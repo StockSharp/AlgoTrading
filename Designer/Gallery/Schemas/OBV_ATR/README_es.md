@@ -10,7 +10,7 @@ El On-Balance Volume suma el volumen de cada vela alcista y resta el de cada vel
 - El canal lo forman un bloque Highest y otro Lowest de 60 valores, alimentados por el bloque On-Balance Volume y no por las velas.
 - Dos bloques de valor anterior conservan el canal de la vela precedente, así que la ruptura se mide contra un borde que el valor actual del OBV todavía no ha desplazado.
 - Como el borde viene de la vela anterior, la ruptura es un suceso y no un estado: opera justo la vela que empuja el OBV más allá del extremo previo.
-- La estrategia original lleva el ATR en el nombre, pero su propio código nunca usa ese indicador, así que el diagrama lo omite y conserva solo lo que realmente decide una operación.
+- A pesar del nombre de la carpeta, el diagrama no usa ATR; sus decisiones proceden exclusivamente del On-Balance Volume y del precio.
 
 ## Reglas de entrada y salida
 
@@ -33,7 +33,7 @@ El On-Balance Volume suma el volumen de cada vela alcista y resta el de cada vel
 - El bloque de velas alimenta el bloque On-Balance Volume, cuya salida pasa al bloque Highest y al Lowest: un indicador que lee a otro indicador.
 - Cada borde del canal atraviesa un bloque de valor anterior, de modo que la comparación usa el borde de la vela previa a la ruptura.
 - Dos bloques de comparación miden el OBV actual contra esos bordes y otros dos comparan la posición con una constante cero; cada Y lógica une una ruptura con su control de posición.
-- El original mantiene un régimen alcista o bajista pegajoso y opera solo cuando cambia; el diagrama logra la misma entrada única por tramo con el control de posición, que bloquea una ruptura repetida en el sentido en el que ya está posicionado.
+- El control de posición produce una sola entrada por tramo al bloquear una ruptura repetida en el sentido en el que el diagrama ya está posicionado.
 - Ambos bloques de modificación envían órdenes a mercado con el volumen de una constante compartida, y sus operaciones alimentan el bloque de protección con el take profit y el stop loss.
 
 ## Uso

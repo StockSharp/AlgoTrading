@@ -1,7 +1,7 @@
 # Diagrama de la estrategia Keltner RSI
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-Un diagrama de reversión a la media construido en torno a la línea central de un canal de Keltner. El precio estirado por debajo de la EMA junto con un RSI débil se compra; el precio estirado por encima con un RSI fuerte se vende, y la operación se entrega cuando el precio vuelve a cruzar la media con el RSI pasado su punto medio. La estrategia original calcula las bandas del canal por ATR pero nunca las lee, así que este diagrama las omite y conserva solo lo que realmente decide una operación.
+Un diagrama de reversión a la media construido en torno a la línea central de un canal de Keltner. El precio estirado por debajo de la EMA junto con un RSI débil se compra; el precio estirado por encima con un RSI fuerte se vende, y la operación se entrega cuando el precio vuelve a cruzar la media con el RSI pasado su punto medio. El diagrama usa solo los valores de la EMA central y del RSI que deciden sus operaciones; las bandas ATR del canal no son necesarias.
 
 ![schema](schema.svg)
 
@@ -10,13 +10,12 @@ Un diagrama de reversión a la media construido en torno a la línea central de 
 - La ExponentialMovingAverage de 20 periodos es la línea central del canal de Keltner y la única referencia de precio de todo el diagrama.
 - El RSI de 14 velas aporta la segunda opinión: una lectura por debajo de 45 confirma la caída que se compra y una por encima de 55 confirma el impulso que se vende.
 - Ambas entradas exigen estar plano y ambas salidas son bloques de cierre, de modo que las cuatro ramas nunca se disputan la misma posición.
-- Dos simplificaciones frente al original: se descartan las bandas ATR no utilizadas y la pausa de 120 barras posterior a cada ejecución no tiene bloque contador, así que este diagrama opera más a menudo.
 
 ## Reglas de entrada y salida
 
 - **Entrada en largo**: El cierre está por debajo de la EMA, el RSI está por debajo del nivel de entrada larga y la posición es plana. La orden compra el volumen compartido a mercado y abre el largo.
 - **Entrada en corto**: El cierre está por encima de la EMA, el RSI está por encima del nivel de entrada corta y la posición es plana. La orden vende el volumen compartido a mercado y abre el corto.
-- **Salida**: El largo se cierra cuando el cierre vuelve por encima de la EMA y el RSI supera su punto medio; el corto se cierra cuando el cierre vuelve por debajo de la EMA y el RSI queda por debajo del punto medio. No hay stop ni objetivo, igual que en el código original, donde el porcentaje de stop declarado nunca se aplica.
+- **Salida**: El largo se cierra cuando el cierre vuelve por encima de la EMA y el RSI supera su punto medio; el corto se cierra cuando el cierre vuelve por debajo de la EMA y el RSI queda por debajo del punto medio. No hay stop ni objetivo.
 
 ## Parámetros
 

@@ -16,7 +16,7 @@ The True Strength Index is momentum smoothed twice, so it turns late but rarely 
 
 - **Long entry**: The TSI line crosses above its signal line, the gap between them is at least the minimum spread and the position is not long. The order buys the shared volume plus the size of an open short, so one market order closes the short and opens the long.
 - **Short entry**: The TSI line crosses below its signal line, the gap between them is at least the minimum spread and the position is not short. The order sells the shared volume plus the size of an open long.
-- **Exit**: There is no exit rule of its own and no protective stop, exactly as in the original: a position is held until the opposite crossing reverses it. Two things are simplified. The original waits ten candles after every entry before it looks at signals again, and no block keeps a bar counter between candles, so that pause is dropped; the position guard still prevents a second entry in the same direction. The original also fires two market orders when it reverses, which doubles the size for an instant; here the volume formula does the same job in a single order.
+- **Exit**: There is no separate exit rule or protective stop: a position is held until the opposite crossing reverses it. The position guard prevents a second entry in the same direction, while the volume formula closes the old side and opens the new one in a single market order.
 
 ## Parameters
 
@@ -27,7 +27,7 @@ The True Strength Index is momentum smoothed twice, so it turns late but rarely 
 | TSI Signal Length | 7 | Length of the exponential signal line drawn on the index. |
 | Min spread | 2 | Minimum absolute gap between the index and its signal line for a crossing to count. |
 | Volume | 1 | Order volume, in lots. |
-| Candles | 01:00:00 | Candle time frame the whole diagram works on. The original runs on four hour candles; on one month of history that leaves too few finished bars for a double smoothed index to form and still trade, so the diagram is scaled down to hourly candles. |
+| Candles | 01:00:00 | Hourly candle time frame, giving the double-smoothed index enough finished bars to form and trade within one month of history. |
 
 ## Diagram Details
 

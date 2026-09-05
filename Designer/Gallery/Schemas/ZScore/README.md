@@ -10,13 +10,13 @@ The close is turned into a z-score, the distance from a moving average measured 
 - The z-score is assembled by hand from SimpleMovingAverage and StandardDeviation: (Close - SMA) / StandardDeviation, computed in a single formula block.
 - A mirrored formula produces the negative of the same score, so one exposed entry level and one exposed exit level cover both directions instead of four separate constants.
 - Entries are made from a flat position only; the entry blocks additionally carry the Open position condition, so the diagram never averages into a trade it already holds.
-- The original runs on one-minute candles and locks trading for 500 bars after every trade. The packaged history is five-minute data, so the diagram works on five-minute candles, and the lock-out is not reproduced because the Designer has no bar counter that holds a state; the diagram therefore trades more often and holds shorter than the original.
+- The diagram works on the five-minute candles supplied with the packaged history.
 
 ## Entry and Exit Rules
 
 - **Long entry**: The z-score is below minus the entry level, that is the close sits more than the configured number of standard deviations under the average, and the position is flat. The order buys the configured volume.
 - **Short entry**: The z-score is above plus the entry level, that is the close sits more than the configured number of standard deviations above the average, and the position is flat. The order sells the configured volume.
-- **Exit**: A long is closed once the z-score climbs back above the exit level, a short once the z-score falls back below minus the exit level. There is no stop loss and no take profit, exactly as in the original strategy.
+- **Exit**: A long is closed once the z-score climbs back above the exit level, a short once the z-score falls back below minus the exit level. There is no stop loss and no take profit.
 
 ## Parameters
 

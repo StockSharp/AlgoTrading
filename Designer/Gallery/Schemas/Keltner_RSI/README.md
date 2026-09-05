@@ -1,7 +1,7 @@
 # Keltner RSI Strategy Diagram
 [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-A mean-reversion diagram built around the centre line of a Keltner channel. Price stretched below the EMA together with a weak RSI is bought, price stretched above it together with a strong RSI is sold, and the trade is given back when price crosses the average again with RSI past its midpoint. The original strategy computes the ATR channel bands but never reads them, so this diagram leaves them out and keeps only what actually decides a trade.
+A mean-reversion diagram built around the centre line of a Keltner channel. Price stretched below the EMA together with a weak RSI is bought, price stretched above it together with a strong RSI is sold, and the trade is given back when price crosses the average again with RSI past its midpoint. The diagram uses only the centre EMA and RSI values that decide its trades; ATR channel bands are not needed.
 
 ![schema](schema.svg)
 
@@ -10,13 +10,12 @@ A mean-reversion diagram built around the centre line of a Keltner channel. Pric
 - The 20-period ExponentialMovingAverage is the centre line of the Keltner channel and the only price reference in the whole diagram.
 - RSI over 14 candles supplies the second opinion: a reading under 45 confirms the sell-off that is bought, a reading over 55 confirms the push that is sold.
 - Both entries need a flat book, and both exits are position-closing blocks, so the four branches can never fight over the same position.
-- Two simplifications against the original: the unused ATR bands are dropped, and the 120-bar cooldown that follows every fill has no counter block, so this diagram trades more often.
 
 ## Entry and Exit Rules
 
 - **Long entry**: The close is below the EMA, RSI is below the long entry level and the position is flat. The order buys the shared volume at market and opens the long.
 - **Short entry**: The close is above the EMA, RSI is above the short entry level and the position is flat. The order sells the shared volume at market and opens the short.
-- **Exit**: A long is closed when the close is back above the EMA and RSI is above its midpoint; a short is closed when the close is back below the EMA and RSI is below the midpoint. There is no stop loss and no take profit, exactly as in the original code, where the declared stop-loss percentage is never applied.
+- **Exit**: A long is closed when the close is back above the EMA and RSI is above its midpoint; a short is closed when the close is back below the EMA and RSI is below the midpoint. There is no stop loss and no take profit.
 
 ## Parameters
 

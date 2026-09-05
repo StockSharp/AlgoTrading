@@ -10,7 +10,7 @@ On-Balance Volume adds the volume of every up candle and subtracts the volume of
 - The channel is built by a Highest and a Lowest block of 60 values, both fed by the On-Balance Volume block rather than by candles.
 - Two previous-value blocks hold the channel of the preceding candle, so the breakout is measured against a border that the current OBV value has not yet moved.
 - Because the border comes from the previous candle, a break is an event and not a state: the very candle that pushes OBV past the old extreme is the one that trades.
-- The original strategy is named after ATR, but its own code never uses that indicator, so the diagram leaves it out and keeps only what actually decides a trade.
+- Despite the folder name, the diagram does not use ATR; its decisions come entirely from On-Balance Volume and price.
 
 ## Entry and Exit Rules
 
@@ -33,7 +33,7 @@ On-Balance Volume adds the volume of every up candle and subtracts the volume of
 - The candle block feeds the On-Balance Volume block, whose output goes on to the Highest and the Lowest block, an indicator reading another indicator.
 - Each channel border passes through a previous-value block, so the comparison uses the border of the candle before the breakout.
 - Two comparison blocks test the current OBV against those borders, and two more test the position against a zero constant; each logical AND joins a breakout with its position guard.
-- The original keeps a sticky bull or bear regime and trades only when the regime flips; the diagram gets the same single entry per swing from the position guard, which blocks a repeated breakout in the direction it is already positioned.
+- The position guard produces a single entry per swing by blocking a repeated breakout in the direction the diagram is already positioned.
 - Both modify blocks send market orders with the volume of one shared constant, and their own trades feed the protection block with the take profit and the stop loss.
 
 ## Usage

@@ -8,15 +8,15 @@ A reversão à média funciona quando o mercado anda de lado e machuca quando h�
 ## Visão geral da estratégia
 
 - A volatilidade é medida em relação a si mesma: um AverageTrueRange alimenta uma SmoothedMovingAverage, e a razão entre os dois é todo o filtro de regime, de modo que o diagrama se transfere para qualquer ativo sem recalibração.
-- A suavização reproduz exatamente a média recursiva do código original, pois a SmoothedMovingAverage usa a mesma fórmula: a média vezes o comprimento menos um, mais o novo valor, dividido pelo comprimento.
+- A SmoothedMovingAverage usa uma fórmula recursiva: a média vezes o comprimento menos um, mais o novo valor, dividido pelo comprimento.
 - O valor justo é uma SimpleMovingAverage comum: um fechamento abaixo dela é comprado e um acima é vendido, mas apenas no regime calmo e apenas com a posição zerada.
-- O original trabalha em candles de um minuto e bloqueia toda a estratégia por 500 barras após cada negócio, inclusive as saídas. O histórico incluído é de cinco minutos, então o diagrama usa candles de cinco minutos; a trava não é reproduzida porque o Designer não tem contador de barras com estado, e por isso ele negocia com mais frequência que o original.
+- O diagrama trabalha com os candles de cinco minutos fornecidos com o histórico empacotado.
 
 ## Regras de entrada e saída
 
 - **Entrada comprada**: O Average True Range está abaixo do nível de calma, o fechamento fica abaixo da média móvel e a posição está zerada. A ordem compra o volume configurado.
 - **Entrada vendida**: O Average True Range está abaixo do nível de calma, o fechamento fica acima da média móvel e a posição está zerada. A ordem vende o volume configurado.
-- **Saída**: A compra é encerrada quando o fechamento volta acima da média móvel e a venda quando volta abaixo. As saídas ignoram de propósito o filtro de volatilidade, de modo que a operação é devolvida mesmo que o mercado já tenha acordado. Não há stop nem alvo, como na estratégia original.
+- **Saída**: A compra é encerrada quando o fechamento volta acima da média móvel e a venda quando volta abaixo. As saídas ignoram de propósito o filtro de volatilidade, de modo que a operação é devolvida mesmo que o mercado já tenha acordado. Não há stop nem alvo.
 
 ## Parâmetros
 

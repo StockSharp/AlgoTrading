@@ -16,7 +16,7 @@ Um inside bar é um candle cuja amplitude inteira cabe dentro da amplitude do ca
 
 - **Entrada comprada**: O bloco de padrão informa um inside bar cuja máxima acaba de ser rompida pelo candle seguinte e a posição está zerada. A ordem compra um lote e abre uma compra.
 - **Entrada vendida**: O bloco de padrão informa um inside bar cuja mínima acaba de ser perdida pelo candle seguinte e a posição está zerada. A ordem vende um lote e abre uma venda.
-- **Saída**: A compra é encerrada quando um candle fecha abaixo da média móvel e a venda quando fecha acima dela, ambas por blocos de modificação de posição em modo de fechamento, exatamente como na estratégia original. O que o diagrama não reproduz é a espera sem prazo do código: lá as extremidades do inside bar ficam guardadas e o rompimento é aceito muitos candles depois, enquanto aqui o bloco de padrão enxerga apenas uma janela de tamanho fixo, de modo que o rompimento precisa chegar no candle logo seguinte. Esse é o caso mais comum do padrão, mas os rompimentos tardios se perdem. A pausa de várias centenas de barras entre operações também não tem bloco próprio e foi omitida.
+- **Saída**: A compra é encerrada quando um candle fecha abaixo da média móvel e a venda quando fecha acima dela, ambas por blocos de modificação de posição em modo de fechamento. O bloco de padrão enxerga apenas uma janela de tamanho fixo, de modo que o rompimento precisa chegar no candle imediatamente posterior ao inside bar; rompimentos posteriores são ignorados.
 
 ## Parâmetros
 

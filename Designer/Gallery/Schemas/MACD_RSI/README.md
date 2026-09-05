@@ -10,7 +10,7 @@ MACD gives the direction and RSI gives the moment. While the MACD line stands ab
 - The trend test is a level comparison, not a crossing: what matters is on which side of the signal line the MACD line currently sits, so the filter stays on for as long as the trend lasts.
 - The entry is deliberately contrarian inside that trend - RSI has to be stretched against it, which turns the diagram into a pullback buyer rather than a breakout chaser.
 - The exit uses the same pair of lines: a long is closed when MACD drops below its signal line, a short when it climbs above.
-- There is no stop loss and no take profit in the diagram, exactly as in the original strategy, where the MACD flip is the only way out.
+- There is no stop loss and no take profit in the diagram; the MACD flip is the only way out.
 
 ## Entry and Exit Rules
 
@@ -36,7 +36,7 @@ MACD gives the direction and RSI gives the moment. While the MACD line stands ab
 - One indicator block holds MACD with its signal line; two converter blocks pull the Macd and Signal values out of it, and a second indicator block calculates the Relative Strength Index on the same candles.
 - Two comparisons place the MACD line against the signal line, two more place RSI against the threshold constants, and one compares the position with zero.
 - Each logical AND joins a trend condition, an RSI condition and the flat-position check, then triggers a position modify block that opens only from flat.
-- The trend comparisons are reused as exit triggers, so the two close-position blocks need no extra logic. The 150-bar pause between trades of the original strategy has no counterpart among the blocks and is left out, which makes re-entries more frequent than in the code.
+- The trend comparisons are reused as exit triggers, so the two close-position blocks need no extra logic.
 
 ## Usage
 

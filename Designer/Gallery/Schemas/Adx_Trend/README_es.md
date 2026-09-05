@@ -1,14 +1,14 @@
 # Diagrama de la estrategia de cruce de media con filtro ADX
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-El diagrama opera la vela que pisa una media móvil simple larga, pero solo mientras el ADX confirma que el mercado realmente tiene tendencia. Una vela cuenta como cruce si abrió a un lado de la media y cerró al otro, y entonces la posición se gira hacia el lado del cierre. El original trabaja con velas de un minuto; este diagrama usa las velas de cinco minutos del histórico incluido.
+El diagrama opera la vela que pisa una media móvil simple larga, pero solo mientras el ADX confirma que el mercado realmente tiene tendencia. Una vela cuenta como cruce si abrió a un lado de la media y cerró al otro, y entonces la posición se gira hacia el lado del cierre. El diagrama usa las velas de cinco minutos del histórico incluido.
 
 ![schema](schema.svg)
 
 ## Resumen de la estrategia
 
 - La SMA de 200 es la línea de referencia y un bloque de valor anterior guarda el valor que tenía una vela antes, de modo que la apertura se mide contra la media de su propia barra y el cierre contra la actual.
-- El O exclusivo de esas dos comparaciones es cierto exactamente en las barras que cabalgan la media: así define el cruce el código original, y no como el cruce de dos líneas de indicadores.
+- El O exclusivo de esas dos comparaciones es cierto exactamente en las barras que cabalgan la media, por lo que la señal detecta una vela que cruza la media y no el cruce de dos líneas de indicadores.
 - El ADX de longitud cincuenta filtra cada entrada: una vela que cruza la media en un mercado tranquilo se ignora.
 - No hay stop ni objetivo: la posición solo se gira con el cruce contrario, y el volumen de la orden es el volumen compartido más lo que ya se tiene.
 
@@ -16,7 +16,7 @@ El diagrama opera la vela que pisa una media móvil simple larga, pero solo mien
 
 - **Entrada en largo**: El ADX supera el umbral, la vela cruzó la media, el cierre está por encima de la SMA actual y la posición no es larga. La orden compra el volumen compartido más el tamaño del corto abierto, así que una sola orden cierra el corto y abre el largo.
 - **Entrada en corto**: El ADX supera el umbral, la vela cruzó la media, el cierre está en la SMA actual o por debajo y la posición no es corta. La orden vende el volumen compartido más el tamaño del largo abierto.
-- **Salida**: No hay salida propia: la posición se mantiene hasta que el cruce contrario la gira, igual que en el código original, que no implementa ni stop loss ni take profit.
+- **Salida**: No hay salida propia, stop loss ni take profit: la posición se mantiene hasta que el cruce contrario la gira.
 
 ## Parámetros
 

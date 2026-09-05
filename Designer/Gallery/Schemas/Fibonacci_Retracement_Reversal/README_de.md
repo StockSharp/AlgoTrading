@@ -10,7 +10,7 @@ Die Spanne der letzten zwanzig Kerzen wird durch den Goldenen Schnitt geteilt, u
 - Highest und Lowest über dasselbe Fenster liefern Hoch und Tief der Spanne, ihre Differenz ist der Bereich, in dem die Marken gemessen werden.
 - Die Kaufmarke liegt 0.618 der Spanne unter dem Hoch, die Verkaufsmarke 0.618 der Spanne über dem Tief; eine Kerze gilt als auf einer Marke, solange ihr Schluss weniger als zwei Prozent der Spanne davon entfernt ist.
 - Beide Abstände werden als Anteil der Spanne gerechnet, deshalb arbeitet das Diagramm auf jedem Instrument und in jeder Preisgrößenordnung gleich.
-- Für einen Einstieg braucht es zusätzlich einen bestätigenden Kerzenkörper und eine neutrale Position; alle Ausstiege übernimmt die SimpleMovingAverage, denn die Vorlage kennt weder Stopp noch Ziel.
+- Für einen Einstieg braucht es zusätzlich einen bestätigenden Kerzenkörper und eine neutrale Position; alle Ausstiege übernimmt die SimpleMovingAverage, und es gibt weder Stopp noch Ziel.
 
 ## Ein- und Ausstiegsregeln
 
@@ -35,7 +35,7 @@ Die Spanne der letzten zwanzig Kerzen wird durch den Goldenen Schnitt geteilt, u
 - Zwei Formelbausteine machen aus den Kursen den durch die Spanne geteilten Abstand des Schlusskurses zu jeder Marke, sodass eine einzige Pufferkonstante für beide Seiten reicht.
 - Jeder Einstieg läuft durch ein logisches UND aus drei Signalen: Marke, Kerzenkörper und die mit einer Nullkonstante verglichene Position.
 - Die beiden Ausstiegsbausteine werden direkt von den Vergleichen mit dem gleitenden Durchschnitt ausgelöst und stehen im Schließmodus; alle vier Orderbausteine teilen sich eine Volumenkonstante.
-- Bewusste Vereinfachungen: Das Original rechnet auf Minutenkerzen und pausiert nach jedem Trade 500 Balken, was kein Baustein abbilden kann; deshalb läuft das Diagramm auf Fünf-Minuten-Kerzen und handelt wieder, sobald die Bedingungen zurückkehren. Positionen halten einige Balken statt Tage; eine größere Periode des Durchschnitts verlängert sie.
+- Das Diagramm läuft auf Fünf-Minuten-Kerzen und kann wieder handeln, sobald die Bedingungen zurückkehren. Positionen halten einige Balken; eine größere Periode des Durchschnitts verlängert sie.
 
 ## Verwendung
 

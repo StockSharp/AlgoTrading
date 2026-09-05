@@ -1,7 +1,7 @@
 # MACD and Bollinger Middle Band Strategy Diagram
 [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-Two very common indicators split the work: MACD says which side of the market to be on, and the middle Bollinger band says when the price has strayed far enough from fair value to take that side cheaply. The outer bands are deliberately not used — the original strategy buys dips below the middle line, not breakouts of the envelope.
+Two very common indicators split the work: MACD says which side of the market to be on, and the middle Bollinger band says when the price has strayed far enough from fair value to take that side cheaply. The outer bands are deliberately not used because the diagram trades dips below the middle line, not breakouts of the envelope.
 
 ![schema](schema.svg)
 
@@ -37,7 +37,6 @@ Two very common indicators split the work: MACD says which side of the market to
 - A single gap constant and two formula blocks turn the middle band into a buy level and a sell level, so one exposed number moves both thresholds at once.
 - Each entry is a logical AND of three flags: the MACD comparison, the band comparison and the position compared against a zero constant.
 - The two exit blocks hang directly off the MACD comparisons and run in close-position mode; all four order blocks take their size from the same volume constant.
-- Deliberate simplifications: the original also subscribes to an AverageTrueRange that it never uses, so no ATR block is drawn, and it pauses entries for 100 bars after a trade, which no block can express — this diagram re-enters as soon as the conditions come back.
 
 ## Usage
 

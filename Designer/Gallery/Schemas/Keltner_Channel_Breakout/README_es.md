@@ -10,13 +10,13 @@ Un canal de Keltner es una media móvil exponencial con bordes separados por un 
 - KeltnerChannels produce el canal en un solo bloque y dos conversores extraen de su valor el borde superior y el inferior.
 - Los bloques de valor anterior guardan los dos bordes y el cierre de una barra atrás, de modo que la ruptura se mide contra el nivel que el mercado ya vio y no contra un borde que se movió con la misma vela.
 - Cada orden lleva el volumen compartido más el valor absoluto de la posición, así que una sola orden da la vuelta a la operación en lugar de reducirla.
-- El original en C# usa un canal de periodo 500 con multiplicador 10 en velas de un minuto; el diagrama emplea el canal 20 / 2 documentado en su README sobre velas de cinco minutos, para que la ruptura ocurra de verdad con datos corrientes.
+- El diagrama emplea un canal de periodo 20 con multiplicador 2 sobre velas de cinco minutos, para que las rupturas ocurran con datos corrientes.
 
 ## Reglas de entrada y salida
 
 - **Entrada en largo**: El cierre está por encima de la banda superior de la vela anterior mientras el cierre anterior seguía en ella o por debajo, y la posición no es larga. La orden compra el volumen más el corto abierto, con lo que se pasa a largo.
 - **Entrada en corto**: El cierre está por debajo de la banda inferior de la vela anterior mientras el cierre anterior seguía en ella o por encima, y la posición no es corta. La orden vende el volumen más el largo abierto, con lo que se pasa a corto.
-- **Salida**: No hay bloque de salida: la ruptura contraria invierte la posición, exactamente como en la estrategia original, que no tiene stop ni objetivo.
+- **Salida**: No hay bloque de salida, stop ni objetivo: la ruptura contraria invierte la posición.
 
 ## Parámetros
 

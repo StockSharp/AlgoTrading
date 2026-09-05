@@ -7,7 +7,7 @@ Eine Kerze, die deutlich mehr Volumen trägt als die vorige, bedeutet meist, das
 
 ## Strategieübersicht
 
-- Das Volumen der Kerze wird mit dem Volumen der vorigen Kerze verglichen, nicht mit einem Durchschnitt vieler Kerzen, genau wie im Originalcode.
+- Das Volumen der Kerze wird mit dem Volumen der vorigen Kerze verglichen, nicht mit einem Durchschnitt vieler Kerzen.
 - Der Vergleich ist als Multiplikation statt als Division geschrieben, sodass eine Kerze ganz ohne Volumen das Diagramm nicht stören kann.
 - Ein einfacher gleitender Durchschnitt des Schlusskurses über zwanzig Kerzen wählt die Seite: darüber wird die Spitze gekauft, darunter verkauft.
 - Eingestiegen wird nur aus der Neutralstellung, und der Ausstieg braucht weder den Durchschnitt noch die Spitze, sondern nur ein Volumen, das nicht mehr wächst.
@@ -16,7 +16,7 @@ Eine Kerze, die deutlich mehr Volumen trägt als die vorige, bedeutet meist, das
 
 - **Long-Einstieg**: Das Volumen der Kerze beträgt mindestens das Vielfache des Volumens der vorigen Kerze, die Kerze schloss über dem gleitenden Durchschnitt und die Position ist neutral. Die Order kauft ein Lot zum Markt.
 - **Short-Einstieg**: Das Volumen der Kerze beträgt mindestens das Vielfache des Volumens der vorigen Kerze, die Kerze schloss unter dem gleitenden Durchschnitt und die Position ist neutral. Die Order verkauft ein Lot zum Markt.
-- **Ausstieg**: Beide Seiten steigen auf der ersten Kerze aus, deren Volumen kleiner ist als das der Kerze davor, über Bausteine zur Positionsänderung im Schließmodus. Die Originalstrategie hat weder Stop Loss noch Take Profit, dieses Diagramm ebenso wenig.
+- **Ausstieg**: Beide Seiten steigen auf der ersten Kerze aus, deren Volumen kleiner ist als das der Kerze davor, über Bausteine zur Positionsänderung im Schließmodus. Das Diagramm hat weder Stop-Loss noch Take-Profit.
 
 ## Parameter
 
@@ -32,7 +32,7 @@ Eine Kerze, die deutlich mehr Volumen trägt als die vorige, bedeutet meist, das
 - Der Kerzenbaustein speist einen Konverter für das Volumen, einen für den Schlusskurs und den Durchschnittsbaustein; ein Baustein für den vorigen Wert mit Versatz von einer Kerze liefert das Volumen der früheren Kerze.
 - Eine Formel multipliziert dieses frühere Volumen mit der Konstante des Spitzenfaktors, und ein Vergleichsbaustein prüft das aktuelle Volumen gegen das Ergebnis.
 - Jedes logische UND verbindet die Spitze, die vom Durchschnitt gewählte Seite und die Prüfung auf Neutralstellung und löst einen Baustein zur Positionsänderung im Modus "nur eröffnen" aus.
-- Der Vergleich des fallenden Volumens geht direkt auf beide Schließbausteine, die im Schließmodus stehen und deshalb untätig bleiben, solange keine Position offen ist. Das Original pausiert zusätzlich nach jedem Trade fünfhundert Kerzen lang und arbeitet auf Minutenkerzen; für eine solche Pause gibt es keinen Zählerbaustein und die mitgelieferte Historie ist gröber als eine Minute, also läuft das Diagramm auf Fünf-Minuten-Kerzen und handelt jede Spitze.
+- Der Vergleich des fallenden Volumens geht direkt auf beide Schließbausteine, die im Schließmodus stehen und deshalb untätig bleiben, solange keine Position offen ist. Das Diagramm läuft auf den Fünf-Minuten-Kerzen der mitgelieferten Historie und handelt jede passende Spitze.
 
 ## Verwendung
 

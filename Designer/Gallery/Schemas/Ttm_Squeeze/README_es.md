@@ -16,7 +16,7 @@ Los mercados tranquilos no siguen tranquilos mucho tiempo. Este diagrama mide la
 
 - **Entrada en largo**: La anchura supera a la de la vela anterior, ese valor anterior estaba en el nivel de compresión o por debajo, el RSI está por encima de 50 y la posición está plana. La orden de compra abre un largo de un lote.
 - **Entrada en corto**: La anchura supera a la de la vela anterior, ese valor anterior estaba en el nivel de compresión o por debajo, el RSI está por debajo de 50 y la posición está plana. La orden de venta abre un corto de un lote.
-- **Salida**: El largo se cierra cuando el cierre cae por debajo de la banda inferior y el corto cuando sube por encima de la superior: la ruptura falló y se fue al otro lado. Ambas salidas trabajan en modo cierre de posición; la estrategia original tampoco lleva stop ni objetivo.
+- **Salida**: El largo se cierra cuando el cierre cae por debajo de la banda inferior y el corto cuando sube por encima de la superior: la ruptura falló y se fue al otro lado. Ambas salidas trabajan en modo cierre de posición, sin stop ni objetivo.
 
 ## Parámetros
 
@@ -37,7 +37,7 @@ Los mercados tranquilos no siguen tranquilos mucho tiempo. Este diagrama mide la
 - Un bloque de fórmula convierte las tres bandas en la anchura porcentual, que alimenta a la vez un bloque de media móvil y un bloque de valor anterior, de forma que la anchura se compara con su propio pasado.
 - Una segunda fórmula multiplica la anchura media por el factor de compresión y dos comparaciones producen las señales de compresión y de expansión.
 - Cada entrada es una Y lógica de cuatro condiciones: expansión, compresión, dirección del RSI y posición plana; ambos bloques de entrada toman el volumen de la misma constante.
-- La estrategia original mantiene además un mínimo móvil de la anchura, cuenta tres barras estrechas, filtra la dirección con una EMA(20) y pausa quince barras tras cada operación; el diagrama sustituye ese mínimo por la media móvil de la anchura y prescinde del contador, la EMA y la pausa, que ningún bloque puede expresar.
+- Una media móvil de la anchura de las bandas proporciona la referencia de la compresión. La dirección procede del RSI y no se aplica ningún filtro separado de recuento de barras.
 
 ## Uso
 

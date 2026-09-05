@@ -7,7 +7,7 @@ Williams %R says where the last close sits inside the highest high and the lowes
 
 ## Strategy Overview
 
-- Williams %R is calculated on finished candles of a single instrument and is fully equivalent to the highest-high / lowest-low formula the original strategy computes by hand.
+- Williams %R is calculated on finished candles of a single instrument from the highest high and lowest low of its lookback window.
 - Two levels split the scale: below -80 the market counts as oversold, above -20 as overbought.
 - A previous-value block keeps the reading of the preceding candle, so a level is tested twice and only the crossing candle produces a signal.
 - The current position takes part in both decisions, so no order ever adds to a position already held.
@@ -16,7 +16,7 @@ Williams %R says where the last close sits inside the highest high and the lowes
 
 - **Long entry**: The previous %R reading was below the lower level, the current one is at or above it, and the position is not long. The order buys one lot, which opens a long from flat or brings an existing short back to zero.
 - **Short entry**: The previous %R reading was above the upper level, the current one is at or below it, and the position is not short. The order sells one lot, which opens a short from flat or brings an existing long back to zero.
-- **Exit**: There is no separate exit block: the opposite crossing sends a market order of the same volume, so it flattens the position exactly as the original strategy does. The original also stands aside for fifty candles after every trade; a bar counter has no block of its own here, so the level crossing carries that job alone and the diagram trades somewhat more often than the source.
+- **Exit**: There is no separate exit block: the opposite crossing sends a market order of the same volume, so it flattens the position. The crossing condition keeps the diagram from issuing repeated orders while the oscillator remains inside a zone.
 
 ## Parameters
 

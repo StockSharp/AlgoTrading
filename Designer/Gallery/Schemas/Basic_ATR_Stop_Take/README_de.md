@@ -10,7 +10,7 @@ Eine kurze Lektion über Risiko, das an der Schwankungsbreite gemessen wird. Ein
 - Es werden nur ein Instrument und eine Kerzenreihe verwendet: Die 50er-EMA gibt die Richtung vor, die 14er-ATR liefert den Maßstab für die Ausstiege.
 - Den Einstiegspreis halten zwei Variablenbausteine: Der erste übernimmt den Schlusskurs der Signalkerze, der zweite gibt ihn auf jeder folgenden Kerze erneut aus, damit die Ausstiegsbedingungen durchgehend geprüft werden können.
 - Zwei Formelbausteine rechnen den Abstand zum Einstiegspreis in ATR-Vielfache um, einmal zugunsten eines Long und einmal zugunsten eines Short, sodass dieselben zwei Schwellen beide Richtungen bedienen.
-- Der Ausstieg ist eine Marktorder auf abgeschlossener Kerze, genau wie in der Ursprungsstrategie: An der Börse liegt keine Stop-Order, ein Ausschlag innerhalb der Kerze wirft die Position also nicht heraus.
+- Der Ausstieg ist eine Marktorder auf abgeschlossener Kerze: An der Börse liegt keine Stop-Order, ein Ausschlag innerhalb der Kerze wirft die Position also nicht heraus.
 
 ## Ein- und Ausstiegsregeln
 
@@ -35,7 +35,6 @@ Eine kurze Lektion über Risiko, das an der Schwankungsbreite gemessen wird. Ein
 - Die aktuelle Position wird gegen eine Nullkonstante geprüft, und jedes logische UND verbindet diese Prüfung mit einer Kreuzung, sodass nur aus der Neutralstellung eröffnet wird.
 - Den Einstiegspreis halten zwei Variablenbausteine; der zweite wird von der Kerzenreihe ausgelöst — deshalb ist diese Verbindung die letzte, die der Kerzenbaustein bedient, und deshalb rechnet der Ausstieg schon auf der Einstiegskerze mit dem richtigen Preis.
 - Vier Vergleichsbausteine prüfen die beiden ATR-Distanzen gegen die Stop- und Zielkonstanten, zwei logische ODER fassen sie zusammen, und zwei auf Schließen gestellte Bausteine senden die Ausstiegsorders.
-- Die Ursprungsstrategie wartet sechs Kerzen zwischen zwei Trades. Für einen solchen Zähler gibt es unter den Bausteinen keine Entsprechung, deshalb lässt das Diagramm ihn weg und nimmt die nächste Kreuzung sofort.
 
 ## Verwendung
 

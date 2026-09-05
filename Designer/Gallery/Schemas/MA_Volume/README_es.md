@@ -9,14 +9,13 @@ Un cruce de media móvil por sí solo reacciona a cualquier temblor del precio. 
 
 - Una SimpleMovingAverage de la vela marca la línea que el cierre debe cruzar, y un único bloque de cruce convierte las dos series en un solo evento de subida o bajada.
 - El filtro de volumen compara la vela con su propia predecesora, no con una media: un bloque de valor anterior guarda el volumen de la vela previa, una fórmula lo multiplica por el factor y una comparación contrasta la vela nueva con el resultado.
-- Solo se entra desde posición plana y con la confirmación de volumen; se sale únicamente con el cruce inverso, igual que en el original en C#.
-- El original congela la operativa durante 150 barras tras cada orden; aquí no hay un bloque contador de barras, así que esa pausa se omite y el diagrama opera más a menudo.
+- Solo se entra desde posición plana y con la confirmación de volumen; se sale únicamente con el cruce inverso.
 
 ## Reglas de entrada y salida
 
 - **Entrada en largo**: El cierre cruza la media móvil hacia arriba, el volumen de esa vela supera el de la anterior multiplicado por el factor, el volumen previo es mayor que cero y la posición está plana. El bloque de modificación compra a mercado el volumen compartido.
 - **Entrada en corto**: El cierre cruza la media móvil hacia abajo con la misma confirmación de volumen y con la posición plana. El bloque de modificación vende a mercado el volumen compartido.
-- **Salida**: El largo se cierra con el primer cruce bajista y el corto con el primer cruce alcista, sin condición de volumen; ambos bloques de cierre trabajan en modo cierre, así que actúan solo cuando hay algo que cerrar. Ni la estrategia original ni este diagrama llevan stop loss o take profit.
+- **Salida**: El largo se cierra con el primer cruce bajista y el corto con el primer cruce alcista, sin condición de volumen; ambos bloques de cierre trabajan en modo cierre, así que actúan solo cuando hay algo que cerrar. El diagrama no lleva stop loss ni take profit.
 
 ## Parámetros
 

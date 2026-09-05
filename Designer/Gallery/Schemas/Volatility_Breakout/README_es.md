@@ -33,7 +33,7 @@ Un canal construido a mano: la media móvil simple da el centro, el Average True
 - Una constante guarda el multiplicador y dos bloques de fórmula calculan el borde superior y el inferior a partir de SMA, el multiplicador y el ATR.
 - Dos bloques de comparación contrastan el cierre con los bordes, otros dos comparan la posición con cero y cada Y lógica reúne una condición de cada tipo en una entrada.
 - Un bloque de fórmula calcula el volumen de giro como volumen base más el valor absoluto de la posición y alimenta los dos bloques de modificación de posición.
-- El original protege la posición con un stop de dos unidades absolutas de precio, calibrado para otro instrumento y que saltaría de inmediato en un precio de cripto; el diagrama usa en su lugar un stop del dos por ciento, que se comporta como pretendía el original en cualquier instrumento.
+- El diagrama usa un stop del dos por ciento, una distancia portátil que mantiene su sentido en cualquier instrumento.
 
 ## Uso
 

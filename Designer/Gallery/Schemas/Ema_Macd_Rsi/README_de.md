@@ -10,13 +10,13 @@ Drei unabhängige Prüfungen müssen übereinstimmen, bevor dieses Diagramm hand
 - Der Trendfilter ist ein Niveauvergleich zweier exponentieller Durchschnitte: Solange EMA 50 unter EMA 200 liegt, wird nicht gekauft, solange sie darüber liegt, nicht verkauft.
 - Der Einstieg ist ein Ereignis und kein Zustand: Nur die Kerze, auf der die MACD-Linie ihre Signallinie kreuzt, darf einen Trade eröffnen, deshalb feuert das Diagramm nicht dauerhaft, solange der Trend hält.
 - Der RSI-Korridor macht die Kombination vorsichtig. Ein Long braucht den RSI über der Kaufmarke und noch unter der Obergrenze, ein Short unter der Verkaufsmarke und noch über der Untergrenze, sodass ausgelaufene Bewegungen ausgelassen werden.
-- Das Original arbeitet mit 30-Minuten-Kerzen; das Diagramm ist auf Fünf-Minuten-Kerzen skaliert, passend zur mitgelieferten Beispielhistorie. Die Pause von zehn Bars nach einem Trade hat keinen Baustein-Gegenpart und entfällt, wodurch Wiedereinstiege häufiger sind als im Code.
+- Das Diagramm verwendet Fünf-Minuten-Kerzen, passend zur mitgelieferten Beispielhistorie.
 
 ## Ein- und Ausstiegsregeln
 
 - **Long-Einstieg**: EMA 50 liegt über EMA 200, die MACD-Linie kreuzt ihre Signallinie nach oben, der RSI steht über der Kaufmarke und noch unter der Obergrenze, und die Position ist nicht bereits long. Die Order kauft das Grundvolumen plus einen offenen Short und dreht ihn mit einer Marktorder auf long.
 - **Short-Einstieg**: EMA 50 liegt unter EMA 200, die MACD-Linie kreuzt ihre Signallinie nach unten, der RSI steht unter der Verkaufsmarke und noch über der Untergrenze, und die Position ist nicht bereits short. Die Order verkauft das Grundvolumen plus einen offenen Long und dreht ihn mit einer Marktorder auf short.
-- **Ausstieg**: Es gibt weder einen Ausstiegsbaustein noch eine Absicherung, genau wie im Original: Die Position wird bis zum Spiegelsignal gehalten, und dieselbe Order schließt den alten Trade und eröffnet den neuen.
+- **Ausstieg**: Es gibt weder einen Ausstiegsbaustein noch eine Absicherung: Die Position wird bis zum Spiegelsignal gehalten, und dieselbe Order schließt den alten Trade und eröffnet den neuen.
 
 ## Parameter
 

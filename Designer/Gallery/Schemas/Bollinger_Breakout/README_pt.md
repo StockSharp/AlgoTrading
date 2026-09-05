@@ -1,7 +1,7 @@
 # Diagrama da estratégia de rompimento por zonas de Bollinger
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
-O nome fala em rompimento, mas o que se opera é a volta: o diagrama espera um candle cuja zona inferior tenha furado a banda inferior de Bollinger enquanto o mercado ainda se mantém acima da EMA 50, e compra essa queda. A imagem espelhada vende um pico acima da banda superior. A posição é entregue assim que o preço volta à banda do meio. A confirmação por RSI do código original (abaixo de 45 para compras e acima de 55 para vendas) foi deixada de fora para manter o diagrama legível: ela quase não restringe um sinal que já exige um candle além da banda.
+O nome fala em rompimento, mas o que se opera é a volta: o diagrama espera um candle cuja zona inferior tenha furado a banda inferior de Bollinger enquanto o mercado ainda se mantém acima da EMA 50, e compra essa queda. A imagem espelhada vende um pico acima da banda superior. A posição é entregue assim que o preço volta à banda do meio.
 
 ![schema](schema.svg)
 

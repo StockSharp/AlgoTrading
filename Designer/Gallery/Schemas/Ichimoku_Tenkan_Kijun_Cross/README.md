@@ -11,13 +11,12 @@ The Ichimoku system is used here in full: the fast pair of lines gives the signa
 - Two formula blocks fold the two Senkou lines into the top and the bottom of the cloud, so the close can be tested against the cloud with one comparison per side.
 - Entries are only made from flat, which is checked twice over: by comparing the position against zero and by the open-position condition of the order block itself.
 - Exits are separate blocks: either the opposite cross or a close that has fallen back through the cloud sends the position home, and the closing blocks take their size from the open position.
-- The original ignores every signal for 500 candles after a fill, which also delays its exits; a bar counter cannot be built out of these blocks, so that pause is left out and the diagram trades more often than the original.
 
 ## Entry and Exit Rules
 
 - **Long entry**: Tenkan-sen crosses above Kijun-sen, the close is above the top of the cloud and the position is flat. The order buys the fixed volume and opens the long.
 - **Short entry**: Tenkan-sen crosses below Kijun-sen, the close is below the bottom of the cloud and the position is flat. The order sells the fixed volume and opens the short.
-- **Exit**: A long is closed when Tenkan-sen crosses back below Kijun-sen or the close drops below the bottom of the cloud; a short is closed on the mirror image of that. The closing order is sized from the position, so the diagram returns to flat instead of reversing, and there is no stop loss or take profit, exactly as in the original.
+- **Exit**: A long is closed when Tenkan-sen crosses back below Kijun-sen or the close drops below the bottom of the cloud; a short is closed on the mirror image of that. The closing order is sized from the position, so the diagram returns to flat instead of reversing, and there is no stop loss or take profit.
 
 ## Parameters
 

@@ -36,7 +36,6 @@ Two classic tools answer two different questions here. Bollinger Bands say how f
 - Three converter blocks split the Bollinger value into the upper band, the lower band and the middle moving average.
 - Six comparison blocks build the conditions: close against each band, RSI against each level, and the position against a zero constant.
 - Each logical AND joins a band condition, an RSI condition and the position guard, and triggers a position modify block whose volume comes from a shared constant.
-- The original strategy pauses for a fixed number of bars after every trade; a bar counter has no block of its own, so the pause is left out and the middle band alone decides when a trade ends.
 
 ## Usage
 

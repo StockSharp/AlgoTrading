@@ -10,7 +10,7 @@ Una lección breve sobre el riesgo medido en volatilidad. El cierre que cruza la
 - Se usa un solo instrumento y una sola serie de velas: la EMA de 50 marca la dirección y el ATR de 14 aporta la vara de medir para las salidas.
 - El precio de entrada lo sostienen dos bloques de variable: el primero toma el cierre de la vela que dio la señal y el segundo lo vuelve a emitir en cada vela siguiente para que las condiciones de salida se comprueben sin interrupción.
 - Dos bloques de fórmula convierten la distancia al precio de entrada en múltiplos de ATR, uno a favor del largo y otro a favor del corto, de manera que los mismos dos umbrales sirven para ambos lados.
-- La salida es una orden a mercado sobre vela cerrada, igual que en la estrategia de origen: no hay ningún stop en reposo en el mercado, así que un pico dentro de la vela no saca la operación.
+- La salida es una orden a mercado sobre vela cerrada: no hay ningún stop en reposo en el mercado, así que un pico dentro de la vela no saca la operación.
 
 ## Reglas de entrada y salida
 
@@ -35,7 +35,6 @@ Una lección breve sobre el riesgo medido en volatilidad. El cierre que cruza la
 - La posición actual se compara con una constante cero y cada Y lógica une esa comprobación con un cruce, de modo que solo se abre una operación desde plano.
 - El precio de entrada lo guarda un par de bloques de variable; el segundo se dispara con la serie de velas, y por eso es el último enlace que sale del bloque de velas: así, ya en la vela de entrada la salida se mide contra el precio correcto.
 - Cuatro bloques de comparación contrastan las dos distancias en ATR con las constantes de stop y objetivo, dos bloques O lógicos las unen y dos bloques de modificación en modo cierre envían las órdenes de salida.
-- La estrategia de origen espera seis velas entre operaciones. Un contador así no tiene equivalente entre los bloques, por lo que el diagrama lo omite y toma el siguiente cruce de inmediato.
 
 ## Uso
 

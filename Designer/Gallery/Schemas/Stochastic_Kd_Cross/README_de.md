@@ -11,8 +11,8 @@ Die Kreuzung der beiden Stochastic-Linien ist ein häufiges, aber verrauschtes S
 - Ein Kreuzungsbaustein vergleicht die Linien: Sein Signal markiert die bullische Kreuzung, dasselbe Signal durch einen NICHT-Baustein invertiert die bärische.
 - Der Zonenfilter ist ein schlichter Vergleich von %K mit den Konstanten für überverkauft und überkauft, eine Kreuzung in der Mitte der Spanne wird also ignoriert.
 - Das Ordervolumen ist das Grundvolumen plus der Betrag der Position, wodurch eine einzige Marktorder die Gegenseite schließt und die neue Seite eröffnet.
-- Trotz des Ordnernamens der Originalstrategie steckt darin kein RSI und auch kein Stop-Loss; die Pause von fünf Kerzen nach einem Trade hat keinen Baustein-Gegenpart und entfällt.
-- Das Original arbeitet mit Fünfzehn-Minuten-Kerzen; das Diagramm ist auf Fünf-Minuten-Kerzen skaliert, passend zur mitgelieferten Beispielhistorie.
+- Das Diagramm verwendet keinen RSI und hat keinen Stop-Loss.
+- Es arbeitet passend zur mitgelieferten Beispielhistorie auf Fünf-Minuten-Kerzen.
 
 ## Ein- und Ausstiegsregeln
 

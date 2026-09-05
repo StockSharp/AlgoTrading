@@ -36,7 +36,6 @@ Dos herramientas clásicas responden aquí a dos preguntas distintas. Las Bollin
 - Tres bloques conversores separan el valor de Bollinger en banda superior, banda inferior y media móvil central.
 - Seis bloques de comparación construyen las condiciones: el cierre frente a cada banda, el RSI frente a cada nivel y la posición frente a una constante cero.
 - Cada Y lógica une una condición de banda, una de RSI y el control de posición, y dispara un bloque de modificación cuyo volumen viene de una constante compartida.
-- La estrategia original hace una pausa de un número fijo de velas tras cada operación; no existe un bloque contador de velas, así que la pausa se omite y solo la banda central decide cuándo termina la operación.
 
 ## Uso
 

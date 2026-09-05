@@ -10,13 +10,13 @@ Ein einfacher gleitender Durchschnitt sagt, auf welcher Seite des Marktes man st
 - SimpleMovingAverage ist der Richtungsfilter: Long nur, solange der Schlusskurs darüber liegt, Short nur, solange er darunter liegt.
 - ParabolicSar liefert das Timing, und ein einziger Kreuzungsbaustein macht aus dem Durchgang des Kurses durch diese Linie einen einzelnen Impuls: wahr für die Kreuzung nach oben, falsch für die nach unten.
 - Die Einstiege sind durch die aktuelle Position abgesichert, die Ausstiege laufen über Schließbausteine, die nur bei einer Position des passenden Vorzeichens tätig werden.
-- Zwei Abweichungen vom C#-Original: Dort ersetzt eine schnelle EMA den SAR und die deklarierten SAR-Einstellungen werden nie gelesen, während das Diagramm einen echten ParabolicSar verwendet; außerdem wird die Pause von 20 Bars zwischen Einstiegen nicht nachgebildet.
+- Das Diagramm verwendet einen echten ParabolicSar-Indikator mit seinen festgelegten Einstellungen.
 
 ## Ein- und Ausstiegsregeln
 
 - **Long-Einstieg**: Der Schlusskurs kreuzt die ParabolicSar-Linie nach oben, liegt dabei über der SMA, und die Position ist nicht long. Der Baustein kauft das gemeinsame Volumen zum Marktpreis.
 - **Short-Einstieg**: Der Schlusskurs kreuzt die ParabolicSar-Linie nach unten, liegt dabei unter der SMA, und die Position ist nicht short. Der Baustein verkauft das gemeinsame Volumen zum Marktpreis.
-- **Ausstieg**: Ein Long wird bei der ersten Kreuzung der SAR-Linie nach unten geschlossen, ein Short bei der ersten nach oben, ohne den gleitenden Durchschnitt zu fragen; Stopps und Ziele gibt es wie im Original nicht.
+- **Ausstieg**: Ein Long wird bei der ersten Kreuzung der SAR-Linie nach unten geschlossen, ein Short bei der ersten nach oben, ohne den gleitenden Durchschnitt zu fragen; Stopps und Ziele gibt es nicht.
 
 ## Parameter
 

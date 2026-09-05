@@ -10,14 +10,13 @@ Der Commodity Channel Index verbringt die meiste Zeit zwischen -100 und +100, da
 - Ein Indikatorbaustein rechnet den Commodity Channel Index, ein Baustein für den Vorwert hält den Stand der vorherigen Kerze, sodass das Paar ein Kreuzen der Marke beschreibt und nicht bloß ein Verweilen darüber.
 - Beide Marken sind gewöhnliche Konstanten, das Ausbruchsband lässt sich also verbreitern, verengen und wie jeder andere Parameter optimieren.
 - Das Ordervolumen ergibt sich aus dem Grundvolumen plus dem Betrag der aktuellen Position, sodass eine einzige Marktorder die Gegenposition schließt und die neue eröffnet.
-- Die Originalstrategie überspringt nach jedem Signal zwei Kerzen; für diesen Zähler gibt es keinen Baustein, er entfällt, weshalb dieses Diagramm ein bis zwei Kerzen früher drehen kann als der Quellcode.
-- Das Original arbeitet mit Stundenkerzen; das Diagramm ist auf Fünf-Minuten-Kerzen skaliert, passend zur mitgelieferten Beispielhistorie.
+- Das Diagramm arbeitet mit Fünf-Minuten-Kerzen, passend zur mitgelieferten Beispielhistorie.
 
 ## Ein- und Ausstiegsregeln
 
 - **Long-Einstieg**: Der CCI schloss die vorherige Kerze auf oder unter der oberen Marke und liegt jetzt darüber, und die Position ist noch nicht long. Die Order kauft das Grundvolumen plus einen offenen Short und dreht die Position auf long.
 - **Short-Einstieg**: Der CCI schloss die vorherige Kerze auf oder über der unteren Marke und liegt jetzt darunter, und die Position ist noch nicht short. Die Order verkauft das Grundvolumen plus einen offenen Long und dreht die Position auf short.
-- **Ausstieg**: Einen eigenen Ausstieg gibt es nicht: Die Strategie bleibt im Markt, und der Gegenausbruch schließt den laufenden Trade und eröffnet zugleich den neuen. Auch der Originalcode kennt weder Stop-Loss noch Take-Profit.
+- **Ausstieg**: Einen eigenen Ausstieg, Stop-Loss oder Take-Profit gibt es nicht: Die Strategie bleibt im Markt, und der Gegenausbruch schließt den laufenden Trade und eröffnet zugleich den neuen.
 
 ## Parameter
 
@@ -32,7 +31,7 @@ Der Commodity Channel Index verbringt die meiste Zeit zwischen -100 und +100, da
 ## Diagrammdetails
 
 - Der Kerzenbaustein speist den Commodity Channel Index, dessen Ausgang sowohl zu den Vergleichsbausteinen als auch zum Baustein für den Vorwert führt.
-- Je Seite prüfen zwei Vergleichsbausteine den aktuellen und den vorherigen Stand gegen dieselbe Marken-Konstante, was die Ausbruchsbedingung des Quellcodes exakt nachbildet.
+- Je Seite prüfen zwei Vergleichsbausteine den aktuellen und den vorherigen Stand gegen dieselbe Marken-Konstante und bilden so die Ausbruchsbedingung.
 - Jedes logische UND verbindet aktuellen Stand, Vorwert und eine Positionsprüfung, bevor es einen Baustein zur Positionsänderung auslöst.
 - Ein Formelbaustein addiert das Grundvolumen zum Betrag der Position und versorgt beide Orderbausteine, sodass eine Marktorder die gesamte Umkehr ausführt.
 

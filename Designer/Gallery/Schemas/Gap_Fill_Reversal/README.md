@@ -9,8 +9,8 @@ The diagram measures the jump between the close of one candle and the open of th
 
 - The gap is expressed in percent of the previous close, so the same threshold keeps its meaning at any price level.
 - A gap alone is not a signal: the candle that opened away from the previous close has to close back towards it, which is the reversal body the strategy is named after.
-- SimpleMovingAverage is the only exit line, used by both sides; there is no stop loss and no take profit, exactly as in the original code.
-- The diagram runs on one-minute candles, like the strategy it was taken from, so a gap here is the small discontinuity between two neighbouring minutes rather than an overnight gap.
+- SimpleMovingAverage is the only exit line, used by both sides; there is no stop loss and no take profit.
+- The diagram runs on one-minute candles, so a gap here is the small discontinuity between two neighbouring minutes rather than an overnight gap.
 
 ## Entry and Exit Rules
 
@@ -32,7 +32,7 @@ The diagram measures the jump between the close of one candle and the open of th
 - Two converter blocks read the open and the close of the candle, and a previous-value block keeps the close of the candle before it.
 - The formula block turns the distance between the open and the previous close into a percentage, and one comparison holds that percentage against the threshold constant.
 - Four further comparisons give the side of the gap and the side of the body; each logical AND joins a gap condition, a body condition and the flat-position check before the order block.
-- The exit pair compares the close with the moving average and drives two close-position blocks. The 500-bar pause between trades of the original strategy has no counterpart among the blocks and is left out, so this diagram trades more often than the code does.
+- The exit pair compares the close with the moving average and drives two close-position blocks.
 
 ## Usage
 

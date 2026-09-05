@@ -10,7 +10,7 @@ Durch die letzten fünfzig Schlusskurse wird eine Ausgleichsgerade gelegt und um
 - LinearReg liefert den Wert der Geraden auf der aktuellen Kerze, LinearRegSlope ihre Richtung und StandardError die übliche Streuung der Schlusskurse um sie herum.
 - Die Bänder sind die Gerade plus und minus dem Abweichungsfaktor mal Standardfehler, sodass sich der Kanal von selbst mit dem Markt weitet und verengt.
 - Die Steigung wirkt als Filter: Ein Rücksetzer wird nur im steigenden Kanal gekauft, eine Spitze nur im fallenden verkauft.
-- Ziel ist die Regressionsgerade selbst; Stop-Loss und Take-Profit gibt es nicht, genau wie in der Ausgangsstrategie.
+- Ziel ist die Regressionsgerade selbst; Stop-Loss und Take-Profit gibt es nicht.
 
 ## Ein- und Ausstiegsregeln
 
@@ -35,7 +35,7 @@ Durch die letzten fünfzig Schlusskurse wird eine Ausgleichsgerade gelegt und um
 - Zwei Formelbausteine bilden die Bänder aus Gerade, Standardfehler und einer gemeinsamen, optimierbaren Abweichungskonstante.
 - Sechs Vergleichsbausteine machen daraus Signale: zwei für die Steigung, zwei für die Bänder und zwei für die Rückkehr zur Geraden.
 - Jeder Einstieg ist ein logisches UND aus Steigung, Band und neutraler Position; die Ausstiege führen direkt vom Vergleich zum Schließbaustein.
-- Die Originalstrategie wartet zwanzig Bars zwischen den Trades und berechnet die Streuung über das ganze Fenster, während StandardError durch Fenster minus zwei teilt und den Kanal so etwa zwei Prozent breiter macht; für die ursprüngliche Breite die Abweichung auf rund 1,47 senken.
+- StandardError teilt durch Fenster minus zwei und macht den Kanal so etwa zwei Prozent breiter als eine Berechnung über das ganze Fenster; für ein schmaleres Band die Abweichung auf rund 1,47 senken.
 
 ## Verwendung
 

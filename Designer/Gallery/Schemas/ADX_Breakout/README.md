@@ -9,14 +9,14 @@ Most diagrams compare an indicator with a fixed level. This one compares the Ave
 
 - The ADX line of the Average Directional Index is the only input of the whole construction; the +DI and -DI lines are not used.
 - That line feeds a second indicator block, a twenty-period simple moving average, so the diagram runs an indicator on an indicator.
-- A formula block builds the band as the average plus the multiplier times twice the absolute distance between the ADX and its average, exactly as the original code computes it.
+- A formula block builds the band as the average plus the multiplier times twice the absolute distance between the ADX and its average.
 - Entries reverse an open position in one order, because the order volume is the shared volume plus whatever is already held.
 
 ## Entry and Exit Rules
 
 - **Long entry**: The ADX line is above the band, the candle closed above its open and the position is not long. The order buys the shared volume plus the size of an open short, so one market order closes the short and opens the long.
 - **Short entry**: The ADX line is above the band, the candle closed at or below its open and the position is not short. The order sells the shared volume plus the size of an open long.
-- **Exit**: The position is closed as soon as the ADX line drops back below its own moving average, a long by a sell in close mode and a short by a buy in close mode. On top of that a position protection block carries the two percent stop loss of the original; the original's take profit is set to zero, that is disabled, so no target is wired here either. One thing is worth knowing before optimizing: while the multiplier stays below 0.5 the band condition is algebraically the same as 'ADX above its average', so at the default of 0.1 the band adds nothing and the diagram reads simply as ADX crossing its own average up and down. The multiplier is kept as a constant so that larger values behave exactly like the original.
+- **Exit**: The position is closed as soon as the ADX line drops back below its own moving average, a long by a sell in close mode and a short by a buy in close mode. A position protection block also carries a two percent stop loss; take profit is disabled, so no target is wired. One thing is worth knowing before optimizing: while the multiplier stays below 0.5 the band condition is algebraically the same as 'ADX above its average', so at the default of 0.1 the band adds nothing and the diagram reads simply as ADX crossing its own average up and down. The multiplier is kept as a constant so larger values can make the band condition stricter.
 
 ## Parameters
 
@@ -33,7 +33,7 @@ Most diagrams compare an indicator with a fixed level. This one compares the Ave
 
 - The candle block feeds the ADX indicator and two converters that read the open and the close of the candle.
 - A converter pulls the ADX line out of the complex indicator value and passes it both to the moving average block and to the comparisons.
-- One formula block computes the whole band in a single expression, which keeps the arithmetic of the original in one readable place instead of a chain of small blocks.
+- One formula block computes the whole band in a single expression, keeping its arithmetic in one readable place instead of a chain of small blocks.
 - A second formula block adds the absolute position to the shared volume, and the two exits are triggered straight from the 'ADX below its average' comparison, so they only act when there is something to close.
 
 ## Usage

@@ -9,7 +9,7 @@ El índice de flujo de dinero pondera cada movimiento del precio por el volumen 
 
 - El Money Flow Index de longitud 14 se calcula sobre velas horarias cerradas, que el probador construye a partir del histórico de cinco minutos incluido.
 - Los niveles 30 y 70 se leen como cruces y no como zonas: solo la vela que entra en una zona genera señal, no las que permanecen dentro.
-- La estrategia original tiene un interruptor Trend que puede invertir ambas señales; el diagrama conserva el modo Direct por defecto, de modo que entrar en sobreventa compra y entrar en sobrecompra vende.
+- El diagrama usa la orientación de señal Direct: entrar en la zona de sobreventa compra y entrar en la zona de sobrecompra vende.
 - La posición actual interviene en las dos decisiones, así que el esquema nunca añade una segunda orden a una posición ya abierta.
 
 ## Reglas de entrada y salida

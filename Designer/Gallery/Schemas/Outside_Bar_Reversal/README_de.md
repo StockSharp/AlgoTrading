@@ -10,13 +10,13 @@ Ein Outside Bar ist eine Kerze, die die gesamte Spanne der vorherigen verschluck
 - Der Outside Bar ist aus einfachen Bausteinen gebaut: Konverter lesen Hoch, Tief, Eröffnung und Schluss der abgeschlossenen Kerze, zwei Bausteine für den Vorwert halten Hoch und Tief der vorangegangenen Kerze.
 - Zwei Vergleiche bilden die Figur — Hoch über dem vorherigen Hoch und Tief unter dem vorherigen Tief — und beide müssen gleichzeitig gelten.
 - Die Richtung kommt aus dem Körper der Kerze selbst, nicht aus einem Trendfilter: Schluss über der Eröffnung heißt kaufen, darunter verkaufen.
-- Der einfache gleitende Durchschnitt ist am Einstieg nicht beteiligt und dient nur als Ausstiegslinie, genau wie im Original.
+- Der einfache gleitende Durchschnitt ist am Einstieg nicht beteiligt und dient nur als Ausstiegslinie.
 
 ## Ein- und Ausstiegsregeln
 
 - **Long-Einstieg**: Die Kerze hat beide Extreme der vorherigen genommen, sie schloss über ihrer eigenen Eröffnung und es besteht keine Position. Die Order kauft ein Lot und eröffnet einen Long.
 - **Short-Einstieg**: Die Kerze hat beide Extreme der vorherigen genommen, sie schloss unter ihrer eigenen Eröffnung und es besteht keine Position. Die Order verkauft ein Lot und eröffnet einen Short.
-- **Ausstieg**: Ein Long wird geschlossen, sobald eine Kerze unter dem gleitenden Durchschnitt schließt, ein Short, sobald eine darüber schließt, beides über Bausteine zur Positionsänderung im Schließmodus, genau wie im Original. Stop-Loss und Take-Profit gibt es nicht, weil der Originalcode beides nicht kennt. Weggelassen ist die Pause von mehreren hundert Kerzen, die das Original nach jedem Ein- und Ausstieg einhält: Ein Balkenzähler lässt sich nur bauen, indem ein Signal ins Diagramm zurückgeführt wird, was den Graphen zu einer Schleife schließen würde. Deshalb wird hier jeder Outside Bar gehandelt und entsprechend deutlich häufiger.
+- **Ausstieg**: Ein Long wird geschlossen, sobald eine Kerze unter dem gleitenden Durchschnitt schließt, ein Short, sobald eine darüber schließt, beides über Bausteine zur Positionsänderung im Schließmodus. Stop-Loss und Take-Profit gibt es nicht. Das Diagramm verarbeitet jeden Outside Bar, den die zugehörige Positionsprüfung zulässt.
 
 ## Parameter
 
@@ -24,7 +24,7 @@ Ein Outside Bar ist eine Kerze, die die gesamte Spanne der vorherigen verschluck
 |---|---|---|
 | SMA Length | 20 | Glättungsperiode des einfachen gleitenden Durchschnitts, der die Trades schließt. |
 | Volume | 1 | Ordervolumen in Lots. |
-| Candles | 00:05:00 | Zeiteinheit der Kerzen, mit der das gesamte Diagramm arbeitet. Die Originalstrategie rechnet auf Minutenkerzen; hier sind es fünf Minuten, passend zur mitgelieferten Historie. |
+| Candles | 00:05:00 | Fünf-Minuten-Zeiteinheit der Kerzen, passend zur mitgelieferten Historie. |
 
 ## Diagrammdetails
 

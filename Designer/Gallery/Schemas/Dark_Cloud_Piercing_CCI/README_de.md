@@ -16,7 +16,7 @@ Zwei klassische Umkehrmuster aus je zwei Kerzen bestimmen die Seite, und der Com
 
 - **Long-Einstieg**: Die vorige Kerze ist bärisch, die aktuelle bullisch, sie eröffnete unter dem vorigen Schlusskurs und schloss über der Mitte des vorigen Körpers, der CCI liegt unter dem negativen Einstiegsniveau und die Position ist neutral. Die Order kauft ein Lot zum Markt.
 - **Short-Einstieg**: Die vorige Kerze ist bullisch, die aktuelle bärisch, sie eröffnete über dem vorigen Schlusskurs und schloss unter der Mitte des vorigen Körpers, der CCI liegt über dem Einstiegsniveau und die Position ist neutral. Die Order verkauft ein Lot zum Markt.
-- **Ausstieg**: Nur der Baustein zum Positionsschutz: Take Profit zwei Prozent vom Einstiegskurs entfernt, Stop Loss ein Prozent. Auch die Originalstrategie kennt keinen Ausstieg per Signal, hier fehlt also nichts.
+- **Ausstieg**: Nur der Baustein zum Positionsschutz: Take Profit zwei Prozent vom Einstiegskurs entfernt, Stop Loss ein Prozent. Einen Ausstieg per Signal gibt es nicht.
 
 ## Parameter
 
@@ -34,7 +34,7 @@ Zwei klassische Umkehrmuster aus je zwei Kerzen bestimmen die Seite, und der Com
 - Der Kerzenbaustein speist beide Musterbausteine, den Commodity Channel Index und den Konverter, der dem Schutzbaustein den Schlusskurs liefert.
 - Eine Konstante hält das Einstiegsniveau, eine Formel kehrt ihr Vorzeichen um, sodass eine einzige optimierbare Zahl beide CCI-Vergleiche steuert.
 - Jedes logische UND verbindet ein Muster, seine CCI-Bestätigung und die Prüfung auf Neutralstellung und löst einen Baustein zur Positionsänderung im Modus "nur eröffnen" aus.
-- Zwei Punkte des Originals sind vereinfacht: Dort wird zusätzlich eine echte Kurslücke über das Hoch oder unter das Tief der vorigen Kerze verlangt, die ein durchgehend gehandeltes Instrument praktisch nie zeigt, und eine Pause von sechs Kerzen zwischen den Trades, für die es keinen Zählerbaustein gibt. Deshalb muss die Eröffnung hier nur auf der anderen Seite des vorigen Schlusskurses liegen, und jedes bestätigte Muster wird gehandelt.
+- Die Eröffnung muss auf der anderen Seite des vorigen Schlusskurses liegen, eine praxistaugliche Bedingung für durchgehend gehandelte Instrumente; jedes bestätigte Muster wird gehandelt.
 
 ## Verwendung
 

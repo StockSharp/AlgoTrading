@@ -10,13 +10,12 @@ A breakout is only worth taking when the market is actually going somewhere. Thi
 - Bollinger Bands are calculated on finished candles of one instrument; the upper and lower bands mark the breakout levels and the middle band, which is the moving average of the same length, marks the exit.
 - ADX measures trend strength without saying anything about direction, so it is used purely as a filter: below the threshold every breakout is ignored.
 - The current position takes part in both entries, and the two closing blocks are set to close a position rather than open one, so each of them can only act on the side it belongs to.
-- The source strategy blocks itself for a hundred bars after any trade, exits included. That counter has no equivalent among the blocks, so the diagram leaves it out; the exit at the middle band therefore always works, which is the more sensible behaviour anyway.
 
 ## Entry and Exit Rules
 
 - **Long entry**: The close is above the upper Bollinger band, ADX is above its threshold and the position is flat. One lot is bought at market.
 - **Short entry**: The close is below the lower Bollinger band, ADX is above its threshold and the position is flat. One lot is sold at market.
-- **Exit**: A long is closed on the first close below the middle band and a short on the first close above it. There is no stop loss or take profit, exactly as in the source strategy.
+- **Exit**: A long is closed on the first close below the middle band and a short on the first close above it. There is no stop loss or take profit.
 
 ## Parameters
 
@@ -35,7 +34,7 @@ A breakout is only worth taking when the market is actually going somewhere. Thi
 - Five comparison blocks do the work: two for the breakout, two for the return to the middle band and one for the trend filter against a threshold constant.
 - Each logical AND joins one breakout condition, the trend filter and the position check, then triggers a position modify block that opens a position and takes its volume from the shared constant.
 - The two exit comparisons drive position modify blocks set to close, which need no volume of their own because the block closes whatever is open.
-- The original code computes trend strength by hand as an unsmoothed DX. The diagram uses the standard ADX instead, which is the Wilder-smoothed version of the same figure, so the moments the threshold is crossed differ slightly.
+- The diagram uses standard Wilder-smoothed ADX as its trend-strength measure.
 
 ## Usage
 

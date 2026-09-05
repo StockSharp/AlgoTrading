@@ -16,7 +16,7 @@ Um fechamento fora de uma banda de Bollinger é tratado como um esticamento pres
 
 - **Entrada comprada**: O candle fecha abaixo da banda inferior e a posição está zerada. A ordem compra o volume base e abre uma compra contra o movimento.
 - **Entrada vendida**: O candle fecha acima da banda superior e a posição está zerada. A ordem vende o volume base e abre uma venda contra o movimento.
-- **Saída**: A compra é encerrada no primeiro fechamento na linha média ou acima dela; a venda, no primeiro fechamento na linha média ou abaixo. A estratégia original não tem stop nem take; sua pausa de quinhentos candles e seu limite de trezentos candles por posição não foram transpostos e, como a pausa era maior que o limite, no código-fonte toda operação terminava de fato por tempo e a saída na linha média nunca chegava a rodar.
+- **Saída**: A compra é encerrada no primeiro fechamento na linha média ou acima dela; a venda, no primeiro fechamento na linha média ou abaixo. Não há stop loss nem take profit.
 
 ## Parâmetros
 
@@ -25,7 +25,7 @@ Um fechamento fora de uma banda de Bollinger é tratado como um esticamento pres
 | Bollinger Period | 20 | Período de suavização das bandas de Bollinger. |
 | Bollinger Width | 2 | Largura das bandas em desvios padrão. |
 | Volume | 1 | Volume da ordem, em lotes. |
-| Candles | 00:05:00 | Tempo gráfico dos candles: a estratégia original usava candles de um minuto e o diagrama trabalha com candles de cinco minutos. |
+| Candles | 00:05:00 | Tempo gráfico de cinco minutos usado pelo diagrama. |
 
 ## Detalhes do diagrama
 

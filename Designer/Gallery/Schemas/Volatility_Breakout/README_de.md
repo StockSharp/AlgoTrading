@@ -33,7 +33,7 @@ Ein von Hand gebauter Kanal: Der einfache gleitende Durchschnitt liefert die Mit
 - Eine Konstante hält den Multiplikator, und zwei Formelbausteine berechnen aus SMA, Multiplikator und ATR den oberen und den unteren Rand.
 - Zwei Vergleichsbausteine prüfen den Schlusskurs gegen die Ränder, zwei weitere vergleichen die Position mit null, und jedes logische UND fügt je eine Bedingung zu einem Einstieg zusammen.
 - Ein Formelbaustein berechnet das Drehvolumen als Basisvolumen plus Positionsbetrag und speist beide Bausteine zur Positionsänderung.
-- Das Original sichert die Position mit einem Stop von zwei absoluten Kurseinheiten ab, der auf ein anderes Instrument abgestimmt ist und bei einem Kryptokurs sofort ausgelöst würde; das Diagramm verwendet stattdessen einen Zwei-Prozent-Stop, der sich auf jedem Instrument so verhält, wie es gemeint war.
+- Das Diagramm verwendet einen Zwei-Prozent-Stop, dessen Abstand auf verschiedenen Instrumenten aussagekräftig bleibt.
 
 ## Verwendung
 

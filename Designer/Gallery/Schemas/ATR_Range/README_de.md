@@ -16,7 +16,7 @@ Hier entscheidet eine einzige Zahl: wie weit der Schlusskurs über die letzten K
 
 - **Long-Einstieg**: Die über die letzten vier Kerzen zurückgelegte Strecke beträgt mindestens eine ATR, der Schlusskurs liegt über dem Schlusskurs von vier Kerzen zuvor und die Position ist neutral. Die Order kauft das gemeinsame Volumen zum Markt.
 - **Short-Einstieg**: Die über die letzten vier Kerzen zurückgelegte Strecke beträgt mindestens eine ATR, der Schlusskurs liegt unter dem Schlusskurs von vier Kerzen zuvor und die Position ist neutral. Die Order verkauft das gemeinsame Volumen zum Markt.
-- **Ausstieg**: Ein Long wird bei der ersten Kerze geschlossen, die unter dem einfachen gleitenden Durchschnitt schließt, ein Short bei der ersten, die darüber schließt. Beide Ausstiegsbausteine tragen die Schließbedingung, sodass jeder nur auf seiner Seite handeln kann. Einen Stop-Loss oder Take-Profit gibt es nicht, wie im Original.
+- **Ausstieg**: Ein Long wird bei der ersten Kerze geschlossen, die unter dem einfachen gleitenden Durchschnitt schließt, ein Short bei der ersten, die darüber schließt. Beide Ausstiegsbausteine tragen die Schließbedingung, sodass jeder nur auf seiner Seite handeln kann. Einen Stop-Loss oder Take-Profit gibt es nicht.
 
 ## Parameter
 
@@ -24,7 +24,7 @@ Hier entscheidet eine einzige Zahl: wie weit der Schlusskurs über die letzten K
 |---|---|---|
 | ATR Period | 14 | Glättungsperiode der Average True Range, die die Mindestbreite eines Ausbruchs festlegt. |
 | MA Period | 20 | Periode des einfachen gleitenden Durchschnitts, der die Position schließt. |
-| Lookback shift | 4 | Wie viele Kerzen zurück der Kurs verglichen wird; das Original misst über das Rückschaufenster minus eins, also standardmäßig vier Kerzen. |
+| Lookback shift | 4 | Wie viele Kerzen zurück der Kurs verglichen wird. |
 | Volume | 1 | Ordervolumen in Lots, gemeinsam für beide Einstiegsbausteine. |
 | Candles | 00:05:00 | Zeiteinheit der Kerzen, mit der das gesamte Diagramm arbeitet. |
 
@@ -34,8 +34,8 @@ Hier entscheidet eine einzige Zahl: wie weit der Schlusskurs über die letzten K
 - Der Formelbaustein berechnet den Betrag der Differenz beider Schlusskurse, und ein Vergleich stellt ihn der ATR gegenüber, um zu entscheiden, ob die Bewegung breit genug war.
 - Zwei weitere Vergleiche desselben Kurspaares liefern die Richtung, und ein Vergleich der Position mit einer Nullkonstante verhindert, dass sich Einstiege stapeln.
 - Jedes logische UND verbindet Breite, Richtung und neutrale Position und löst einen Eröffnungsbaustein aus; die beiden Vergleiche mit dem gleitenden Durchschnitt lösen die Schließbausteine direkt aus, denn deren Richtung bestimmt bereits, welche Seite sie schließen dürfen.
-- Das C#-Original misst nur jede fünfte Kerze über nicht überlappende Fenster und friert den Referenzkurs auf der Kerze dazwischen ein. Für diesen Modulo-Zähler gibt es keinen Baustein, daher verwendet das Diagramm ein gleitendes Fenster und prüft auf jeder Kerze, was mehr Signale ergibt als im Original.
-- Die Pause von fünfhundert Kerzen nach jedem Trade entfällt aus demselben Grund, und das Diagramm läuft auf den Fünf-Minuten-Kerzen der mitgelieferten Historie statt auf den Minutenkerzen des C#-Codes.
+- Das Diagramm verwendet ein gleitendes Rückschaufenster und prüft die Spanne auf jeder Kerze.
+- Es läuft auf den Fünf-Minuten-Kerzen der mitgelieferten Historie.
 
 ## Verwendung
 

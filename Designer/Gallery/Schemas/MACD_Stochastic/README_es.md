@@ -10,14 +10,14 @@ Un cruce del MACD significa cosas distintas según dónde ocurra. Este diagrama 
 - El disparador es el cruce de la línea MACD con su señal; el filtro de signo revisa el valor actual y el de la vela anterior, de modo que una barra que salta a la vez sobre el cero y sobre la señal no se confunde con un cruce nuevo.
 - El Stochastic Oscillator es la segunda opinión: un largo quiere %K por encima de %D y un corto lo quiere por debajo.
 - Solo se entra desde posición plana: el diagrama nunca aumenta una operación ni se da la vuelta con una señal; el stop y el objetivo son la única salida.
-- El original es un port de un experto de MetaTrader y mide stop y objetivo en pips, con tres sesiones de negociación y un trailing de varios pasos. El diagrama convierte las distancias en porcentaje del precio de entrada y omite las ventanas de sesión, porque la ventana por defecto cubre el día entero.
-- Dos simplificaciones más: la confirmación del Stochastic está cableada de forma permanente, mientras que en el código es un interruptor apagado por defecto, y se comparan las dos líneas tal como están ahora, sin revisar además cómo estaban cuatro barras antes. El original trabaja con velas de cuatro horas; el diagrama se reduce a cinco minutos para el histórico de muestra incluido.
+- El diagrama expresa las distancias del stop y del objetivo como porcentajes del precio de entrada y opera durante todo el día.
+- La confirmación del Stochastic está siempre activa y compara las dos líneas actuales. El diagrama usa velas de cinco minutos para ajustarse al histórico de muestra incluido.
 
 ## Reglas de entrada y salida
 
 - **Entrada en largo**: La línea MACD cruza al alza su señal, el valor actual y el anterior del MACD están por debajo de cero, %K está sobre %D y la posición está plana. La orden compra un lote a mercado.
 - **Entrada en corto**: La línea MACD cruza a la baja su señal, el valor actual y el anterior del MACD están por encima de cero, %K está bajo %D y la posición está plana. La orden vende un lote a mercado.
-- **Salida**: El bloque de protección cierra la operación a un porcentaje fijo del precio de entrada, por objetivo o por stop. No hay salida por el cruce contrario del MACD, igual que en el original.
+- **Salida**: El bloque de protección cierra la operación a un porcentaje fijo del precio de entrada, por objetivo o por stop. No hay salida por el cruce contrario del MACD.
 
 ## Parámetros
 
@@ -29,8 +29,8 @@ Un cruce del MACD significa cosas distintas según dónde ocurra. Este diagrama 
 | Stochastic %K length | 5 | Periodo de cálculo de la línea %K del Stochastic. |
 | Stochastic %D length | 3 | Periodo de suavizado de la línea %D, la media móvil de %K. |
 | Volume | 1 | Volumen de la orden, en lotes. |
-| Take profit, % | 1 | Distancia del objetivo, en porcentaje del precio de entrada; sustituye a los 100 pips del original. |
-| Stop loss, % | 1 | Distancia del stop, en porcentaje del precio de entrada; sustituye a los 100 pips del original. |
+| Take profit, % | 1 | Distancia del objetivo, en porcentaje del precio de entrada. |
+| Stop loss, % | 1 | Distancia del stop, en porcentaje del precio de entrada. |
 | Candles | 00:05:00 | Marco temporal de las velas con el que trabaja todo el diagrama. |
 
 ## Detalles del diagrama

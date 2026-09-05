@@ -7,7 +7,7 @@ A long-only mean-reversion diagram built on Bollinger %B, the position of the cl
 
 ## Strategy Overview
 
-- The BollingerPercentB indicator does in one block what the original strategy computes by hand from the bands; its scale is 0 to 100, so the classic 0.35 and 0.8 thresholds are written as 35 and 80.
+- The BollingerPercentB indicator calculates the price's position within the bands on a scale from 0 to 100, so the classic 0.35 and 0.8 thresholds are written as 35 and 80.
 - A previous-value block keeps the reading of the last candle, which is what turns a single weak candle into a two-candle condition.
 - The strategy is long only: it buys weakness and sells that same long back, never opening a short.
 - The position takes part in both decisions, so the entry cannot stack and the exit cannot fire on a flat book.

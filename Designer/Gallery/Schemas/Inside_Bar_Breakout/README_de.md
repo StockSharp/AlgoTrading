@@ -16,7 +16,7 @@ Ein Inside Bar ist eine Kerze, deren gesamte Spanne in die der vorangegangenen K
 
 - **Long-Einstieg**: Der Musterbaustein meldet einen Inside Bar, dessen Hoch die folgende Kerze soeben überschritten hat, und die Position ist neutral. Die Order kauft ein Lot und eröffnet einen Long.
 - **Short-Einstieg**: Der Musterbaustein meldet einen Inside Bar, dessen Tief die folgende Kerze soeben unterschritten hat, und die Position ist neutral. Die Order verkauft ein Lot und eröffnet einen Short.
-- **Ausstieg**: Ein Long wird geschlossen, sobald eine Kerze unter dem gleitenden Durchschnitt schließt, ein Short, sobald sie darüber schließt, beides über Bausteine zur Positionsänderung im Schließmodus, genau wie im Original. Nicht abbildbar ist das unbefristete Warten des Originals: Dort werden die Extreme des Inside Bar gemerkt und ein Ausbruch auch viele Kerzen später angenommen, während der Musterbaustein hier nur ein Fenster fester Länge sieht, der Ausbruch also auf der unmittelbar folgenden Kerze kommen muss. Das ist der übliche Fall des Musters, späte Ausbrüche gehen jedoch verloren. Auch die Pause von mehreren hundert Balken zwischen zwei Trades hat keinen eigenen Baustein und entfällt.
+- **Ausstieg**: Ein Long wird geschlossen, sobald eine Kerze unter dem gleitenden Durchschnitt schließt, ein Short, sobald sie darüber schließt, beides über Bausteine zur Positionsänderung im Schließmodus. Der Musterbaustein sieht nur ein Fenster fester Länge, daher muss der Ausbruch auf der Kerze unmittelbar nach dem Inside Bar kommen; spätere Ausbrüche werden ignoriert.
 
 ## Parameter
 

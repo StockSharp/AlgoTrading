@@ -8,15 +8,14 @@ Um doji é um candle que abre e fecha quase no mesmo preço: compradores e vende
 ## Visão geral da estratégia
 
 - Um bloco de fórmula calcula o corpo menos a amplitude vezes o limiar: um resultado negativo significa que o corpo é menor que a fração permitida do candle.
-- Escrever o teste como multiplicação em vez de divisão também reproduz a proteção do código original: num candle em que a máxima é igual à mínima compara-se zero com zero e nenhum doji é reconhecido.
+- Escrever o teste como multiplicação em vez de divisão também resolve um candle cuja máxima é igual à mínima: a comparação fica em zero contra zero e nenhum doji é reconhecido.
 - Dois blocos de valor anterior leem os fechamentos de um e de dois candles atrás: uma queda entre eles é tratada como perna de baixa e comprada, uma alta como perna de alta e vendida.
-- A estratégia original ainda bloqueia todos os sinais por várias centenas de barras após uma execução; aqui não existe bloco contador de barras, então essa pausa foi omitida e está registrada.
 
 ## Regras de entrada e saída
 
 - **Entrada comprada**: O candle recém-encerrado é um doji, o fechamento de um candle atrás é menor que o de dois candles atrás e a posição é zero. A ordem compra um lote e abre uma compra.
 - **Entrada vendida**: O candle recém-encerrado é um doji, o fechamento de um candle atrás é maior que o de dois candles atrás e a posição é zero. A ordem vende um lote e abre uma venda.
-- **Saída**: Uma compra é encerrada por um bloco de modificação de posição em modo de fechamento quando um candle fecha abaixo da média móvel; uma venda é encerrada quando um candle fecha acima dela. A estratégia de origem não tem stop loss nem take profit, e este diagrama também não.
+- **Saída**: Uma compra é encerrada por um bloco de modificação de posição em modo de fechamento quando um candle fecha abaixo da média móvel; uma venda é encerrada quando um candle fecha acima dela. O diagrama não tem stop loss nem take profit.
 
 ## Parâmetros
 
@@ -25,7 +24,7 @@ Um doji é um candle que abre e fecha quase no mesmo preço: compradores e vende
 | Doji Threshold | 0.1 | Maior razão entre corpo e amplitude total em que um candle ainda conta como doji. |
 | SMA Length | 20 | Período da média móvel simples que encerra as operações. |
 | Volume | 1 | Volume da ordem, em lotes. |
-| Candles | 00:05:00 | Tempo gráfico dos candles de todo o diagrama; o original roda em candles de um minuto e aqui foi ajustado ao histórico de cinco minutos que acompanha a galeria. |
+| Candles | 00:05:00 | Tempo gráfico de cinco minutos usado por todo o diagrama e pelo histórico fornecido com a galeria. |
 
 ## Detalhes do diagrama
 

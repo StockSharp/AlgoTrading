@@ -10,7 +10,7 @@ Un diagrama de ruptura sobre bandas de Bollinger: las bandas se trazan a 1,8 des
 - Las bandas de Bollinger se calculan sobre velas cerradas de un solo instrumento y solo intervienen la banda superior y la inferior.
 - Se trata de una ruptura y no de una reversión: compra la fuerza por encima de la banda superior y vende la debilidad por debajo de la inferior, al contrario que el ejemplo Bollinger_Bands de esta misma galería.
 - El volumen de cada orden es el volumen base más el valor absoluto de la posición actual, así que una señal contraria a la posición abierta la cierra y abre el lado opuesto con una sola orden.
-- Pese al nombre, no hay filtro de compresión: la estrategia original en C# calcula la anchura relativa de las bandas pero nunca la usa en ninguna condición, y el diagrama respeta lo que el código realmente hace.
+- Pese al nombre, no hay filtro de compresión: la anchura relativa de las bandas se calcula para mostrarla, pero no interviene en ninguna condición de negociación.
 
 ## Reglas de entrada y salida
 
@@ -33,7 +33,6 @@ Un diagrama de ruptura sobre bandas de Bollinger: las bandas se trazan a 1,8 des
 - Dos conversores tipados como valor de indicador extraen la banda superior y la inferior de la única salida del indicador.
 - Dos bloques de comparación contrastan el cierre con las bandas, otros dos comparan la posición con una constante cero, y cada Y lógica une una condición de banda con una de posición.
 - Un bloque de fórmula calcula el volumen base más la posición en valor absoluto y alimenta ambos bloques de modificación de posición, que es lo que convierte cada entrada en una vuelta.
-- La pausa de diez velas que el código original mantiene tras cada entrada no se reproduce: los bloques disponibles no tienen contador de velas, así que solo las comprobaciones de posición contienen la frecuencia de operación.
 
 ## Uso
 

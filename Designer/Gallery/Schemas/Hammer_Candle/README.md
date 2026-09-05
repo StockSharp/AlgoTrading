@@ -7,7 +7,7 @@ A hammer is a candle with a small body, a long lower shadow and almost no upper 
 
 ## Strategy Overview
 
-- Two candle pattern blocks carry the exact formulas of the original strategy: a body greater than zero, one shadow longer than twice the body and the opposite shadow shorter than half the body.
+- Two candle pattern blocks define a body greater than zero, one shadow longer than twice the body and the opposite shadow shorter than half the body.
 - The built-in Hammer and Inverted Hammer patterns are deliberately not used, because their formulas measure the shadows against the candle length rather than against the body.
 - A simple moving average of the closing price splits the chart into a cheap half and an expensive half and is both the entry filter and the exit line.
 - The position guard makes sure a pattern is acted on only when the diagram is flat.
@@ -16,7 +16,7 @@ A hammer is a candle with a small body, a long lower shadow and almost no upper 
 
 - **Long entry**: The candle pattern block reports a hammer, the candle closed below the moving average and the position is flat. The order buys one lot and opens a long.
 - **Short entry**: The candle pattern block reports an inverted hammer, the candle closed above the moving average and the position is flat. The order sells one lot and opens a short.
-- **Exit**: A long is closed once a candle closes above the moving average, a short once a candle closes below it, both through position modify blocks in close mode. The original strategy instead exits on the same side of the average it entered on and relies on a pause of several hundred bars to hold the trade in between; a bar counter has no block of its own here, so keeping that exit literally would close every trade on the very next candle. The return to the average is the closest rule that still holds a position for a sensible stretch.
+- **Exit**: A long is closed once a candle closes above the moving average, a short once a candle closes below it, both through position modify blocks in close mode. Returning to the average holds a position for a useful stretch before closing it.
 
 ## Parameters
 

@@ -7,17 +7,16 @@ Duas ideias são empilhadas aqui. O Momentum, a diferença entre o fechamento at
 
 ## Visão geral da estratégia
 
-- O cruzamento da linha zero é escrito com duas comparações, o valor atual contra zero e o valor de um candle atrás contra zero, exatamente a condição do código original.
+- O cruzamento da linha zero é escrito com duas comparações: o valor atual contra zero e o valor de um candle atrás contra zero.
 - O filtro da média móvel separa as direções: o cruzamento para cima só compra enquanto o fechamento está acima da média, o cruzamento para baixo só vende enquanto está abaixo.
 - Apesar do nome da pasta, o indicador é o Momentum, uma diferença absoluta de preços em pontos, e não uma taxa percentual de variação.
 - Todo sinal inverte a posição: o volume da ordem é o volume compartilhado mais o valor absoluto da posição atual, então uma única execução fecha o lado antigo e abre o novo.
-- O original congela as operações por 30 candles após cada execução; não existe bloco contador de barras, então essa pausa fica de fora e o diagrama responde a todos os cruzamentos válidos.
 
 ## Regras de entrada e saída
 
 - **Entrada comprada**: No candle anterior o Momentum estava em zero ou abaixo, agora está acima, o fechamento está acima da SMA e a posição não está comprada. A ordem compra a mercado o volume de inversão.
 - **Entrada vendida**: No candle anterior o Momentum estava em zero ou acima, agora está abaixo, o fechamento está abaixo da SMA e a posição não está vendida. A ordem vende a mercado o volume de inversão.
-- **Saída**: Não há bloco de saída próprio nem stop de proteção, como no original: a posição é mantida até que o cruzamento oposto a inverta com uma única ordem.
+- **Saída**: Não há bloco de saída próprio nem stop de proteção: a posição é mantida até que o cruzamento oposto a inverta com uma única ordem.
 
 ## Parâmetros
 

@@ -16,7 +16,7 @@ Quiet markets do not stay quiet. This diagram measures the Bollinger band width 
 
 - **Long entry**: The band width is above its value on the previous candle, that previous value was at or below the squeeze level, the RSI is above 50, and the position is flat. The buy order opens a long of one lot.
 - **Short entry**: The band width is above its value on the previous candle, that previous value was at or below the squeeze level, the RSI is below 50, and the position is flat. The sell order opens a short of one lot.
-- **Exit**: A long is closed when the close drops below the lower Bollinger band, a short when the close climbs above the upper band: the breakout failed and went the other way. Both exits run in close-position mode; the original strategy has no stop-loss or take-profit either.
+- **Exit**: A long is closed when the close drops below the lower Bollinger band, a short when the close climbs above the upper band: the breakout failed and went the other way. Both exits run in close-position mode, with no stop loss or take profit.
 
 ## Parameters
 
@@ -37,7 +37,7 @@ Quiet markets do not stay quiet. This diagram measures the Bollinger band width 
 - A formula block turns the three bands into the width percentage, which then feeds both a moving average block and a previous-value block, so the diagram compares the width with its own past.
 - A second formula multiplies the average width by the squeeze factor, and two comparisons produce the squeeze and the expansion flags.
 - Each entry is a four-way logical AND of expansion, squeeze, RSI direction and a flat position; both entry blocks take their volume from the same constant.
-- The original strategy also keeps a running minimum of the width, counts three narrow bars, filters the direction with an EMA(20) and pauses fifteen bars after every trade; the diagram replaces the running minimum with the moving average of the width and drops the counter, the EMA and the pause, which no block can express.
+- A moving average of band width supplies the squeeze baseline. Direction comes from RSI, and no separate bar-count filter is applied.
 
 ## Usage
 

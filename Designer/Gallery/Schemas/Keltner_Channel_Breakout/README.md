@@ -10,13 +10,13 @@ A Keltner channel is an exponential moving average with edges pushed out by a mu
 - KeltnerChannels produces the channel in one block, and two converters pull the upper and the lower edge out of its value.
 - Previous-value blocks hold the two edges and the close from one bar back, so the break is measured against the level the market already saw rather than against an edge that moved with the same candle.
 - Each order carries the shared volume plus the absolute position, so one order reverses the trade instead of only shrinking it.
-- The C# original runs a 500-period channel with a multiplier of 10 on one-minute candles; the diagram uses the 20 / 2 channel documented in its README on five-minute candles, so a breakout actually happens on ordinary data.
+- The diagram uses a 20-period channel with a multiplier of 2 on five-minute candles, so breakouts occur on ordinary data.
 
 ## Entry and Exit Rules
 
 - **Long entry**: The close is above the previous candle's upper band while the previous close was still at or below it, and the position is not long. The order buys the volume plus whatever short is open, which reverses it into a long.
 - **Short entry**: The close is below the previous candle's lower band while the previous close was still at or above it, and the position is not short. The order sells the volume plus whatever long is open, which reverses it into a short.
-- **Exit**: There is no exit block: the opposite breakout reverses the position, exactly as in the original strategy, which has neither stop loss nor take profit.
+- **Exit**: There is no exit block, stop loss or take profit: the opposite breakout reverses the position.
 
 ## Parameters
 

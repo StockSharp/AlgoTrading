@@ -9,8 +9,8 @@ Das Diagramm legt um einen einfachen gleitenden Durchschnitt einen Kanal, dessen
 
 - SimpleMovingAverage zeichnet die Mittellinie, AverageTrueRange bestimmt den Abstand der Ränder, sodass sich der Kanal an die aktuelle Schwankungsbreite anpasst.
 - Zwei Formelbausteine setzen die Ränder aus denselben drei Quellen als SMA + Multiplikator * ATR und SMA - Multiplikator * ATR zusammen.
-- Eingestiegen wird nur aus der Neutralstellung, und der einzige Ausstieg ist der Schlusskurs, der die Mittellinie wieder durchquert; Stopps und Ziele gibt es wie im C#-Original nicht.
-- Zwei Abweichungen vom Original: Die Pause von 500 Bars nach jedem Trade wird nicht nachgebildet, das Diagramm handelt also häufiger, und die Arbeitskerze ist fünf statt einer Minute, denn genau solche Daten liegen bei.
+- Eingestiegen wird nur aus der Neutralstellung, und der einzige Ausstieg ist der Schlusskurs, der die Mittellinie wieder durchquert; Stop-Loss und Take-Profit gibt es nicht.
+- Das Diagramm arbeitet auf den Fünf-Minuten-Kerzen der mitgelieferten Historie und kann jedes passende Signal handeln.
 
 ## Ein- und Ausstiegsregeln
 

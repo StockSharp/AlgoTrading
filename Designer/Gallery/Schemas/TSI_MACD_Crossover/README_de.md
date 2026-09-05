@@ -16,7 +16,7 @@ Der True Strength Index ist zweifach geglättetes Momentum: Er dreht spät, lüg
 
 - **Long-Einstieg**: Die TSI-Linie kreuzt ihre Signallinie nach oben, der Abstand zwischen beiden erreicht mindestens den Mindestabstand und die Position ist nicht long. Die Order kauft das gemeinsame Volumen plus die Größe eines offenen Shorts, sodass eine einzige Marktorder den Short schließt und den Long eröffnet.
 - **Short-Einstieg**: Die TSI-Linie kreuzt ihre Signallinie nach unten, der Abstand zwischen beiden erreicht mindestens den Mindestabstand und die Position ist nicht short. Die Order verkauft das gemeinsame Volumen plus die Größe eines offenen Longs.
-- **Ausstieg**: Es gibt weder eine eigene Ausstiegsregel noch einen Schutzstopp, genau wie im Original: Die Position wird gehalten, bis die Gegenkreuzung sie dreht. Zwei Dinge sind vereinfacht. Das Original wartet nach jedem Einstieg zehn Kerzen, bevor es wieder auf Signale schaut, und kein Baustein hält einen Balkenzähler über Kerzen hinweg, deshalb entfällt diese Pause; die Positionsprüfung verhindert weiterhin einen zweiten Einstieg in dieselbe Richtung. Das Original schickt beim Drehen außerdem zwei Marktorders, was die Größe für einen Moment verdoppelt; hier erledigt die Volumenformel dasselbe in einer einzigen Order.
+- **Ausstieg**: Es gibt weder eine eigene Ausstiegsregel noch einen Schutzstopp: Die Position wird gehalten, bis die Gegenkreuzung sie dreht. Die Positionsprüfung verhindert einen zweiten Einstieg in dieselbe Richtung, während die Volumenformel die alte Seite schließt und die neue mit einer einzigen Marktorder eröffnet.
 
 ## Parameter
 
@@ -27,7 +27,7 @@ Der True Strength Index ist zweifach geglättetes Momentum: Er dreht spät, lüg
 | TSI Signal Length | 7 | Periode der exponentiellen Signallinie, die über den Index gelegt wird. |
 | Min spread | 2 | Mindestabstand zwischen Index und Signallinie, damit eine Kreuzung zählt. |
 | Volume | 1 | Ordervolumen in Lots. |
-| Candles | 01:00:00 | Zeiteinheit der Kerzen, mit der das gesamte Diagramm arbeitet. Das Original läuft auf Vier-Stunden-Kerzen; in einem Monat Historie bleiben zu wenige abgeschlossene Balken, damit sich ein doppelt geglätteter Index bildet und danach noch handelt, deshalb ist das Diagramm auf Stundenkerzen herunterskaliert. |
+| Candles | 01:00:00 | Stundenkerzen geben dem doppelt geglätteten Index genug abgeschlossene Balken, um sich innerhalb eines Monats Historie zu bilden und zu handeln. |
 
 ## Diagrammdetails
 

@@ -7,16 +7,16 @@ A Keltner channel is a moving average with a volatility envelope around it: the 
 
 ## Strategy Overview
 
-- The channel is assembled by hand rather than taken from the ready KeltnerChannels indicator, because that block ties the average and the ATR to one length, while the original uses 20 for the EMA and 14 for the ATR.
+- The channel is assembled by hand rather than taken from the ready KeltnerChannels indicator, allowing the EMA length of 20 and ATR length of 14 to be configured separately.
 - Two formula blocks build the bands literally: EMA plus and minus ATR times the multiplier, with the multiplier exposed so the channel can be widened or narrowed without touching the diagram.
 - The middle line is the whole exit rule: a trade is given back the moment price crosses back to the other side of the EMA, so the profit target moves with the average.
-- The original works on one-minute candles and locks trading for 500 bars after every trade, which in practice also holds the position. The packaged history is five-minute data, so the diagram runs on five-minute candles; the lock-out is not reproduced, because the Designer has no bar counter that holds a state, and the diagram therefore trades more often and holds shorter.
+- The diagram runs on the five-minute candles supplied with the packaged history.
 
 ## Entry and Exit Rules
 
 - **Long entry**: The close is below the lower band, that is under the EMA by more than the ATR times the multiplier, and the position is flat. The order buys the configured volume.
 - **Short entry**: The close is above the upper band, that is over the EMA by more than the ATR times the multiplier, and the position is flat. The order sells the configured volume.
-- **Exit**: A long is closed once the close is back above the EMA, a short once the close is back below it. The original declares a stop loss multiplier but never uses it, so the diagram has no stop loss and no take profit either.
+- **Exit**: A long is closed once the close is back above the EMA, a short once the close is back below it. The diagram has no stop loss and no take profit.
 
 ## Parameters
 

@@ -7,16 +7,16 @@ Uma média móvel ponderada por volume mostra onde o dinheiro realmente negociou
 
 ## Visão geral da estratégia
 
-- A média é uma VolumeWeightedMovingAverage móvel de 32 candles, e não um VWAP de sessão. Apesar do nome, é o indicador que a estratégia original usa: ele pondera cada fechamento pelo volume do próprio candle.
+- A média é uma VolumeWeightedMovingAverage móvel de 32 candles, e não um VWAP de sessão, e pondera cada fechamento pelo volume negociado nesse candle.
 - O índice de força relativa é calculado sobre preços de fechamento e apenas confirma a entrada; sozinho não abre nada.
 - Os dois blocos de indicador emitem somente valores formados, o que impede operar com a média incompleta dos primeiros candles.
-- O original para de processar candles por 100 barras depois de cada operação, o que congela também a saída e segura a posição por pelo menos oito horas. O Designer não tem contador de bloqueio, então essa pausa não foi reproduzida: aqui a posição é fechada assim que o preço cruza de volta a média.
+- A posição é encerrada assim que o preço cruza de volta a média.
 
 ## Regras de entrada e saída
 
 - **Entrada comprada**: O fechamento está abaixo da VWMA, o RSI está abaixo do nível de sobrevenda e a posição está zerada. A ordem compra o volume configurado.
 - **Entrada vendida**: O fechamento está acima da VWMA, o RSI está acima do nível de sobrecompra e a posição está zerada. A ordem vende o volume configurado.
-- **Saída**: A compra é encerrada quando o fechamento volta acima da VWMA; a venda, quando volta abaixo dela. Não há stop loss nem take profit, como na estratégia original.
+- **Saída**: A compra é encerrada quando o fechamento volta acima da VWMA; a venda, quando volta abaixo dela. Não há stop loss nem take profit.
 
 ## Parâmetros
 

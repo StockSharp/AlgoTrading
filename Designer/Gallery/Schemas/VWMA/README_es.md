@@ -1,16 +1,15 @@
 # Diagrama de la estrategia de cruce del precio con la VWMA
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-La media móvil ponderada por volumen pondera cada precio por el volumen negociado en él, así que se inclina hacia los niveles donde el dinero cambió de manos de verdad. El diagrama sigue el paso del precio de cierre por esa media: si el cierre pasa de estar por debajo a estar por encima, compra; si ocurre lo contrario, vende. La estrategia original usa velas de un minuto y descansa varias barras tras cada operación; el diagrama trabaja en cinco minutos y omite esa pausa, porque el control de la posición ya impide una segunda entrada en el mismo sentido.
+La media móvil ponderada por volumen pondera cada precio por el volumen negociado en él, así que se inclina hacia los niveles donde el dinero cambió de manos de verdad. El diagrama sigue el paso del precio de cierre por esa media: si el cierre pasa de estar por debajo a estar por encima, compra; si ocurre lo contrario, vende. Trabaja con velas de cinco minutos y el control de posición impide una segunda entrada en el mismo sentido.
 
 ![schema](schema.svg)
 
 ## Resumen de la estrategia
 
 - VolumeWeightedMovingAverage recibe la vela completa y no solo un precio, porque también necesita el volumen negociado.
-- Tanto el cierre como la media se guardan además una vela atrás, de modo que el cruce se lee igual que en el código original.
+- Tanto el cierre como la media se guardan además una vela atrás, de modo que cada señal representa un cruce real.
 - Cada entrada está protegida por la posición: solo se compra mientras la posición no sea larga y solo se vende mientras no sea corta.
-- La pausa de la estrategia original no se reproduce, así que el diagrama responde a todos los cruces que ve.
 
 ## Reglas de entrada y salida
 
@@ -24,7 +23,7 @@ La media móvil ponderada por volumen pondera cada precio por el volumen negocia
 |---|---|---|
 | VWMA Length | 14 | Periodo de suavizado de la media móvil ponderada por volumen. |
 | Volume | 1 | Volumen de la orden, en lotes. |
-| Candles | 00:05:00 | Marco temporal de las velas de todo el diagrama; el original usaba un minuto. |
+| Candles | 00:05:00 | Marco temporal de cinco minutos usado por todo el diagrama. |
 
 ## Detalles del diagrama
 

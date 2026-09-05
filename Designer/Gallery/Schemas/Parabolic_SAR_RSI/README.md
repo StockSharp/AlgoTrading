@@ -8,7 +8,7 @@ Parabolic SAR decides which side of the market to stand on, and the Relative Str
 ## Strategy Overview
 
 - Parabolic SAR runs on finished candles and is compared with the closing price of every candle: a close above the line means the trend is up, a close below it means the trend is down.
-- The Relative Strength Index is a soft filter, exactly as in the original code: a long needs RSI below the overbought level, a short needs RSI above the oversold level, so the filter blocks only entries made straight into an extreme.
+- The Relative Strength Index is a soft filter: a long needs RSI below the overbought level, a short needs RSI above the oversold level, so the filter blocks only entries made straight into an extreme.
 - Positions are opened only from flat, and the SAR flip is the only way out — the diagram has no fixed stop-loss and no take-profit.
 
 ## Entry and Exit Rules
@@ -34,7 +34,6 @@ Parabolic SAR decides which side of the market to stand on, and the Relative Str
 - The candle block feeds Parabolic SAR, the Relative Strength Index and a converter that reads the closing price of the candle.
 - Two comparisons place the close against the SAR line, two more test the index against its constants, and three compare the position with zero.
 - Every logical AND gathers one price condition, one filter condition and one position condition before it triggers a position modify block; the closing blocks use the close-position mode and need no volume.
-- The 130-bar pause the C# strategy keeps after each trade has no counterpart block in the Designer, so this diagram re-enters sooner and trades more often than the original.
 
 ## Usage
 

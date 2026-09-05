@@ -16,7 +16,7 @@ El calendario decide la dirección y la media móvil decide el momento. A princi
 
 - **Entrada en largo**: La vela pertenece a la ventana de principio de semana, su cierre está por encima de la media móvil simple y la posición está plana. La orden compra el volumen compartido a mercado.
 - **Entrada en corto**: La vela pertenece a la ventana de final de semana, su cierre está por debajo de la media móvil simple y la posición está plana. La orden vende el volumen compartido a mercado.
-- **Salida**: Un cierre de vuelta por debajo de la media cierra un largo y un cierre de vuelta por encima cierra un corto, ambos mediante bloques de modificación de posición en modo cierre. Como un bloque de cierre no hace nada si la posición ya está plana, esto reproduce la prueba de cruce del original sin bloques adicionales. El original tiene dos contadores que el diagrama no puede mantener entre velas y se han eliminado los dos: la pausa de trescientas barras tras cada operación y la regla que prohíbe una segunda entrada el mismo día de la semana. Sin ellos el diagrama vuelve a entrar en cuanto el precio regresa al lado correcto de la media dentro de la misma ventana, así que opera bastante más que el original.
+- **Salida**: Un cierre de vuelta por debajo de la media cierra un largo y un cierre de vuelta por encima cierra un corto, ambos mediante bloques de modificación de posición en modo cierre. Un bloque de cierre no hace nada si la posición ya está plana, por lo que no hacen falta bloques de cruce adicionales. El diagrama puede volver a entrar en cuanto el precio regresa al lado requerido de la media dentro de la misma ventana del día de la semana.
 
 ## Parámetros
 

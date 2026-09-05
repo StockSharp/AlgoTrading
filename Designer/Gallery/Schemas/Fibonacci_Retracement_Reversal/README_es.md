@@ -10,7 +10,7 @@ El rango de las últimas veinte velas se divide por la proporción áurea y los 
 - Highest y Lowest sobre la misma ventana dan el máximo y el mínimo del movimiento; su diferencia es el rango en el que se miden los niveles.
 - El nivel de compra queda 0.618 del rango por debajo del máximo y el de venta 0.618 del rango por encima del mínimo; una vela está sobre un nivel mientras su cierre se sitúe a menos del dos por ciento del rango de él.
 - Ambas distancias se calculan como fracción del rango, de modo que el diagrama funciona igual en cualquier instrumento y a cualquier escala de precios.
-- Las entradas exigen además un cuerpo de vela que confirme y una posición plana; todas las salidas las decide la SimpleMovingAverage, porque la estrategia original no define stop ni objetivo.
+- Las entradas exigen además un cuerpo de vela que confirme y una posición plana; todas las salidas las decide la SimpleMovingAverage, y no hay stop ni objetivo.
 
 ## Reglas de entrada y salida
 
@@ -35,7 +35,7 @@ El rango de las últimas veinte velas se divide por la proporción áurea y los 
 - Dos bloques de fórmula convierten los precios en la distancia del cierre a cada nivel dividida por el rango, de manera que una sola constante de margen sirve para ambos lados.
 - Cada entrada pasa por una Y lógica de tres señales: el nivel, el cuerpo de la vela y la posición comparada con una constante cero.
 - Los dos bloques de salida se disparan directamente desde las comparaciones con la media móvil y están en modo de cierre; los cuatro bloques de órdenes comparten una misma constante de volumen.
-- Simplificaciones deliberadas: el original trabaja con velas de un minuto y hace una pausa de 500 barras tras cada operación, algo que ningún bloque expresa, por lo que el diagrama usa velas de cinco minutos y vuelve a operar en cuanto se repiten las condiciones. Las posiciones duran unas pocas barras en lugar de días; subir el periodo de la media las alarga.
+- El diagrama usa velas de cinco minutos y puede volver a operar en cuanto se repiten sus condiciones. Las posiciones duran unas pocas barras; subir el periodo de la media las alarga.
 
 ## Uso
 

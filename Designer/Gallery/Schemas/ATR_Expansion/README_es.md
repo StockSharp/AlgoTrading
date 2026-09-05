@@ -16,7 +16,7 @@ Aquí la señal es la propia volatilidad. El Average True Range se compara con s
 
 - **Entrada en largo**: La volatilidad se expande, la vela cierra por encima de la media móvil simple y la posición está plana. La orden compra a mercado el volumen compartido.
 - **Entrada en corto**: La volatilidad se expande, la vela cierra por debajo de la media móvil simple y la posición está plana. La orden vende a mercado el volumen compartido.
-- **Salida**: La volatilidad se contrae, es decir, el ATR multiplicado por la proporción cae por debajo del ATR anterior. El lado que esté abierto se cierra a mercado con el bloque correspondiente; no hay stop de pérdidas ni toma de beneficios, igual que en la estrategia original.
+- **Salida**: La volatilidad se contrae, es decir, el ATR multiplicado por la proporción cae por debajo del ATR anterior. El lado que esté abierto se cierra a mercado con el bloque correspondiente; no hay stop de pérdidas ni toma de beneficios.
 
 ## Parámetros
 
@@ -34,8 +34,7 @@ Aquí la señal es la propia volatilidad. El Average True Range se compara con s
 - Un bloque de valor anterior guarda el ATR de la vela precedente y dos bloques de fórmula le aplican la proporción: uno construye el nivel de expansión y el otro el de contracción.
 - Dos bloques de comparación convierten esos niveles en indicadores de expansión y contracción, y otros dos sitúan el cierre frente a la media móvil.
 - Cada Y lógica reúne volatilidad, dirección y la comparación de la posición con cero, y dispara uno de los dos bloques de entrada; el indicador de contracción por sí solo dispara los dos bloques de cierre, cuya dirección decide qué lado pueden cerrar.
-- Dos cosas del original en C# no se trasladan: la pausa de quinientas velas tras cada operación, que no tiene bloque equivalente, y las velas de un minuto, sustituidas por las de cinco minutos del histórico que acompaña a la galería.
-- También se omite el parámetro Lookback del original, porque el código nunca lo lee.
+- El diagrama utiliza las velas de cinco minutos suministradas con el histórico de la galería.
 
 ## Uso
 

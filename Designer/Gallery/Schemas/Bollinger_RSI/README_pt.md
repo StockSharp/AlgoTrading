@@ -36,7 +36,6 @@ Duas ferramentas clássicas respondem aqui a perguntas diferentes. As Bollinger 
 - Três blocos conversores separam o valor de Bollinger em banda superior, banda inferior e média móvel central.
 - Seis blocos de comparação montam as condições: o fechamento contra cada banda, o RSI contra cada nível e a posição contra uma constante zero.
 - Cada E lógico une uma condição de banda, uma de RSI e a verificação de posição, e aciona um bloco de modificação de posição cujo volume vem de uma constante compartilhada.
-- A estratégia original faz uma pausa de um número fixo de barras após cada negócio; não existe bloco contador de barras, então a pausa foi omitida e apenas a banda central decide quando a operação termina.
 
 ## Uso
 

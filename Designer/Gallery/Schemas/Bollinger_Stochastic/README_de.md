@@ -8,15 +8,14 @@ Eine Mean-Reversion, die zwei voneinander unabhängige Zeichen einer erschöpfte
 ## Strategieübersicht
 
 - Die Bollinger Bands liefern aus einem einzigen Indikatorbaustein drei Linien: oberes Band, unteres Band und den mittleren gleitenden Durchschnitt als Ausstiegsniveau.
-- Vom Stochastic wird nur die %K-Linie genutzt; die %D-Linie bleibt bewusst unverbunden, genau wie in der Originalstrategie.
+- Vom Stochastic wird nur die %K-Linie genutzt; die %D-Linie bleibt bewusst unverbunden.
 - Eingestiegen wird ausschließlich aus der Neutralstellung, sodass das Diagramm eine laufende Position nie verbilligt.
-- Die Originalstrategie wartet zwischen zwei Trades zusätzlich eine feste Anzahl Kerzen; für diesen Zähler gibt es keinen Baustein, er entfällt, weshalb dieses Diagramm häufiger handelt als der Quellcode.
 
 ## Ein- und Ausstiegsregeln
 
 - **Long-Einstieg**: Der Schlusskurs liegt auf oder unter dem unteren Bollinger Band, %K liegt unter der überverkauften Marke und die Position ist neutral. Die Order kauft ein Lot und eröffnet einen Long.
 - **Short-Einstieg**: Der Schlusskurs liegt auf oder über dem oberen Bollinger Band, %K liegt über der überkauften Marke und die Position ist neutral. Die Order verkauft ein Lot und eröffnet einen Short.
-- **Ausstieg**: Ein Long wird geschlossen, wenn der Schlusskurs über die Mittellinie steigt, ein Short, wenn er darunter fällt. Beide Ausstiege nutzen Bausteine zur Positionsänderung im Schließen-Modus: Sie berechnen das Volumen aus der offenen Position und bleiben untätig, wenn nichts zu schließen ist. Stopps oder Ziele gibt es nicht, genau wie im Originalcode.
+- **Ausstieg**: Ein Long wird geschlossen, wenn der Schlusskurs über die Mittellinie steigt, ein Short, wenn er darunter fällt. Beide Ausstiege nutzen Bausteine zur Positionsänderung im Schließen-Modus: Sie berechnen das Volumen aus der offenen Position und bleiben untätig, wenn nichts zu schließen ist. Stopps oder Ziele gibt es nicht.
 
 ## Parameter
 

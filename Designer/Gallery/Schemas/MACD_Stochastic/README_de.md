@@ -10,14 +10,14 @@ Eine MACD-Kreuzung bedeutet je nach Ort etwas anderes. Dieses Diagramm akzeptier
 - Auslöser ist das Kreuzen der MACD-Linie mit ihrer Signallinie; der Vorzeichenfilter prüft den aktuellen und den vorherigen Wert der MACD-Linie, damit eine Kerze, die zugleich über null und über die Signallinie springt, nicht als frische Kreuzung durchgeht.
 - Der Stochastic Oscillator ist die zweite Meinung: Ein Long will %K über %D, ein Short will %K darunter.
 - Eingestiegen wird nur aus der Neutralstellung: Das Diagramm stockt nie auf und dreht nie auf ein Signal; Stop und Ziel sind der einzige Ausgang.
-- Das Original ist die Portierung eines MetaTrader-Experten und misst Stop und Ziel in Pips, mit drei Handelssitzungen und einem mehrstufigen Trailing-Stop. Das Diagramm rechnet die Abstände in Prozent des Einstiegspreises um und lässt die Sitzungsfenster weg, weil das Standardfenster den ganzen Tag abdeckt.
-- Zwei weitere Vereinfachungen: Die Stochastic-Bestätigung ist fest verdrahtet, während sie im Code ein standardmäßig ausgeschalteter Schalter ist, und sie vergleicht die beiden Linien nur im Jetzt, ohne zusätzlich ihre Lage vier Bars zuvor zu prüfen. Das Original läuft auf Vier-Stunden-Kerzen; das Diagramm ist auf Fünf-Minuten-Kerzen skaliert, passend zur mitgelieferten Beispielhistorie.
+- Das Diagramm gibt die Abstände für Stop und Ziel als Prozentsätze des Einstiegspreises an und arbeitet den ganzen Tag.
+- Die Stochastic-Bestätigung ist immer aktiv und vergleicht die beiden aktuellen Linien. Das Diagramm verwendet Fünf-Minuten-Kerzen, passend zur mitgelieferten Beispielhistorie.
 
 ## Ein- und Ausstiegsregeln
 
 - **Long-Einstieg**: Die MACD-Linie kreuzt ihre Signallinie nach oben, der aktuelle und der vorherige MACD-Wert liegen unter null, %K liegt über %D und die Position ist neutral. Die Order kauft ein Lot zum Marktpreis.
 - **Short-Einstieg**: Die MACD-Linie kreuzt ihre Signallinie nach unten, der aktuelle und der vorherige MACD-Wert liegen über null, %K liegt unter %D und die Position ist neutral. Die Order verkauft ein Lot zum Marktpreis.
-- **Ausstieg**: Der Baustein zur Positionsabsicherung schließt den Trade bei einem festen Prozentsatz vom Einstiegspreis, per Ziel oder per Stop. Einen Ausstieg auf die Gegenkreuzung des MACD gibt es nicht, genau wie im Original.
+- **Ausstieg**: Der Baustein zur Positionsabsicherung schließt den Trade bei einem festen Prozentsatz vom Einstiegspreis, per Ziel oder per Stop. Einen Ausstieg auf die Gegenkreuzung des MACD gibt es nicht.
 
 ## Parameter
 
@@ -29,8 +29,8 @@ Eine MACD-Kreuzung bedeutet je nach Ort etwas anderes. Dieses Diagramm akzeptier
 | Stochastic %K length | 5 | Berechnungsperiode der %K-Linie des Stochastic. |
 | Stochastic %D length | 3 | Glättungslänge der %D-Linie, des gleitenden Durchschnitts von %K. |
 | Volume | 1 | Ordervolumen in Lots. |
-| Take profit, % | 1 | Abstand des Take-Profits in Prozent des Einstiegspreises; er ersetzt die 100 Pips des Originals. |
-| Stop loss, % | 1 | Abstand des Stop-Loss in Prozent des Einstiegspreises; er ersetzt die 100 Pips des Originals. |
+| Take profit, % | 1 | Abstand des Take-Profits in Prozent des Einstiegspreises. |
+| Stop loss, % | 1 | Abstand des Stop-Loss in Prozent des Einstiegspreises. |
 | Candles | 00:05:00 | Zeiteinheit der Kerzen, mit der das gesamte Diagramm arbeitet. |
 
 ## Diagrammdetails

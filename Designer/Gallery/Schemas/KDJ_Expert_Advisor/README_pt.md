@@ -1,7 +1,7 @@
 # Diagrama da estratégia do expert advisor KDJ
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
-Uma adaptação do expert advisor KDJ do MetaTrader. A linha J é reconstruída aqui como a diferença entre as linhas %K e %D do oscilador estocástico, e é essa diferença que escolhe o lado: compra quando ela fica positiva ou quando %K continua subindo com a diferença já positiva, e vende nas condições espelhadas. Duas coisas foram adaptadas ao histórico empacotado: os candles de quatro horas do original passaram a ser de uma hora, para que um mês de dados ainda ofereça barras suficientes, e o stop e o alvo em pips viraram distâncias percentuais que valem para qualquer instrumento.
+Um diagrama KDJ no qual a linha J é reconstruída como a diferença entre as linhas %K e %D do oscilador estocástico. Essa diferença escolhe o lado: o diagrama compra quando ela fica positiva ou quando %K continua subindo enquanto ela já está positiva, e vende nas condições espelhadas. Candles de uma hora fornecem barras suficientes em um mês de dados, enquanto distâncias percentuais de stop e alvo funcionam com qualquer instrumento.
 
 ![schema](schema.svg)
 
@@ -15,18 +15,18 @@ Uma adaptação do expert advisor KDJ do MetaTrader. A linha J é reconstruída 
 
 - **Entrada comprada**: K - D é positiva e, ou era negativa no candle anterior, o que faz deste candle o cruzamento do zero, ou %K está acima do valor do candle anterior. A posição precisa estar zerada; compra-se um lote a mercado.
 - **Entrada vendida**: K - D é negativa e, ou era positiva no candle anterior, o que faz deste candle o cruzamento do zero, ou %K está abaixo do valor do candle anterior. A posição precisa estar zerada; vende-se um lote a mercado.
-- **Saída**: Não existe sinal de saída algum, exatamente como no original: o bloco de proteção encerra a operação com ordens a mercado em um alvo de 2% ou um stop de 1%, o equivalente percentual das distâncias de 450 e 250 pips do código.
+- **Saída**: Não existe sinal de saída: o bloco de proteção encerra a operação com ordens a mercado em um alvo de 2% ou um stop de 1%.
 
 ## Parâmetros
 
 | Parâmetro | Padrão | Descrição |
 |---|---|---|
-| %K Length (KDJ period) | 30 | Comprimento da linha %K, o período KDJ do advisor original. |
+| %K Length (KDJ period) | 30 | Comprimento da linha %K usado como período KDJ. |
 | %D Smoothing | 6 | Comprimento de suavização da linha %D. |
 | Take profit, % | 2 | Distância do alvo, em percentual do preço de entrada. |
 | Stop loss, % | 1 | Distância do stop, em percentual do preço de entrada. |
 | Volume | 1 | Volume da ordem, em lotes. |
-| Candles | 01:00:00 | Tempo gráfico dos candles de todo o diagrama; o original usava quatro horas. |
+| Candles | 01:00:00 | Tempo gráfico de uma hora usado por todo o diagrama. |
 
 ## Detalhes do diagrama
 

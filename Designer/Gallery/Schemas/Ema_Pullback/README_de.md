@@ -15,7 +15,7 @@ Ein Trenddiagramm, das den Ausbruch bewusst nicht kauft. Die beiden exponentiell
 
 - **Long-Einstieg**: Der schnelle EMA liegt über dem langsamen, der Schlusskurs fällt zurück auf den schnellen EMA und die Position ist nicht long. Die Order kauft Volume plus den Betrag der aktuellen Position: aus der Neutralstellung ein Long-Einstieg, aus einem Short die direkte Umkehr in einen Long.
 - **Short-Einstieg**: Der schnelle EMA liegt unter dem langsamen, der Schlusskurs steigt zurück auf den schnellen EMA und die Position ist nicht short. Die Order verkauft Volume plus den Betrag der aktuellen Position: aus der Neutralstellung ein Short-Einstieg, aus einem Long die direkte Umkehr in einen Short.
-- **Ausstieg**: Ein Long wird geschlossen, wenn der schnelle EMA unter den langsamen fällt, ein Short, wenn der schnelle darüber steigt; beide Schließbausteine arbeiten auf der gesamten offenen Position, ein wiederholtes Signal ohne Position bewirkt daher nichts. Einen Schutzstopp gibt es nicht - so ist die Originalstrategie geschrieben.
+- **Ausstieg**: Ein Long wird geschlossen, wenn der schnelle EMA unter den langsamen fällt, ein Short, wenn der schnelle darüber steigt; beide Schließbausteine arbeiten auf der gesamten offenen Position, ein wiederholtes Signal ohne Position bewirkt daher nichts. Einen Schutzstopp gibt es nicht.
 
 ## Parameter
 

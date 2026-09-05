@@ -1,18 +1,18 @@
 # TRIX Crossover Strategy Diagram
 [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-TRIX here is not an off-the-shelf indicator but a series built in the diagram, exactly as the original strategy builds it: a triple exponential average and its one-bar relative change. The fast series crossing zero is the trigger, the slow series has to be moving in the same direction by more than a threshold, and a percent take and stop close the trade.
+TRIX here is not an off-the-shelf indicator but a series built in the diagram from a triple exponential average and its one-bar relative change. The fast series crossing zero is the trigger, the slow series has to be moving in the same direction by more than a threshold, and a percentage take and stop close the trade.
 
 ![schema](schema.svg)
 
 ## Strategy Overview
 
 - Two triple exponential averages of the closing price, 9 and 21 bars, are the raw material; a previous-value block holds each of them one candle back.
-- The slow TRIX is a formula block: the average minus its previous value, divided by that previous value, which is the relative change per bar the original computes in code.
+- The slow TRIX is a formula block: the average minus its previous value, divided by that previous value, which gives the relative change per bar.
 - The fast TRIX crossing zero is drawn as the crossing of the fast average with its own previous value. Because a price average is positive, the sign of the relative change is the sign of the difference, so the crossing block is an exact substitute and saves the division.
 - The threshold on the slow TRIX is what keeps the diagram out of a flat market: a turn of the fast series is only accepted while the slow one is moving by more than 0.05 percent per bar in the same direction.
-- The original runs on four-hour candles with a take of 1500 and a stop of 500 in absolute price units; the diagram is scaled to five-minute candles for the packaged sample history, and the two distances become percentages of the entry price in the same three-to-one ratio.
-- The built-in Trix indicator is deliberately not used: it is a chain of three successive smoothings scaled by a constant, so its values and signals differ from the triple exponential average the strategy is written on.
+- The diagram uses five-minute candles from the packaged sample history and expresses its take and stop as percentages of the entry price in a three-to-one ratio.
+- The built-in Trix indicator is deliberately not used: it is a chain of three successive smoothings scaled by a constant, so its values and signals differ from the triple exponential average used in this diagram.
 
 ## Entry and Exit Rules
 

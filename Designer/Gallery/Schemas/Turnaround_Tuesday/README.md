@@ -1,7 +1,7 @@
 # Turnaround Tuesday Strategy Diagram
 [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-The idea is the turnaround after a bad session: a session that ends lower than it started often hands the next one a bounce, so the diagram waits for the market to recover above its moving average and buys that recovery, and mirrors the whole thing after a session that closed higher. Despite the name, the original strategy contains no weekday filter at all, and neither does this diagram.
+The idea is the turnaround after a bad session: a session that ends lower than it started often hands the next one a bounce, so the diagram waits for the market to recover above its moving average and buys that recovery, and mirrors the whole thing after a session that closed higher. Despite the name, the diagram contains no weekday filter.
 
 ![schema](schema.svg)
 
@@ -10,13 +10,13 @@ The idea is the turnaround after a bad session: a session that ends lower than i
 - Two candle series work side by side: a session series decides which way to lean and a faster trading series times the entry.
 - The session verdict is a single comparison of the session candle's close with its own open, so no state has to be remembered between candles.
 - The simple moving average on the trading series is the confirmation: after a losing session the diagram buys only once the price has climbed back above the average.
-- Because the session verdict arrives once per session candle, the logical AND can fire only once per session, which is exactly the one-entry-per-session rule of the original.
+- Because the session verdict arrives once per session candle, the logical AND can fire only once per session.
 
 ## Entry and Exit Rules
 
 - **Long entry**: The last session closed below its open, the trading candle closes above the simple moving average and the position is flat. The order buys the shared volume at market.
 - **Short entry**: The last session closed above its open, the trading candle closes below the simple moving average and the position is flat. The order sells the shared volume at market.
-- **Exit**: The position is left on the side of the average, not on a target: a close back below the average closes a long, a close back above it closes a short. There is no stop loss and no take profit, exactly as in the original strategy.
+- **Exit**: The position is left on the side of the average, not on a target: a close back below the average closes a long, a close back above it closes a short. There is no stop loss and no take profit.
 
 ## Parameters
 

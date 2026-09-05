@@ -10,13 +10,13 @@ O fechamento é convertido em z-score: a distância até uma média móvel medid
 - O z-score é montado à mão a partir de SimpleMovingAverage e StandardDeviation: (Close - SMA) / StandardDeviation em um único bloco de fórmula.
 - Uma fórmula espelhada devolve o mesmo escore com sinal trocado, de modo que um nível de entrada e um de saída atendem aos dois lados, sem precisar de quatro constantes.
 - As entradas só ocorrem com a posição zerada, e os blocos de entrada ainda carregam a condição de abertura de posição, de modo que o diagrama nunca reforça uma operação já aberta.
-- O original usa candles de um minuto e trava as operações por 500 barras após cada negócio. O histórico incluído é de cinco minutos, então o diagrama trabalha em candles de cinco minutos; a trava não é reproduzida porque o Designer não tem um contador de barras com estado, e por isso o diagrama negocia com mais frequência e segura menos tempo.
+- O diagrama trabalha com os candles de cinco minutos fornecidos com o histórico empacotado.
 
 ## Regras de entrada e saída
 
 - **Entrada comprada**: O z-score está abaixo do nível de entrada negativo, ou seja, o fechamento está mais desvios padrão abaixo da média do que o configurado, e a posição está zerada. A ordem compra o volume configurado.
 - **Entrada vendida**: O z-score está acima do nível de entrada, ou seja, o fechamento está mais desvios padrão acima da média do que o configurado, e a posição está zerada. A ordem vende o volume configurado.
-- **Saída**: A compra é encerrada quando o z-score volta acima do nível de saída; a venda, quando ele cai abaixo desse nível negativo. Não há stop nem alvo, exatamente como na estratégia original.
+- **Saída**: A compra é encerrada quando o z-score volta acima do nível de saída; a venda, quando ele cai abaixo desse nível negativo. Não há stop nem alvo.
 
 ## Parâmetros
 

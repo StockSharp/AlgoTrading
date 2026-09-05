@@ -8,7 +8,7 @@ A trend diagram with a strength filter. The ExponentialMovingAverage says which 
 ## Strategy Overview
 
 - The candle close is compared against an ExponentialMovingAverage; above the average means long, below it means short.
-- DirectionalIndex delivers the DX value, the same formula the original strategy computes by hand from +DM and -DM, and an entry is allowed only while DX is above the threshold.
+- DirectionalIndex delivers the DX value calculated from +DM and -DM, and an entry is allowed only while DX is above the threshold.
 - Entries are taken from a flat position only, and each exit closes exactly the open position, so the diagram never pyramids.
 - The exit ignores trend strength: once the close is back on the other side of the average, the position goes, no matter what DX says.
 
@@ -16,7 +16,7 @@ A trend diagram with a strength filter. The ExponentialMovingAverage says which 
 
 - **Long entry**: The close is above the EMA, DX is above the trend strength threshold and the position is flat. The order buys the base volume and opens a long.
 - **Short entry**: The close is below the EMA, DX is above the trend strength threshold and the position is flat. The order sells the base volume and opens a short.
-- **Exit**: A long is closed as soon as a candle closes below the EMA, a short as soon as a candle closes above it; the closing blocks take their volume from the open position. The original strategy has no stop loss or take profit, and its pause of a hundred candles after each trade is not reproduced here, so this diagram trades more often than the source.
+- **Exit**: A long is closed as soon as a candle closes below the EMA, a short as soon as a candle closes above it; the closing blocks take their volume from the open position. The diagram has no stop loss or take profit.
 
 ## Parameters
 

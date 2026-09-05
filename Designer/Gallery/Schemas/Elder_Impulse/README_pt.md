@@ -10,13 +10,12 @@ Alexander Elder colore cada barra por duas coisas ao mesmo tempo: a inclinação
 - A EMA e as linhas do MACD são calculadas sobre candles finalizados de um único instrumento; o histograma é montado dentro do próprio diagrama como MACD menos Signal.
 - Dois blocos de valor anterior guardam a EMA e o histograma do candle passado, permitindo comparar a leitura atual com eles e definir para onde cada um se inclina.
 - A cor da barra é o par de inclinações: EMA subindo e histograma subindo dá verde; EMA caindo e histograma parado ou caindo dá vermelho; o resto é neutro e é ignorado.
-- A estratégia original fica de fora por 65 barras depois de cada operação. Essa pausa é um contador e os blocos do Designer não guardam esse estado, então o diagrama a omite; a verificação da posição já impede repetir o mesmo lado.
 
 ## Regras de entrada e saída
 
 - **Entrada comprada**: A EMA está acima do seu valor de um candle atrás, o histograma também está, e a posição ainda não está comprada. A ordem compra Volume mais o módulo da posição: abre uma compra a partir do zero ou inverte uma venda de uma só vez.
 - **Entrada vendida**: A EMA está abaixo do seu valor de um candle atrás, o histograma está nesse valor ou abaixo, e a posição ainda não está vendida. A ordem vende Volume mais o módulo da posição, abrindo uma venda ou invertendo uma compra.
-- **Saída**: Não existe saída própria: a cor contrária inverte a posição e, como o tamanho da ordem inclui a posição aberta, a inversão fecha a operação antiga e abre a nova ao mesmo tempo. A estratégia de origem também não tem stop nem alvo.
+- **Saída**: Não existe saída própria, stop nem alvo: a cor contrária inverte a posição e, como o tamanho da ordem inclui a posição aberta, a inversão fecha a operação antiga e abre a nova ao mesmo tempo.
 
 ## Parâmetros
 

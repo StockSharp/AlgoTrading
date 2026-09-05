@@ -10,7 +10,7 @@ MACD gibt die Richtung vor, RSI den Zeitpunkt. Solange die MACD-Linie über ihre
 - Der Trendtest ist ein Niveauvergleich und kein Kreuzen: Entscheidend ist, auf welcher Seite der Signallinie die MACD-Linie gerade steht, damit der Filter so lange greift, wie der Trend anhält.
 - Der Einstieg innerhalb dieses Trends ist bewusst antizyklisch - der RSI muss dagegen gelaufen sein, sodass das Diagramm Rücksetzer kauft, statt Ausbrüchen hinterherzulaufen.
 - Der Ausstieg nutzt dasselbe Linienpaar: Ein Long wird geschlossen, wenn MACD unter seine Signallinie fällt, ein Short, wenn er darüber steigt.
-- Stop-Loss und Take-Profit gibt es im Diagramm nicht, genau wie in der Originalstrategie, in der nur der MACD-Wechsel aus der Position führt.
+- Stop-Loss und Take-Profit gibt es im Diagramm nicht; nur der MACD-Wechsel führt aus der Position.
 
 ## Ein- und Ausstiegsregeln
 
@@ -36,7 +36,7 @@ MACD gibt die Richtung vor, RSI den Zeitpunkt. Solange die MACD-Linie über ihre
 - Ein Indikatorbaustein enthält den MACD samt Signallinie; zwei Konverter holen die Werte Macd und Signal heraus, ein zweiter Indikatorbaustein berechnet den Relative-Stärke-Index auf denselben Kerzen.
 - Zwei Vergleiche stellen die MACD-Linie der Signallinie gegenüber, zwei weitere den RSI den Schwellenkonstanten, und einer vergleicht die Position mit null.
 - Jedes logische UND verbindet eine Trendbedingung, eine RSI-Bedingung und die Nullpositionsprüfung und löst dann einen Baustein aus, der nur aus der Neutralstellung eröffnet.
-- Die Trendvergleiche dienen zugleich als Ausstiegsauslöser, sodass die beiden Schließbausteine ohne zusätzliche Logik auskommen. Die Pause von 150 Bars zwischen zwei Trades aus dem Original hat keine Entsprechung unter den Bausteinen und entfällt, wodurch Wiedereinstiege häufiger sind als im Code.
+- Die Trendvergleiche dienen zugleich als Ausstiegsauslöser, sodass die beiden Schließbausteine ohne zusätzliche Logik auskommen.
 
 ## Verwendung
 

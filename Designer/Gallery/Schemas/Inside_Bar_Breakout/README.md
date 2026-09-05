@@ -16,7 +16,7 @@ An inside bar is a candle whose whole range fits inside the range of the candle 
 
 - **Long entry**: The candle pattern block reports an inside bar whose high has just been taken out by the following candle, and the position is flat. The order buys one lot and opens a long.
 - **Short entry**: The candle pattern block reports an inside bar whose low has just been taken out by the following candle, and the position is flat. The order sells one lot and opens a short.
-- **Exit**: A long is closed once a candle closes below the moving average, a short once a candle closes above it, both through position modify blocks in close mode, exactly as in the original strategy. What the diagram cannot reproduce is the original's open-ended wait: there the extremes of an inside bar are remembered and a breakout is accepted many candles later, while here the pattern block only sees a fixed window, so the breakout has to arrive on the candle right after the inside bar. That is the common case of the pattern, but the late breakouts are lost. The original's pause of several hundred bars between trades has no block of its own either and is left out.
+- **Exit**: A long is closed once a candle closes below the moving average, a short once a candle closes above it, both through position modify blocks in close mode. The pattern block sees a fixed window, so the breakout has to arrive on the candle immediately after the inside bar; later breakouts are ignored.
 
 ## Parameters
 

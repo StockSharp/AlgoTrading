@@ -9,8 +9,8 @@ El diagrama mide el salto entre el cierre de una vela y la apertura de la siguie
 
 - El hueco se expresa en porcentaje del cierre anterior, así que el mismo umbral conserva su sentido a cualquier nivel de precio.
 - El hueco por sí solo no es una señal: la vela que abrió lejos del cierre anterior tiene que volver hacia él, ese es el cuerpo de reversión que da nombre a la estrategia.
-- La SimpleMovingAverage es la única línea de salida y sirve a ambos lados; no hay stop de pérdidas ni toma de beneficios, igual que en el código original.
-- El diagrama trabaja con velas de un minuto, como la estrategia de la que procede, de modo que aquí el hueco es la pequeña discontinuidad entre dos minutos vecinos y no un hueco de apertura diaria.
+- La SimpleMovingAverage es la única línea de salida y sirve a ambos lados; no hay stop de pérdidas ni toma de beneficios.
+- El diagrama trabaja con velas de un minuto, de modo que aquí el hueco es la pequeña discontinuidad entre dos minutos vecinos y no un hueco de apertura diaria.
 
 ## Reglas de entrada y salida
 
@@ -32,7 +32,7 @@ El diagrama mide el salto entre el cierre de una vela y la apertura de la siguie
 - Dos bloques convertidores leen la apertura y el cierre de la vela, y un bloque de valor anterior guarda el cierre de la vela precedente.
 - El bloque de fórmula convierte la distancia entre la apertura y el cierre anterior en un porcentaje, y una comparación lo contrasta con la constante de umbral.
 - Otras cuatro comparaciones aportan el lado del hueco y el lado del cuerpo; cada Y lógica une una condición de hueco, una de cuerpo y la comprobación de posición plana antes del bloque de orden.
-- El par de salida compara el cierre con la media móvil y acciona dos bloques de cierre de posición. La pausa de 500 barras entre operaciones del código no tiene equivalente entre los bloques y se omite, por lo que este diagrama opera con más frecuencia.
+- El par de salida compara el cierre con la media móvil y acciona dos bloques de cierre de posición.
 
 ## Uso
 

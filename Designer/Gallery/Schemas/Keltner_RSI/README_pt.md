@@ -1,7 +1,7 @@
 # Diagrama da estratégia Keltner RSI
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
-Um diagrama de reversão à média construído em torno da linha central de um canal de Keltner. O preço esticado abaixo da EMA com RSI fraco é comprado; o preço esticado acima dela com RSI forte é vendido, e a operação é devolvida quando o preço cruza a média de volta com o RSI passando do ponto médio. A estratégia original calcula as bandas ATR do canal mas nunca as lê, por isso este diagrama as deixa de fora e mantém apenas o que realmente decide uma operação.
+Um diagrama de reversão à média construído em torno da linha central de um canal de Keltner. O preço esticado abaixo da EMA com RSI fraco é comprado; o preço esticado acima dela com RSI forte é vendido, e a operação é devolvida quando o preço cruza a média de volta com o RSI passando do ponto médio. O diagrama usa apenas os valores da EMA central e do RSI que decidem suas operações; as bandas ATR do canal não são necessárias.
 
 ![schema](schema.svg)
 
@@ -10,13 +10,12 @@ Um diagrama de reversão à média construído em torno da linha central de um c
 - A ExponentialMovingAverage de 20 períodos é a linha central do canal de Keltner e a única referência de preço de todo o diagrama.
 - O RSI de 14 candles dá a segunda opinião: leitura abaixo de 45 confirma a liquidação que é comprada e acima de 55 confirma o impulso que é vendido.
 - As duas entradas exigem posição zerada e as duas saídas são blocos de encerramento, de modo que os quatro ramos nunca disputam a mesma posição.
-- Duas simplificações em relação ao original: as bandas ATR não utilizadas são removidas e a pausa de 120 barras após cada execução não tem bloco contador, então este diagrama negocia com mais frequência.
 
 ## Regras de entrada e saída
 
 - **Entrada comprada**: O fechamento está abaixo da EMA, o RSI abaixo do nível de entrada comprada e a posição está zerada. A ordem compra o volume compartilhado a mercado e abre a compra.
 - **Entrada vendida**: O fechamento está acima da EMA, o RSI acima do nível de entrada vendida e a posição está zerada. A ordem vende o volume compartilhado a mercado e abre a venda.
-- **Saída**: A compra é encerrada quando o fechamento volta acima da EMA e o RSI passa do ponto médio; a venda é encerrada quando o fechamento volta abaixo da EMA e o RSI fica sob o ponto médio. Não há stop nem alvo, como no código original, em que o percentual de stop declarado nunca é aplicado.
+- **Saída**: A compra é encerrada quando o fechamento volta acima da EMA e o RSI passa do ponto médio; a venda é encerrada quando o fechamento volta abaixo da EMA e o RSI fica sob o ponto médio. Não há stop nem alvo.
 
 ## Parâmetros
 

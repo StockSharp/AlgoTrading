@@ -1,7 +1,7 @@
 # Diagramm der Strategie Opening Range Breakout (Bollinger-Ausbruch mit EMA-Filter)
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-Das Beispiel behält den Namen der Ursprungsstrategie, enthält aber keine Eröffnungsspanne einer Sitzung: Gehandelt wird tatsächlich ein Ausbruch aus den Bollinger-Bändern, bestätigt durch eine langsame EMA. Das Verlassen des Bandes ist der Auslöser, die EMA entscheidet, ob der Ausbruch mit oder gegen den Markt läuft, und das mittlere Band holt den Trade wieder ein.
+Trotz seines Namens enthält das Diagramm keine Eröffnungsspanne einer Sitzung: Es handelt einen Ausbruch aus den Bollinger-Bändern, bestätigt durch eine langsame EMA. Das Verlassen des Bandes ist der Auslöser, die EMA entscheidet, ob der Ausbruch mit oder gegen den Markt läuft, und das mittlere Band holt den Trade wieder ein.
 
 ![schema](schema.svg)
 
@@ -22,7 +22,7 @@ Das Beispiel behält den Namen der Ursprungsstrategie, enthält aber keine Eröf
 | Parameter | Standard | Beschreibung |
 |---|---|---|
 | Bollinger Length | 20 | Glättungsperiode der Bollinger-Bänder, zugleich die Periode des mittleren Bandes. |
-| Bollinger Width | 2 | Bandbreite in Standardabweichungen; im Originalcode fest auf zwei gesetzt. |
+| Bollinger Width | 2 | Bandbreite in Standardabweichungen. |
 | EMA Length | 50 | Periode der EMA, die bestimmt, in welche Richtung ein Ausbruch gehandelt werden darf. |
 | Volume | 1 | Ordervolumen in Lots. |
 | Candles | 00:30:00 | Zeiteinheit der Kerzen, mit der das gesamte Diagramm arbeitet. |
@@ -32,7 +32,7 @@ Das Beispiel behält den Namen der Ursprungsstrategie, enthält aber keine Eröf
 - Der Kerzenbaustein speist die Bollinger-Bänder, die EMA und einen Konverter für den Schlusskurs; drei weitere Konverter trennen oberes, unteres und mittleres Band.
 - Sechs Vergleiche decken die gesamte Logik ab: zwei für die Bänder, zwei für den EMA-Filter und zwei für die Rückkehr zum mittleren Band.
 - Beide UND-Bausteine der Einstiege verlangen eine neutrale Position, ein Einstieg vergrößert also nie einen laufenden Trade; die Schließbausteine hängen direkt an den Vergleichen mit dem mittleren Band.
-- Zwei Dinge des C#-Originals fehlen: die Pause von 10 Kerzen zwischen den Aktionen, für die es im Designer keinen Baustein gibt, und die sofortige Umkehr — hier wird erst am mittleren Band geschlossen und die Gegenseite auf einer späteren Kerze eröffnet.
+- Das Diagramm schließt zuerst am mittleren Band und kann die Gegenseite auf einer späteren Kerze eröffnen.
 
 ## Verwendung
 

@@ -10,7 +10,7 @@ A amplitude dos últimos vinte candles é dividida pela proporção áurea e os 
 - Highest e Lowest na mesma janela dão a máxima e a mínima do movimento; a diferença entre elas é a amplitude em que os níveis são medidos.
 - O nível de compra fica 0.618 da amplitude abaixo da máxima e o de venda 0.618 acima da mínima; um candle está sobre um nível enquanto seu fechamento estiver a menos de dois por cento da amplitude dele.
 - As duas distâncias são calculadas como fração da amplitude, então o diagrama funciona igual em qualquer ativo e qualquer escala de preços.
-- As entradas ainda exigem um corpo de candle que confirme e posição zerada; todas as saídas ficam por conta da SimpleMovingAverage, porque a estratégia original não define stop nem alvo.
+- As entradas ainda exigem um corpo de candle que confirme e posição zerada; todas as saídas ficam por conta da SimpleMovingAverage, e não há stop nem alvo.
 
 ## Regras de entrada e saída
 
@@ -35,7 +35,7 @@ A amplitude dos últimos vinte candles é dividida pela proporção áurea e os 
 - Dois blocos de fórmula transformam os preços na distância do fechamento até cada nível dividida pela amplitude, de modo que uma única constante de margem serve aos dois lados.
 - Cada entrada passa por um E lógico de três sinais: o nível, o corpo do candle e a posição comparada com uma constante zero.
 - Os dois blocos de saída são acionados diretamente pelas comparações com a média móvel e ficam em modo de fechamento; os quatro blocos de ordem compartilham uma constante de volume.
-- Simplificações deliberadas: o original trabalha em candles de um minuto e faz uma pausa de 500 barras após cada operação, o que nenhum bloco expressa; por isso o diagrama usa candles de cinco minutos e volta a operar assim que as condições retornam. As posições duram algumas barras em vez de dias; aumentar o período da média as alonga.
+- O diagrama usa candles de cinco minutos e pode voltar a operar assim que suas condições retornam. As posições duram alguns candles; aumentar o período da média as alonga.
 
 ## Uso
 

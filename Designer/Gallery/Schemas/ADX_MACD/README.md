@@ -34,7 +34,6 @@ Two classic indicators split the work: MACD against its own signal line says whi
 - The candle block feeds both indicators; converters pull the ADX line out of the Average Directional Index and the MACD and signal lines out of the MACD indicator.
 - Three comparisons produce the market conditions — trend strength, MACD above the signal line and MACD below it — and three more compare the position with zero.
 - The entry AND blocks join strength, direction and a flat position; the exit AND blocks join direction with an open position of the opposite side.
-- The 100-bar pause the C# strategy keeps between trades cannot be built from Designer blocks, so this diagram enters and exits more often than the original.
 
 ## Usage
 

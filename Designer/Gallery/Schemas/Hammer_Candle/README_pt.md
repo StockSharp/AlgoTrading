@@ -7,7 +7,7 @@ Um martelo é um candle de corpo pequeno, sombra inferior longa e praticamente s
 
 ## Visão geral da estratégia
 
-- Dois blocos de padrão de candles carregam exatamente as fórmulas da estratégia original: corpo maior que zero, uma sombra mais longa que o dobro do corpo e a sombra oposta menor que metade do corpo.
+- Dois blocos de padrão de candles definem um corpo maior que zero, uma sombra mais longa que o dobro do corpo e a sombra oposta menor que metade do corpo.
 - Os padrões nativos Hammer e Inverted Hammer são propositalmente evitados, porque medem as sombras contra o comprimento do candle e não contra o corpo.
 - A média móvel simples do preço de fechamento divide o gráfico numa metade barata e outra cara, servindo ao mesmo tempo de filtro de entrada e de linha de saída.
 - A verificação da posição garante que um padrão só seja operado a partir do zero.
@@ -16,7 +16,7 @@ Um martelo é um candle de corpo pequeno, sombra inferior longa e praticamente s
 
 - **Entrada comprada**: O bloco de padrão informa um martelo, o candle fechou abaixo da média móvel e a posição está zerada. A ordem compra um lote e abre uma compra.
 - **Entrada vendida**: O bloco de padrão informa um martelo invertido, o candle fechou acima da média móvel e a posição está zerada. A ordem vende um lote e abre uma venda.
-- **Saída**: A compra é encerrada quando um candle fecha acima da média móvel e a venda quando fecha abaixo dela, ambas por blocos de modificação de posição em modo de fechamento. A estratégia original sai pelo mesmo lado da média por onde entrou e segura a operação com uma pausa de várias centenas de barras; aqui não existe bloco contador de barras, então copiar essa saída ao pé da letra encerraria cada operação já no candle seguinte. O retorno à média é a regra mais próxima que ainda mantém a posição por um trecho razoável.
+- **Saída**: A compra é encerrada quando um candle fecha acima da média móvel e a venda quando fecha abaixo dela, ambas por blocos de modificação de posição em modo de fechamento. O retorno à média mantém a posição por um trecho útil antes de encerrá-la.
 
 ## Parâmetros
 

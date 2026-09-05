@@ -10,13 +10,13 @@ Der Schlusskurs wird in einen Z-Score verwandelt: den Abstand zu einem gleitende
 - Der Z-Score wird von Hand aus SimpleMovingAverage und StandardDeviation gebaut: (Close - SMA) / StandardDeviation in einem einzigen Formelbaustein.
 - Eine gespiegelte Formel liefert denselben Score mit umgekehrtem Vorzeichen, sodass ein Einstiegs- und ein Ausstiegsniveau beide Seiten abdecken statt vier getrennter Konstanten.
 - Eingestiegen wird nur aus der Neutralstellung; die Einstiegsbausteine tragen zusätzlich die Bedingung Position eröffnen, sodass das Diagramm nie in eine bestehende Position nachlegt.
-- Das Original arbeitet auf Minutenkerzen und sperrt den Handel nach jedem Trade für 500 Bars. Die mitgelieferte Historie besteht aus Fünf-Minuten-Daten, daher läuft das Diagramm auf Fünf-Minuten-Kerzen; die Sperre lässt sich nicht nachbilden, weil der Designer keinen zustandsbehafteten Bar-Zähler kennt. Das Diagramm handelt deshalb häufiger und hält kürzer als das Original.
+- Das Diagramm arbeitet auf den Fünf-Minuten-Kerzen der mitgelieferten Historie.
 
 ## Ein- und Ausstiegsregeln
 
 - **Long-Einstieg**: Der Z-Score liegt unter dem negativen Einstiegsniveau, der Schlusskurs steht also mehr als die eingestellte Zahl an Standardabweichungen unter dem Durchschnitt, und die Position ist neutral. Die Order kauft das eingestellte Volumen.
 - **Short-Einstieg**: Der Z-Score liegt über dem Einstiegsniveau, der Schlusskurs steht also mehr als die eingestellte Zahl an Standardabweichungen über dem Durchschnitt, und die Position ist neutral. Die Order verkauft das eingestellte Volumen.
-- **Ausstieg**: Ein Long wird geschlossen, sobald der Z-Score wieder über das Ausstiegsniveau steigt, ein Short, sobald er unter dessen negativen Wert fällt. Es gibt weder Stop-Loss noch Take-Profit, genau wie in der Originalstrategie.
+- **Ausstieg**: Ein Long wird geschlossen, sobald der Z-Score wieder über das Ausstiegsniveau steigt, ein Short, sobald er unter dessen negativen Wert fällt. Es gibt weder Stop-Loss noch Take-Profit.
 
 ## Parameter
 

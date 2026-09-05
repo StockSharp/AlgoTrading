@@ -14,9 +14,9 @@ Internal Bar Strength stellt einer abgeschlossenen Kerze eine einzige Frage: An 
 
 ## Ein- und Ausstiegsregeln
 
-- **Long-Einstieg**: Es gibt keinen Long-Einstieg. Das Diagramm verkauft nur, genau wie die Originalstrategie.
+- **Long-Einstieg**: Es gibt keinen Long-Einstieg. Das Diagramm verkauft nur.
 - **Short-Einstieg**: Die Kerze schloss über dem Hoch der vorangegangenen Kerze, ihr IBS liegt auf oder über der oberen Schwelle und die Position ist noch nicht short. Die Order verkauft ein Lot und eröffnet einen Short.
-- **Ausstieg**: Der Short wird zurückgekauft, sobald der IBS einer Kerze auf die untere Schwelle oder darunter fällt, also wenn der Schlusskurs in den unteren Teil der eigenen Spanne zurückkehrt; der Kauf läuft im Schließmodus und stellt die Position damit glatt, statt sie zu drehen. Das Original kennt weder Stop-Loss noch Take-Profit, und beides wird hier auch nicht ergänzt. Zwei Punkte weichen vom Code ab. Das Original arbeitet auf Vier-Stunden-Kerzen, von denen die mitgelieferte Historie eines Monats nur einige hundert hergäbe, weshalb das Diagramm auf Fünf-Minuten-Kerzen läuft. Und das Original überspringt eine Kerze, deren Hoch gleich dem Tief ist, einfach; hier teilt die Formel durch eine nach unten auf einen Preisschritt begrenzte Spanne, sodass eine solche Kerze einen IBS von null ergibt und in keiner der Bedingungen auftaucht. Die SimpleMovingAverage, die das Original anlegt, wird nicht nachgebaut, weil ihr Wert dort in keine einzige Entscheidung eingeht.
+- **Ausstieg**: Der Short wird zurückgekauft, sobald der IBS einer Kerze auf die untere Schwelle oder darunter fällt, also wenn der Schlusskurs in den unteren Teil der eigenen Spanne zurückkehrt; der Kauf läuft im Schließmodus und stellt die Position damit glatt, statt sie zu drehen. Es gibt weder Stop-Loss noch Take-Profit. Das Diagramm läuft auf Fünf-Minuten-Kerzen, die in der mitgelieferten Monatshistorie genügend Bars liefern. Die Formel teilt durch die auf mindestens einen Preisschritt begrenzte Kerzenspanne; bei gleichem Hoch und Tief ergibt sich daher ein IBS von null, und die Kerze bleibt außerhalb beider Bedingungen.
 
 ## Parameter
 
@@ -25,7 +25,7 @@ Internal Bar Strength stellt einer abgeschlossenen Kerze eine einzige Frage: An 
 | Upper IBS Threshold | 0.9 | IBS-Marke, auf oder über der die Ausbruchskerze verkauft wird. |
 | Lower IBS Threshold | 0.3 | IBS-Marke, auf oder unter der der Short zurückgekauft wird. |
 | Volume | 1 | Ordervolumen in Lots. |
-| Candles | 00:05:00 | Zeiteinheit der Kerzen, mit der das gesamte Diagramm arbeitet; das Original nutzt Vier-Stunden-Kerzen, dieses Diagramm die Fünf-Minuten-Kerzen der mitgelieferten Historie. |
+| Candles | 00:05:00 | Fünf-Minuten-Zeiteinheit der Kerzen für das gesamte Diagramm. |
 
 ## Diagrammdetails
 

@@ -16,7 +16,7 @@ Der Choppiness Index sagt nicht, wohin der Markt läuft, sondern nur, ob er übe
 
 - **Long-Einstieg**: Der Choppiness Index liegt unter der Trendschwelle, die Kerze hat über dem einfachen gleitenden Durchschnitt geschlossen und die Position ist neutral. Die Order kauft ein Lot und eröffnet einen Long.
 - **Short-Einstieg**: Der Choppiness Index liegt unter der Trendschwelle, die Kerze hat unter dem einfachen gleitenden Durchschnitt geschlossen und die Position ist neutral. Die Order verkauft ein Lot und eröffnet einen Short.
-- **Ausstieg**: Sobald der Choppiness Index über die Seitwärtsschwelle steigt, wird die offene Position geschlossen: ein Long durch einen Verkauf im Schließmodus, ein Short durch einen Kauf im Schließmodus. Auch der Originalcode kennt weder Stop-Loss noch Take-Profit. Zwei Dinge weichen bewusst von ihm ab. Seine Schwellen lauten 99 und 99.5, womit der Einstiegsfilter dauerhaft offen und die Ausstiegsbedingung dauerhaft unerreichbar wäre; deshalb verwendet das Diagramm die kanonischen Werte 38.2 und 61.8 aus der Indikatordokumentation, die auch die README der Strategie selbst nennt. Die Pause von fünfhundert Balken zwischen zwei Trades entfällt ebenfalls, weil ein solcher Zähler in Bausteinen keine getreue Entsprechung hat.
+- **Ausstieg**: Sobald der Choppiness Index über die Seitwärtsschwelle steigt, wird die offene Position geschlossen: ein Long durch einen Verkauf im Schließmodus, ein Short durch einen Kauf im Schließmodus. Es gibt weder Stop-Loss noch Take-Profit. Das Diagramm verwendet die kanonischen Schwellen 38.2 und 61.8 aus der Indikatordokumentation.
 
 ## Parameter
 
@@ -27,7 +27,7 @@ Der Choppiness Index sagt nicht, wohin der Markt läuft, sondern nur, ob er übe
 | Trending Threshold | 38.2 | Indexwert, unter dem ein Einstieg erlaubt ist. |
 | Choppy Threshold | 61.8 | Indexwert, oberhalb dessen der Markt als seitwärts gilt und die Position geschlossen wird. |
 | Volume | 1 | Ordervolumen in Lots. |
-| Candles | 00:05:00 | Zeiteinheit der Kerzen, mit der das gesamte Diagramm arbeitet; das Original nutzt Minutenkerzen, dieses Diagramm die Fünf-Minuten-Kerzen der mitgelieferten Historie. |
+| Candles | 00:05:00 | Fünf-Minuten-Zeiteinheit der Kerzen für das gesamte Diagramm. |
 
 ## Diagrammdetails
 

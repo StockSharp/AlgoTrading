@@ -10,7 +10,7 @@ Uma reta de mínimos quadrados é ajustada sobre os últimos cinquenta fechament
 - LinearReg fornece o valor da reta ajustada na barra atual, LinearRegSlope a sua direção e StandardError a dispersão habitual dos fechamentos em torno dela.
 - As bandas são a reta mais e menos o multiplicador de desvio vezes o erro padrão, de modo que o canal se alarga e se estreita sozinho junto com o mercado.
 - A inclinação funciona como filtro: uma queda só é comprada dentro de um canal ascendente e um pico só é vendido dentro de um canal descendente.
-- A reta de regressão é o alvo; não há stop nem realização, exatamente como na estratégia de origem.
+- A reta de regressão é o alvo; não há stop nem realização.
 
 ## Regras de entrada e saída
 
@@ -35,7 +35,7 @@ Uma reta de mínimos quadrados é ajustada sobre os últimos cinquenta fechament
 - Dois blocos de fórmula montam as bandas a partir da reta, do erro padrão e de uma constante de desvio compartilhada que pode ser otimizada.
 - Seis blocos de comparação transformam esses números em sinais: dois para a inclinação, dois para as bandas e dois para o retorno à reta.
 - Cada entrada é um E lógico de inclinação, banda e posição zerada; as saídas vão direto da comparação para um bloco de encerramento de posição.
-- A estratégia original espera vinte barras entre operações e calcula o desvio sobre toda a janela, enquanto o StandardError divide pela janela menos dois, o que deixa o canal cerca de dois por cento mais largo; reduza o desvio para cerca de 1,47 para reproduzir a banda original.
+- O StandardError divide pela janela menos dois, o que deixa o canal cerca de dois por cento mais largo do que um cálculo sobre a janela completa; reduza o desvio para cerca de 1,47 para obter uma banda mais estreita.
 
 ## Uso
 

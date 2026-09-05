@@ -16,7 +16,7 @@ Volume decides the direction here. The Accumulation/Distribution Line adds up wh
 
 - **Long entry**: The A/D line is above its previous value, the candle closes above the simple moving average and the position is flat. The order buys the shared volume at market.
 - **Short entry**: The A/D line is at or below its previous value, the candle closes below the simple moving average and the position is flat. The order sells the shared volume at market.
-- **Exit**: The slope alone closes the trade, with no price condition attached: the line falling back closes a long, the line turning up closes a short. There is no stop loss and no take profit, exactly as in the original strategy.
+- **Exit**: The slope alone closes the trade, with no price condition attached: the line falling back closes a long, the line turning up closes a short. There is no stop loss and no take profit.
 
 ## Parameters
 

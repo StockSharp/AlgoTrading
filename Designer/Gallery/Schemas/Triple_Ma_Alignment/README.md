@@ -31,10 +31,10 @@ Three ExponentialMovingAverage blocks of very different lengths are stacked on t
 ## Diagram Details
 
 - One candle block feeds all three indicator blocks, so the averages are always computed on the same finished candles.
-- Four comparison blocks build the two states: two strict greater-than for the bullish stack, two less-or-equal for the bearish one, which is exactly the negation used in the original code.
+- Four comparison blocks build the two states: two strict greater-than comparisons for the bullish stack and two less-or-equal comparisons for its bearish negation.
 - Each logical AND joins the two average comparisons with the position compared against a zero constant and triggers one position-modify block.
 - A formula block adds the absolute position to the volume constant and feeds both order blocks, which is what turns an entry into a reversal.
-- Deliberate simplifications: the original runs on one-minute candles, and this diagram runs on five-minute ones, so the same lengths cover five times as much time. The original also remembers whether the alignment was already there on the previous candle; that flag is dropped, because the position guard blocks a repeat entry just as effectively. The declared 2% stop loss is never applied in the original code, so no protection block is drawn.
+- The diagram runs on five-minute candles. Its position guard blocks repeated entries while an alignment persists, and no protection block is drawn.
 
 ## Usage
 

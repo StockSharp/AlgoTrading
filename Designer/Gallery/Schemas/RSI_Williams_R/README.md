@@ -1,7 +1,7 @@
 # RSI + Williams %R Double Cross Strategy Diagram
 [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-Two oscillators have to agree on the very same candle. The diagram buys only when RSI drops through 30 while Williams %R drops through -80 at the same time, and sells only when RSI rises through 70 while Williams %R rises through -20. A reading that is simply sitting inside the zone is not enough: the previous candle must still have been outside it, which is why both oscillators are also kept one candle back. The 180-bar cooldown of the original code is not reproduced, because on five-minute candles it would silence the strategy for fifteen hours after every trade.
+Two oscillators have to agree on the very same candle. The diagram buys only when RSI drops through 30 while Williams %R drops through -80 at the same time, and sells only when RSI rises through 70 while Williams %R rises through -20. A reading that is simply sitting inside the zone is not enough: the previous candle must still have been outside it, which is why both oscillators are also kept one candle back.
 
 ![schema](schema.svg)
 

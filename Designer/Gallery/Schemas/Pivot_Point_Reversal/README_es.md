@@ -16,7 +16,7 @@ El pivote clásico del parqué se recalcula en cada vela sobre una ventana móvi
 
 - **Entrada en largo**: El mínimo de la vela entra en la zona de S1 (mínimo <= S1 + margen), la vela cierra por encima de su apertura y la posición está plana. La orden de compra abre un largo de un lote.
 - **Entrada en corto**: El máximo de la vela alcanza la zona de R1 (máximo >= R1 - margen), la vela cierra por debajo de su apertura y la posición está plana. La orden de venta abre un corto de un lote.
-- **Salida**: El largo se cierra cuando el cierre queda por encima del pivote y el corto cuando queda por debajo. Ambos bloques de salida trabajan en modo cierre de posición, de modo que no hacen nada si no hay nada que cerrar. El código original no lleva ni stop de pérdidas ni toma de beneficios, y el diagrama lo respeta.
+- **Salida**: El largo se cierra cuando el cierre queda por encima del pivote y el corto cuando queda por debajo. Ambos bloques de salida trabajan en modo cierre de posición, de modo que no hacen nada si no hay nada que cerrar. El diagrama no lleva ni stop de pérdidas ni toma de beneficios.
 
 ## Parámetros
 
@@ -34,7 +34,7 @@ El pivote clásico del parqué se recalcula en cada vela sobre una ventana móvi
 - Tres bloques de fórmula convierten esos cinco números en el pivote, el soporte con margen y la resistencia con margen; el margen es una constante propia y por eso se puede optimizar.
 - Cada entrada es una Y lógica de tres comparaciones: toque del nivel, dirección de la vela y posición plana.
 - Los dos bloques de salida se disparan con una simple comparación del cierre contra el pivote y usan el modo cierre de posición en lugar de un volumen fijo.
-- La estrategia original usa velas de un minuto y calla durante quinientas barras tras cada operación; el diagrama trabaja en cinco minutos, que es lo que admite el histórico incluido, y no tiene esa pausa.
+- El diagrama trabaja con las velas de cinco minutos admitidas por el histórico incluido.
 
 ## Uso
 

@@ -1,7 +1,7 @@
 # Bollinger Zone Breakout Strategy Diagram
 [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-The name says breakout, but the diagram trades the snap back: it waits for a candle whose lower zone has punched through the lower Bollinger band while the market still holds above its EMA 50, and buys that dip. The mirror image sells a spike through the upper band. Every position is given up as soon as price returns to the middle band. The RSI confirmation of the original code (below 45 for longs, above 55 for shorts) is left out here so that the diagram stays readable; it hardly narrows a signal that already demands a candle beyond the band.
+The name says breakout, but the diagram trades the snap back: it waits for a candle whose lower zone has punched through the lower Bollinger band while the market still holds above its EMA 50, and buys that dip. The mirror image sells a spike through the upper band. Every position is given up as soon as price returns to the middle band.
 
 ![schema](schema.svg)
 

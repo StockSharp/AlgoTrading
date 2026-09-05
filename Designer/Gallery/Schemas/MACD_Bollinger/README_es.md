@@ -1,7 +1,7 @@
 # Diagrama de la estrategia MACD con la banda media de Bollinger
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-Dos indicadores muy comunes se reparten el trabajo: el MACD decide de qué lado del mercado estar y la banda media de Bollinger indica cuándo el precio se ha alejado lo suficiente del valor justo como para tomar ese lado barato. Las bandas exteriores no se usan a propósito: la estrategia original compra retrocesos por debajo de la línea media, no rupturas del canal.
+Dos indicadores muy comunes se reparten el trabajo: el MACD decide de qué lado del mercado estar y la banda media de Bollinger indica cuándo el precio se ha alejado lo suficiente del valor justo como para tomar ese lado barato. Las bandas exteriores no se usan a propósito porque el diagrama opera retrocesos por debajo de la línea media, no rupturas de la envolvente.
 
 ![schema](schema.svg)
 
@@ -37,7 +37,6 @@ Dos indicadores muy comunes se reparten el trabajo: el MACD decide de qué lado 
 - Una sola constante de margen y dos bloques de fórmula convierten la banda media en un nivel de compra y otro de venta, de modo que un parámetro expuesto mueve ambos umbrales a la vez.
 - Cada entrada es una Y lógica de tres señales: la comparación del MACD, la de la banda y la posición contrastada con una constante cero.
 - Los dos bloques de salida cuelgan directamente de las comparaciones del MACD y están en modo de cierre; los cuatro bloques de órdenes toman su tamaño de la misma constante de volumen.
-- Simplificaciones deliberadas: el original también suscribe un AverageTrueRange que nunca utiliza, así que no se dibuja bloque de ATR, y bloquea las entradas durante 100 barras tras cada operación, algo que ningún bloque expresa: este diagrama vuelve a entrar en cuanto se repiten las condiciones.
 
 ## Uso
 

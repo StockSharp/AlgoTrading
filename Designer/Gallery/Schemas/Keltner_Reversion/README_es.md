@@ -7,16 +7,16 @@ Un canal de Keltner es una media móvil con una envolvente de volatilidad: la an
 
 ## Resumen de la estrategia
 
-- El canal se monta a mano en vez de usar el indicador KeltnerChannels, porque ese bloque ata la media y el ATR a una única longitud, mientras que el original usa 20 para la EMA y 14 para el ATR.
+- El canal se monta a mano en vez de usar el indicador KeltnerChannels, lo que permite configurar por separado una longitud de 20 para la EMA y de 14 para el ATR.
 - Dos bloques de fórmula construyen las bandas de forma literal: EMA más y menos el ATR por el multiplicador, con el multiplicador expuesto para ensanchar o estrechar el canal sin tocar el diagrama.
 - La línea media es toda la regla de salida: la operación se devuelve en cuanto el precio vuelve al otro lado de la EMA, así que el objetivo se mueve con la media.
-- El original trabaja con velas de un minuto y bloquea la operativa 500 barras tras cada operación, lo que en la práctica también sostiene la posición. El histórico incluido es de cinco minutos, así que el diagrama usa velas de cinco minutos; el bloqueo no se reproduce porque Designer no tiene contador de barras con estado, y por eso opera más a menudo y mantiene menos tiempo.
+- El diagrama trabaja con las velas de cinco minutos suministradas con el histórico incluido.
 
 ## Reglas de entrada y salida
 
 - **Entrada en largo**: El cierre está por debajo de la banda inferior, es decir, más de un ATR por el multiplicador por debajo de la EMA, y la posición está plana. La orden compra el volumen configurado.
 - **Entrada en corto**: El cierre está por encima de la banda superior, es decir, más de un ATR por el multiplicador por encima de la EMA, y la posición está plana. La orden vende el volumen configurado.
-- **Salida**: El largo se cierra cuando el cierre vuelve por encima de la EMA y el corto cuando vuelve por debajo. El original declara un multiplicador de stop que nunca utiliza, así que el diagrama tampoco lleva stop de pérdidas ni toma de beneficios.
+- **Salida**: El largo se cierra cuando el cierre vuelve por encima de la EMA y el corto cuando vuelve por debajo. El diagrama no lleva stop de pérdidas ni toma de beneficios.
 
 ## Parámetros
 

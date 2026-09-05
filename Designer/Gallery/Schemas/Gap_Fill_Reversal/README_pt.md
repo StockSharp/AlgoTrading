@@ -9,8 +9,8 @@ O diagrama mede o salto entre o fechamento de um candle e a abertura do seguinte
 
 - O gap é medido em porcentagem do fechamento anterior, assim o mesmo limiar mantém o significado em qualquer nível de preço.
 - O gap sozinho não é sinal: o candle que abriu longe do fechamento anterior precisa fechar de volta na direção dele, e é esse o corpo de reversão que dá nome à estratégia.
-- A SimpleMovingAverage é a única linha de saída e serve aos dois lados; não há stop nem alvo, exatamente como no código original.
-- O diagrama roda em candles de um minuto, como a estratégia de origem, portanto o gap aqui é a pequena descontinuidade entre dois minutos vizinhos, não um gap de abertura diária.
+- A SimpleMovingAverage é a única linha de saída e serve aos dois lados; não há stop nem alvo.
+- O diagrama roda em candles de um minuto, portanto o gap aqui é a pequena descontinuidade entre dois minutos vizinhos, não um gap de abertura diária.
 
 ## Regras de entrada e saída
 
@@ -32,7 +32,7 @@ O diagrama mede o salto entre o fechamento de um candle e a abertura do seguinte
 - Dois blocos conversores leem a abertura e o fechamento do candle, e um bloco de valor anterior guarda o fechamento do candle precedente.
 - O bloco de fórmula converte a distância entre a abertura e o fechamento anterior em porcentagem, e uma comparação a confronta com a constante de limiar.
 - Outras quatro comparações informam o lado do gap e o lado do corpo; cada E lógico une a condição de gap, a de corpo e a checagem de posição zerada antes do bloco de ordem.
-- O par de saída compara o fechamento com a média móvel e aciona dois blocos de encerramento. A pausa de 500 barras entre operações existente no código não tem equivalente entre os blocos e foi omitida, por isso o diagrama negocia com mais frequência.
+- O par de saída compara o fechamento com a média móvel e aciona dois blocos de encerramento.
 
 ## Uso
 

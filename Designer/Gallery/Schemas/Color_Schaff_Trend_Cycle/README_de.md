@@ -16,7 +16,7 @@ Der Schaff Trend Cycle ist ein Stochastik-Wert über dem MACD-Histogramm; er rea
 
 - **Long-Einstieg**: Auf der Vorkerze lag der Zyklus auf oder unter der oberen Marke und liegt nun darüber, die MACD-Linie ist positiv und die Position ist nicht long. Die Order kauft das Basisvolumen zuzüglich des Positionsbetrags: Ein Short dreht auf Long, aus der Neutralstellung entsteht ein Long.
 - **Short-Einstieg**: Auf der Vorkerze lag der Zyklus auf oder über der unteren Marke und liegt nun darunter, die MACD-Linie ist negativ und die Position ist nicht short. Die Order verkauft das Basisvolumen zuzüglich des Positionsbetrags: Ein Long dreht auf Short, aus der Neutralstellung entsteht ein Short.
-- **Ausstieg**: Einen eigenen Ausstieg oder Schutzorders gibt es nicht, genau wie im Original: Die Position wird nur verlassen, wenn der gegenläufige Marken-Durchbruch kommt und sie dreht.
+- **Ausstieg**: Einen eigenen Ausstieg oder Schutzorders gibt es nicht: Die Position wird nur verlassen, wenn der gegenläufige Marken-Durchbruch kommt und sie dreht.
 
 ## Parameter
 
@@ -36,9 +36,9 @@ Der Schaff Trend Cycle ist ein Stochastik-Wert über dem MACD-Histogramm; er rea
 - Vier Vergleichsbausteine bilden die beiden Durchbrüche: der Vorwert gegen eine Marke und der aktuelle Wert gegen dieselbe Marke, was zusammen heißt, dass die Linie sie auf dieser Kerze überschritten hat.
 - Zwei weitere Vergleiche liefern das Vorzeichen der MACD-Linie, und zwei stellen die Position der gemeinsamen Nullkonstante gegenüber, damit ein Signal eine bestehende Position nicht vergrößert.
 - Jedes logische UND verbindet vier Bedingungen - wo der Zyklus war, wo er ist, das MACD-Vorzeichen und die Position - und löst einen Baustein zur Positionsänderung aus.
-- Ein Formelbaustein berechnet die Drehgröße als Basisvolumen plus Positionsbetrag, sodass eine Marktorder die alte Seite schließt und die neue eröffnet - genau wie das Orderpaar im C#-Code.
-- Zwei Abweichungen vom C#-Original sind erwähnenswert. Das Original trägt den Namen des Schaff Trend Cycle, berechnet an seiner Stelle aber tatsächlich einen RSI über zehn Perioden; dieses Diagramm verwendet den echten Schaff-Trend-Cycle-Indikator, die Signale entsprechen also dem Namen und nicht dem Code.
-- Zudem arbeitet das Original mit Vier-Stunden-Kerzen, von denen der mitgelieferte Monat Historie viel zu wenige enthält; das Diagramm läuft auf Fünf-Minuten-Kerzen.
+- Ein Formelbaustein berechnet die Drehgröße als Basisvolumen plus Positionsbetrag, sodass eine Marktorder die alte Seite schließt und die neue eröffnet.
+- Das Diagramm verwendet den Schaff-Trend-Cycle-Indikator für seine Signale.
+- Es läuft auf Fünf-Minuten-Kerzen, damit der mitgelieferte Monat Historie genügend Bars enthält.
 
 ## Verwendung
 

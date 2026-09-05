@@ -16,7 +16,7 @@ O pivô clássico do pregão é recalculado a cada candle sobre uma janela móve
 
 - **Entrada comprada**: A mínima do candle entra na zona de S1 (mínima <= S1 + folga), o candle fecha acima da sua abertura e a posição está zerada. A ordem de compra abre uma posição comprada de um lote.
 - **Entrada vendida**: A máxima do candle alcança a zona de R1 (máxima >= R1 - folga), o candle fecha abaixo da sua abertura e a posição está zerada. A ordem de venda abre uma posição vendida de um lote.
-- **Saída**: A compra é encerrada quando o fechamento fica acima do pivô e a venda quando fica abaixo. Os dois blocos de saída trabalham em modo de encerramento de posição, portanto não fazem nada quando não há o que encerrar. O código original não tem stop nem alvo, e o diagrama mantém isso.
+- **Saída**: A compra é encerrada quando o fechamento fica acima do pivô e a venda quando fica abaixo. Os dois blocos de saída trabalham em modo de encerramento de posição, portanto não fazem nada quando não há o que encerrar. O diagrama não tem stop nem alvo.
 
 ## Parâmetros
 
@@ -34,7 +34,7 @@ O pivô clássico do pregão é recalculado a cada candle sobre uma janela móve
 - Três blocos de fórmula transformam esses cinco números no pivô, no suporte com folga e na resistência com folga; a folga é uma constante separada e por isso pode ser otimizada.
 - Cada entrada é um E lógico de três comparações: toque no nível, direção do candle e posição zerada.
 - Os dois blocos de saída são acionados por uma comparação simples entre o fechamento e o pivô e usam o modo de encerramento em vez de volume fixo.
-- A estratégia original usa candles de um minuto e fica quinhentas barras em silêncio após cada operação; o diagrama trabalha em cinco minutos, que é o que o histórico incluído oferece, e não tem essa pausa.
+- O diagrama trabalha com os candles de cinco minutos oferecidos pelo histórico incluído.
 
 ## Uso
 

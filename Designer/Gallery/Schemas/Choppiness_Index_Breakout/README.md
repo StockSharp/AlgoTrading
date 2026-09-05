@@ -16,7 +16,7 @@ The Choppiness Index does not say where the market is going, only whether it is 
 
 - **Long entry**: The Choppiness Index is below the trending threshold, the candle closed above the simple moving average and the position is flat. The order buys one lot and opens a long.
 - **Short entry**: The Choppiness Index is below the trending threshold, the candle closed below the simple moving average and the position is flat. The order sells one lot and opens a short.
-- **Exit**: As soon as the Choppiness Index rises above the choppy threshold, the open position is closed: a long by a sell in close mode, a short by a buy in close mode. The original code carries no stop loss and no take profit either. Two things are deliberately different from that code. Its own thresholds are 99 and 99.5, which would leave the entry filter permanently open and the exit condition permanently unreachable, so the diagram uses the canonical 38.2 and 61.8 of the indicator's documentation instead, which is also what the strategy's own README describes. Its pause of five hundred bars between trades is left out as well, because a counter of that kind has no faithful equivalent in blocks.
+- **Exit**: As soon as the Choppiness Index rises above the choppy threshold, the open position is closed: a long by a sell in close mode, a short by a buy in close mode. There is no stop loss and no take profit. The diagram uses the canonical 38.2 and 61.8 thresholds from the indicator documentation.
 
 ## Parameters
 
@@ -27,7 +27,7 @@ The Choppiness Index does not say where the market is going, only whether it is 
 | Trending Threshold | 38.2 | Index value the market has to stay below for an entry to be allowed. |
 | Choppy Threshold | 61.8 | Index value above which the market counts as sideways and the position is closed. |
 | Volume | 1 | Order volume, in lots. |
-| Candles | 00:05:00 | Candle time frame the whole diagram works on; the original uses one-minute candles, this diagram the five-minute candles of the packaged history. |
+| Candles | 00:05:00 | Five-minute candle time frame used by the whole diagram. |
 
 ## Diagram Details
 

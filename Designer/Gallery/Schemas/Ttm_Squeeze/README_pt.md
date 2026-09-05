@@ -16,7 +16,7 @@ Mercados calmos não permanecem calmos. Este diagrama mede a largura das bandas 
 
 - **Entrada comprada**: A largura supera a do candle anterior, esse valor anterior estava no nível de compressão ou abaixo dele, o RSI está acima de 50 e a posição está zerada. A ordem de compra abre uma posição comprada de um lote.
 - **Entrada vendida**: A largura supera a do candle anterior, esse valor anterior estava no nível de compressão ou abaixo dele, o RSI está abaixo de 50 e a posição está zerada. A ordem de venda abre uma posição vendida de um lote.
-- **Saída**: A compra é encerrada quando o fechamento cai abaixo da banda inferior e a venda quando sobe acima da banda superior: o rompimento falhou e foi para o outro lado. As duas saídas usam o modo de encerramento; a estratégia original também não tem stop nem alvo.
+- **Saída**: A compra é encerrada quando o fechamento cai abaixo da banda inferior e a venda quando sobe acima da banda superior: o rompimento falhou e foi para o outro lado. As duas saídas usam o modo de encerramento, sem stop nem alvo.
 
 ## Parâmetros
 
@@ -37,7 +37,7 @@ Mercados calmos não permanecem calmos. Este diagrama mede a largura das bandas 
 - Um bloco de fórmula transforma as três bandas na largura percentual, que alimenta tanto um bloco de média móvel quanto um bloco de valor anterior, permitindo comparar a largura com o seu próprio passado.
 - Uma segunda fórmula multiplica a largura média pelo fator de compressão, e duas comparações produzem os sinais de compressão e de expansão.
 - Cada entrada é um E lógico de quatro condições: expansão, compressão, direção do RSI e posição zerada; os dois blocos de entrada tiram o volume da mesma constante.
-- A estratégia original ainda mantém um mínimo corrente da largura, conta três barras estreitas, filtra a direção com uma EMA(20) e faz pausa de quinze barras após cada operação; o diagrama troca esse mínimo pela média móvel da largura e abre mão do contador, da EMA e da pausa, que nenhum bloco consegue expressar.
+- Uma média móvel da largura das bandas fornece a referência do squeeze. A direção vem do RSI, e nenhum filtro separado de contagem de barras é aplicado.
 
 ## Uso
 

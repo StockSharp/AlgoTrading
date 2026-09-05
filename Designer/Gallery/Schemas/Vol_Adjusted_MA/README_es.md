@@ -9,8 +9,8 @@ El diagrama envuelve una media móvil simple en un canal cuya semianchura equiva
 
 - SimpleMovingAverage traza la línea central y AverageTrueRange decide a qué distancia quedan los bordes, de modo que el canal se adapta a la volatilidad del momento.
 - Dos bloques de fórmula construyen los bordes como SMA + multiplicador * ATR y SMA - multiplicador * ATR a partir de las mismas tres fuentes.
-- Solo se entra desde posición plana y la única salida es que el cierre vuelva a cruzar la línea central; no hay stop ni objetivo, igual que en el original en C#.
-- Dos diferencias con el original: la pausa de 500 barras tras cada operación no se reproduce, por lo que el diagrama opera más a menudo, y la vela de trabajo es de cinco minutos en lugar de uno, que es lo que trae el histórico incluido.
+- Solo se entra desde posición plana y la única salida es que el cierre vuelva a cruzar la línea central; no hay stop ni objetivo.
+- El diagrama trabaja con velas de cinco minutos del histórico incluido y puede operar cada señal válida.
 
 ## Reglas de entrada y salida
 

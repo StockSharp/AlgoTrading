@@ -10,13 +10,13 @@ Dois candles empurram o mercado para baixo, o segundo marcando uma mínima menor
 - Dois blocos de padrão de candles carregam, cada um, uma fórmula de três candles, então a figura inteira é reconhecida em um bloco em vez de uma parede de comparações.
 - A fórmula comprada pede um candle de baixa, depois um candle de baixa com mínima inferior e, em seguida, um candle de alta fechando acima da máxima do candle do meio.
 - A fórmula vendida é o espelho exato: alta, alta com máxima superior e depois baixa fechando abaixo da mínima do candle do meio.
-- A média móvel simples não participa da entrada: é apenas a linha em que a operação é abandonada, exatamente como na estratégia original.
+- A média móvel simples não participa da entrada: é apenas a linha em que a operação é abandonada.
 
 ## Regras de entrada e saída
 
 - **Entrada comprada**: O bloco do padrão de alta informa a reversão de três candles concluída e a posição está zerada. A ordem compra um lote e abre uma compra.
 - **Entrada vendida**: O bloco do padrão de baixa informa a reversão espelhada concluída e a posição está zerada. A ordem vende um lote e abre uma venda.
-- **Saída**: A compra é encerrada quando um candle fecha abaixo da média móvel e a venda quando fecha acima, ambas por blocos de modificação de posição em modo de fechamento, exatamente como no original. O código original não tem stop nem alvo, então o diagrama também não tem. Ficou de fora a pausa de várias centenas de candles que o original mantém após cada operação: um contador de barras só se monta devolvendo um sinal ao próprio diagrama, o que fecharia o grafo em um laço, então aqui todo padrão visto é operado. Por isso a frequência de negócios é bem maior que a do original.
+- **Saída**: A compra é encerrada quando um candle fecha abaixo da média móvel e a venda quando fecha acima, ambas por blocos de modificação de posição em modo de fechamento. O diagrama não tem stop nem alvo e negocia cada padrão válido que detecta.
 
 ## Parâmetros
 
@@ -24,7 +24,7 @@ Dois candles empurram o mercado para baixo, o segundo marcando uma mínima menor
 |---|---|---|
 | SMA Length | 20 | Período de suavização da média móvel simples que encerra as operações. |
 | Volume | 1 | Volume da ordem, em lotes. |
-| Candles | 00:05:00 | Tempo gráfico dos candles com que todo o diagrama trabalha. A estratégia original usa candles de um minuto; aqui são cinco minutos, para casar com o histórico incluído e manter a figura legível. |
+| Candles | 00:05:00 | Tempo gráfico de cinco minutos usado para combinar com o histórico incluído e manter a figura legível. |
 
 ## Detalhes do diagrama
 

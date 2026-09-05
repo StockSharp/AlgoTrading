@@ -7,7 +7,7 @@ Der Williams %R zeigt, wo der letzte Schlusskurs zwischen dem Hoch und dem Tief 
 
 ## Strategieübersicht
 
-- Der Williams %R wird auf abgeschlossenen Kerzen eines einzelnen Instruments berechnet und entspricht vollständig der Hoch-Tief-Formel, die die Originalstrategie von Hand rechnet.
+- Der Williams %R wird auf abgeschlossenen Kerzen eines einzelnen Instruments aus dem höchsten Hoch und tiefsten Tief seines Rückschaufensters berechnet.
 - Zwei Marken teilen die Skala: unter -80 gilt der Markt als überverkauft, über -20 als überkauft.
 - Ein Baustein für den Vorwert hält den Wert der vorangegangenen Kerze fest, sodass jede Marke zweimal geprüft wird und nur die Kerze der Kreuzung ein Signal liefert.
 - Die aktuelle Position geht in beide Entscheidungen ein, sodass keine Order eine bestehende Position vergrößert.
@@ -16,7 +16,7 @@ Der Williams %R zeigt, wo der letzte Schlusskurs zwischen dem Hoch und dem Tief 
 
 - **Long-Einstieg**: Der vorige %R-Wert lag unter der unteren Marke, der aktuelle liegt auf oder über ihr und die Position ist nicht long. Die Order kauft ein Lot: aus der Neutralstellung ein Long-Einstieg, aus einem Short die Rückkehr auf null.
 - **Short-Einstieg**: Der vorige %R-Wert lag über der oberen Marke, der aktuelle liegt auf oder unter ihr und die Position ist nicht short. Die Order verkauft ein Lot: aus der Neutralstellung ein Short-Einstieg, aus einem Long die Rückkehr auf null.
-- **Ausstieg**: Es gibt keinen eigenen Ausstiegsbaustein: Die Gegenkreuzung schickt eine Marktorder desselben Volumens und stellt die Position glatt, genau wie im Original. Dieses pausiert nach jedem Trade zusätzlich fünfzig Kerzen lang; einen Balkenzähler gibt es hier als Baustein nicht, daher trägt die Levelkreuzung diese Aufgabe allein und das Diagramm handelt etwas häufiger als die Vorlage.
+- **Ausstieg**: Es gibt keinen eigenen Ausstiegsbaustein: Die Gegenkreuzung schickt eine Marktorder desselben Volumens und stellt die Position glatt. Die Kreuzungsbedingung verhindert wiederholte Orders, solange der Oszillator innerhalb einer Zone bleibt.
 
 ## Parameter
 

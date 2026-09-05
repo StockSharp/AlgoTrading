@@ -16,7 +16,7 @@ Aqui é o volume que define a direção. A linha de acumulação/distribuição 
 
 - **Entrada comprada**: A linha A/D está acima do seu valor anterior, o candle fecha acima da média móvel simples e a posição está zerada. A ordem compra o volume compartilhado a mercado.
 - **Entrada vendida**: A linha A/D está no seu valor anterior ou abaixo, o candle fecha abaixo da média móvel simples e a posição está zerada. A ordem vende o volume compartilhado a mercado.
-- **Saída**: Só a inclinação encerra a operação, sem condição de preço: a linha recuando fecha uma compra e a linha virando para cima fecha uma venda. Não há stop loss nem take profit, exatamente como na estratégia original.
+- **Saída**: Só a inclinação encerra a operação, sem condição de preço: a linha recuando fecha uma compra e a linha virando para cima fecha uma venda. Não há stop loss nem take profit.
 
 ## Parâmetros
 

@@ -9,14 +9,13 @@ Um cruzamento de média móvel sozinho reage a qualquer tremor do preço. Este d
 
 - Uma SimpleMovingAverage do candle é a linha que o fechamento precisa cruzar, e um único bloco de cruzamento transforma as duas séries em um evento de subida ou descida.
 - O filtro de volume compara o candle com o seu próprio antecessor, e não com uma média: um bloco de valor anterior guarda o volume do candle passado, uma fórmula o multiplica pelo fator e uma comparação confronta o candle novo com o resultado.
-- A entrada só ocorre a partir da posição zerada e com a confirmação de volume; a saída depende apenas do cruzamento inverso, exatamente como no original em C#.
-- O original congela a negociação por 150 barras após cada ordem; aqui não existe bloco contador de barras, então essa pausa foi omitida e o diagrama negocia com mais frequência.
+- A entrada só ocorre a partir da posição zerada e com a confirmação de volume; a saída depende apenas do cruzamento inverso.
 
 ## Regras de entrada e saída
 
 - **Entrada comprada**: O fechamento cruza a média móvel para cima, o volume desse candle supera o volume do anterior multiplicado pelo fator, o volume anterior é maior que zero e a posição está zerada. O bloco de modificação compra a mercado o volume compartilhado.
 - **Entrada vendida**: O fechamento cruza a média móvel para baixo com a mesma confirmação de volume e com a posição zerada. O bloco de modificação vende a mercado o volume compartilhado.
-- **Saída**: A compra é encerrada pelo primeiro cruzamento de baixa e a venda pelo primeiro cruzamento de alta, sem qualquer condição de volume; os dois blocos de encerramento operam em modo de fechamento e só agem quando há algo a encerrar. Nem a estratégia de origem nem este diagrama têm stop loss ou take profit.
+- **Saída**: A compra é encerrada pelo primeiro cruzamento de baixa e a venda pelo primeiro cruzamento de alta, sem qualquer condição de volume; os dois blocos de encerramento operam em modo de fechamento e só agem quando há algo a encerrar. O diagrama não tem stop loss nem take profit.
 
 ## Parâmetros
 

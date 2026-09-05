@@ -16,7 +16,7 @@ El Choppiness Index no dice hacia dónde va el mercado, solo si va a alguna part
 
 - **Entrada en largo**: El Choppiness Index está por debajo del umbral de tendencia, la vela cerró por encima de la media móvil simple y la posición está plana. La orden compra un lote y abre un largo.
 - **Entrada en corto**: El Choppiness Index está por debajo del umbral de tendencia, la vela cerró por debajo de la media móvil simple y la posición está plana. La orden vende un lote y abre un corto.
-- **Salida**: En cuanto el Choppiness Index supera el umbral lateral, la posición abierta se cierra: el largo con una venta en modo cierre y el corto con una compra en modo cierre. El código original tampoco lleva stop loss ni take profit. Dos cosas se apartan a propósito de ese código. Sus umbrales son 99 y 99.5, lo que dejaría el filtro de entrada abierto para siempre y la condición de salida fuera de alcance, así que el diagrama usa los valores canónicos 38.2 y 61.8 de la documentación del indicador, que son además los que describe el propio README de la estrategia. Su pausa de quinientas barras entre operaciones también se omite, porque un contador así no tiene equivalente fiel en bloques.
+- **Salida**: En cuanto el Choppiness Index supera el umbral lateral, la posición abierta se cierra: el largo con una venta en modo cierre y el corto con una compra en modo cierre. No hay stop loss ni take profit. El diagrama utiliza los umbrales canónicos 38.2 y 61.8 de la documentación del indicador.
 
 ## Parámetros
 
@@ -27,7 +27,7 @@ El Choppiness Index no dice hacia dónde va el mercado, solo si va a alguna part
 | Trending Threshold | 38.2 | Valor del índice por debajo del cual se permite entrar. |
 | Choppy Threshold | 61.8 | Valor del índice por encima del cual el mercado se considera lateral y la posición se cierra. |
 | Volume | 1 | Volumen de la orden, en lotes. |
-| Candles | 00:05:00 | Marco temporal de las velas con el que trabaja todo el diagrama; el original usa velas de un minuto y este diagrama las de cinco minutos del histórico incluido. |
+| Candles | 00:05:00 | Marco temporal de cinco minutos usado por todo el diagrama. |
 
 ## Detalles del diagrama
 

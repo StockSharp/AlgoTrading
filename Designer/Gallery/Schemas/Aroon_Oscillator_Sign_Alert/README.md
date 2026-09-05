@@ -1,7 +1,7 @@
 # Aroon Oscillator Sign Alert Strategy Diagram
 [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-The Aroon Oscillator asks which is fresher, the highest high or the lowest low of the last few candles, and answers with a number between -100 and +100. This diagram does not trade the extreme itself, it trades the moment the market leaves it: a reading that climbs back above the down level buys, a reading that falls back below the up level sells. The original strategy runs on four-hour candles; the diagram works on five-minute candles so the packaged one-month history gives it enough bars to trade.
+The Aroon Oscillator asks which is fresher, the highest high or the lowest low of the last few candles, and answers with a number between -100 and +100. This diagram does not trade the extreme itself, it trades the moment the market leaves it: a reading that climbs back above the down level buys, a reading that falls back below the up level sells. The diagram works on five-minute candles so the packaged one-month history gives it enough bars to trade.
 
 ![schema](schema.svg)
 
@@ -16,7 +16,7 @@ The Aroon Oscillator asks which is fresher, the highest high or the lowest low o
 
 - **Long entry**: The previous AroonOscillator reading was at or below the down level, the current one is above it, and the position is not long. The order buys one lot, which opens a long from flat or closes an existing short.
 - **Short entry**: The previous AroonOscillator reading was at or above the up level, the current one is below it, and the position is not short. The order sells one lot, which opens a short from flat or closes an existing long.
-- **Exit**: There is no exit block and no protective stop, just as in the original strategy: the opposite signal flattens the position, because every order carries the same volume.
+- **Exit**: There is no exit block and no protective stop: the opposite signal flattens the position, because every order carries the same volume.
 
 ## Parameters
 
@@ -26,7 +26,7 @@ The Aroon Oscillator asks which is fresher, the highest high or the lowest low o
 | Down Level | -50 | Lower level; the oscillator crossing it upwards is the buy signal. |
 | Up Level | 50 | Upper level; the oscillator crossing it downwards is the sell signal. |
 | Volume | 1 | Order volume, in lots. |
-| Candles | 00:05:00 | Candle time frame the whole diagram works on; the original strategy used four hours. |
+| Candles | 00:05:00 | Five-minute candle time frame used by the whole diagram. |
 
 ## Diagram Details
 

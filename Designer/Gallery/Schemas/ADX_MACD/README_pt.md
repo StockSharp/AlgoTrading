@@ -34,7 +34,6 @@ Dois indicadores clássicos dividem o trabalho: o MACD em relação à sua linha
 - O bloco de candles alimenta os dois indicadores; conversores extraem a linha ADX do índice direcional médio e as linhas MACD e de sinal do indicador MACD.
 - Três comparações produzem as condições de mercado — força da tendência, MACD acima da linha de sinal e MACD abaixo dela — e outras três comparam a posição com zero.
 - Os blocos E de entrada juntam força, direção e posição zerada; os de saída juntam direção com uma posição aberta do lado oposto.
-- A pausa de 100 candles que a estratégia em C# mantém entre operações não pode ser montada com blocos do Designer, por isso este diagrama entra e sai com mais frequência.
 
 ## Uso
 

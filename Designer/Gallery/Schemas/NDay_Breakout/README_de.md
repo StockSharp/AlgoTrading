@@ -15,7 +15,7 @@ Der Turtle-Klassiker auf den Kern reduziert: Die beiden Indikatoren Highest und 
 
 - **Long-Einstieg**: Das Kerzenhoch steigt über den Highest-Wert der Vorkerze und die Position ist nicht long. Die Order kauft das Basisvolumen zuzüglich des Positionsbetrags: Ein Short dreht auf Long, aus der Neutralstellung entsteht ein Long.
 - **Short-Einstieg**: Das Kerzentief fällt unter den Lowest-Wert der Vorkerze, der Long-Ausbruch hat auf derselben Kerze nicht ausgelöst und die Position ist nicht short. Die Order verkauft das Basisvolumen zuzüglich des Positionsbetrags.
-- **Ausstieg**: Kein Stop, kein Ziel, kein eigener Ausstieg: Die Position bleibt bestehen, bis der Gegenausbruch sie dreht — so verhält sich auch der ursprüngliche Code.
+- **Ausstieg**: Kein Stop, kein Ziel, kein eigener Ausstieg: Die Position bleibt bestehen, bis der Gegenausbruch sie dreht.
 
 ## Parameter
 
@@ -29,9 +29,9 @@ Der Turtle-Klassiker auf den Kern reduziert: Die beiden Indikatoren Highest und 
 
 - Der Kerzenbaustein speist beide Indikatoren sowie über zwei Konverter das Hoch und das Tief der aktuellen Kerze.
 - Zwei Bausteine für den Vorwert verzögern die Werte von Highest und Lowest um eine Kerze — darin besteht der ganze Kniff dieser Strategie.
-- Vergleichsbausteine erzeugen die beiden Ausbruchsflaggen, zwei weitere vergleichen die Position mit null; ein logisches NICHT gibt dem Long-Ausbruch Vorrang vor dem Short-Ausbruch, genau wie der else-if-Zweig des Originals.
+- Vergleichsbausteine erzeugen die beiden Ausbruchsflaggen, zwei weitere vergleichen die Position mit null; ein logisches NICHT gibt dem Long-Ausbruch Vorrang vor dem Short-Ausbruch.
 - Ein Formelbaustein berechnet das Drehvolumen als Basisvolumen plus Positionsbetrag und speist beide Bausteine zur Positionsänderung.
-- Das Original deklariert einen gleitenden Durchschnitt und einen Stop-Prozentsatz, die sein eigener Code nie verwendet, und nutzt standardmäßig einen Kanal über 1500 Minutenbars; das Diagramm lässt die toten Parameter weg und verwendet 20 Bars auf dem Fünf-Minuten-Chart, wie es die README der Strategie und ihr Optimierungsbereich nahelegen.
+- Das Diagramm verwendet einen Kanal aus 20 Fünf-Minuten-Bars und stellt nur Parameter bereit, die seine Entscheidungen beeinflussen.
 
 ## Verwendung
 

@@ -16,7 +16,7 @@ O Schaff Trend Cycle é um estocástico calculado sobre o histograma do MACD, po
 
 - **Entrada comprada**: No candle anterior o ciclo estava no nível superior ou abaixo dele e agora está acima, a linha MACD é positiva e a posição não está comprada. A ordem compra o volume base mais o módulo da posição: vira uma venda em compra ou abre uma compra a partir do zero.
 - **Entrada vendida**: No candle anterior o ciclo estava no nível inferior ou acima dele e agora está abaixo, a linha MACD é negativa e a posição não está vendida. A ordem vende o volume base mais o módulo da posição: vira uma compra em venda ou abre uma venda a partir do zero.
-- **Saída**: Não há saída própria nem ordens de proteção, exatamente como na estratégia original: a posição só é abandonada quando chega o rompimento contrário do nível e a inverte.
+- **Saída**: Não há saída própria nem ordens de proteção: a posição só é abandonada quando chega o rompimento contrário do nível e a inverte.
 
 ## Parâmetros
 
@@ -36,9 +36,9 @@ O Schaff Trend Cycle é um estocástico calculado sobre o histograma do MACD, po
 - Quatro blocos de comparação montam os dois rompimentos: o valor anterior contra um nível e o valor atual contra o mesmo nível, o que em conjunto significa que a linha o atravessou neste candle.
 - Outras duas comparações dão o sinal da linha MACD, e duas comparam a posição com a constante zero compartilhada, para que um sinal não aumente uma posição já aberta.
 - Cada E lógico junta quatro condições - onde o ciclo estava, onde está, o sinal do MACD e a posição - e aciona um bloco de modificação de posição.
-- Um bloco de fórmula calcula o tamanho da inversão como volume base mais o módulo da posição, de modo que uma ordem a mercado fecha o lado antigo e abre o novo, correspondendo ao par de ordens enviado pelo código C#.
-- Vale conhecer duas diferenças em relação ao original em C#. O original leva o nome do Schaff Trend Cycle, mas na prática calcula um RSI de dez períodos no lugar dele; este diagrama usa o indicador Schaff Trend Cycle de verdade, então os sinais são os que o nome promete e não os que o código produz.
-- Além disso, o original trabalha em candles de quatro horas, que deixam barras de menos no mês de histórico que acompanha a galeria; o diagrama roda em candles de cinco minutos.
+- Um bloco de fórmula calcula o tamanho da inversão como volume base mais o módulo da posição, de modo que uma ordem a mercado fecha o lado antigo e abre o novo.
+- O diagrama usa o indicador Schaff Trend Cycle para seus sinais.
+- Ele roda em candles de cinco minutos para que o mês de histórico fornecido com a galeria tenha barras suficientes.
 
 ## Uso
 

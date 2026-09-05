@@ -1,7 +1,7 @@
 # Trailing Stop (EMA Crossover) Strategy Diagram
 [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-A short trend diagram whose point is the exit rather than the entry. Two exponential moving averages decide the side, but nothing in the signal path ever closes a trade: the position modify blocks only ever open, and a protection block carries the trade to its take-profit or its stop-loss. The trailing switch of that block is left off, because the original strategy declares a trailing distance and never uses it.
+A short trend diagram whose point is the exit rather than the entry. Two exponential moving averages decide the side, but nothing in the signal path ever closes a trade: the position modify blocks only ever open, and a protection block carries the trade to its take profit or its stop loss. Its trailing switch is off, so both protection distances remain fixed.
 
 ![schema](schema.svg)
 

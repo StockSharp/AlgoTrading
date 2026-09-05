@@ -9,8 +9,8 @@ Williams %R indica dónde queda el cierre dentro del rango de las últimas velas
 
 - El Williams %R de longitud 14 se calcula sobre velas horarias cerradas, que el probador construye a partir del histórico de cinco minutos incluido.
 - La señal es el cruce en sí: la lectura anterior a un lado del nivel y la actual al otro, de modo que una estancia larga dentro de la zona dispara una sola vez.
-- Se trata de la entrada en la zona, la imagen invertida de la lectura clásica que espera a que el oscilador vuelva a salir, y coincide con el modo Direct de la estrategia original.
-- El original incluye además permisos separados para largos y cortos; ambos están activos por defecto, así que el diagrama cablea los dos lados y basta con desconectar una rama para desactivar uno.
+- Se trata de la entrada en la zona, la imagen invertida de la lectura clásica que espera a que el oscilador vuelva a salir, y el diagrama usa esta orientación Direct.
+- Las ramas larga y corta están conectadas; basta con desconectar una de ellas para desactivar ese lado.
 
 ## Reglas de entrada y salida
 
@@ -36,7 +36,7 @@ Williams %R indica dónde queda el cierre dentro del rango de las últimas velas
 - Cuatro bloques de comparación construyen los dos cruces con la lectura anterior y la actual frente a las dos constantes de nivel.
 - Otros dos bloques de comparación contrastan la posición con una constante cero, y cada Y lógica une un cruce con su control de posición.
 - Ambos bloques de modificación envían órdenes a mercado con el volumen de una constante compartida, y sus operaciones alimentan el bloque de protección con el take profit y el stop loss.
-- El original protege con distancias absolutas de precio; el diagrama usa porcentajes del precio de entrada para que las mismas cifras sirvan en cualquier instrumento.
+- El diagrama protege la posición con porcentajes del precio de entrada para que las mismas cifras sigan siendo significativas en cualquier instrumento.
 
 ## Uso
 

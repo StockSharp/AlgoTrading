@@ -11,13 +11,12 @@ Aqui o sistema Ichimoku é usado por inteiro: o par de linhas rápidas dá o sin
 - Dois blocos de fórmula dobram as duas linhas Senkou no topo e no fundo da nuvem, de modo que basta uma comparação por lado para situar o fechamento em relação à nuvem.
 - As entradas só ocorrem a partir do zero, e isso é verificado duas vezes: comparando a posição com zero e pela condição de abertura do próprio bloco de ordem.
 - As saídas são blocos separados: o cruzamento contrário ou um fechamento que volta a cair dentro da nuvem levam a posição de volta ao zero, e os blocos de fechamento tomam o tamanho da posição aberta.
-- O original ignora qualquer sinal por 500 candles após uma execução, o que também atrasa suas saídas; não é possível montar um contador de barras com estes blocos, então essa pausa fica de fora e o diagrama opera com mais frequência que o original.
 
 ## Regras de entrada e saída
 
 - **Entrada comprada**: Tenkan-sen cruza acima de Kijun-sen, o fechamento está acima do topo da nuvem e a posição está zerada. A ordem compra o volume fixo e abre a compra.
 - **Entrada vendida**: Tenkan-sen cruza abaixo de Kijun-sen, o fechamento está abaixo do fundo da nuvem e a posição está zerada. A ordem vende o volume fixo e abre a venda.
-- **Saída**: A compra é encerrada quando Tenkan-sen volta a cruzar abaixo de Kijun-sen ou o fechamento cai abaixo do fundo da nuvem; a venda, na imagem espelhada. A ordem de fechamento é dimensionada pela posição, então o diagrama volta ao zero em vez de inverter, e não há stop nem alvo, como no original.
+- **Saída**: A compra é encerrada quando Tenkan-sen volta a cruzar abaixo de Kijun-sen ou o fechamento cai abaixo do fundo da nuvem; a venda, na imagem espelhada. A ordem de fechamento é dimensionada pela posição, então o diagrama volta ao zero em vez de inverter, e não há stop nem alvo.
 
 ## Parâmetros
 

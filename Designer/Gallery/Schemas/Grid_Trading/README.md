@@ -10,13 +10,13 @@ The diagram turns price into a ladder: the close of every candle is rounded down
 - The close price is discretised by the formula floor(Close / GridStep) * GridStep, which gives the rung the market currently stands on.
 - A previous-value block remembers the rung of the last candle, so the diagram compares rungs instead of raw prices and ignores every move inside one cell of the grid.
 - The order volume is the open position plus the base volume, so a signal against an open position reverses it with a single market order.
-- The original strategy runs on four-hour candles and closes a position at an absolute profit of 2000 price units; here it works on five-minute candles and the target is a percentage of the entry price, which keeps it meaningful on any instrument.
+- The diagram works on five-minute candles and expresses its target as a percentage of the entry price, keeping it meaningful on any instrument.
 
 ## Entry and Exit Rules
 
 - **Long entry**: The new grid rung is above the previous one and the position is not long. The order buys the base volume plus any open short, which turns the position into a long of one base volume.
 - **Short entry**: The new grid rung is below the previous one and the position is not short. The order sells the base volume plus any open long, which turns the position into a short of one base volume.
-- **Exit**: The position protection block closes the position on a take profit of the configured percentage; there is no stop loss, as in the original. Otherwise the position is held until the price crosses into the next grid cell and the opposite signal reverses it.
+- **Exit**: The position protection block closes the position on a take profit of the configured percentage; there is no stop loss. Otherwise the position is held until the price crosses into the next grid cell and the opposite signal reverses it.
 
 ## Parameters
 

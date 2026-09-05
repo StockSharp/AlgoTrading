@@ -9,14 +9,13 @@ Eine Kreuzung des gleitenden Durchschnitts allein reagiert auf jedes Zucken des 
 
 - Ein SimpleMovingAverage der Kerze bildet die Linie, die der Schlusskurs kreuzen muss, und ein einziger Kreuzungsbaustein macht aus den zwei Reihen ein einzelnes Aufwärts- oder Abwärtsereignis.
 - Der Volumenfilter vergleicht die Kerze mit ihrem eigenen Vorgänger und nicht mit einem Durchschnitt: Ein Baustein für den vorherigen Wert hält das Volumen der Vorkerze, eine Formel multipliziert es mit dem Faktor, und ein Vergleich prüft die neue Kerze gegen das Ergebnis.
-- Eingestiegen wird nur aus der Neutralstellung und nur mit Volumenbestätigung; ausgestiegen wird allein bei der Gegenkreuzung, genau wie im C#-Original.
-- Das Original friert nach jeder Order 150 Bars lang den Handel ein; einen Bar-Zähler gibt es hier als Baustein nicht, daher entfällt diese Pause und das Diagramm handelt häufiger.
+- Eingestiegen wird nur aus der Neutralstellung und nur mit Volumenbestätigung; ausgestiegen wird allein bei der Gegenkreuzung.
 
 ## Ein- und Ausstiegsregeln
 
 - **Long-Einstieg**: Der Schlusskurs kreuzt den Durchschnitt nach oben, das Volumen dieser Kerze liegt über dem Volumen der Vorkerze mal Faktor, das vorherige Volumen selbst ist größer als null und die Position ist neutral. Der Baustein kauft das gemeinsame Volumen zum Marktpreis.
 - **Short-Einstieg**: Der Schlusskurs kreuzt den Durchschnitt nach unten, bei derselben Volumenbestätigung und neutraler Position. Der Baustein verkauft das gemeinsame Volumen zum Marktpreis.
-- **Ausstieg**: Ein Long wird von der ersten Abwärtskreuzung geschlossen, ein Short von der ersten Aufwärtskreuzung, ohne jede Volumenbedingung; beide Schließbausteine laufen im Schließmodus und werden nur tätig, wenn es etwas zu schließen gibt. Weder die Ursprungsstrategie noch dieses Diagramm führt Stop-Loss oder Take-Profit.
+- **Ausstieg**: Ein Long wird von der ersten Abwärtskreuzung geschlossen, ein Short von der ersten Aufwärtskreuzung, ohne jede Volumenbedingung; beide Schließbausteine laufen im Schließmodus und werden nur tätig, wenn es etwas zu schließen gibt. Das Diagramm führt weder Stop-Loss noch Take-Profit.
 
 ## Parameter
 

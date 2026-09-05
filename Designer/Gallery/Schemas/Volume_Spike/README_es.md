@@ -7,7 +7,7 @@ Una vela que mueve mucho más volumen que la anterior suele significar que algui
 
 ## Resumen de la estrategia
 
-- El volumen de la vela se compara con el de la vela anterior, no con una media de muchas velas, exactamente como hace el código original.
+- El volumen de la vela se compara con el de la vela anterior, no con una media de muchas velas.
 - La comparación está escrita como una multiplicación y no como una división, de modo que una vela sin volumen no puede romper el diagrama.
 - Una media móvil simple de veinte velas sobre el precio de cierre elige el lado: por encima se compra el pico y por debajo se vende.
 - Las entradas se hacen solo estando plano, y la salida no necesita ni la media ni el pico, únicamente un volumen que ha dejado de crecer.
@@ -16,7 +16,7 @@ Una vela que mueve mucho más volumen que la anterior suele significar que algui
 
 - **Entrada en largo**: El volumen de la vela es al menos el multiplicador por el volumen de la vela anterior, la vela cerró por encima de la media móvil y la posición está plana. La orden compra un lote a mercado.
 - **Entrada en corto**: El volumen de la vela es al menos el multiplicador por el volumen de la vela anterior, la vela cerró por debajo de la media móvil y la posición está plana. La orden vende un lote a mercado.
-- **Salida**: Ambos lados salen en la primera vela cuyo volumen es menor que el de la vela precedente, mediante bloques de modificación de posición en modo cierre. La estrategia original no tiene stop loss ni take profit, y este diagrama tampoco.
+- **Salida**: Ambos lados salen en la primera vela cuyo volumen es menor que el de la vela precedente, mediante bloques de modificación de posición en modo cierre. El diagrama no tiene stop loss ni take profit.
 
 ## Parámetros
 
@@ -32,7 +32,7 @@ Una vela que mueve mucho más volumen que la anterior suele significar que algui
 - El bloque de velas alimenta un conversor de volumen, un conversor del precio de cierre y el bloque de la media móvil; un bloque de valor anterior desplazado una vela entrega el volumen de la vela previa.
 - Una fórmula multiplica ese volumen previo por la constante del multiplicador y un bloque de comparación contrasta el volumen actual con el resultado.
 - Cada Y lógica une el pico, el lado elegido por la media móvil y la comprobación de posición plana, y dispara un bloque de modificación de posición en modo de solo apertura.
-- La comparación de volumen decreciente va directamente a los dos bloques de cierre, que están en modo cierre y por eso no hacen nada mientras el diagrama está plano. El original además pausa quinientas velas tras cada operación y trabaja con velas de un minuto; no existe bloque contador para esa pausa y el histórico incluido es más grueso que un minuto, así que el diagrama usa velas de cinco minutos y opera cada pico.
+- La comparación de volumen decreciente va directamente a los dos bloques de cierre, que están en modo cierre y por eso no hacen nada mientras el diagrama está plano. El diagrama usa velas de cinco minutos del histórico incluido y opera cada pico válido.
 
 ## Uso
 

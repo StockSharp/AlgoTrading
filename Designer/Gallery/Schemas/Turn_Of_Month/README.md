@@ -9,14 +9,13 @@ This diagram trades a calendar effect rather than a price pattern: it carries a 
 
 - A converter reads the day number out of the candle open time, and a small formula turns it into the distance to the nearest month edge: min(day - 1, 31 - day).
 - One threshold defines the whole window: while that distance is at or below it the date counts as the turn of the month, above it the date counts as the middle of the month.
-- The original counts trading days and skips weekends; a diagram has no loop, so calendar days are used instead and the window is symmetric around the month boundary. On a 31-day month it covers the first six and the last six calendar days, on a short month a day or two less.
+- Calendar days define a symmetric window around the month boundary. On a 31-day month it covers the first six and the last six calendar days, and on a short month a day or two less.
 - The strategy is long-only, so the position guard decides between opening and closing, and there is no short branch at all.
-- The 10-bar pause between trades from the original is left out: with a window that lasts several days and entries gated by the position, it changes nothing.
 
 ## Entry and Exit Rules
 
 - **Long entry**: The distance to the month edge is at or below the window and the position is not long. The order buys the fixed volume and opens the long that is meant to be carried across the month boundary.
-- **Short entry**: There is no short entry. The strategy only ever holds a long position or nothing at all, exactly as the original does.
+- **Short entry**: There is no short entry. The strategy only ever holds a long position or nothing at all.
 - **Exit**: The distance to the month edge is greater than the window and the position is long. The closing block sends a market order for the size of the open position, so the diagram is flat through the middle of the month. There is no stop loss and no take profit.
 
 ## Parameters

@@ -14,9 +14,9 @@ El Internal Bar Strength hace una sola pregunta sobre una vela cerrada: ¿en qu�
 
 ## Reglas de entrada y salida
 
-- **Entrada en largo**: No hay entrada en largo. El diagrama solo vende, igual que la estrategia original.
+- **Entrada en largo**: No hay entrada en largo. El diagrama solo vende.
 - **Entrada en corto**: La vela cerró por encima del máximo de la vela anterior, su IBS está en el umbral superior o por encima y la posición no está ya corta. La orden vende un lote y abre un corto.
-- **Salida**: El corto se recompra cuando el IBS de una vela cae al umbral inferior o por debajo, es decir cuando el cierre vuelve a la parte baja de su propio rango; la compra funciona en modo cierre, así que deja la posición en plano en lugar de girarla. El original no tiene stop loss ni take profit y aquí tampoco se añaden. Dos detalles se apartan del código. El original trabaja con velas de cuatro horas, de las que el histórico incluido de un mes solo daría unos cientos, así que el diagrama pasa a velas de cinco minutos. Y el original simplemente omite la vela cuyo máximo iguala al mínimo; aquí la fórmula divide por un rango acotado por debajo a un paso de precio, con lo que esa vela da un IBS de cero y no entra en ninguna de las condiciones. La SimpleMovingAverage que el original crea no se reproduce, porque su valor no interviene allí en ninguna decisión.
+- **Salida**: El corto se recompra cuando el IBS de una vela cae al umbral inferior o por debajo, es decir cuando el cierre vuelve a la parte baja de su propio rango; la compra funciona en modo cierre, así que deja la posición en plano en lugar de girarla. No hay stop loss ni take profit. El diagrama trabaja con velas de cinco minutos, que proporcionan suficientes barras en el histórico incluido de un mes. Su fórmula divide por el rango de la vela acotado por debajo a un paso de precio; por tanto, una vela cuyo máximo iguala al mínimo da un IBS de cero y queda fuera de ambas condiciones.
 
 ## Parámetros
 
@@ -25,7 +25,7 @@ El Internal Bar Strength hace una sola pregunta sobre una vela cerrada: ¿en qu�
 | Upper IBS Threshold | 0.9 | Nivel de IBS en el que, o por encima del cual, se vende la vela de ruptura. |
 | Lower IBS Threshold | 0.3 | Nivel de IBS en el que, o por debajo del cual, se recompra el corto. |
 | Volume | 1 | Volumen de la orden, en lotes. |
-| Candles | 00:05:00 | Marco temporal de las velas con el que trabaja todo el diagrama; el original usa velas de cuatro horas y este diagrama las de cinco minutos del histórico incluido. |
+| Candles | 00:05:00 | Marco temporal de cinco minutos con el que trabaja todo el diagrama. |
 
 ## Detalles del diagrama
 

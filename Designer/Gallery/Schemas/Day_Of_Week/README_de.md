@@ -16,7 +16,7 @@ Der Kalender bestimmt die Richtung, der gleitende Durchschnitt den Zeitpunkt. Zu
 
 - **Long-Einstieg**: Die Kerze fällt in das Fenster des Wochenbeginns, ihr Schluss liegt über dem einfachen gleitenden Durchschnitt und die Position ist neutral. Die Order kauft das gemeinsame Volumen zum Marktpreis.
 - **Short-Einstieg**: Die Kerze fällt in das Fenster des Wochenendes, ihr Schluss liegt unter dem einfachen gleitenden Durchschnitt und die Position ist neutral. Die Order verkauft das gemeinsame Volumen zum Marktpreis.
-- **Ausstieg**: Ein Schluss zurück unter den Durchschnitt schließt einen Long, ein Schluss zurück darüber einen Short, beides über Bausteine zur Positionsänderung im Schließmodus. Da ein Schließbaustein bei neutraler Position nichts tut, bildet das den Kreuzungstest des Originals ohne zusätzliche Bausteine nach. Das Original kennt zwei Zähler, die das Diagramm über Kerzen hinweg nicht halten kann, und beide entfielen: die Pause von dreihundert Balken nach jedem Trade und die Regel, die einen zweiten Einstieg am selben Wochentag verbietet. Ohne sie steigt das Diagramm wieder ein, sobald der Kurs innerhalb desselben Fensters auf die richtige Seite des Durchschnitts zurückkehrt, und handelt daher deutlich häufiger als das Original.
+- **Ausstieg**: Ein Schluss zurück unter den Durchschnitt schließt einen Long, ein Schluss zurück darüber einen Short, beides über Bausteine zur Positionsänderung im Schließmodus. Da ein Schließbaustein bei neutraler Position nichts tut, sind keine zusätzlichen Kreuzungsbausteine nötig. Das Diagramm kann erneut einsteigen, sobald der Kurs innerhalb desselben Wochentagsfensters auf die erforderliche Seite des Durchschnitts zurückkehrt.
 
 ## Parameter
 

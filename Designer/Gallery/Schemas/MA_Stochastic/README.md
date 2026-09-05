@@ -9,7 +9,7 @@ Two blocks decide together: SimpleMovingAverage says which side of the market th
 
 - The close against SimpleMovingAverage sets the direction: above the average only longs are considered, below it only shorts.
 - The entry itself is contrarian - the %K line of the Stochastic has to be in the oversold zone for a long and in the overbought zone for a short, so the diagram buys dips inside an uptrend and sells rallies inside a downtrend.
-- StochasticK is exactly the %K the original strategy computed by hand: 100 * (Close - lowest Low) / (highest High - lowest Low) over the last N candles.
+- StochasticK calculates %K as 100 * (Close - lowest Low) / (highest High - lowest Low) over the last N candles.
 - The same moving average is also the exit line, and there is no stop loss or take profit anywhere in the diagram.
 
 ## Entry and Exit Rules
@@ -34,7 +34,7 @@ Two blocks decide together: SimpleMovingAverage says which side of the market th
 - The candle block feeds three branches: the converter that reads the close, the SimpleMovingAverage and the StochasticK indicator.
 - Two comparisons place the close against the average, two more place %K against the threshold constants, and one compares the position with zero.
 - Each logical AND joins a trend condition, a Stochastic condition and the flat-position check, then triggers a position modify block that opens only from flat.
-- The trend comparisons are reused by the exit: the same signal that allows a short also closes a long, which keeps the diagram small. The bar counter that paused the original strategy for 100 candles after every trade has no block of its own and is left out.
+- The trend comparisons are reused by the exit: the same signal that allows a short also closes a long, which keeps the diagram small.
 
 ## Usage
 

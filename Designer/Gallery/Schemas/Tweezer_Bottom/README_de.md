@@ -16,7 +16,7 @@ Eine Pinzette besteht aus zwei benachbarten Kerzen, die sich auf demselben Nivea
 
 - **Long-Einstieg**: Der Musterbaustein meldet eine fallende Kerze gefolgt von einer steigenden, der Abstand der beiden Tiefs liegt höchstens bei der Toleranz in Prozent des vorigen Tiefs und die Position ist neutral. Die Order kauft das gemeinsame Volumen zum Marktpreis.
 - **Short-Einstieg**: Der Musterbaustein meldet eine steigende Kerze gefolgt von einer fallenden, der Abstand der beiden Hochs liegt höchstens bei der Toleranz in Prozent des vorigen Hochs und die Position ist neutral. Die Order verkauft das gemeinsame Volumen zum Marktpreis.
-- **Ausstieg**: Die erste Kerze, die unter dem gleitenden Durchschnitt schließt, beendet einen Long, die erste darüber einen Short; beide Ausstiege sind Bausteine zur Positionsänderung im Schließmodus und eröffnen nie etwas. Das Original kennt weder Stop-Loss noch Take-Profit, dieses Diagramm ebenso wenig. Zwei Dinge aus dem Original ließen sich mit den vorhandenen Bausteinen nicht abbilden: die Pause von fünfhundert Balken nach jedem Trade, weil kein Baustein einen Zähler über Kerzen hinweg hält, und die Minutenzeiteinheit, die auf die Fünf-Minuten-Kerzen der mitgelieferten Historie skaliert wurde.
+- **Ausstieg**: Die erste Kerze, die unter dem gleitenden Durchschnitt schließt, beendet einen Long, die erste darüber einen Short; beide Ausstiege sind Bausteine zur Positionsänderung im Schließmodus und eröffnen nie etwas. Das Diagramm hat weder Stop-Loss noch Take-Profit und nutzt die Fünf-Minuten-Kerzen der mitgelieferten Historie.
 
 ## Parameter
 

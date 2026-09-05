@@ -16,7 +16,7 @@ O Chande Momentum Oscillator oscila entre -100 e +100 e troca de sinal exatament
 
 - **Entrada comprada**: O oscilador estava abaixo de zero no candle anterior e agora está no nível positivo mínimo ou acima dele, e a posição não está comprada. A ordem compra o volume compartilhado mais o tamanho de uma venda aberta, de modo que uma única ordem a mercado encerra a venda e abre a compra.
 - **Entrada vendida**: O oscilador estava em zero ou acima no candle anterior e agora está no nível negativo mínimo ou abaixo dele, e a posição não está vendida. A ordem vende o volume compartilhado mais o tamanho de uma compra aberta.
-- **Saída**: Não há bloco de saída próprio: a posição é deixada pelo cruzamento contrário do zero, que a inverte, ou pelo bloco de proteção. O original usa take profit absoluto de 2000 e stop loss de 1000 passos de preço; níveis absolutos calibrados para outro instrumento jamais seriam alcançados neste histórico, então aqui eles aparecem como alvo de dois por cento e stop de um por cento, mantendo a proporção de dois para um. O original também faz uma pausa de quatro candles após cada mudança de posição; não existe bloco que guarde um contador de barras entre candles, portanto a pausa foi removida e a verificação de posição sozinha impede uma segunda entrada no mesmo sentido.
+- **Saída**: Não há bloco de saída próprio: a posição é deixada pelo cruzamento contrário do zero, que a inverte, ou pelo bloco de proteção. A proteção usa alvo de dois por cento e stop de um por cento, uma relação risco-retorno de dois para um expressa em percentuais portáteis. A verificação da posição impede uma segunda entrada no mesmo sentido.
 
 ## Parâmetros
 

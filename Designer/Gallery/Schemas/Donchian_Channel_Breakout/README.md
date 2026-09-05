@@ -15,7 +15,7 @@ The oldest trend-following idea there is: the Donchian Channels indicator draws 
 
 - **Long entry**: The candle closes above the upper band of the previous candle and the position is not long. The order buys the base volume plus the absolute position, which reverses a short into a long or opens a long from flat.
 - **Short entry**: The candle closes below the lower band of the previous candle and the position is not short. The order sells the base volume plus the absolute position, which reverses a long into a short or opens a short from flat.
-- **Exit**: There is no stop, no target and no separate exit block: the position is held until the opposite breakout reverses it, exactly as in the original strategy.
+- **Exit**: There is no stop, no target and no separate exit block: the position is held until the opposite breakout reverses it.
 
 ## Parameters
 
@@ -31,7 +31,7 @@ The oldest trend-following idea there is: the Donchian Channels indicator draws 
 - Two converters read the UpperBand and LowerBand values out of the indicator, and two previous-value blocks shift them one candle back.
 - Two comparison blocks test the close against the shifted bands; two more compare the position against zero, and a logical AND joins one of each into an entry signal.
 - A formula block computes the reversal volume as base volume plus the absolute position and feeds both position modify blocks.
-- The original code defaults to a 1000-candle channel on one-minute candles; the diagram uses a 20-candle channel on five-minute candles, the setting the strategy's own README and optimization range describe, so that it actually trades on a month of history.
+- The diagram uses a 20-candle channel on five-minute candles so it can trade on a month of history.
 
 ## Usage
 

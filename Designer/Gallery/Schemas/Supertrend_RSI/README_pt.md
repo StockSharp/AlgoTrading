@@ -10,7 +10,7 @@ Um diagrama seguidor de tendência com um freio de oscilador. O SuperTrend, uma 
 - O SuperTrend é montado com um ATR de dez períodos multiplicado por três, de modo que a linha avança atrás do preço e só vira quando o fechamento a rompe.
 - O RSI funciona como freio e não como sinal de reversão: a entrada é permitida enquanto o oscilador está no lado calmo do nível cinquenta, o que mantém o diagrama fora de movimentos já esticados.
 - As entradas ocorrem somente a partir de posição zerada, tanto pela comparação explícita da posição com zero quanto pela condição de abertura nos blocos de ordem.
-- Toda a saída é delegada a um bloco de proteção com take-profit de dois por cento e stop-loss de um por cento, exatamente o par que a estratégia original aciona.
+- Toda a saída é delegada a um bloco de proteção com take-profit de dois por cento e stop-loss de um por cento.
 
 ## Regras de entrada e saída
 
@@ -25,7 +25,7 @@ Um diagrama seguidor de tendência com um freio de oscilador. O SuperTrend, uma 
 | SuperTrend ATR Period | 10 | Período do ATR dentro do SuperTrend; valores maiores alargam a banda e tornam as viradas mais raras. |
 | SuperTrend Multiplier | 3 | Multiplicador do ATR do SuperTrend, a distância da linha de arrasto em relação ao preço mediano. |
 | RSI Length | 14 | Período de suavização do índice de força relativa. |
-| RSI Midline | 50 | Nível de RSI contra o qual o filtro de entrada é medido; o código original compara com cinquenta e não com os níveis de sobrevenda e sobrecompra que declara. |
+| RSI Midline | 50 | Nível de RSI contra o qual o filtro de entrada é medido. |
 | Take Profit, % | 2 | Distância do take-profit em relação ao preço de entrada, em porcentagem. |
 | Stop Loss, % | 1 | Distância do stop-loss em relação ao preço de entrada, em porcentagem. |
 | Volume | 1 | Volume da ordem, em lotes. |
@@ -38,7 +38,6 @@ Um diagrama seguidor de tendência com um freio de oscilador. O SuperTrend, uma 
 - Uma única constante de cinquenta atende às duas comparações de RSI, de modo que mover a linha média move os dois filtros ao mesmo tempo.
 - Cada E lógico une três condições — tendência, oscilador e posição zerada — e aciona um bloco de modificação de posição que ainda carrega a condição de abertura.
 - Os dois blocos de modificação entregam o próprio negócio ao bloco de proteção, que coloca as ordens de take-profit e stop-loss usando o fechamento do candle corrente como preço.
-- A pausa de cem candles que o código original mantém entre operações não foi reproduzida: entre os blocos disponíveis não há contador de candles, então as entradas voltam assim que a proteção zera a posição.
 
 ## Uso
 

@@ -16,7 +16,7 @@ Eine Engulfing-Kerze sagt, dass die Seite, die die vorherige Bar beherrschte, ge
 
 - **Long-Einstieg**: Der Musterbaustein meldet ein bullisches Engulfing, die Kerze schloss unter dem gleitenden Durchschnitt und es besteht keine Position. Die Order kauft ein Lot und eröffnet einen Long.
 - **Short-Einstieg**: Der Musterbaustein meldet ein bärisches Engulfing, die Kerze schloss über dem gleitenden Durchschnitt und es besteht keine Position. Die Order verkauft ein Lot und eröffnet einen Short.
-- **Ausstieg**: Ein Long wird geschlossen, sobald eine Kerze über dem gleitenden Durchschnitt schließt, ein Short, sobald eine unter ihm schließt, beides über Bausteine zur Positionsänderung im Schließmodus. Die Originalstrategie steigt auf derselben Seite des Durchschnitts aus, auf der sie eingestiegen ist, und hält den Trade dazwischen über eine Pause von mehreren hundert Bars; einen Bar-Zähler gibt es hier als Baustein nicht, deshalb ist die Rückkehr zum Durchschnitt der Ausstieg — die nächstliegende Regel, die weiterhin sinnvoll handelt.
+- **Ausstieg**: Ein Long wird geschlossen, sobald eine Kerze über dem gleitenden Durchschnitt schließt, ein Short, sobald eine unter ihm schließt, beides über Bausteine zur Positionsänderung im Schließmodus. Die Rückkehr zum Durchschnitt lässt der Position Raum, sich vor dem Schließen zu entwickeln.
 
 ## Parameter
 

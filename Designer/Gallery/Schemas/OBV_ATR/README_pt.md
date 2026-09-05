@@ -10,7 +10,7 @@ O On-Balance Volume soma o volume de cada candle de alta e subtrai o de cada can
 - O canal é formado por um bloco Highest e um Lowest de 60 valores, alimentados pelo bloco On-Balance Volume e não pelos candles.
 - Dois blocos de valor anterior guardam o canal do candle precedente, de modo que o rompimento é medido contra uma borda que o valor atual do OBV ainda não deslocou.
 - Como a borda vem do candle anterior, o rompimento é um evento e não um estado: negocia exatamente o candle que empurra o OBV além do extremo antigo.
-- A estratégia original leva ATR no nome, mas seu próprio código nunca usa esse indicador, então o diagrama o deixa de fora e mantém só o que de fato decide uma operação.
+- Apesar do nome da pasta, o diagrama não usa ATR; suas decisões vêm inteiramente do On-Balance Volume e do preço.
 
 ## Regras de entrada e saída
 
@@ -33,7 +33,7 @@ O On-Balance Volume soma o volume de cada candle de alta e subtrai o de cada can
 - O bloco de candles alimenta o bloco On-Balance Volume, cuja saída segue para os blocos Highest e Lowest: um indicador lendo outro indicador.
 - Cada borda do canal passa por um bloco de valor anterior, de modo que a comparação usa a borda do candle anterior ao rompimento.
 - Dois blocos de comparação medem o OBV atual contra essas bordas e outros dois comparam a posição com uma constante zero; cada E lógico une um rompimento à sua verificação de posição.
-- O original mantém um regime de alta ou de baixa que gruda e só negocia quando ele vira; no diagrama a verificação de posição produz a mesma entrada única por movimento, barrando um rompimento repetido no sentido já posicionado.
+- A verificação de posição produz uma única entrada por movimento, barrando um rompimento repetido no sentido em que o diagrama já está posicionado.
 - Os dois blocos de modificação enviam ordens a mercado com o volume de uma constante compartilhada, e seus negócios alimentam o bloco de proteção com o take profit e o stop loss.
 
 ## Uso

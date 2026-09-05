@@ -7,17 +7,16 @@ Aquí se apilan dos ideas. El Momentum, la diferencia entre el cierre actual y e
 
 ## Resumen de la estrategia
 
-- El cruce de la línea cero se escribe con dos comparaciones, el valor actual contra cero y el valor de una vela atrás contra cero, que es exactamente la condición del código original.
+- El cruce de la línea cero se escribe con dos comparaciones: el valor actual contra cero y el valor de una vela atrás contra cero.
 - El filtro de la media móvil separa los dos cruces: el cruce al alza solo compra mientras el cierre está por encima de la media, el cruce a la baja solo vende mientras está por debajo.
 - Pese al nombre de la carpeta, el indicador es Momentum, una diferencia absoluta de precios en puntos, y no una tasa de cambio porcentual.
 - Cada señal invierte la posición: el volumen de la orden es el volumen compartido más el valor absoluto de la posición actual, así que una sola ejecución cierra el lado viejo y abre el nuevo.
-- El original congela la operativa durante 30 velas tras cada ejecución; no existe un bloque contador de barras, así que esa pausa se omite y el diagrama responde a todos los cruces válidos.
 
 ## Reglas de entrada y salida
 
 - **Entrada en largo**: El Momentum estaba en cero o por debajo en la vela anterior, ahora está por encima, el cierre está por encima de la SMA y la posición no es larga. La orden compra a mercado el volumen de vuelta.
 - **Entrada en corto**: El Momentum estaba en cero o por encima en la vela anterior, ahora está por debajo, el cierre está por debajo de la SMA y la posición no es corta. La orden vende a mercado el volumen de vuelta.
-- **Salida**: No hay bloque de salida propio ni stop de protección, igual que en el original: la posición se mantiene hasta que el cruce contrario la invierte con una sola orden.
+- **Salida**: No hay bloque de salida propio ni stop de protección: la posición se mantiene hasta que el cruce contrario la invierte con una sola orden.
 
 ## Parámetros
 

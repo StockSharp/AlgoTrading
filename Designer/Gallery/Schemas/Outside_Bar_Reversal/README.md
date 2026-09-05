@@ -10,13 +10,13 @@ An outside bar is a candle that swallows the whole range of the one before it: a
 - The outside bar is assembled from plain blocks: converters read the high, the low, the open and the close of the finished candle, and two previous-value blocks hold the high and the low of the candle before it.
 - Two comparisons make the shape — the high above the previous high and the low below the previous low — and both must hold at once.
 - Direction comes from the candle's own body, not from a trend filter: closing above the open means buy, closing below it means sell.
-- The simple moving average takes no part in the entry and serves only as the exit line, exactly as in the original strategy.
+- The simple moving average takes no part in the entry and serves only as the exit line.
 
 ## Entry and Exit Rules
 
 - **Long entry**: The candle has taken out both extremes of the previous one, it closed above its own open and the position is flat. The order buys one lot and opens a long.
 - **Short entry**: The candle has taken out both extremes of the previous one, it closed below its own open and the position is flat. The order sells one lot and opens a short.
-- **Exit**: A long is closed once a candle closes below the moving average, a short once a candle closes above it, both through position modify blocks in close mode, exactly as in the original. There is no stop loss and no take profit, because the original code has neither. What is left out is the pause of several hundred candles the original keeps after every trade, entry and exit alike: a bar counter cannot be assembled without feeding a signal back into the diagram, which would close the graph into a loop, so this example acts on every outside bar and therefore trades noticeably more often.
+- **Exit**: A long is closed once a candle closes below the moving average, a short once a candle closes above it, both through position modify blocks in close mode. There is no stop loss and no take profit. The diagram acts on every outside bar while the corresponding position guard allows it.
 
 ## Parameters
 
@@ -24,7 +24,7 @@ An outside bar is a candle that swallows the whole range of the one before it: a
 |---|---|---|
 | SMA Length | 20 | Averaging length of the simple moving average that closes the trades. |
 | Volume | 1 | Order volume, in lots. |
-| Candles | 00:05:00 | Candle time frame the whole diagram works on. The original strategy runs on one-minute candles; five minutes is used here to match the packaged history. |
+| Candles | 00:05:00 | Five-minute candle time frame used to match the packaged history. |
 
 ## Diagram Details
 

@@ -16,7 +16,7 @@ Una vela envolvente indica que el bando que dominaba la barra anterior acaba de 
 
 - **Entrada en largo**: El bloque de patrón informa de una envolvente alcista, la vela cerró por debajo de la media móvil y no hay posición. La orden compra un lote y abre un largo.
 - **Entrada en corto**: El bloque de patrón informa de una envolvente bajista, la vela cerró por encima de la media móvil y no hay posición. La orden vende un lote y abre un corto.
-- **Salida**: El largo se cierra cuando una vela cierra por encima de la media móvil y el corto cuando cierra por debajo, ambos mediante bloques de modificación de posición en modo cierre. La estrategia original sale por el mismo lado de la media por el que entró y sostiene la operación con una pausa de varios cientos de barras; aquí no existe un bloque contador de barras, así que la salida es el regreso a la media, la regla más cercana que sigue operando con sentido.
+- **Salida**: El largo se cierra cuando una vela cierra por encima de la media móvil y el corto cuando cierra por debajo, ambos mediante bloques de modificación de posición en modo cierre. El regreso a la media da a cada posición margen para desarrollarse antes del cierre.
 
 ## Parámetros
 

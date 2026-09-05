@@ -1,18 +1,18 @@
 # Diagrama de la estrategia de cruce del TRIX
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-Aquí el TRIX no es un indicador de catálogo, sino una serie construida dentro del diagrama tal como la construye la estrategia original: una media exponencial triple y su variación relativa de una barra. El disparador es el cruce del cero por la serie rápida, la serie lenta debe moverse en el mismo sentido por encima de un umbral, y un objetivo y un stop porcentuales cierran la operación.
+Aquí el TRIX no es un indicador de catálogo, sino una serie construida dentro del diagrama a partir de una media exponencial triple y su variación relativa de una barra. El disparador es el cruce del cero por la serie rápida, la serie lenta debe moverse en el mismo sentido por encima de un umbral, y un objetivo y un stop porcentuales cierran la operación.
 
 ![schema](schema.svg)
 
 ## Resumen de la estrategia
 
 - La materia prima son dos medias exponenciales triples del precio de cierre, de 9 y 21 barras; sendos bloques de valor anterior guardan cada una una vela atrás.
-- El TRIX lento es un bloque de fórmula: la media menos su valor anterior, dividida por ese mismo valor anterior, que es la variación relativa por barra que el original calcula en código.
+- El TRIX lento es un bloque de fórmula: la media menos su valor anterior, dividida por ese mismo valor anterior, lo que da la variación relativa por barra.
 - El cruce del cero por el TRIX rápido se dibuja como el cruce de la media rápida con su propio valor anterior. Como una media de precios es positiva, el signo de la variación relativa coincide con el de la diferencia, así que el bloque de cruce es un sustituto exacto y ahorra la división.
 - El umbral del TRIX lento es lo que mantiene al diagrama fuera del mercado lateral: el giro de la serie rápida solo se acepta mientras la lenta se mueve más de un 0,05 por ciento por barra en el mismo sentido.
-- El original trabaja con velas de cuatro horas, objetivo de 1500 y stop de 500 en unidades absolutas de precio; el diagrama se reduce a cinco minutos para el histórico de muestra incluido y ambas distancias pasan a ser porcentajes del precio de entrada con la misma proporción de tres a uno.
-- El indicador Trix incorporado se descarta a propósito: es una cadena de tres suavizados sucesivos con un factor de escala, así que sus valores y señales difieren de la media exponencial triple sobre la que está escrita la estrategia.
+- El diagrama usa velas de cinco minutos del histórico de muestra incluido y expresa su objetivo y su stop como porcentajes del precio de entrada con una proporción de tres a uno.
+- El indicador Trix incorporado se descarta a propósito: es una cadena de tres suavizados sucesivos con un factor de escala, así que sus valores y señales difieren de la media exponencial triple usada en este diagrama.
 
 ## Reglas de entrada y salida
 

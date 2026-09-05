@@ -1,7 +1,7 @@
 # Diagrama da estratégia de virada após uma sessão perdedora
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
-A ideia é a virada depois de uma sessão ruim: uma sessão que termina abaixo de onde abriu costuma deixar um repique para a seguinte, então o diagrama espera o mercado se recuperar acima da sua média móvel e compra essa recuperação, fazendo o inverso depois de uma sessão que fechou em alta. Apesar do nome, a estratégia original não contém nenhum filtro por dia da semana, e este diagrama também não.
+A ideia é a virada depois de uma sessão ruim: uma sessão que termina abaixo de onde abriu costuma deixar um repique para a seguinte, então o diagrama espera o mercado se recuperar acima da sua média móvel e compra essa recuperação, fazendo o inverso depois de uma sessão que fechou em alta. Apesar do nome, o diagrama não contém nenhum filtro por dia da semana.
 
 ![schema](schema.svg)
 
@@ -10,13 +10,13 @@ A ideia é a virada depois de uma sessão ruim: uma sessão que termina abaixo d
 - Duas séries de candles trabalham lado a lado: a série de sessão decide para que lado pender e a série de negociação, mais rápida, define o momento da entrada.
 - O veredito da sessão é uma única comparação entre o fechamento do candle de sessão e a sua própria abertura, portanto nada precisa ser lembrado entre candles.
 - A média móvel simples na série de negociação serve de confirmação: depois de uma sessão perdedora só se compra quando o preço já voltou acima da média.
-- Como o veredito chega uma vez por candle de sessão, o E lógico só pode disparar uma vez por sessão, que é exatamente a regra de uma entrada por sessão do original.
+- Como o veredito chega uma vez por candle de sessão, o E lógico só pode disparar uma vez por sessão.
 
 ## Regras de entrada e saída
 
 - **Entrada comprada**: A última sessão fechou abaixo da sua abertura, o candle de negociação fecha acima da média móvel simples e a posição está zerada. A ordem compra o volume compartilhado a mercado.
 - **Entrada vendida**: A última sessão fechou acima da sua abertura, o candle de negociação fecha abaixo da média móvel simples e a posição está zerada. A ordem vende o volume compartilhado a mercado.
-- **Saída**: A saída é pelo lado da média, e não por um alvo: um fechamento de volta abaixo da média encerra uma compra e um fechamento de volta acima encerra uma venda. Não há stop loss nem take profit, exatamente como na estratégia original.
+- **Saída**: A saída é pelo lado da média, e não por um alvo: um fechamento de volta abaixo da média encerra uma compra e um fechamento de volta acima encerra uma venda. Não há stop loss nem take profit.
 
 ## Parâmetros
 

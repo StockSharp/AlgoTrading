@@ -9,7 +9,7 @@ O Money Flow Index pondera cada movimento de preço pelo volume que o acompanha,
 
 - O Money Flow Index de período 14 é calculado sobre candles horários finalizados, que o testador monta a partir do histórico de cinco minutos incluído.
 - Os níveis 30 e 70 são lidos como cruzamentos e não como zonas: apenas o candle que entra em uma zona gera sinal, não os que permanecem dentro dela.
-- A estratégia original tem um seletor Trend capaz de espelhar os dois sinais; o diagrama mantém o modo Direct padrão, de modo que entrar na sobrevenda compra e entrar na sobrecompra vende.
+- O diagrama usa a orientação de sinal Direct: entrar na zona de sobrevenda compra e entrar na zona de sobrecompra vende.
 - A posição atual participa das duas decisões, então o esquema nunca soma uma segunda ordem a uma posição já aberta.
 
 ## Regras de entrada e saída

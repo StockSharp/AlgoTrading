@@ -34,8 +34,8 @@ As entradas são a parte simples: com a posição zerada, um fechamento acima da
 - Duas comparações colocam o fechamento diante da média móvel e outras duas diante da linha móvel, de modo que o mesmo preço é lido uma vez e usado pelas duas metades do diagrama.
 - Três comparações contra uma constante zero transformam a posição em sinalizadores de zerado, comprado e vendido, que liberam entradas e saídas separadamente.
 - Os dois blocos de entrada carregam a condição de abertura e os dois de saída a de encerramento, então um sinal que não combina com a posição atual simplesmente não faz nada.
-- A estratégia original recalcula o nível do stop como o máximo corrente do fechamento menos alguns ATR; essa catraca não se expressa como uma cadeia de blocos, por isso a linha SuperTrend, que funciona do mesmo modo, ocupa seu lugar.
-- Vale conhecer mais duas simplificações: a pausa de quinhentos candles que o original mantém após cada operação não tem bloco equivalente e foi removida, e o diagrama roda em candles de cinco minutos em vez do minuto do código C#, porque esse é o histórico que acompanha a galeria.
+- A linha SuperTrend fornece o nível de saída com catraca baseado em ATR.
+- O diagrama roda nos candles de cinco minutos fornecidos com o histórico da galeria.
 
 ## Uso
 

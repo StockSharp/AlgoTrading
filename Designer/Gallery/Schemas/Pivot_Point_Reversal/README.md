@@ -16,7 +16,7 @@ The classic floor-trader pivot is rebuilt on every candle from a rolling window:
 
 - **Long entry**: The candle low reaches into the S1 zone (low <= S1 + buffer), the candle closes above its open, and the position is flat. The buy order opens a long of one lot.
 - **Short entry**: The candle high reaches into the R1 zone (high >= R1 - buffer), the candle closes below its open, and the position is flat. The sell order opens a short of one lot.
-- **Exit**: A long is closed when the close is above the pivot, a short when the close is below it. Both exit blocks work in close-position mode, so they stay idle when there is nothing to close. The original code has neither a stop-loss nor a take-profit, and the diagram keeps it that way.
+- **Exit**: A long is closed when the close is above the pivot, a short when the close is below it. Both exit blocks work in close-position mode, so they stay idle when there is nothing to close. The diagram has neither a stop loss nor a take profit.
 
 ## Parameters
 
@@ -34,7 +34,7 @@ The classic floor-trader pivot is rebuilt on every candle from a rolling window:
 - Three formula blocks turn those five numbers into the pivot, the buffered support and the buffered resistance; the buffer constant is a separate block, so it can be optimized.
 - Each entry is a logical AND of three comparisons: the level touch, the candle direction and a flat position.
 - The two exit blocks are triggered by a plain comparison of the close against the pivot and use the close-position mode instead of a fixed volume.
-- The original strategy runs on one-minute candles and pauses for five hundred bars after every trade; the diagram works on five-minute candles, which the packaged history supports, and has no such pause.
+- The diagram works on the five-minute candles supported by the packaged history.
 
 ## Usage
 

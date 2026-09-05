@@ -1,7 +1,7 @@
 # Diagrama de la estrategia Trailing Stop (cruce de EMA)
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-Un diagrama de tendencia corto cuyo interés está en la salida y no en la entrada. Dos medias móviles exponenciales eligen el lado, pero la parte de señal nunca cierra una operación: los bloques de modificación de posición solo abren, y es un bloque de protección el que lleva la operación hasta su toma de beneficios o su stop. El interruptor de trailing de ese bloque queda apagado, porque la estrategia original declara una distancia de trailing y no la utiliza.
+Un diagrama de tendencia corto cuyo interés está en la salida y no en la entrada. Dos medias móviles exponenciales eligen el lado, pero la parte de señal nunca cierra una operación: los bloques de modificación de posición solo abren, y es un bloque de protección el que lleva la operación hasta su toma de beneficios o su stop. El interruptor de trailing está apagado, por lo que ambas distancias de protección permanecen fijas.
 
 ![schema](schema.svg)
 

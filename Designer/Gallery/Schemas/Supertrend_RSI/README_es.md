@@ -10,7 +10,7 @@ Un diagrama seguidor de tendencia con un freno de oscilador. SuperTrend, una ban
 - SuperTrend se construye con un ATR de diez periodos multiplicado por tres, de modo que la línea avanza por detrás del precio y solo gira cuando el cierre la atraviesa.
 - El RSI actúa como freno y no como señal de giro: la entrada se permite mientras el oscilador está en el lado tranquilo del nivel cincuenta, lo que mantiene al diagrama fuera de movimientos ya estirados.
 - Las entradas solo se producen desde posición plana, tanto por la comparación explícita de la posición con cero como por la condición de apertura de los bloques de orden.
-- Toda la salida se delega en un bloque de protección con un take-profit del dos por ciento y un stop-loss del uno por ciento, justo el par que arranca la estrategia original.
+- Toda la salida se delega en un bloque de protección con un take-profit del dos por ciento y un stop-loss del uno por ciento.
 
 ## Reglas de entrada y salida
 
@@ -25,7 +25,7 @@ Un diagrama seguidor de tendencia con un freno de oscilador. SuperTrend, una ban
 | SuperTrend ATR Period | 10 | Periodo del ATR dentro de SuperTrend; valores mayores ensanchan la banda y espacian los giros. |
 | SuperTrend Multiplier | 3 | Multiplicador del ATR de SuperTrend, la distancia de la línea de arrastre respecto al precio mediano. |
 | RSI Length | 14 | Periodo de suavizado del índice de fuerza relativa. |
-| RSI Midline | 50 | Nivel del RSI contra el que se mide el filtro de entrada; el código original compara con cincuenta y no con los niveles de sobreventa y sobrecompra que declara. |
+| RSI Midline | 50 | Nivel del RSI contra el que se mide el filtro de entrada. |
 | Take Profit, % | 2 | Distancia del take-profit respecto al precio de entrada, en porcentaje. |
 | Stop Loss, % | 1 | Distancia del stop-loss respecto al precio de entrada, en porcentaje. |
 | Volume | 1 | Volumen de la orden, en lotes. |
@@ -38,7 +38,6 @@ Un diagrama seguidor de tendencia con un freno de oscilador. SuperTrend, una ban
 - Una única constante de cincuenta sirve a las dos comparaciones del RSI, así que mover la línea media mueve los dos filtros a la vez.
 - Cada Y lógica une tres condiciones —tendencia, oscilador y posición plana— y dispara un bloque de modificación de posición que además lleva la condición de apertura.
 - Ambos bloques de modificación entregan su operación al bloque de protección, que coloca las órdenes de take-profit y stop-loss tomando el precio del cierre de la vela en curso.
-- La pausa de cien velas que el código original mantiene entre operaciones no se reproduce: los bloques disponibles no tienen contador de velas, así que las entradas se reanudan en cuanto la protección deja la posición plana.
 
 ## Uso
 

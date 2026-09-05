@@ -16,7 +16,7 @@ A tweezer is a pair of neighbouring candles that turn against each other on the 
 
 - **Long entry**: The pattern block reports a down candle followed by an up candle, the distance between the two lows is at most the tolerance percent of the previous low, and the position is flat. The order buys the shared volume at market.
 - **Short entry**: The pattern block reports an up candle followed by a down candle, the distance between the two highs is at most the tolerance percent of the previous high, and the position is flat. The order sells the shared volume at market.
-- **Exit**: A long is closed by the first candle that closes below the simple moving average, a short by the first candle that closes above it; both exits are position modify blocks in close mode, so they never open anything. The original has no stop loss and no take profit, and neither does this diagram. Two things from the original could not be expressed with the blocks available: the pause of five hundred bars after every trade, because no block keeps a bar counter between candles, and the exact one minute time frame, which was scaled to the five minute candles of the packaged history.
+- **Exit**: A long is closed by the first candle that closes below the simple moving average, a short by the first candle that closes above it; both exits are position modify blocks in close mode, so they never open anything. The diagram has no stop loss and no take profit and uses the five-minute candles of the packaged history.
 
 ## Parameters
 

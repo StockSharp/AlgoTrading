@@ -9,14 +9,13 @@ Este diagrama negocia um efeito de calendário em vez de um padrão de preço: c
 
 - Um conversor extrai o número do dia do horário de abertura do candle, e uma fórmula curta o transforma na distância até a borda de mês mais próxima: min(day - 1, 31 - day).
 - Um único limiar define toda a janela: enquanto a distância for menor ou igual a ele, a data conta como virada do mês; acima dele, como meio do mês.
-- O original conta dias úteis e pula fins de semana; um diagrama não tem laços, então usam-se dias corridos e a janela fica simétrica em torno da fronteira do mês. Num mês de 31 dias ela cobre os seis primeiros e os seis últimos dias, num mês curto um ou dois a menos.
+- Os dias corridos definem uma janela simétrica em torno da fronteira do mês. Num mês de 31 dias ela cobre os seis primeiros e os seis últimos dias, e num mês curto um ou dois a menos.
 - A estratégia é apenas comprada, então a verificação da posição decide entre abrir e fechar, e não existe ramo vendido.
-- A pausa de 10 barras entre operações do original foi omitida: com uma janela de vários dias e a entrada travada pela condição de posição, ela não muda nada.
 
 ## Regras de entrada e saída
 
 - **Entrada comprada**: A distância até a borda do mês é menor ou igual à janela e a posição não está comprada. A ordem compra o volume fixo e abre a compra que deve atravessar a virada do mês.
-- **Entrada vendida**: Não há entrada vendida. A estratégia só mantém uma compra ou fica zerada, exatamente como o original.
+- **Entrada vendida**: Não há entrada vendida. A estratégia só mantém uma compra ou fica zerada.
 - **Saída**: A distância até a borda do mês é maior que a janela e a posição está comprada. O bloco de fechamento envia uma ordem a mercado do tamanho da posição aberta, de modo que o diagrama passa o meio do mês zerado. Não há stop nem alvo.
 
 ## Parâmetros

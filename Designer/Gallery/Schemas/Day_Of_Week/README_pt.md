@@ -16,7 +16,7 @@ O calendário decide a direção e a média móvel decide o momento. No começo 
 
 - **Entrada comprada**: O candle pertence à janela do começo da semana, seu fechamento está acima da média móvel simples e a posição está zerada. A ordem compra o volume compartilhado a mercado.
 - **Entrada vendida**: O candle pertence à janela do fim da semana, seu fechamento está abaixo da média móvel simples e a posição está zerada. A ordem vende o volume compartilhado a mercado.
-- **Saída**: Um fechamento de volta abaixo da média encerra uma compra e um fechamento de volta acima encerra uma venda, ambos por blocos de modificação de posição em modo de fechamento. Como um bloco de fechamento nada faz com a posição já zerada, isso reproduz o teste de cruzamento do original sem blocos extras. O original tem dois contadores que o diagrama não consegue manter entre candles, e os dois foram removidos: a pausa de trezentas barras após cada operação e a regra que proíbe uma segunda entrada no mesmo dia da semana. Sem eles o diagrama entra de novo assim que o preço volta ao lado certo da média dentro da mesma janela, portanto negocia bem mais que o original.
+- **Saída**: Um fechamento de volta abaixo da média encerra uma compra e um fechamento de volta acima encerra uma venda, ambos por blocos de modificação de posição em modo de fechamento. Um bloco de fechamento nada faz com a posição já zerada, por isso não são necessários blocos de cruzamento extras. O diagrama pode entrar de novo assim que o preço volta ao lado exigido da média dentro da mesma janela do dia da semana.
 
 ## Parâmetros
 

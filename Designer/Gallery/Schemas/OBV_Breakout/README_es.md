@@ -1,7 +1,7 @@
 # Diagrama de la estrategia de dirección del OBV con filtro de media móvil
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-El On-Balance Volume suma el volumen de cada vela alcista y resta el de cada vela bajista, de modo que su pendiente indica qué lado está operando. Este diagrama lee solo esa pendiente, vela a vela, y deja que una media móvil simple del precio decida cuándo merece la pena seguirla. El nombre de la estrategia original habla de ruptura, pero su código compara el OBV únicamente con su valor anterior, y el diagrama sigue al código.
+El On-Balance Volume suma el volumen de cada vela alcista y resta el de cada vela bajista, de modo que su pendiente indica qué lado está operando. Este diagrama lee solo esa pendiente, vela a vela, y deja que una media móvil simple del precio decida cuándo merece la pena seguirla. A pesar del nombre de la carpeta, la señal compara el OBV únicamente con su valor en la vela anterior, no con un nivel de ruptura.
 
 ![schema](schema.svg)
 
@@ -15,8 +15,8 @@ El On-Balance Volume suma el volumen de cada vela alcista y resta el de cada vel
 ## Reglas de entrada y salida
 
 - **Entrada en largo**: El On-Balance Volume está por encima de su valor en la vela anterior, la vela cerró por encima de la media móvil y la posición está plana. La orden compra un lote a mercado.
-- **Entrada en corto**: El On-Balance Volume está en su valor anterior o por debajo, la vela cerró por debajo de la media móvil y la posición está plana. La orden vende un lote a mercado. Un OBV sin cambios cuenta aquí como no ascendente, igual que en el código original.
-- **Salida**: Un largo se cierra en la primera vela en la que el OBV deja de subir y un corto en la primera vela en la que vuelve a subir, ambos mediante bloques de modificación de posición en modo cierre. El original tampoco tiene stop loss ni take profit.
+- **Entrada en corto**: El On-Balance Volume está en su valor anterior o por debajo, la vela cerró por debajo de la media móvil y la posición está plana. La orden vende un lote a mercado. Un OBV sin cambios cuenta como no ascendente.
+- **Salida**: Un largo se cierra en la primera vela en la que el OBV deja de subir y un corto en la primera vela en la que vuelve a subir, ambos mediante bloques de modificación de posición en modo cierre. No hay stop loss ni take profit.
 
 ## Parámetros
 
@@ -31,7 +31,7 @@ El On-Balance Volume suma el volumen de cada vela alcista y resta el de cada vel
 - El bloque de velas alimenta el bloque de On-Balance Volume, el de la media móvil y el conversor que lee el precio de cierre; un bloque de valor anterior con desplazamiento de una vela entrega el OBV previo y dos bloques de comparación convierten la pareja en una bandera ascendente y otra no ascendente.
 - Cada Y lógica une la bandera del OBV, la posición del precio respecto a la media y la comprobación de posición plana, y dispara un bloque de modificación de posición en modo de solo apertura.
 - Esas mismas dos banderas del OBV van directamente a los bloques de cierre, que están en modo cierre y por tanto permanecen inactivos mientras el diagrama está plano.
-- La estrategia original trabaja con velas de un minuto y hace una pausa de quinientas velas tras cada operación. El histórico incluido es más grueso que un minuto y el diagrama no tiene contador de barras, así que funciona con velas de cinco minutos y opera cada señal.
+- El diagrama trabaja con velas de cinco minutos del histórico incluido y opera cada señal válida.
 
 ## Uso
 

@@ -10,7 +10,7 @@ Das On-Balance Volume addiert das Volumen jeder steigenden Kerze und zieht das j
 - Den Kanal bilden ein Highest- und ein Lowest-Baustein über 60 Werte, gespeist vom On-Balance-Volume-Baustein und nicht von den Kerzen.
 - Zwei Bausteine für den vorherigen Wert halten den Kanal der vorangegangenen Kerze fest, sodass der Ausbruch gegen eine Grenze gemessen wird, die der aktuelle OBV-Wert noch nicht verschoben hat.
 - Weil die Grenze von der Vorkerze stammt, ist der Ausbruch ein Ereignis und kein Zustand: Es handelt genau die Kerze, die OBV über das alte Extrem hebt.
-- Die ursprüngliche Strategie trägt ATR im Namen, verwendet diesen Indikator im eigenen Code aber nie; das Diagramm lässt ihn deshalb weg und behält nur, was wirklich über einen Trade entscheidet.
+- Trotz des Ordnernamens verwendet das Diagramm keinen ATR; seine Entscheidungen beruhen vollständig auf On-Balance Volume und Kurs.
 
 ## Ein- und Ausstiegsregeln
 
@@ -33,7 +33,7 @@ Das On-Balance Volume addiert das Volumen jeder steigenden Kerze und zieht das j
 - Der Kerzenbaustein speist den On-Balance-Volume-Baustein, dessen Ausgang weiter in den Highest- und den Lowest-Baustein läuft: ein Indikator, der einen anderen Indikator liest.
 - Jede Kanalgrenze läuft durch einen Baustein für den vorherigen Wert, sodass der Vergleich die Grenze der Kerze vor dem Ausbruch benutzt.
 - Zwei Vergleichsbausteine prüfen den aktuellen OBV gegen diese Grenzen, zwei weitere die Position gegen eine Nullkonstante; jedes logische UND verbindet einen Ausbruch mit seiner Positionsprüfung.
-- Das Original hält ein haftendes Bullen- oder Bärenregime und handelt nur beim Wechsel; im Diagramm sorgt die Positionsprüfung für denselben einen Einstieg pro Bewegung, indem sie einen erneuten Ausbruch in die bereits gehaltene Richtung blockiert.
+- Die Positionsprüfung erzeugt einen Einstieg pro Bewegung, indem sie einen erneuten Ausbruch in die bereits gehaltene Richtung blockiert.
 - Beide Bausteine zur Positionsänderung senden Marktorders mit dem Volumen einer gemeinsamen Konstante, und ihre Trades laufen in den Schutzbaustein mit Take-Profit und Stop-Loss.
 
 ## Verwendung

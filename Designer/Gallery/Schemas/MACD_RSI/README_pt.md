@@ -10,7 +10,7 @@ O MACD dá a direção e o RSI dá o momento. Enquanto a linha MACD está acima 
 - O teste de tendência é uma comparação de nível e não um cruzamento: importa de que lado da linha de sinal a linha MACD está agora, de modo que o filtro permanece ativo enquanto a tendência durar.
 - A entrada dentro dessa tendência é propositalmente contrária: o RSI precisa estar esticado contra ela, então o diagrama compra recuos em vez de correr atrás de rompimentos.
 - A saída usa o mesmo par de linhas: a compra é encerrada quando o MACD cai abaixo do sinal e a venda quando ele sobe acima.
-- Não há stop nem alvo no diagrama, exatamente como na estratégia original, em que a virada do MACD é a única saída.
+- Não há stop nem alvo no diagrama; a virada do MACD é a única saída.
 
 ## Regras de entrada e saída
 
@@ -36,7 +36,7 @@ O MACD dá a direção e o RSI dá o momento. Enquanto a linha MACD está acima 
 - Um bloco de indicador contém o MACD com sua linha de sinal; dois conversores retiram dele os valores Macd e Signal, e outro bloco de indicador calcula o índice de força relativa nos mesmos candles.
 - Duas comparações colocam a linha MACD diante da linha de sinal, outras duas colocam o RSI diante das constantes de limiar e uma compara a posição com zero.
 - Cada E lógico une a condição de tendência, a de RSI e a checagem de posição zerada, e então aciona um bloco de modificação que só abre a partir do zero.
-- As comparações de tendência são reaproveitadas como gatilhos de saída, então os dois blocos de encerramento dispensam lógica extra. A pausa de 150 barras entre operações do original não tem equivalente entre os blocos e foi omitida, o que torna as reentradas mais frequentes do que no código.
+- As comparações de tendência são reaproveitadas como gatilhos de saída, então os dois blocos de encerramento dispensam lógica extra.
 
 ## Uso
 

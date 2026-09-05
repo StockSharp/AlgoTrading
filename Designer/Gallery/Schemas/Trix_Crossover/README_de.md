@@ -1,18 +1,18 @@
 # Diagramm der TRIX-Crossover-Strategie
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-TRIX ist hier kein fertiger Indikator, sondern eine im Diagramm gebaute Reihe, genau wie die Originalstrategie sie baut: ein dreifach exponentieller Durchschnitt und seine relative Veränderung pro Bar. Auslöser ist der Nulldurchgang der schnellen Reihe, die langsame muss sich stärker als eine Schwelle in dieselbe Richtung bewegen, und ein prozentuales Ziel samt Stop schließt den Trade.
+TRIX ist hier kein fertiger Indikator, sondern eine im Diagramm aus einem dreifach exponentiellen Durchschnitt und dessen relativer Veränderung pro Bar gebaute Reihe. Auslöser ist der Nulldurchgang der schnellen Reihe, die langsame muss sich stärker als eine Schwelle in dieselbe Richtung bewegen, und ein prozentuales Ziel samt Stop schließt den Trade.
 
 ![schema](schema.svg)
 
 ## Strategieübersicht
 
 - Rohstoff sind zwei dreifach exponentielle Durchschnitte des Schlusskurses über 9 und 21 Bars; je ein Baustein für den Vorwert hält sie eine Kerze zurück.
-- Der langsame TRIX ist ein Formelbaustein: der Durchschnitt minus seinem Vorwert, geteilt durch eben diesen Vorwert - die relative Veränderung pro Bar, die das Original im Code berechnet.
+- Der langsame TRIX ist ein Formelbaustein: der Durchschnitt minus seinem Vorwert, geteilt durch eben diesen Vorwert — das ergibt die relative Veränderung pro Bar.
 - Der Nulldurchgang des schnellen TRIX ist als Kreuzung des schnellen Durchschnitts mit seinem eigenen Vorwert gezeichnet. Da ein Kursdurchschnitt positiv ist, entspricht das Vorzeichen der relativen Veränderung dem der Differenz, der Kreuzungsbaustein ist also ein exakter Ersatz und spart die Division.
 - Die Schwelle auf dem langsamen TRIX hält das Diagramm aus der Seitwärtsphase heraus: Die Wende der schnellen Reihe wird nur angenommen, solange sich die langsame um mehr als 0,05 Prozent je Bar in dieselbe Richtung bewegt.
-- Das Original läuft auf Vier-Stunden-Kerzen mit einem Ziel von 1500 und einem Stop von 500 in absoluten Preiseinheiten; das Diagramm ist auf Fünf-Minuten-Kerzen skaliert, und beide Abstände werden im selben Verhältnis drei zu eins zu Prozentwerten des Einstiegspreises.
-- Der eingebaute Trix-Indikator wird bewusst nicht verwendet: Er ist eine Kette aus drei aufeinanderfolgenden Glättungen mit einem Skalierungsfaktor, seine Werte und Signale unterscheiden sich also vom dreifach exponentiellen Durchschnitt, auf dem die Strategie beruht.
+- Das Diagramm nutzt Fünf-Minuten-Kerzen aus der mitgelieferten Beispielhistorie und drückt Ziel und Stop im Verhältnis drei zu eins als Prozentwerte des Einstiegspreises aus.
+- Der eingebaute Trix-Indikator wird bewusst nicht verwendet: Er ist eine Kette aus drei aufeinanderfolgenden Glättungen mit einem Skalierungsfaktor, seine Werte und Signale unterscheiden sich also vom dreifach exponentiellen Durchschnitt dieses Diagramms.
 
 ## Ein- und Ausstiegsregeln
 

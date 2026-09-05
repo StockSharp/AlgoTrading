@@ -15,7 +15,7 @@ Um diagrama de tendência que se recusa a comprar o rompimento. As duas médias 
 
 - **Entrada comprada**: A EMA rápida está acima da lenta, o fechamento volta para baixo até a EMA rápida e a posição não está comprada. A ordem compra Volume mais o valor absoluto da posição atual: abre uma compra a partir do zero ou vira uma venda diretamente em compra.
 - **Entrada vendida**: A EMA rápida está abaixo da lenta, o fechamento volta para cima até a EMA rápida e a posição não está vendida. A ordem vende Volume mais o valor absoluto da posição atual: abre uma venda a partir do zero ou vira uma compra diretamente em venda.
-- **Saída**: A compra é encerrada quando a EMA rápida cai abaixo da lenta, e a venda quando a rápida sobe acima dela; ambos os blocos de encerramento atuam sobre toda a posição aberta, então um sinal repetido sem posição não faz nada. Não há stop de proteção, exatamente como a estratégia original foi escrita.
+- **Saída**: A compra é encerrada quando a EMA rápida cai abaixo da lenta, e a venda quando a rápida sobe acima dela; ambos os blocos de encerramento atuam sobre toda a posição aberta, então um sinal repetido sem posição não faz nada. Não há stop de proteção.
 
 ## Parâmetros
 

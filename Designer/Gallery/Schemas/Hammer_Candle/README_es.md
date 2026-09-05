@@ -7,7 +7,7 @@ Un martillo es una vela de cuerpo pequeño, sombra inferior larga y prácticamen
 
 ## Resumen de la estrategia
 
-- Dos bloques de patrón de velas llevan exactamente las fórmulas de la estrategia original: cuerpo mayor que cero, una sombra más larga que el doble del cuerpo y la sombra opuesta más corta que la mitad del cuerpo.
+- Dos bloques de patrón de velas definen un cuerpo mayor que cero, una sombra más larga que el doble del cuerpo y la sombra opuesta más corta que la mitad del cuerpo.
 - Los patrones integrados Hammer e Inverted Hammer se descartan a propósito, porque miden las sombras contra la longitud de la vela y no contra el cuerpo.
 - La media móvil simple del precio de cierre parte el gráfico en una mitad barata y otra cara, y es a la vez filtro de entrada y línea de salida.
 - El control de la posición garantiza que un patrón solo se opere estando plano.
@@ -16,7 +16,7 @@ Un martillo es una vela de cuerpo pequeño, sombra inferior larga y prácticamen
 
 - **Entrada en largo**: El bloque de patrón informa de un martillo, la vela cerró por debajo de la media móvil y la posición está plana. La orden compra un lote y abre un largo.
 - **Entrada en corto**: El bloque de patrón informa de un martillo invertido, la vela cerró por encima de la media móvil y la posición está plana. La orden vende un lote y abre un corto.
-- **Salida**: El largo se cierra cuando una vela cierra por encima de la media móvil y el corto cuando cierra por debajo, ambos mediante bloques de modificación de posición en modo cierre. La estrategia original sale por el mismo lado de la media por el que entró y sostiene la operación con una pausa de varios cientos de barras; aquí no hay bloque contador de barras, de modo que copiar esa salida al pie de la letra cerraría cada operación en la vela siguiente. La vuelta a la media es la regla más cercana que aún mantiene la posición un tramo razonable.
+- **Salida**: El largo se cierra cuando una vela cierra por encima de la media móvil y el corto cuando cierra por debajo, ambos mediante bloques de modificación de posición en modo cierre. Volver a la media mantiene la posición durante un tramo útil antes de cerrarla.
 
 ## Parámetros
 

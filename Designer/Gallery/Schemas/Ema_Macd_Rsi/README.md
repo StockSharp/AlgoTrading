@@ -10,13 +10,13 @@ Three independent checks have to agree before this diagram trades. The distance 
 - The trend filter is a level comparison of two exponential averages: nothing is bought while EMA 50 sits below EMA 200, and nothing is sold while it sits above.
 - The entry itself is an event, not a state: only the candle on which the MACD line crosses its signal line can open a trade, so the diagram does not keep firing for as long as the trend holds.
 - The RSI corridor is what makes the combination careful. A long needs RSI above the buy level and still below the upper bound, a short needs RSI below the sell level and still above the lower bound, so exhausted moves are skipped.
-- The original strategy runs on 30-minute candles; the diagram is scaled to five-minute candles to match the packaged sample history. Its pause of ten bars after a trade has no block equivalent and is left out, which makes re-entries somewhat more frequent than in the code.
+- The diagram uses five-minute candles to match the packaged sample history.
 
 ## Entry and Exit Rules
 
 - **Long entry**: EMA 50 is above EMA 200, the MACD line crosses above its signal line, RSI is above the buy level and still below the upper bound, and the position is not already long. The order buys the base volume plus any open short, so a short is reversed into a long by one market order.
 - **Short entry**: EMA 50 is below EMA 200, the MACD line crosses below its signal line, RSI is below the sell level and still above the lower bound, and the position is not already short. The order sells the base volume plus any open long, so a long is reversed into a short by one market order.
-- **Exit**: There is no exit block and no protection, exactly as in the original: the position is held until the mirror signal appears, and that same order closes the old trade and opens the new one.
+- **Exit**: There is no exit block and no protection: the position is held until the mirror signal appears, and that same order closes the old trade and opens the new one.
 
 ## Parameters
 

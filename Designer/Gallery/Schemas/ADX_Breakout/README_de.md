@@ -9,14 +9,14 @@ Die meisten Diagramme vergleichen einen Indikator mit einer festen Marke. Dieses
 
 - Einziger Eingang der ganzen Konstruktion ist die ADX-Linie des Average Directional Index; die Linien +DI und -DI bleiben ungenutzt.
 - Diese Linie speist einen zweiten Indikatorbaustein, einen einfachen gleitenden Durchschnitt über zwanzig Perioden — das Diagramm rechnet also einen Indikator auf einem Indikator.
-- Ein Formelbaustein bildet das Band als Durchschnitt plus Multiplikator mal dem doppelten Betrag des Abstands zwischen ADX und seinem Durchschnitt, genau wie im Originalcode.
+- Ein Formelbaustein bildet das Band als Durchschnitt plus Multiplikator mal dem doppelten Betrag des Abstands zwischen ADX und seinem Durchschnitt.
 - Einstiege drehen eine offene Position mit einer einzigen Order, denn das Ordervolumen ist das gemeinsame Volumen plus die bereits gehaltene Position.
 
 ## Ein- und Ausstiegsregeln
 
 - **Long-Einstieg**: Die ADX-Linie liegt über dem Band, die Kerze schloss über ihrer Eröffnung und die Position ist nicht long. Die Order kauft das gemeinsame Volumen plus die Größe eines offenen Shorts, sodass eine Marktorder den Short schließt und den Long eröffnet.
 - **Short-Einstieg**: Die ADX-Linie liegt über dem Band, die Kerze schloss auf oder unter ihrer Eröffnung und die Position ist nicht short. Die Order verkauft das gemeinsame Volumen plus die Größe eines offenen Longs.
-- **Ausstieg**: Die Position wird geschlossen, sobald die ADX-Linie unter ihren eigenen gleitenden Durchschnitt fällt: ein Long durch einen Verkauf im Schließmodus, ein Short durch einen Kauf im Schließmodus. Darüber hinaus trägt ein Baustein zum Positionsschutz den Zwei-Prozent-Stop des Originals; dessen Take-Profit steht auf null, ist also abgeschaltet, weshalb hier ebenfalls kein Ziel verdrahtet ist. Vor dem Optimieren lohnt ein Hinweis: Solange der Multiplikator unter 0,5 bleibt, ist die Bandbedingung algebraisch dasselbe wie 'ADX über seinem Durchschnitt'. Beim Standardwert 0,1 fügt das Band also nichts hinzu, und das Diagramm liest sich schlicht als ADX, der seinen eigenen Durchschnitt nach oben und nach unten kreuzt. Der Multiplikator bleibt als Konstante erhalten, damit größere Werte sich genau wie im Original verhalten.
+- **Ausstieg**: Die Position wird geschlossen, sobald die ADX-Linie unter ihren eigenen gleitenden Durchschnitt fällt: ein Long durch einen Verkauf im Schließmodus, ein Short durch einen Kauf im Schließmodus. Zusätzlich trägt ein Baustein zum Positionsschutz einen Zwei-Prozent-Stop; der Take-Profit ist abgeschaltet, weshalb kein Ziel verdrahtet ist. Vor dem Optimieren lohnt ein Hinweis: Solange der Multiplikator unter 0,5 bleibt, ist die Bandbedingung algebraisch dasselbe wie 'ADX über seinem Durchschnitt'. Beim Standardwert 0,1 fügt das Band also nichts hinzu, und das Diagramm liest sich schlicht als ADX, der seinen eigenen Durchschnitt nach oben und nach unten kreuzt. Der Multiplikator bleibt als Konstante erhalten, damit größere Werte die Bandbedingung strenger machen können.
 
 ## Parameter
 
@@ -33,7 +33,7 @@ Die meisten Diagramme vergleichen einen Indikator mit einer festen Marke. Dieses
 
 - Der Kerzenbaustein speist den ADX-Indikator und zwei Konverter, die Eröffnung und Schluss der Kerze auslesen.
 - Ein Konverter holt die ADX-Linie aus dem komplexen Indikatorwert und gibt sie sowohl an den Durchschnittsbaustein als auch an die Vergleiche weiter.
-- Ein einziger Formelbaustein berechnet das gesamte Band in einem Ausdruck, sodass die Arithmetik des Originals an einer lesbaren Stelle steht statt in einer Kette kleiner Bausteine.
+- Ein einziger Formelbaustein berechnet das gesamte Band in einem Ausdruck, sodass seine Arithmetik an einer lesbaren Stelle steht statt in einer Kette kleiner Bausteine.
 - Ein zweiter Formelbaustein addiert den Betrag der Position zum gemeinsamen Volumen, und beide Ausstiege werden direkt vom Vergleich 'ADX unter seinem Durchschnitt' ausgelöst, greifen also nur, wenn es etwas zu schließen gibt.
 
 ## Verwendung

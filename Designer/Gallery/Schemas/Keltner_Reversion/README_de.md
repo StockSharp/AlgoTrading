@@ -7,16 +7,16 @@ Ein Keltner-Kanal ist ein gleitender Durchschnitt mit einer Volatilitätshülle:
 
 ## Strategieübersicht
 
-- Der Kanal wird von Hand gebaut statt aus dem fertigen Indikator KeltnerChannels übernommen, denn dieser Baustein bindet Durchschnitt und ATR an eine einzige Länge, während das Original 20 für die EMA und 14 für die ATR verwendet.
+- Der Kanal wird von Hand gebaut statt aus dem fertigen Indikator KeltnerChannels übernommen, damit EMA-Länge 20 und ATR-Länge 14 getrennt eingestellt werden können.
 - Zwei Formelbausteine bilden die Bänder wörtlich ab: EMA plus und minus ATR mal Multiplikator, wobei der Multiplikator als Parameter herausgeführt ist und den Kanal ohne Eingriff ins Diagramm weitet oder verengt.
 - Die Mittellinie ist die gesamte Ausstiegsregel: Der Trade wird zurückgegeben, sobald der Kurs auf die andere Seite der EMA wechselt, das Ziel wandert also mit dem Durchschnitt.
-- Das Original läuft auf Minutenkerzen und sperrt den Handel nach jedem Trade für 500 Bars, was die Position praktisch auch hält. Die mitgelieferte Historie besteht aus Fünf-Minuten-Daten, daher arbeitet das Diagramm auf Fünf-Minuten-Kerzen; die Sperre ist nicht nachgebildet, weil der Designer keinen zustandsbehafteten Bar-Zähler hat, und das Diagramm handelt deshalb häufiger und hält kürzer.
+- Das Diagramm arbeitet auf den Fünf-Minuten-Kerzen der mitgelieferten Historie.
 
 ## Ein- und Ausstiegsregeln
 
 - **Long-Einstieg**: Der Schlusskurs liegt unter dem unteren Band, also mehr als ATR mal Multiplikator unter der EMA, und die Position ist neutral. Die Order kauft das eingestellte Volumen.
 - **Short-Einstieg**: Der Schlusskurs liegt über dem oberen Band, also mehr als ATR mal Multiplikator über der EMA, und die Position ist neutral. Die Order verkauft das eingestellte Volumen.
-- **Ausstieg**: Ein Long wird geschlossen, sobald der Schlusskurs wieder über der EMA steht, ein Short, sobald er wieder darunter liegt. Das Original deklariert einen Stop-Multiplikator, verwendet ihn aber nie, daher hat auch das Diagramm weder Stop-Loss noch Take-Profit.
+- **Ausstieg**: Ein Long wird geschlossen, sobald der Schlusskurs wieder über der EMA steht, ein Short, sobald er wieder darunter liegt. Das Diagramm hat weder Stop-Loss noch Take-Profit.
 
 ## Parameter
 

@@ -7,7 +7,7 @@ Um candle que carrega muito mais volume do que o anterior geralmente significa q
 
 ## Visão geral da estratégia
 
-- O volume do candle é comparado com o volume do candle anterior, e não com uma média de vários candles, exatamente como faz o código original.
+- O volume do candle é comparado com o volume do candle anterior, e não com uma média de vários candles.
 - A comparação está escrita como multiplicação e não como divisão, de modo que um candle sem volume algum não quebra o diagrama.
 - Uma média móvel simples de vinte candles sobre o preço de fechamento escolhe o lado: acima dela o pico é comprado, abaixo dela é vendido.
 - As entradas ocorrem apenas a partir da posição zerada, e a saída não precisa nem da média nem do pico, apenas de um volume que parou de crescer.
@@ -16,7 +16,7 @@ Um candle que carrega muito mais volume do que o anterior geralmente significa q
 
 - **Entrada comprada**: O volume do candle é pelo menos o multiplicador vezes o volume do candle anterior, o candle fechou acima da média móvel e a posição está zerada. A ordem compra um lote a mercado.
 - **Entrada vendida**: O volume do candle é pelo menos o multiplicador vezes o volume do candle anterior, o candle fechou abaixo da média móvel e a posição está zerada. A ordem vende um lote a mercado.
-- **Saída**: Os dois lados saem no primeiro candle cujo volume é menor que o do candle anterior, por blocos de modificação de posição em modo de fechamento. A estratégia original não tem stop loss nem take profit, e este diagrama também não.
+- **Saída**: Os dois lados saem no primeiro candle cujo volume é menor que o do candle anterior, por blocos de modificação de posição em modo de fechamento. O diagrama não tem stop loss nem take profit.
 
 ## Parâmetros
 
@@ -32,7 +32,7 @@ Um candle que carrega muito mais volume do que o anterior geralmente significa q
 - O bloco de candles alimenta um conversor de volume, um conversor do preço de fechamento e o bloco da média móvel; um bloco de valor anterior deslocado em um candle entrega o volume do candle passado.
 - Uma fórmula multiplica esse volume anterior pela constante do multiplicador, e um bloco de comparação confronta o volume atual com o resultado.
 - Cada E lógico une o pico, o lado escolhido pela média móvel e a checagem de posição zerada, e aciona um bloco de modificação de posição no modo somente abertura.
-- A comparação de volume em queda vai direto para os dois blocos de fechamento, que estão em modo de fechamento e por isso nada fazem enquanto o diagrama está zerado. O original ainda faz uma pausa de quinhentos candles após cada operação e trabalha em candles de um minuto; não existe bloco contador para essa pausa e o histórico empacotado é mais grosso que um minuto, então o diagrama roda em candles de cinco minutos e negocia todo pico.
+- A comparação de volume em queda vai direto para os dois blocos de fechamento, que estão em modo de fechamento e por isso nada fazem enquanto o diagrama está zerado. O diagrama usa candles de cinco minutos do histórico empacotado e negocia todo pico válido.
 
 ## Uso
 

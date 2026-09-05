@@ -10,13 +10,13 @@ Ein Keltner-Kanal ist ein exponentieller gleitender Durchschnitt, dessen Ränder
 - KeltnerChannels erzeugt den Kanal in einem Baustein, zwei Konverter holen den oberen und den unteren Rand aus seinem Wert.
 - Bausteine für den vorherigen Wert halten beide Ränder und den Schlusskurs von einem Bar zuvor, sodass der Ausbruch gegen ein Niveau gemessen wird, das der Markt bereits gesehen hat, und nicht gegen einen Rand, der sich mit derselben Kerze verschoben hat.
 - Jede Order trägt das gemeinsame Volumen plus den Betrag der Position, sodass eine einzige Order den Trade dreht statt ihn nur zu verkleinern.
-- Das C#-Original arbeitet mit einem Kanal der Periode 500 und Multiplikator 10 auf Minutenkerzen; das Diagramm nutzt den in dessen README dokumentierten Kanal 20 / 2 auf Fünfminutenkerzen, damit ein Ausbruch auf gewöhnlichen Daten tatsächlich vorkommt.
+- Das Diagramm nutzt einen Kanal der Periode 20 mit Multiplikator 2 auf Fünf-Minuten-Kerzen, damit Ausbrüche auf gewöhnlichen Daten vorkommen.
 
 ## Ein- und Ausstiegsregeln
 
 - **Long-Einstieg**: Der Schlusskurs liegt über dem oberen Band der Vorkerze, während der vorherige Schlusskurs noch darauf oder darunter lag, und die Position ist nicht long. Die Order kauft das Volumen plus den offenen Short und dreht damit auf Long.
 - **Short-Einstieg**: Der Schlusskurs liegt unter dem unteren Band der Vorkerze, während der vorherige Schlusskurs noch darauf oder darüber lag, und die Position ist nicht short. Die Order verkauft das Volumen plus den offenen Long und dreht damit auf Short.
-- **Ausstieg**: Es gibt keinen Ausstiegsbaustein: Der Gegenausbruch dreht die Position, genau wie in der Originalstrategie, die weder Stop-Loss noch Take-Profit kennt.
+- **Ausstieg**: Es gibt keinen Ausstiegsbaustein, Stop-Loss oder Take-Profit: Der Gegenausbruch dreht die Position.
 
 ## Parameter
 

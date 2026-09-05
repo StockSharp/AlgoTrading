@@ -10,13 +10,13 @@ El diagrama convierte el precio en una escalera: el cierre de cada vela se redon
 - El precio de cierre se discretiza con la fórmula floor(Close / GridStep) * GridStep, que da el escalón en el que se encuentra el mercado.
 - Un bloque de valor anterior guarda el escalón de la vela previa, así se comparan escalones y no precios, y todo movimiento dentro de una celda de la rejilla se ignora.
 - El volumen de la orden es la posición abierta más el volumen base, por lo que una señal contraria a la posición la invierte con una sola orden a mercado.
-- La estrategia original trabaja con velas de cuatro horas y cierra con un beneficio absoluto de 2000 unidades de precio; aquí se usan velas de cinco minutos y el objetivo se expresa como porcentaje del precio de entrada, lo que lo hace válido en cualquier instrumento.
+- El diagrama trabaja con velas de cinco minutos y expresa su objetivo como porcentaje del precio de entrada, lo que lo hace válido en cualquier instrumento.
 
 ## Reglas de entrada y salida
 
 - **Entrada en largo**: El nuevo escalón de la rejilla está por encima del anterior y la posición no es larga. La orden compra el volumen base más el corto abierto, y la posición queda larga por un volumen base.
 - **Entrada en corto**: El nuevo escalón de la rejilla está por debajo del anterior y la posición no es corta. La orden vende el volumen base más el largo abierto, y la posición queda corta por un volumen base.
-- **Salida**: El bloque de protección cierra la posición con un take profit del porcentaje configurado; no hay stop loss, igual que en el original. En los demás casos la posición se mantiene hasta que el precio pasa a la siguiente celda y la señal contraria la invierte.
+- **Salida**: El bloque de protección cierra la posición con un take profit del porcentaje configurado; no hay stop loss. En los demás casos la posición se mantiene hasta que el precio pasa a la siguiente celda y la señal contraria la invierte.
 
 ## Parámetros
 

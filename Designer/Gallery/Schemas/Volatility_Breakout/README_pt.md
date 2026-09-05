@@ -33,7 +33,7 @@ Um canal construído à mão: a média móvel simples dá o centro, o Average Tr
 - Uma constante guarda o multiplicador e dois blocos de fórmula calculam as bordas superior e inferior a partir de SMA, do multiplicador e do ATR.
 - Dois blocos de comparação testam o fechamento contra as bordas, outros dois comparam a posição com zero, e cada E lógico junta uma condição de cada tipo em uma entrada.
 - Um bloco de fórmula calcula o volume de inversão como volume base mais o módulo da posição e alimenta os dois blocos de modificação de posição.
-- O original protege a posição com um stop de duas unidades absolutas de preço, calibrado para outro instrumento e que seria atingido de imediato em um preço de cripto; o diagrama usa no lugar um stop de dois por cento, que se comporta como o original pretendia em qualquer instrumento.
+- O diagrama usa um stop de dois por cento, uma distância portátil que permanece significativa em qualquer instrumento.
 
 ## Uso
 

@@ -10,13 +10,13 @@ A Simple Moving Average says which side of the market is worth trading and a Par
 - SimpleMovingAverage is the direction filter; longs are taken only while the close is above it, shorts only while it is below.
 - ParabolicSar supplies the timing, and a single crossing block turns the close crossing that line into one pulse: true for an upward cross, false for a downward one.
 - Entries are guarded by the current position, and the exits use close-position blocks, which act only when there is a position of the right sign to close.
-- Two departures from the C# original: it builds its SAR substitute from a fast EMA and never reads the declared SAR settings, while the diagram uses a real ParabolicSar; and the 20-bar pause between entries is not reproduced.
+- The diagram uses a real ParabolicSar indicator with its declared settings.
 
 ## Entry and Exit Rules
 
 - **Long entry**: The close crosses the ParabolicSar line upwards while it is above the SMA and the position is not long. The modify block buys the shared volume at market.
 - **Short entry**: The close crosses the ParabolicSar line downwards while it is below the SMA and the position is not short. The modify block sells the shared volume at market.
-- **Exit**: A long is closed on the first downward cross of the SAR line and a short on the first upward cross, without asking the moving average; there is no stop loss or take profit, as in the original strategy.
+- **Exit**: A long is closed on the first downward cross of the SAR line and a short on the first upward cross, without asking the moving average; there is no stop loss or take profit.
 
 ## Parameters
 

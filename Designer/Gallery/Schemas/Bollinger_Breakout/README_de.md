@@ -1,7 +1,7 @@
 # Diagramm der Bollinger-Zonen-Ausbruchsstrategie
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-Der Name verspricht einen Ausbruch, gehandelt wird jedoch die Gegenbewegung: Das Diagramm wartet auf eine Kerze, deren untere Zone durch das untere Bollinger-Band gestoßen ist, während der Markt noch über seiner EMA 50 liegt, und kauft diesen Rücksetzer. Spiegelbildlich wird eine Spitze über dem oberen Band verkauft. Die Position wird aufgegeben, sobald der Kurs zum mittleren Band zurückkehrt. Die RSI-Bestätigung des Originalcodes (unter 45 für Long, über 55 für Short) fehlt hier bewusst, damit das Diagramm lesbar bleibt: Sie schränkt ein Signal, das ohnehin eine Kerze jenseits des Bandes verlangt, kaum weiter ein.
+Der Name verspricht einen Ausbruch, gehandelt wird jedoch die Gegenbewegung: Das Diagramm wartet auf eine Kerze, deren untere Zone durch das untere Bollinger-Band gestoßen ist, während der Markt noch über seiner EMA 50 liegt, und kauft diesen Rücksetzer. Spiegelbildlich wird eine Spitze über dem oberen Band verkauft. Die Position wird aufgegeben, sobald der Kurs zum mittleren Band zurückkehrt.
 
 ![schema](schema.svg)
 

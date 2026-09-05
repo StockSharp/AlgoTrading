@@ -7,17 +7,16 @@ Two ideas are stacked here. Momentum, the difference between the current close a
 
 ## Strategy Overview
 
-- Momentum crossing the zero line is spelled out as two comparisons, the current value against zero and the value one candle back against zero, which is exactly the condition the original code writes.
+- Momentum crossing the zero line is spelled out as two comparisons: the current value against zero and the value one candle back against zero.
 - The moving average filter keeps the cross up and the cross down apart: a cross up is only a buy while the close is above the average, a cross down only a sell while it is below.
 - Despite the folder name the indicator is Momentum, an absolute price difference in points, not a percentage rate of change.
 - Every signal reverses the position: the order volume is the shared volume plus the absolute value of the current position, so a single fill closes the old side and opens the new one.
-- The original freezes trading for 30 candles after each fill; there is no bar-counting block, so that pause is left out and the diagram reacts to every qualifying cross.
 
 ## Entry and Exit Rules
 
 - **Long entry**: Momentum was at or below zero on the previous candle, is above zero now, the close is above the SMA and the position is not long. The order buys the reversal volume at market.
 - **Short entry**: Momentum was at or above zero on the previous candle, is below zero now, the close is below the SMA and the position is not short. The order sells the reversal volume at market.
-- **Exit**: There is no separate exit block and no protective stop, exactly as in the original: a position is held until the opposite cross reverses it in one order.
+- **Exit**: There is no separate exit block and no protective stop: a position is held until the opposite cross reverses it in one order.
 
 ## Parameters
 

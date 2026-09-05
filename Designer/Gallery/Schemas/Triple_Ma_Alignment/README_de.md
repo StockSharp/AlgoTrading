@@ -31,10 +31,10 @@ Drei ExponentialMovingAverage-Bausteine sehr unterschiedlicher Länge laufen auf
 ## Diagrammdetails
 
 - Ein Kerzenbaustein versorgt alle drei Indikatorbausteine, sodass die Durchschnitte stets auf denselben abgeschlossenen Kerzen gerechnet werden.
-- Vier Vergleichsbausteine bilden die beiden Zustände: zwei strenge Größer-Vergleiche für den bullischen Stapel, zwei Kleiner-gleich-Vergleiche für den bärischen — genau die Negation aus dem Originalcode.
+- Vier Vergleichsbausteine bilden die beiden Zustände: zwei strenge Größer-Vergleiche für den bullischen Stapel und zwei Kleiner-gleich-Vergleiche für dessen bärische Negation.
 - Jedes logische UND verbindet die beiden Durchschnittsvergleiche mit der gegen eine Nullkonstante geprüften Position und löst einen Baustein zur Positionsänderung aus.
 - Ein Formelbaustein addiert den Positionsbetrag zur Volumenkonstante und speist beide Orderbausteine — dadurch wird aus einem Einstieg ein Dreh.
-- Bewusste Vereinfachungen: Das Original läuft auf Minutenkerzen, dieses Diagramm auf Fünf-Minuten-Kerzen, dieselben Längen decken also den fünffachen Zeitraum ab. Das Original merkt sich zudem, ob die Ausrichtung schon auf der Vorkerze bestand; dieses Merkmal entfällt, weil die Positionsprüfung einen Wiedereinstieg ebenso zuverlässig verhindert. Der deklarierte Zwei-Prozent-Stopp wird im Code nie gesetzt, deshalb ist kein Schutzbaustein gezeichnet.
+- Das Diagramm läuft auf Fünf-Minuten-Kerzen. Seine Positionsprüfung verhindert wiederholte Einstiege, solange die Ausrichtung bestehen bleibt, und es enthält keinen Schutzbaustein.
 
 ## Verwendung
 

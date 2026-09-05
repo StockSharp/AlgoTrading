@@ -10,7 +10,7 @@ Ein Trendfolge-Diagramm mit einem Oszillator als Bremse. SuperTrend, ein ATR-Ban
 - SuperTrend entsteht aus einem ATR über zehn Perioden mal drei, sodass die Linie hinter dem Kurs nachrückt und erst dreht, wenn der Schlusskurs sie durchbricht.
 - RSI dient als Bremse und nicht als Umkehrsignal: Der Einstieg ist erlaubt, solange der Oszillator auf der ruhigen Seite der Fünfzig-Linie steht, was das Diagramm aus bereits gelaufenen Bewegungen heraushält.
 - Eingestiegen wird nur aus der Neutralstellung — sowohl über den expliziten Vergleich der Position mit null als auch über die Eröffnungsbedingung der Orderbausteine.
-- Der gesamte Ausstieg liegt bei einem Schutzbaustein mit zwei Prozent Take-Profit und einem Prozent Stop-Loss, genau dem Paar, das die ursprüngliche Strategie startet.
+- Der gesamte Ausstieg liegt bei einem Schutzbaustein mit zwei Prozent Take-Profit und einem Prozent Stop-Loss.
 
 ## Ein- und Ausstiegsregeln
 
@@ -25,7 +25,7 @@ Ein Trendfolge-Diagramm mit einem Oszillator als Bremse. SuperTrend, ein ATR-Ban
 | SuperTrend ATR Period | 10 | ATR-Periode innerhalb von SuperTrend; größere Werte verbreitern das Band und machen die Wechsel seltener. |
 | SuperTrend Multiplier | 3 | ATR-Multiplikator von SuperTrend, also der Abstand der nachgezogenen Linie vom Medianpreis. |
 | RSI Length | 14 | Glättungsperiode des Relative-Stärke-Index. |
-| RSI Midline | 50 | RSI-Marke, an der der Einstiegsfilter gemessen wird; der Originalcode vergleicht mit fünfzig und nicht mit den deklarierten Marken für überverkauft und überkauft. |
+| RSI Midline | 50 | RSI-Marke, an der der Einstiegsfilter gemessen wird. |
 | Take Profit, % | 2 | Abstand des Take-Profits vom Einstiegskurs in Prozent. |
 | Stop Loss, % | 1 | Abstand des Stop-Loss vom Einstiegskurs in Prozent. |
 | Volume | 1 | Ordervolumen in Lots. |
@@ -38,7 +38,6 @@ Ein Trendfolge-Diagramm mit einem Oszillator als Bremse. SuperTrend, ein ATR-Ban
 - Eine gemeinsame Konstante fünfzig bedient beide RSI-Vergleiche, sodass ein Verschieben der Mittellinie beide Filter zugleich verschiebt.
 - Jedes logische UND verbindet drei Bedingungen — Trend, Oszillator und neutrale Position — und löst einen Baustein zur Positionsänderung aus, der zusätzlich die Eröffnungsbedingung trägt.
 - Beide Bausteine zur Positionsänderung geben ihren eigenen Trade an den Schutzbaustein weiter, der Take-Profit und Stop-Loss platziert und sich am Schlusskurs der laufenden Kerze orientiert.
-- Die Pause von hundert Kerzen, die der Originalcode zwischen den Trades einhält, ist nicht nachgebildet: Unter den verfügbaren Bausteinen gibt es keinen Kerzenzähler, daher wird wieder eingestiegen, sobald der Schutz die Position glattgestellt hat.
 
 ## Verwendung
 

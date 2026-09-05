@@ -9,8 +9,8 @@ Das Diagramm misst den Sprung zwischen dem Schluss einer Kerze und der Eröffnun
 
 - Das Gap wird in Prozent des vorherigen Schlusskurses gemessen, damit dieselbe Schwelle auf jedem Kursniveau dieselbe Bedeutung behält.
 - Ein Gap allein ist kein Signal: Die Kerze, die abseits des vorherigen Schlusskurses eröffnet, muss wieder dorthin zurückschließen - das ist der namensgebende Umkehrkörper.
-- Die SimpleMovingAverage ist die einzige Ausstiegslinie für beide Seiten; Stop-Loss und Take-Profit gibt es nicht, genau wie im Originalcode.
-- Das Diagramm läuft auf Minutenkerzen wie die Vorlage, das Gap ist hier also der kleine Bruch zwischen zwei benachbarten Minuten und keine Übernacht-Kurslücke.
+- Die SimpleMovingAverage ist die einzige Ausstiegslinie für beide Seiten; Stop-Loss und Take-Profit gibt es nicht.
+- Das Diagramm läuft auf Minutenkerzen, das Gap ist hier also der kleine Bruch zwischen zwei benachbarten Minuten und keine Übernacht-Kurslücke.
 
 ## Ein- und Ausstiegsregeln
 
@@ -32,7 +32,7 @@ Das Diagramm misst den Sprung zwischen dem Schluss einer Kerze und der Eröffnun
 - Zwei Konverterbausteine lesen Eröffnung und Schluss der Kerze, ein Baustein für den Vorwert hält den Schluss der Kerze davor.
 - Der Formelbaustein rechnet den Abstand zwischen Eröffnung und vorherigem Schluss in Prozent um, ein Vergleich stellt ihn der Schwellenkonstante gegenüber.
 - Vier weitere Vergleiche liefern die Richtung des Gaps und die Richtung des Kerzenkörpers; jedes logische UND verbindet Gap-Bedingung, Körperbedingung und Nullpositionsprüfung vor dem Orderbaustein.
-- Das Ausstiegspaar vergleicht den Schlusskurs mit dem gleitenden Durchschnitt und steuert zwei Bausteine zum Schließen der Position. Die Pause von 500 Bars zwischen zwei Trades aus dem Code hat keine Entsprechung unter den Bausteinen und entfällt, daher handelt das Diagramm häufiger.
+- Das Ausstiegspaar vergleicht den Schlusskurs mit dem gleitenden Durchschnitt und steuert zwei Bausteine zum Schließen der Position.
 
 ## Verwendung
 

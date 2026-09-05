@@ -9,14 +9,13 @@ A moving average crossing on its own reacts to every twitch of the price. This d
 
 - A SimpleMovingAverage of the candle is the line the close has to cross, and a single crossing block turns the two series into one up-or-down event.
 - The volume filter compares the candle against its own predecessor, not against an average: a previous-value block keeps the volume of the candle before, a formula multiplies it by the factor and a comparison checks the new candle against the result.
-- Entries are taken only from a flat position and only with the volume confirmation; exits are taken on the reverse crossing alone, exactly as the C# original does it.
-- The original freezes trading for 150 bars after every order; a bar counter has no block of its own, so that pause is left out and this diagram trades more often.
+- Entries are taken only from a flat position and only with the volume confirmation; exits are taken on the reverse crossing alone.
 
 ## Entry and Exit Rules
 
 - **Long entry**: The close crosses the moving average upwards, the volume of that candle is above the previous candle's volume multiplied by the factor, the previous volume itself is above zero, and the position is flat. The modify block buys the shared volume at market.
 - **Short entry**: The close crosses the moving average downwards under the same volume confirmation and with a flat position. The modify block sells the shared volume at market.
-- **Exit**: A long is closed by the first downward crossing and a short by the first upward crossing, with no volume condition attached; both closing blocks run in close-position mode, so they act only when there is something to close. Neither the source strategy nor this diagram carries a stop loss or a take profit.
+- **Exit**: A long is closed by the first downward crossing and a short by the first upward crossing, with no volume condition attached; both closing blocks run in close-position mode, so they act only when there is something to close. The diagram carries neither a stop loss nor a take profit.
 
 ## Parameters
 

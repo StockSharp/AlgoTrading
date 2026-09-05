@@ -1,7 +1,7 @@
 # Diagramm der Strategie Trailing Stop (EMA-Kreuzung)
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-Ein kurzes Trenddiagramm, dessen Reiz im Ausstieg und nicht im Einstieg liegt. Zwei exponentielle gleitende Durchschnitte wählen die Seite, doch der Signalpfad schließt nie einen Trade: die Bausteine zur Positionsänderung eröffnen ausschließlich, und ein Schutzbaustein führt den Trade zu seinem Take-Profit oder Stop-Loss. Der Trailing-Schalter dieses Bausteins bleibt aus, denn die Ursprungsstrategie deklariert einen Trailing-Abstand und nutzt ihn nie.
+Ein kurzes Trenddiagramm, dessen Reiz im Ausstieg und nicht im Einstieg liegt. Zwei exponentielle gleitende Durchschnitte wählen die Seite, doch der Signalpfad schließt nie einen Trade: Die Bausteine zur Positionsänderung eröffnen ausschließlich, und ein Schutzbaustein führt den Trade zu seinem Take-Profit oder Stop-Loss. Der Trailing-Schalter dieses Bausteins ist ausgeschaltet, sodass beide Schutzabstände fest bleiben.
 
 ![schema](schema.svg)
 

@@ -33,7 +33,7 @@ A channel built by hand: a simple moving average gives the centre, the Average T
 - A constant holds the multiplier, and two formula blocks compute the upper and the lower edge from SMA, the multiplier and ATR.
 - Two comparison blocks test the close against the edges, two more compare the position against zero, and each logical AND joins one of each into an entry.
 - A formula block computes the reversal volume as base volume plus the absolute position and feeds both position modify blocks.
-- The original protects the position with a stop of two absolute price units, which is calibrated for another instrument and would be hit instantly on a crypto price; the diagram uses a two-percent stop instead, which behaves the way the original intended on any instrument.
+- The diagram uses a two-percent stop, a portable distance that remains meaningful across instruments.
 
 ## Usage
 

@@ -9,8 +9,8 @@ Williams %R zeigt, wo der Schlusskurs innerhalb der Spanne der letzten Kerzen li
 
 - Williams %R mit der Länge 14 wird auf abgeschlossenen Stundenkerzen berechnet, die der Tester aus der mitgelieferten Fünf-Minuten-Historie aufbaut.
 - Das Signal ist die Durchquerung selbst: der vorherige Wert auf der einen Seite des Levels, der aktuelle auf der anderen, sodass ein langer Aufenthalt in der Zone nur einmal auslöst.
-- Das ist der Eintritt in die Zone, das Spiegelbild der klassischen Lesart, die auf den Rückweg des Oszillators wartet, und entspricht dem Direct-Modus der ursprünglichen Strategie.
-- Das Original hat zusätzlich getrennte Freigaben für Long- und Short-Einstiege; beide sind standardmäßig aktiv, deshalb verdrahtet das Diagramm beide Seiten, und eine Seite lässt sich durch Abhängen ihres Zweigs abschalten.
+- Das ist der Eintritt in die Zone, das Spiegelbild der klassischen Lesart, die auf den Rückweg des Oszillators wartet; das Diagramm verwendet damit die direkte Orientierung.
+- Beide Zweige für Long- und Short-Einstiege sind verdrahtet; eine Seite lässt sich durch Abhängen ihres Zweigs abschalten.
 
 ## Ein- und Ausstiegsregeln
 
@@ -36,7 +36,7 @@ Williams %R zeigt, wo der Schlusskurs innerhalb der Spanne der letzten Kerzen li
 - Vier Vergleichsbausteine bilden die beiden Durchquerungen aus vorherigem und aktuellem Wert gegen die beiden Level-Konstanten.
 - Zwei weitere Vergleichsbausteine prüfen die Position gegen eine Nullkonstante, und jedes logische UND verbindet eine Durchquerung mit ihrer Positionsprüfung.
 - Beide Bausteine zur Positionsänderung senden Marktorders mit dem Volumen einer gemeinsamen Konstante, und ihre Trades laufen in den Schutzbaustein mit Take-Profit und Stop-Loss.
-- Das Original sichert mit absoluten Preisabständen ab; das Diagramm verwendet stattdessen Prozente des Einstiegspreises, damit dieselben Zahlen auf jedem Instrument passen.
+- Das Diagramm schützt die Position mit Prozentsätzen des Einstiegspreises, sodass dieselben Werte auf jedem Instrument aussagekräftig bleiben.
 
 ## Verwendung
 

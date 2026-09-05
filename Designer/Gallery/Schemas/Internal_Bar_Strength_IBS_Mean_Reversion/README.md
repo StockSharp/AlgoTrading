@@ -14,9 +14,9 @@ Internal Bar Strength asks a single question about a finished candle: where insi
 
 ## Entry and Exit Rules
 
-- **Long entry**: There is no long entry. The diagram only sells, exactly as the original strategy does.
+- **Long entry**: There is no long entry. The diagram only sells.
 - **Short entry**: The candle closed above the high of the previous candle, its IBS is at or above the upper threshold, and the position is not already short. The order sells one lot and opens a short.
-- **Exit**: The short is bought back when a candle's IBS drops to the lower threshold or below, that is when the close returns to the bottom part of its own range, and the buy runs in close mode so it flattens the position instead of reversing it. The original has neither a stop loss nor a take profit, and neither is added here. Two details differ from the code. The original works on four-hour candles, which would leave only a few hundred bars in the packaged one-month history, so the diagram runs on five-minute candles instead. And the original simply skips a candle whose high equals its low; the formula here divides by the range floored at one price step, which yields an IBS of zero on such a candle and keeps it out of both conditions. The SimpleMovingAverage the original creates is not reproduced, because its value never enters a single decision there.
+- **Exit**: The short is bought back when a candle's IBS drops to the lower threshold or below, that is when the close returns to the bottom part of its own range, and the buy runs in close mode so it flattens the position instead of reversing it. There is neither a stop loss nor a take profit. The diagram runs on five-minute candles, which provide enough bars in the packaged one-month history. Its formula divides by the candle range floored at one price step; a candle whose high equals its low therefore yields an IBS of zero and stays out of both conditions.
 
 ## Parameters
 
@@ -25,7 +25,7 @@ Internal Bar Strength asks a single question about a finished candle: where insi
 | Upper IBS Threshold | 0.9 | IBS level at or above which a breakout candle is sold. |
 | Lower IBS Threshold | 0.3 | IBS level at or below which the short is bought back. |
 | Volume | 1 | Order volume, in lots. |
-| Candles | 00:05:00 | Candle time frame the whole diagram works on; the original uses four-hour candles, this diagram the five-minute candles of the packaged history. |
+| Candles | 00:05:00 | Five-minute candle time frame used by the whole diagram. |
 
 ## Diagram Details
 

@@ -16,7 +16,7 @@ Das Signal ist hier die Volatilität selbst. Die Average True Range wird mit ihr
 
 - **Long-Einstieg**: Die Volatilität weitet sich aus, die Kerze schließt über dem einfachen gleitenden Durchschnitt und die Position ist neutral. Die Order kauft das gemeinsame Volumen zum Markt.
 - **Short-Einstieg**: Die Volatilität weitet sich aus, die Kerze schließt unter dem einfachen gleitenden Durchschnitt und die Position ist neutral. Die Order verkauft das gemeinsame Volumen zum Markt.
-- **Ausstieg**: Die Volatilität verengt sich, das heißt die ATR mal dem Verhältnis fällt unter die vorherige ATR. Die jeweils offene Seite wird vom passenden Schließbaustein zum Markt glattgestellt; einen Stop-Loss oder Take-Profit gibt es nicht, genau wie im Original.
+- **Ausstieg**: Die Volatilität verengt sich, das heißt die ATR mal dem Verhältnis fällt unter die vorherige ATR. Die jeweils offene Seite wird vom passenden Schließbaustein zum Markt glattgestellt; einen Stop-Loss oder Take-Profit gibt es nicht.
 
 ## Parameter
 
@@ -34,8 +34,7 @@ Das Signal ist hier die Volatilität selbst. Die Average True Range wird mit ihr
 - Ein Vorwert-Baustein hält die ATR der vorangegangenen Kerze, und zwei Formelbausteine multiplizieren das Verhältnis hinein: einer baut das Ausweitungsniveau, der andere das Verengungsniveau.
 - Zwei Vergleichsbausteine machen daraus ein Ausweitungs- und ein Verengungskennzeichen, zwei weitere stellen den Schlusskurs dem gleitenden Durchschnitt gegenüber.
 - Jedes logische UND verbindet Volatilität, Richtung und den Vergleich der Position mit null und löst einen der beiden Einstiegsbausteine aus; das Verengungskennzeichen allein löst die beiden Schließbausteine aus, deren Richtung entscheidet, welche Seite sie schließen dürfen.
-- Zwei Dinge aus dem C#-Original fehlen: die Pause von fünfhundert Kerzen nach jedem Trade, für die es keinen passenden Baustein gibt, und die Minutenkerzen, ersetzt durch die Fünf-Minuten-Kerzen der mitgelieferten Historie.
-- Auch der ungenutzte Parameter Lookback des Originals entfällt, weil der Code ihn nie ausliest.
+- Das Diagramm verwendet die mit der Galeriehistorie gelieferten Fünf-Minuten-Kerzen.
 
 ## Verwendung
 

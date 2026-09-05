@@ -1,7 +1,7 @@
 # Diagrama de la estrategia del asesor KDJ
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-Una adaptación del asesor KDJ de MetaTrader. La línea J se reconstruye aquí como la diferencia entre las líneas %K y %D del oscilador estocástico, y esa diferencia decide el lado: se compra cuando pasa a positiva o cuando %K sigue subiendo con la diferencia ya positiva, y se vende en las condiciones simétricas. Dos cosas se adaptan al histórico incluido: las velas de cuatro horas del original pasan a ser de una hora, para que un mes de datos siga dando suficientes barras, y el stop y el objetivo en pips se convierten en distancias porcentuales válidas para cualquier instrumento.
+Un diagrama KDJ en el que la línea J se reconstruye como la diferencia entre las líneas %K y %D del oscilador estocástico. Esa diferencia decide el lado: el diagrama compra cuando pasa a positiva o cuando %K sigue subiendo mientras ya es positiva, y vende en las condiciones simétricas. Las velas de una hora proporcionan suficientes barras en un mes de datos, mientras que las distancias porcentuales de stop y objetivo funcionan con cualquier instrumento.
 
 ![schema](schema.svg)
 
@@ -15,18 +15,18 @@ Una adaptación del asesor KDJ de MetaTrader. La línea J se reconstruye aquí c
 
 - **Entrada en largo**: K - D es positiva y, o bien era negativa en la vela anterior (esta vela es el cruce del cero), o bien %K es mayor que en la vela anterior. La posición debe estar plana; se compra un lote a mercado.
 - **Entrada en corto**: K - D es negativa y, o bien era positiva en la vela anterior (esta vela es el cruce del cero), o bien %K es menor que en la vela anterior. La posición debe estar plana; se vende un lote a mercado.
-- **Salida**: No hay ninguna señal de salida, igual que en el original: el bloque de protección cierra la operación con órdenes a mercado en un objetivo del 2% o un stop del 1%, el equivalente porcentual de las distancias de 450 y 250 pips del código.
+- **Salida**: No hay ninguna señal de salida: el bloque de protección cierra la operación con órdenes a mercado en un objetivo del 2% o un stop del 1%.
 
 ## Parámetros
 
 | Parámetro | Por defecto | Descripción |
 |---|---|---|
-| %K Length (KDJ period) | 30 | Longitud de la línea %K, el periodo KDJ del asesor original. |
+| %K Length (KDJ period) | 30 | Longitud de la línea %K usada como periodo KDJ. |
 | %D Smoothing | 6 | Longitud de suavizado de la línea %D. |
 | Take profit, % | 2 | Distancia del objetivo, en porcentaje del precio de entrada. |
 | Stop loss, % | 1 | Distancia del stop, en porcentaje del precio de entrada. |
 | Volume | 1 | Volumen de la orden, en lotes. |
-| Candles | 01:00:00 | Marco temporal de las velas de todo el diagrama; el original usaba cuatro horas. |
+| Candles | 01:00:00 | Marco temporal de una hora usado por todo el diagrama. |
 
 ## Detalles del diagrama
 

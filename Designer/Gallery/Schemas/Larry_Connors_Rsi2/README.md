@@ -1,7 +1,7 @@
 # Larry Connors RSI-2 Strategy Diagram
 [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-Larry Connors' RSI-2 buys panic and sells euphoria, but only on the side the slower average allows: a two-period RSI marks the extreme, a 50-period SMA decides the direction, and a 5-period SMA times the exit. The original trades four-hour candles; this diagram works on five-minute candles so it matches the packaged intraday history.
+Larry Connors' RSI-2 buys panic and sells euphoria, but only on the side the slower average allows: a two-period RSI marks the extreme, a 50-period SMA decides the direction, and a 5-period SMA times the exit. The diagram works on five-minute candles to match the packaged intraday history.
 
 ![schema](schema.svg)
 
@@ -10,7 +10,7 @@ Larry Connors' RSI-2 buys panic and sells euphoria, but only on the side the slo
 - RSI with a length of two reacts to a single candle, so a reading under 6 or over 95 marks a short burst of selling or buying rather than a lasting condition.
 - The slow SMA is a direction filter: longs are taken only above it and shorts only below it, which keeps the diagram on the side of the larger move.
 - A position is opened only from flat, and the fast SMA closes it as soon as price steps back over that average, so trades usually live one or two candles.
-- A protection block adds a percentage stop and target in place of the pip-based stop and target of the original, which cannot be computed from the price step inside a diagram.
+- A protection block adds a percentage stop and target, keeping the distances portable across instruments.
 
 ## Entry and Exit Rules
 

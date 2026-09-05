@@ -16,7 +16,7 @@ An engulfing candle says that the side which controlled the previous bar has jus
 
 - **Long entry**: The candle pattern block reports a bullish engulfing, the candle closed below the moving average and the position is flat. The order buys one lot and opens a long.
 - **Short entry**: The candle pattern block reports a bearish engulfing, the candle closed above the moving average and the position is flat. The order sells one lot and opens a short.
-- **Exit**: A long is closed once a candle closes above the moving average, a short once a candle closes below it, both through position modify blocks in close mode. The original strategy instead exits on the same side of the average it entered on and relies on a pause of several hundred bars to hold the trade in between; a bar counter has no block of its own here, so the exit is the return to the average, which is the closest rule that still trades sensibly.
+- **Exit**: A long is closed once a candle closes above the moving average, a short once a candle closes below it, both through position modify blocks in close mode. The return to the average gives each position room to develop before it is closed.
 
 ## Parameters
 

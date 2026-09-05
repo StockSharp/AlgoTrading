@@ -16,7 +16,7 @@ Unas pinzas son dos velas contiguas que se dan la vuelta una contra otra en el m
 
 - **Entrada en largo**: El bloque de patrón informa de una vela bajista seguida de una alcista, la distancia entre los dos mínimos no supera el porcentaje de tolerancia del mínimo anterior y la posición está plana. La orden compra el volumen compartido a mercado.
 - **Entrada en corto**: El bloque de patrón informa de una vela alcista seguida de una bajista, la distancia entre los dos máximos no supera el porcentaje de tolerancia del máximo anterior y la posición está plana. La orden vende el volumen compartido a mercado.
-- **Salida**: La primera vela que cierra por debajo de la media móvil simple cierra un largo, y la primera que cierra por encima cierra un corto; ambas salidas son bloques de modificación de posición en modo cierre y nunca abren nada. El original no tiene stop loss ni take profit, y este diagrama tampoco. Dos cosas del original no se pudieron expresar con los bloques disponibles: la pausa de quinientas barras después de cada operación, porque ningún bloque guarda un contador entre velas, y el marco de un minuto, escalado a las velas de cinco minutos del historial incluido.
+- **Salida**: La primera vela que cierra por debajo de la media móvil simple cierra un largo, y la primera que cierra por encima cierra un corto; ambas salidas son bloques de modificación de posición en modo cierre y nunca abren nada. El diagrama no tiene stop loss ni take profit y usa las velas de cinco minutos del histórico incluido.
 
 ## Parámetros
 

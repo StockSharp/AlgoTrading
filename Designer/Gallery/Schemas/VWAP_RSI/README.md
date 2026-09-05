@@ -7,16 +7,16 @@ A volume weighted moving average marks where the money has actually traded, and 
 
 ## Strategy Overview
 
-- The average is a rolling VolumeWeightedMovingAverage of 32 candles, not a session VWAP. It is the indicator the original strategy uses, despite the name, and it weights every close by the volume traded on that candle.
+- The average is a rolling VolumeWeightedMovingAverage of 32 candles, not a session VWAP, and it weights every close by the volume traded on that candle.
 - The Relative Strength Index is calculated on close prices and only confirms an entry; on its own it opens nothing.
 - Both indicator blocks emit formed values only, which is what keeps the diagram from trading on the incomplete average of the first candles.
-- The original stops processing candles for 100 bars after each trade, which also freezes the exit and holds a position for at least eight hours. Designer has no lock-out counter, so that pause is not reproduced: here a position is closed as soon as price returns across the average.
+- A position is closed as soon as price returns across the average.
 
 ## Entry and Exit Rules
 
 - **Long entry**: The close is below the VWMA, RSI is under the oversold level and the position is flat. The order buys the configured volume.
 - **Short entry**: The close is above the VWMA, RSI is over the overbought level and the position is flat. The order sells the configured volume.
-- **Exit**: A long is closed once the close comes back above the VWMA, a short once the close comes back below it. There is no stop loss and no take profit, as in the original strategy.
+- **Exit**: A long is closed once the close comes back above the VWMA, a short once the close comes back below it. There is no stop loss and no take profit.
 
 ## Parameters
 

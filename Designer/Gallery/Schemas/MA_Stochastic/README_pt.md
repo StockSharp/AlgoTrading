@@ -9,7 +9,7 @@ Dois blocos decidem juntos: a SimpleMovingAverage diz de que lado do mercado o d
 
 - A direção vem do fechamento em relação à SimpleMovingAverage: acima dela só se consideram compras, abaixo só vendas.
 - A entrada é contrária ao movimento imediato: a linha %K precisa estar na zona de sobrevenda para comprar e na de sobrecompra para vender, ou seja, o diagrama compra recuos dentro da alta e vende repiques dentro da baixa.
-- StochasticK é exatamente o %K que a estratégia original calculava manualmente: 100 * (Close - menor Low) / (maior High - menor Low) nas últimas N velas.
+- StochasticK calcula %K como 100 * (Close - menor Low) / (maior High - menor Low) nas últimas N velas.
 - A mesma média móvel também é a linha de saída, e não há stop nem alvo em nenhum ponto do diagrama.
 
 ## Regras de entrada e saída
@@ -34,7 +34,7 @@ Dois blocos decidem juntos: a SimpleMovingAverage diz de que lado do mercado o d
 - O bloco de candles alimenta três ramos: o conversor que lê o fechamento, a SimpleMovingAverage e o indicador StochasticK.
 - Duas comparações colocam o fechamento diante da média, outras duas colocam %K diante das constantes de limiar e uma compara a posição com zero.
 - Cada E lógico une a condição de tendência, a do estocástico e a checagem de posição zerada, e então aciona um bloco de modificação que só abre a partir do zero.
-- As comparações de tendência são reaproveitadas na saída: o mesmo sinal que libera a venda encerra a compra, o que mantém o diagrama enxuto. O contador que parava a estratégia original por 100 candles após cada operação não tem bloco correspondente e foi omitido.
+- As comparações de tendência são reaproveitadas na saída: o mesmo sinal que libera a venda encerra a compra, o que mantém o diagrama enxuto.
 
 ## Uso
 

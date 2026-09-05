@@ -16,7 +16,7 @@ Aqui tudo é decidido por um único número: o quanto o fechamento andou nos úl
 
 - **Entrada comprada**: A distância percorrida nos últimos quatro candles é de ao menos um ATR, o fechamento está acima do fechamento de quatro candles atrás e a posição está zerada. A ordem compra a mercado o volume compartilhado.
 - **Entrada vendida**: A distância percorrida nos últimos quatro candles é de ao menos um ATR, o fechamento está abaixo do fechamento de quatro candles atrás e a posição está zerada. A ordem vende a mercado o volume compartilhado.
-- **Saída**: A compra é encerrada no primeiro candle que fecha abaixo da média móvel simples e a venda no primeiro que fecha acima. Os dois blocos de saída trazem a condição de encerramento, de modo que cada um só age no seu lado. Não há stop loss nem realização de lucro, como na estratégia original.
+- **Saída**: A compra é encerrada no primeiro candle que fecha abaixo da média móvel simples e a venda no primeiro que fecha acima. Os dois blocos de saída trazem a condição de encerramento, de modo que cada um só age no seu lado. Não há stop loss nem realização de lucro.
 
 ## Parâmetros
 
@@ -24,7 +24,7 @@ Aqui tudo é decidido por um único número: o quanto o fechamento andou nos úl
 |---|---|---|
 | ATR Period | 14 | Período de suavização do Average True Range, que define a largura mínima de um rompimento. |
 | MA Period | 20 | Período da média móvel simples que encerra a posição. |
-| Lookback shift | 4 | Quantos candles atrás o preço é comparado; o original mede sobre a janela de observação menos um, ou seja, quatro candles por padrão. |
+| Lookback shift | 4 | Quantos candles atrás o preço é comparado. |
 | Volume | 1 | Volume da ordem, em lotes, compartilhado pelos dois blocos de entrada. |
 | Candles | 00:05:00 | Tempo gráfico dos candles com que todo o diagrama trabalha. |
 
@@ -34,8 +34,8 @@ Aqui tudo é decidido por um único número: o quanto o fechamento andou nos úl
 - O bloco de fórmula calcula o módulo da diferença entre os dois fechamentos, e uma comparação o confronta com o ATR para decidir se o movimento foi largo o bastante.
 - Outras duas comparações do mesmo par de fechamentos dão a direção, e uma comparação da posição com uma constante zero impede que as entradas se acumulem.
 - Cada E lógico junta amplitude, direção e posição zerada e aciona um bloco de abertura; as duas comparações com a média móvel acionam diretamente os blocos de encerramento, pois a direção de um bloco de encerramento já decide qual lado ele pode fechar.
-- O original em C# mede apenas a cada quinto candle, em janelas que não se sobrepõem, e congela o preço de referência no candle intermediário. Esse contador modular não tem bloco equivalente, então o diagrama usa uma janela deslizante e verifica a cada candle, o que gera mais sinais que o original.
-- A pausa de quinhentos candles que o original mantém após cada operação foi removida pelo mesmo motivo, e o diagrama roda nos candles de cinco minutos do histórico que acompanha a galeria, e não no minuto do código C#.
+- O diagrama usa uma janela de observação deslizante e verifica o intervalo a cada candle.
+- Ele roda nos candles de cinco minutos fornecidos com o histórico da galeria.
 
 ## Uso
 

@@ -34,7 +34,6 @@ Dos indicadores clásicos se reparten el trabajo: el MACD frente a su línea de 
 - El bloque de velas alimenta ambos indicadores; los conversores extraen la línea ADX del índice direccional medio y las líneas MACD y señal del indicador MACD.
 - Tres comparaciones producen las condiciones de mercado —fuerza de tendencia, MACD por encima de la señal y MACD por debajo— y otras tres comparan la posición con cero.
 - Las Y lógicas de entrada unen fuerza, dirección y posición plana; las de salida unen dirección con una posición abierta del lado contrario.
-- La pausa de 100 velas que la estrategia en C# mantiene entre operaciones no puede construirse con bloques de Designer, por lo que este diagrama entra y sale con más frecuencia.
 
 ## Uso
 

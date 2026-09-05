@@ -8,15 +8,14 @@ Der Morning Star ist der klassische Dreikerzen-Boden: eine breite Abwärtskerze,
 ## Strategieübersicht
 
 - Zwei Bausteine des Kerzenmuster-Indikators tragen eigene Dreikerzen-Ausdrücke: Die erste Kerze hat einen Körper und zeigt gegen den späteren Einstieg, der mittlere Körper ist kleiner als die Hälfte davon, und die dritte Kerze schließt jenseits der Mitte der ersten.
-- Ein einfacher gleitender Durchschnitt der Schlusskurse ist die einzige Ausstiegsreferenz; das Diagramm kennt weder Stop-Loss noch Take-Profit, genau wie die Originalstrategie.
+- Ein einfacher gleitender Durchschnitt der Schlusskurse ist die einzige Ausstiegsreferenz; das Diagramm kennt weder Stop-Loss noch Take-Profit.
 - Der Positionsbaustein wird mit null verglichen, sodass ein Muster nur aus der Neutralstellung gehandelt und niemals aufgestockt wird.
-- Die Originalstrategie friert nach jeder Ausführung außerdem alle Signale für mehrere hundert Bars ein; einen Bar-Zähler gibt es hier als Baustein nicht, daher entfällt diese Pause und wird hier vermerkt.
 
 ## Ein- und Ausstiegsregeln
 
 - **Long-Einstieg**: Der Morning-Star-Baustein meldet das Muster auf der eben abgeschlossenen Kerze und die Position ist null. Die Order kauft ein Lot und eröffnet einen Long.
 - **Short-Einstieg**: Der Evening-Star-Baustein meldet das Muster auf der eben abgeschlossenen Kerze und die Position ist null. Die Order verkauft ein Lot und eröffnet einen Short.
-- **Ausstieg**: Ein Long wird von einem Baustein zur Positionsänderung im Schließmodus glattgestellt, sobald eine Kerze unter dem gleitenden Durchschnitt schließt; ein Short ebenso, sobald eine Kerze darüber schließt. Einen Schutzstop gibt es nicht, weil die Ursprungsstrategie ebenfalls keinen hat.
+- **Ausstieg**: Ein Long wird von einem Baustein zur Positionsänderung im Schließmodus glattgestellt, sobald eine Kerze unter dem gleitenden Durchschnitt schließt; ein Short ebenso, sobald eine Kerze darüber schließt. Einen Schutzstop gibt es nicht.
 
 ## Parameter
 
@@ -24,7 +23,7 @@ Der Morning Star ist der klassische Dreikerzen-Boden: eine breite Abwärtskerze,
 |---|---|---|
 | SMA Length | 20 | Glättungsperiode des einfachen gleitenden Durchschnitts, der die Trades schließt. |
 | Volume | 1 | Ordervolumen in Lots. |
-| Candles | 00:05:00 | Zeiteinheit der Kerzen für das gesamte Diagramm; das Original läuft auf Minutenkerzen und ist hier auf die mitgelieferte Fünf-Minuten-Historie herunterskaliert. |
+| Candles | 00:05:00 | Fünf-Minuten-Zeiteinheit der Kerzen für das gesamte Diagramm und die mitgelieferte Galeriehistorie. |
 
 ## Diagrammdetails
 

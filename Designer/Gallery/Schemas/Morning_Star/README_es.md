@@ -8,15 +8,14 @@ El Morning Star es el suelo clásico de tres velas: una vela bajista amplia, una
 ## Resumen de la estrategia
 
 - Dos bloques de indicador de patrones de vela llevan expresiones propias de tres velas: la primera vela tiene cuerpo y apunta en sentido contrario a la entrada, el cuerpo intermedio es menor que la mitad del primero y la tercera cierra más allá del punto medio de la primera.
-- Una media móvil simple del precio de cierre es la única referencia de salida; el diagrama no tiene stop loss ni take profit, igual que la estrategia original.
+- Una media móvil simple del precio de cierre es la única referencia de salida; el diagrama no tiene stop loss ni take profit.
 - El bloque de posición se compara con cero, de modo que solo se actúa sobre un patrón estando plano y nunca se añade a una operación abierta.
-- La estrategia original congela además todas las señales durante varios cientos de barras tras cada ejecución; aquí no existe un bloque contador de barras, así que esa pausa se omite y se documenta.
 
 ## Reglas de entrada y salida
 
 - **Entrada en largo**: El bloque Morning Star informa del patrón en la vela recién cerrada y la posición es cero. La orden compra un lote y abre un largo.
 - **Entrada en corto**: El bloque Evening Star informa del patrón en la vela recién cerrada y la posición es cero. La orden vende un lote y abre un corto.
-- **Salida**: Un largo se cierra con un bloque de modificación de posición en modo cierre en cuanto una vela cierra por debajo de la media móvil; un corto se cierra igual cuando una vela cierra por encima. No hay stop de protección porque la estrategia de origen tampoco lo tiene.
+- **Salida**: Un largo se cierra con un bloque de modificación de posición en modo cierre en cuanto una vela cierra por debajo de la media móvil; un corto se cierra igual cuando una vela cierra por encima. No hay stop de protección.
 
 ## Parámetros
 
@@ -24,7 +23,7 @@ El Morning Star es el suelo clásico de tres velas: una vela bajista amplia, una
 |---|---|---|
 | SMA Length | 20 | Periodo de la media móvil simple que cierra las operaciones. |
 | Volume | 1 | Volumen de la orden, en lotes. |
-| Candles | 00:05:00 | Marco temporal de las velas de todo el diagrama; el original usa velas de un minuto y aquí se ajusta al histórico de cinco minutos incluido en la galería. |
+| Candles | 00:05:00 | Marco temporal de cinco minutos usado por todo el diagrama y por el histórico incluido en la galería. |
 
 ## Detalles del diagrama
 

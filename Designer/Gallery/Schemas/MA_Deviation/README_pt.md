@@ -10,13 +10,13 @@ A média móvel simples é tomada como preço justo, e todo o sinal é a distân
 - O desvio é calculado literalmente, em um único bloco de fórmula: (Close - SMA) / SMA * 100.
 - Um só limiar serve aos dois lados: o desvio é comparado com esse número em positivo e em negativo, de modo que compra e venda ficam simétricas.
 - A entrada só ocorre com posição zerada, e os dois blocos de entrada ainda carregam a condição Abrir posição, então nunca há preço médio.
-- O original trabalha em candles de um minuto, com limiar de 2% e uma pausa de 500 candles após cada operação. O histórico incluído é de cinco minutos, por isso o diagrama roda em candles de cinco minutos com limiar de 1%, cerca de dois desvios padrão dessa série; a pausa não foi reproduzida porque o Designer não tem contador de bloqueio, e por isso o diagrama opera com mais frequência que o original.
+- O diagrama trabalha com o histórico empacotado de cinco minutos e um limiar de 1%, cerca de dois desvios padrão dessa série.
 
 ## Regras de entrada e saída
 
 - **Entrada comprada**: O desvio está abaixo do limiar negativo, ou seja, o fechamento está mais do que o percentual configurado abaixo da média, e a posição está zerada. A ordem compra o volume configurado.
 - **Entrada vendida**: O desvio está acima do limiar positivo, ou seja, o fechamento está mais do que o percentual configurado acima da média, e a posição está zerada. A ordem vende o volume configurado.
-- **Saída**: A compra é encerrada quando o fechamento retorna à média ou acima dela; a venda, quando o fechamento retorna à média ou abaixo dela. Não há stop loss nem take profit, como na estratégia original.
+- **Saída**: A compra é encerrada quando o fechamento retorna à média ou acima dela; a venda, quando o fechamento retorna à média ou abaixo dela. Não há stop loss nem take profit.
 
 ## Parâmetros
 

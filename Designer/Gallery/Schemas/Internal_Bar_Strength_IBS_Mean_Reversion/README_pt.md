@@ -14,9 +14,9 @@ O Internal Bar Strength faz uma única pergunta sobre um candle finalizado: em q
 
 ## Regras de entrada e saída
 
-- **Entrada comprada**: Não há entrada comprada. O diagrama apenas vende, exatamente como a estratégia original.
+- **Entrada comprada**: Não há entrada comprada. O diagrama apenas vende.
 - **Entrada vendida**: O candle fechou acima da máxima do candle anterior, seu IBS está no limiar superior ou acima dele e a posição ainda não está vendida. A ordem vende um lote e abre uma venda.
-- **Saída**: A venda é recomprada quando o IBS de um candle cai ao limiar inferior ou abaixo dele, isto é, quando o fechamento volta à parte baixa da própria amplitude; a compra roda em modo de fechamento, então zera a posição em vez de invertê-la. O original não tem stop loss nem take profit, e nenhum foi acrescentado aqui. Dois detalhes divergem do código. O original trabalha com candles de quatro horas, dos quais o histórico incluído de um mês daria apenas algumas centenas, por isso o diagrama passa a candles de cinco minutos. E o original simplesmente pula o candle cuja máxima é igual à mínima; aqui a fórmula divide por uma amplitude limitada por baixo a um passo de preço, o que dá IBS zero nesse candle e o mantém fora das duas condições. A SimpleMovingAverage que o original cria não é reproduzida, porque o valor dela não entra em nenhuma decisão lá.
+- **Saída**: A venda é recomprada quando o IBS de um candle cai ao limiar inferior ou abaixo dele, isto é, quando o fechamento volta à parte baixa da própria amplitude; a compra roda em modo de fechamento, então zera a posição em vez de invertê-la. Não há stop loss nem take profit. O diagrama trabalha com candles de cinco minutos, que fornecem barras suficientes no histórico empacotado de um mês. Sua fórmula divide pela amplitude do candle limitada por baixo a um passo de preço; portanto, um candle cuja máxima seja igual à mínima produz um IBS de zero e fica fora das duas condições.
 
 ## Parâmetros
 
@@ -25,7 +25,7 @@ O Internal Bar Strength faz uma única pergunta sobre um candle finalizado: em q
 | Upper IBS Threshold | 0.9 | Nível de IBS em que, ou acima do qual, o candle de rompimento é vendido. |
 | Lower IBS Threshold | 0.3 | Nível de IBS em que, ou abaixo do qual, a venda é recomprada. |
 | Volume | 1 | Volume da ordem, em lotes. |
-| Candles | 00:05:00 | Tempo gráfico dos candles com que todo o diagrama trabalha; o original usa candles de quatro horas e este diagrama os de cinco minutos do histórico incluído. |
+| Candles | 00:05:00 | Tempo gráfico de cinco minutos com que todo o diagrama trabalha. |
 
 ## Detalhes do diagrama
 

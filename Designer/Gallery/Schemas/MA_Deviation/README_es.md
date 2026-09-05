@@ -10,13 +10,13 @@ La media móvil simple se toma como precio justo, y toda la señal es la distanc
 - La desviación se calcula de forma literal, en un solo bloque de fórmula: (Close - SMA) / SMA * 100.
 - Un único umbral sirve para ambos lados: la desviación se compara con ese número en positivo y en negativo, así el largo y el corto son simétricos.
 - Solo se entra desde posición plana y ambos bloques de entrada llevan además la condición Abrir posición, por lo que nunca se promedia a la baja.
-- El original trabaja con velas de un minuto, umbral del 2% y una pausa de 500 velas tras cada operación. El histórico incluido es de cinco minutos, así que el diagrama usa velas de cinco minutos con umbral del 1%, unas dos desviaciones típicas de esa serie; la pausa no se reproduce porque Designer no dispone de un contador de bloqueo, y por eso el diagrama opera más a menudo que el original.
+- El diagrama trabaja con el histórico incluido de cinco minutos y un umbral del 1%, unas dos desviaciones típicas de esa serie.
 
 ## Reglas de entrada y salida
 
 - **Entrada en largo**: La desviación está por debajo del umbral negativo, es decir, el cierre está más del porcentaje configurado por debajo de la media, y la posición es plana. La orden compra el volumen configurado.
 - **Entrada en corto**: La desviación está por encima del umbral positivo, es decir, el cierre está más del porcentaje configurado por encima de la media, y la posición es plana. La orden vende el volumen configurado.
-- **Salida**: El largo se cierra cuando el cierre vuelve a la media o por encima de ella; el corto, cuando el cierre vuelve a la media o por debajo. No hay stop loss ni take profit, igual que en la estrategia original.
+- **Salida**: El largo se cierra cuando el cierre vuelve a la media o por encima de ella; el corto, cuando el cierre vuelve a la media o por debajo. No hay stop loss ni take profit.
 
 ## Parámetros
 

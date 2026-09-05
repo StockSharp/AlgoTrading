@@ -8,15 +8,14 @@ The Morning Star is the classic three-candle bottom: a wide down candle, a small
 ## Strategy Overview
 
 - Two candle pattern indicator blocks carry custom three-candle expressions: the first candle has a real body and points the wrong way, the middle body is smaller than half of it, and the third candle closes past the midpoint of the first.
-- A simple moving average of the closing price is the only exit reference; the diagram has no stop loss and no take profit, exactly as in the original strategy.
+- A simple moving average of the closing price is the only exit reference; the diagram has no stop loss and no take profit.
 - The position block is compared against zero so a pattern is acted on only from a flat book, never as an addition to an open trade.
-- The original strategy also freezes every signal for several hundred bars after each fill; a bar counter has no block of its own, so that pause is left out and noted here.
 
 ## Entry and Exit Rules
 
 - **Long entry**: The Morning Star block reports the pattern on the candle just finished and the position is zero. The order buys one lot and opens a long.
 - **Short entry**: The Evening Star block reports the pattern on the candle just finished and the position is zero. The order sells one lot and opens a short.
-- **Exit**: A long is closed by a position modify block in close mode as soon as a candle closes below the moving average; a short is closed the same way once a candle closes above it. There is no protective stop, because the source strategy has none either.
+- **Exit**: A long is closed by a position modify block in close mode as soon as a candle closes below the moving average; a short is closed the same way once a candle closes above it. There is no protective stop.
 
 ## Parameters
 
@@ -24,7 +23,7 @@ The Morning Star is the classic three-candle bottom: a wide down candle, a small
 |---|---|---|
 | SMA Length | 20 | Averaging length of the simple moving average that closes the trades. |
 | Volume | 1 | Order volume, in lots. |
-| Candles | 00:05:00 | Candle time frame the whole diagram works on; the original runs on one-minute candles and is scaled here to the five-minute history shipped with the gallery. |
+| Candles | 00:05:00 | Five-minute candle time frame used by the whole diagram and the packaged gallery history. |
 
 ## Diagram Details
 

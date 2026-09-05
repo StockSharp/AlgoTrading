@@ -8,7 +8,7 @@ Un diagrama de tendencia con filtro de fuerza. La ExponentialMovingAverage indic
 ## Resumen de la estrategia
 
 - El cierre de la vela se compara con una ExponentialMovingAverage: por encima significa largo y por debajo, corto.
-- El bloque DirectionalIndex entrega el valor DX, la misma fórmula que la estrategia original calcula a mano a partir de +DM y -DM; solo se permite entrar mientras DX supera el umbral.
+- El bloque DirectionalIndex entrega el valor DX calculado a partir de +DM y -DM; solo se permite entrar mientras DX supera el umbral.
 - Las entradas se hacen únicamente desde posición plana y cada salida cierra exactamente lo abierto, de modo que nunca se piramida.
 - La salida no mira la fuerza de la tendencia: en cuanto el cierre queda al otro lado de la media, la posición se cierra sin importar el DX.
 
@@ -16,7 +16,7 @@ Un diagrama de tendencia con filtro de fuerza. La ExponentialMovingAverage indic
 
 - **Entrada en largo**: El cierre está por encima de la EMA, el DX supera el umbral de fuerza de tendencia y la posición es plana. La orden compra el volumen base y abre un largo.
 - **Entrada en corto**: El cierre está por debajo de la EMA, el DX supera el umbral de fuerza de tendencia y la posición es plana. La orden vende el volumen base y abre un corto.
-- **Salida**: El largo se cierra en cuanto una vela cierra por debajo de la EMA y el corto en cuanto cierra por encima; los bloques de cierre toman el volumen de la posición abierta. La estrategia original no tiene stop ni take profit, y su pausa de cien velas tras cada operación no se reproduce, por lo que este diagrama opera con más frecuencia que el código fuente.
+- **Salida**: El largo se cierra en cuanto una vela cierra por debajo de la EMA y el corto en cuanto cierra por encima; los bloques de cierre toman el volumen de la posición abierta. El diagrama no tiene stop ni take profit.
 
 ## Parámetros
 

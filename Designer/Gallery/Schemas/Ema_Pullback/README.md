@@ -15,7 +15,7 @@ A trend diagram that refuses to buy a breakout. The two exponential moving avera
 
 - **Long entry**: The fast EMA is above the slow one, the close crosses back down onto the fast EMA and the position is not long. The order buys Volume plus the absolute value of the current position, which opens a long from flat or turns a short straight into a long.
 - **Short entry**: The fast EMA is below the slow one, the close crosses back up onto the fast EMA and the position is not short. The order sells Volume plus the absolute value of the current position, which opens a short from flat or turns a long straight into a short.
-- **Exit**: A long is closed when the fast EMA drops below the slow one, and a short when the fast EMA climbs above it; both closing blocks work on the whole open position, so a repeated signal on a flat book does nothing. There is no protective stop, which is how the original strategy is written.
+- **Exit**: A long is closed when the fast EMA drops below the slow one, and a short when the fast EMA climbs above it; both closing blocks work on the whole open position, so a repeated signal on a flat book does nothing. There is no protective stop.
 
 ## Parameters
 

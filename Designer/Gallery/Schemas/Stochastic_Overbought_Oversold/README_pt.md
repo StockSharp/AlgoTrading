@@ -7,16 +7,16 @@ A linha %K do estocástico mede onde o fechamento se encontra dentro da faixa re
 
 ## Visão geral da estratégia
 
-- A linha %K é calculada sobre candles finalizados de um único instrumento; a linha suavizada %D não participa da decisão, exatamente como na estratégia original.
+- A linha %K é calculada sobre candles finalizados de um único instrumento; a linha suavizada %D não participa da decisão.
 - Uma janela de três candles torna %K uma linha muito rápida: ela alcança as duas zonas com frequência, e daí vem o número de negócios deste exemplo.
-- Os níveis de sobrevenda e sobrecompra são constantes do diagrama e podem ser editados e otimizados; no código original estão fixos em 20 e 80.
+- Os níveis de sobrevenda e sobrecompra são constantes editáveis e otimizáveis do diagrama, definidos como 20 e 80 por padrão.
 - Todas as ordens usam o mesmo volume, de modo que um sinal contrário à posição aberta a encerra em vez de invertê-la e aumentá-la.
 
 ## Regras de entrada e saída
 
 - **Entrada comprada**: A leitura anterior de %K estava no nível de sobrevenda ou acima dele, a atual está abaixo e a posição não está comprada. A ordem compra um lote: a partir do zero abre uma compra, a partir de uma venda a encerra.
 - **Entrada vendida**: A leitura anterior de %K estava no nível de sobrecompra ou abaixo dele, a atual está acima e a posição não está vendida. A ordem vende um lote: a partir do zero abre uma venda, a partir de uma compra a encerra.
-- **Saída**: Não há bloco de saída próprio: o cruzamento contrário encerra a posição, pois todas as ordens usam o mesmo volume. A estratégia original ainda faz uma pausa de um número fixo de candles após cada negócio; não existe bloco contador de barras, então o cruzamento assume esse papel e evita uma ordem a cada candle dentro da zona.
+- **Saída**: Não há bloco de saída próprio: o cruzamento contrário encerra a posição, pois todas as ordens usam o mesmo volume. Usar um cruzamento em vez de apenas permanecer dentro de uma zona evita que o diagrama dispare em cada candle.
 
 ## Parâmetros
 

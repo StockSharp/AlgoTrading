@@ -16,7 +16,7 @@ Aquí todo lo decide un solo número: cuánto ha recorrido el cierre en las últ
 
 - **Entrada en largo**: La distancia recorrida en las últimas cuatro velas es de al menos un ATR, el cierre está por encima del cierre de cuatro velas atrás y la posición está plana. La orden compra a mercado el volumen compartido.
 - **Entrada en corto**: La distancia recorrida en las últimas cuatro velas es de al menos un ATR, el cierre está por debajo del cierre de cuatro velas atrás y la posición está plana. La orden vende a mercado el volumen compartido.
-- **Salida**: El largo se cierra en la primera vela que cierra por debajo de la media móvil simple y el corto en la primera que cierra por encima. Ambos bloques de salida llevan la condición de cierre, de modo que cada uno solo actúa sobre su lado. No hay stop de pérdidas ni toma de beneficios, igual que en la estrategia original.
+- **Salida**: El largo se cierra en la primera vela que cierra por debajo de la media móvil simple y el corto en la primera que cierra por encima. Ambos bloques de salida llevan la condición de cierre, de modo que cada uno solo actúa sobre su lado. No hay stop de pérdidas ni toma de beneficios.
 
 ## Parámetros
 
@@ -24,7 +24,7 @@ Aquí todo lo decide un solo número: cuánto ha recorrido el cierre en las últ
 |---|---|---|
 | ATR Period | 14 | Periodo de suavizado del Average True Range que fija la anchura mínima de una ruptura. |
 | MA Period | 20 | Periodo de la media móvil simple que cierra la posición. |
-| Lookback shift | 4 | Cuántas velas atrás se compara el precio; el original mide sobre la ventana de observación menos una, es decir cuatro velas por defecto. |
+| Lookback shift | 4 | Cuántas velas atrás se compara el precio. |
 | Volume | 1 | Volumen de la orden, en lotes, compartido por los dos bloques de entrada. |
 | Candles | 00:05:00 | Marco temporal de las velas con el que trabaja todo el diagrama. |
 
@@ -34,8 +34,8 @@ Aquí todo lo decide un solo número: cuánto ha recorrido el cierre en las últ
 - El bloque de fórmula calcula la diferencia absoluta entre los dos cierres y una comparación la contrasta con el ATR para decidir si el movimiento es lo bastante amplio.
 - Otras dos comparaciones del mismo par de cierres dan la dirección, y una comparación de la posición con una constante cero impide que las entradas se acumulen.
 - Cada Y lógica reúne amplitud, dirección y posición plana y dispara un bloque de apertura; las dos comparaciones con la media móvil disparan directamente los bloques de cierre, ya que la dirección de un bloque de cierre decide por sí sola qué lado puede cerrar.
-- El original en C# mide solo cada quinta vela, sobre ventanas que no se solapan, y congela el precio de referencia en la vela intermedia. Ese contador modular no tiene bloque equivalente, así que el diagrama usa una ventana deslizante y comprueba en cada vela, lo que produce más señales que el original.
-- La pausa de quinientas velas que el original mantiene tras cada operación se omite por la misma razón, y el diagrama trabaja con las velas de cinco minutos del histórico que acompaña a la galería en lugar del minuto del código en C#.
+- El diagrama utiliza una ventana de observación deslizante y comprueba el rango en cada vela.
+- Funciona con las velas de cinco minutos suministradas con el histórico de la galería.
 
 ## Uso
 

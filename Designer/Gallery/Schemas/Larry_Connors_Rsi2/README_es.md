@@ -1,7 +1,7 @@
 # Diagrama de la estrategia RSI-2 de Larry Connors
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-El RSI-2 de Larry Connors compra el pánico y vende la euforia, pero solo en el sentido que permite la media lenta: un RSI de dos periodos marca el extremo, una SMA de 50 decide la dirección y una SMA de 5 marca el momento de salir. El original opera velas de cuatro horas; este diagrama trabaja con velas de cinco minutos para ajustarse al histórico intradía incluido.
+El RSI-2 de Larry Connors compra el pánico y vende la euforia, pero solo en el sentido que permite la media lenta: un RSI de dos periodos marca el extremo, una SMA de 50 decide la dirección y una SMA de 5 marca el momento de salir. El diagrama trabaja con velas de cinco minutos para ajustarse al histórico intradía incluido.
 
 ![schema](schema.svg)
 
@@ -10,7 +10,7 @@ El RSI-2 de Larry Connors compra el pánico y vende la euforia, pero solo en el 
 - El RSI de longitud dos reacciona a una sola vela, así que una lectura por debajo de 6 o por encima de 95 señala un arrebato breve de ventas o de compras, no un estado duradero.
 - La SMA lenta actúa como filtro de dirección: los largos solo se toman por encima y los cortos solo por debajo, de modo que el diagrama se mantiene del lado del movimiento mayor.
 - La posición se abre únicamente desde plano y la SMA rápida la cierra en cuanto el precio vuelve a cruzar esa media, por lo que las operaciones suelen durar una o dos velas.
-- El bloque de protección añade un stop y un objetivo porcentuales en lugar de los niveles en pips del original, que no pueden calcularse desde el paso de precio dentro de un diagrama.
+- El bloque de protección añade un stop y un objetivo porcentuales, manteniendo las distancias portátiles entre instrumentos.
 
 ## Reglas de entrada y salida
 

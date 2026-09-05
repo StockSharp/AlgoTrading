@@ -10,7 +10,7 @@ The swing range of the last twenty candles is split by the golden ratio, and the
 - Highest and Lowest over the same lookback give the swing high and the swing low; their difference is the range the levels are measured in.
 - The buy level sits 0.618 of the range under the swing high, the sell level 0.618 of the range above the swing low, and a candle counts as being on a level while its close is within two percent of the range of it.
 - Both distances are computed relative to the range, so the diagram works the same on any instrument and any price scale.
-- Entries also need a confirming candle body and a flat position; the SimpleMovingAverage handles every exit, because the original strategy sets no stop and no target.
+- Entries also need a confirming candle body and a flat position; the SimpleMovingAverage handles every exit, and there is no stop or target.
 
 ## Entry and Exit Rules
 
@@ -35,7 +35,7 @@ The swing range of the last twenty candles is split by the golden ratio, and the
 - Two formula blocks turn the raw prices into the distance from the close to each level, divided by the range, so a single buffer constant serves both sides.
 - Every entry passes through a logical AND of three flags: the level, the candle body and the position compared with a zero constant.
 - The two exit blocks are triggered straight from the moving-average comparisons and are set to close-position mode; all four order blocks share one volume constant.
-- Deliberate simplifications: the original works on one-minute candles and pauses for 500 bars after every trade, which no block can express, so the diagram runs on five-minute candles and trades again as soon as the conditions return. Expect it to hold positions for a handful of bars instead of days; raising the MA period lengthens them.
+- The diagram runs on five-minute candles and can trade again as soon as its conditions return. Expect it to hold positions for a handful of bars; raising the MA period lengthens them.
 
 ## Usage
 

@@ -10,13 +10,13 @@ Der einfache gleitende Durchschnitt gilt als fairer Preis, und das gesamte Signa
 - Die Abweichung wird wörtlich in einem einzigen Formelbaustein berechnet: (Close - SMA) / SMA * 100.
 - Eine Schwelle bedient beide Seiten: Die Abweichung wird mit dem Plus und dem Minus derselben Zahl verglichen, Long und Short sind damit symmetrisch.
 - Eingestiegen wird nur aus der Neutralstellung, und beide Einstiegsbausteine tragen zusätzlich die Bedingung Position eröffnen, sodass nie nachgekauft wird.
-- Das Original arbeitet mit Ein-Minuten-Kerzen, einer Schwelle von 2% und einer Pause von 500 Kerzen nach jedem Trade. Die mitgelieferte Historie besteht aus Fünf-Minuten-Daten, deshalb läuft das Diagramm auf Fünf-Minuten-Kerzen mit einer Schwelle von 1%, was etwa zwei Standardabweichungen dieser Reihe entspricht; die Pause wird nicht nachgebildet, da Designer keinen Sperrzähler kennt, und das Diagramm handelt daher häufiger als das Original.
+- Das Diagramm läuft auf der mitgelieferten Fünf-Minuten-Historie mit einer Schwelle von 1%, was etwa zwei Standardabweichungen dieser Reihe entspricht.
 
 ## Ein- und Ausstiegsregeln
 
 - **Long-Einstieg**: Die Abweichung liegt unter der negativen Schwelle, der Schlusskurs also um mehr als den eingestellten Prozentsatz unter dem Durchschnitt, und die Position ist neutral. Die Order kauft das eingestellte Volumen.
 - **Short-Einstieg**: Die Abweichung liegt über der positiven Schwelle, der Schlusskurs also um mehr als den eingestellten Prozentsatz über dem Durchschnitt, und die Position ist neutral. Die Order verkauft das eingestellte Volumen.
-- **Ausstieg**: Ein Long wird geschlossen, sobald der Schlusskurs den Durchschnitt wieder erreicht oder überschreitet; ein Short, sobald der Schlusskurs den Durchschnitt wieder erreicht oder unterschreitet. Stop-Loss und Take-Profit gibt es wie im Original nicht.
+- **Ausstieg**: Ein Long wird geschlossen, sobald der Schlusskurs den Durchschnitt wieder erreicht oder überschreitet; ein Short, sobald der Schlusskurs den Durchschnitt wieder erreicht oder unterschreitet. Stop-Loss und Take-Profit gibt es nicht.
 
 ## Parameter
 

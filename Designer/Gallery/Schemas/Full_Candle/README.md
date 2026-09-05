@@ -10,13 +10,13 @@ A full candle is one that opens at one end of its range and closes at the other:
 - Converters read the open, high, low and close of the finished candle, and two formula blocks measure how much of the range the shadows take.
 - The bullish measure is the upper shadow plus the lower shadow of a rising candle, scaled by a hundred and compared with the shadow share applied to the full range; the bearish measure is its mirror.
 - An exponential moving average of the closing price is the trend filter: full bullish candles are only bought above it, full bearish candles only sold below it.
-- A position protection block closes every trade at a fixed take profit, which is the only exit the original strategy has.
+- A position protection block closes every trade at a fixed take profit, the diagram's only exit.
 
 ## Entry and Exit Rules
 
 - **Long entry**: The bullish shadow measure is below zero, which means the candle rose and its shadows stayed within the allowed share of the range, the close is above the EMA and the position is not already long. The order buys the volume constant plus whatever short is open, so it reverses a short and opens a long in one order.
 - **Short entry**: The bearish shadow measure is below zero, the close is below the EMA and the position is not already short. The order sells the volume constant plus whatever long is open, reversing a long and opening a short in one order.
-- **Exit**: The position protection block takes profit at 0.3 percent from the entry price, the same figure the original strategy hard-codes, and there is no stop loss because the original has none. Two differences are worth knowing. The protection block watches the price inside the bar, while the original checks only the close of a finished candle, so the target is hit slightly earlier here. And the original's pause of fifteen candles after every trade is left out: a bar counter cannot be assembled without feeding a signal back into the diagram, which would close the graph into a loop, so a reversal signal is taken as soon as it appears.
+- **Exit**: The position protection block takes profit at 0.3 percent from the entry price, and there is no stop loss. The protection block watches price inside the bar, so it can react before the candle finishes. A reversal signal can be taken as soon as it appears.
 
 ## Parameters
 
@@ -26,7 +26,7 @@ A full candle is one that opens at one end of its range and closes at the other:
 | Shadow share, % | 10 | Largest share of the candle's high-to-low range, in percent, that both shadows together may take. |
 | Take profit, % | 0.3 | Take profit distance from the entry price, in percent. |
 | Volume | 1 | Order volume, in lots; the reversal order adds the size of the position being closed on top of it. |
-| Candles | 00:05:00 | Candle time frame the whole diagram works on. The original strategy runs on fifteen-minute candles; five minutes is used here so that the pattern appears often enough on the packaged history. |
+| Candles | 00:05:00 | Five-minute candle time frame, chosen so the pattern appears often enough on the packaged history. |
 
 ## Diagram Details
 

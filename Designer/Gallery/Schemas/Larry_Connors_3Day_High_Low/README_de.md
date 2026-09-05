@@ -1,7 +1,7 @@
 # Diagramm der Strategie Larry Connors 3 Day High/Low
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-Larry Connors' 3 Day High/Low kauft einen kurzen Rücksetzer in einem steigenden Markt. Der Kurs muss über einer langsamen SimpleMovingAverage bleiben, unter eine schnelle rutschen und drei Kerzen in Folge zeigen, deren Hoch und Tief jeweils unter denen der Vorkerze liegen. Der Trade wird beim ersten Schluss über der schnellen Linie abgegeben. Das Original zählt Tagesbalken; dieses Diagramm arbeitet mit Fünf-Minuten-Kerzen, damit es zur mitgelieferten Intraday-Historie passt.
+Larry Connors' 3 Day High/Low kauft einen kurzen Rücksetzer in einem steigenden Markt. Der Kurs muss über einer langsamen SimpleMovingAverage bleiben, unter eine schnelle rutschen und drei Kerzen in Folge zeigen, deren Hoch und Tief jeweils unter denen der Vorkerze liegen. Der Trade wird beim ersten Schluss über der schnellen Linie abgegeben. Dieses Diagramm arbeitet mit Fünf-Minuten-Kerzen, damit es zur mitgelieferten Intraday-Historie passt.
 
 ![schema](schema.svg)
 
@@ -10,13 +10,13 @@ Larry Connors' 3 Day High/Low kauft einen kurzen Rücksetzer in einem steigenden
 - Ein Kerzenmuster-Baustein trägt die ganze Vier-Kerzen-Figur: drei aufeinanderfolgende Kerzen mit jeweils tieferem Hoch und tieferem Tief als die vorherige.
 - Eine SimpleMovingAverage über 50 Perioden stellt fest, dass der Markt steigt, sodass der Rücksetzer nur in Richtung der größeren Bewegung gekauft wird.
 - Eine SimpleMovingAverage über 5 Perioden ist zugleich Eintrittstor – ein Kurs darunter heißt, der Rücksetzer läuft noch – und Ausstiegsauslöser.
-- Die Strategie handelt nur long. Das Original begrenzt zusätzlich die Zahl der Einstiege und wartet fünfzehn Balken zwischen den Trades; für beide Zähler gibt es keinen Baustein, deshalb handelt dieses Diagramm häufiger als die Vorlage.
+- Die Strategie handelt nur long.
 
 ## Ein- und Ausstiegsregeln
 
 - **Long-Einstieg**: Der Musterbaustein meldet drei tiefere Hochs und Tiefs, der Schlusskurs liegt über der langsamen SMA, unter der schnellen SMA und die Position ist neutral. Die Order kauft das gemeinsame Volumen zu Markt und eröffnet den Long.
 - **Short-Einstieg**: Es gibt keine Short-Seite. Connors' Regelwerk kauft ausschließlich Rücksetzer in einem steigenden Markt, daher besitzt das Diagramm keinen Verkaufseinstieg.
-- **Ausstieg**: Der erste Schluss über der schnellen SMA schließt den Long. Der Schließen-Baustein sendet eine Marktorder über die offene Größe; Stop-Loss und Take-Profit fehlen, genau wie im Originalcode.
+- **Ausstieg**: Der erste Schluss über der schnellen SMA schließt den Long. Der Schließen-Baustein sendet eine Marktorder über die offene Größe; Stop-Loss und Take-Profit fehlen.
 
 ## Parameter
 

@@ -10,7 +10,7 @@ Ein Ausbruchsdiagramm auf Basis der Bollinger-Bänder: Die Bänder liegen 1,8 St
 - Die Bollinger-Bänder werden auf abgeschlossenen Kerzen eines einzelnen Instruments berechnet; an den Entscheidungen sind nur das obere und das untere Band beteiligt.
 - Das Diagramm ist ein Ausbruch und keine Rückkehr zum Mittelwert: Es kauft Stärke über dem oberen Band und verkauft Schwäche unter dem unteren Band, also genau umgekehrt zum Beispiel Bollinger_Bands in dieser Galerie.
 - Das Volumen jeder Order ist das Grundvolumen plus der Betrag der laufenden Position, sodass ein Signal gegen eine offene Position sie schließt und die Gegenseite mit einer einzigen Order eröffnet.
-- Trotz des Namens gibt es keinen Squeeze-Filter: Die ursprüngliche C#-Strategie berechnet die relative Bandbreite, verwendet sie aber in keiner Bedingung, und das Diagramm bleibt bei dem, was der Code tatsächlich tut.
+- Trotz des Namens gibt es keinen Squeeze-Filter: Die relative Bandbreite wird zur Anzeige berechnet, geht aber in keine Handelsbedingung ein.
 
 ## Ein- und Ausstiegsregeln
 
@@ -33,7 +33,6 @@ Ein Ausbruchsdiagramm auf Basis der Bollinger-Bänder: Die Bänder liegen 1,8 St
 - Zwei als Indikatorwert typisierte Konverter holen das obere und das untere Band aus dem einzigen Ausgang des Indikators.
 - Zwei Vergleichsbausteine prüfen den Schlusskurs gegen die Bänder, zwei weitere vergleichen die Position mit einer Nullkonstante, und jedes logische UND verbindet eine Bandbedingung mit einer Positionsbedingung.
 - Ein Formelbaustein berechnet Grundvolumen plus Betrag der Position und speist beide Bausteine zur Positionsänderung — dadurch wird aus jedem Einstieg eine Drehung.
-- Die Pause von zehn Kerzen, die der Originalcode nach jedem Einstieg einhält, ist nicht nachgebildet: Unter den verfügbaren Bausteinen gibt es keinen Kerzenzähler, daher bremsen allein die Positionsprüfungen die Handelsfrequenz.
 
 ## Verwendung
 

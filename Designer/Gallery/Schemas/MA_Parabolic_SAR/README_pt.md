@@ -10,13 +10,13 @@ Uma média móvel simples diz de que lado do mercado vale a pena estar e um Para
 - SimpleMovingAverage é o filtro de direção: compra-se apenas enquanto o fechamento está acima dela e vende-se apenas enquanto está abaixo.
 - ParabolicSar fornece o momento, e um único bloco de cruzamento transforma a passagem do preço por essa linha num pulso só: verdadeiro para o cruzamento de alta, falso para o de baixa.
 - As entradas são protegidas pela posição atual e as saídas usam blocos de encerramento, que agem apenas quando existe posição do sinal correspondente.
-- Dois desvios do original em C#: lá o SAR é substituído por uma EMA rápida e os ajustes declarados do SAR nunca são lidos, enquanto o diagrama usa um ParabolicSar de verdade; além disso, a pausa de 20 barras entre entradas não é reproduzida.
+- O diagrama usa um indicador ParabolicSar real com suas configurações declaradas.
 
 ## Regras de entrada e saída
 
 - **Entrada comprada**: O fechamento cruza a linha do ParabolicSar para cima estando acima da SMA e a posição não está comprada. O bloco de modificação compra a mercado o volume compartilhado.
 - **Entrada vendida**: O fechamento cruza a linha do ParabolicSar para baixo estando abaixo da SMA e a posição não está vendida. O bloco de modificação vende a mercado o volume compartilhado.
-- **Saída**: A compra é encerrada no primeiro cruzamento de baixa da linha do SAR e a venda no primeiro cruzamento de alta, sem consultar a média móvel; não há stop nem alvo, como na estratégia original.
+- **Saída**: A compra é encerrada no primeiro cruzamento de baixa da linha do SAR e a venda no primeiro cruzamento de alta, sem consultar a média móvel; não há stop nem alvo.
 
 ## Parâmetros
 

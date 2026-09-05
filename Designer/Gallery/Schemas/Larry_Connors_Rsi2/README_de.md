@@ -1,7 +1,7 @@
 # Diagramm der RSI-2-Strategie von Larry Connors
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-Larry Connors' RSI-2 kauft die Panik und verkauft die Euphorie, aber nur auf der Seite, die der langsame Durchschnitt erlaubt: Ein RSI mit Periode zwei markiert das Extrem, eine SMA(50) bestimmt die Richtung, eine SMA(5) den Ausstiegszeitpunkt. Das Original handelt Vier-Stunden-Kerzen; dieses Diagramm arbeitet auf Fünf-Minuten-Kerzen und passt damit zur mitgelieferten Intraday-Historie.
+Larry Connors' RSI-2 kauft die Panik und verkauft die Euphorie, aber nur auf der Seite, die der langsame Durchschnitt erlaubt: Ein RSI mit Periode zwei markiert das Extrem, eine SMA(50) bestimmt die Richtung, eine SMA(5) den Ausstiegszeitpunkt. Dieses Diagramm arbeitet auf Fünf-Minuten-Kerzen und passt damit zur mitgelieferten Intraday-Historie.
 
 ![schema](schema.svg)
 
@@ -10,7 +10,7 @@ Larry Connors' RSI-2 kauft die Panik und verkauft die Euphorie, aber nur auf der
 - Ein RSI der Länge zwei reagiert auf eine einzige Kerze, deshalb markiert ein Wert unter 6 oder über 95 einen kurzen Verkaufs- oder Kaufschub und keinen dauerhaften Zustand.
 - Die langsame SMA ist der Richtungsfilter: Longs nur oberhalb, Shorts nur unterhalb, damit das Diagramm auf der Seite der größeren Bewegung bleibt.
 - Eine Position wird nur aus der Neutralstellung eröffnet, und die schnelle SMA schließt sie, sobald der Kurs wieder über diesen Durchschnitt tritt — Trades leben deshalb meist ein bis zwei Kerzen.
-- Der Schutzbaustein ersetzt Stop und Ziel in Pips durch prozentuale Abstände, da sich die Pip-Größe aus dem Kursschritt in einem Diagramm nicht berechnen lässt.
+- Der Schutzbaustein ergänzt prozentuale Abstände für Stop und Ziel, die auf verschiedenen Instrumenten sinnvoll bleiben.
 
 ## Ein- und Ausstiegsregeln
 

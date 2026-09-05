@@ -9,8 +9,8 @@ O Williams %R mostra onde o fechamento está dentro da faixa dos últimos candle
 
 - O Williams %R de período 14 é calculado sobre candles horários finalizados, que o testador monta a partir do histórico de cinco minutos incluído.
 - O sinal é o próprio cruzamento: a leitura anterior de um lado do nível e a atual do outro, de modo que uma permanência longa dentro da zona dispara apenas uma vez.
-- Trata-se da entrada na zona, o espelho da leitura clássica que espera o oscilador voltar para fora, e corresponde ao modo Direct da estratégia original.
-- O original ainda traz permissões separadas para compras e vendas; ambas ligadas por padrão, então o diagrama liga os dois lados e basta desconectar um ramo para desativar um deles.
+- Trata-se da entrada na zona, o espelho da leitura clássica que espera o oscilador voltar para fora, e o diagrama usa essa orientação Direct.
+- Os ramos de compra e venda estão conectados; basta desconectar um deles para desativar esse lado.
 
 ## Regras de entrada e saída
 
@@ -36,7 +36,7 @@ O Williams %R mostra onde o fechamento está dentro da faixa dos últimos candle
 - Quatro blocos de comparação constroem os dois cruzamentos com a leitura anterior e a atual diante das duas constantes de nível.
 - Outros dois blocos de comparação testam a posição contra uma constante zero, e cada E lógico une um cruzamento à sua verificação de posição.
 - Os dois blocos de modificação enviam ordens a mercado com o volume de uma constante compartilhada, e seus negócios alimentam o bloco de proteção com o take profit e o stop loss.
-- O original protege com distâncias absolutas de preço; o diagrama usa porcentagens do preço de entrada, para que os mesmos números sirvam em qualquer instrumento.
+- O diagrama protege a posição com porcentagens do preço de entrada, para que os mesmos números permaneçam significativos em qualquer instrumento.
 
 ## Uso
 

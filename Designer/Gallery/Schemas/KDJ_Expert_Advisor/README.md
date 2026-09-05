@@ -1,7 +1,7 @@
 # KDJ Expert Advisor Strategy Diagram
 [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-A port of the MetaTrader KDJ advisor. The J line is rebuilt here as the difference between the %K and %D lines of the Stochastic Oscillator, and that difference decides the side: the diagram buys when it turns positive or when %K keeps rising while it is already positive, and sells on the mirror conditions. Two things are adapted to the packaged history: the original four-hour candles become hourly ones, so a month of data still gives enough bars, and the pip-based stop and target become percent distances that work on any instrument.
+A KDJ diagram in which the J line is rebuilt as the difference between the %K and %D lines of the Stochastic Oscillator. That difference decides the side: the diagram buys when it turns positive or when %K keeps rising while it is already positive, and sells on the mirror conditions. Hourly candles give a month of data enough bars, while percentage stop and target distances work on any instrument.
 
 ![schema](schema.svg)
 
@@ -15,18 +15,18 @@ A port of the MetaTrader KDJ advisor. The J line is rebuilt here as the differen
 
 - **Long entry**: K - D is positive and either it was negative on the previous candle, which makes this candle the zero cross, or %K is higher than on the previous candle. The position must be flat; one lot is bought at market.
 - **Short entry**: K - D is negative and either it was positive on the previous candle, which makes this candle the zero cross, or %K is lower than on the previous candle. The position must be flat; one lot is sold at market.
-- **Exit**: There is no exit signal at all, exactly as in the original: the position protection block closes the trade with market orders at a 2% take profit or a 1% stop loss, which is the percent equivalent of the 450 and 250 pip distances of the code.
+- **Exit**: There is no signal exit: the position protection block closes the trade with market orders at a 2% take profit or a 1% stop loss.
 
 ## Parameters
 
 | Parameter | Default | Description |
 |---|---|---|
-| %K Length (KDJ period) | 30 | Length of the %K line, the KDJ period of the original advisor. |
+| %K Length (KDJ period) | 30 | Length of the %K line used as the KDJ period. |
 | %D Smoothing | 6 | Smoothing length of the %D line. |
 | Take profit, % | 2 | Take profit distance, in percent of the entry price. |
 | Stop loss, % | 1 | Stop loss distance, in percent of the entry price. |
 | Volume | 1 | Order volume, in lots. |
-| Candles | 01:00:00 | Candle time frame the whole diagram works on; the original used four hours. |
+| Candles | 01:00:00 | Hourly candle time frame used by the whole diagram. |
 
 ## Diagram Details
 

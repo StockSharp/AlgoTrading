@@ -9,8 +9,8 @@ Williams %R says where the close sits inside the range of the last candles, from
 
 - Williams %R with a length of 14 is calculated on finished hourly candles, which the tester builds from the packaged five-minute history.
 - The signal is the crossing itself: the previous reading on one side of the level and the current reading on the other, so a long stay inside a zone fires only once.
-- This is the entry into the zone, the mirror image of the classic reading that waits for the oscillator to climb back out, and it matches the Direct mode of the original strategy.
-- The original also carries switches that allow long and short entries separately; both are on by default, so the diagram wires both sides and a branch can simply be unplugged to disable one.
+- This is the entry into the zone, the mirror image of the classic reading that waits for the oscillator to climb back out, and the diagram uses this Direct orientation.
+- Both long and short branches are wired; either branch can simply be unplugged to disable that side.
 
 ## Entry and Exit Rules
 
@@ -36,7 +36,7 @@ Williams %R says where the close sits inside the range of the last candles, from
 - Four comparison blocks build the two crossings out of the previous and the current reading against the two level constants.
 - Two more comparison blocks test the position against a zero constant, and each logical AND joins one crossing with its position guard.
 - Both modify blocks send market orders with the volume of one shared constant, and their own trades feed the protection block that carries the take profit and the stop loss.
-- The original protects the position with absolute price distances; the diagram uses percentages of the entry price instead, so the same numbers work on any instrument.
+- The diagram protects the position with percentages of the entry price, so the same values remain meaningful on any instrument.
 
 ## Usage
 

@@ -8,14 +8,14 @@ Das Diagramm handelt gegen RSI-Extreme, aber erst im Moment der Umkehr: Es kauft
 ## Strategieübersicht
 
 - Der Relative-Stärke-Index rechnet auf abgeschlossenen Kerzen, und ein Baustein für den Vorwert hält den Messwert der vorangegangenen Kerze fest, sodass genau die Kerze erkannt wird, auf der der Index in den normalen Bereich zurückkehrt.
-- Der SimpleMovingAverage über 50 Kerzen stammt aus der Originalstrategie: Er wählt keine Richtung, sondern verzögert den Handel nur bis zu seiner Formierung.
+- Der SimpleMovingAverage über 50 Kerzen wählt keine Richtung, sondern verzögert den Handel nur bis zu seiner Formierung.
 - Die aktuelle Position geht in beide Entscheidungen ein, und das Ordervolumen ist das Grundvolumen plus die offene Position, sodass eine Marktorder schließt und dreht.
 
 ## Ein- und Ausstiegsregeln
 
 - **Long-Einstieg**: Der vorherige RSI-Wert liegt unter der überverkauften Marke, der aktuelle auf oder über ihr, der SMA 50 ist formiert und die Position ist nicht long. Die Order kauft das Grundvolumen plus die Größe eines offenen Shorts und dreht damit einen Short in einen Long oder eröffnet aus der Neutralstellung einen Long.
 - **Short-Einstieg**: Der vorherige RSI-Wert liegt über der überkauften Marke, der aktuelle auf oder unter ihr, der SMA 50 ist formiert und die Position ist nicht short. Die Order verkauft das Grundvolumen plus die Größe eines offenen Longs und dreht damit einen Long in einen Short oder eröffnet aus der Neutralstellung einen Short.
-- **Ausstieg**: Einen eigenen Ausstiegsbaustein gibt es nicht: Das entgegengesetzte Reversionssignal schließt die Position und eröffnet mit derselben Order die Gegenseite. Die Originalstrategie kennt weder Stop-Loss noch Take-Profit, und ihre Pause von zehn Kerzen nach einem Trade wurde nicht übernommen, da die Bausteine keinen Zustand über Kerzen hinweg halten.
+- **Ausstieg**: Es gibt keinen eigenen Ausstiegsbaustein, Stop-Loss oder Take-Profit: Das entgegengesetzte Reversionssignal schließt die Position und eröffnet mit derselben Order die Gegenseite.
 
 ## Parameter
 
@@ -31,8 +31,8 @@ Das Diagramm handelt gegen RSI-Extreme, aber erst im Moment der Umkehr: Es kauft
 ## Diagrammdetails
 
 - Der Kerzenbaustein speist beide Indikatoren, und der Vorwert-Baustein am RSI-Ausgang liefert den Messwert der vorherigen Kerze.
-- Je Seite prüfen zwei Vergleichsbausteine den vorherigen und den aktuellen Wert gegen die Schwellenkonstante und bilden damit die Bedingung des Quellcodes wörtlich ab.
-- Der Vergleich des SMA mit null entspricht der Absicherung im Quellcode; da der Indikatorbaustein nur formierte Werte ausgibt, beginnt der Handel nach fünfzig Kerzen.
+- Je Seite prüfen zwei Vergleichsbausteine den vorherigen und den aktuellen Wert gegen die Schwellenkonstante und bilden damit die Durchquerungsbedingung.
+- Der Vergleich des SMA mit null dient als Bereitschaftsprüfung; da der Indikatorbaustein nur formierte Werte ausgibt, beginnt der Handel nach fünfzig Kerzen.
 - Ein Formelbaustein addiert den Betrag der Position zur Volumenkonstante, und beide Bausteine zur Positionsänderung senden Marktorders mit diesem Volumen.
 
 ## Verwendung

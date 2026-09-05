@@ -34,8 +34,8 @@ Entries are the simple part: from a flat position, a close above the moving aver
 - Two comparisons place the close against the moving average and two more place it against the trailing line, so the same price is read once and used by both halves of the diagram.
 - Three comparisons against a zero constant turn the position into flat, long and short flags that gate the entries and the exits separately.
 - The two entry blocks carry the open-position condition and the two exit blocks the close-position condition, so a signal that does not fit the current position simply does nothing.
-- The original strategy recomputes its stop level as the running maximum of close minus a multiple of ATR; that ratchet is not expressible as a chain of blocks, so the SuperTrend line, which ratchets the same way, stands in for it.
-- Two further simplifications are worth knowing: the five hundred bar pause the original keeps after every trade has no equivalent block and is dropped, and the diagram runs on five minute candles rather than the one minute candles of the C# code, because that is the history the gallery ships.
+- The SuperTrend line provides the ratcheting ATR-based exit level.
+- The diagram runs on the five-minute candles supplied with the gallery history.
 
 ## Usage
 

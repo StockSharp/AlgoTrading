@@ -1,7 +1,7 @@
 # Diagramm der Hull-MA-Steigungsstrategie
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-Der Hull Moving Average folgt dem Kurs mit sehr geringer Verzögerung, deshalb ist schon die Richtung seiner eigenen Steigung ein Trendsignal. Das Diagramm misst, wie weit sich der Durchschnitt seit der Vorkerze bewegt hat — als Bruchteil seines eigenen Werts — und dreht die Position auf diese Seite, sobald die Bewegung eine kleine Schwelle überschreitet. Das Original zählt 500 Minutenkerzen; hier sind es 100 Fünf-Minuten-Kerzen, derselbe Zeitraum auf der mitgelieferten Historie.
+Der Hull Moving Average folgt dem Kurs mit sehr geringer Verzögerung, deshalb ist schon die Richtung seiner eigenen Steigung ein Trendsignal. Das Diagramm misst, wie weit sich der Durchschnitt seit der Vorkerze bewegt hat — als Bruchteil seines eigenen Werts — und dreht die Position auf diese Seite, sobald die Bewegung eine kleine Schwelle überschreitet. Seine Länge beträgt 100 Fünf-Minuten-Kerzen, also 500 Minuten der mitgelieferten Historie.
 
 ![schema](schema.svg)
 
@@ -10,7 +10,7 @@ Der Hull Moving Average folgt dem Kurs mit sehr geringer Verzögerung, deshalb i
 - Gehandelt wird ausschließlich die Steigung des Hull Moving Average — der Kurs selbst wird nie mit dem Durchschnitt verglichen.
 - Die Steigung ist relativ, als Bruchteil des Vorwerts ausgedrückt, sodass dieselbe Schwelle auf jedem Kursniveau passt.
 - Über +0,02% will das Diagramm long sein, unter -0,02% short; innerhalb dieses Bandes passiert nichts und die offene Position bleibt bestehen.
-- Nach dem ersten Signal ist die Strategie immer im Markt: kein Stop, kein Ziel und keine Neutralstellung zwischen den Trades — genau wie im Originalcode.
+- Nach dem ersten Signal ist die Strategie immer im Markt: kein Stop, kein Ziel und keine Neutralstellung zwischen den Trades.
 
 ## Ein- und Ausstiegsregeln
 
@@ -22,7 +22,7 @@ Der Hull Moving Average folgt dem Kurs mit sehr geringer Verzögerung, deshalb i
 
 | Parameter | Standard | Beschreibung |
 |---|---|---|
-| Hull MA Length | 100 | Länge des Hull Moving Average, von 500 Minutenkerzen auf 100 Fünf-Minuten-Kerzen umgerechnet. |
+| Hull MA Length | 100 | Länge des Hull Moving Average in Fünf-Minuten-Kerzen. |
 | Rise Threshold | 0.0002 | Relativer Anstieg des Durchschnitts je Kerze, der einen Long eröffnet; 0,0002 entspricht 0,02%. |
 | Fall Threshold | -0.0002 | Relativer Rückgang des Durchschnitts je Kerze, der einen Short eröffnet; das Spiegelbild der Anstiegsschwelle. |
 | Volume | 1 | Ordervolumen in Lots, bevor die offene Position addiert wird. |
@@ -30,7 +30,7 @@ Der Hull Moving Average folgt dem Kurs mit sehr geringer Verzögerung, deshalb i
 
 ## Diagrammdetails
 
-- Ein Baustein für den Vorwert hält den Hull-Wert der vorigen Kerze und schweigt beim ersten Wert, was den übersprungenen ersten Balken des Originals nachbildet.
+- Ein Baustein für den Vorwert hält den Hull-Wert der vorigen Kerze und schweigt beim ersten Wert, sodass der erste Balken übersprungen wird.
 - Die Steigungsformel zieht den Vorwert vom aktuellen ab und teilt durch den Vorwert, wodurch die Bewegung zu einem Bruchteil wird.
 - Zwei Vergleiche teilen diesen Bruchteil mit der positiven und der negativen Schwellenkonstante in drei Zustände.
 - Jedes logische UND verbindet eine Steigungsbedingung mit einer Positionsprüfung, und die Volumenformel addiert den Betrag der Position zum gemeinsamen Volumen — das macht aus einem Einstieg eine Umkehr.

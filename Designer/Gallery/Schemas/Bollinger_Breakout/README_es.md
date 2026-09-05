@@ -1,7 +1,7 @@
 # Diagrama de la estrategia de ruptura por zonas de Bollinger
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-El nombre habla de ruptura, pero lo que se opera es el rebote: el diagrama espera una vela cuya zona inferior haya atravesado la banda inferior de Bollinger mientras el mercado sigue por encima de su EMA 50, y compra esa caída. La imagen simétrica vende un pico por encima de la banda superior. La posición se abandona en cuanto el precio vuelve a la banda media. La confirmación por RSI del código original (por debajo de 45 para largos y por encima de 55 para cortos) se omite aquí para que el diagrama siga siendo legible: apenas restringe una señal que ya exige una vela más allá de la banda.
+El nombre habla de ruptura, pero lo que se opera es el rebote: el diagrama espera una vela cuya zona inferior haya atravesado la banda inferior de Bollinger mientras el mercado sigue por encima de su EMA 50, y compra esa caída. La imagen simétrica vende un pico por encima de la banda superior. La posición se abandona en cuanto el precio vuelve a la banda media.
 
 ![schema](schema.svg)
 

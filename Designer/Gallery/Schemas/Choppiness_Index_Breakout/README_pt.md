@@ -16,7 +16,7 @@ O Choppiness Index não diz para onde o mercado vai, apenas se ele está indo a 
 
 - **Entrada comprada**: O Choppiness Index está abaixo do limiar de tendência, o candle fechou acima da média móvel simples e a posição está zerada. A ordem compra um lote e abre uma compra.
 - **Entrada vendida**: O Choppiness Index está abaixo do limiar de tendência, o candle fechou abaixo da média móvel simples e a posição está zerada. A ordem vende um lote e abre uma venda.
-- **Saída**: Assim que o Choppiness Index sobe acima do limiar de congestão, a posição aberta é encerrada: a compra por uma venda em modo de fechamento e a venda por uma compra em modo de fechamento. O código original também não traz stop loss nem take profit. Duas coisas divergem dele de propósito. Seus limiares são 99 e 99.5, o que deixaria o filtro de entrada permanentemente aberto e a condição de saída permanentemente inatingível; por isso o diagrama usa os valores canônicos 38.2 e 61.8 da documentação do indicador, que são também os descritos no próprio README da estratégia. A pausa de quinhentas barras entre operações também foi omitida, porque um contador desses não tem equivalente fiel em blocos.
+- **Saída**: Assim que o Choppiness Index sobe acima do limiar de congestão, a posição aberta é encerrada: a compra por uma venda em modo de fechamento e a venda por uma compra em modo de fechamento. Não há stop loss nem take profit. O diagrama usa os limiares canônicos 38.2 e 61.8 da documentação do indicador.
 
 ## Parâmetros
 
@@ -27,7 +27,7 @@ O Choppiness Index não diz para onde o mercado vai, apenas se ele está indo a 
 | Trending Threshold | 38.2 | Valor do índice abaixo do qual a entrada é permitida. |
 | Choppy Threshold | 61.8 | Valor do índice acima do qual o mercado é considerado lateral e a posição é encerrada. |
 | Volume | 1 | Volume da ordem, em lotes. |
-| Candles | 00:05:00 | Tempo gráfico dos candles com que todo o diagrama trabalha; o original usa candles de um minuto e este diagrama os de cinco minutos do histórico incluído. |
+| Candles | 00:05:00 | Tempo gráfico de cinco minutos usado por todo o diagrama. |
 
 ## Detalhes do diagrama
 

@@ -8,15 +8,15 @@ Mean Reversion funktioniert, wenn der Markt auf der Stelle tritt, und schadet im
 ## Strategieübersicht
 
 - Volatilität wird an sich selbst gemessen: Eine AverageTrueRange speist eine SmoothedMovingAverage, und das Verhältnis der beiden ist der gesamte Regimefilter, sodass sich das Diagramm ohne Neukalibrierung auf jedes Instrument übertragen lässt.
-- Die Glättung bildet den rekursiven Durchschnitt des Originalcodes exakt nach, denn SmoothedMovingAverage rechnet mit derselben Formel: Durchschnitt mal Länge minus eins, plus neuer Wert, geteilt durch die Länge.
+- SmoothedMovingAverage verwendet eine rekursive Formel: Durchschnitt mal Länge minus eins, plus neuer Wert, geteilt durch die Länge.
 - Der faire Wert ist eine gewöhnliche SimpleMovingAverage: Ein Schlusskurs darunter wird gekauft, einer darüber verkauft, aber nur im ruhigen Regime und nur aus der Neutralstellung.
-- Das Original arbeitet auf Minutenkerzen und sperrt die gesamte Strategie nach jedem Trade für 500 Bars, samt ihrer Ausstiege. Die mitgelieferte Historie besteht aus Fünf-Minuten-Daten, daher läuft das Diagramm auf Fünf-Minuten-Kerzen; die Sperre ist nicht nachgebildet, weil der Designer keinen zustandsbehafteten Bar-Zähler kennt, und das Diagramm handelt deshalb häufiger als das Original.
+- Das Diagramm läuft auf den Fünf-Minuten-Kerzen der mitgelieferten Historie.
 
 ## Ein- und Ausstiegsregeln
 
 - **Long-Einstieg**: Die Average True Range liegt unter dem Ruheniveau, der Schlusskurs steht unter dem gleitenden Durchschnitt und die Position ist neutral. Die Order kauft das eingestellte Volumen.
 - **Short-Einstieg**: Die Average True Range liegt unter dem Ruheniveau, der Schlusskurs steht über dem gleitenden Durchschnitt und die Position ist neutral. Die Order verkauft das eingestellte Volumen.
-- **Ausstieg**: Ein Long wird geschlossen, sobald der Schlusskurs wieder über den gleitenden Durchschnitt zurückkehrt, ein Short, sobald er wieder darunter fällt. Die Ausstiege ignorieren den Volatilitätsfilter bewusst, sodass ein Trade auch dann zurückgegeben wird, wenn der Markt bereits aufgewacht ist. Stop-Loss und Take-Profit gibt es nicht, wie in der Originalstrategie.
+- **Ausstieg**: Ein Long wird geschlossen, sobald der Schlusskurs wieder über den gleitenden Durchschnitt zurückkehrt, ein Short, sobald er wieder darunter fällt. Die Ausstiege ignorieren den Volatilitätsfilter bewusst, sodass ein Trade auch dann zurückgegeben wird, wenn der Markt bereits aufgewacht ist. Stop-Loss und Take-Profit gibt es nicht.
 
 ## Parameter
 

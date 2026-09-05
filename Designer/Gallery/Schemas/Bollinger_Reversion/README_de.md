@@ -16,7 +16,7 @@ Ein Schlusskurs außerhalb eines Bollinger-Bandes gilt als Dehnung, die gleich z
 
 - **Long-Einstieg**: Die Kerze schließt unter dem unteren Band und die Position ist neutral. Die Order kauft das Grundvolumen und eröffnet gegen die Bewegung einen Long.
 - **Short-Einstieg**: Die Kerze schließt über dem oberen Band und die Position ist neutral. Die Order verkauft das Grundvolumen und eröffnet gegen die Bewegung einen Short.
-- **Ausstieg**: Ein Long wird beim ersten Schlusskurs auf oder über der Mittellinie geschlossen, ein Short beim ersten Schlusskurs auf oder unter ihr. Die Originalstrategie kennt weder Stop-Loss noch Take-Profit; ihre Pause von fünfhundert Kerzen und ihre Haltegrenze von dreihundert Kerzen wurden nicht übernommen, und da die Pause länger war als die Grenze, endete im Quellcode jeder Trade tatsächlich an der Zeitgrenze und der Ausstieg an der Mittellinie kam nie zum Zug.
+- **Ausstieg**: Ein Long wird beim ersten Schlusskurs auf oder über der Mittellinie geschlossen, ein Short beim ersten Schlusskurs auf oder unter ihr. Es gibt weder Stop-Loss noch Take-Profit.
 
 ## Parameter
 
@@ -25,7 +25,7 @@ Ein Schlusskurs außerhalb eines Bollinger-Bandes gilt als Dehnung, die gleich z
 | Bollinger Period | 20 | Glättungsperiode der Bollinger-Bänder. |
 | Bollinger Width | 2 | Bandbreite in Standardabweichungen. |
 | Volume | 1 | Ordervolumen in Lots. |
-| Candles | 00:05:00 | Zeiteinheit der Kerzen: Die Originalstrategie nutzte Minutenkerzen, das Diagramm arbeitet mit Fünf-Minuten-Kerzen. |
+| Candles | 00:05:00 | Fünf-Minuten-Zeiteinheit der Kerzen im Diagramm. |
 
 ## Diagrammdetails
 

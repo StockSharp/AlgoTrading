@@ -16,7 +16,7 @@ Der klassische Pivot der Parketthändler wird bei jeder Kerze neu aus einem glei
 
 - **Long-Einstieg**: Das Tief der Kerze reicht in die S1-Zone (Tief <= S1 + Puffer), die Kerze schließt über ihrer Eröffnung und die Position ist neutral. Die Kauforder eröffnet einen Long über ein Lot.
 - **Short-Einstieg**: Das Hoch der Kerze reicht in die R1-Zone (Hoch >= R1 - Puffer), die Kerze schließt unter ihrer Eröffnung und die Position ist neutral. Die Verkaufsorder eröffnet einen Short über ein Lot.
-- **Ausstieg**: Ein Long wird geschlossen, wenn der Schlusskurs über dem Pivot liegt, ein Short, wenn er darunter liegt. Beide Ausstiegsbausteine arbeiten im Schließmodus und bleiben untätig, wenn es nichts zu schließen gibt. Der Originalcode kennt weder Stop-Loss noch Take-Profit, und das Diagramm behält das bei.
+- **Ausstieg**: Ein Long wird geschlossen, wenn der Schlusskurs über dem Pivot liegt, ein Short, wenn er darunter liegt. Beide Ausstiegsbausteine arbeiten im Schließmodus und bleiben untätig, wenn es nichts zu schließen gibt. Das Diagramm kennt weder Stop-Loss noch Take-Profit.
 
 ## Parameter
 
@@ -34,7 +34,7 @@ Der klassische Pivot der Parketthändler wird bei jeder Kerze neu aus einem glei
 - Drei Formelbausteine machen aus diesen fünf Zahlen den Pivot sowie Unterstützung und Widerstand samt Puffer; der Puffer steht als eigene Konstante und lässt sich daher optimieren.
 - Jeder Einstieg ist ein logisches UND aus drei Vergleichen: Berührung der Marke, Richtung der Kerze und neutrale Position.
 - Die beiden Ausstiegsbausteine werden von einem einfachen Vergleich des Schlusskurses mit dem Pivot ausgelöst und nutzen den Schließmodus statt eines festen Volumens.
-- Die Originalstrategie rechnet mit Minutenkerzen und pausiert nach jedem Trade fünfhundert Bars; das Diagramm nutzt Fünf-Minuten-Kerzen, die die mitgelieferte Historie hergibt, und kennt diese Pause nicht.
+- Das Diagramm nutzt die Fünf-Minuten-Kerzen der mitgelieferten Historie.
 
 ## Verwendung
 

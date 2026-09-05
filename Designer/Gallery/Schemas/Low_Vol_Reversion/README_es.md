@@ -8,15 +8,15 @@ La reversión a la media funciona cuando el mercado no va a ninguna parte y sufr
 ## Resumen de la estrategia
 
 - La volatilidad se mide respecto a sí misma: un AverageTrueRange alimenta una SmoothedMovingAverage y la relación entre ambos es todo el filtro de régimen, por lo que el diagrama se traslada a cualquier instrumento sin recalibrar.
-- El suavizado reproduce exactamente la media recursiva del código original, porque SmoothedMovingAverage usa la misma fórmula: la media por la longitud menos uno, más el valor nuevo, dividido por la longitud.
+- SmoothedMovingAverage usa una fórmula recursiva: la media por la longitud menos uno, más el valor nuevo, dividido por la longitud.
 - El valor justo es una SimpleMovingAverage corriente: un cierre por debajo se compra y uno por encima se vende, pero solo en régimen tranquilo y solo desde posición plana.
-- El original trabaja con velas de un minuto y bloquea toda la estrategia durante 500 barras tras cada operación, salidas incluidas. El histórico incluido es de cinco minutos, así que el diagrama usa velas de cinco minutos; el bloqueo no se reproduce porque Designer no tiene contador de barras con estado, y por eso opera con más frecuencia que el original.
+- El diagrama trabaja con las velas de cinco minutos suministradas con el histórico incluido.
 
 ## Reglas de entrada y salida
 
 - **Entrada en largo**: El Average True Range está por debajo del nivel de calma, el cierre queda bajo la media móvil y la posición está plana. La orden compra el volumen configurado.
 - **Entrada en corto**: El Average True Range está por debajo del nivel de calma, el cierre queda sobre la media móvil y la posición está plana. La orden vende el volumen configurado.
-- **Salida**: El largo se cierra cuando el cierre vuelve por encima de la media móvil y el corto cuando vuelve por debajo. Las salidas ignoran deliberadamente el filtro de volatilidad, de modo que la operación se devuelve incluso si el mercado ya se ha despertado. No hay stop de pérdidas ni toma de beneficios, igual que en la estrategia original.
+- **Salida**: El largo se cierra cuando el cierre vuelve por encima de la media móvil y el corto cuando vuelve por debajo. Las salidas ignoran deliberadamente el filtro de volatilidad, de modo que la operación se devuelve incluso si el mercado ya se ha despertado. No hay stop de pérdidas ni toma de beneficios.
 
 ## Parámetros
 

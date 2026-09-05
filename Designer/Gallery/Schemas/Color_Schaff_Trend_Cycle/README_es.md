@@ -16,7 +16,7 @@ El Schaff Trend Cycle es un estocástico calculado sobre el histograma del MACD,
 
 - **Entrada en largo**: En la vela anterior el ciclo estaba en el nivel superior o por debajo y ahora está por encima, la línea MACD es positiva y la posición no es larga. La orden compra el volumen base más el valor absoluto de la posición: gira un corto a largo o abre un largo desde plano.
 - **Entrada en corto**: En la vela anterior el ciclo estaba en el nivel inferior o por encima y ahora está por debajo, la línea MACD es negativa y la posición no es corta. La orden vende el volumen base más el valor absoluto de la posición: gira un largo a corto o abre un corto desde plano.
-- **Salida**: No hay salida propia ni órdenes de protección, igual que en la estrategia original: solo se abandona la posición cuando llega la rotura contraria del nivel y la gira.
+- **Salida**: No hay salida propia ni órdenes de protección: solo se abandona la posición cuando llega la rotura contraria del nivel y la gira.
 
 ## Parámetros
 
@@ -36,9 +36,9 @@ El Schaff Trend Cycle es un estocástico calculado sobre el histograma del MACD,
 - Cuatro bloques de comparación construyen las dos roturas: el valor anterior frente a un nivel y el actual frente al mismo nivel, lo que en conjunto significa que la línea lo atravesó en esta vela.
 - Otras dos comparaciones dan el signo de la línea MACD y dos más contrastan la posición con la constante cero compartida, para que una señal no aumente una posición ya abierta.
 - Cada Y lógica reúne cuatro condiciones —dónde estaba el ciclo, dónde está, el signo del MACD y la posición— y dispara un bloque de modificación de posición.
-- Un bloque de fórmula calcula el tamaño del giro como volumen base más el valor absoluto de la posición, de modo que una sola orden a mercado cierra el lado antiguo y abre el nuevo, igual que el par de órdenes que envía el código en C#.
-- Conviene conocer dos diferencias con el original en C#. El original lleva el nombre del Schaff Trend Cycle pero en realidad calcula un RSI de diez periodos en su lugar; este diagrama usa el indicador Schaff Trend Cycle real, así que las señales son las que promete el nombre y no las que produce el código.
-- Además el original trabaja con velas de cuatro horas, que dejan muy pocas barras en el mes de histórico que acompaña a la galería; el diagrama usa velas de cinco minutos.
+- Un bloque de fórmula calcula el tamaño del giro como volumen base más el valor absoluto de la posición, de modo que una sola orden a mercado cierra el lado antiguo y abre el nuevo.
+- El diagrama utiliza el indicador Schaff Trend Cycle para sus señales.
+- Trabaja con velas de cinco minutos para que el mes de histórico incluido en la galería aporte suficientes barras.
 
 ## Uso
 

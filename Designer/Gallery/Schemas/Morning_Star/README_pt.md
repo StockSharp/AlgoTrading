@@ -8,15 +8,14 @@ O Morning Star é o fundo clássico de três candles: um candle de baixa largo, 
 ## Visão geral da estratégia
 
 - Dois blocos de indicador de padrões de candle carregam expressões próprias de três candles: o primeiro candle tem corpo e aponta contra a entrada futura, o corpo do meio é menor que metade dele e o terceiro fecha além do ponto médio do primeiro.
-- Uma média móvel simples do preço de fechamento é a única referência de saída; o diagrama não tem stop loss nem take profit, exatamente como a estratégia original.
+- Uma média móvel simples do preço de fechamento é a única referência de saída; o diagrama não tem stop loss nem take profit.
 - O bloco de posição é comparado com zero, de modo que o padrão só é executado a partir do zero e nunca aumenta uma operação aberta.
-- A estratégia original ainda congela todos os sinais por várias centenas de barras após cada execução; aqui não existe bloco contador de barras, então essa pausa foi omitida e está registrada.
 
 ## Regras de entrada e saída
 
 - **Entrada comprada**: O bloco Morning Star informa o padrão no candle recém-encerrado e a posição é zero. A ordem compra um lote e abre uma compra.
 - **Entrada vendida**: O bloco Evening Star informa o padrão no candle recém-encerrado e a posição é zero. A ordem vende um lote e abre uma venda.
-- **Saída**: Uma compra é encerrada por um bloco de modificação de posição em modo de fechamento assim que um candle fecha abaixo da média móvel; uma venda é encerrada do mesmo jeito quando um candle fecha acima dela. Não há stop de proteção, porque a estratégia de origem também não tem.
+- **Saída**: Uma compra é encerrada por um bloco de modificação de posição em modo de fechamento assim que um candle fecha abaixo da média móvel; uma venda é encerrada do mesmo jeito quando um candle fecha acima dela. Não há stop de proteção.
 
 ## Parâmetros
 
@@ -24,7 +23,7 @@ O Morning Star é o fundo clássico de três candles: um candle de baixa largo, 
 |---|---|---|
 | SMA Length | 20 | Período da média móvel simples que encerra as operações. |
 | Volume | 1 | Volume da ordem, em lotes. |
-| Candles | 00:05:00 | Tempo gráfico dos candles de todo o diagrama; o original roda em candles de um minuto e aqui foi ajustado ao histórico de cinco minutos que acompanha a galeria. |
+| Candles | 00:05:00 | Tempo gráfico de cinco minutos usado por todo o diagrama e pelo histórico empacotado da galeria. |
 
 ## Detalhes do diagrama
 

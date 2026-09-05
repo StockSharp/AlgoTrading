@@ -36,7 +36,6 @@ Zwei klassische Werkzeuge beantworten hier zwei verschiedene Fragen. Die Bolling
 - Drei Konverterbausteine zerlegen den Bollinger-Wert in oberes Band, unteres Band und mittleren gleitenden Durchschnitt.
 - Sechs Vergleichsbausteine bilden die Bedingungen: Schlusskurs gegen jedes Band, RSI gegen jede Marke und die Position gegen eine Nullkonstante.
 - Jedes logische UND verbindet eine Bandbedingung, eine RSI-Bedingung und die Positionsprüfung und löst einen Baustein zur Positionsänderung aus, dessen Volumen aus einer gemeinsamen Konstante stammt.
-- Die ursprüngliche Strategie pausiert nach jedem Trade eine feste Zahl von Bars; einen Bar-Zähler gibt es als Baustein nicht, deshalb entfällt die Pause und allein das mittlere Band bestimmt das Ende eines Trades.
 
 ## Verwendung
 

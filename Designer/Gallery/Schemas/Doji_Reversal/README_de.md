@@ -8,15 +8,14 @@ Ein Doji ist eine Kerze, die fast auf demselben Kurs eröffnet und schließt: K�
 ## Strategieübersicht
 
 - Ein Formelbaustein rechnet Körper minus Spanne mal Schwelle: Ein negatives Ergebnis heißt, der Körper ist kleiner als der erlaubte Anteil der Kerze.
-- Die Schreibweise als Multiplikation statt als Division bildet auch die Absicherung des Originalcodes ab: Bei einer Kerze, deren Hoch gleich dem Tief ist, wird null mit null verglichen und kein Doji gemeldet.
+- Die Schreibweise als Multiplikation statt als Division behandelt eine Kerze, deren Hoch gleich dem Tief ist: Dabei wird null mit null verglichen und kein Doji gemeldet.
 - Zwei Bausteine für den vorherigen Wert lesen die Schlusskurse eine und zwei Kerzen zurück: Ein Rückgang dazwischen gilt als Abwärtsschwung und wird gekauft, ein Anstieg als Aufwärtsschwung und wird verkauft.
-- Die Originalstrategie sperrt nach einer Ausführung außerdem alle Signale für mehrere hundert Bars; einen Bar-Zähler gibt es hier als Baustein nicht, daher entfällt diese Pause und wird hier vermerkt.
 
 ## Ein- und Ausstiegsregeln
 
 - **Long-Einstieg**: Die eben abgeschlossene Kerze ist ein Doji, der Schlusskurs eine Kerze zurück liegt unter dem von zwei Kerzen zurück und die Position ist null. Die Order kauft ein Lot und eröffnet einen Long.
 - **Short-Einstieg**: Die eben abgeschlossene Kerze ist ein Doji, der Schlusskurs eine Kerze zurück liegt über dem von zwei Kerzen zurück und die Position ist null. Die Order verkauft ein Lot und eröffnet einen Short.
-- **Ausstieg**: Ein Long wird von einem Baustein zur Positionsänderung im Schließmodus glattgestellt, sobald eine Kerze unter dem gleitenden Durchschnitt schließt; ein Short, sobald eine Kerze darüber schließt. Die Ursprungsstrategie hat weder Stop-Loss noch Take-Profit, und dieses Diagramm ebenfalls nicht.
+- **Ausstieg**: Ein Long wird von einem Baustein zur Positionsänderung im Schließmodus glattgestellt, sobald eine Kerze unter dem gleitenden Durchschnitt schließt; ein Short, sobald eine Kerze darüber schließt. Das Diagramm hat weder Stop-Loss noch Take-Profit.
 
 ## Parameter
 
@@ -25,7 +24,7 @@ Ein Doji ist eine Kerze, die fast auf demselben Kurs eröffnet und schließt: K�
 | Doji Threshold | 0.1 | Größtes Verhältnis von Körper zu Gesamtspanne, bei dem eine Kerze noch als Doji gilt. |
 | SMA Length | 20 | Glättungsperiode des einfachen gleitenden Durchschnitts, der die Trades schließt. |
 | Volume | 1 | Ordervolumen in Lots. |
-| Candles | 00:05:00 | Zeiteinheit der Kerzen für das gesamte Diagramm; das Original läuft auf Minutenkerzen und ist hier auf die mitgelieferte Fünf-Minuten-Historie herunterskaliert. |
+| Candles | 00:05:00 | Fünf-Minuten-Zeiteinheit der Kerzen für das gesamte Diagramm und die mitgelieferte Galeriehistorie. |
 
 ## Diagrammdetails
 

@@ -1,7 +1,7 @@
 # Diagrama de la estrategia de giro tras una sesión perdedora
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-La idea es el giro después de una mala sesión: una sesión que termina por debajo de donde abrió suele dejarle un rebote a la siguiente, así que el diagrama espera a que el mercado se recupere por encima de su media móvil y compra esa recuperación, y hace lo contrario tras una sesión que cerró al alza. A pesar del nombre, la estrategia original no contiene ningún filtro por día de la semana, y este diagrama tampoco.
+La idea es el giro después de una mala sesión: una sesión que termina por debajo de donde abrió suele dejarle un rebote a la siguiente, así que el diagrama espera a que el mercado se recupere por encima de su media móvil y compra esa recuperación, y hace lo contrario tras una sesión que cerró al alza. A pesar del nombre, el diagrama no contiene ningún filtro por día de la semana.
 
 ![schema](schema.svg)
 
@@ -10,13 +10,13 @@ La idea es el giro después de una mala sesión: una sesión que termina por deb
 - Dos series de velas trabajan a la vez: la serie de sesión decide hacia dónde inclinarse y la serie de negociación, más rápida, elige el momento de entrar.
 - El veredicto de la sesión es una única comparación del cierre de la vela de sesión con su propia apertura, así que no hay que recordar ningún estado entre velas.
 - La media móvil simple sobre la serie de negociación es la confirmación: tras una sesión perdedora solo se compra cuando el precio ya ha vuelto por encima de la media.
-- Como el veredicto llega una vez por vela de sesión, la Y lógica solo puede dispararse una vez por sesión, que es exactamente la regla de una entrada por sesión del original.
+- Como el veredicto llega una vez por vela de sesión, la Y lógica solo puede dispararse una vez por sesión.
 
 ## Reglas de entrada y salida
 
 - **Entrada en largo**: La última sesión cerró por debajo de su apertura, la vela de negociación cierra por encima de la media móvil simple y la posición es plana. La orden compra el volumen compartido a mercado.
 - **Entrada en corto**: La última sesión cerró por encima de su apertura, la vela de negociación cierra por debajo de la media móvil simple y la posición es plana. La orden vende el volumen compartido a mercado.
-- **Salida**: Se sale por el lado de la media, no por un objetivo: un cierre de vuelta por debajo de la media cierra un largo y un cierre de vuelta por encima cierra un corto. No hay stop loss ni take profit, igual que en la estrategia original.
+- **Salida**: Se sale por el lado de la media, no por un objetivo: un cierre de vuelta por debajo de la media cierra un largo y un cierre de vuelta por encima cierra un corto. No hay stop loss ni take profit.
 
 ## Parámetros
 

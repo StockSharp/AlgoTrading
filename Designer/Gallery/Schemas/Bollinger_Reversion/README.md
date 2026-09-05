@@ -16,7 +16,7 @@ A close outside a Bollinger band is treated as a stretch that is about to be giv
 
 - **Long entry**: The candle closes below the lower band and the position is flat. The order buys the base volume and opens a long against the move.
 - **Short entry**: The candle closes above the upper band and the position is flat. The order sells the base volume and opens a short against the move.
-- **Exit**: A long is closed on the first close at or above the middle line, a short on the first close at or below it. The original strategy has no stop loss or take profit; its pause of five hundred candles and its limit of three hundred candles per position are not carried over, and since the pause was longer than the limit, every trade in the source actually ended on the time limit and the middle line exit never ran.
+- **Exit**: A long is closed on the first close at or above the middle line, a short on the first close at or below it. There is no stop loss or take profit.
 
 ## Parameters
 
@@ -25,7 +25,7 @@ A close outside a Bollinger band is treated as a stretch that is about to be giv
 | Bollinger Period | 20 | Averaging length of the Bollinger Bands. |
 | Bollinger Width | 2 | Band width in standard deviations. |
 | Volume | 1 | Order volume, in lots. |
-| Candles | 00:05:00 | Candle time frame; the original strategy used one-minute candles, the diagram works on five-minute ones. |
+| Candles | 00:05:00 | Five-minute candle time frame used by the diagram. |
 
 ## Diagram Details
 

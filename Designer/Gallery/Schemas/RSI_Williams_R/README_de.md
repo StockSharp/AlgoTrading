@@ -1,7 +1,7 @@
 # Diagramm der Doppelkreuzungsstrategie aus RSI und Williams %R
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-Zwei Oszillatoren müssen sich auf derselben Kerze einig sein. Gekauft wird nur, wenn der RSI unter 30 fällt und der Williams %R zugleich unter -80 rutscht, verkauft nur, wenn der RSI über 70 steigt und der Williams %R zugleich über -20 klettert. Ein Wert, der bloß in der Zone liegt, genügt nicht: Auf der Vorkerze mussten beide noch außerhalb sein, deshalb wird jeder Oszillator zusätzlich eine Kerze zurück gehalten. Die Pause von 180 Balken aus dem Originalcode ist nicht übernommen, denn auf Fünf-Minuten-Kerzen würde sie die Strategie nach jedem Trade fünfzehn Stunden lang stilllegen.
+Zwei Oszillatoren müssen sich auf derselben Kerze einig sein. Gekauft wird nur, wenn der RSI unter 30 fällt und der Williams %R zugleich unter -80 rutscht, verkauft nur, wenn der RSI über 70 steigt und der Williams %R zugleich über -20 klettert. Ein Wert, der bloß in der Zone liegt, genügt nicht: Auf der Vorkerze mussten beide noch außerhalb sein, deshalb wird jeder Oszillator zusätzlich eine Kerze zurück gehalten.
 
 ![schema](schema.svg)
 

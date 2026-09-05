@@ -8,15 +8,14 @@ Un doji es una vela que abre y cierra casi al mismo precio: compradores y vended
 ## Resumen de la estrategia
 
 - Un bloque de fórmula calcula el cuerpo menos el rango multiplicado por el umbral: un resultado negativo significa que el cuerpo es menor que la fracción permitida de la vela.
-- Escribir la prueba como multiplicación en vez de división reproduce además la protección del código original: en una vela donde el máximo iguala al mínimo se compara cero contra cero y no se reconoce ningún doji.
+- Escribir la prueba como multiplicación en vez de división también resuelve una vela cuyo máximo iguala al mínimo: la comparación queda en cero contra cero y no se reconoce ningún doji.
 - Dos bloques de valor anterior leen los cierres de una y dos velas atrás: una caída entre ellos se toma como tramo bajista y se compra, una subida como tramo alcista y se vende.
-- La estrategia original bloquea además todas las señales durante varios cientos de barras tras una ejecución; aquí no existe un bloque contador de barras, así que esa pausa se omite y se documenta.
 
 ## Reglas de entrada y salida
 
 - **Entrada en largo**: La vela recién cerrada es un doji, el cierre de una vela atrás es menor que el de dos velas atrás y la posición es cero. La orden compra un lote y abre un largo.
 - **Entrada en corto**: La vela recién cerrada es un doji, el cierre de una vela atrás es mayor que el de dos velas atrás y la posición es cero. La orden vende un lote y abre un corto.
-- **Salida**: Un largo se cierra con un bloque de modificación de posición en modo cierre cuando una vela cierra por debajo de la media móvil; un corto se cierra cuando una vela cierra por encima. La estrategia de origen no tiene stop loss ni take profit, y este diagrama tampoco.
+- **Salida**: Un largo se cierra con un bloque de modificación de posición en modo cierre cuando una vela cierra por debajo de la media móvil; un corto se cierra cuando una vela cierra por encima. El diagrama no tiene stop loss ni take profit.
 
 ## Parámetros
 
@@ -25,7 +24,7 @@ Un doji es una vela que abre y cierra casi al mismo precio: compradores y vended
 | Doji Threshold | 0.1 | Proporción máxima entre cuerpo y rango completo con la que una vela sigue contando como doji. |
 | SMA Length | 20 | Periodo de la media móvil simple que cierra las operaciones. |
 | Volume | 1 | Volumen de la orden, en lotes. |
-| Candles | 00:05:00 | Marco temporal de las velas de todo el diagrama; el original usa velas de un minuto y aquí se ajusta al histórico de cinco minutos incluido en la galería. |
+| Candles | 00:05:00 | Marco temporal de cinco minutos usado por todo el diagrama y por el histórico incluido en la galería. |
 
 ## Detalles del diagrama
 

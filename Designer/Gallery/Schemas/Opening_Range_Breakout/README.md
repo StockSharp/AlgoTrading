@@ -1,7 +1,7 @@
 # Opening Range Breakout (Bollinger Breakout with EMA Filter) Strategy Diagram
 [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-The example keeps the name of the original strategy, but there is no session opening range in it: what it actually trades is a breakout of the Bollinger Bands confirmed by a slow EMA. Price leaving the band is the trigger, the EMA decides whether that break is going with the market or against it, and the middle band brings the trade home.
+Despite its name, the diagram has no session opening range: it trades a breakout of the Bollinger Bands confirmed by a slow EMA. Price leaving the band is the trigger, the EMA decides whether that break is going with the market or against it, and the middle band brings the trade home.
 
 ![schema](schema.svg)
 
@@ -22,7 +22,7 @@ The example keeps the name of the original strategy, but there is no session ope
 | Parameter | Default | Description |
 |---|---|---|
 | Bollinger Length | 20 | Averaging length of the Bollinger Bands, which is also the length of the middle band. |
-| Bollinger Width | 2 | Band width in standard deviations; the original code fixes it at two. |
+| Bollinger Width | 2 | Band width in standard deviations. |
 | EMA Length | 50 | Length of the EMA that decides the direction a breakout is allowed to be traded in. |
 | Volume | 1 | Order volume, in lots. |
 | Candles | 00:30:00 | Candle time frame the whole diagram works on. |
@@ -32,7 +32,7 @@ The example keeps the name of the original strategy, but there is no session ope
 - The candle block feeds the Bollinger Bands, the EMA and a converter for the closing price; three more converters split the bands into upper, lower and middle lines.
 - Six comparisons cover the whole logic: two for the bands, two for the EMA filter and two for the return to the middle band.
 - Both entry AND blocks require a flat position, so an entry never adds to an open trade; the closing blocks are wired straight to the middle-band comparisons.
-- Two things from the C# original are missing here: the 10-bar pause between actions, which has no block in the Designer, and the immediate reversal — this diagram closes at the middle band first and opens the opposite side on a later candle.
+- The diagram closes at the middle band first and can open the opposite side on a later candle.
 
 ## Usage
 

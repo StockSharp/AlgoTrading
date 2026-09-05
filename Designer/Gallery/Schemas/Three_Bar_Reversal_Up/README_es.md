@@ -10,13 +10,13 @@ Dos velas empujan el mercado a la baja, la segunda marcando un mínimo más bajo
 - Dos bloques de patrón de velas llevan cada uno una fórmula de tres velas, así toda la figura se reconoce en un bloque en lugar de un muro de comparaciones.
 - La fórmula larga pide una vela bajista, luego una vela bajista con un mínimo inferior y después una vela alcista que cierre por encima del máximo de la vela intermedia.
 - La fórmula corta es el espejo exacto: alcista, alcista con un máximo superior y luego bajista cerrando por debajo del mínimo de la vela intermedia.
-- La media móvil simple no interviene en la entrada: es solo la línea en la que se abandona la operación, igual que en la estrategia original.
+- La media móvil simple no interviene en la entrada: es solo la línea en la que se abandona la operación.
 
 ## Reglas de entrada y salida
 
 - **Entrada en largo**: El bloque del patrón alcista informa de la reversión de tres velas completada y la posición está plana. La orden compra un lote y abre un largo.
 - **Entrada en corto**: El bloque del patrón bajista informa de la reversión espejo completada y la posición está plana. La orden vende un lote y abre un corto.
-- **Salida**: El largo se cierra cuando una vela cierra por debajo de la media móvil y el corto cuando cierra por encima, ambos mediante bloques de modificación de posición en modo cierre, exactamente como en el original. El código original no tiene ni stop de pérdidas ni toma de beneficios, así que el diagrama tampoco. Lo que se ha dejado fuera es la pausa de varios cientos de velas que el original mantiene tras cada operación: un contador de barras solo se construye devolviendo una señal al propio diagrama, lo que cerraría el grafo en un bucle, así que aquí se toma cada patrón que aparece. Por eso opera bastante más a menudo que el original.
+- **Salida**: El largo se cierra cuando una vela cierra por debajo de la media móvil y el corto cuando cierra por encima, ambos mediante bloques de modificación de posición en modo cierre. El diagrama no tiene ni stop de pérdidas ni toma de beneficios y toma cada patrón válido que detecta.
 
 ## Parámetros
 
@@ -24,7 +24,7 @@ Dos velas empujan el mercado a la baja, la segunda marcando un mínimo más bajo
 |---|---|---|
 | SMA Length | 20 | Periodo de suavizado de la media móvil simple que cierra las operaciones. |
 | Volume | 1 | Volumen de la orden, en lotes. |
-| Candles | 00:05:00 | Marco temporal de las velas con el que trabaja todo el diagrama. La estrategia original usa velas de un minuto; aquí se emplean cinco minutos para ajustarse al histórico incluido y mantener legible la figura. |
+| Candles | 00:05:00 | Marco temporal de cinco minutos usado para ajustarse al histórico incluido y mantener legible la figura. |
 
 ## Detalles del diagrama
 

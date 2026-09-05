@@ -16,7 +16,7 @@ Um candle de engolfo indica que o lado que dominava a barra anterior acabou de s
 
 - **Entrada comprada**: O bloco de padrão informa um engolfo de alta, o candle fechou abaixo da média móvel e não há posição. A ordem compra um lote e abre uma compra.
 - **Entrada vendida**: O bloco de padrão informa um engolfo de baixa, o candle fechou acima da média móvel e não há posição. A ordem vende um lote e abre uma venda.
-- **Saída**: A compra é encerrada quando um candle fecha acima da média móvel e a venda quando fecha abaixo, ambas por blocos de modificação de posição em modo de fechamento. A estratégia original sai do mesmo lado da média em que entrou e sustenta a operação com uma pausa de várias centenas de barras; aqui não existe bloco contador de barras, então a saída é o retorno à média, a regra mais próxima que continua operando com sentido.
+- **Saída**: A compra é encerrada quando um candle fecha acima da média móvel e a venda quando fecha abaixo, ambas por blocos de modificação de posição em modo de fechamento. O retorno à média dá a cada posição espaço para se desenvolver antes do encerramento.
 
 ## Parâmetros
 

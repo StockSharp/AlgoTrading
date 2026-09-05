@@ -11,8 +11,8 @@ El cruce de las dos líneas del Stochastic es una señal frecuente y ruidosa, as
 - Un bloque de cruce compara ambas líneas: su señal marca el cruce alcista y esa misma señal invertida por un bloque NO marca el bajista.
 - El filtro de zona es una simple comparación de %K con las constantes de sobreventa y sobrecompra, así que un cruce en mitad del rango se ignora.
 - El volumen de la orden es el volumen base más el valor absoluto de la posición, lo que cierra el lado contrario y abre el nuevo con una sola orden a mercado.
-- Pese al nombre de la carpeta de la estrategia original, en ella no hay RSI ni stop loss; la pausa de cinco velas que mantiene tras cada operación no tiene equivalente en bloques y se omite.
-- El original trabaja con velas de quince minutos; el diagrama se ha reducido a velas de cinco minutos para ajustarse al histórico de muestra incluido.
+- El diagrama no usa RSI y no tiene stop loss.
+- Trabaja con velas de cinco minutos para ajustarse al histórico de muestra incluido.
 
 ## Reglas de entrada y salida
 

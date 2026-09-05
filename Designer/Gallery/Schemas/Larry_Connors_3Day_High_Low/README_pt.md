@@ -1,7 +1,7 @@
 # Diagrama da estratégia Larry Connors 3 Day High/Low
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
-O 3 Day High/Low de Larry Connors compra um recuo curto dentro de um mercado em alta. O preço precisa se manter acima de uma SimpleMovingAverage lenta, cair abaixo de uma rápida e formar três candles seguidos cujas máximas e mínimas sejam menores que as do candle anterior. A operação é devolvida no primeiro fechamento acima da média rápida. O original usa barras diárias; este diagrama trabalha em candles de cinco minutos para combinar com o histórico intradiário incluído.
+O 3 Day High/Low de Larry Connors compra um recuo curto dentro de um mercado em alta. O preço precisa se manter acima de uma SimpleMovingAverage lenta, cair abaixo de uma rápida e formar três candles seguidos cujas máximas e mínimas sejam menores que as do candle anterior. A operação é devolvida no primeiro fechamento acima da média rápida. Este diagrama trabalha em candles de cinco minutos para combinar com o histórico intradiário incluído.
 
 ![schema](schema.svg)
 
@@ -10,13 +10,13 @@ O 3 Day High/Low de Larry Connors compra um recuo curto dentro de um mercado em 
 - Um bloco de padrão de candles carrega toda a figura de quatro candles: três consecutivos, cada um com máxima e mínima menores que o anterior.
 - Uma SimpleMovingAverage de 50 períodos define que o mercado sobe, de modo que o recuo só é comprado a favor do movimento maior.
 - Uma SimpleMovingAverage de 5 períodos é ao mesmo tempo o portão de entrada, pois o preço abaixo dela indica que o recuo continua, e o gatilho de saída.
-- A estratégia é somente comprada. O original ainda limita o número de entradas e espera quinze barras entre operações; não há bloco contador, então este diagrama negocia com mais frequência que a fonte.
+- A estratégia é somente comprada.
 
 ## Regras de entrada e saída
 
 - **Entrada comprada**: O bloco de padrão informa três máximas e mínimas descendentes, o fechamento está acima da SMA lenta, abaixo da SMA rápida e a posição está zerada. A ordem compra o volume compartilhado a mercado e abre a compra.
 - **Entrada vendida**: Não existe lado vendido. As regras de Connors só compram recuos dentro de um mercado em alta, por isso o diagrama não tem entrada de venda.
-- **Saída**: O primeiro fechamento acima da SMA rápida encerra a compra. O bloco de encerramento envia uma ordem a mercado do tamanho aberto e, como no código original, não há stop nem alvo.
+- **Saída**: O primeiro fechamento acima da SMA rápida encerra a compra. O bloco de encerramento envia uma ordem a mercado do tamanho aberto, e não há stop nem alvo.
 
 ## Parâmetros
 

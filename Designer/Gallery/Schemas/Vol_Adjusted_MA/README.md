@@ -9,8 +9,8 @@ The diagram wraps a Simple Moving Average in a channel whose half-width is a mul
 
 - A SimpleMovingAverage draws the centre line and an AverageTrueRange decides how far the edges sit from it, which makes the channel adapt to the current volatility.
 - Two formula blocks assemble the edges as SMA + multiplier * ATR and SMA - multiplier * ATR from the same three sources.
-- Entries are taken only from a flat position, and the only way out is the close coming back through the centre line; there is no stop loss or take profit, exactly as in the C# original.
-- Two departures from the original: the 500-bar pause after every trade is not reproduced, so the diagram trades more often, and the working candle is five minutes instead of one, which is what the packaged history provides.
+- Entries are taken only from a flat position, and the only way out is the close coming back through the centre line; there is no stop loss or take profit.
+- The diagram works on five-minute candles from the packaged history and can trade every qualifying signal.
 
 ## Entry and Exit Rules
 

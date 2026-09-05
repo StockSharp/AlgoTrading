@@ -16,7 +16,7 @@ O True Strength Index é momento suavizado duas vezes, por isso vira tarde mas r
 
 - **Entrada comprada**: A linha do TSI cruza a linha de sinal para cima, a distância entre elas alcança ao menos o mínimo e a posição não está comprada. A ordem compra o volume compartilhado mais o tamanho de uma venda aberta, de modo que uma única ordem a mercado encerra a venda e abre a compra.
 - **Entrada vendida**: A linha do TSI cruza a linha de sinal para baixo, a distância entre elas alcança ao menos o mínimo e a posição não está vendida. A ordem vende o volume compartilhado mais o tamanho de uma compra aberta.
-- **Saída**: Não há regra de saída própria nem stop de proteção, exatamente como no original: a posição é mantida até que o cruzamento contrário a inverta. Duas coisas foram simplificadas. O original espera dez candles depois de cada entrada antes de olhar novamente para os sinais, e nenhum bloco guarda um contador de barras entre candles, portanto essa pausa foi removida; a verificação de posição continua impedindo uma segunda entrada no mesmo sentido. O original também dispara duas ordens a mercado ao inverter, o que dobra o tamanho por um instante; aqui a fórmula de volume faz o mesmo em uma única ordem.
+- **Saída**: Não há regra de saída própria nem stop de proteção: a posição é mantida até que o cruzamento contrário a inverta. A verificação de posição impede uma segunda entrada no mesmo sentido, enquanto a fórmula de volume encerra o lado anterior e abre o novo em uma única ordem a mercado.
 
 ## Parâmetros
 
@@ -27,7 +27,7 @@ O True Strength Index é momento suavizado duas vezes, por isso vira tarde mas r
 | TSI Signal Length | 7 | Período da linha de sinal exponencial traçada sobre o índice. |
 | Min spread | 2 | Distância absoluta mínima entre o índice e sua linha de sinal para o cruzamento valer. |
 | Volume | 1 | Volume da ordem, em lotes. |
-| Candles | 01:00:00 | Tempo gráfico dos candles com que todo o diagrama trabalha. O original roda em candles de quatro horas; em um mês de histórico sobram poucas barras finalizadas para um índice duplamente suavizado se formar e ainda operar, então o diagrama foi reduzido para candles de uma hora. |
+| Candles | 01:00:00 | Tempo gráfico de uma hora, que fornece barras finalizadas suficientes para o índice duplamente suavizado se formar e negociar dentro de um mês de histórico. |
 
 ## Detalhes do diagrama
 

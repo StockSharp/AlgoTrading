@@ -16,7 +16,7 @@ Un cierre fuera de una banda de Bollinger se interpreta como un estiramiento a p
 
 - **Entrada en largo**: La vela cierra por debajo de la banda inferior y la posición es plana. La orden compra el volumen base y abre un largo contra el movimiento.
 - **Entrada en corto**: La vela cierra por encima de la banda superior y la posición es plana. La orden vende el volumen base y abre un corto contra el movimiento.
-- **Salida**: El largo se cierra en el primer cierre en la línea media o por encima; el corto, en el primer cierre en la línea media o por debajo. La estrategia original no tiene stop ni take profit; su pausa de quinientas velas y su límite de trescientas velas por posición no se trasladan y, como la pausa era más larga que el límite, en el código fuente cada operación terminaba en realidad por tiempo y la salida a la línea media nunca llegaba a ejecutarse.
+- **Salida**: El largo se cierra en el primer cierre en la línea media o por encima; el corto, en el primer cierre en la línea media o por debajo. No hay stop loss ni take profit.
 
 ## Parámetros
 
@@ -25,7 +25,7 @@ Un cierre fuera de una banda de Bollinger se interpreta como un estiramiento a p
 | Bollinger Period | 20 | Periodo de suavizado de las bandas de Bollinger. |
 | Bollinger Width | 2 | Ancho de las bandas en desviaciones estándar. |
 | Volume | 1 | Volumen de la orden, en lotes. |
-| Candles | 00:05:00 | Marco temporal de las velas: la estrategia original usaba velas de un minuto y el diagrama trabaja con velas de cinco minutos. |
+| Candles | 00:05:00 | Marco temporal de cinco minutos usado por el diagrama. |
 
 ## Detalles del diagrama
 

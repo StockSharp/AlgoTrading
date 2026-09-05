@@ -7,7 +7,7 @@ Un diagrama de reversión a la media solo en largo, construido sobre Bollinger %
 
 ## Resumen de la estrategia
 
-- El indicador BollingerPercentB hace en un bloque lo que la estrategia original calcula a mano a partir de las bandas; su escala va de 0 a 100, por lo que los umbrales clásicos 0.35 y 0.8 se escriben 35 y 80.
+- El indicador BollingerPercentB calcula la posición del precio dentro de las bandas en una escala de 0 a 100, por lo que los umbrales clásicos 0.35 y 0.8 se escriben 35 y 80.
 - Un bloque de valor anterior guarda la lectura de la vela previa, y es lo que convierte una vela débil aislada en una condición de dos velas.
 - La estrategia es solo larga: compra la debilidad y vende ese mismo largo, nunca abre un corto.
 - La posición interviene en ambas decisiones, de modo que la entrada no se acumula y la salida no se dispara sin posición.

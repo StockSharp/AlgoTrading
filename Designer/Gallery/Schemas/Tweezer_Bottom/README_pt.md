@@ -16,7 +16,7 @@ Uma pinça são dois candles vizinhos que se viram um contra o outro no mesmo n�
 
 - **Entrada comprada**: O bloco de padrão informa um candle de baixa seguido de um de alta, a distância entre as duas mínimas não passa da tolerância em porcentagem da mínima anterior e a posição está zerada. A ordem compra o volume compartilhado a mercado.
 - **Entrada vendida**: O bloco de padrão informa um candle de alta seguido de um de baixa, a distância entre as duas máximas não passa da tolerância em porcentagem da máxima anterior e a posição está zerada. A ordem vende o volume compartilhado a mercado.
-- **Saída**: O primeiro candle que fecha abaixo da média móvel simples encerra uma compra, e o primeiro que fecha acima encerra uma venda; as duas saídas são blocos de modificação de posição em modo de fechamento e nunca abrem nada. O original não tem stop loss nem take profit, e este diagrama também não. Duas coisas do original não puderam ser expressas com os blocos disponíveis: a pausa de quinhentas barras após cada operação, porque nenhum bloco guarda contador entre candles, e o tempo gráfico de um minuto, ajustado para os candles de cinco minutos do histórico embarcado.
+- **Saída**: O primeiro candle que fecha abaixo da média móvel simples encerra uma compra, e o primeiro que fecha acima encerra uma venda; as duas saídas são blocos de modificação de posição em modo de fechamento e nunca abrem nada. O diagrama não tem stop loss nem take profit e usa os candles de cinco minutos do histórico empacotado.
 
 ## Parâmetros
 

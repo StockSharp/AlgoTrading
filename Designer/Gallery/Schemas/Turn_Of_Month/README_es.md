@@ -9,14 +9,13 @@ Este diagrama opera un efecto de calendario en lugar de una figura de precio: ma
 
 - Un conversor extrae el número de día de la hora de apertura de la vela y una fórmula corta lo convierte en la distancia al borde de mes más cercano: min(day - 1, 31 - day).
 - Un único umbral define toda la ventana: mientras esa distancia sea menor o igual, la fecha cuenta como cambio de mes; por encima, como mitad de mes.
-- El original cuenta días de negociación y salta los fines de semana; un diagrama no tiene bucles, así que se usan días naturales y la ventana queda simétrica respecto a la frontera del mes. En un mes de 31 días cubre los seis primeros y los seis últimos, en un mes corto uno o dos menos.
+- Los días naturales definen una ventana simétrica alrededor del límite del mes. En un mes de 31 días cubre los seis primeros y los seis últimos días, y en un mes corto uno o dos menos.
 - La estrategia es solo larga, por lo que el control de la posición elige entre abrir y cerrar, y no existe rama corta alguna.
-- La pausa de 10 barras entre operaciones del original se omite: con una ventana que dura varios días y una entrada limitada por la posición, no cambia nada.
 
 ## Reglas de entrada y salida
 
 - **Entrada en largo**: La distancia al borde de mes es menor o igual que la ventana y la posición no es larga. La orden compra el volumen fijo y abre el largo que debe atravesar la frontera del mes.
-- **Entrada en corto**: No hay entrada corta. La estrategia solo mantiene una posición larga o ninguna, igual que el original.
+- **Entrada en corto**: No hay entrada corta. La estrategia solo mantiene una posición larga o ninguna.
 - **Salida**: La distancia al borde de mes es mayor que la ventana y la posición es larga. El bloque de cierre envía una orden a mercado por el tamaño de la posición abierta, de modo que el diagrama pasa plano la mitad del mes. No hay stop de pérdidas ni toma de beneficios.
 
 ## Parámetros

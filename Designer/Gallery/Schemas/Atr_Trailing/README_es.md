@@ -34,8 +34,8 @@ Las entradas son la parte sencilla: desde posición plana, un cierre por encima 
 - Dos comparaciones sitúan el cierre frente a la media móvil y otras dos frente a la línea dinámica, de modo que el mismo precio se lee una vez y lo usan las dos mitades del diagrama.
 - Tres comparaciones contra una constante cero convierten la posición en indicadores de plano, largo y corto que habilitan por separado las entradas y las salidas.
 - Los dos bloques de entrada llevan la condición de apertura y los dos de salida la de cierre, así que una señal que no encaja con la posición actual simplemente no hace nada.
-- La estrategia original recalcula su nivel de stop como el máximo corriente del cierre menos varios ATR; ese trinquete no se puede expresar con una cadena de bloques, por lo que lo sustituye la línea SuperTrend, que funciona igual.
-- Conviene conocer otras dos simplificaciones: la pausa de quinientas velas que el original mantiene tras cada operación no tiene bloque equivalente y se ha omitido, y el diagrama trabaja con velas de cinco minutos en lugar del minuto del código en C#, porque ese es el histórico que acompaña a la galería.
+- La línea SuperTrend proporciona el nivel de salida con trinquete basado en ATR.
+- El diagrama trabaja con las velas de cinco minutos suministradas con el histórico de la galería.
 
 ## Uso
 

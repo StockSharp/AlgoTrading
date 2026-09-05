@@ -10,7 +10,7 @@ Um diagrama de rompimento sobre as Bandas de Bollinger: as bandas ficam a 1,8 de
 - As Bandas de Bollinger são calculadas sobre candles finalizados de um único instrumento, e apenas a banda superior e a inferior participam das decisões.
 - É um rompimento e não uma reversão: compra a força acima da banda superior e vende a fraqueza abaixo da inferior, ao contrário do exemplo Bollinger_Bands desta mesma galeria.
 - O volume de cada ordem é o volume base mais o valor absoluto da posição atual, então um sinal contrário à posição aberta a encerra e abre o lado oposto em uma única ordem.
-- Apesar do nome, não há filtro de compressão: a estratégia original em C# calcula a largura relativa das bandas, mas nunca a usa em nenhuma condição, e o diagrama reproduz o que o código de fato faz.
+- Apesar do nome, não há filtro de compressão: a largura relativa das bandas é calculada para exibição, mas não entra em nenhuma condição de negociação.
 
 ## Regras de entrada e saída
 
@@ -33,7 +33,6 @@ Um diagrama de rompimento sobre as Bandas de Bollinger: as bandas ficam a 1,8 de
 - Dois conversores tipados como valor de indicador extraem a banda superior e a inferior da única saída do indicador.
 - Dois blocos de comparação testam o fechamento contra as bandas, outros dois comparam a posição com uma constante zero, e cada E lógico une uma condição de banda a uma de posição.
 - Um bloco de fórmula calcula o volume base mais o módulo da posição e alimenta os dois blocos de modificação de posição, o que transforma cada entrada em uma inversão.
-- A pausa de dez candles que o código original mantém após cada entrada não foi reproduzida: entre os blocos disponíveis não há contador de candles, então apenas as verificações de posição seguram a frequência das operações.
 
 ## Uso
 

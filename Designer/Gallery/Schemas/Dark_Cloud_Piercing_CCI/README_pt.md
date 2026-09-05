@@ -16,7 +16,7 @@ Dois padrões clássicos de reversão de dois candles escolhem o lado, e o Commo
 
 - **Entrada comprada**: O candle anterior é de baixa, o atual é de alta, abriu abaixo do fechamento anterior e fechou acima do meio do corpo anterior, o CCI está abaixo do nível de entrada negativo e a posição está zerada. A ordem compra um lote a mercado.
 - **Entrada vendida**: O candle anterior é de alta, o atual é de baixa, abriu acima do fechamento anterior e fechou abaixo do meio do corpo anterior, o CCI está acima do nível de entrada e a posição está zerada. A ordem vende um lote a mercado.
-- **Saída**: Apenas o bloco de proteção da posição: take profit a dois por cento do preço de entrada e stop loss a um por cento. A estratégia original também não tem saída por sinal, portanto nada se perde aqui.
+- **Saída**: Apenas o bloco de proteção da posição: take profit a dois por cento do preço de entrada e stop loss a um por cento. Não há saída por sinal.
 
 ## Parâmetros
 
@@ -34,7 +34,7 @@ Dois padrões clássicos de reversão de dois candles escolhem o lado, e o Commo
 - O bloco de candles alimenta os dois blocos de padrões, o Commodity Channel Index e o conversor que entrega o preço de fechamento ao bloco de proteção.
 - Uma constante guarda o nível de entrada e uma fórmula inverte o seu sinal, de modo que um único número otimizável comanda as duas comparações do CCI.
 - Cada E lógico une um padrão, a sua confirmação pelo CCI e a checagem de posição zerada, e aciona um bloco de modificação de posição no modo somente abertura.
-- Duas coisas do original foram simplificadas: lá também se exige um gap verdadeiro além da mínima ou da máxima do candle anterior, o que um instrumento negociado continuamente praticamente nunca mostra, e uma pausa de seis candles entre operações, para a qual não existe bloco contador. Por isso aqui basta que a abertura fique do outro lado do fechamento anterior, e todo padrão confirmado é negociado.
+- A abertura deve ficar do outro lado do fechamento anterior, uma condição prática para instrumentos negociados continuamente, e todo padrão confirmado é negociado.
 
 ## Uso
 

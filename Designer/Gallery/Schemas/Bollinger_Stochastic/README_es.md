@@ -8,15 +8,14 @@ Una reversión a la media que exige dos señales independientes de movimiento ag
 ## Resumen de la estrategia
 
 - Las Bandas de Bollinger aportan tres líneas desde un solo bloque de indicador: banda superior, banda inferior y la media central que sirve de nivel de salida.
-- Del Stochastic solo se usa la línea %K; la línea %D queda deliberadamente sin conectar, igual que en la estrategia original.
+- Del Stochastic solo se usa la línea %K; la línea %D queda deliberadamente sin conectar.
 - Solo se entra desde posición plana, así que el diagrama nunca promedia una operación ya abierta.
-- La estrategia original espera además un número fijo de velas entre operaciones; ese contador no tiene equivalente en bloques y se omite, por lo que este diagrama opera con más frecuencia que el código fuente.
 
 ## Reglas de entrada y salida
 
 - **Entrada en largo**: El cierre está en la banda inferior de Bollinger o por debajo, %K está bajo el nivel de sobreventa y la posición es plana. La orden compra un lote y abre un largo.
 - **Entrada en corto**: El cierre está en la banda superior de Bollinger o por encima, %K está sobre el nivel de sobrecompra y la posición es plana. La orden vende un lote y abre un corto.
-- **Salida**: El largo se cierra cuando el cierre supera la banda central y el corto cuando cae por debajo de ella. Ambas salidas usan bloques de modificación de posición en modo cierre: calculan el volumen a partir de la posición abierta y permanecen inactivos si no hay nada que cerrar. No hay stops ni objetivos, exactamente como en el código original.
+- **Salida**: El largo se cierra cuando el cierre supera la banda central y el corto cuando cae por debajo de ella. Ambas salidas usan bloques de modificación de posición en modo cierre: calculan el volumen a partir de la posición abierta y permanecen inactivos si no hay nada que cerrar. No hay stops ni objetivos.
 
 ## Parámetros
 

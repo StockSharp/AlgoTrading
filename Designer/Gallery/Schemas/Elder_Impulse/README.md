@@ -10,13 +10,12 @@ Alexander Elder colours every bar by two things at once: the slope of an exponen
 - The EMA and the MACD lines are both taken from finished candles of one instrument; the histogram is built inside the diagram as MACD minus Signal.
 - Two previous-value blocks keep the EMA and the histogram of the last candle, so the diagram can compare the current reading against it and decide which way each of them is sloping.
 - The bar colour is the pair of slopes: EMA up and histogram up is green, EMA down and histogram flat or down is red, anything else is neutral and is ignored.
-- The original strategy stands aside for 65 bars after a trade. That pause is a counter, and the Designer blocks hold no such state, so the diagram leaves it out; the position check keeps the schema from repeating the same side anyway.
 
 ## Entry and Exit Rules
 
 - **Long entry**: The EMA is above its value one candle ago, the histogram is above its value one candle ago and the position is not already long. The order buys Volume plus the absolute position, which opens a long from flat and reverses a short in one go.
 - **Short entry**: The EMA is below its value one candle ago, the histogram is at or below its value one candle ago and the position is not already short. The order sells Volume plus the absolute position, opening a short from flat or reversing a long.
-- **Exit**: There is no separate exit: the opposite colour reverses the position, and because the order size includes the open position the reversal both closes the old trade and opens the new one. The source strategy has no stop loss or take profit either.
+- **Exit**: There is no separate exit, stop loss or take profit: the opposite colour reverses the position, and because the order size includes the open position the reversal both closes the old trade and opens the new one.
 
 ## Parameters
 

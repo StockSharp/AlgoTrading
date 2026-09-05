@@ -10,7 +10,7 @@ Uma lição curta sobre risco medido pela volatilidade. O fechamento que cruza a
 - Usa-se apenas um instrumento e uma série de candles: a EMA de 50 dá a direção e o ATR de 14 fornece a régua para as saídas.
 - O preço de entrada é guardado por dois blocos de variável: o primeiro toma o fechamento do candle que gerou o sinal e o segundo o reemite a cada candle seguinte, para que as condições de saída sejam testadas continuamente.
 - Dois blocos de fórmula convertem a distância até o preço de entrada em múltiplos de ATR, um a favor da compra e outro a favor da venda, de modo que os mesmos dois limiares servem aos dois lados.
-- A saída é uma ordem a mercado em candle finalizado, exatamente como na estratégia de origem: não há stop pendurado na bolsa, então um pavio dentro do candle não tira a posição.
+- A saída é uma ordem a mercado em candle finalizado: não há stop pendurado na bolsa, então um pavio dentro do candle não tira a posição.
 
 ## Regras de entrada e saída
 
@@ -35,7 +35,6 @@ Uma lição curta sobre risco medido pela volatilidade. O fechamento que cruza a
 - A posição atual é comparada a uma constante zero e cada E lógico junta essa verificação a um cruzamento, de modo que só se abre operação a partir do zero.
 - O preço de entrada é mantido por um par de blocos de variável; o segundo é acionado pela série de candles, e por isso essa é a última ligação que sai do bloco de candles — assim, já no candle de entrada a saída é medida contra o preço correto.
 - Quatro blocos de comparação testam as duas distâncias em ATR contra as constantes de stop e alvo, dois blocos OU lógico as unem e dois blocos de modificação no modo de encerramento enviam as ordens de saída.
-- A estratégia de origem espera seis candles entre operações. Um contador desses não tem equivalente entre os blocos, por isso o diagrama o omite e aproveita o cruzamento seguinte de imediato.
 
 ## Uso
 

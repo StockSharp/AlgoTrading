@@ -9,7 +9,7 @@ Zwei Bausteine entscheiden gemeinsam: Die SimpleMovingAverage bestimmt, auf welc
 
 - Die Richtung ergibt sich aus dem Schlusskurs gegenüber der SimpleMovingAverage: oberhalb kommen nur Longs infrage, unterhalb nur Shorts.
 - Der Einstieg selbst ist antizyklisch - die %K-Linie muss für einen Long in der überverkauften und für einen Short in der überkauften Zone stehen; das Diagramm kauft also Rücksetzer im Aufwärtstrend und verkauft Erholungen im Abwärtstrend.
-- StochasticK ist genau jenes %K, das die Originalstrategie von Hand berechnet hat: 100 * (Close - tiefstes Low) / (höchstes High - tiefstes Low) über die letzten N Kerzen.
+- StochasticK berechnet %K als 100 * (Close - tiefstes Low) / (höchstes High - tiefstes Low) über die letzten N Kerzen.
 - Derselbe gleitende Durchschnitt ist auch die Ausstiegslinie; Stop-Loss oder Take-Profit gibt es im Diagramm nicht.
 
 ## Ein- und Ausstiegsregeln
@@ -34,7 +34,7 @@ Zwei Bausteine entscheiden gemeinsam: Die SimpleMovingAverage bestimmt, auf welc
 - Der Kerzenbaustein speist drei Zweige: den Konverter mit dem Schlusskurs, die SimpleMovingAverage und den Indikator StochasticK.
 - Zwei Vergleiche stellen den Schlusskurs dem Durchschnitt gegenüber, zwei weitere %K den Schwellenkonstanten, und einer vergleicht die Position mit null.
 - Jedes logische UND verbindet eine Trendbedingung, eine Stochastik-Bedingung und die Nullpositionsprüfung und löst dann einen Baustein aus, der nur aus der Neutralstellung eröffnet.
-- Die Trendvergleiche werden vom Ausstieg mitbenutzt: Dasselbe Signal, das einen Short erlaubt, schließt einen Long - so bleibt das Diagramm klein. Der Barzähler, der die Originalstrategie nach jedem Trade 100 Kerzen lang pausieren ließ, hat keinen eigenen Baustein und entfällt.
+- Die Trendvergleiche werden vom Ausstieg mitbenutzt: Dasselbe Signal, das einen Short erlaubt, schließt einen Long - so bleibt das Diagramm klein.
 
 ## Verwendung
 

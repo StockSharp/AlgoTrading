@@ -8,7 +8,7 @@ Der Parabolic SAR bestimmt, auf welcher Seite des Marktes man steht, und der Rel
 ## Strategieübersicht
 
 - Der Parabolic SAR läuft auf abgeschlossenen Kerzen und wird mit dem Schlusskurs jeder Kerze verglichen: ein Schluss über der Linie bedeutet Aufwärtstrend, darunter Abwärtstrend.
-- Der Relative-Stärke-Index wirkt als weicher Filter, genau wie im Originalcode: Long verlangt einen RSI unterhalb der überkauften Marke, Short einen RSI oberhalb der überverkauften Marke, sodass nur Einstiege direkt ins Extrem verhindert werden.
+- Der Relative-Stärke-Index wirkt als weicher Filter: Long verlangt einen RSI unterhalb der überkauften Marke, Short einen RSI oberhalb der überverkauften Marke, sodass nur Einstiege direkt ins Extrem verhindert werden.
 - Positionen werden ausschließlich aus der Neutralstellung eröffnet, und der Seitenwechsel zum SAR ist der einzige Ausstieg — feste Stop-Loss- oder Take-Profit-Marken kennt das Diagramm nicht.
 
 ## Ein- und Ausstiegsregeln
@@ -34,7 +34,6 @@ Der Parabolic SAR bestimmt, auf welcher Seite des Marktes man steht, und der Rel
 - Der Kerzenbaustein versorgt den Parabolic SAR, den Relative-Stärke-Index und einen Konverter, der den Schlusskurs ausliest.
 - Zwei Vergleiche ordnen den Schlusskurs der SAR-Linie zu, zwei weitere prüfen den Index gegen seine Konstanten, drei vergleichen die Position mit null.
 - Jedes logische UND sammelt eine Kursbedingung, eine Filterbedingung und eine Positionsbedingung, bevor es einen Positionsbaustein auslöst; die Schließbausteine laufen im Schließmodus und brauchen kein Volumen.
-- Die Pause von 130 Kerzen, die die C#-Strategie nach jedem Trade einlegt, hat im Designer keinen entsprechenden Baustein, daher steigt dieses Diagramm früher wieder ein und handelt häufiger.
 
 ## Verwendung
 

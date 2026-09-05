@@ -9,14 +9,13 @@ Dieses Diagramm handelt einen Kalendereffekt statt eines Kursmusters: Es trägt 
 
 - Ein Konverter liest die Tageszahl aus der Eröffnungszeit der Kerze, und eine kurze Formel macht daraus den Abstand zum nächsten Monatsrand: min(day - 1, 31 - day).
 - Eine einzige Schwelle definiert das ganze Fenster: Liegt der Abstand darunter oder darauf, gilt das Datum als Monatswechsel, darüber als Monatsmitte.
-- Das Original zählt Handelstage und überspringt Wochenenden; ein Diagramm kennt keine Schleifen, also werden Kalendertage genommen und das Fenster liegt symmetrisch um die Monatsgrenze. In einem 31-Tage-Monat deckt es die ersten und die letzten sechs Kalendertage ab, in einem kurzen Monat ein bis zwei Tage weniger.
+- Kalendertage bilden ein symmetrisches Fenster um die Monatsgrenze. In einem 31-Tage-Monat deckt es die ersten und die letzten sechs Kalendertage ab, in einem kurzen Monat ein bis zwei Tage weniger.
 - Die Strategie ist reine Long-Strategie, deshalb entscheidet die Positionsprüfung zwischen Eröffnen und Schließen, und einen Short-Zweig gibt es überhaupt nicht.
-- Die Pause von 10 Balken zwischen den Trades aus dem Original entfällt: Bei einem Fenster von mehreren Tagen und einem Einstieg, den die Positionsbedingung ohnehin sperrt, ändert sie nichts.
 
 ## Ein- und Ausstiegsregeln
 
 - **Long-Einstieg**: Der Abstand zum Monatsrand liegt auf oder unter dem Fenster und die Position ist nicht long. Die Order kauft das feste Volumen und eröffnet den Long, der über die Monatsgrenze getragen werden soll.
-- **Short-Einstieg**: Einen Short-Einstieg gibt es nicht. Die Strategie hält entweder einen Long oder gar nichts - genau wie das Original.
+- **Short-Einstieg**: Einen Short-Einstieg gibt es nicht. Die Strategie hält entweder einen Long oder gar nichts.
 - **Ausstieg**: Der Abstand zum Monatsrand ist größer als das Fenster und die Position ist long. Der Schließen-Baustein sendet eine Marktorder über die Größe der offenen Position, sodass das Diagramm die Monatsmitte neutral verbringt. Weder Stop-Loss noch Take-Profit sind vorhanden.
 
 ## Parameter

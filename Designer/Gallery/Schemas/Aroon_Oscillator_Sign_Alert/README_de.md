@@ -1,7 +1,7 @@
 # Diagramm der Strategie zum Vorzeichenwechsel des Aroon Oscillator
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-Der Aroon Oscillator fragt, was jünger ist: das höchste Hoch oder das tiefste Tief der letzten Kerzen, und antwortet mit einer Zahl zwischen -100 und +100. Dieses Diagramm handelt nicht das Extrem selbst, sondern den Augenblick, in dem der Markt es verlässt: Steigt der Wert wieder über die untere Marke, wird gekauft, fällt er unter die obere Marke, wird verkauft. Die ursprüngliche Strategie arbeitet mit Vier-Stunden-Kerzen; das Diagramm nutzt Fünf-Minuten-Kerzen, damit die mitgelieferte Historie eines Monats genügend Bars für Trades liefert.
+Der Aroon Oscillator fragt, was jünger ist: das höchste Hoch oder das tiefste Tief der letzten Kerzen, und antwortet mit einer Zahl zwischen -100 und +100. Dieses Diagramm handelt nicht das Extrem selbst, sondern den Augenblick, in dem der Markt es verlässt: Steigt der Wert wieder über die untere Marke, wird gekauft, fällt er unter die obere Marke, wird verkauft. Das Diagramm nutzt Fünf-Minuten-Kerzen, damit die mitgelieferte Historie eines Monats genügend Bars für Trades liefert.
 
 ![schema](schema.svg)
 
@@ -16,7 +16,7 @@ Der Aroon Oscillator fragt, was jünger ist: das höchste Hoch oder das tiefste 
 
 - **Long-Einstieg**: Der vorige Wert des AroonOscillator lag auf oder unter der unteren Marke, der aktuelle liegt darüber, und die Position ist nicht long. Die Order kauft ein Lot: aus der Neutralstellung ein Long-Einstieg, aus einem Short dessen Schließung.
 - **Short-Einstieg**: Der vorige Wert des AroonOscillator lag auf oder über der oberen Marke, der aktuelle liegt darunter, und die Position ist nicht short. Die Order verkauft ein Lot: aus der Neutralstellung ein Short-Einstieg, aus einem Long dessen Schließung.
-- **Ausstieg**: Es gibt weder einen Ausstiegsbaustein noch einen Schutzstopp, genau wie im Original: Das Gegensignal stellt die Position glatt, da alle Orders dasselbe Volumen verwenden.
+- **Ausstieg**: Es gibt weder einen Ausstiegsbaustein noch einen Schutzstopp: Das Gegensignal stellt die Position glatt, da alle Orders dasselbe Volumen verwenden.
 
 ## Parameter
 
@@ -26,7 +26,7 @@ Der Aroon Oscillator fragt, was jünger ist: das höchste Hoch oder das tiefste 
 | Down Level | -50 | Untere Marke; ihr Kreuzen nach oben ist das Kaufsignal. |
 | Up Level | 50 | Obere Marke; ihr Kreuzen nach unten ist das Verkaufssignal. |
 | Volume | 1 | Ordervolumen in Lots. |
-| Candles | 00:05:00 | Zeiteinheit der Kerzen für das gesamte Diagramm; im Original waren es vier Stunden. |
+| Candles | 00:05:00 | Fünf-Minuten-Zeiteinheit der Kerzen für das gesamte Diagramm. |
 
 ## Diagrammdetails
 

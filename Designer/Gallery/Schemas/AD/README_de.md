@@ -16,7 +16,7 @@ Die Richtung gibt hier das Volumen vor. Die Accumulation/Distribution Line summi
 
 - **Long-Einstieg**: Die A/D-Linie liegt über ihrem Vorwert, die Kerze schließt über dem einfachen gleitenden Durchschnitt und die Position ist neutral. Die Order kauft das gemeinsame Volumen zum Marktpreis.
 - **Short-Einstieg**: Die A/D-Linie liegt auf oder unter ihrem Vorwert, die Kerze schließt unter dem einfachen gleitenden Durchschnitt und die Position ist neutral. Die Order verkauft das gemeinsame Volumen zum Marktpreis.
-- **Ausstieg**: Allein die Steigung schließt den Trade, ohne Preisbedingung: Fällt die Linie zurück, wird ein Long geschlossen, dreht sie nach oben, ein Short. Es gibt weder Stop-Loss noch Take-Profit, genau wie in der Originalstrategie.
+- **Ausstieg**: Allein die Steigung schließt den Trade, ohne Preisbedingung: Fällt die Linie zurück, wird ein Long geschlossen, dreht sie nach oben, ein Short. Es gibt weder Stop-Loss noch Take-Profit.
 
 ## Parameter
 

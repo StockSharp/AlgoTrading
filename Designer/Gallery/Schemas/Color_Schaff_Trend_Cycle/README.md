@@ -16,7 +16,7 @@ The Schaff Trend Cycle is a stochastic taken over the MACD histogram, so it reac
 
 - **Long entry**: The cycle was at or below the upper level on the previous candle and is above it now, the MACD line is positive and the position is not long. The order buys the base volume plus the absolute position, which turns a short into a long and opens a long from flat.
 - **Short entry**: The cycle was at or above the lower level on the previous candle and is below it now, the MACD line is negative and the position is not short. The order sells the base volume plus the absolute position, which turns a long into a short and opens a short from flat.
-- **Exit**: There is no separate exit and no protective stop, exactly as in the original strategy: a position is left only when the opposite level break arrives and reverses it.
+- **Exit**: There is no separate exit and no protective stop: a position is left only when the opposite level break arrives and reverses it.
 
 ## Parameters
 
@@ -36,9 +36,9 @@ The Schaff Trend Cycle is a stochastic taken over the MACD histogram, so it reac
 - Four comparison blocks build the two breaks: the previous value against a level and the current value against the same level, which together mean the line stepped across it on this candle.
 - Two more comparisons give the sign of the MACD line, and two compare the position against the shared zero constant so a signal cannot add to a position already held.
 - Each logical AND joins four conditions - where the cycle was, where it is, the MACD sign and the position - and triggers one position modify block.
-- A formula block computes the reversal size as base volume plus the absolute position, so one market order both closes the old side and opens the new one, matching the pair of market orders the C# code sends.
-- Two departures from the C# original are worth knowing. The original is named after the Schaff Trend Cycle but actually computes a ten-period RSI in its place; this diagram uses the real Schaff Trend Cycle indicator, so the signals are those the name promises rather than those the code produces.
-- The original also works on four-hour candles, which leave far too few bars in the one month of history the gallery ships; the diagram runs on five-minute candles instead.
+- A formula block computes the reversal size as base volume plus the absolute position, so one market order both closes the old side and opens the new one.
+- The diagram uses the Schaff Trend Cycle indicator for its signals.
+- It runs on five-minute candles so the one month of history shipped with the gallery provides enough bars.
 
 ## Usage
 

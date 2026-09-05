@@ -8,7 +8,7 @@ Ein Trenddiagramm mit Stärkefilter. Der ExponentialMovingAverage gibt die Markt
 ## Strategieübersicht
 
 - Der Schlusskurs wird mit einem ExponentialMovingAverage verglichen: oberhalb bedeutet long, unterhalb short.
-- Der Baustein DirectionalIndex liefert den DX-Wert, also genau die Formel, die die Originalstrategie von Hand aus +DM und -DM rechnet; ein Einstieg ist nur erlaubt, solange DX über der Schwelle liegt.
+- Der Baustein DirectionalIndex liefert den aus +DM und -DM berechneten DX-Wert; ein Einstieg ist nur erlaubt, solange DX über der Schwelle liegt.
 - Eingestiegen wird ausschließlich aus der Neutralstellung, und jeder Ausstieg schließt genau die offene Position, sodass nie aufgestockt wird.
 - Der Ausstieg beachtet die Trendstärke nicht: Sobald der Schlusskurs wieder auf der anderen Seite des Durchschnitts liegt, wird die Position unabhängig vom DX geschlossen.
 
@@ -16,7 +16,7 @@ Ein Trenddiagramm mit Stärkefilter. Der ExponentialMovingAverage gibt die Markt
 
 - **Long-Einstieg**: Der Schlusskurs liegt über dem EMA, DX liegt über der Schwelle für die Trendstärke und die Position ist neutral. Die Order kauft das Grundvolumen und eröffnet einen Long.
 - **Short-Einstieg**: Der Schlusskurs liegt unter dem EMA, DX liegt über der Schwelle für die Trendstärke und die Position ist neutral. Die Order verkauft das Grundvolumen und eröffnet einen Short.
-- **Ausstieg**: Ein Long wird geschlossen, sobald eine Kerze unter dem EMA schließt, ein Short, sobald sie darüber schließt; die Schließbausteine beziehen ihr Volumen aus der offenen Position. Die Originalstrategie kennt weder Stop-Loss noch Take-Profit, und ihre Pause von hundert Kerzen nach jedem Trade wurde nicht übernommen, weshalb dieses Diagramm häufiger handelt als der Quellcode.
+- **Ausstieg**: Ein Long wird geschlossen, sobald eine Kerze unter dem EMA schließt, ein Short, sobald sie darüber schließt; die Schließbausteine beziehen ihr Volumen aus der offenen Position. Das Diagramm kennt weder Stop-Loss noch Take-Profit.
 
 ## Parameter
 

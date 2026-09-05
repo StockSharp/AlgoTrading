@@ -16,7 +16,7 @@ Aquí la dirección la marca el volumen. La línea de acumulación/distribución
 
 - **Entrada en largo**: La línea A/D está por encima de su valor anterior, la vela cierra por encima de la media móvil simple y la posición es plana. La orden compra el volumen compartido a mercado.
 - **Entrada en corto**: La línea A/D está en su valor anterior o por debajo, la vela cierra por debajo de la media móvil simple y la posición es plana. La orden vende el volumen compartido a mercado.
-- **Salida**: La pendiente por sí sola cierra la operación, sin condición de precio: la línea que retrocede cierra un largo y la que gira al alza cierra un corto. No hay stop loss ni take profit, igual que en la estrategia original.
+- **Salida**: La pendiente por sí sola cierra la operación, sin condición de precio: la línea que retrocede cierra un largo y la que gira al alza cierra un corto. No hay stop loss ni take profit.
 
 ## Parámetros
 

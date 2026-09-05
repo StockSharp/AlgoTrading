@@ -10,13 +10,13 @@ Zwei Kerzen drücken den Markt nach unten, die zweite mit einem tieferen Tief al
 - Zwei Kerzenmuster-Bausteine tragen je eine Formel über drei Kerzen, sodass die ganze Figur in einem Baustein erkannt wird statt in einer Wand aus Vergleichen.
 - Die Long-Formel verlangt eine bärische Kerze, dann eine bärische Kerze mit tieferem Tief und dann eine bullische Kerze, die über dem Hoch der mittleren Kerze schließt.
 - Die Short-Formel ist das genaue Spiegelbild: bullisch, bullisch mit höherem Hoch, dann bärisch mit Schluss unter dem Tief der mittleren Kerze.
-- Der einfache gleitende Durchschnitt ist am Einstieg nicht beteiligt; er ist nur die Linie, an der der Trade aufgegeben wird, genau wie im Original.
+- Der einfache gleitende Durchschnitt ist am Einstieg nicht beteiligt; er ist nur die Linie, an der der Trade aufgegeben wird.
 
 ## Ein- und Ausstiegsregeln
 
 - **Long-Einstieg**: Der Baustein des Aufwärtsmusters meldet die vollendete Drei-Kerzen-Umkehr und die Position ist neutral. Die Order kauft ein Lot und eröffnet einen Long.
 - **Short-Einstieg**: Der Baustein des Abwärtsmusters meldet die vollendete Spiegelumkehr und die Position ist neutral. Die Order verkauft ein Lot und eröffnet einen Short.
-- **Ausstieg**: Ein Long wird geschlossen, sobald eine Kerze unter dem gleitenden Durchschnitt schließt, ein Short, sobald eine darüber schließt, beides über Bausteine zur Positionsänderung im Schließmodus — genau wie im Original. Das Original kennt weder Stop-Loss noch Take-Profit, also hat das Diagramm auch keine. Weggelassen ist die Pause von mehreren hundert Kerzen, die das Original nach jedem Trade einhält: Ein Balkenzähler lässt sich aus Bausteinen nur bauen, indem ein Signal ins Diagramm zurückgeführt wird, was den Graphen zu einer Schleife schließen würde. Deshalb wird hier jedes gesehene Muster gehandelt und entsprechend deutlich häufiger als im Original.
+- **Ausstieg**: Ein Long wird geschlossen, sobald eine Kerze unter dem gleitenden Durchschnitt schließt, ein Short, sobald eine darüber schließt, beides über Bausteine zur Positionsänderung im Schließmodus. Das Diagramm hat weder Stop-Loss noch Take-Profit und handelt jedes erkannte passende Muster.
 
 ## Parameter
 
@@ -24,7 +24,7 @@ Zwei Kerzen drücken den Markt nach unten, die zweite mit einem tieferen Tief al
 |---|---|---|
 | SMA Length | 20 | Glättungsperiode des einfachen gleitenden Durchschnitts, der die Trades schließt. |
 | Volume | 1 | Ordervolumen in Lots. |
-| Candles | 00:05:00 | Zeiteinheit der Kerzen, mit der das gesamte Diagramm arbeitet. Die Originalstrategie rechnet auf Minutenkerzen; hier sind es fünf Minuten, passend zur mitgelieferten Historie und zur Lesbarkeit der Figur. |
+| Candles | 00:05:00 | Fünf-Minuten-Zeiteinheit passend zur mitgelieferten Historie und zur Lesbarkeit der Figur. |
 
 ## Diagrammdetails
 

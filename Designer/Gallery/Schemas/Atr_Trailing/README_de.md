@@ -34,8 +34,8 @@ Die Einstiege sind der einfache Teil: Aus der Neutralstellung kauft ein Schlussk
 - Zwei Vergleiche stellen den Schlusskurs dem Durchschnitt gegenüber, zwei weitere der Trailing-Linie, sodass derselbe Kurs einmal gelesen und von beiden Hälften des Diagramms genutzt wird.
 - Drei Vergleiche gegen eine Nullkonstante machen aus der Position die Kennzeichen neutral, long und short, die Einstiege und Ausstiege getrennt freigeben.
 - Die beiden Einstiegsbausteine tragen die Eröffnungsbedingung, die beiden Ausstiegsbausteine die Schließbedingung, sodass ein Signal, das nicht zur aktuellen Position passt, schlicht nichts bewirkt.
-- Die ursprüngliche Strategie berechnet ihr Stopniveau als laufendes Maximum aus Schlusskurs minus mehreren ATR; diese Sperrklinke lässt sich nicht als Bausteinkette ausdrücken, daher tritt die SuperTrend-Linie an ihre Stelle, die genauso arbeitet.
-- Zwei weitere Vereinfachungen sind erwähnenswert: Für die Pause von fünfhundert Kerzen nach jedem Trade gibt es keinen Baustein, sie entfällt; und das Diagramm läuft auf Fünf-Minuten-Kerzen statt der Minutenkerzen des C#-Codes, weil die Galerie genau diese Historie mitbringt.
+- Die SuperTrend-Linie liefert das nachgezogene ATR-basierte Ausstiegsniveau.
+- Das Diagramm läuft auf den Fünf-Minuten-Kerzen der mitgelieferten Galeriehistorie.
 
 ## Verwendung
 

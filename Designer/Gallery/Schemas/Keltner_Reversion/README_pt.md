@@ -7,16 +7,16 @@ Um canal de Keltner é uma média móvel com um envelope de volatilidade: a larg
 
 ## Visão geral da estratégia
 
-- O canal é montado à mão em vez de usar o indicador KeltnerChannels pronto, porque aquele bloco prende a média e o ATR a um único comprimento, enquanto o original usa 20 para a EMA e 14 para o ATR.
+- O canal é montado à mão em vez de usar o indicador KeltnerChannels pronto, o que permite configurar separadamente um comprimento de 20 para a EMA e de 14 para o ATR.
 - Dois blocos de fórmula constroem as bandas literalmente: EMA mais e menos o ATR vezes o multiplicador, com o multiplicador exposto para alargar ou estreitar o canal sem mexer no diagrama.
 - A linha média é toda a regra de saída: a operação é devolvida assim que o preço volta para o outro lado da EMA, portanto o alvo caminha junto com a média.
-- O original trabalha em candles de um minuto e trava as operações por 500 barras após cada negócio, o que na prática também segura a posição. O histórico incluído é de cinco minutos, então o diagrama usa candles de cinco minutos; a trava não é reproduzida porque o Designer não tem contador de barras com estado, e por isso o diagrama negocia mais vezes e segura menos tempo.
+- O diagrama trabalha com os candles de cinco minutos fornecidos com o histórico empacotado.
 
 ## Regras de entrada e saída
 
 - **Entrada comprada**: O fechamento está abaixo da banda inferior, ou seja, mais de um ATR vezes o multiplicador abaixo da EMA, e a posição está zerada. A ordem compra o volume configurado.
 - **Entrada vendida**: O fechamento está acima da banda superior, ou seja, mais de um ATR vezes o multiplicador acima da EMA, e a posição está zerada. A ordem vende o volume configurado.
-- **Saída**: A compra é encerrada quando o fechamento volta acima da EMA e a venda quando volta abaixo dela. O original declara um multiplicador de stop que nunca utiliza, então o diagrama também não tem stop nem alvo.
+- **Saída**: A compra é encerrada quando o fechamento volta acima da EMA e a venda quando volta abaixo dela. O diagrama não tem stop nem alvo.
 
 ## Parâmetros
 

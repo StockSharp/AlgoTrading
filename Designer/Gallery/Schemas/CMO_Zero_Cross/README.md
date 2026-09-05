@@ -16,7 +16,7 @@ The Chande Momentum Oscillator swings between -100 and +100 and changes sign exa
 
 - **Long entry**: The oscillator was below zero on the previous candle and is now at or above the minimum positive level, and the position is not long. The order buys the shared volume plus the size of an open short, so one market order closes the short and opens the long.
 - **Short entry**: The oscillator was at or above zero on the previous candle and is now at or below the minimum negative level, and the position is not short. The order sells the shared volume plus the size of an open long.
-- **Exit**: There is no separate exit block: a position is left either by the opposite zero cross, which reverses it, or by the position protection block. The original uses an absolute take profit of 2000 and stop loss of 1000 price steps; absolute levels tuned for another instrument would never be reached on this history, so they are written here as a two percent target and a one percent stop, which keeps the same two-to-one ratio. The original also pauses for four candles after every position change; there is no block that keeps a bar counter between candles, so the pause is dropped and the position guard alone prevents a second entry in the same direction.
+- **Exit**: There is no separate exit block: a position is left either by the opposite zero cross, which reverses it, or by the position protection block. Protection uses a two percent target and a one percent stop, a two-to-one reward-to-risk ratio expressed in portable percentages. The position guard prevents a second entry in the same direction.
 
 ## Parameters
 

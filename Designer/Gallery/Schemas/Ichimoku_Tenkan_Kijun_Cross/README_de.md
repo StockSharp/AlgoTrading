@@ -11,13 +11,12 @@ Das Ichimoku-System wird hier vollständig genutzt: Das schnelle Linienpaar lief
 - Zwei Formelbausteine falten die beiden Senkou-Linien zu Ober- und Unterkante der Wolke, sodass je Seite ein Vergleich genügt, um den Schlusskurs zur Wolke ins Verhältnis zu setzen.
 - Eingestiegen wird nur aus der Neutralstellung, und das wird doppelt geprüft: durch den Vergleich der Position mit null und durch die Eröffnungsbedingung des Orderbausteins selbst.
 - Die Ausstiege sind eigene Bausteine: Die Gegenkreuzung oder ein Schlusskurs, der wieder in die Wolke zurückfällt, holt die Position nach Hause, und die Schließen-Bausteine beziehen ihre Größe aus der offenen Position.
-- Das Original ignoriert nach einer Ausführung 500 Kerzen lang jedes Signal und verzögert damit auch seine Ausstiege; ein Balkenzähler lässt sich aus diesen Bausteinen nicht bauen, also entfällt die Pause und das Diagramm handelt häufiger als das Original.
 
 ## Ein- und Ausstiegsregeln
 
 - **Long-Einstieg**: Tenkan-sen kreuzt Kijun-sen von unten nach oben, der Schlusskurs liegt über der Oberkante der Wolke und die Position ist neutral. Die Order kauft das feste Volumen und eröffnet den Long.
 - **Short-Einstieg**: Tenkan-sen kreuzt Kijun-sen von oben nach unten, der Schlusskurs liegt unter der Unterkante der Wolke und die Position ist neutral. Die Order verkauft das feste Volumen und eröffnet den Short.
-- **Ausstieg**: Ein Long wird geschlossen, wenn Tenkan-sen wieder unter Kijun-sen kreuzt oder der Schlusskurs unter die Unterkante der Wolke fällt; beim Short gilt das Spiegelbild. Die Schließen-Order bemisst sich an der Position, sodass das Diagramm in die Neutralstellung zurückkehrt statt zu drehen, und es gibt weder Stop-Loss noch Take-Profit - genau wie im Original.
+- **Ausstieg**: Ein Long wird geschlossen, wenn Tenkan-sen wieder unter Kijun-sen kreuzt oder der Schlusskurs unter die Unterkante der Wolke fällt; beim Short gilt das Spiegelbild. Die Schließen-Order bemisst sich an der Position, sodass das Diagramm in die Neutralstellung zurückkehrt statt zu drehen, und es gibt weder Stop-Loss noch Take-Profit.
 
 ## Parameter
 

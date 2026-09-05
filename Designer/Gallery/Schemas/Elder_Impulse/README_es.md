@@ -10,13 +10,12 @@ Alexander Elder colorea cada barra con dos cosas a la vez: la pendiente de una m
 - La EMA y las líneas del MACD se calculan sobre velas cerradas de un solo instrumento; el histograma se construye dentro del diagrama como MACD menos Signal.
 - Dos bloques de valor anterior guardan la EMA y el histograma de la vela previa, de manera que el diagrama compara la lectura actual con ella y deduce hacia dónde se inclina cada una.
 - El color de la barra es el par de pendientes: EMA al alza e histograma al alza es verde; EMA a la baja e histograma plano o a la baja es rojo; cualquier otra combinación es neutra y se ignora.
-- La estrategia original se aparta 65 barras tras cada operación. Esa pausa es un contador y los bloques del Designer no guardan ese estado, así que el diagrama la omite; de todos modos el control de la posición impide repetir el mismo lado.
 
 ## Reglas de entrada y salida
 
 - **Entrada en largo**: La EMA está por encima de su valor de la vela anterior, el histograma también, y la posición no es ya larga. La orden compra Volume más la posición en valor absoluto: abre un largo desde plano o gira un corto de una sola vez.
 - **Entrada en corto**: La EMA está por debajo de su valor de la vela anterior, el histograma está en ese valor o por debajo, y la posición no es ya corta. La orden vende Volume más la posición en valor absoluto: abre un corto desde plano o gira un largo.
-- **Salida**: No hay salida propia: el color contrario invierte la posición y, como el tamaño de la orden incluye la posición abierta, el giro cierra la operación anterior y abre la nueva a la vez. La estrategia de origen tampoco lleva stop ni objetivo.
+- **Salida**: No hay salida propia, stop ni objetivo: el color contrario invierte la posición y, como el tamaño de la orden incluye la posición abierta, el giro cierra la operación anterior y abre la nueva a la vez.
 
 ## Parámetros
 

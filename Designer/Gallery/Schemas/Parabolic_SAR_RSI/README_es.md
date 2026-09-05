@@ -8,7 +8,7 @@ El Parabolic SAR decide de qué lado del mercado situarse y el índice de fuerza
 ## Resumen de la estrategia
 
 - El Parabolic SAR se calcula sobre velas cerradas y se compara con el precio de cierre de cada vela: cierre por encima de la línea significa tendencia alcista, por debajo, bajista.
-- El índice de fuerza relativa actúa como filtro laxo, igual que en el código original: un largo exige un RSI por debajo del nivel de sobrecompra y un corto un RSI por encima del nivel de sobreventa, así que solo se bloquean las entradas hechas directamente en un extremo.
+- El índice de fuerza relativa actúa como filtro laxo: un largo exige un RSI por debajo del nivel de sobrecompra y un corto un RSI por encima del nivel de sobreventa, así que solo se bloquean las entradas hechas directamente en un extremo.
 - Las posiciones se abren únicamente desde plano y la única salida es el cambio de lado respecto al SAR: el diagrama no lleva stop fijo ni objetivo de beneficio.
 
 ## Reglas de entrada y salida
@@ -34,7 +34,6 @@ El Parabolic SAR decide de qué lado del mercado situarse y el índice de fuerza
 - El bloque de velas alimenta al Parabolic SAR, al índice de fuerza relativa y a un conversor que extrae el precio de cierre.
 - Dos comparaciones sitúan el cierre respecto a la línea SAR, otras dos contrastan el índice con sus constantes y tres comparan la posición con cero.
 - Cada Y lógica reúne una condición de precio, una de filtro y una de posición antes de disparar un bloque de modificación; los bloques de cierre usan el modo de cierre y no necesitan volumen.
-- La pausa de 130 velas que la estrategia en C# respeta tras cada operación no tiene bloque equivalente en Designer, por lo que este diagrama vuelve a entrar antes y opera con más frecuencia.
 
 ## Uso
 

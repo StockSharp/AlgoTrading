@@ -10,7 +10,7 @@ A least-squares line is fitted through the last fifty closes and a channel is dr
 - LinearReg gives the value of the fitted line on the current bar, LinearRegSlope gives its direction, and StandardError measures how far the closes usually scatter around it.
 - The two bands are the line plus and minus the deviation multiplier times the standard error, so the channel widens and narrows with the market on its own.
 - The slope acts as a filter: a dip is only bought inside a rising channel, a spike is only sold inside a falling one.
-- The regression line is the profit target; there is no stop-loss or take-profit, exactly as in the source strategy.
+- The regression line is the profit target; there is no stop-loss or take-profit.
 
 ## Entry and Exit Rules
 
@@ -35,7 +35,7 @@ A least-squares line is fitted through the last fifty closes and a channel is dr
 - Two formula blocks build the bands out of the line, the standard error and a shared deviation constant that can be optimized.
 - Six comparison blocks turn those numbers into flags: two for the slope, two for the bands and two for the return to the line.
 - Each entry is a logical AND of slope, band and a flat position; the exits are wired straight from their comparison to a close-position block.
-- The original strategy waits twenty bars between trades and computes the deviation over the whole window, while StandardError divides by the window minus two, which makes the channel about two percent wider; lower the deviation to about 1.47 if you want the exact original band.
+- StandardError divides by the window minus two, making the channel about two percent wider than a full-window calculation; lower the deviation to about 1.47 for a narrower band.
 
 ## Usage
 

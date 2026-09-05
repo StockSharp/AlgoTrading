@@ -8,7 +8,7 @@ O Parabolic SAR define de que lado do mercado ficar, e o índice de força relat
 ## Visão geral da estratégia
 
 - O Parabolic SAR é calculado sobre candles finalizados e comparado com o preço de fechamento de cada candle: fechamento acima da linha indica tendência de alta, abaixo indica tendência de baixa.
-- O índice de força relativa funciona como filtro brando, exatamente como no código original: a compra exige RSI abaixo do nível de sobrecompra e a venda exige RSI acima do nível de sobrevenda, então só as entradas feitas direto no extremo são barradas.
+- O índice de força relativa funciona como filtro brando: a compra exige RSI abaixo do nível de sobrecompra e a venda exige RSI acima do nível de sobrevenda, então só as entradas feitas direto no extremo são barradas.
 - As posições são abertas apenas a partir do zero, e a única saída é a passagem do preço para o outro lado do SAR — o diagrama não tem stop fixo nem alvo de lucro.
 
 ## Regras de entrada e saída
@@ -34,7 +34,6 @@ O Parabolic SAR define de que lado do mercado ficar, e o índice de força relat
 - O bloco de candles alimenta o Parabolic SAR, o índice de força relativa e um conversor que lê o preço de fechamento.
 - Duas comparações posicionam o fechamento em relação à linha do SAR, outras duas testam o índice contra as constantes e três comparam a posição com zero.
 - Cada E lógico reúne uma condição de preço, uma de filtro e uma de posição antes de acionar um bloco de modificação; os blocos de encerramento usam o modo de fechamento e dispensam volume.
-- A pausa de 130 candles que a estratégia em C# mantém após cada operação não tem bloco equivalente no Designer, por isso este diagrama volta a entrar mais cedo e negocia com mais frequência.
 
 ## Uso
 

@@ -10,13 +10,13 @@ El cierre se convierte en un z-score: la distancia a una media móvil medida en 
 - El z-score se construye a mano con SimpleMovingAverage y StandardDeviation: (Close - SMA) / StandardDeviation se calcula en un único bloque de fórmula.
 - Una fórmula espejo produce la misma puntuación con signo cambiado, de modo que un nivel de entrada y otro de salida sirven para ambos lados en vez de cuatro constantes.
 - Solo se entra desde posición plana; además los bloques de entrada llevan la condición de apertura de posición, así que el diagrama nunca promedia sobre una operación abierta.
-- El original trabaja con velas de un minuto y bloquea la operativa durante 500 barras tras cada operación. El histórico incluido es de cinco minutos, por lo que el diagrama usa velas de cinco minutos; el bloqueo no se reproduce porque Designer no tiene un contador de barras con estado, y por eso el diagrama opera con más frecuencia y mantiene menos tiempo.
+- El diagrama trabaja con las velas de cinco minutos suministradas con el histórico incluido.
 
 ## Reglas de entrada y salida
 
 - **Entrada en largo**: El z-score está por debajo del nivel de entrada en negativo, es decir, el cierre queda más de las desviaciones típicas configuradas por debajo de la media, y la posición está plana. La orden compra el volumen configurado.
 - **Entrada en corto**: El z-score supera el nivel de entrada, es decir, el cierre queda más de las desviaciones típicas configuradas por encima de la media, y la posición está plana. La orden vende el volumen configurado.
-- **Salida**: El largo se cierra cuando el z-score vuelve por encima del nivel de salida; el corto, cuando cae por debajo de ese nivel en negativo. No hay stop de pérdidas ni toma de beneficios, igual que en la estrategia original.
+- **Salida**: El largo se cierra cuando el z-score vuelve por encima del nivel de salida; el corto, cuando cae por debajo de ese nivel en negativo. No hay stop de pérdidas ni toma de beneficios.
 
 ## Parámetros
 

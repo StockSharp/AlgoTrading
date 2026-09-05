@@ -7,16 +7,16 @@ Die %K-Linie der Stochastik misst, wo der Schlusskurs innerhalb der jüngsten Ho
 
 ## Strategieübersicht
 
-- Die %K-Linie wird auf abgeschlossenen Kerzen eines einzelnen Instruments berechnet; die geglättete %D-Linie geht wie in der Originalstrategie nicht in die Entscheidung ein.
+- Die %K-Linie wird auf abgeschlossenen Kerzen eines einzelnen Instruments berechnet; die geglättete %D-Linie geht nicht in die Entscheidung ein.
 - Ein Fenster von drei Kerzen macht %K sehr schnell: die Linie erreicht beide Zonen häufig, und daher stammt die Zahl der Trades in diesem Beispiel.
-- Die überverkaufte und die überkaufte Marke sind Konstanten des Diagramms und damit änder- und optimierbar; im Originalcode stehen sie fest auf 20 und 80.
+- Die überverkaufte und die überkaufte Marke sind änder- und optimierbare Konstanten des Diagramms, die standardmäßig auf 20 und 80 stehen.
 - Alle Orders nutzen dasselbe Volumen, sodass ein Signal gegen eine offene Position diese schließt, statt sie vergrößert zu drehen.
 
 ## Ein- und Ausstiegsregeln
 
 - **Long-Einstieg**: Der vorherige %K-Wert lag auf oder über der überverkauften Marke, der aktuelle darunter, und die Position ist nicht long. Die Order kauft ein Lot: aus der Neutralstellung ein Long-Einstieg, aus einem Short dessen Schließung.
 - **Short-Einstieg**: Der vorherige %K-Wert lag auf oder unter der überkauften Marke, der aktuelle darüber, und die Position ist nicht short. Die Order verkauft ein Lot: aus der Neutralstellung ein Short-Einstieg, aus einem Long dessen Schließung.
-- **Ausstieg**: Es gibt keinen eigenen Ausstiegsbaustein: die gegenläufige Niveaudurchquerung schließt die Position, da alle Orders dasselbe Volumen verwenden. Die Originalstrategie pausiert nach einem Trade zusätzlich eine feste Zahl von Kerzen; einen Bar-Zähler gibt es als Baustein nicht, deshalb übernimmt die Durchquerung diese Rolle und verhindert eine Order auf jeder Kerze innerhalb der Zone.
+- **Ausstieg**: Es gibt keinen eigenen Ausstiegsbaustein: Die gegenläufige Niveaudurchquerung schließt die Position, da alle Orders dasselbe Volumen verwenden. Die Durchquerung verhindert, dass das Diagramm auf jeder Kerze innerhalb der Zone eine Order auslöst.
 
 ## Parameter
 

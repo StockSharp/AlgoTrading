@@ -31,10 +31,10 @@ Tres bloques ExponentialMovingAverage de longitudes muy distintas se calculan so
 ## Detalles del diagrama
 
 - Un único bloque de velas alimenta los tres bloques de indicador, de forma que las medias siempre se calculan sobre las mismas velas cerradas.
-- Cuatro bloques de comparación construyen los dos estados: dos «mayor que» estrictos para la pila alcista y dos «menor o igual» para la bajista, que es justo la negación empleada en el código original.
+- Cuatro bloques de comparación construyen los dos estados: dos comparaciones estrictas de «mayor que» para la pila alcista y dos de «menor o igual» para su negación bajista.
 - Cada Y lógica une las dos comparaciones de medias con la posición contrastada frente a una constante cero y dispara un bloque de modificación de posición.
 - Un bloque de fórmula suma la posición absoluta a la constante de volumen y alimenta ambos bloques de órdenes: eso es lo que convierte una entrada en un giro.
-- Simplificaciones deliberadas: el original usa velas de un minuto y este diagrama velas de cinco, así que las mismas longitudes cubren cinco veces más tiempo. El original además recuerda si la alineación ya existía en la vela anterior; esa marca se elimina, porque el control de la posición bloquea igual de bien una entrada repetida. El stop del 2% declarado nunca se aplica en el código, así que no se dibuja bloque de protección.
+- El diagrama trabaja con velas de cinco minutos. Su control de posición bloquea las entradas repetidas mientras persiste una alineación, y no se dibuja ningún bloque de protección.
 
 ## Uso
 

@@ -7,7 +7,7 @@ El Williams %R indica dónde queda el último cierre dentro del máximo y el mí
 
 ## Resumen de la estrategia
 
-- El Williams %R se calcula sobre velas cerradas de un solo instrumento y equivale por completo a la fórmula de máximo y mínimo que la estrategia original programa a mano.
+- El Williams %R se calcula sobre velas cerradas de un solo instrumento a partir del máximo más alto y el mínimo más bajo de su ventana retrospectiva.
 - Dos niveles dividen la escala: por debajo de -80 el mercado se considera sobrevendido y por encima de -20, sobrecomprado.
 - Un bloque de valor anterior guarda la lectura de la vela precedente, así cada nivel se comprueba dos veces y solo la vela del cruce genera la señal.
 - La posición actual participa en ambas decisiones, de modo que ninguna orden aumenta una posición ya abierta.
@@ -16,7 +16,7 @@ El Williams %R indica dónde queda el último cierre dentro del máximo y el mí
 
 - **Entrada en largo**: La lectura anterior del %R estaba por debajo del nivel inferior, la actual está en él o por encima y la posición no es larga. La orden compra un lote: abre un largo desde plano o devuelve un corto existente a cero.
 - **Entrada en corto**: La lectura anterior del %R estaba por encima del nivel superior, la actual está en él o por debajo y la posición no es corta. La orden vende un lote: abre un corto desde plano o devuelve un largo existente a cero.
-- **Salida**: No hay bloque de salida propio: el cruce contrario envía una orden a mercado del mismo volumen y deja la posición en cero igual que la estrategia original. Esta además se aparta durante cincuenta velas después de cada operación; aquí no existe un bloque contador de barras, así que el cruce de nivel asume esa función en solitario y el diagrama opera algo más a menudo que el código de origen.
+- **Salida**: No hay bloque de salida propio: el cruce contrario envía una orden a mercado del mismo volumen y deja la posición en cero. La condición de cruce evita que el diagrama envíe órdenes repetidas mientras el oscilador permanece dentro de una zona.
 
 ## Parámetros
 

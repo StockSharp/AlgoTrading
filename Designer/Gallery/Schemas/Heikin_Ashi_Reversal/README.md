@@ -9,15 +9,14 @@ Heikin-Ashi candles average away most of the noise, so a run of them keeps one c
 
 - A formula block builds the Heikin-Ashi body as the average of open, high, low and close minus the midpoint of the previous candle; a positive body means a bullish Heikin-Ashi candle, zero or less a bearish one.
 - A previous-value block keeps the body of the candle before, so the two comparisons together describe a colour change rather than just a colour.
-- The moving average and the exit price are taken from the ordinary candles, not from the smoothed ones, exactly as in the source strategy.
-- The Heikin-Ashi open is properly defined by its own previous value, which a diagram cannot feed back into a block; the midpoint of the previous raw candle is used instead, so the colour changes here are close to, but not identical with, the ones the original code computes.
-- The original strategy also freezes every signal for several hundred bars after a fill; a bar counter has no block of its own, so that pause is left out and noted here.
+- The moving average and the exit price are taken from the ordinary candles, not from the smoothed ones.
+- The Heikin-Ashi open is normally defined by its own previous value, which a diagram cannot feed back into a block; the midpoint of the previous raw candle is used instead, so the colour changes are an approximation.
 
 ## Entry and Exit Rules
 
 - **Long entry**: The Heikin-Ashi body of the candle just finished is positive, the body of the candle before it was zero or negative, and the position is zero. The order buys one lot and opens a long.
 - **Short entry**: The Heikin-Ashi body of the candle just finished is zero or negative, the body of the candle before it was positive, and the position is zero. The order sells one lot and opens a short.
-- **Exit**: A long is closed by a position modify block in close mode once an ordinary candle closes below the moving average; a short is closed once one closes above it. The source strategy carries no stop loss and no take profit, and neither does this diagram.
+- **Exit**: A long is closed by a position modify block in close mode once an ordinary candle closes below the moving average; a short is closed once one closes above it. The diagram carries no stop loss and no take profit.
 
 ## Parameters
 
@@ -25,7 +24,7 @@ Heikin-Ashi candles average away most of the noise, so a run of them keeps one c
 |---|---|---|
 | SMA Length | 20 | Averaging length of the simple moving average on the ordinary closing price, which closes the trades. |
 | Volume | 1 | Order volume, in lots. |
-| Candles | 00:05:00 | Candle time frame the whole diagram works on; the original runs on one-minute candles and is scaled here to the five-minute history shipped with the gallery. |
+| Candles | 00:05:00 | Five-minute candle time frame used by the whole diagram and the packaged gallery history. |
 
 ## Diagram Details
 

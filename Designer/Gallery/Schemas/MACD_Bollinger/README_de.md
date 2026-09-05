@@ -1,7 +1,7 @@
 # Diagramm der Strategie aus MACD und mittlerem Bollinger-Band
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-Zwei sehr gebräuchliche Indikatoren teilen sich die Arbeit: Der MACD bestimmt die Marktseite, und das mittlere Bollinger-Band zeigt, wann sich der Kurs weit genug vom fairen Wert entfernt hat, um diese Seite günstig einzunehmen. Die äußeren Bänder bleiben bewusst ungenutzt — die Vorlage kauft Rücksetzer unter der Mittellinie, keine Kanalausbrüche.
+Zwei sehr gebräuchliche Indikatoren teilen sich die Arbeit: Der MACD bestimmt die Marktseite, und das mittlere Bollinger-Band zeigt, wann sich der Kurs weit genug vom fairen Wert entfernt hat, um diese Seite günstig einzunehmen. Die äußeren Bänder bleiben bewusst ungenutzt, weil das Diagramm Rücksetzer unter der Mittellinie und keine Kanalausbrüche handelt.
 
 ![schema](schema.svg)
 
@@ -37,7 +37,6 @@ Zwei sehr gebräuchliche Indikatoren teilen sich die Arbeit: Der MACD bestimmt d
 - Eine einzige Abstandskonstante und zwei Formelbausteine machen aus dem Mittelband eine Kauf- und eine Verkaufsmarke, sodass ein herausgehobener Parameter beide Schwellen zugleich verschiebt.
 - Jeder Einstieg ist ein logisches UND aus drei Signalen: dem MACD-Vergleich, dem Bandvergleich und der gegen eine Nullkonstante geprüften Position.
 - Die beiden Ausstiegsbausteine hängen direkt an den MACD-Vergleichen und laufen im Schließmodus; alle vier Orderbausteine beziehen ihre Größe aus derselben Volumenkonstante.
-- Bewusste Vereinfachungen: Das Original abonniert zusätzlich einen AverageTrueRange, den es nie verwendet, deshalb ist kein ATR-Baustein gezeichnet; außerdem sperrt es Einstiege nach einem Trade für 100 Balken, was kein Baustein abbilden kann — dieses Diagramm steigt wieder ein, sobald die Bedingungen zurückkehren.
 
 ## Verwendung
 

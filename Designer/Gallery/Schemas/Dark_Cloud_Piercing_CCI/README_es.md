@@ -16,7 +16,7 @@ Dos patrones clásicos de reversión de dos velas eligen el lado y el Commodity 
 
 - **Entrada en largo**: La vela anterior es bajista, la actual es alcista, abrió por debajo del cierre anterior y cerró por encima del centro del cuerpo anterior, el CCI está por debajo del nivel de entrada en negativo y la posición está plana. La orden compra un lote a mercado.
 - **Entrada en corto**: La vela anterior es alcista, la actual es bajista, abrió por encima del cierre anterior y cerró por debajo del centro del cuerpo anterior, el CCI está por encima del nivel de entrada y la posición está plana. La orden vende un lote a mercado.
-- **Salida**: Solo el bloque de protección de la posición: un take profit al dos por ciento del precio de entrada y un stop loss al uno por ciento. La estrategia original tampoco tiene salida por señal, así que aquí no falta nada.
+- **Salida**: Solo el bloque de protección de la posición: un take profit al dos por ciento del precio de entrada y un stop loss al uno por ciento. No hay salida por señal.
 
 ## Parámetros
 
@@ -34,7 +34,7 @@ Dos patrones clásicos de reversión de dos velas eligen el lado y el Commodity 
 - El bloque de velas alimenta los dos bloques de patrones, el Commodity Channel Index y el conversor que entrega el precio de cierre al bloque de protección.
 - Una constante guarda el nivel de entrada y una fórmula le invierte el signo, por lo que un único número optimizable gobierna las dos comparaciones del CCI.
 - Cada Y lógica une un patrón, su confirmación por CCI y la comprobación de posición plana, y dispara un bloque de modificación de posición en modo de solo apertura.
-- Se han simplificado dos cosas del original: allí también se exige un hueco real más allá del mínimo o del máximo de la vela previa, algo que un instrumento de cotización continua casi nunca muestra, y una pausa de seis velas entre operaciones, para la que no existe bloque contador. Por eso aquí solo se pide que la apertura quede al otro lado del cierre anterior y se opera cada patrón confirmado.
+- Se exige que la apertura quede al otro lado del cierre anterior, una condición práctica para instrumentos de cotización continua, y se opera cada patrón confirmado.
 
 ## Uso
 

@@ -10,13 +10,13 @@ O diagrama transforma o preço em uma escada: o fechamento de cada candle é arr
 - O preço de fechamento é discretizado pela fórmula floor(Close / GridStep) * GridStep, o que dá o degrau em que o mercado está.
 - Um bloco de valor anterior guarda o degrau do candle passado, então são comparados degraus e não preços brutos, e qualquer movimento dentro de uma célula da grade é ignorado.
 - O volume da ordem é a posição aberta mais o volume base, por isso um sinal contrário à posição a inverte com uma única ordem a mercado.
-- A estratégia original opera em candles de quatro horas e fecha a posição com lucro absoluto de 2000 unidades de preço; aqui são usados candles de cinco minutos e o alvo é um percentual do preço de entrada, o que continua fazendo sentido em qualquer instrumento.
+- O diagrama opera em candles de cinco minutos e expressa seu alvo como percentual do preço de entrada, o que continua fazendo sentido em qualquer instrumento.
 
 ## Regras de entrada e saída
 
 - **Entrada comprada**: O novo degrau da grade está acima do anterior e a posição não está comprada. A ordem compra o volume base mais a venda em aberto, deixando a posição comprada em um volume base.
 - **Entrada vendida**: O novo degrau da grade está abaixo do anterior e a posição não está vendida. A ordem vende o volume base mais a compra em aberto, deixando a posição vendida em um volume base.
-- **Saída**: O bloco de proteção de posição fecha a posição no take profit do percentual configurado; não há stop loss, como no original. Fora isso, a posição é mantida até o preço passar para a próxima célula da grade, onde o sinal contrário a inverte.
+- **Saída**: O bloco de proteção de posição fecha a posição no take profit do percentual configurado; não há stop loss. Fora isso, a posição é mantida até o preço passar para a próxima célula da grade, onde o sinal contrário a inverte.
 
 ## Parâmetros
 

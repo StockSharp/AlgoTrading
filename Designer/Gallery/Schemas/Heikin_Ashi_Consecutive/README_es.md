@@ -9,14 +9,14 @@ Las velas Heikin-Ashi promedian el ruido, así que su color se mantiene mientras
 
 - Un bloque de fórmula construye el cuerpo Heikin-Ashi como la media de apertura, máximo, mínimo y cierre menos el punto medio de la vela anterior: cuerpo positivo es vela alcista, negativo es bajista.
 - La serie de velas del mismo color se mide sin contador: que el mínimo de los últimos siete cuerpos esté por encima de cero significa que las siete fueron alcistas, y que el máximo esté por debajo de cero, que las siete fueron bajistas.
-- La orden se dimensiona como volumen más la posición absoluta, de modo que una sola orden gira un corto directamente a largo y al revés, igual que en el original en C#.
-- La apertura Heikin-Ashi se define por su propio valor anterior, algo que un diagrama no puede realimentar a un bloque; en su lugar se usa el punto medio de la vela normal previa, así que las series halladas aquí son parecidas, pero no idénticas, a las que cuenta el código fuente.
+- La orden se dimensiona como volumen más la posición absoluta, de modo que una sola orden gira un corto directamente a largo y al revés.
+- La apertura Heikin-Ashi se define normalmente por su propio valor anterior, algo que un diagrama no puede realimentar a un bloque; en su lugar se usa el punto medio de la vela normal previa, así que las series son una aproximación.
 
 ## Reglas de entrada y salida
 
 - **Entrada en largo**: El mínimo de los últimos siete cuerpos Heikin-Ashi está por encima de cero, es decir, las siete velas fueron alcistas, y la posición no es larga. La orden compra volumen más la posición absoluta: abre un largo desde plano o gira un corto.
 - **Entrada en corto**: El máximo de los últimos siete cuerpos Heikin-Ashi está por debajo de cero, es decir, las siete velas fueron bajistas, y la posición no es corta. La orden vende volumen más la posición absoluta: abre un corto desde plano o gira un largo.
-- **Salida**: No hay regla de salida propia, como en la estrategia de origen: la posición se gira con la serie contraria o la retira el bloque de protección, que coloca un stop loss a un porcentaje fijo del precio de ejecución. No hay objetivo ni stop dinámico.
+- **Salida**: No hay una salida propia por señal: la posición se gira con la serie contraria o la retira el bloque de protección, que coloca un stop loss a un porcentaje fijo del precio de ejecución. No hay objetivo ni stop dinámico.
 
 ## Parámetros
 
@@ -25,7 +25,7 @@ Las velas Heikin-Ashi promedian el ruido, así que su color se mantiene mientras
 | Consecutive candles | 7 | Cuántas velas Heikin-Ashi del mismo color seguidas forman una señal; es el periodo tanto del bloque Lowest como del Highest. |
 | Stop loss, % | 2 | Distancia del stop loss respecto al precio de entrada, en porcentaje. |
 | Volume | 1 | Volumen base de la orden, en lotes; se le suma la posición absoluta para que el giro ocurra en una sola orden. |
-| Candles | 00:30:00 | Marco temporal de las velas de todo el diagrama, la misma media hora que usa la estrategia original. |
+| Candles | 00:30:00 | Marco temporal de treinta minutos usado por todo el diagrama. |
 
 ## Detalles del diagrama
 

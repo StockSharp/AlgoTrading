@@ -8,15 +8,15 @@ Mean reversion works when the market is going nowhere and hurts when it is trend
 ## Strategy Overview
 
 - Volatility is measured relative to itself: an AverageTrueRange feeds a SmoothedMovingAverage, and the ratio of the two is the whole regime filter, so the diagram carries over to any instrument without recalibration.
-- The smoothing reproduces the recursive average of the original code exactly, because SmoothedMovingAverage uses the same formula, average times length minus one plus the new value, divided by length.
+- SmoothedMovingAverage uses a recursive formula: average times length minus one plus the new value, divided by length.
 - The fair value is a plain SimpleMovingAverage: a close below it is bought, a close above it is sold, but only in the quiet regime and only from a flat position.
-- The original works on one-minute candles and blocks the whole strategy for 500 bars after every trade, which also blocks its exits. The packaged history is five-minute data, so the diagram runs on five-minute candles, and the lock-out is not reproduced, because the Designer has no bar counter that holds a state; the diagram therefore trades more often than the original.
+- The diagram runs on the five-minute candles supplied with the packaged history.
 
 ## Entry and Exit Rules
 
 - **Long entry**: The Average True Range is below the quiet level, the close is under the moving average and the position is flat. The order buys the configured volume.
 - **Short entry**: The Average True Range is below the quiet level, the close is above the moving average and the position is flat. The order sells the configured volume.
-- **Exit**: A long is closed once the close crosses back above the moving average, a short once it crosses back below. The exits deliberately ignore the volatility filter, so a trade is always given back even when the market has woken up. There is no stop loss and no take profit, as in the original strategy.
+- **Exit**: A long is closed once the close crosses back above the moving average, a short once it crosses back below. The exits deliberately ignore the volatility filter, so a trade is always given back even when the market has woken up. There is no stop loss and no take profit.
 
 ## Parameters
 

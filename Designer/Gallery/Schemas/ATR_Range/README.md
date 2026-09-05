@@ -16,7 +16,7 @@ One number decides everything here: how far the close has travelled over the las
 
 - **Long entry**: The distance travelled over the last four candles is at least one ATR, the close is above the close four candles ago and the position is flat. The order buys the shared volume at market.
 - **Short entry**: The distance travelled over the last four candles is at least one ATR, the close is below the close four candles ago and the position is flat. The order sells the shared volume at market.
-- **Exit**: A long is closed on the first candle that closes below the simple moving average, a short on the first candle that closes above it. Both exit blocks carry the close-position condition, so each of them can only act on the side it is meant for. There is no stop loss and no take profit, as in the original strategy.
+- **Exit**: A long is closed on the first candle that closes below the simple moving average, a short on the first candle that closes above it. Both exit blocks carry the close-position condition, so each of them can only act on the side it is meant for. There is no stop loss and no take profit.
 
 ## Parameters
 
@@ -24,7 +24,7 @@ One number decides everything here: how far the close has travelled over the las
 |---|---|---|
 | ATR Period | 14 | Averaging length of the Average True Range that sets the minimum width of a breakout. |
 | MA Period | 20 | Length of the simple moving average that closes the position. |
-| Lookback shift | 4 | How many candles back the price is compared with; the original measures over the lookback window minus one, which is four candles by default. |
+| Lookback shift | 4 | How many candles back the price is compared with. |
 | Volume | 1 | Order volume, in lots, shared by both entry blocks. |
 | Candles | 00:05:00 | Candle time frame the whole diagram works on. |
 
@@ -34,8 +34,8 @@ One number decides everything here: how far the close has travelled over the las
 - The formula block computes the absolute difference between the two closes, and a comparison holds it against the ATR to decide whether the move is wide enough.
 - Two comparisons of the same pair of closes give the direction, and one comparison of the position against a zero constant keeps the entries from stacking.
 - Each logical AND joins range, direction and the flat position, and triggers one open-position block; the two moving average comparisons trigger the close-position blocks directly, since the direction of a close-position block already decides which side it may close.
-- The C# original only measures every fifth candle, over windows that do not overlap, and freezes the reference price on the bar in between. That modulo counter has no equivalent block, so the diagram uses a sliding window instead and checks on every candle, which produces more signals than the original.
-- The five hundred bar pause the original keeps after every trade is dropped for the same reason, and the diagram runs on the five minute candles the gallery history is shipped in rather than the one minute candles of the C# code.
+- The diagram uses a sliding lookback window and checks the range on every candle.
+- It runs on the five-minute candles supplied with the gallery history.
 
 ## Usage
 

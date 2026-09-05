@@ -1,7 +1,7 @@
 # OBV Direction with Moving Average Filter Strategy Diagram
 [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-On-Balance Volume adds the volume of every up candle and subtracts the volume of every down candle, so its slope says which side is doing the trading. This diagram reads only the slope, one candle at a time, and lets a simple moving average of price decide which slope is worth acting on. The name of the original strategy speaks of a breakout, but its code compares OBV with its own previous value and nothing else, and the diagram follows the code.
+On-Balance Volume adds the volume of every up candle and subtracts the volume of every down candle, so its slope says which side is doing the trading. This diagram reads only the slope, one candle at a time, and lets a simple moving average of price decide which slope is worth acting on. Despite the folder name, the signal compares OBV only with its value on the previous candle rather than with a breakout level.
 
 ![schema](schema.svg)
 
@@ -15,8 +15,8 @@ On-Balance Volume adds the volume of every up candle and subtracts the volume of
 ## Entry and Exit Rules
 
 - **Long entry**: On-Balance Volume is above its value on the previous candle, the candle closed above the moving average and the position is flat. The order buys one lot at market.
-- **Short entry**: On-Balance Volume is at or below its value on the previous candle, the candle closed below the moving average and the position is flat. The order sells one lot at market. An unchanged OBV counts as not rising here, exactly as in the original code.
-- **Exit**: A long is closed on the first candle where OBV stops rising, a short on the first candle where OBV rises again, both through position modify blocks in close mode. The original has no stop loss or take profit either.
+- **Short entry**: On-Balance Volume is at or below its value on the previous candle, the candle closed below the moving average and the position is flat. The order sells one lot at market. An unchanged OBV counts as not rising.
+- **Exit**: A long is closed on the first candle where OBV stops rising, a short on the first candle where OBV rises again, both through position modify blocks in close mode. There is no stop loss or take profit.
 
 ## Parameters
 
@@ -31,7 +31,7 @@ On-Balance Volume adds the volume of every up candle and subtracts the volume of
 - The candle block feeds the On-Balance Volume block, the moving average block and the converter that reads the closing price; a previous value block delayed by one candle supplies the earlier OBV, and two comparison blocks turn the pair into a rising and a not rising flag.
 - Each logical AND joins the OBV flag, the position of price against the moving average and the flat position check, then triggers a position modify block set to open only.
 - The same two OBV flags are wired straight into the closing blocks, which are set to close mode and therefore stay idle while the diagram is flat.
-- The original strategy works on one minute candles and pauses for five hundred candles after every trade. The packaged history is coarser than one minute and the diagram has no bar counter, so it runs on five minute candles and trades every signal.
+- The diagram runs on five-minute candles from the packaged history and trades every qualifying signal.
 
 ## Usage
 

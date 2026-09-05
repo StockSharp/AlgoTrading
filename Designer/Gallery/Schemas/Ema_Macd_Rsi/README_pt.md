@@ -10,13 +10,13 @@ Três verificações independentes precisam concordar antes de este diagrama ope
 - O filtro de tendência é uma comparação de níveis entre duas médias exponenciais: não se compra enquanto a EMA 50 estiver abaixo da EMA 200 nem se vende enquanto estiver acima.
 - A entrada é um evento e não um estado: apenas o candle em que a linha MACD cruza o sinal pode abrir uma operação, portanto o diagrama não dispara continuamente enquanto a tendência dura.
 - O corredor do RSI é o que dá prudência à combinação. Uma compra exige RSI acima do nível de compra e ainda abaixo do limite superior; uma venda exige RSI abaixo do nível de venda e ainda acima do limite inferior.
-- O original trabalha em candles de trinta minutos; o diagrama foi reduzido para candles de cinco minutos, de acordo com o histórico de amostra incluído. A pausa de dez barras após cada operação não tem equivalente em blocos e foi omitida, o que torna as reentradas mais frequentes do que no código.
+- O diagrama usa candles de cinco minutos, de acordo com o histórico de amostra incluído.
 
 ## Regras de entrada e saída
 
 - **Entrada comprada**: A EMA 50 está acima da EMA 200, a linha MACD cruza o sinal para cima, o RSI está acima do nível de compra e ainda abaixo do limite superior, e a posição ainda não está comprada. A ordem compra o volume base mais a venda em aberto, invertendo a venda para compra com uma única ordem a mercado.
 - **Entrada vendida**: A EMA 50 está abaixo da EMA 200, a linha MACD cruza o sinal para baixo, o RSI está abaixo do nível de venda e ainda acima do limite inferior, e a posição ainda não está vendida. A ordem vende o volume base mais a compra em aberto, invertendo a compra para venda com uma única ordem.
-- **Saída**: Não há bloco de saída nem proteção, exatamente como no original: a posição é mantida até surgir o sinal espelhado, e essa mesma ordem encerra a operação antiga e abre a nova.
+- **Saída**: Não há bloco de saída nem proteção: a posição é mantida até surgir o sinal espelhado, e essa mesma ordem encerra a operação antiga e abre a nova.
 
 ## Parâmetros
 

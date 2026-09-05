@@ -9,8 +9,8 @@ O diagrama envolve uma média móvel simples num canal cuja semilargura vale alg
 
 - SimpleMovingAverage traça a linha central e AverageTrueRange define a que distância ficam as bordas, de modo que o canal acompanha a volatilidade do momento.
 - Dois blocos de fórmula montam as bordas como SMA + multiplicador * ATR e SMA - multiplicador * ATR a partir das mesmas três fontes.
-- A entrada só ocorre a partir da posição zerada e a única saída é o fechamento voltando a cruzar a linha central; não há stop nem alvo, como no original em C#.
-- Dois desvios do original: a pausa de 500 barras após cada operação não é reproduzida, então o diagrama negocia com mais frequência, e o candle de trabalho é de cinco minutos em vez de um, que é o histórico incluído.
+- A entrada só ocorre a partir da posição zerada e a única saída é o fechamento voltando a cruzar a linha central; não há stop nem alvo.
+- O diagrama trabalha com candles de cinco minutos do histórico empacotado e pode negociar cada sinal válido.
 
 ## Regras de entrada e saída
 

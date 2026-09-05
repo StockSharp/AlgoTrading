@@ -10,13 +10,12 @@ Um rompimento só vale a pena quando o mercado realmente vai a algum lugar. Este
 - As Bandas de Bollinger são calculadas sobre candles finalizados de um único instrumento: a superior e a inferior marcam os níveis de rompimento e a do meio, que é a média móvel do mesmo período, marca a saída.
 - O ADX mede a força da tendência sem dizer nada sobre a direção, por isso é usado apenas como filtro: abaixo do limiar todo rompimento é ignorado.
 - A posição atual participa das duas entradas, e os dois blocos de encerramento estão no modo de fechar em vez de abrir, de modo que cada um só age no seu lado.
-- A estratégia de origem se trava por cem barras depois de qualquer operação, inclusive as saídas. Esse contador não tem equivalente entre os blocos, então o diagrama o omite: a saída na banda do meio passa a funcionar sempre, o que é mais sensato de todo modo.
 
 ## Regras de entrada e saída
 
 - **Entrada comprada**: O fechamento está acima da banda superior, o ADX está acima do seu limiar e a posição está zerada. Compra-se um lote a mercado.
 - **Entrada vendida**: O fechamento está abaixo da banda inferior, o ADX está acima do seu limiar e a posição está zerada. Vende-se um lote a mercado.
-- **Saída**: Uma compra é encerrada no primeiro fechamento abaixo da banda do meio e uma venda no primeiro acima dela. Não há stop nem alvo, exatamente como na estratégia de origem.
+- **Saída**: Uma compra é encerrada no primeiro fechamento abaixo da banda do meio e uma venda no primeiro acima dela. Não há stop nem alvo.
 
 ## Parâmetros
 
@@ -35,7 +34,7 @@ Um rompimento só vale a pena quando o mercado realmente vai a algum lugar. Este
 - Cinco blocos de comparação fazem o trabalho: dois para o rompimento, dois para a volta à banda do meio e um para o filtro de tendência contra uma constante de limiar.
 - Cada E lógico junta uma condição de rompimento, o filtro de tendência e a verificação da posição e então aciona um bloco de modificação no modo de abrir, que tira o volume da constante compartilhada.
 - As duas comparações de saída acionam blocos de modificação no modo de fechar, que dispensam volume próprio porque o bloco encerra o que estiver aberto.
-- O código original calcula a força da tendência à mão, como um DX sem suavização. O diagrama usa o ADX padrão, a versão suavizada por Wilder da mesma grandeza, de modo que os momentos de cruzar o limiar diferem um pouco.
+- O diagrama usa o ADX padrão suavizado por Wilder como medida da força da tendência.
 
 ## Uso
 

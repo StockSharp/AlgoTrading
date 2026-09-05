@@ -16,7 +16,7 @@ Two classic two-candle reversal patterns choose the side, and the Commodity Chan
 
 - **Long entry**: The previous candle is bearish, the current one is bullish, it opened below the previous close and closed above the middle of the previous body, CCI is below minus the entry level and the position is flat. The order buys one lot at market.
 - **Short entry**: The previous candle is bullish, the current one is bearish, it opened above the previous close and closed below the middle of the previous body, CCI is above the entry level and the position is flat. The order sells one lot at market.
-- **Exit**: Only the position protection block: a take profit two percent away from the entry price and a stop loss one percent away from it. The original strategy has no signal exit either, so nothing is missing here.
+- **Exit**: Only the position protection block: a take profit two percent away from the entry price and a stop loss one percent away from it. There is no signal exit.
 
 ## Parameters
 
@@ -34,7 +34,7 @@ Two classic two-candle reversal patterns choose the side, and the Commodity Chan
 - The candle block feeds both pattern blocks, the Commodity Channel Index and the converter that reads the closing price for the protection block.
 - A constant holds the entry level and a formula flips its sign, so a single optimizable number drives both CCI comparisons.
 - Each logical AND joins a pattern, its CCI confirmation and the flat position check, and triggers a position modify block set to open only.
-- Two things from the original are simplified: it also demands a true gap beyond the previous candle's low or high, which a continuously traded instrument practically never shows, and a pause of six candles between trades, for which no counter block exists. The open is therefore only required to be on the far side of the previous close, and every confirmed pattern is traded.
+- The open is required to be on the far side of the previous close, a practical condition for continuously traded instruments, and every confirmed pattern is traded.
 
 ## Usage
 

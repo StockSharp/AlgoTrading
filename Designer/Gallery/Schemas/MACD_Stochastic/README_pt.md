@@ -10,14 +10,14 @@ Um cruzamento do MACD significa coisas diferentes conforme o lugar em que aconte
 - O gatilho é o cruzamento da linha MACD com o sinal; o filtro de sinal confere o valor atual e o do candle anterior, de modo que uma barra que salta ao mesmo tempo sobre o zero e sobre o sinal não seja confundida com um cruzamento novo.
 - O Stochastic Oscillator é a segunda opinião: a compra quer %K acima de %D e a venda quer %K abaixo.
 - Só se entra a partir da posição zerada: o diagrama nunca aumenta a operação nem inverte por sinal; o stop e o alvo são a única saída.
-- O original é um port de um expert do MetaTrader e mede stop e alvo em pips, com três sessões de negociação e um trailing de vários degraus. O diagrama converte as distâncias em porcentagem do preço de entrada e omite as janelas de sessão, pois a janela padrão cobre o dia inteiro.
-- Mais duas simplificações: a confirmação do Stochastic está ligada de forma permanente, enquanto no código é uma chave desligada por padrão, e as duas linhas são comparadas apenas como estão agora, sem checar também como estavam quatro barras antes. O original roda em candles de quatro horas; o diagrama foi reduzido para cinco minutos, de acordo com o histórico de amostra incluído.
+- O diagrama expressa as distâncias do stop e do alvo como porcentagens do preço de entrada e opera durante todo o dia.
+- A confirmação do Stochastic está sempre ativa e compara as duas linhas atuais. O diagrama usa candles de cinco minutos de acordo com o histórico de amostra incluído.
 
 ## Regras de entrada e saída
 
 - **Entrada comprada**: A linha MACD cruza o sinal para cima, o valor atual e o anterior do MACD estão abaixo de zero, %K está acima de %D e a posição está zerada. A ordem compra um lote a mercado.
 - **Entrada vendida**: A linha MACD cruza o sinal para baixo, o valor atual e o anterior do MACD estão acima de zero, %K está abaixo de %D e a posição está zerada. A ordem vende um lote a mercado.
-- **Saída**: O bloco de proteção encerra a operação a uma porcentagem fixa do preço de entrada, no alvo ou no stop. Não há saída pelo cruzamento contrário do MACD, exatamente como no original.
+- **Saída**: O bloco de proteção encerra a operação a uma porcentagem fixa do preço de entrada, no alvo ou no stop. Não há saída pelo cruzamento contrário do MACD.
 
 ## Parâmetros
 
@@ -29,8 +29,8 @@ Um cruzamento do MACD significa coisas diferentes conforme o lugar em que aconte
 | Stochastic %K length | 5 | Período de cálculo da linha %K do Stochastic. |
 | Stochastic %D length | 3 | Período de suavização da linha %D, a média móvel de %K. |
 | Volume | 1 | Volume da ordem, em lotes. |
-| Take profit, % | 1 | Distância do alvo, em porcentagem do preço de entrada; substitui os 100 pips do original. |
-| Stop loss, % | 1 | Distância do stop, em porcentagem do preço de entrada; substitui os 100 pips do original. |
+| Take profit, % | 1 | Distância do alvo, em porcentagem do preço de entrada. |
+| Stop loss, % | 1 | Distância do stop, em porcentagem do preço de entrada. |
 | Candles | 00:05:00 | Tempo gráfico dos candles com que todo o diagrama trabalha. |
 
 ## Detalhes do diagrama

@@ -1,7 +1,7 @@
 # Diagrama da estratégia de duplo cruzamento RSI + Williams %R
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
-Os dois osciladores precisam concordar no mesmo candle. O diagrama compra apenas quando o RSI cai abaixo de 30 e, ao mesmo tempo, o Williams %R cai abaixo de -80; vende apenas quando o RSI sobe acima de 70 e o Williams %R sobe acima de -20. Estar dentro da zona não basta: no candle anterior ambos precisavam continuar fora dela, e por isso cada oscilador também é guardado com um candle de atraso. A pausa de 180 barras do código original não foi reproduzida, porque em candles de cinco minutos ela silenciaria a estratégia por quinze horas depois de cada operação.
+Os dois osciladores precisam concordar no mesmo candle. O diagrama compra apenas quando o RSI cai abaixo de 30 e, ao mesmo tempo, o Williams %R cai abaixo de -80; vende apenas quando o RSI sobe acima de 70 e o Williams %R sobe acima de -20. Estar dentro da zona não basta: no candle anterior ambos precisavam continuar fora dela, e por isso cada oscilador também é guardado com um candle de atraso.
 
 ![schema](schema.svg)
 

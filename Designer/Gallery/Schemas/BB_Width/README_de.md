@@ -9,14 +9,14 @@ Das Signal ist der Abstand zwischen den beiden Bollinger-Bändern, nicht die Ber
 
 - Die Bollinger-Bänder liefern drei Linien auf einmal; drei Konverter-Bausteine holen oberes Band, unteres Band und Mittelband aus demselben Indikatorwert.
 - Die Bandbreite berechnet ein Formelbaustein, ein Vorwert-Baustein hält sie fest, sodass Ausweitung ein einfacher Vergleich zweier Zahlen wird.
-- Die Richtung ist keine Ausbruchsprüfung: Jede Ausweitung eröffnet einen Trade, das Mittelband sagt nur, ob es ein Long oder ein Short wird. Genau so verzweigt die Originalstrategie.
+- Die Richtung ist keine Ausbruchsprüfung: Jede Ausweitung eröffnet einen Trade, das Mittelband sagt nur, ob es ein Long oder ein Short wird.
 - Sobald die Breite nicht mehr wächst, feuern beide Schließen-Bausteine und die offene Seite wird glattgestellt.
 
 ## Ein- und Ausstiegsregeln
 
 - **Long-Einstieg**: Die Breite ist größer als auf der vorigen Kerze, die Kerze schloss über dem Mittelband und die Position ist neutral. Die Order kauft das gemeinsame Volumen zum Marktpreis.
 - **Short-Einstieg**: Die Breite ist größer als auf der vorigen Kerze, die Kerze schloss auf oder unter dem Mittelband und die Position ist neutral. Die Order verkauft das gemeinsame Volumen zum Marktpreis.
-- **Ausstieg**: Die Breite wächst nicht mehr, liegt also auf oder unter der Breite der vorigen Kerze. Beide Schließen-Bausteine werden ausgelöst, und derjenige, der zur offenen Seite passt, stellt sie zum Marktpreis glatt. Die Originalstrategie hat weder Stop-Loss noch Take-Profit, dieses Diagramm ebenso wenig.
+- **Ausstieg**: Die Breite wächst nicht mehr, liegt also auf oder unter der Breite der vorigen Kerze. Beide Schließen-Bausteine werden ausgelöst, und derjenige, der zur offenen Seite passt, stellt sie zum Marktpreis glatt. Das Diagramm hat weder Stop-Loss noch Take-Profit.
 
 ## Parameter
 

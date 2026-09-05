@@ -8,15 +8,14 @@ Mean reversion that asks for two independent signs of an exhausted move: the clo
 ## Strategy Overview
 
 - Bollinger Bands supply three lines from one indicator block: the upper band, the lower band and the middle moving average that serves as the exit level.
-- The Stochastic Oscillator is used for its %K line only; the %D line is deliberately left unconnected, as in the original strategy.
+- The Stochastic Oscillator is used for its %K line only; the %D line is deliberately left unconnected.
 - Entries are taken only from a flat position, so the diagram never averages into a trade that is already running.
-- The original strategy also waits a fixed number of bars between trades; that cooldown counter has no block equivalent and is left out, which makes this diagram trade more often than the source.
 
 ## Entry and Exit Rules
 
 - **Long entry**: The close is at or below the lower Bollinger band, %K is below the oversold level and the position is flat. The order buys one lot and opens a long.
 - **Short entry**: The close is at or above the upper Bollinger band, %K is above the overbought level and the position is flat. The order sells one lot and opens a short.
-- **Exit**: A long is closed when the close rises above the middle band, a short when the close falls below it. Both exits use position modify blocks in close mode, so they size themselves from the open position and stay idle when there is nothing to close. There are no stops or targets, exactly as in the original code.
+- **Exit**: A long is closed when the close rises above the middle band, a short when the close falls below it. Both exits use position modify blocks in close mode, so they size themselves from the open position and stay idle when there is nothing to close. There are no stops or targets.
 
 ## Parameters
 

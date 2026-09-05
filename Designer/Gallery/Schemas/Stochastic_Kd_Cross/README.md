@@ -11,8 +11,8 @@ A crossover of the two Stochastic lines is a common but noisy signal, so this di
 - A crossing block compares the two lines: its signal marks a bullish cross, and the same signal inverted by a NOT block marks a bearish one.
 - The zone filter is a plain comparison of %K against the oversold and overbought constants, so a cross in the middle of the range is ignored.
 - The order volume is the base volume plus the absolute value of the position, which closes the opposite side and opens the new one with a single market order.
-- Despite the folder name of the original strategy there is no RSI in it, and there is no stop loss either; the pause of five candles it keeps after a trade has no block equivalent and is left out.
-- The original works on fifteen-minute candles; the diagram is scaled to five-minute candles to match the packaged sample history.
+- The diagram uses no RSI and has no stop loss.
+- It works on five-minute candles to match the packaged sample history.
 
 ## Entry and Exit Rules
 

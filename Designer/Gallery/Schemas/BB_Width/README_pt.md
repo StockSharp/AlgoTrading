@@ -9,14 +9,14 @@ O sinal é a distância entre as duas Bandas de Bollinger, e não o preço tocan
 
 - As Bandas de Bollinger fornecem três linhas de uma vez; três blocos conversores extraem a banda superior, a inferior e a média do mesmo valor do indicador.
 - A largura é calculada por um bloco de fórmula e guardada por um bloco de valor anterior, o que transforma a expansão numa simples comparação de dois números.
-- A direção não é um teste de rompimento: qualquer expansão abre uma operação e a banda média apenas diz se é compra ou venda. É exatamente assim que a estratégia original se ramifica.
+- A direção não é um teste de rompimento: qualquer expansão abre uma operação e a banda média apenas diz se é compra ou venda.
 - Assim que a largura para de crescer, os dois blocos de fechamento disparam e o lado aberto é zerado.
 
 ## Regras de entrada e saída
 
 - **Entrada comprada**: A largura é maior que no candle anterior, o candle fechou acima da banda média e a posição está zerada. A ordem compra o volume compartilhado a mercado.
 - **Entrada vendida**: A largura é maior que no candle anterior, o candle fechou na banda média ou abaixo dela e a posição está zerada. A ordem vende o volume compartilhado a mercado.
-- **Saída**: A largura deixou de crescer, ou seja, está igual ou abaixo da largura do candle anterior. Os dois blocos de fechamento são acionados e aquele que corresponde ao lado aberto o liquida a mercado. A estratégia original não tem stop loss nem take profit, e este diagrama também não.
+- **Saída**: A largura deixou de crescer, ou seja, está igual ou abaixo da largura do candle anterior. Os dois blocos de fechamento são acionados e aquele que corresponde ao lado aberto o liquida a mercado. O diagrama não tem stop loss nem take profit.
 
 ## Parâmetros
 

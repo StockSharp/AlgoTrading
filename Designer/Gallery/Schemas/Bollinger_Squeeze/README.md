@@ -10,7 +10,7 @@ A breakout diagram built on Bollinger Bands: the bands are drawn one and eight t
 - Bollinger Bands are calculated on finished candles of a single instrument; only the upper and the lower band take part in the decisions.
 - The diagram is a breakout, not a reversion: it buys strength above the upper band and sells weakness below the lower band, the opposite of the Bollinger_Bands example in this gallery.
 - The volume of every order is the base volume plus the absolute value of the current position, so a signal against an open position closes it and opens the new side in one order.
-- Despite the name, no squeeze filter is applied: the original C# strategy computes the relative band width but never uses it in a condition, and the diagram stays faithful to what the code actually does.
+- Despite the name, no squeeze filter is applied: relative band width is calculated for display but does not enter any trading condition.
 
 ## Entry and Exit Rules
 
@@ -33,7 +33,6 @@ A breakout diagram built on Bollinger Bands: the bands are drawn one and eight t
 - Two converters typed as indicator values pull the upper and the lower band out of the single indicator output.
 - Two comparison blocks test the close against the bands, two more compare the position against a zero constant, and each logical AND joins one band condition with one position condition.
 - A formula block computes the base volume plus the absolute position and feeds both position modify blocks, which is what turns each entry into a reversal.
-- The ten-bar pause the original code keeps after every entry is not reproduced: the available blocks have no bar counter, so the position checks alone hold the frequency of trading down.
 
 ## Usage
 

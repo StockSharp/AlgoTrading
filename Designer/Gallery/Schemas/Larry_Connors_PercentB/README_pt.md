@@ -7,7 +7,7 @@ Um diagrama de reversão à média somente comprado, construído sobre o Bolling
 
 ## Visão geral da estratégia
 
-- O indicador BollingerPercentB faz em um bloco o que a estratégia original calcula à mão a partir das bandas; sua escala vai de 0 a 100, por isso os limiares clássicos 0.35 e 0.8 aparecem como 35 e 80.
+- O indicador BollingerPercentB calcula a posição do preço dentro das bandas em uma escala de 0 a 100, por isso os limiares clássicos 0.35 e 0.8 aparecem como 35 e 80.
 - Um bloco de valor anterior guarda a leitura do candle passado, e é ele que transforma um candle fraco isolado em uma condição de dois candles.
 - A estratégia é apenas comprada: compra a fraqueza e vende de volta a mesma compra, nunca abrindo venda.
 - A posição participa das duas decisões, de modo que a entrada não se acumula e a saída não dispara sem posição.

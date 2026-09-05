@@ -10,13 +10,13 @@ Un outside bar es una vela que se traga todo el rango de la anterior: un máximo
 - El outside bar se arma con bloques básicos: los conversores leen el máximo, el mínimo, la apertura y el cierre de la vela terminada, y dos bloques de valor anterior guardan el máximo y el mínimo de la vela previa.
 - Dos comparaciones forman la figura —máximo por encima del máximo anterior y mínimo por debajo del mínimo anterior— y ambas deben cumplirse a la vez.
 - La dirección sale del propio cuerpo de la vela, no de un filtro de tendencia: cerrar por encima de la apertura es comprar, cerrar por debajo es vender.
-- La media móvil simple no interviene en la entrada y sirve únicamente como línea de salida, igual que en la estrategia original.
+- La media móvil simple no interviene en la entrada y sirve únicamente como línea de salida.
 
 ## Reglas de entrada y salida
 
 - **Entrada en largo**: La vela ha superado los dos extremos de la anterior, cerró por encima de su propia apertura y no hay posición. La orden compra un lote y abre un largo.
 - **Entrada en corto**: La vela ha superado los dos extremos de la anterior, cerró por debajo de su propia apertura y no hay posición. La orden vende un lote y abre un corto.
-- **Salida**: El largo se cierra cuando una vela cierra por debajo de la media móvil y el corto cuando cierra por encima, ambos con bloques de modificación de posición en modo cierre, igual que en el original. No hay stop de pérdidas ni toma de beneficios porque el código original no los tiene. Queda fuera la pausa de varios cientos de velas que el original mantiene tras cada entrada y cada salida: un contador de barras solo se monta devolviendo una señal al diagrama, lo que cerraría el grafo en un bucle. Por eso aquí se actúa sobre cada outside bar y se opera bastante más a menudo.
+- **Salida**: El largo se cierra cuando una vela cierra por debajo de la media móvil y el corto cuando cierra por encima, ambos con bloques de modificación de posición en modo cierre. No hay stop de pérdidas ni toma de beneficios. El diagrama actúa sobre cada outside bar mientras lo permita el correspondiente control de posición.
 
 ## Parámetros
 
@@ -24,7 +24,7 @@ Un outside bar es una vela que se traga todo el rango de la anterior: un máximo
 |---|---|---|
 | SMA Length | 20 | Periodo de suavizado de la media móvil simple que cierra las operaciones. |
 | Volume | 1 | Volumen de la orden, en lotes. |
-| Candles | 00:05:00 | Marco temporal de las velas con el que trabaja todo el diagrama. La estrategia original usa velas de un minuto; aquí se emplean cinco minutos para ajustarse al histórico incluido. |
+| Candles | 00:05:00 | Marco temporal de cinco minutos usado para ajustarse al histórico incluido. |
 
 ## Detalles del diagrama
 

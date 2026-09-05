@@ -9,7 +9,7 @@ Der Money Flow Index gewichtet jede Preisbewegung mit dem dahinterstehenden Volu
 
 - Der Money Flow Index mit der Länge 14 wird auf abgeschlossenen Stundenkerzen berechnet, die der Tester aus der mitgelieferten Fünf-Minuten-Historie aufbaut.
 - Die Level 30 und 70 werden als Durchbruch gelesen, nicht als Zone: Nur die Kerze, die in eine Zone eintritt, erzeugt ein Signal, nicht die Kerzen, die darin verweilen.
-- Die ursprüngliche Strategie hat einen Trend-Schalter, der beide Signale spiegeln kann; das Diagramm behält den Standardmodus Direct, also kauft der Eintritt in die überverkaufte Zone und verkauft der Eintritt in die überkaufte Zone.
+- Das Diagramm verwendet die direkte Signalausrichtung Direct: Der Eintritt in die überverkaufte Zone kauft, der Eintritt in die überkaufte Zone verkauft.
 - Die aktuelle Position geht in beide Entscheidungen ein, sodass das Schema niemals eine zweite Order auf eine bestehende Position legt.
 
 ## Ein- und Ausstiegsregeln

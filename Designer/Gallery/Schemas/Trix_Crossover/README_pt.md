@@ -1,18 +1,18 @@
 # Diagrama da estratégia de cruzamento do TRIX
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
-Aqui o TRIX não é um indicador pronto, e sim uma série montada dentro do diagrama, exatamente como a estratégia original a monta: uma média exponencial tripla e sua variação relativa de uma barra. O gatilho é a série rápida cruzando o zero, a série lenta precisa se mover no mesmo sentido acima de um limiar, e um alvo e um stop percentuais encerram a operação.
+Aqui o TRIX não é um indicador pronto, e sim uma série montada dentro do diagrama a partir de uma média exponencial tripla e sua variação relativa de uma barra. O gatilho é a série rápida cruzando o zero, a série lenta precisa se mover no mesmo sentido acima de um limiar, e um alvo e um stop percentuais encerram a operação.
 
 ![schema](schema.svg)
 
 ## Visão geral da estratégia
 
 - A matéria-prima são duas médias exponenciais triplas do preço de fechamento, de 9 e 21 barras; blocos de valor anterior guardam cada uma delas um candle atrás.
-- O TRIX lento é um bloco de fórmula: a média menos o seu valor anterior, dividida por esse mesmo valor anterior, que é a variação relativa por barra calculada no código original.
+- O TRIX lento é um bloco de fórmula: a média menos o seu valor anterior, dividida por esse mesmo valor anterior, o que fornece a variação relativa por barra.
 - O cruzamento do zero pelo TRIX rápido é desenhado como o cruzamento da média rápida com o seu próprio valor anterior. Como a média de preços é positiva, o sinal da variação relativa é o sinal da diferença, então o bloco de cruzamento é um substituto exato e dispensa a divisão.
 - O limiar do TRIX lento é o que mantém o diagrama fora do mercado lateral: a virada da série rápida só é aceita enquanto a lenta se move mais de 0,05 por cento por barra no mesmo sentido.
-- O original roda em candles de quatro horas com alvo de 1500 e stop de 500 em unidades absolutas de preço; o diagrama foi reduzido para cinco minutos por causa do histórico de amostra incluído, e as duas distâncias viraram porcentagens do preço de entrada na mesma proporção de três para um.
-- O indicador Trix embutido é deliberadamente evitado: ele é uma cadeia de três suavizações sucessivas com um fator de escala, portanto seus valores e sinais diferem da média exponencial tripla sobre a qual a estratégia foi escrita.
+- O diagrama usa candles de cinco minutos do histórico de amostra incluído e expressa seu alvo e seu stop como porcentagens do preço de entrada na proporção de três para um.
+- O indicador Trix embutido é deliberadamente evitado: ele é uma cadeia de três suavizações sucessivas com um fator de escala, portanto seus valores e sinais diferem da média exponencial tripla usada neste diagrama.
 
 ## Regras de entrada e saída
 

@@ -16,7 +16,7 @@ The calendar decides the direction and the moving average decides the timing. Ea
 
 - **Long entry**: The candle belongs to the early week window, its close is above the simple moving average and the position is flat. The order buys the shared volume at market.
 - **Short entry**: The candle belongs to the late week window, its close is below the simple moving average and the position is flat. The order sells the shared volume at market.
-- **Exit**: A close back below the average closes a long and a close back above it closes a short, both through position modify blocks in close mode. Because a close block does nothing while the position is already flat, this reproduces the crossing test of the original without any extra blocks. The original knows two counters the diagram cannot keep between candles, and both were dropped: the pause of three hundred bars after every trade and the rule that forbids a second entry on the same weekday. Without them the diagram re-enters as soon as the price returns to the right side of the average inside the same window, so it trades noticeably more often than the original.
+- **Exit**: A close back below the average closes a long and a close back above it closes a short, both through position modify blocks in close mode. A close block does nothing while the position is already flat, so no extra crossing blocks are needed. The diagram can re-enter as soon as price returns to the required side of the average inside the same weekday window.
 
 ## Parameters
 

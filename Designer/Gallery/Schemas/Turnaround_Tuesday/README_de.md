@@ -1,7 +1,7 @@
 # Diagramm der Umkehrstrategie nach einer verlorenen Sitzung
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-Die Idee ist die Umkehr nach einer schlechten Sitzung: Eine Sitzung, die tiefer endet als sie begann, überlässt der nächsten oft einen Rebound. Deshalb wartet das Diagramm, bis sich der Markt über seinen gleitenden Durchschnitt zurückgearbeitet hat, und kauft diese Erholung; nach einer höher geschlossenen Sitzung läuft alles spiegelbildlich. Trotz des Namens enthält die Originalstrategie überhaupt keinen Wochentagsfilter, und dieses Diagramm ebenso wenig.
+Die Idee ist die Umkehr nach einer schlechten Sitzung: Eine Sitzung, die tiefer endet als sie begann, überlässt der nächsten oft einen Rebound. Deshalb wartet das Diagramm, bis sich der Markt über seinen gleitenden Durchschnitt zurückgearbeitet hat, und kauft diese Erholung; nach einer höher geschlossenen Sitzung läuft alles spiegelbildlich. Trotz des Namens enthält das Diagramm keinen Wochentagsfilter.
 
 ![schema](schema.svg)
 
@@ -10,13 +10,13 @@ Die Idee ist die Umkehr nach einer schlechten Sitzung: Eine Sitzung, die tiefer 
 - Zwei Kerzenreihen arbeiten nebeneinander: Die Sitzungsreihe entscheidet die Richtung, die schnellere Handelsreihe bestimmt den Zeitpunkt.
 - Das Urteil über die Sitzung ist ein einziger Vergleich des Schlusses der Sitzungskerze mit ihrer eigenen Eröffnung, es muss also kein Zustand zwischen den Kerzen gemerkt werden.
 - Der einfache gleitende Durchschnitt auf der Handelsreihe dient als Bestätigung: Nach einer verlorenen Sitzung wird erst gekauft, wenn der Kurs bereits über den Durchschnitt zurückgekehrt ist.
-- Da das Urteil einmal je Sitzungskerze eintrifft, kann das logische UND nur einmal pro Sitzung feuern - genau die Regel eines Einstiegs pro Sitzung aus dem Original.
+- Da das Urteil einmal je Sitzungskerze eintrifft, kann das logische UND nur einmal pro Sitzung feuern.
 
 ## Ein- und Ausstiegsregeln
 
 - **Long-Einstieg**: Die letzte Sitzung schloss unter ihrer Eröffnung, die Handelskerze schließt über dem einfachen gleitenden Durchschnitt und die Position ist neutral. Die Order kauft das gemeinsame Volumen zum Marktpreis.
 - **Short-Einstieg**: Die letzte Sitzung schloss über ihrer Eröffnung, die Handelskerze schließt unter dem einfachen gleitenden Durchschnitt und die Position ist neutral. Die Order verkauft das gemeinsame Volumen zum Marktpreis.
-- **Ausstieg**: Ausgestiegen wird an der Seite des Durchschnitts, nicht an einem Kursziel: Ein Schluss zurück unter den Durchschnitt schließt einen Long, ein Schluss zurück darüber einen Short. Es gibt weder Stop-Loss noch Take-Profit, genau wie in der Originalstrategie.
+- **Ausstieg**: Ausgestiegen wird an der Seite des Durchschnitts, nicht an einem Kursziel: Ein Schluss zurück unter den Durchschnitt schließt einen Long, ein Schluss zurück darüber einen Short. Es gibt weder Stop-Loss noch Take-Profit.
 
 ## Parameter
 

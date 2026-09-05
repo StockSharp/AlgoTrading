@@ -10,13 +10,13 @@ Tres comprobaciones independientes deben coincidir antes de que este diagrama op
 - El filtro de tendencia es una comparación de niveles entre dos medias exponenciales: no se compra mientras la EMA 50 está por debajo de la EMA 200 ni se vende mientras está por encima.
 - La entrada es un suceso, no un estado: solo la vela en la que la línea MACD cruza su señal puede abrir una operación, así que el diagrama no dispara sin parar mientras dura la tendencia.
 - El corredor del RSI es lo que da prudencia a la combinación. Un largo necesita el RSI por encima del nivel de compra y todavía por debajo del límite superior; un corto, por debajo del nivel de venta y todavía por encima del límite inferior.
-- El original trabaja con velas de treinta minutos; el diagrama se ha reducido a velas de cinco minutos para ajustarse al histórico de muestra incluido. Su pausa de diez barras tras cada operación no tiene equivalente en bloques y se omite, por lo que las reentradas son más frecuentes que en el código.
+- El diagrama usa velas de cinco minutos para ajustarse al histórico de muestra incluido.
 
 ## Reglas de entrada y salida
 
 - **Entrada en largo**: La EMA 50 está por encima de la EMA 200, la línea MACD cruza al alza su señal, el RSI está sobre el nivel de compra y aún bajo el límite superior, y la posición no es ya larga. La orden compra el volumen base más el corto abierto, de modo que una sola orden a mercado invierte el corto en largo.
 - **Entrada en corto**: La EMA 50 está por debajo de la EMA 200, la línea MACD cruza a la baja su señal, el RSI está bajo el nivel de venta y aún sobre el límite inferior, y la posición no es ya corta. La orden vende el volumen base más el largo abierto, invirtiendo la posición a corto con una sola orden.
-- **Salida**: No hay bloque de salida ni protección, igual que en el original: la posición se mantiene hasta que aparece la señal espejo, y esa misma orden cierra la operación antigua y abre la nueva.
+- **Salida**: No hay bloque de salida ni protección: la posición se mantiene hasta que aparece la señal espejo, y esa misma orden cierra la operación antigua y abre la nueva.
 
 ## Parámetros
 

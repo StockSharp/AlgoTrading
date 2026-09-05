@@ -15,7 +15,7 @@ Die älteste Trendfolgeidee überhaupt: Der Indikator Donchian Channels zeichnet
 
 - **Long-Einstieg**: Die Kerze schließt über dem oberen Band der Vorkerze und die Position ist nicht long. Die Order kauft das Basisvolumen zuzüglich des Positionsbetrags: Ein Short dreht auf Long, aus der Neutralstellung entsteht ein Long.
 - **Short-Einstieg**: Die Kerze schließt unter dem unteren Band der Vorkerze und die Position ist nicht short. Die Order verkauft das Basisvolumen zuzüglich des Positionsbetrags: Ein Long dreht auf Short, aus der Neutralstellung entsteht ein Short.
-- **Ausstieg**: Es gibt weder Stop noch Ziel noch einen eigenen Ausstiegsbaustein: Die Position wird gehalten, bis der Gegenausbruch sie dreht — genau wie in der ursprünglichen Strategie.
+- **Ausstieg**: Es gibt weder Stop noch Ziel noch einen eigenen Ausstiegsbaustein: Die Position wird gehalten, bis der Gegenausbruch sie dreht.
 
 ## Parameter
 
@@ -31,7 +31,7 @@ Die älteste Trendfolgeidee überhaupt: Der Indikator Donchian Channels zeichnet
 - Zwei Konverter lesen die Werte UpperBand und LowerBand aus dem Indikator, zwei Bausteine für den Vorwert verschieben sie um eine Kerze.
 - Zwei Vergleichsbausteine prüfen den Schlusskurs gegen die verschobenen Bänder, zwei weitere vergleichen die Position mit null, und ein logisches UND fügt je eine Bedingung zum Einstiegssignal zusammen.
 - Ein Formelbaustein berechnet das Drehvolumen als Basisvolumen plus Positionsbetrag und speist beide Bausteine zur Positionsänderung.
-- Der Originalcode verwendet standardmäßig einen Kanal über 1000 Minutenkerzen; das Diagramm nutzt 20 Kerzen auf dem Fünf-Minuten-Chart, den Wert aus der README der Strategie und ihrem Optimierungsbereich, damit es auf einem Monat Historie tatsächlich handelt.
+- Das Diagramm nutzt einen Kanal aus 20 Fünf-Minuten-Kerzen, damit es auf einem Monat Historie handeln kann.
 
 ## Verwendung
 

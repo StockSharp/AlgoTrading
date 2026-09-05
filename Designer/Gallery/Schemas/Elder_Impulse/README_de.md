@@ -10,13 +10,12 @@ Alexander Elder färbt jeden Balken nach zwei Dingen gleichzeitig: nach der Stei
 - EMA und MACD-Linien werden auf abgeschlossenen Kerzen eines einzelnen Instruments berechnet; das Histogramm entsteht im Diagramm selbst als MACD minus Signal.
 - Zwei Bausteine für den Vorwert halten EMA und Histogramm der vorigen Kerze fest, sodass das Diagramm den aktuellen Wert dagegen stellen und die Richtung beider ablesen kann.
 - Die Balkenfarbe ist das Paar der Steigungen: EMA steigend und Histogramm steigend ergibt grün, EMA fallend und Histogramm nicht steigend ergibt rot, alles andere gilt als neutral und wird übergangen.
-- Die Ursprungsstrategie pausiert nach jedem Trade 65 Balken. Diese Pause ist ein Zähler, und die Designer-Bausteine halten keinen solchen Zustand, deshalb lässt das Diagramm sie weg; die Positionsprüfung verhindert ohnehin eine Wiederholung derselben Seite.
 
 ## Ein- und Ausstiegsregeln
 
 - **Long-Einstieg**: Der EMA liegt über seinem Wert von vor einer Kerze, das Histogramm ebenfalls, und die Position ist noch nicht long. Die Order kauft Volume plus die absolute Position: aus der Neutralstellung ein Long-Einstieg, aus einem Short die Drehung in einem Zug.
 - **Short-Einstieg**: Der EMA liegt unter seinem Wert von vor einer Kerze, das Histogramm liegt auf oder unter seinem Vorwert, und die Position ist noch nicht short. Die Order verkauft Volume plus die absolute Position und dreht damit einen Long oder eröffnet einen Short.
-- **Ausstieg**: Es gibt keinen eigenen Ausstieg: Die Gegenfarbe dreht die Position, und weil die Ordergröße die offene Position enthält, schließt die Drehung den alten Trade und eröffnet zugleich den neuen. Auch die Ursprungsstrategie kennt weder Stop noch Ziel.
+- **Ausstieg**: Es gibt keinen eigenen Ausstieg, Stop oder Ziel: Die Gegenfarbe dreht die Position, und weil die Ordergröße die offene Position enthält, schließt die Drehung den alten Trade und eröffnet zugleich den neuen.
 
 ## Parameter
 

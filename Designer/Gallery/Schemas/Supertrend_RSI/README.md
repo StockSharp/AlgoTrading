@@ -10,7 +10,7 @@ A trend-following diagram with an oscillator brake. SuperTrend, an ATR band that
 - SuperTrend is built from a ten-period ATR times three, so the line ratchets behind the price and only turns when the close breaks through it.
 - RSI is used as a brake, not as a reversal signal: the entry is allowed while the oscillator is on the calm side of the fifty line, which keeps the diagram out of moves that are already stretched.
 - Entries are taken only from a flat position, both through an explicit comparison of the position against zero and through the open-position condition on the order blocks.
-- The whole exit is delegated to a protection block carrying a two percent take-profit and a one percent stop-loss, exactly the pair the original strategy starts.
+- The whole exit is delegated to a protection block carrying a two percent take profit and a one percent stop loss.
 
 ## Entry and Exit Rules
 
@@ -25,7 +25,7 @@ A trend-following diagram with an oscillator brake. SuperTrend, an ATR band that
 | SuperTrend ATR Period | 10 | ATR length inside SuperTrend; longer values widen the band and make the flips rarer. |
 | SuperTrend Multiplier | 3 | ATR multiplier of SuperTrend, the distance of the trailing line from the median price. |
 | RSI Length | 14 | Averaging length of the Relative Strength Index. |
-| RSI Midline | 50 | The RSI level the entry filter is measured against; the original code compares against fifty rather than against the oversold and overbought levels it declares. |
+| RSI Midline | 50 | The RSI level against which the entry filter is measured. |
 | Take Profit, % | 2 | Take-profit distance from the entry price, in percent. |
 | Stop Loss, % | 1 | Stop-loss distance from the entry price, in percent. |
 | Volume | 1 | Order volume, in lots. |
@@ -38,7 +38,6 @@ A trend-following diagram with an oscillator brake. SuperTrend, an ATR band that
 - One shared constant of fifty serves both RSI comparisons, so moving the midline moves both filters at once.
 - Each logical AND joins three conditions — trend, oscillator and a flat position — and triggers a position modify block that also carries the open-position condition.
 - Both modify blocks pass their own trade to the protection block, which places the take-profit and stop-loss orders and is priced off the close of the running candle.
-- The hundred-bar pause the original code keeps between trades is not reproduced: the available blocks have no bar counter, so entries resume as soon as the protection has flattened the position.
 
 ## Usage
 

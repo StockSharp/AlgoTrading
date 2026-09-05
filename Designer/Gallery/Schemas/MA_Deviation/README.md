@@ -10,13 +10,13 @@ A simple moving average is treated as fair value, and the distance of the close 
 - The deviation is computed literally, in one formula block: (Close - SMA) / SMA * 100.
 - One threshold serves both sides: the diagram compares the deviation with the plus and the minus of the same number, so long and short are symmetric.
 - Entries are made from a flat position only, and both entry blocks additionally carry the Open position condition, so the diagram never averages down.
-- The original works on one-minute candles with a 2% threshold and a 500-bar cooldown after every trade. The packaged history is five-minute data, so the diagram runs on five-minute candles with a 1% threshold, which is roughly two standard deviations of that series; the cooldown is not reproduced, because the Designer has no lock-out counter, and the diagram therefore trades more often than the original.
+- The diagram runs on the packaged five-minute history with a 1% threshold, which is roughly two standard deviations of that series.
 
 ## Entry and Exit Rules
 
 - **Long entry**: The deviation is below minus the threshold, that is the close is more than the configured percentage under the moving average, and the position is flat. The order buys the configured volume.
 - **Short entry**: The deviation is above plus the threshold, that is the close is more than the configured percentage above the moving average, and the position is flat. The order sells the configured volume.
-- **Exit**: A long is closed once the close returns to the moving average or above it; a short is closed once the close returns to the average or below it. There is no stop loss and no take profit, as in the original strategy.
+- **Exit**: A long is closed once the close returns to the moving average or above it; a short is closed once the close returns to the average or below it. There is no stop loss and no take profit.
 
 ## Parameters
 

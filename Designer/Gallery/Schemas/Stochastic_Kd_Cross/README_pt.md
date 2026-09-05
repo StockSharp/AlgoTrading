@@ -11,8 +11,8 @@ O cruzamento das duas linhas do Stochastic é um sinal comum e ruidoso, por isso
 - Um bloco de cruzamento compara as linhas: o seu sinal marca o cruzamento de alta e o mesmo sinal invertido por um bloco NÃO marca o de baixa.
 - O filtro de zona é uma simples comparação de %K com as constantes de sobrevenda e sobrecompra, portanto um cruzamento no meio da faixa é ignorado.
 - O volume da ordem é o volume base mais o valor absoluto da posição, o que encerra o lado contrário e abre o novo com uma única ordem a mercado.
-- Apesar do nome da pasta da estratégia original, não há RSI nela nem stop loss; a pausa de cinco candles mantida após cada operação não tem equivalente em blocos e foi omitida.
-- O original trabalha em candles de quinze minutos; o diagrama foi reduzido para candles de cinco minutos, de acordo com o histórico de amostra incluído.
+- O diagrama não usa RSI e não tem stop loss.
+- Ele trabalha com candles de cinco minutos de acordo com o histórico de amostra incluído.
 
 ## Regras de entrada e saída
 

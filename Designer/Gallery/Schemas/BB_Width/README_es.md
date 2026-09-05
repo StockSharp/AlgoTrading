@@ -9,14 +9,14 @@ La señal es la distancia entre las dos bandas de Bollinger, no que el precio la
 
 - Las bandas de Bollinger entregan tres líneas a la vez; tres bloques conversores extraen la banda superior, la inferior y la media del mismo valor del indicador.
 - El ancho lo calcula un bloque de fórmula y lo guarda un bloque de valor anterior, con lo que la expansión se reduce a comparar dos números.
-- La dirección no es una prueba de ruptura: cualquier expansión abre una operación y la banda media solo dice si es larga o corta. Así se ramifica exactamente la estrategia original.
+- La dirección no es una prueba de ruptura: cualquier expansión abre una operación y la banda media solo dice si es larga o corta.
 - En cuanto el ancho deja de crecer, se disparan los dos bloques de cierre y el lado abierto queda plano.
 
 ## Reglas de entrada y salida
 
 - **Entrada en largo**: El ancho es mayor que en la vela anterior, la vela cerró por encima de la banda media y la posición es plana. La orden compra el volumen compartido a mercado.
 - **Entrada en corto**: El ancho es mayor que en la vela anterior, la vela cerró en la banda media o por debajo y la posición es plana. La orden vende el volumen compartido a mercado.
-- **Salida**: El ancho deja de crecer, es decir queda igual o por debajo del ancho de la vela anterior. Se disparan ambos bloques de cierre y el que corresponde al lado abierto lo liquida a mercado. La estrategia original no tiene stop loss ni take profit, y este diagrama tampoco.
+- **Salida**: El ancho deja de crecer, es decir queda igual o por debajo del ancho de la vela anterior. Se disparan ambos bloques de cierre y el que corresponde al lado abierto lo liquida a mercado. El diagrama no tiene stop loss ni take profit.
 
 ## Parámetros
 

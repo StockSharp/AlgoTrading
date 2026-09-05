@@ -16,7 +16,7 @@ Volatility itself is the signal here. The Average True Range is compared with it
 
 - **Long entry**: Volatility is expanding, the candle closes above the simple moving average and the position is flat. The order buys the shared volume at market.
 - **Short entry**: Volatility is expanding, the candle closes below the simple moving average and the position is flat. The order sells the shared volume at market.
-- **Exit**: Volatility contracts, that is ATR multiplied by the ratio falls below the previous ATR. Whichever side is open is closed at market by the matching close-position block; there is no stop loss and no take profit, exactly as in the original strategy.
+- **Exit**: Volatility contracts, that is ATR multiplied by the ratio falls below the previous ATR. Whichever side is open is closed at market by the matching close-position block; there is no stop loss and no take profit.
 
 ## Parameters
 
@@ -34,8 +34,7 @@ Volatility itself is the signal here. The Average True Range is compared with it
 - A previous-value block holds the ATR of the preceding candle, and two formula blocks multiply the ratio into it: one builds the expansion level, the other the contraction level.
 - Two comparison blocks turn those levels into an expansion flag and a contraction flag, and two more place the close against the moving average.
 - Each logical AND joins volatility, direction and a position-is-flat comparison, and triggers one of the two entry blocks; the contraction flag alone triggers the two close-position blocks, whose direction decides which side they may close.
-- Two things from the C# original are not carried over: the five hundred bar pause after every trade, which has no equivalent block, and the one minute candles, replaced by the five minute candles the gallery history is shipped in.
-- The unused Lookback parameter of the original is left out as well, because the code never reads it.
+- The diagram uses the five-minute candles supplied with the gallery history.
 
 ## Usage
 

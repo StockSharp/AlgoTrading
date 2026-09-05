@@ -1,7 +1,7 @@
 # Diagrama de la estrategia Opening Range Breakout (ruptura de Bandas de Bollinger con filtro EMA)
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-El ejemplo conserva el nombre de la estrategia original, pero no contiene ningún rango de apertura de sesión: lo que realmente opera es una ruptura de las Bandas de Bollinger confirmada por una EMA lenta. La salida del precio fuera de la banda es el disparador, la EMA decide si esa ruptura va a favor o en contra del mercado y la banda central devuelve la operación a casa.
+A pesar de su nombre, el diagrama no contiene ningún rango de apertura de sesión: opera una ruptura de las Bandas de Bollinger confirmada por una EMA lenta. La salida del precio fuera de la banda es el disparador, la EMA decide si esa ruptura va a favor o en contra del mercado y la banda central devuelve la operación a casa.
 
 ![schema](schema.svg)
 
@@ -22,7 +22,7 @@ El ejemplo conserva el nombre de la estrategia original, pero no contiene ningú
 | Parámetro | Por defecto | Descripción |
 |---|---|---|
 | Bollinger Length | 20 | Periodo de suavizado de las Bandas de Bollinger, que es también el de la banda central. |
-| Bollinger Width | 2 | Anchura de las bandas en desviaciones típicas; el código original la fija en dos. |
+| Bollinger Width | 2 | Anchura de las bandas en desviaciones típicas. |
 | EMA Length | 50 | Periodo de la EMA que decide en qué dirección se permite operar la ruptura. |
 | Volume | 1 | Volumen de la orden, en lotes. |
 | Candles | 00:30:00 | Marco temporal de las velas con el que trabaja todo el diagrama. |
@@ -32,7 +32,7 @@ El ejemplo conserva el nombre de la estrategia original, pero no contiene ningú
 - El bloque de velas alimenta las Bandas de Bollinger, la EMA y un conversor del precio de cierre; otros tres conversores separan la banda superior, la inferior y la central.
 - Seis comparaciones cubren toda la lógica: dos para las bandas, dos para el filtro de la EMA y dos para el regreso a la banda central.
 - Las dos Y lógicas de entrada exigen posición plana, así que una entrada nunca añade a una operación abierta; los bloques de cierre cuelgan directamente de las comparaciones con la banda central.
-- Faltan dos cosas del original en C#: la pausa de 10 velas entre acciones, que no tiene bloque en Designer, y la vuelta inmediata de posición — aquí primero se cierra en la banda central y el lado contrario se abre en una vela posterior.
+- El diagrama cierra primero en la banda central y puede abrir el lado contrario en una vela posterior.
 
 ## Uso
 

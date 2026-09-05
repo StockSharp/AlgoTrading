@@ -10,7 +10,7 @@ Se ajusta una recta por mínimos cuadrados sobre los últimos cincuenta cierres 
 - LinearReg da el valor de la recta ajustada en la barra actual, LinearRegSlope su dirección y StandardError la dispersión habitual de los cierres alrededor de ella.
 - Las bandas son la recta más y menos el multiplicador de desviación por el error estándar, de modo que el canal se ensancha y se estrecha solo con el mercado.
 - La pendiente actúa de filtro: una caída solo se compra dentro de un canal ascendente y un pico solo se vende dentro de uno descendente.
-- La recta de regresión es el objetivo; no hay stop de pérdidas ni toma de beneficios, igual que en la estrategia de origen.
+- La recta de regresión es el objetivo; no hay stop de pérdidas ni toma de beneficios.
 
 ## Reglas de entrada y salida
 
@@ -35,7 +35,7 @@ Se ajusta una recta por mínimos cuadrados sobre los últimos cincuenta cierres 
 - Dos bloques de fórmula construyen las bandas a partir de la recta, el error estándar y una constante de desviación compartida que se puede optimizar.
 - Seis bloques de comparación convierten esos números en señales: dos para la pendiente, dos para las bandas y dos para el regreso a la recta.
 - Cada entrada es una Y lógica de pendiente, banda y posición plana; las salidas van directamente de su comparación a un bloque de cierre de posición.
-- La estrategia original espera veinte barras entre operaciones y calcula la desviación sobre toda la ventana, mientras que StandardError divide entre la ventana menos dos, lo que ensancha el canal alrededor de un dos por ciento; baje la desviación a unos 1,47 para reproducir la banda original.
+- StandardError divide entre la ventana menos dos, lo que ensancha el canal alrededor de un dos por ciento respecto a un cálculo sobre la ventana completa; baje la desviación a unos 1,47 para obtener una banda más estrecha.
 
 ## Uso
 

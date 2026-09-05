@@ -8,7 +8,7 @@ Um diagrama de tendência com filtro de força. A ExponentialMovingAverage indic
 ## Visão geral da estratégia
 
 - O fechamento do candle é comparado com uma ExponentialMovingAverage: acima da média significa compra, abaixo significa venda.
-- O bloco DirectionalIndex entrega o valor DX, a mesma fórmula que a estratégia original calcula manualmente a partir de +DM e -DM; a entrada só é permitida enquanto o DX estiver acima do limiar.
+- O bloco DirectionalIndex entrega o valor DX calculado a partir de +DM e -DM; a entrada só é permitida enquanto o DX estiver acima do limiar.
 - As entradas ocorrem apenas com posição zerada e cada saída encerra exatamente o que está aberto, de modo que nunca há aumento de posição.
 - A saída ignora a força da tendência: assim que o fechamento fica do outro lado da média, a posição é encerrada independentemente do DX.
 
@@ -16,7 +16,7 @@ Um diagrama de tendência com filtro de força. A ExponentialMovingAverage indic
 
 - **Entrada comprada**: O fechamento está acima da EMA, o DX está acima do limiar de força de tendência e a posição está zerada. A ordem compra o volume base e abre uma posição comprada.
 - **Entrada vendida**: O fechamento está abaixo da EMA, o DX está acima do limiar de força de tendência e a posição está zerada. A ordem vende o volume base e abre uma posição vendida.
-- **Saída**: A compra é encerrada assim que um candle fecha abaixo da EMA, e a venda assim que fecha acima; os blocos de encerramento tiram o volume da posição aberta. A estratégia original não tem stop nem take, e sua pausa de cem candles após cada operação não foi transposta, por isso este diagrama negocia com mais frequência que o código-fonte.
+- **Saída**: A compra é encerrada assim que um candle fecha abaixo da EMA, e a venda assim que fecha acima; os blocos de encerramento tiram o volume da posição aberta. O diagrama não tem stop nem take profit.
 
 ## Parâmetros
 

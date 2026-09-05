@@ -1,7 +1,7 @@
 # Diagrama de la estrategia de doble cruce RSI + Williams %R
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-Los dos osciladores tienen que coincidir en la misma vela. El diagrama compra solo cuando el RSI cae por debajo de 30 mientras el Williams %R cae por debajo de -80 a la vez, y vende solo cuando el RSI sube por encima de 70 mientras el Williams %R sube por encima de -20. No basta con estar dentro de la zona: en la vela anterior ambos debían seguir fuera de ella, y por eso cada oscilador se guarda también una vela atrás. El descanso de 180 barras del código original no se reproduce, porque en velas de cinco minutos silenciaría la estrategia durante quince horas después de cada operación.
+Los dos osciladores tienen que coincidir en la misma vela. El diagrama compra solo cuando el RSI cae por debajo de 30 mientras el Williams %R cae por debajo de -80 a la vez, y vende solo cuando el RSI sube por encima de 70 mientras el Williams %R sube por encima de -20. No basta con estar dentro de la zona: en la vela anterior ambos debían seguir fuera de ella, y por eso cada oscilador se guarda también una vela atrás.
 
 ![schema](schema.svg)
 

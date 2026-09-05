@@ -9,7 +9,7 @@ Dos bloques deciden juntos: la SimpleMovingAverage indica de qué lado del merca
 
 - La dirección la marca el cierre frente a la SimpleMovingAverage: por encima solo se consideran largos, por debajo solo cortos.
 - La entrada es contraria: la línea %K debe estar en zona de sobreventa para comprar y en zona de sobrecompra para vender, de modo que el diagrama compra retrocesos dentro de una subida y vende rebotes dentro de una bajada.
-- StochasticK es exactamente el %K que la estrategia original calculaba a mano: 100 * (Close - mínimo Low) / (máximo High - mínimo Low) sobre las últimas N velas.
+- StochasticK calcula %K como 100 * (Close - mínimo Low) / (máximo High - mínimo Low) sobre las últimas N velas.
 - La misma media móvil sirve de línea de salida y en el diagrama no hay stop de pérdidas ni toma de beneficios.
 
 ## Reglas de entrada y salida
@@ -34,7 +34,7 @@ Dos bloques deciden juntos: la SimpleMovingAverage indica de qué lado del merca
 - El bloque de velas alimenta tres ramas: el convertidor que lee el cierre, la SimpleMovingAverage y el indicador StochasticK.
 - Dos comparaciones sitúan el cierre respecto a la media, otras dos sitúan %K frente a las constantes de umbral y una compara la posición con cero.
 - Cada Y lógica une una condición de tendencia, una del estocástico y la comprobación de posición plana, y después dispara un bloque de modificación que solo abre desde plano.
-- Las comparaciones de tendencia se reutilizan en la salida: la misma señal que permite el corto cierra el largo, lo que mantiene compacto el diagrama. El contador que detenía la estrategia original durante 100 velas tras cada operación no tiene bloque propio y se omite.
+- Las comparaciones de tendencia se reutilizan en la salida: la misma señal que permite el corto cierra el largo, lo que mantiene compacto el diagrama.
 
 ## Uso
 

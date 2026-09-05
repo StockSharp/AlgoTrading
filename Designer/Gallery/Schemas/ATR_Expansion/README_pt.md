@@ -16,7 +16,7 @@ Aqui o sinal é a própria volatilidade. O Average True Range é comparado com o
 
 - **Entrada comprada**: A volatilidade está se expandindo, o candle fecha acima da média móvel simples e a posição está zerada. A ordem compra a mercado o volume compartilhado.
 - **Entrada vendida**: A volatilidade está se expandindo, o candle fecha abaixo da média móvel simples e a posição está zerada. A ordem vende a mercado o volume compartilhado.
-- **Saída**: A volatilidade se contrai, ou seja, o ATR multiplicado pela proporção cai abaixo do ATR anterior. O lado que estiver aberto é encerrado a mercado pelo bloco correspondente; não há stop loss nem realização de lucro, exatamente como na estratégia original.
+- **Saída**: A volatilidade se contrai, ou seja, o ATR multiplicado pela proporção cai abaixo do ATR anterior. O lado que estiver aberto é encerrado a mercado pelo bloco correspondente; não há stop loss nem realização de lucro.
 
 ## Parâmetros
 
@@ -34,8 +34,7 @@ Aqui o sinal é a própria volatilidade. O Average True Range é comparado com o
 - Um bloco de valor anterior guarda o ATR do candle precedente, e dois blocos de fórmula aplicam a proporção: um monta o nível de expansão, o outro o de contração.
 - Dois blocos de comparação transformam esses níveis em sinalizadores de expansão e contração, e outros dois colocam o fechamento diante da média móvel.
 - Cada E lógico junta volatilidade, direção e a comparação da posição com zero, e aciona um dos dois blocos de entrada; o sinalizador de contração sozinho aciona os dois blocos de encerramento, cuja direção define qual lado podem fechar.
-- Duas coisas do original em C# não foram trazidas: a pausa de quinhentos candles após cada operação, que não tem bloco equivalente, e os candles de um minuto, substituídos pelos de cinco minutos do histórico que acompanha a galeria.
-- O parâmetro Lookback do original também ficou de fora, porque o código nunca o lê.
+- O diagrama usa os candles de cinco minutos fornecidos com o histórico da galeria.
 
 ## Uso
 

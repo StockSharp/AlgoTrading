@@ -7,16 +7,16 @@ La línea %K del estocástico mide dónde queda el cierre dentro del rango recie
 
 ## Resumen de la estrategia
 
-- La línea %K se calcula sobre velas cerradas de un solo instrumento; la línea suavizada %D no participa en la decisión, igual que en la estrategia original.
+- La línea %K se calcula sobre velas cerradas de un solo instrumento; la línea suavizada %D no participa en la decisión.
 - Una ventana de tres velas hace de %K una línea muy rápida: alcanza ambas zonas con frecuencia, y de ahí viene el número de operaciones de este ejemplo.
-- Los niveles de sobreventa y sobrecompra son constantes del diagrama, así que pueden editarse y optimizarse; en el código original están fijados en 20 y 80.
+- Los niveles de sobreventa y sobrecompra son constantes editables y optimizables del diagrama, establecidos en 20 y 80 de forma predeterminada.
 - Todas las órdenes usan el mismo volumen, de modo que una señal contraria a la posición abierta la cierra en lugar de invertirla y agrandarla.
 
 ## Reglas de entrada y salida
 
 - **Entrada en largo**: La lectura anterior de %K estaba en el nivel de sobreventa o por encima, la actual está por debajo y la posición no es larga. La orden compra un lote: abre un largo desde plano o cierra un corto existente.
 - **Entrada en corto**: La lectura anterior de %K estaba en el nivel de sobrecompra o por debajo, la actual está por encima y la posición no es corta. La orden vende un lote: abre un corto desde plano o cierra un largo existente.
-- **Salida**: No hay bloque de salida propio: el cruce contrario cierra la posición, porque todas las órdenes usan el mismo volumen. La estrategia original además hace una pausa de un número fijo de velas tras cada operación; no existe un bloque contador de velas, así que el cruce asume ese papel y evita que el diagrama dispare en cada vela dentro de la zona.
+- **Salida**: No hay bloque de salida propio: el cruce contrario cierra la posición, porque todas las órdenes usan el mismo volumen. Usar un cruce en vez de limitarse a permanecer dentro de una zona evita que el diagrama se active en cada vela.
 
 ## Parámetros
 

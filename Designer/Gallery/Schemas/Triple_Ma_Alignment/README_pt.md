@@ -31,10 +31,10 @@ Três blocos ExponentialMovingAverage de comprimentos bem diferentes são calcul
 ## Detalhes do diagrama
 
 - Um único bloco de candles alimenta os três blocos de indicador, então as médias são sempre calculadas sobre os mesmos candles finalizados.
-- Quatro blocos de comparação montam os dois estados: dois «maior que» estritos para a pilha de alta e dois «menor ou igual» para a de baixa, que é exatamente a negação usada no código original.
+- Quatro blocos de comparação montam os dois estados: duas comparações estritas de «maior que» para a pilha de alta e duas de «menor ou igual» para sua negação de baixa.
 - Cada E lógico une as duas comparações de médias à posição comparada com uma constante zero e aciona um bloco de modificação de posição.
 - Um bloco de fórmula soma o módulo da posição à constante de volume e alimenta os dois blocos de ordem — é isso que transforma uma entrada em inversão.
-- Simplificações deliberadas: o original usa candles de um minuto e este diagrama usa de cinco, então os mesmos comprimentos cobrem cinco vezes mais tempo. O original ainda guarda se o alinhamento já existia no candle anterior; essa marca foi removida, porque a verificação de posição bloqueia igualmente uma entrada repetida. O stop de 2% declarado nunca é aplicado no código, por isso nenhum bloco de proteção é desenhado.
+- O diagrama trabalha com candles de cinco minutos. Sua verificação de posição bloqueia entradas repetidas enquanto um alinhamento persiste, e nenhum bloco de proteção é desenhado.
 
 ## Uso
 

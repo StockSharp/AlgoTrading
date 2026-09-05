@@ -9,7 +9,7 @@ The Money Flow Index weighs every price move by the volume behind it, so it says
 
 - Money Flow Index with a length of 14 is calculated on finished hourly candles, which the tester builds from the packaged five-minute history.
 - The two levels, 30 and 70, are read as crossings rather than as zones: only the candle that enters a zone produces a signal, not the candles that stay inside it.
-- The original strategy has a Trend switch that can mirror both signals; the diagram keeps the default Direct mode, so a step into the oversold zone buys and a step into the overbought zone sells.
+- The diagram uses Direct signal orientation: a step into the oversold zone buys and a step into the overbought zone sells.
 - The current position takes part in both decisions, so the schema never piles a second order onto a position it already holds.
 
 ## Entry and Exit Rules

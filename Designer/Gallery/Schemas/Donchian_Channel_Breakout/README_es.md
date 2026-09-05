@@ -15,7 +15,7 @@ La idea de seguimiento de tendencia más antigua que existe: el indicador Donchi
 
 - **Entrada en largo**: La vela cierra por encima de la banda superior de la vela anterior y la posición no es larga. La orden compra el volumen base más el valor absoluto de la posición: gira un corto a largo o abre un largo desde plano.
 - **Entrada en corto**: La vela cierra por debajo de la banda inferior de la vela anterior y la posición no es corta. La orden vende el volumen base más el valor absoluto de la posición: gira un largo a corto o abre un corto desde plano.
-- **Salida**: No hay stop, ni objetivo, ni bloque de salida propio: la posición se mantiene hasta que la ruptura contraria la gira, igual que en la estrategia original.
+- **Salida**: No hay stop, ni objetivo, ni bloque de salida propio: la posición se mantiene hasta que la ruptura contraria la gira.
 
 ## Parámetros
 
@@ -31,7 +31,7 @@ La idea de seguimiento de tendencia más antigua que existe: el indicador Donchi
 - Dos conversores extraen del indicador los valores UpperBand y LowerBand, y dos bloques de valor anterior los desplazan una vela atrás.
 - Dos bloques de comparación contrastan el cierre con las bandas desplazadas; otros dos comparan la posición con cero, y una Y lógica reúne una condición de cada tipo en la señal de entrada.
 - Un bloque de fórmula calcula el volumen de giro como volumen base más el valor absoluto de la posición y lo envía a los dos bloques de modificación de posición.
-- El código original usa por defecto un canal de 1000 velas de un minuto; el diagrama emplea un canal de 20 velas de cinco minutos, el valor que describen el README de la estrategia y su rango de optimización, para que realmente opere con un mes de historial.
+- El diagrama utiliza un canal de 20 velas sobre velas de cinco minutos para poder operar con un mes de historial.
 
 ## Uso
 

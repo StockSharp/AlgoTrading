@@ -9,14 +9,14 @@ The signal is the distance between the two Bollinger bands, not the price touchi
 
 - Bollinger Bands supply three lines at once; three converter blocks pull the upper band, the lower band and the middle band out of the same indicator value.
 - Band width is computed by a formula block and stored by a previous-value block, which turns expansion into a plain comparison of two numbers.
-- Direction is not a breakout test: any expansion opens a trade, and the middle band only says whether it is a long or a short. That is exactly how the original strategy branches.
+- Direction is not a breakout test: any expansion opens a trade, and the middle band only says whether it is a long or a short.
 - As soon as the width stops growing, both close-position blocks fire and whichever side is open is flattened.
 
 ## Entry and Exit Rules
 
 - **Long entry**: The width is wider than on the previous candle, the candle closed above the middle band and the position is flat. The order buys the shared volume at market.
 - **Short entry**: The width is wider than on the previous candle, the candle closed at or below the middle band and the position is flat. The order sells the shared volume at market.
-- **Exit**: The width is no longer growing, that is it is at or below the width of the previous candle. Both close-position blocks are triggered and the one matching the open side flattens it at market. The original strategy has no stop loss and no take profit, and neither does this diagram.
+- **Exit**: The width is no longer growing, that is it is at or below the width of the previous candle. Both close-position blocks are triggered and the one matching the open side flattens it at market. The diagram has no stop loss and no take profit.
 
 ## Parameters
 

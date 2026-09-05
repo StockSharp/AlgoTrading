@@ -15,7 +15,7 @@ Un diagrama de tendencia que se niega a comprar la ruptura. Las dos medias móvi
 
 - **Entrada en largo**: La EMA rápida está por encima de la lenta, el cierre vuelve a bajar hasta la EMA rápida y la posición no es larga. La orden compra Volume más el valor absoluto de la posición actual: abre un largo desde plano o convierte un corto directamente en largo.
 - **Entrada en corto**: La EMA rápida está por debajo de la lenta, el cierre vuelve a subir hasta la EMA rápida y la posición no es corta. La orden vende Volume más el valor absoluto de la posición actual: abre un corto desde plano o convierte un largo directamente en corto.
-- **Salida**: El largo se cierra cuando la EMA rápida cae por debajo de la lenta, y el corto cuando la rápida sube por encima; ambos bloques de cierre actúan sobre toda la posición abierta, por lo que una señal repetida sin posición no hace nada. No hay stop de protección, tal como está escrita la estrategia original.
+- **Salida**: El largo se cierra cuando la EMA rápida cae por debajo de la lenta, y el corto cuando la rápida sube por encima; ambos bloques de cierre actúan sobre toda la posición abierta, por lo que una señal repetida sin posición no hace nada. No hay stop de protección.
 
 ## Parámetros
 

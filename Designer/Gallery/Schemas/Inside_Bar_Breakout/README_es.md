@@ -16,7 +16,7 @@ Un inside bar es una vela cuyo rango completo cabe dentro del rango de la vela a
 
 - **Entrada en largo**: El bloque de patrón informa de un inside bar cuyo máximo acaba de ser superado por la vela siguiente y la posición está plana. La orden compra un lote y abre un largo.
 - **Entrada en corto**: El bloque de patrón informa de un inside bar cuyo mínimo acaba de ser perforado por la vela siguiente y la posición está plana. La orden vende un lote y abre un corto.
-- **Salida**: El largo se cierra cuando una vela cierra por debajo de la media móvil y el corto cuando cierra por encima, ambos mediante bloques de modificación de posición en modo cierre, igual que en la estrategia original. Lo que el diagrama no puede reproducir es la espera indefinida del código: allí se recuerdan los extremos del inside bar y la ruptura se acepta muchas velas después, mientras que aquí el bloque de patrón solo ve una ventana de longitud fija, de modo que la ruptura debe llegar en la vela inmediatamente posterior. Es el caso habitual del patrón, pero las rupturas tardías se pierden. La pausa de varios cientos de barras entre operaciones tampoco tiene bloque propio y se ha omitido.
+- **Salida**: El largo se cierra cuando una vela cierra por debajo de la media móvil y el corto cuando cierra por encima, ambos mediante bloques de modificación de posición en modo cierre. El bloque de patrón solo ve una ventana de longitud fija, de modo que la ruptura debe llegar en la vela inmediatamente posterior al inside bar; las rupturas posteriores se ignoran.
 
 ## Parámetros
 

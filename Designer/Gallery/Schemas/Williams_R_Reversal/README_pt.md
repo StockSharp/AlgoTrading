@@ -7,7 +7,7 @@ O Williams %R mostra onde está o último fechamento entre a máxima e a mínima
 
 ## Visão geral da estratégia
 
-- O Williams %R é calculado sobre candles finalizados de um único instrumento e equivale integralmente à fórmula de máxima e mínima que a estratégia original calcula à mão.
+- O Williams %R é calculado sobre candles finalizados de um único instrumento a partir da máxima mais alta e da mínima mais baixa da sua janela retrospectiva.
 - Dois níveis dividem a escala: abaixo de -80 o mercado é considerado sobrevendido e acima de -20, sobrecomprado.
 - Um bloco de valor anterior guarda a leitura do candle precedente, então cada nível é testado duas vezes e apenas o candle do cruzamento gera sinal.
 - A posição atual participa das duas decisões, de modo que nenhuma ordem aumenta uma posição já aberta.
@@ -16,7 +16,7 @@ O Williams %R mostra onde está o último fechamento entre a máxima e a mínima
 
 - **Entrada comprada**: A leitura anterior do %R estava abaixo do nível inferior, a atual está nele ou acima, e a posição não está comprada. A ordem compra um lote: a partir do zero abre uma compra, a partir de uma venda leva a posição de volta a zero.
 - **Entrada vendida**: A leitura anterior do %R estava acima do nível superior, a atual está nele ou abaixo, e a posição não está vendida. A ordem vende um lote: a partir do zero abre uma venda, a partir de uma compra leva a posição de volta a zero.
-- **Saída**: Não há bloco de saída próprio: o cruzamento contrário envia uma ordem a mercado do mesmo volume e zera a posição exatamente como na estratégia original. Esta ainda fica de fora por cinquenta candles após cada operação; aqui não existe um bloco contador de barras, então o cruzamento de nível assume sozinho esse papel e o diagrama negocia um pouco mais do que o código de origem.
+- **Saída**: Não há bloco de saída próprio: o cruzamento contrário envia uma ordem a mercado do mesmo volume e zera a posição. A condição de cruzamento impede que o diagrama envie ordens repetidas enquanto o oscilador permanece dentro de uma zona.
 
 ## Parâmetros
 

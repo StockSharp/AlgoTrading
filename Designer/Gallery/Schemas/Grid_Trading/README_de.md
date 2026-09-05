@@ -10,13 +10,13 @@ Das Diagramm verwandelt den Kurs in eine Leiter: Der Schlusskurs jeder Kerze wir
 - Der Schlusskurs wird mit der Formel floor(Close / GridStep) * GridStep diskretisiert; das ergibt die Stufe, auf der der Markt gerade steht.
 - Ein Baustein für den vorherigen Wert merkt sich die Stufe der letzten Kerze, sodass Stufen und nicht Rohkurse verglichen werden und jede Bewegung innerhalb einer Gitterzelle unbeachtet bleibt.
 - Das Ordervolumen ist die offene Position plus das Basisvolumen, deshalb dreht ein Gegensignal die Position mit einer einzigen Marktorder um.
-- Die ursprüngliche Strategie arbeitet mit Vier-Stunden-Kerzen und schließt bei einem absoluten Gewinn von 2000 Kurseinheiten; hier laufen Fünf-Minuten-Kerzen und das Ziel ist ein Prozentsatz des Einstiegskurses, was auf jedem Instrument sinnvoll bleibt.
+- Das Diagramm läuft auf Fünf-Minuten-Kerzen und gibt das Ziel als Prozentsatz des Einstiegskurses an, sodass es auf jedem Instrument sinnvoll bleibt.
 
 ## Ein- und Ausstiegsregeln
 
 - **Long-Einstieg**: Die neue Gitterstufe liegt über der vorherigen und die Position ist nicht long. Die Order kauft das Basisvolumen zuzüglich eines offenen Shorts, womit die Position long in Höhe eines Basisvolumens wird.
 - **Short-Einstieg**: Die neue Gitterstufe liegt unter der vorherigen und die Position ist nicht short. Die Order verkauft das Basisvolumen zuzüglich eines offenen Longs, womit die Position short in Höhe eines Basisvolumens wird.
-- **Ausstieg**: Der Baustein zum Positionsschutz schließt die Position bei einem Take-Profit in Höhe des eingestellten Prozentsatzes; einen Stop-Loss gibt es wie im Original nicht. Andernfalls wird die Position gehalten, bis der Kurs in die nächste Gitterzelle wechselt und das Gegensignal sie dreht.
+- **Ausstieg**: Der Baustein zum Positionsschutz schließt die Position bei einem Take-Profit in Höhe des eingestellten Prozentsatzes; einen Stop-Loss gibt es nicht. Andernfalls wird die Position gehalten, bis der Kurs in die nächste Gitterzelle wechselt und das Gegensignal sie dreht.
 
 ## Parameter
 

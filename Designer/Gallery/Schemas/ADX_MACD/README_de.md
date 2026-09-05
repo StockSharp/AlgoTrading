@@ -34,7 +34,6 @@ Zwei klassische Indikatoren teilen sich die Arbeit: Der MACD gegenüber seiner S
 - Der Kerzenbaustein speist beide Indikatoren; Konverter holen die ADX-Linie aus dem Average Directional Index sowie MACD- und Signallinie aus dem MACD-Indikator.
 - Drei Vergleiche liefern die Marktbedingungen — Trendstärke, MACD über der Signallinie und MACD darunter —, drei weitere vergleichen die Position mit null.
 - Die UND-Bausteine der Einstiege verbinden Stärke, Richtung und neutrale Position; die der Ausstiege verbinden die Richtung mit einer offenen Gegenposition.
-- Die Pause von 100 Kerzen, die die C#-Strategie zwischen Trades hält, lässt sich aus Designer-Bausteinen nicht nachbauen, daher steigt dieses Diagramm häufiger ein und aus.
 
 ## Verwendung
 

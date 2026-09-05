@@ -15,7 +15,7 @@ A ideia de seguimento de tendência mais antiga que existe: o indicador Donchian
 
 - **Entrada comprada**: O candle fecha acima da banda superior do candle anterior e a posição não está comprada. A ordem compra o volume base mais o módulo da posição: vira uma venda em compra ou abre uma compra a partir do zero.
 - **Entrada vendida**: O candle fecha abaixo da banda inferior do candle anterior e a posição não está vendida. A ordem vende o volume base mais o módulo da posição: vira uma compra em venda ou abre uma venda a partir do zero.
-- **Saída**: Não há stop, nem alvo, nem bloco de saída próprio: a posição é mantida até que o rompimento contrário a inverta, exatamente como na estratégia original.
+- **Saída**: Não há stop, nem alvo, nem bloco de saída próprio: a posição é mantida até que o rompimento contrário a inverta.
 
 ## Parâmetros
 
@@ -31,7 +31,7 @@ A ideia de seguimento de tendência mais antiga que existe: o indicador Donchian
 - Dois conversores extraem do indicador os valores UpperBand e LowerBand, e dois blocos de valor anterior os deslocam um candle para trás.
 - Dois blocos de comparação testam o fechamento contra as bandas deslocadas; outros dois comparam a posição com zero, e um E lógico junta uma condição de cada tipo no sinal de entrada.
 - Um bloco de fórmula calcula o volume de inversão como volume base mais o módulo da posição e o envia aos dois blocos de modificação de posição.
-- O código original usa por padrão um canal de 1000 candles de um minuto; o diagrama adota um canal de 20 candles de cinco minutos, o valor descrito no README da estratégia e na sua faixa de otimização, para que realmente opere em um mês de histórico.
+- O diagrama usa um canal de 20 candles sobre candles de cinco minutos para poder operar em um mês de histórico.
 
 ## Uso
 

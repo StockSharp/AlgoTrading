@@ -16,7 +16,7 @@ El True Strength Index es momento suavizado dos veces, así que gira tarde pero 
 
 - **Entrada en largo**: La línea del TSI cruza al alza su línea de señal, la separación entre ambas alcanza al menos el mínimo y la posición no es larga. La orden compra el volumen compartido más el tamaño del corto abierto, de forma que una sola orden a mercado cierra el corto y abre el largo.
 - **Entrada en corto**: La línea del TSI cruza a la baja su línea de señal, la separación entre ambas alcanza al menos el mínimo y la posición no es corta. La orden vende el volumen compartido más el tamaño del largo abierto.
-- **Salida**: No hay regla de salida propia ni stop de protección, igual que en el original: la posición se mantiene hasta que el cruce contrario la invierte. Se simplifican dos cosas. El original espera diez velas después de cada entrada antes de volver a mirar las señales, y ningún bloque guarda un contador de barras entre velas, así que esa pausa se elimina; el control de la posición sigue impidiendo una segunda entrada en el mismo sentido. El original también lanza dos órdenes a mercado al invertir, lo que duplica el tamaño por un instante; aquí la fórmula de volumen hace lo mismo con una sola orden.
+- **Salida**: No hay regla de salida propia ni stop de protección: la posición se mantiene hasta que el cruce contrario la invierte. El control de posición impide una segunda entrada en el mismo sentido, mientras que la fórmula de volumen cierra el lado anterior y abre el nuevo con una sola orden a mercado.
 
 ## Parámetros
 
@@ -27,7 +27,7 @@ El True Strength Index es momento suavizado dos veces, así que gira tarde pero 
 | TSI Signal Length | 7 | Periodo de la línea de señal exponencial trazada sobre el índice. |
 | Min spread | 2 | Separación absoluta mínima entre el índice y su línea de señal para que el cruce cuente. |
 | Volume | 1 | Volumen de la orden, en lotes. |
-| Candles | 01:00:00 | Marco temporal de las velas con el que trabaja todo el diagrama. El original opera con velas de cuatro horas; en un mes de historial quedan demasiadas pocas barras cerradas para que un índice doblemente suavizado se forme y además opere, por lo que el diagrama se reduce a velas horarias. |
+| Candles | 01:00:00 | Marco temporal de una hora, que proporciona suficientes barras cerradas para que el índice doblemente suavizado se forme y opere dentro de un mes de histórico. |
 
 ## Detalles del diagrama
 

@@ -1,7 +1,7 @@
 # Diagramm der KDJ-Expert-Advisor-Strategie
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-Eine Portierung des MetaTrader-Advisors KDJ. Die J-Linie entsteht hier als Differenz der Linien %K und %D des Stochastik-Oszillators, und diese Differenz bestimmt die Richtung: gekauft wird, wenn sie positiv wird oder wenn %K bei bereits positiver Differenz weiter steigt, verkauft spiegelbildlich. Zwei Dinge sind an die mitgelieferte Historie angepasst: Aus den Vier-Stunden-Kerzen des Originals werden Stundenkerzen, damit ein Monat Daten genügend Balken liefert, und aus dem Stopp und Ziel in Pips werden Prozentabstände, die auf jedem Instrument funktionieren.
+Ein KDJ-Diagramm, in dem die J-Linie als Differenz der Linien %K und %D des Stochastik-Oszillators entsteht. Diese Differenz bestimmt die Richtung: gekauft wird, wenn sie positiv wird oder wenn %K bei bereits positiver Differenz weiter steigt, verkauft spiegelbildlich. Stundenkerzen liefern in einem Monat genügend Balken, und Prozentabstände für Stopp und Ziel funktionieren auf jedem Instrument.
 
 ![schema](schema.svg)
 
@@ -15,18 +15,18 @@ Eine Portierung des MetaTrader-Advisors KDJ. Die J-Linie entsteht hier als Diffe
 
 - **Long-Einstieg**: K - D ist positiv, und entweder war die Differenz auf der Vorkerze negativ, diese Kerze bringt also den Nulldurchgang, oder %K liegt höher als auf der Vorkerze. Die Position muss neutral sein; ein Lot wird zum Marktpreis gekauft.
 - **Short-Einstieg**: K - D ist negativ, und entweder war die Differenz auf der Vorkerze positiv, diese Kerze bringt also den Nulldurchgang, oder %K liegt tiefer als auf der Vorkerze. Die Position muss neutral sein; ein Lot wird zum Marktpreis verkauft.
-- **Ausstieg**: Es gibt überhaupt kein Ausstiegssignal, genau wie im Original: Der Schutzbaustein schließt den Trade mit Marktorders bei 2% Gewinnziel oder 1% Verlustbegrenzung, dem prozentualen Gegenstück zu den 450 und 250 Pips des Codes.
+- **Ausstieg**: Es gibt kein Ausstiegssignal: Der Schutzbaustein schließt den Trade mit Marktorders bei 2% Gewinnziel oder 1% Verlustbegrenzung.
 
 ## Parameter
 
 | Parameter | Standard | Beschreibung |
 |---|---|---|
-| %K Length (KDJ period) | 30 | Länge der %K-Linie, die KDJ-Periode des ursprünglichen Advisors. |
+| %K Length (KDJ period) | 30 | Länge der %K-Linie, die als KDJ-Periode dient. |
 | %D Smoothing | 6 | Glättungslänge der %D-Linie. |
 | Take profit, % | 2 | Abstand des Gewinnziels in Prozent des Einstiegskurses. |
 | Stop loss, % | 1 | Abstand der Verlustbegrenzung in Prozent des Einstiegskurses. |
 | Volume | 1 | Ordervolumen in Lots. |
-| Candles | 01:00:00 | Zeiteinheit der Kerzen im gesamten Diagramm; das Original arbeitete mit vier Stunden. |
+| Candles | 01:00:00 | Stunden-Zeiteinheit der Kerzen im gesamten Diagramm. |
 
 ## Diagrammdetails
 

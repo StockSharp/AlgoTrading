@@ -7,7 +7,7 @@ Ein reines Long-Diagramm zur Rückkehr zum Mittelwert, gebaut auf Bollinger %B �
 
 ## Strategieübersicht
 
-- Der Indikator BollingerPercentB erledigt in einem Baustein, was die Ursprungsstrategie von Hand aus den Bändern rechnet; seine Skala reicht von 0 bis 100, weshalb die klassischen Schwellen 0.35 und 0.8 als 35 und 80 geschrieben sind.
+- Der Indikator BollingerPercentB berechnet die Position des Kurses innerhalb der Bänder auf einer Skala von 0 bis 100, weshalb die klassischen Schwellen 0.35 und 0.8 als 35 und 80 geschrieben sind.
 - Ein Baustein für den vorherigen Wert hält den Messwert der letzten Kerze fest — er macht aus einer einzelnen schwachen Kerze eine Bedingung über zwei Kerzen.
 - Die Strategie ist nur long: Sie kauft die Schwäche und verkauft denselben Long wieder, einen Short eröffnet sie nie.
 - Die Position geht in beide Entscheidungen ein, sodass der Einstieg nicht aufstockt und der Ausstieg nicht ohne Position feuert.

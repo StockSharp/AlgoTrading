@@ -9,15 +9,14 @@ Heikin-Ashi-Kerzen mitteln einen Großteil des Rauschens weg, sodass eine Reihe 
 
 - Ein Formelbaustein bildet den Heikin-Ashi-Körper als Mittel aus Eröffnung, Hoch, Tief und Schluss minus der Mitte der vorherigen Kerze: Ein positiver Körper ist eine bullische Heikin-Ashi-Kerze, null oder weniger eine bärische.
 - Ein Baustein für den vorherigen Wert hält den Körper der Kerze davor, sodass die beiden Vergleiche zusammen einen Farbwechsel beschreiben und nicht nur eine Farbe.
-- Der gleitende Durchschnitt und der Ausstiegskurs stammen von den gewöhnlichen Kerzen, nicht von den geglätteten, genau wie in der Ursprungsstrategie.
-- Die Heikin-Ashi-Eröffnung ist über ihren eigenen Vorgängerwert definiert, was ein Diagramm nicht in einen Baustein zurückführen kann; stattdessen dient die Mitte der vorherigen gewöhnlichen Kerze, weshalb die Farbwechsel nahe an denen des Originalcodes liegen, aber nicht identisch sind.
-- Die Originalstrategie friert nach einer Ausführung außerdem alle Signale für mehrere hundert Bars ein; einen Bar-Zähler gibt es hier als Baustein nicht, daher entfällt diese Pause und wird hier vermerkt.
+- Der gleitende Durchschnitt und der Ausstiegskurs stammen von den gewöhnlichen Kerzen, nicht von den geglätteten.
+- Die Heikin-Ashi-Eröffnung wird normalerweise über ihren eigenen Vorgängerwert definiert, was ein Diagramm nicht in einen Baustein zurückführen kann; stattdessen dient die Mitte der vorherigen gewöhnlichen Kerze, weshalb die Farbwechsel eine Näherung sind.
 
 ## Ein- und Ausstiegsregeln
 
 - **Long-Einstieg**: Der Heikin-Ashi-Körper der eben abgeschlossenen Kerze ist positiv, der Körper der Kerze davor war null oder negativ und die Position ist null. Die Order kauft ein Lot und eröffnet einen Long.
 - **Short-Einstieg**: Der Heikin-Ashi-Körper der eben abgeschlossenen Kerze ist null oder negativ, der Körper der Kerze davor war positiv und die Position ist null. Die Order verkauft ein Lot und eröffnet einen Short.
-- **Ausstieg**: Ein Long wird von einem Baustein zur Positionsänderung im Schließmodus glattgestellt, sobald eine gewöhnliche Kerze unter dem gleitenden Durchschnitt schließt; ein Short, sobald eine darüber schließt. Die Ursprungsstrategie führt weder Stop-Loss noch Take-Profit, und dieses Diagramm ebenfalls nicht.
+- **Ausstieg**: Ein Long wird von einem Baustein zur Positionsänderung im Schließmodus glattgestellt, sobald eine gewöhnliche Kerze unter dem gleitenden Durchschnitt schließt; ein Short, sobald eine darüber schließt. Das Diagramm führt weder Stop-Loss noch Take-Profit.
 
 ## Parameter
 
@@ -25,7 +24,7 @@ Heikin-Ashi-Kerzen mitteln einen Großteil des Rauschens weg, sodass eine Reihe 
 |---|---|---|
 | SMA Length | 20 | Glättungsperiode des einfachen gleitenden Durchschnitts auf dem gewöhnlichen Schlusskurs, der die Trades schließt. |
 | Volume | 1 | Ordervolumen in Lots. |
-| Candles | 00:05:00 | Zeiteinheit der Kerzen für das gesamte Diagramm; das Original läuft auf Minutenkerzen und ist hier auf die mitgelieferte Fünf-Minuten-Historie herunterskaliert. |
+| Candles | 00:05:00 | Fünf-Minuten-Zeiteinheit der Kerzen für das gesamte Diagramm und die mitgelieferte Galeriehistorie. |
 
 ## Diagrammdetails
 
