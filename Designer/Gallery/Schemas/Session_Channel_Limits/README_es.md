@@ -1,0 +1,45 @@
+# Diagrama de estrategia con órdenes límite en el canal de sesión
+[English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
+
+Este diagrama toma cada día una instantánea fija de un canal de precios de nueve horas y coloca en sus límites un par OCO de órdenes límite gestionado por el cliente. La lógica del diagrama solicita cancelar la orden opuesta después de una ejecución; no es una instrucción OCO atómica de la bolsa. Las velas finalizadas de cinco minutos definen el canal, una suscripción en vivo a BestBid aporta eventos de cotización para la ejecución y el siguiente reinicio diario cancela las órdenes restantes antes de ajustar la posición con una acción de mercado ReduceOnly por Order Volume.
+
+![schema](schema.svg)
+
+## Resumen de la estrategia
+
+- Las velas finalizadas de cinco minutos alimentan Highest 108 y Lowest 108, configurados para emitir solo valores formados. En la instantánea diaria, su ventana móvil contiene las velas con OpenTime entre las 01:00 y las 09:55 UTC, es decir, la sesión completa de 01:00–10:00.
+- El bloque de horario de colocación selecciona la vela finalizada marcada entre 09:55:00 y 09:59:59. La marca de la vela contiene OpenTime, por lo que llega cuando termina a las 10:00 UTC; un Flag convierte el resultado de la ventana en exactamente un pulso de colocación por sesión.
+- El pulso captura ambos límites del canal y la posición actual. Si Session Low < Session High y Position = 0, el diagrama registra una compra limitada en el mínimo capturado y después una venta limitada en el máximo capturado, ambas con volumen 1 y ShrinkPrice desactivado.
+- Un bloque Level1 suscrito continuamente lee BestBid. Su flujo de cotizaciones mantiene disponibles las actualizaciones de precio en vivo para que el conector ejecute las dos órdenes pendientes cuando el mercado alcance sus precios; BestBid no sustituye ninguno de los límites capturados.
+- El primer MyTrade de cualquiera de las órdenes límite solicita cancelar la Order contraria almacenada. Es una lógica OCO del lado del cliente: con el procesamiento secuencial normal pretende dejar una sola orden del canal ejecutada, pero ejecuciones casi simultáneas pueden competir porque la cancelación no es atómica en la bolsa. En el siguiente reinicio, el diagrama envía una solicitud de cancelación masiva, también pasa ambas referencias Order almacenadas por sus rutas de cancelación deterministas y ejecuta una acción de mercado ReduceOnly por Order Volume. Esa cantidad cierra la posición del caso normal con una ejecución; si la exposición real es distinta, ReduceOnly solo la reduce. El gráfico muestra velas, ambas líneas del canal, dos flujos de órdenes y todas las operaciones de entrada y cierre por reinicio.
+
+## Reglas de entrada y salida
+
+- **Entrada en largo**: En el límite de sesión de las 10:00 UTC, si ambos indicadores de 108 valores están formados, el mínimo capturado es menor que el máximo capturado y la instantánea de posición es cero, el diagrama coloca una compra limitada por Order Volume en Session Low. La orden permanece activa hasta su ejecución o hasta que una ruta de cancelación la retire.
+- **Entrada en corto**: Con las mismas comprobaciones de canal formado y posición plana, el diagrama coloca una venta limitada por Order Volume en Session High. Si esta orden genera la primera ejecución, su evento MyTrade envía la compra limitada almacenada al bloque de cancelación.
+- **Salida**: No hay bloques de stop-loss ni take-profit. Tras la primera ejecución del canal, la lógica del cliente solicita cancelar la orden contraria en vez de invertir deliberadamente la posición. La posición permanece abierta hasta el reinicio asociado con la vela de 00:55, procesado cuando termina a las 01:00 UTC; el reinicio solicita cancelación masiva, cancela explícitamente ambos límites almacenados y usa una acción de mercado ReduceOnly por Order Volume. Esta cierra la posición normal de una ejecución y no puede aumentar ni invertir una exposición real distinta.
+
+## Parámetros
+
+| Parámetro | Por defecto | Descripción |
+|---|---|---|
+| Candles Series | 00:05:00 | Serie de velas de cinco minutos; solo las velas finalizadas actualizan el canal y activan las dos ventanas diarias. |
+| Session High Length | 108 | Número de velas finalizadas usado por Highest con salida solo formada. Con el marco y las ventanas predeterminados, 108 velas cubren 01:00–10:00 UTC. |
+| Session High Source | unset | Se deja sin definir. Highest lee automáticamente el High de cada vela finalizada. |
+| Session Low Length | 108 | Número de velas finalizadas usado por Lowest con salida solo formada. Manténgalo igual a Session High Length para que ambos límites describan la misma sesión. |
+| Session Low Source | unset | Se deja sin definir. Lowest lee automáticamente el Low de cada vela finalizada. |
+| Order Volume | 1 | Cantidad asignada a cada límite pendiente y a la acción ReduceOnly del reinicio. En la ruta normal con una ejecución coincide con la posición resultante; ReduceOnly impide que el reinicio aumente o invierta la exposición si el tamaño real es distinto. |
+
+## Detalles del diagrama
+
+- El bloque [Velas](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) emite únicamente velas finalizadas de cinco minutos. Dos bloques de [Indicador](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/common/indicator.html), limitados a valores formados, calculan directamente Highest 108 y Lowest 108 móviles.
+- Dos bloques de [Horario de trabajo](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/time/working_time.html) inspeccionan el OpenTime de la vela. El intervalo 09:55:00–09:59:59 actúa cuando esa vela termina a las 10:00 UTC, mientras 00:55:00–00:59:59 actúa al terminar a las 01:00 UTC. Este desplazamiento de una vela forma parte de la configuración temporal y no es un retraso de ejecución.
+- Un [Flag](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/common/flag.html) de colocación emite una vez y permanece establecido hasta el reinicio. Los bloques de [Variable](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/data_sources/variable.html) capturan Highest, Lowest, Position, cero y volumen con ese pulso; [Comparación](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/common/comparison.html) y [Condición lógica](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/common/logical_condition.html) admiten un único par con canal válido y posición plana.
+- El bloque de [Registro de orden](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/orders/register.html) de compra coloca primero el límite en Session Low. Su Order registrada actualiza las entradas de máximo y volumen antes de activar el registro de venta en Session High. Ambas órdenes tienen ShrinkPrice=false y permanecen activas hasta su ejecución o cancelación.
+- El bloque [Level1](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/data_sources/level_1.html) se suscribe continuamente a BestBid. El flujo conservado activa el procesamiento de cotizaciones en vivo para cruzar los límites pendientes, mientras sus precios siguen procediendo únicamente de Highest y Lowest capturados.
+- Cada Order registrada se almacena. Un MyTrade de compra entrega la venta guardada a [Cancelar orden](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/trading/cancel_order.html), y un MyTrade de venta hace lo mismo con la compra. El reinicio invoca [Cancelación masiva de órdenes](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/orders/mass_cancel.html) y también entrega las referencias almacenadas de ambas órdenes a sus bloques de cancelación, de modo que la limpieza no depende de la confirmación masiva.
+- Por último, el pulso de reinicio activa [Modificar posición](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) con ReduceOnly, Order Volume y el algoritmo MarketOrder. En la ruta secuencial prevista con una ejecución, esa cantidad cierra toda la posición; si las ejecuciones compiten o la exposición real es distinta, ReduceOnly impide aumentarla o invertirla. El [Panel de gráfico](https://doc.stocksharp.com/es/topics/designer/strategies/using_visual_designer/elements/common/chart.html) recibe las velas finalizadas, Highest, Lowest, ambos flujos Order, los dos flujos MyTrade de los límites y el flujo MyTrade del cierre por reinicio.
+
+## Uso
+
+Importe el archivo `.json` en Designer, ejecútelo sobre datos históricos en el probador y después ajuste los parámetros o los propios bloques a su instrumento antes de operar en real.

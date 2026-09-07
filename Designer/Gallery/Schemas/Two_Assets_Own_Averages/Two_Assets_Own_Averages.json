@@ -1,0 +1,3058 @@
+﻿{
+  "Id": "273d219e-7c06-b0fd-d101-c08c41014d91",
+  "Content": {
+    "Type": "Schema",
+    "Value": {
+      "Version": "1.0",
+      "Scheme": {
+        "SchemaVersion": 1,
+        "Category": "",
+        "DocUrl": "",
+        "Composition": {
+          "Id": "273d219e-7c06-b0fd-d101-c08c41014d91",
+          "CanAutoName": false,
+          "Parameters": {
+            "Name": {
+              "Value": "Two_Assets_Own_Averages"
+            },
+            "LogLevel": {
+              "Value": "Inherit"
+            },
+            "ShowParameters": {
+              "Value": true
+            },
+            "ShowSockets": {
+              "Value": false
+            },
+            "ProcessNullValues": {
+              "Value": false
+            },
+            "b78817d6-bbaa-e4d4-1865-5c57865c4065Value": {
+              "Value": "BTCUSDT@BNBFT"
+            },
+            "67a415fb-7462-b23c-341c-ecf60ec5f0bdValue": {
+              "Value": "TONUSDT@BNBFT"
+            },
+            "1639e403-8107-7024-f80a-57cf7826ec8dSeries": {
+              "Value": {
+                "type": "StockSharp.Messages.DataType, StockSharp.Messages",
+                "settings": {
+                  "MessageType": "StockSharp.Messages.TimeFrameCandleMessage, StockSharp.Messages",
+                  "Arg": {
+                    "type": "System.TimeSpan, System.Private.CoreLib",
+                    "value": "00-15-00"
+                  }
+                }
+              }
+            },
+            "49bcc99d-9634-6fa0-b62c-db46599b20e0Series": {
+              "Value": {
+                "type": "StockSharp.Messages.DataType, StockSharp.Messages",
+                "settings": {
+                  "MessageType": "StockSharp.Messages.TimeFrameCandleMessage, StockSharp.Messages",
+                  "Arg": {
+                    "type": "System.TimeSpan, System.Private.CoreLib",
+                    "value": "00-15-00"
+                  }
+                }
+              }
+            },
+            "e536d2be-8bbf-0b60-2f29-262d24ab0e6fLength": {
+              "Value": 20
+            },
+            "e536d2be-8bbf-0b60-2f29-262d24ab0e6fSource": {},
+            "8c76f26a-1dd9-0654-d510-95421ce72d4bLength": {
+              "Value": 20
+            },
+            "8c76f26a-1dd9-0654-d510-95421ce72d4bSource": {},
+            "b37753bd-1d47-0bb0-b117-d980d171887eValue": {
+              "Value": {
+                "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                "settings": {
+                  "Type": "Absolute",
+                  "Value": 1.0
+                }
+              }
+            },
+            "4f8a632a-2ba4-a450-28d5-41934221c3abTakeValue": {
+              "Value": {
+                "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                "settings": {
+                  "Type": "Absolute",
+                  "Value": 0.0
+                }
+              }
+            },
+            "4f8a632a-2ba4-a450-28d5-41934221c3abStopValue": {
+              "Value": {
+                "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                "settings": {
+                  "Type": "Percent",
+                  "Value": 2.0
+                }
+              }
+            },
+            "4f8a632a-2ba4-a450-28d5-41934221c3abIsTrailingStopLoss": {
+              "Value": false
+            },
+            "4f8a632a-2ba4-a450-28d5-41934221c3abUseMarketOrders": {
+              "Value": true
+            }
+          },
+          "TypeId": "0d7852bd-8fb6-44fe-84f0-f1db185c189d"
+        },
+        "Model": {
+          "Nodes": [
+            {
+              "Key": "tradedSecurity",
+              "Figure": "",
+              "X": 0.0,
+              "Y": 760.0,
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "b78817d6-bbaa-e4d4-1865-5c57865c4065",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Traded: BTCUSDT@BNBFT"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.BusinessEntities.Security, StockSharp.BusinessEntities"
+                    }
+                  },
+                  "Value": {
+                    "Value": "BTCUSDT@BNBFT"
+                  },
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "signalSecurity",
+              "Figure": "",
+              "X": 0.0,
+              "Y": 1240.0,
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "67a415fb-7462-b23c-341c-ecf60ec5f0bd",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Signal: TONUSDT@BNBFT"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.BusinessEntities.Security, StockSharp.BusinessEntities"
+                    }
+                  },
+                  "Value": {
+                    "Value": "TONUSDT@BNBFT"
+                  },
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "tradedCandles",
+              "Figure": "",
+              "X": 280.0,
+              "Y": 740.0,
+              "TypeId": "3d773273-0cee-4d40-8eef-acded2d07ab8",
+              "Settings": {
+                "Id": "1639e403-8107-7024-f80a-57cf7826ec8d",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "BTCUSDT 15-minute candles"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "IsManuallySubscription": {
+                    "Value": false
+                  },
+                  "Series": {
+                    "Value": {
+                      "type": "StockSharp.Messages.DataType, StockSharp.Messages",
+                      "settings": {
+                        "MessageType": "StockSharp.Messages.TimeFrameCandleMessage, StockSharp.Messages",
+                        "Arg": {
+                          "type": "System.TimeSpan, System.Private.CoreLib",
+                          "value": "00-15-00"
+                        }
+                      }
+                    }
+                  },
+                  "IsFinishedOnly": {
+                    "Value": true
+                  },
+                  "IsCalcVolumeProfile": {
+                    "Value": false
+                  },
+                  "AllowBuildFromSmallerTimeFrame": {
+                    "Value": true
+                  },
+                  "IsRegularTradingHours": {},
+                  "BuildCandlesMode": {
+                    "Value": "LoadAndBuild"
+                  },
+                  "BuildCandlesFrom": {},
+                  "BuildCandlesField": {}
+                }
+              }
+            },
+            {
+              "Key": "signalCandles",
+              "Figure": "",
+              "X": 280.0,
+              "Y": 1240.0,
+              "TypeId": "3d773273-0cee-4d40-8eef-acded2d07ab8",
+              "Settings": {
+                "Id": "49bcc99d-9634-6fa0-b62c-db46599b20e0",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "TONUSDT 15-minute candles"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "IsManuallySubscription": {
+                    "Value": false
+                  },
+                  "Series": {
+                    "Value": {
+                      "type": "StockSharp.Messages.DataType, StockSharp.Messages",
+                      "settings": {
+                        "MessageType": "StockSharp.Messages.TimeFrameCandleMessage, StockSharp.Messages",
+                        "Arg": {
+                          "type": "System.TimeSpan, System.Private.CoreLib",
+                          "value": "00-15-00"
+                        }
+                      }
+                    }
+                  },
+                  "IsFinishedOnly": {
+                    "Value": true
+                  },
+                  "IsCalcVolumeProfile": {
+                    "Value": false
+                  },
+                  "AllowBuildFromSmallerTimeFrame": {
+                    "Value": true
+                  },
+                  "IsRegularTradingHours": {},
+                  "BuildCandlesMode": {
+                    "Value": "LoadAndBuild"
+                  },
+                  "BuildCandlesFrom": {},
+                  "BuildCandlesField": {}
+                }
+              }
+            },
+            {
+              "Key": "tradedClose",
+              "Figure": "",
+              "X": 850.0,
+              "Y": 700.0,
+              "TypeId": "35c046c4-1b0f-4074-ac08-0c70850a8dcf",
+              "Settings": {
+                "Id": "4c6fd252-9fd9-bd9a-600a-6c25cb33d87b",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "BTC close price"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.ICandleMessage, StockSharp.Messages"
+                    }
+                  },
+                  "Property": {
+                    "Value": "ClosePrice"
+                  }
+                }
+              }
+            },
+            {
+              "Key": "signalClose",
+              "Figure": "",
+              "X": 850.0,
+              "Y": 1210.0,
+              "TypeId": "35c046c4-1b0f-4074-ac08-0c70850a8dcf",
+              "Settings": {
+                "Id": "f0df081a-e09e-86a2-407f-2224d77bb320",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "TON close price"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.ICandleMessage, StockSharp.Messages"
+                    }
+                  },
+                  "Property": {
+                    "Value": "ClosePrice"
+                  }
+                }
+              }
+            },
+            {
+              "Key": "tradedSma",
+              "Figure": "",
+              "X": 850.0,
+              "Y": 900.0,
+              "TypeId": "f56c74af-7c39-464a-8b90-4eff4c8760b1",
+              "Settings": {
+                "Id": "e536d2be-8bbf-0b60-2f29-262d24ab0e6f",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "BTC SMA 20"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Id": "StockSharp.Algo.Indicators.SimpleMovingAverage, StockSharp.Algo.Indicators"
+                    }
+                  },
+                  "IsFinal": {
+                    "Value": false
+                  },
+                  "IsFormed": {
+                    "Value": true
+                  },
+                  "IsEmpty": {
+                    "Value": false
+                  },
+                  "Length": {
+                    "Value": 20
+                  },
+                  "Source": {}
+                }
+              }
+            },
+            {
+              "Key": "signalSma",
+              "Figure": "",
+              "X": 850.0,
+              "Y": 1410.0,
+              "TypeId": "f56c74af-7c39-464a-8b90-4eff4c8760b1",
+              "Settings": {
+                "Id": "8c76f26a-1dd9-0654-d510-95421ce72d4b",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "TON SMA 20"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Id": "StockSharp.Algo.Indicators.SimpleMovingAverage, StockSharp.Algo.Indicators"
+                    }
+                  },
+                  "IsFinal": {
+                    "Value": false
+                  },
+                  "IsFormed": {
+                    "Value": true
+                  },
+                  "IsEmpty": {
+                    "Value": false
+                  },
+                  "Length": {
+                    "Value": 20
+                  },
+                  "Source": {}
+                }
+              }
+            },
+            {
+              "Key": "state",
+              "Figure": "",
+              "X": 320.0,
+              "Y": 170.0,
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "47b02da8-95a2-53ac-64ef-d76cdddb9cb0",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Tracked BTC state: short / flat / long"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.Unit, StockSharp.Messages"
+                    }
+                  },
+                  "Value": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Absolute",
+                        "Value": 0.0
+                      }
+                    }
+                  },
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "zero",
+              "Figure": "",
+              "X": 620.0,
+              "Y": 0.0,
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "af9f8490-e04c-8c6d-95d4-eb3df369aabc",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Position zero"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.Unit, StockSharp.Messages"
+                    }
+                  },
+                  "Value": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Absolute",
+                        "Value": 0.0
+                      }
+                    }
+                  },
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "baseVolume",
+              "Figure": "",
+              "X": 620.0,
+              "Y": 220.0,
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "b37753bd-1d47-0bb0-b117-d980d171887e",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Base BTC volume = 1"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.Unit, StockSharp.Messages"
+                    }
+                  },
+                  "Value": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Absolute",
+                        "Value": 1.0
+                      }
+                    }
+                  },
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "actionVolume",
+              "Figure": "",
+              "X": 900.0,
+              "Y": 220.0,
+              "TypeId": "f0edcbdf-41cb-442b-896c-332dac3caae3",
+              "Settings": {
+                "Id": "a27091ab-b1ec-4a93-b26c-890e1cecb451",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Entry or reversal volume = base * (1 + abs(state))"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Expression": {
+                    "Value": "v * (1 + abs(p))"
+                  },
+                  "Validation": {}
+                }
+              }
+            },
+            {
+              "Key": "firstBelow",
+              "Figure": "",
+              "X": 1140.0,
+              "Y": 700.0,
+              "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
+              "Settings": {
+                "Id": "8a651983-3777-ab45-f01b-473925e79218",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "BTC close < BTC SMA"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "LeftValue": {
+                    "Value": {
+                      "Id": "Input"
+                    }
+                  },
+                  "Operator": {
+                    "Value": "Less"
+                  },
+                  "RightValue": {
+                    "Value": {
+                      "Id": "SecondInput"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "Key": "firstAbove",
+              "Figure": "",
+              "X": 1140.0,
+              "Y": 900.0,
+              "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
+              "Settings": {
+                "Id": "9b3b4516-d087-d498-bdc8-dcb6a83a136a",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "BTC close > BTC SMA"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "LeftValue": {
+                    "Value": {
+                      "Id": "Input"
+                    }
+                  },
+                  "Operator": {
+                    "Value": "Greater"
+                  },
+                  "RightValue": {
+                    "Value": {
+                      "Id": "SecondInput"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "Key": "secondAbove",
+              "Figure": "",
+              "X": 1140.0,
+              "Y": 1210.0,
+              "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
+              "Settings": {
+                "Id": "a1e63f27-d020-5d28-f1e9-40b23902e2e8",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "TON close > TON SMA"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "LeftValue": {
+                    "Value": {
+                      "Id": "Input"
+                    }
+                  },
+                  "Operator": {
+                    "Value": "Greater"
+                  },
+                  "RightValue": {
+                    "Value": {
+                      "Id": "SecondInput"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "Key": "secondBelow",
+              "Figure": "",
+              "X": 1140.0,
+              "Y": 1410.0,
+              "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
+              "Settings": {
+                "Id": "9f20bf35-368e-3eea-94ad-05fd58cdf3e8",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "TON close < TON SMA"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "LeftValue": {
+                    "Value": {
+                      "Id": "Input"
+                    }
+                  },
+                  "Operator": {
+                    "Value": "Less"
+                  },
+                  "RightValue": {
+                    "Value": {
+                      "Id": "SecondInput"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "Key": "longSignal",
+              "Figure": "",
+              "X": 1740.0,
+              "Y": 790.0,
+              "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
+              "Settings": {
+                "Id": "97847e29-12f9-13c5-eaad-ed0d79cb2721",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "BTC below and TON above"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Operator": {
+                    "Value": "And"
+                  }
+                },
+                "InputSocketIds": [
+                  "bd2e11401f1e4ff080429e4dd227a584",
+                  "df9774de1f5646d389c6c4c1a50ef1fd",
+                  "3e366b08593c4029821cffaf0f051049"
+                ]
+              }
+            },
+            {
+              "Key": "shortSignal",
+              "Figure": "",
+              "X": 1740.0,
+              "Y": 1340.0,
+              "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
+              "Settings": {
+                "Id": "407fe70f-57f3-c6c1-5655-b19cf8bf7598",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "BTC above and TON below"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Operator": {
+                    "Value": "And"
+                  }
+                },
+                "InputSocketIds": [
+                  "95ad7e7733f443ccb227640bd9369778",
+                  "e8169c563344412cb5d2f458eb66cd76",
+                  "dd1d377b697f446dbd75552e46cc85a4"
+                ]
+              }
+            },
+            {
+              "Key": "notLongSignal",
+              "Figure": "",
+              "X": 1970.0,
+              "Y": 1550.0,
+              "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
+              "Settings": {
+                "Id": "1f6d7841-7407-5ecd-49e9-840e65ccb0bf",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "No complete long signal"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Operator": {
+                    "Value": "Not"
+                  }
+                },
+                "InputSocketIds": [
+                  "d703925d85974365a37a094a63099977"
+                ]
+              }
+            },
+            {
+              "Key": "notShortSignal",
+              "Figure": "",
+              "X": 1970.0,
+              "Y": 1010.0,
+              "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
+              "Settings": {
+                "Id": "28dbe0c9-703d-3386-5cc6-2514ec037fd9",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "No complete short signal"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Operator": {
+                    "Value": "Not"
+                  }
+                },
+                "InputSocketIds": [
+                  "5162ba6277ca4edaa3ded66ce7fd2df2"
+                ]
+              }
+            },
+            {
+              "Key": "notPositive",
+              "Figure": "",
+              "X": 900.0,
+              "Y": 0.0,
+              "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
+              "Settings": {
+                "Id": "c895a24a-2934-d5de-6ae7-d3b871009b5a",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "BTC state <= 0"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "LeftValue": {
+                    "Value": {
+                      "Id": "Input"
+                    }
+                  },
+                  "Operator": {
+                    "Value": "LessOrEqual"
+                  },
+                  "RightValue": {
+                    "Value": {
+                      "Id": "SecondInput"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "Key": "notNegative",
+              "Figure": "",
+              "X": 1180.0,
+              "Y": 0.0,
+              "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
+              "Settings": {
+                "Id": "40c3318b-8f5f-6a35-cb4b-80ee8401e65d",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "BTC state >= 0"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "LeftValue": {
+                    "Value": {
+                      "Id": "Input"
+                    }
+                  },
+                  "Operator": {
+                    "Value": "GreaterOrEqual"
+                  },
+                  "RightValue": {
+                    "Value": {
+                      "Id": "SecondInput"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "Key": "isLong",
+              "Figure": "",
+              "X": 900.0,
+              "Y": 430.0,
+              "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
+              "Settings": {
+                "Id": "eb7da7fb-ecd2-14ff-9881-0b7ee0c117e1",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "BTC state > 0"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "LeftValue": {
+                    "Value": {
+                      "Id": "Input"
+                    }
+                  },
+                  "Operator": {
+                    "Value": "Greater"
+                  },
+                  "RightValue": {
+                    "Value": {
+                      "Id": "SecondInput"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "Key": "isShort",
+              "Figure": "",
+              "X": 1180.0,
+              "Y": 430.0,
+              "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
+              "Settings": {
+                "Id": "594d11ab-51e9-cab3-e13f-dada8cfaaa05",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "BTC state < 0"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "LeftValue": {
+                    "Value": {
+                      "Id": "Input"
+                    }
+                  },
+                  "Operator": {
+                    "Value": "Less"
+                  },
+                  "RightValue": {
+                    "Value": {
+                      "Id": "SecondInput"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "Key": "buyGate",
+              "Figure": "",
+              "X": 2050.0,
+              "Y": 650.0,
+              "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
+              "Settings": {
+                "Id": "84998d14-409f-106d-1081-ee619d756f0e",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Open or reverse to BTC long"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Operator": {
+                    "Value": "And"
+                  }
+                },
+                "InputSocketIds": [
+                  "b8c2e3a9b001487a87f6ba03bb55322f",
+                  "fdf81353ed8449ef938893f77dcf68b5",
+                  "960cb9d3ecee4875a90f679817338c5c"
+                ]
+              }
+            },
+            {
+              "Key": "sellGate",
+              "Figure": "",
+              "X": 2050.0,
+              "Y": 1190.0,
+              "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
+              "Settings": {
+                "Id": "b22c36c6-7fb2-8524-8721-29eea6c0e33b",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Open or reverse to BTC short"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Operator": {
+                    "Value": "And"
+                  }
+                },
+                "InputSocketIds": [
+                  "70c267a9830341d9a1155c737187d7b6",
+                  "a6b0ff7ca3f8400b9b13a83b4348cd02",
+                  "7f660e177a524d18b2ed0c9c68fc4ef8"
+                ]
+              }
+            },
+            {
+              "Key": "exitLongGate",
+              "Figure": "",
+              "X": 2050.0,
+              "Y": 900.0,
+              "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
+              "Settings": {
+                "Id": "488562f8-dc80-f4c9-2f47-5e6793b90e72",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Close BTC long at its average"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Operator": {
+                    "Value": "And"
+                  }
+                },
+                "InputSocketIds": [
+                  "521f159021c94874879ffdc92fdf9062",
+                  "3234bf01f55d4027b74924cfd2c6b11c",
+                  "56d9e4b3abcc47679484c73c5cc910c4"
+                ]
+              }
+            },
+            {
+              "Key": "exitShortGate",
+              "Figure": "",
+              "X": 2050.0,
+              "Y": 1440.0,
+              "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
+              "Settings": {
+                "Id": "e5048977-5ddd-168f-6524-816d17f07c12",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Close BTC short at its average"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Operator": {
+                    "Value": "And"
+                  }
+                },
+                "InputSocketIds": [
+                  "d7457fb38f1d46aeaa70de5f50cca2ae",
+                  "0df695af5bfa4c6dad30020479980720",
+                  "a78635a8091942feb7aa49a6d06e5279"
+                ]
+              }
+            },
+            {
+              "Key": "buy",
+              "Figure": "",
+              "X": 2710.0,
+              "Y": 630.0,
+              "TypeId": "953961cd-a9ba-4afe-ac38-e8b61f84b3be",
+              "Settings": {
+                "Id": "999b5a5b-8619-c296-2db4-e206f82dad3b",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Buy BTCUSDT at market"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "OnlineOnly": {
+                    "Value": false
+                  },
+                  "TimeInForce": {},
+                  "ClientCode": {},
+                  "BrokerCode": {},
+                  "MarginMode": {},
+                  "IsMarketMaker": {},
+                  "IsManual": {},
+                  "Comment": {
+                    "Value": ""
+                  },
+                  "PosCondition": {
+                    "Value": "NoCondition"
+                  },
+                  "Direction": {
+                    "Value": "Buy"
+                  },
+                  "Algorithm": {
+                    "Value": "MarketOrder"
+                  },
+                  "VolumePart": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Percent",
+                        "Value": 1.0
+                      }
+                    }
+                  },
+                  "TimeInterval": {
+                    "Value": "00:01:00"
+                  }
+                }
+              }
+            },
+            {
+              "Key": "sell",
+              "Figure": "",
+              "X": 2710.0,
+              "Y": 1170.0,
+              "TypeId": "953961cd-a9ba-4afe-ac38-e8b61f84b3be",
+              "Settings": {
+                "Id": "611802fd-bcd6-f4a9-a343-b91082a02a59",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Sell BTCUSDT at market"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "OnlineOnly": {
+                    "Value": false
+                  },
+                  "TimeInForce": {},
+                  "ClientCode": {},
+                  "BrokerCode": {},
+                  "MarginMode": {},
+                  "IsMarketMaker": {},
+                  "IsManual": {},
+                  "Comment": {
+                    "Value": ""
+                  },
+                  "PosCondition": {
+                    "Value": "NoCondition"
+                  },
+                  "Direction": {
+                    "Value": "Sell"
+                  },
+                  "Algorithm": {
+                    "Value": "MarketOrder"
+                  },
+                  "VolumePart": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Percent",
+                        "Value": 1.0
+                      }
+                    }
+                  },
+                  "TimeInterval": {
+                    "Value": "00:01:00"
+                  }
+                }
+              }
+            },
+            {
+              "Key": "exitLong",
+              "Figure": "",
+              "X": 2710.0,
+              "Y": 880.0,
+              "TypeId": "953961cd-a9ba-4afe-ac38-e8b61f84b3be",
+              "Settings": {
+                "Id": "f089ad20-678c-8147-c12c-5f6afe4b89df",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Reduce BTCUSDT long"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "OnlineOnly": {
+                    "Value": false
+                  },
+                  "TimeInForce": {},
+                  "ClientCode": {},
+                  "BrokerCode": {},
+                  "MarginMode": {},
+                  "IsMarketMaker": {},
+                  "IsManual": {},
+                  "Comment": {
+                    "Value": ""
+                  },
+                  "PosCondition": {
+                    "Value": "ReduceOnly"
+                  },
+                  "Direction": {
+                    "Value": "Sell"
+                  },
+                  "Algorithm": {
+                    "Value": "MarketOrder"
+                  },
+                  "VolumePart": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Percent",
+                        "Value": 1.0
+                      }
+                    }
+                  },
+                  "TimeInterval": {
+                    "Value": "00:01:00"
+                  }
+                }
+              }
+            },
+            {
+              "Key": "exitShort",
+              "Figure": "",
+              "X": 2710.0,
+              "Y": 1420.0,
+              "TypeId": "953961cd-a9ba-4afe-ac38-e8b61f84b3be",
+              "Settings": {
+                "Id": "2051d211-5390-ba70-d49c-5889917ebccd",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Reduce BTCUSDT short"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "OnlineOnly": {
+                    "Value": false
+                  },
+                  "TimeInForce": {},
+                  "ClientCode": {},
+                  "BrokerCode": {},
+                  "MarginMode": {},
+                  "IsMarketMaker": {},
+                  "IsManual": {},
+                  "Comment": {
+                    "Value": ""
+                  },
+                  "PosCondition": {
+                    "Value": "ReduceOnly"
+                  },
+                  "Direction": {
+                    "Value": "Buy"
+                  },
+                  "Algorithm": {
+                    "Value": "MarketOrder"
+                  },
+                  "VolumePart": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Percent",
+                        "Value": 1.0
+                      }
+                    }
+                  },
+                  "TimeInterval": {
+                    "Value": "00:01:00"
+                  }
+                }
+              }
+            },
+            {
+              "Key": "protection",
+              "Figure": "",
+              "X": 3040.0,
+              "Y": 930.0,
+              "TypeId": "7712ff8b-0270-49fa-9663-196a9a03bfe8",
+              "Settings": {
+                "Id": "4f8a632a-2ba4-a450-28d5-41934221c3ab",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "BTC stop loss 2%"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "TakeValue": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Absolute",
+                        "Value": 0.0
+                      }
+                    }
+                  },
+                  "TakeProfitTimeOut": {
+                    "Value": "00:00:00"
+                  },
+                  "StopValue": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Percent",
+                        "Value": 2.0
+                      }
+                    }
+                  },
+                  "IsTrailingStopLoss": {
+                    "Value": false
+                  },
+                  "StopLossTimeOut": {
+                    "Value": "00:00:00"
+                  },
+                  "UseMarketOrders": {
+                    "Value": true
+                  },
+                  "UseServer": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "setLong",
+              "Figure": "",
+              "X": 0.0,
+              "Y": 180.0,
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "00f43d5b-4f50-f7aa-af27-b3018ec04f8a",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Set tracked BTC state: long"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.Unit, StockSharp.Messages"
+                    }
+                  },
+                  "Value": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Absolute",
+                        "Value": 1.0
+                      }
+                    }
+                  },
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "setShort",
+              "Figure": "",
+              "X": 0.0,
+              "Y": 360.0,
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "4920d10c-e607-0650-ab4d-9afafe2fcc01",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Set tracked BTC state: short"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.Unit, StockSharp.Messages"
+                    }
+                  },
+                  "Value": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Absolute",
+                        "Value": -1.0
+                      }
+                    }
+                  },
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "setFlat",
+              "Figure": "",
+              "X": 0.0,
+              "Y": 0.0,
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "7a4e65b3-2c10-2627-1e2b-9e4a72d40434",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Set tracked BTC state: flat"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.Unit, StockSharp.Messages"
+                    }
+                  },
+                  "Value": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Absolute",
+                        "Value": 0.0
+                      }
+                    }
+                  },
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "strategyTrades",
+              "Figure": "",
+              "X": 3350.0,
+              "Y": 1180.0,
+              "TypeId": "7162155b-ecaa-4248-84ff-b1046e753562",
+              "Settings": {
+                "Id": "4f011fc1-83f4-8a60-18bd-efbfc1430418",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "All BTCUSDT fills"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "8247d438-e78a-41c2-8351-b5b68b387cfc",
+              "X": 560.0,
+              "Y": 1010.0,
+              "TypeId": "e569d5c4-7b9b-4f42-a190-0e454876ac79",
+              "Settings": {
+                "Id": "12dc15d2-c3db-4b39-b9ef-010863fdc300",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Synchronize BTCUSDT and TONUSDT candles"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Interval": {
+                    "Value": "00:15:00"
+                  },
+                  "ClearSockets": {
+                    "Value": true
+                  }
+                },
+                "in": [
+                  {
+                    "Id": "in 1",
+                    "Type": "StockSharp.Messages.ICandleMessage, StockSharp.Messages"
+                  },
+                  {
+                    "Id": "in 2",
+                    "Type": "StockSharp.Messages.ICandleMessage, StockSharp.Messages"
+                  },
+                  {
+                    "Id": "in 3",
+                    "Type": "object"
+                  }
+                ]
+              }
+            },
+            {
+              "Key": "9c409121-042f-42c8-8dba-54118c6b189d",
+              "X": 1450.0,
+              "Y": 650.0,
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "69784f1a-aafa-4f64-80a7-f96b89b10c52",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Sampled BTC below its SMA"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "System.Boolean, System.Private.CoreLib"
+                    }
+                  },
+                  "Value": {
+                    "Value": false
+                  },
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "8d3271a9-7fa2-446f-a083-52d017ec5de6",
+              "X": 1450.0,
+              "Y": 1010.0,
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "f4911d85-d0ce-44b0-9d28-9f2842757aaf",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Sampled BTC above its SMA"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "System.Boolean, System.Private.CoreLib"
+                    }
+                  },
+                  "Value": {
+                    "Value": false
+                  },
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "ea067a13-3d6b-44ac-9ab0-db6eb00a0a3f",
+              "X": 1450.0,
+              "Y": 1180.0,
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "1a479694-b826-4df5-881d-7c32800f28f5",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Sampled TON above its SMA"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "System.Boolean, System.Private.CoreLib"
+                    }
+                  },
+                  "Value": {
+                    "Value": false
+                  },
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "2dbeb69d-0a8a-4461-be9e-70896ef53e7a",
+              "X": 1450.0,
+              "Y": 1530.0,
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "fd05f98b-2720-4215-8fe8-fd49bdedc521",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Sampled TON below its SMA"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "System.Boolean, System.Private.CoreLib"
+                    }
+                  },
+                  "Value": {
+                    "Value": false
+                  },
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "935cef9f-ca38-4218-b4a0-abb0b7c0c15a",
+              "X": 1450.0,
+              "Y": 1740.0,
+              "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
+              "Settings": {
+                "Id": "6168fd1f-a615-4957-99f0-ec1d538eb3b5",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Wait for both current BTC relations"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Operator": {
+                    "Value": "And"
+                  }
+                },
+                "InputSocketIds": [
+                  "1d9b9d0bf27f45ff8ecb54688bfb34d4",
+                  "92291c0e304c43e2a1aad7fe213f32db",
+                  "941a16f87e914ba89ca5e3b764400163"
+                ]
+              }
+            },
+            {
+              "Key": "196b44cd-fbf6-4762-89a3-297ea53f860c",
+              "X": 1450.0,
+              "Y": 1910.0,
+              "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
+              "Settings": {
+                "Id": "e0d52ea4-3020-4b32-a9b1-5f22abe82262",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Wait for both current TON relations"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Operator": {
+                    "Value": "And"
+                  }
+                },
+                "InputSocketIds": [
+                  "cf089b84a0ee44b8a7a5583362df5322",
+                  "edc3e8e6246844e888b15f81591e7837",
+                  "031e187953e34c4da4b98e0180461432"
+                ]
+              }
+            },
+            {
+              "Key": "4507f7f8-ed4d-4ad2-848c-e0dca6ed13d6",
+              "X": 1740.0,
+              "Y": 1820.0,
+              "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
+              "Settings": {
+                "Id": "c9a69afa-766c-463c-bff1-c59611521274",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Wait for both current instrument legs"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Operator": {
+                    "Value": "And"
+                  }
+                },
+                "InputSocketIds": [
+                  "a8fa71354f26471bbf81f5a2a1e44e60",
+                  "c290419d712046018c9d78a4038fc164",
+                  "0be249f8d71849b28c0ff8f107172646"
+                ]
+              }
+            },
+            {
+              "Key": "59c8be8b-e590-4a5a-a1df-9438d2f30187",
+              "X": 1970.0,
+              "Y": 1740.0,
+              "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
+              "Settings": {
+                "Id": "5405d20d-cebf-4ff8-a618-deae3e1777da",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Inverse of relation barrier result"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Operator": {
+                    "Value": "Not"
+                  }
+                },
+                "InputSocketIds": [
+                  "6c32a99b372c41be8422b280db6de7e9"
+                ]
+              }
+            },
+            {
+              "Key": "ca71609b-f5cc-4824-84e4-d285facc898c",
+              "X": 1970.0,
+              "Y": 1910.0,
+              "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
+              "Settings": {
+                "Id": "f5bb3f45-8478-42e3-a188-0f91ab0c888d",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "All four current relations are ready"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Operator": {
+                    "Value": "Or"
+                  }
+                },
+                "InputSocketIds": [
+                  "c6379e1cf14849ed8d5df21d549158c8",
+                  "597e990ec7bf4d54bd49bf16c11489f7",
+                  "f8174139105f4b95a8d2fffe0999e63e"
+                ]
+              }
+            },
+            {
+              "Key": "e7580e04-b48b-47e7-8ab4-3271cc2030cd",
+              "X": 2850.0,
+              "Y": 1740.0,
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "5a37ebea-be9e-41dc-b0c3-677b08fe262d",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "BTC close after synchronized decision"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.Unit, StockSharp.Messages"
+                    }
+                  },
+                  "Value": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Absolute",
+                        "Value": 0.0
+                      }
+                    }
+                  },
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "91ff4c7b-cc13-4994-8db2-daa7fbfb87bd",
+              "X": 2260.0,
+              "Y": 1900.0,
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "641f9421-2e29-4586-8b99-1a7ace792992",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Release one synchronized decision"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.Unit, StockSharp.Messages"
+                    }
+                  },
+                  "Value": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Absolute",
+                        "Value": 1.0
+                      }
+                    }
+                  },
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "e850c414-4059-4015-a7f4-2a770ce0038c",
+              "X": 2550.0,
+              "Y": 1900.0,
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "c0334428-a7ee-4e50-8ade-a17f7039d544",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Execute one prioritized decision"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "System.Boolean, System.Private.CoreLib"
+                    }
+                  },
+                  "Value": {
+                    "Value": true
+                  },
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "c4726226-f70a-4ce2-a780-8451df93abd8",
+              "X": 2380.0,
+              "Y": 650.0,
+              "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
+              "Settings": {
+                "Id": "b6cf1d49-2709-4744-87ef-56ad4ea01e14",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Release prioritized BTC long action"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Operator": {
+                    "Value": "And"
+                  }
+                },
+                "InputSocketIds": [
+                  "2a4be2eaaacb453cba2e7edb2cd9397d",
+                  "e21a9ce0f0de4d37ab9bef3264a39218",
+                  "b6991198c4fa42348a801a13c947b853"
+                ]
+              }
+            },
+            {
+              "Key": "ed2860f3-ede3-4994-a08b-c0a109d99cee",
+              "X": 2380.0,
+              "Y": 1190.0,
+              "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
+              "Settings": {
+                "Id": "26d898c7-621b-47aa-944f-e6f6a5a553db",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Release prioritized BTC short action"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Operator": {
+                    "Value": "And"
+                  }
+                },
+                "InputSocketIds": [
+                  "498878f97d8549c6bfe1844cd42641e0",
+                  "dcb7e9d2335a410f991aa1f2b97bd9e9",
+                  "27054587ad7144edb1eada4f0b0999d9"
+                ]
+              }
+            },
+            {
+              "Key": "6e3fc7fb-0d04-419c-b3df-18fa2f0a2d9d",
+              "X": 2380.0,
+              "Y": 900.0,
+              "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
+              "Settings": {
+                "Id": "771928de-a39b-4b5e-bba8-14f9ca211a63",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Release prioritized BTC long exit"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Operator": {
+                    "Value": "And"
+                  }
+                },
+                "InputSocketIds": [
+                  "fe5f0e83a5234c5f88c94c227163cb67",
+                  "58a4e62f5008443e946be2ee4d6c5a3f",
+                  "31b3027699ca4c418829ee7c4e591b3e"
+                ]
+              }
+            },
+            {
+              "Key": "759467a4-8486-4f8d-89c3-307ba2ede1fb",
+              "X": 2380.0,
+              "Y": 1440.0,
+              "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
+              "Settings": {
+                "Id": "007016b7-1091-405d-9e37-9a091cbb228c",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Release prioritized BTC short exit"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Operator": {
+                    "Value": "And"
+                  }
+                },
+                "InputSocketIds": [
+                  "2331edef7a424f3aaaf7c015a519249e",
+                  "769525198e2b4249bde2129b2a397c94",
+                  "3e848c695f4c4eda85b82a6566f2244b"
+                ]
+              }
+            },
+            {
+              "Key": "578b4a52-4105-473f-b45f-9546b8b3f31b",
+              "X": 3650.0,
+              "Y": 940.0,
+              "TypeId": "1926c40e-aaa3-4948-98e6-fba4b38b580e",
+              "Settings": {
+                "Id": "1c1ebfb4-ab30-45c6-815a-2f55eb5a8e10",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Aligned candles, own averages, stop and BTC fills"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": false
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "ShowNonFormedIndicators": {
+                    "Value": false
+                  },
+                  "ChartGroupId": {
+                    "Value": ""
+                  },
+                  "AreaName": {
+                    "Value": "Chart panel"
+                  }
+                },
+                "CandleElements": [
+                  {
+                    "Id": "a15e2af8-8391-45db-90e0-fc414f935767"
+                  },
+                  {
+                    "Id": "1062980e-6473-4370-9686-9f76d83e35da"
+                  }
+                ],
+                "IndicatorElements": [
+                  {
+                    "Id": "405f49d5-fbec-4e71-a1f7-04bf34bd5b47"
+                  },
+                  {
+                    "Id": "65c743f6-d323-4067-9338-9ea689f4d0e6"
+                  }
+                ],
+                "OrderElements": [
+                  {
+                    "Id": "84a02580-2949-4672-acef-fa5a4accdf8e"
+                  }
+                ],
+                "TradeElements": [
+                  {
+                    "Id": "42b08e13-8bfb-4a12-b402-ad7c11ba472e"
+                  }
+                ],
+                "XAxes": [
+                  {
+                    "Id": "X",
+                    "Title": "X",
+                    "IsVisible": false,
+                    "AutoRange": false,
+                    "DrawMinorTicks": false,
+                    "DrawMajorTicks": false,
+                    "DrawMajorGridLines": false,
+                    "DrawMinorGridLines": false,
+                    "DrawLabels": false,
+                    "TextFormatting": "G",
+                    "SubDayTextFormatting": "T",
+                    "SwitchAxisLocation": false,
+                    "AxisType": "CategoryDateTime"
+                  }
+                ],
+                "YAxes": [
+                  {
+                    "Id": "Y",
+                    "Title": "Y",
+                    "IsVisible": false,
+                    "AutoRange": false,
+                    "DrawMinorTicks": false,
+                    "DrawMajorTicks": false,
+                    "DrawMajorGridLines": false,
+                    "DrawMinorGridLines": false,
+                    "DrawLabels": false,
+                    "SwitchAxisLocation": false,
+                    "AxisType": "Numeric"
+                  }
+                ]
+              }
+            }
+          ],
+          "Links": [
+            {
+              "From": "tradedSecurity",
+              "FromPort": "Output",
+              "To": "tradedCandles",
+              "ToPort": "Security"
+            },
+            {
+              "From": "signalSecurity",
+              "FromPort": "Output",
+              "To": "signalCandles",
+              "ToPort": "Security"
+            },
+            {
+              "From": "tradedSma",
+              "FromPort": "Output",
+              "To": "firstBelow",
+              "ToPort": "SecondInput"
+            },
+            {
+              "From": "tradedSma",
+              "FromPort": "Output",
+              "To": "firstAbove",
+              "ToPort": "SecondInput"
+            },
+            {
+              "From": "signalClose",
+              "FromPort": "Output",
+              "To": "secondAbove",
+              "ToPort": "Input"
+            },
+            {
+              "From": "signalClose",
+              "FromPort": "Output",
+              "To": "secondBelow",
+              "ToPort": "Input"
+            },
+            {
+              "From": "state",
+              "FromPort": "Output",
+              "To": "notPositive",
+              "ToPort": "Input"
+            },
+            {
+              "From": "state",
+              "FromPort": "Output",
+              "To": "notNegative",
+              "ToPort": "Input"
+            },
+            {
+              "From": "state",
+              "FromPort": "Output",
+              "To": "isLong",
+              "ToPort": "Input"
+            },
+            {
+              "From": "state",
+              "FromPort": "Output",
+              "To": "isShort",
+              "ToPort": "Input"
+            },
+            {
+              "From": "state",
+              "FromPort": "Output",
+              "To": "actionVolume",
+              "ToPort": "dynsock_p"
+            },
+            {
+              "From": "zero",
+              "FromPort": "Output",
+              "To": "notPositive",
+              "ToPort": "SecondInput"
+            },
+            {
+              "From": "zero",
+              "FromPort": "Output",
+              "To": "notNegative",
+              "ToPort": "SecondInput"
+            },
+            {
+              "From": "zero",
+              "FromPort": "Output",
+              "To": "isLong",
+              "ToPort": "SecondInput"
+            },
+            {
+              "From": "zero",
+              "FromPort": "Output",
+              "To": "isShort",
+              "ToPort": "SecondInput"
+            },
+            {
+              "From": "baseVolume",
+              "FromPort": "Output",
+              "To": "actionVolume",
+              "ToPort": "dynsock_v"
+            },
+            {
+              "From": "actionVolume",
+              "FromPort": "Output",
+              "To": "buy",
+              "ToPort": "Volume"
+            },
+            {
+              "From": "actionVolume",
+              "FromPort": "Output",
+              "To": "sell",
+              "ToPort": "Volume"
+            },
+            {
+              "From": "baseVolume",
+              "FromPort": "Output",
+              "To": "exitLong",
+              "ToPort": "Volume"
+            },
+            {
+              "From": "baseVolume",
+              "FromPort": "Output",
+              "To": "exitShort",
+              "ToPort": "Volume"
+            },
+            {
+              "From": "buy",
+              "FromPort": "MyTrade",
+              "To": "protection",
+              "ToPort": "Trade"
+            },
+            {
+              "From": "sell",
+              "FromPort": "MyTrade",
+              "To": "protection",
+              "ToPort": "Trade"
+            },
+            {
+              "From": "exitLong",
+              "FromPort": "MyTrade",
+              "To": "protection",
+              "ToPort": "Trade"
+            },
+            {
+              "From": "exitShort",
+              "FromPort": "MyTrade",
+              "To": "protection",
+              "ToPort": "Trade"
+            },
+            {
+              "From": "buy",
+              "FromPort": "MyTrade",
+              "To": "setLong",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "sell",
+              "FromPort": "MyTrade",
+              "To": "setShort",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "exitLong",
+              "FromPort": "MyTrade",
+              "To": "setFlat",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "exitShort",
+              "FromPort": "MyTrade",
+              "To": "setFlat",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "protection",
+              "FromPort": "MyTrade",
+              "To": "setFlat",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "setLong",
+              "FromPort": "Output",
+              "To": "state",
+              "ToPort": "Input"
+            },
+            {
+              "From": "setShort",
+              "FromPort": "Output",
+              "To": "state",
+              "ToPort": "Input"
+            },
+            {
+              "From": "setFlat",
+              "FromPort": "Output",
+              "To": "state",
+              "ToPort": "Input"
+            },
+            {
+              "From": "tradedCandles",
+              "FromPort": "Output",
+              "To": "8247d438-e78a-41c2-8351-b5b68b387cfc",
+              "ToPort": "in 1"
+            },
+            {
+              "From": "signalCandles",
+              "FromPort": "Output",
+              "To": "8247d438-e78a-41c2-8351-b5b68b387cfc",
+              "ToPort": "in 2"
+            },
+            {
+              "From": "8247d438-e78a-41c2-8351-b5b68b387cfc",
+              "FromPort": "out 1",
+              "To": "tradedSma",
+              "ToPort": "Input"
+            },
+            {
+              "From": "8247d438-e78a-41c2-8351-b5b68b387cfc",
+              "FromPort": "out 1",
+              "To": "tradedClose",
+              "ToPort": "Input"
+            },
+            {
+              "From": "8247d438-e78a-41c2-8351-b5b68b387cfc",
+              "FromPort": "out 2",
+              "To": "signalSma",
+              "ToPort": "Input"
+            },
+            {
+              "From": "8247d438-e78a-41c2-8351-b5b68b387cfc",
+              "FromPort": "out 2",
+              "To": "signalClose",
+              "ToPort": "Input"
+            },
+            {
+              "From": "signalSma",
+              "FromPort": "Output",
+              "To": "secondAbove",
+              "ToPort": "SecondInput"
+            },
+            {
+              "From": "signalSma",
+              "FromPort": "Output",
+              "To": "secondBelow",
+              "ToPort": "SecondInput"
+            },
+            {
+              "From": "firstBelow",
+              "FromPort": "Signal",
+              "To": "9c409121-042f-42c8-8dba-54118c6b189d",
+              "ToPort": "Input"
+            },
+            {
+              "From": "firstAbove",
+              "FromPort": "Signal",
+              "To": "8d3271a9-7fa2-446f-a083-52d017ec5de6",
+              "ToPort": "Input"
+            },
+            {
+              "From": "secondAbove",
+              "FromPort": "Signal",
+              "To": "ea067a13-3d6b-44ac-9ab0-db6eb00a0a3f",
+              "ToPort": "Input"
+            },
+            {
+              "From": "secondBelow",
+              "FromPort": "Signal",
+              "To": "2dbeb69d-0a8a-4461-be9e-70896ef53e7a",
+              "ToPort": "Input"
+            },
+            {
+              "From": "firstBelow",
+              "FromPort": "Signal",
+              "To": "935cef9f-ca38-4218-b4a0-abb0b7c0c15a",
+              "ToPort": "92291c0e304c43e2a1aad7fe213f32db"
+            },
+            {
+              "From": "firstAbove",
+              "FromPort": "Signal",
+              "To": "935cef9f-ca38-4218-b4a0-abb0b7c0c15a",
+              "ToPort": "1d9b9d0bf27f45ff8ecb54688bfb34d4"
+            },
+            {
+              "From": "secondAbove",
+              "FromPort": "Signal",
+              "To": "196b44cd-fbf6-4762-89a3-297ea53f860c",
+              "ToPort": "edc3e8e6246844e888b15f81591e7837"
+            },
+            {
+              "From": "secondBelow",
+              "FromPort": "Signal",
+              "To": "196b44cd-fbf6-4762-89a3-297ea53f860c",
+              "ToPort": "cf089b84a0ee44b8a7a5583362df5322"
+            },
+            {
+              "From": "935cef9f-ca38-4218-b4a0-abb0b7c0c15a",
+              "FromPort": "Signal",
+              "To": "4507f7f8-ed4d-4ad2-848c-e0dca6ed13d6",
+              "ToPort": "c290419d712046018c9d78a4038fc164"
+            },
+            {
+              "From": "196b44cd-fbf6-4762-89a3-297ea53f860c",
+              "FromPort": "Signal",
+              "To": "4507f7f8-ed4d-4ad2-848c-e0dca6ed13d6",
+              "ToPort": "a8fa71354f26471bbf81f5a2a1e44e60"
+            },
+            {
+              "From": "4507f7f8-ed4d-4ad2-848c-e0dca6ed13d6",
+              "FromPort": "Signal",
+              "To": "ca71609b-f5cc-4824-84e4-d285facc898c",
+              "ToPort": "597e990ec7bf4d54bd49bf16c11489f7"
+            },
+            {
+              "From": "4507f7f8-ed4d-4ad2-848c-e0dca6ed13d6",
+              "FromPort": "Signal",
+              "To": "59c8be8b-e590-4a5a-a1df-9438d2f30187",
+              "ToPort": "6c32a99b372c41be8422b280db6de7e9"
+            },
+            {
+              "From": "59c8be8b-e590-4a5a-a1df-9438d2f30187",
+              "FromPort": "Signal",
+              "To": "ca71609b-f5cc-4824-84e4-d285facc898c",
+              "ToPort": "c6379e1cf14849ed8d5df21d549158c8"
+            },
+            {
+              "From": "9c409121-042f-42c8-8dba-54118c6b189d",
+              "FromPort": "Output",
+              "To": "longSignal",
+              "ToPort": "df9774de1f5646d389c6c4c1a50ef1fd"
+            },
+            {
+              "From": "ea067a13-3d6b-44ac-9ab0-db6eb00a0a3f",
+              "FromPort": "Output",
+              "To": "longSignal",
+              "ToPort": "bd2e11401f1e4ff080429e4dd227a584"
+            },
+            {
+              "From": "8d3271a9-7fa2-446f-a083-52d017ec5de6",
+              "FromPort": "Output",
+              "To": "shortSignal",
+              "ToPort": "e8169c563344412cb5d2f458eb66cd76"
+            },
+            {
+              "From": "2dbeb69d-0a8a-4461-be9e-70896ef53e7a",
+              "FromPort": "Output",
+              "To": "shortSignal",
+              "ToPort": "95ad7e7733f443ccb227640bd9369778"
+            },
+            {
+              "From": "longSignal",
+              "FromPort": "Signal",
+              "To": "notLongSignal",
+              "ToPort": "d703925d85974365a37a094a63099977"
+            },
+            {
+              "From": "shortSignal",
+              "FromPort": "Signal",
+              "To": "notShortSignal",
+              "ToPort": "5162ba6277ca4edaa3ded66ce7fd2df2"
+            },
+            {
+              "From": "longSignal",
+              "FromPort": "Signal",
+              "To": "buyGate",
+              "ToPort": "fdf81353ed8449ef938893f77dcf68b5"
+            },
+            {
+              "From": "notPositive",
+              "FromPort": "Signal",
+              "To": "buyGate",
+              "ToPort": "b8c2e3a9b001487a87f6ba03bb55322f"
+            },
+            {
+              "From": "shortSignal",
+              "FromPort": "Signal",
+              "To": "sellGate",
+              "ToPort": "a6b0ff7ca3f8400b9b13a83b4348cd02"
+            },
+            {
+              "From": "notNegative",
+              "FromPort": "Signal",
+              "To": "sellGate",
+              "ToPort": "70c267a9830341d9a1155c737187d7b6"
+            },
+            {
+              "From": "8d3271a9-7fa2-446f-a083-52d017ec5de6",
+              "FromPort": "Output",
+              "To": "exitLongGate",
+              "ToPort": "3234bf01f55d4027b74924cfd2c6b11c"
+            },
+            {
+              "From": "isLong",
+              "FromPort": "Signal",
+              "To": "exitLongGate",
+              "ToPort": "521f159021c94874879ffdc92fdf9062"
+            },
+            {
+              "From": "notShortSignal",
+              "FromPort": "Signal",
+              "To": "exitLongGate",
+              "ToPort": "56d9e4b3abcc47679484c73c5cc910c4"
+            },
+            {
+              "From": "9c409121-042f-42c8-8dba-54118c6b189d",
+              "FromPort": "Output",
+              "To": "exitShortGate",
+              "ToPort": "0df695af5bfa4c6dad30020479980720"
+            },
+            {
+              "From": "isShort",
+              "FromPort": "Signal",
+              "To": "exitShortGate",
+              "ToPort": "d7457fb38f1d46aeaa70de5f50cca2ae"
+            },
+            {
+              "From": "notLongSignal",
+              "FromPort": "Signal",
+              "To": "exitShortGate",
+              "ToPort": "a78635a8091942feb7aa49a6d06e5279"
+            },
+            {
+              "From": "tradedClose",
+              "FromPort": "Output",
+              "To": "e7580e04-b48b-47e7-8ab4-3271cc2030cd",
+              "ToPort": "Input"
+            },
+            {
+              "From": "tradedClose",
+              "FromPort": "Output",
+              "To": "firstBelow",
+              "ToPort": "Input"
+            },
+            {
+              "From": "tradedClose",
+              "FromPort": "Output",
+              "To": "firstAbove",
+              "ToPort": "Input"
+            },
+            {
+              "From": "ca71609b-f5cc-4824-84e4-d285facc898c",
+              "FromPort": "Signal",
+              "To": "state",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "ca71609b-f5cc-4824-84e4-d285facc898c",
+              "FromPort": "Signal",
+              "To": "zero",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "ca71609b-f5cc-4824-84e4-d285facc898c",
+              "FromPort": "Signal",
+              "To": "baseVolume",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "ca71609b-f5cc-4824-84e4-d285facc898c",
+              "FromPort": "Signal",
+              "To": "91ff4c7b-cc13-4994-8db2-daa7fbfb87bd",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "91ff4c7b-cc13-4994-8db2-daa7fbfb87bd",
+              "FromPort": "Output",
+              "To": "9c409121-042f-42c8-8dba-54118c6b189d",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "91ff4c7b-cc13-4994-8db2-daa7fbfb87bd",
+              "FromPort": "Output",
+              "To": "8d3271a9-7fa2-446f-a083-52d017ec5de6",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "91ff4c7b-cc13-4994-8db2-daa7fbfb87bd",
+              "FromPort": "Output",
+              "To": "ea067a13-3d6b-44ac-9ab0-db6eb00a0a3f",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "91ff4c7b-cc13-4994-8db2-daa7fbfb87bd",
+              "FromPort": "Output",
+              "To": "2dbeb69d-0a8a-4461-be9e-70896ef53e7a",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "91ff4c7b-cc13-4994-8db2-daa7fbfb87bd",
+              "FromPort": "Output",
+              "To": "e850c414-4059-4015-a7f4-2a770ce0038c",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "buyGate",
+              "FromPort": "Signal",
+              "To": "c4726226-f70a-4ce2-a780-8451df93abd8",
+              "ToPort": "e21a9ce0f0de4d37ab9bef3264a39218"
+            },
+            {
+              "From": "e850c414-4059-4015-a7f4-2a770ce0038c",
+              "FromPort": "Output",
+              "To": "c4726226-f70a-4ce2-a780-8451df93abd8",
+              "ToPort": "2a4be2eaaacb453cba2e7edb2cd9397d"
+            },
+            {
+              "From": "c4726226-f70a-4ce2-a780-8451df93abd8",
+              "FromPort": "Signal",
+              "To": "buy",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "sellGate",
+              "FromPort": "Signal",
+              "To": "ed2860f3-ede3-4994-a08b-c0a109d99cee",
+              "ToPort": "dcb7e9d2335a410f991aa1f2b97bd9e9"
+            },
+            {
+              "From": "e850c414-4059-4015-a7f4-2a770ce0038c",
+              "FromPort": "Output",
+              "To": "ed2860f3-ede3-4994-a08b-c0a109d99cee",
+              "ToPort": "498878f97d8549c6bfe1844cd42641e0"
+            },
+            {
+              "From": "ed2860f3-ede3-4994-a08b-c0a109d99cee",
+              "FromPort": "Signal",
+              "To": "sell",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "exitLongGate",
+              "FromPort": "Signal",
+              "To": "6e3fc7fb-0d04-419c-b3df-18fa2f0a2d9d",
+              "ToPort": "58a4e62f5008443e946be2ee4d6c5a3f"
+            },
+            {
+              "From": "e850c414-4059-4015-a7f4-2a770ce0038c",
+              "FromPort": "Output",
+              "To": "6e3fc7fb-0d04-419c-b3df-18fa2f0a2d9d",
+              "ToPort": "fe5f0e83a5234c5f88c94c227163cb67"
+            },
+            {
+              "From": "6e3fc7fb-0d04-419c-b3df-18fa2f0a2d9d",
+              "FromPort": "Signal",
+              "To": "exitLong",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "exitShortGate",
+              "FromPort": "Signal",
+              "To": "759467a4-8486-4f8d-89c3-307ba2ede1fb",
+              "ToPort": "769525198e2b4249bde2129b2a397c94"
+            },
+            {
+              "From": "e850c414-4059-4015-a7f4-2a770ce0038c",
+              "FromPort": "Output",
+              "To": "759467a4-8486-4f8d-89c3-307ba2ede1fb",
+              "ToPort": "2331edef7a424f3aaaf7c015a519249e"
+            },
+            {
+              "From": "759467a4-8486-4f8d-89c3-307ba2ede1fb",
+              "FromPort": "Signal",
+              "To": "exitShort",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "e850c414-4059-4015-a7f4-2a770ce0038c",
+              "FromPort": "Output",
+              "To": "e7580e04-b48b-47e7-8ab4-3271cc2030cd",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "e7580e04-b48b-47e7-8ab4-3271cc2030cd",
+              "FromPort": "Output",
+              "To": "protection",
+              "ToPort": "Price"
+            },
+            {
+              "From": "8247d438-e78a-41c2-8351-b5b68b387cfc",
+              "FromPort": "out 1",
+              "To": "578b4a52-4105-473f-b45f-9546b8b3f31b",
+              "ToPort": "dynsock_a15e2af8839145db90e0fc414f935767"
+            },
+            {
+              "From": "8247d438-e78a-41c2-8351-b5b68b387cfc",
+              "FromPort": "out 2",
+              "To": "578b4a52-4105-473f-b45f-9546b8b3f31b",
+              "ToPort": "dynsock_1062980e6473437096869f76d83e35da"
+            },
+            {
+              "From": "tradedSma",
+              "FromPort": "Output",
+              "To": "578b4a52-4105-473f-b45f-9546b8b3f31b",
+              "ToPort": "dynsock_405f49d5fbec4e71a1f704bf34bd5b47"
+            },
+            {
+              "From": "signalSma",
+              "FromPort": "Output",
+              "To": "578b4a52-4105-473f-b45f-9546b8b3f31b",
+              "ToPort": "dynsock_65c743f6d323406793389ea689f4d0e6"
+            },
+            {
+              "From": "protection",
+              "FromPort": "Stop",
+              "To": "578b4a52-4105-473f-b45f-9546b8b3f31b",
+              "ToPort": "dynsock_84a0258029494672aceffa5a4accdf8e"
+            },
+            {
+              "From": "strategyTrades",
+              "FromPort": "Output",
+              "To": "578b4a52-4105-473f-b45f-9546b8b3f31b",
+              "ToPort": "dynsock_42b08e138bfb4a12b402ad7c11ba472e"
+            }
+          ]
+        },
+        "Description": "Synchronizes finished BTCUSDT and TONUSDT 15-minute candles, compares each close with its own SMA(20), trades BTC long or short with one-step reversals, and applies a fixed 2% stop loss."
+      },
+      "Type": "Independent"
+    }
+  }
+}

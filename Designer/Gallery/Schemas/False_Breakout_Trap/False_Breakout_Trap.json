@@ -1,0 +1,2142 @@
+﻿{
+  "Id": "a8b894ae-e4e1-df54-ae8a-5bde97a414ee",
+  "Content": {
+    "Type": "Schema",
+    "Value": {
+      "Version": "1.0",
+      "Scheme": {
+        "SchemaVersion": 1,
+        "Category": "",
+        "DocUrl": "",
+        "Composition": {
+          "Id": "a8b894ae-e4e1-df54-ae8a-5bde97a414ee",
+          "CanAutoName": false,
+          "Parameters": {
+            "Name": {
+              "Value": "False_Breakout_Trap"
+            },
+            "LogLevel": {
+              "Value": "Inherit"
+            },
+            "ShowParameters": {
+              "Value": true
+            },
+            "ShowSockets": {
+              "Value": false
+            },
+            "ProcessNullValues": {
+              "Value": false
+            },
+            "cefbd12c-ba85-b252-299f-afe3e5cef6e1Series": {
+              "Value": {
+                "type": "StockSharp.Messages.DataType, StockSharp.Messages",
+                "settings": {
+                  "MessageType": "StockSharp.Messages.TimeFrameCandleMessage, StockSharp.Messages",
+                  "Arg": {
+                    "type": "System.TimeSpan, System.Private.CoreLib",
+                    "value": "00-01-00"
+                  }
+                }
+              }
+            },
+            "0019d89c-484c-bab5-2176-9e485e23949aLength": {
+              "Value": 20
+            },
+            "0019d89c-484c-bab5-2176-9e485e23949aSource": {},
+            "14d2e463-790d-450a-d7c9-edd721efd8e9Length": {
+              "Value": 20
+            },
+            "14d2e463-790d-450a-d7c9-edd721efd8e9Source": {},
+            "3e82c074-cd31-73f7-a2c6-ec5bb861bc4dLength": {
+              "Value": 20
+            },
+            "3e82c074-cd31-73f7-a2c6-ec5bb861bc4dSource": {},
+            "9b5f6ad9-aa90-d3cd-a9cd-40f9bb5ad344N": {
+              "Value": 500
+            },
+            "9d828cd1-becc-4792-5f4b-77c959ccc387Value": {
+              "Value": {
+                "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                "settings": {
+                  "Type": "Absolute",
+                  "Value": 1.0
+                }
+              }
+            }
+          },
+          "TypeId": "0d7852bd-8fb6-44fe-84f0-f1db185c189d"
+        },
+        "Model": {
+          "Nodes": [
+            {
+              "Key": "candles",
+              "Figure": "",
+              "X": 0.0,
+              "Y": 600.0,
+              "TypeId": "3d773273-0cee-4d40-8eef-acded2d07ab8",
+              "Settings": {
+                "Id": "cefbd12c-ba85-b252-299f-afe3e5cef6e1",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "TF: 00:01:00 (finished)"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "IsManuallySubscription": {
+                    "Value": false
+                  },
+                  "Series": {
+                    "Value": {
+                      "type": "StockSharp.Messages.DataType, StockSharp.Messages",
+                      "settings": {
+                        "MessageType": "StockSharp.Messages.TimeFrameCandleMessage, StockSharp.Messages",
+                        "Arg": {
+                          "type": "System.TimeSpan, System.Private.CoreLib",
+                          "value": "00-01-00"
+                        }
+                      }
+                    }
+                  },
+                  "IsFinishedOnly": {
+                    "Value": true
+                  },
+                  "IsCalcVolumeProfile": {
+                    "Value": false
+                  },
+                  "AllowBuildFromSmallerTimeFrame": {
+                    "Value": true
+                  },
+                  "IsRegularTradingHours": {},
+                  "BuildCandlesMode": {
+                    "Value": "LoadAndBuild"
+                  },
+                  "BuildCandlesFrom": {},
+                  "BuildCandlesField": {}
+                }
+              }
+            },
+            {
+              "Key": "high",
+              "Figure": "",
+              "X": 220.0,
+              "Y": 360.0,
+              "TypeId": "35c046c4-1b0f-4074-ac08-0c70850a8dcf",
+              "Settings": {
+                "Id": "d5cd1f58-958a-8db5-dbbb-e4141531059c",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Candle high"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.ICandleMessage, StockSharp.Messages"
+                    }
+                  },
+                  "Property": {
+                    "Value": "HighPrice"
+                  }
+                }
+              }
+            },
+            {
+              "Key": "low",
+              "Figure": "",
+              "X": 220.0,
+              "Y": 540.0,
+              "TypeId": "35c046c4-1b0f-4074-ac08-0c70850a8dcf",
+              "Settings": {
+                "Id": "90b2fa1a-dfac-923d-2e10-d59fb70afd6a",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Candle low"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.ICandleMessage, StockSharp.Messages"
+                    }
+                  },
+                  "Property": {
+                    "Value": "LowPrice"
+                  }
+                }
+              }
+            },
+            {
+              "Key": "close",
+              "Figure": "",
+              "X": 220.0,
+              "Y": 720.0,
+              "TypeId": "35c046c4-1b0f-4074-ac08-0c70850a8dcf",
+              "Settings": {
+                "Id": "8424bfd9-9f51-8a9e-4b28-fb4b1b22ae1a",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Candle close"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.ICandleMessage, StockSharp.Messages"
+                    }
+                  },
+                  "Property": {
+                    "Value": "ClosePrice"
+                  }
+                }
+              }
+            },
+            {
+              "Key": "highest",
+              "Figure": "",
+              "X": 460.0,
+              "Y": 360.0,
+              "TypeId": "f56c74af-7c39-464a-8b90-4eff4c8760b1",
+              "Settings": {
+                "Id": "0019d89c-484c-bab5-2176-9e485e23949a",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Highest high over 20 bars"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Id": "StockSharp.Algo.Indicators.Highest, StockSharp.Algo.Indicators"
+                    }
+                  },
+                  "IsFinal": {
+                    "Value": false
+                  },
+                  "IsFormed": {
+                    "Value": true
+                  },
+                  "IsEmpty": {
+                    "Value": false
+                  },
+                  "Length": {
+                    "Value": 20
+                  },
+                  "Source": {}
+                }
+              }
+            },
+            {
+              "Key": "lowest",
+              "Figure": "",
+              "X": 460.0,
+              "Y": 540.0,
+              "TypeId": "f56c74af-7c39-464a-8b90-4eff4c8760b1",
+              "Settings": {
+                "Id": "14d2e463-790d-450a-d7c9-edd721efd8e9",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Lowest low over 20 bars"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Id": "StockSharp.Algo.Indicators.Lowest, StockSharp.Algo.Indicators"
+                    }
+                  },
+                  "IsFinal": {
+                    "Value": false
+                  },
+                  "IsFormed": {
+                    "Value": true
+                  },
+                  "IsEmpty": {
+                    "Value": false
+                  },
+                  "Length": {
+                    "Value": 20
+                  },
+                  "Source": {}
+                }
+              }
+            },
+            {
+              "Key": "sma",
+              "Figure": "",
+              "X": 460.0,
+              "Y": 720.0,
+              "TypeId": "f56c74af-7c39-464a-8b90-4eff4c8760b1",
+              "Settings": {
+                "Id": "3e82c074-cd31-73f7-a2c6-ec5bb861bc4d",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "SMA 20 exit line"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Id": "StockSharp.Algo.Indicators.SimpleMovingAverage, StockSharp.Algo.Indicators"
+                    }
+                  },
+                  "IsFinal": {
+                    "Value": false
+                  },
+                  "IsFormed": {
+                    "Value": true
+                  },
+                  "IsEmpty": {
+                    "Value": false
+                  },
+                  "Length": {
+                    "Value": 20
+                  },
+                  "Source": {}
+                }
+              }
+            },
+            {
+              "Key": "previousHigh",
+              "Figure": "",
+              "X": 700.0,
+              "Y": 360.0,
+              "TypeId": "835c9ae0-906a-48d6-9e20-a332b6350fd0",
+              "Settings": {
+                "Id": "a13257c5-3425-df3e-d43e-4dcecfa539c8",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Previous 20-bar high"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Algo.Indicators.IIndicatorValue, StockSharp.BusinessEntities"
+                    }
+                  },
+                  "Shift": {
+                    "Value": 1
+                  },
+                  "IsFinishedOnly": {
+                    "Value": true
+                  }
+                }
+              }
+            },
+            {
+              "Key": "previousLow",
+              "Figure": "",
+              "X": 700.0,
+              "Y": 540.0,
+              "TypeId": "835c9ae0-906a-48d6-9e20-a332b6350fd0",
+              "Settings": {
+                "Id": "0fed85c0-748c-ceba-2364-b4095b837d6d",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Previous 20-bar low"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Algo.Indicators.IIndicatorValue, StockSharp.BusinessEntities"
+                    }
+                  },
+                  "Shift": {
+                    "Value": 1
+                  },
+                  "IsFinishedOnly": {
+                    "Value": true
+                  }
+                }
+              }
+            },
+            {
+              "Key": "highPierced",
+              "Figure": "",
+              "X": 940.0,
+              "Y": 300.0,
+              "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
+              "Settings": {
+                "Id": "0199f529-b378-cf4b-c441-970e067036b2",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "High > previous range high"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "LeftValue": {
+                    "Value": {
+                      "Id": "Input"
+                    }
+                  },
+                  "Operator": {
+                    "Value": "Greater"
+                  },
+                  "RightValue": {
+                    "Value": {
+                      "Id": "SecondInput"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "Key": "closeBelowHigh",
+              "Figure": "",
+              "X": 940.0,
+              "Y": 440.0,
+              "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
+              "Settings": {
+                "Id": "4cbe191f-4b5c-07ae-1eca-6ae6c411c9e6",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Close < previous range high"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "LeftValue": {
+                    "Value": {
+                      "Id": "Input"
+                    }
+                  },
+                  "Operator": {
+                    "Value": "Less"
+                  },
+                  "RightValue": {
+                    "Value": {
+                      "Id": "SecondInput"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "Key": "lowPierced",
+              "Figure": "",
+              "X": 940.0,
+              "Y": 580.0,
+              "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
+              "Settings": {
+                "Id": "a1591f20-3f32-2d16-faf5-d8a4476d80c9",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Low < previous range low"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "LeftValue": {
+                    "Value": {
+                      "Id": "Input"
+                    }
+                  },
+                  "Operator": {
+                    "Value": "Less"
+                  },
+                  "RightValue": {
+                    "Value": {
+                      "Id": "SecondInput"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "Key": "closeAboveLow",
+              "Figure": "",
+              "X": 940.0,
+              "Y": 720.0,
+              "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
+              "Settings": {
+                "Id": "b712011a-1a6f-5f38-bb50-c2b83f00d929",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Close > previous range low"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "LeftValue": {
+                    "Value": {
+                      "Id": "Input"
+                    }
+                  },
+                  "Operator": {
+                    "Value": "Greater"
+                  },
+                  "RightValue": {
+                    "Value": {
+                      "Id": "SecondInput"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "Key": "position",
+              "Figure": "",
+              "X": 0.0,
+              "Y": 0.0,
+              "TypeId": "83bcd64c-0f75-4572-be49-3d771a456f76",
+              "Settings": {
+                "Id": "c33e823b-5c5a-0eee-a202-7c339a981ea4",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Current position"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "IsMoney": {
+                    "Value": false
+                  },
+                  "ShowPosition": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "positionAtCandle",
+              "Figure": "",
+              "X": 220.0,
+              "Y": 0.0,
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "020e5fb4-9dc5-937e-7496-a03e4427879f",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Position at candle"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.Unit, StockSharp.Messages"
+                    }
+                  },
+                  "Value": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Absolute",
+                        "Value": 0.0
+                      }
+                    }
+                  },
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "zero",
+              "Figure": "",
+              "X": 220.0,
+              "Y": 150.0,
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "56679cd9-2d7b-1e2f-fa5a-dad7f96c7a94",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Zero"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.Unit, StockSharp.Messages"
+                    }
+                  },
+                  "Value": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Absolute",
+                        "Value": 0.0
+                      }
+                    }
+                  },
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "isLong",
+              "Figure": "",
+              "X": 460.0,
+              "Y": 0.0,
+              "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
+              "Settings": {
+                "Id": "35a8cdaf-70ad-9114-d6db-905c6cf23ec2",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Position > 0"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "LeftValue": {
+                    "Value": {
+                      "Id": "Input"
+                    }
+                  },
+                  "Operator": {
+                    "Value": "Greater"
+                  },
+                  "RightValue": {
+                    "Value": {
+                      "Id": "SecondInput"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "Key": "isShort",
+              "Figure": "",
+              "X": 460.0,
+              "Y": 150.0,
+              "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
+              "Settings": {
+                "Id": "01ec40c4-1493-483a-9019-6845a51cf786",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Position < 0"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "LeftValue": {
+                    "Value": {
+                      "Id": "Input"
+                    }
+                  },
+                  "Operator": {
+                    "Value": "Less"
+                  },
+                  "RightValue": {
+                    "Value": {
+                      "Id": "SecondInput"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "Key": "closeBelowSma",
+              "Figure": "",
+              "X": 940.0,
+              "Y": 960.0,
+              "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
+              "Settings": {
+                "Id": "7fe73e21-75b7-13a7-ce49-878811439c8a",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Close < SMA 20"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "LeftValue": {
+                    "Value": {
+                      "Id": "Input"
+                    }
+                  },
+                  "Operator": {
+                    "Value": "Less"
+                  },
+                  "RightValue": {
+                    "Value": {
+                      "Id": "SecondInput"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "Key": "closeAboveSma",
+              "Figure": "",
+              "X": 940.0,
+              "Y": 1120.0,
+              "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
+              "Settings": {
+                "Id": "08bd84a5-69c3-123f-9de4-511902725b0b",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Close > SMA 20"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "LeftValue": {
+                    "Value": {
+                      "Id": "Input"
+                    }
+                  },
+                  "Operator": {
+                    "Value": "Greater"
+                  },
+                  "RightValue": {
+                    "Value": {
+                      "Id": "SecondInput"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "Key": "evaluationOne",
+              "Figure": "",
+              "X": 220.0,
+              "Y": 960.0,
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "db5491d9-5d23-2967-3da6-b18103189da2",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Evaluation value = 1"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.Unit, StockSharp.Messages"
+                    }
+                  },
+                  "Value": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Absolute",
+                        "Value": 1.0
+                      }
+                    }
+                  },
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "evaluationOn",
+              "Figure": "",
+              "X": 460.0,
+              "Y": 960.0,
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "cfb4acae-7638-e114-34d5-3f49bfa9d197",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Final evaluation = 1"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.Unit, StockSharp.Messages"
+                    }
+                  },
+                  "Value": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Absolute",
+                        "Value": 1.0
+                      }
+                    }
+                  },
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "evaluationTick",
+              "Figure": "",
+              "X": 460.0,
+              "Y": 1110.0,
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "feb36360-8440-6742-70b4-9ef1c7325b02",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Final candle evaluation tick"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.ICandleMessage, StockSharp.Messages"
+                    }
+                  },
+                  "Value": {},
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "evaluationReady",
+              "Figure": "",
+              "X": 700.0,
+              "Y": 1030.0,
+              "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
+              "Settings": {
+                "Id": "e97c230a-92ae-c52a-3a5f-b77801fa0763",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Evaluate after candle inputs"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "LeftValue": {
+                    "Value": {
+                      "Id": "Input"
+                    }
+                  },
+                  "Operator": {
+                    "Value": "Equal"
+                  },
+                  "RightValue": {
+                    "Value": {
+                      "Id": "SecondInput"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "Key": "falseBreakUp",
+              "Figure": "",
+              "X": 1180.0,
+              "Y": 360.0,
+              "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
+              "Settings": {
+                "Id": "3b0a402a-abfd-133e-b4e2-55df8de09d81",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Failed upside breakout"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Operator": {
+                    "Value": "And"
+                  }
+                },
+                "InputSocketIds": [
+                  "dynsock_pierce",
+                  "dynsock_return",
+                  "dynsock_evaluate",
+                  "931fda032f914c5f9d96277d44d9d0de"
+                ]
+              }
+            },
+            {
+              "Key": "falseBreakDown",
+              "Figure": "",
+              "X": 1180.0,
+              "Y": 640.0,
+              "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
+              "Settings": {
+                "Id": "992d790a-3755-2b18-2cf0-6abf5266c714",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Failed downside breakout"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Operator": {
+                    "Value": "And"
+                  }
+                },
+                "InputSocketIds": [
+                  "dynsock_pierce",
+                  "dynsock_return",
+                  "dynsock_evaluate",
+                  "2322eecaf6ae4fc0b7ee81db3c05871b"
+                ]
+              }
+            },
+            {
+              "Key": "cooldownSell",
+              "Figure": "",
+              "X": 1420.0,
+              "Y": 360.0,
+              "TypeId": "d9273c2c-6789-4ba8-a5c5-2b1eb4c4f006",
+              "Settings": {
+                "Id": "7a83f2a0-0499-574e-1f11-41671b85731d",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Sell-side cooldown gate"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "cooldownBuy",
+              "Figure": "",
+              "X": 1420.0,
+              "Y": 640.0,
+              "TypeId": "d9273c2c-6789-4ba8-a5c5-2b1eb4c4f006",
+              "Settings": {
+                "Id": "263c2fe5-656b-d3e9-ea79-f268183b0f34",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Buy-side cooldown gate"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "cooldownDelay",
+              "Figure": "",
+              "X": 1420.0,
+              "Y": 1050.0,
+              "TypeId": "823a7255-f6e1-47b6-8186-4b58ffde0a78",
+              "Settings": {
+                "Id": "9b5f6ad9-aa90-d3cd-a9cd-40f9bb5ad344",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Cooldown: wait 500 finished candles"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "N": {
+                    "Value": 500
+                  },
+                  "IsFinishedOnly": {
+                    "Value": true
+                  }
+                }
+              }
+            },
+            {
+              "Key": "volume",
+              "Figure": "",
+              "X": 1420.0,
+              "Y": 850.0,
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "9d828cd1-becc-4792-5f4b-77c959ccc387",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Entry volume = 1"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.Unit, StockSharp.Messages"
+                    }
+                  },
+                  "Value": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Absolute",
+                        "Value": 1.0
+                      }
+                    }
+                  },
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "sellEntry",
+              "Figure": "",
+              "X": 1660.0,
+              "Y": 360.0,
+              "TypeId": "953961cd-a9ba-4afe-ac38-e8b61f84b3be",
+              "Settings": {
+                "Id": "23648283-d8da-b7f7-d3fd-b99860cdbe4a",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Sell failed upside breakout"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "OnlineOnly": {
+                    "Value": true
+                  },
+                  "TimeInForce": {},
+                  "ClientCode": {},
+                  "BrokerCode": {},
+                  "MarginMode": {},
+                  "IsMarketMaker": {},
+                  "IsManual": {},
+                  "Comment": {
+                    "Value": ""
+                  },
+                  "PosCondition": {
+                    "Value": "OpenPosition"
+                  },
+                  "Direction": {
+                    "Value": "Sell"
+                  },
+                  "Algorithm": {
+                    "Value": "MarketOrder"
+                  },
+                  "VolumePart": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Percent",
+                        "Value": 1.0
+                      }
+                    }
+                  },
+                  "TimeInterval": {
+                    "Value": "00:01:00"
+                  }
+                }
+              }
+            },
+            {
+              "Key": "buyEntry",
+              "Figure": "",
+              "X": 1660.0,
+              "Y": 640.0,
+              "TypeId": "953961cd-a9ba-4afe-ac38-e8b61f84b3be",
+              "Settings": {
+                "Id": "814c0b95-d4b8-f8dd-3bb1-acdbaccc0f23",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Buy failed downside breakout"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "OnlineOnly": {
+                    "Value": true
+                  },
+                  "TimeInForce": {},
+                  "ClientCode": {},
+                  "BrokerCode": {},
+                  "MarginMode": {},
+                  "IsMarketMaker": {},
+                  "IsManual": {},
+                  "Comment": {
+                    "Value": ""
+                  },
+                  "PosCondition": {
+                    "Value": "OpenPosition"
+                  },
+                  "Direction": {
+                    "Value": "Buy"
+                  },
+                  "Algorithm": {
+                    "Value": "MarketOrder"
+                  },
+                  "VolumePart": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Percent",
+                        "Value": 1.0
+                      }
+                    }
+                  },
+                  "TimeInterval": {
+                    "Value": "00:01:00"
+                  }
+                }
+              }
+            },
+            {
+              "Key": "longExit",
+              "Figure": "",
+              "X": 1180.0,
+              "Y": 960.0,
+              "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
+              "Settings": {
+                "Id": "d6a21e10-4633-a015-7f6b-c869ab790037",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Exit long below SMA"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Operator": {
+                    "Value": "And"
+                  }
+                },
+                "InputSocketIds": [
+                  "dynsock_price",
+                  "dynsock_position",
+                  "dynsock_evaluate",
+                  "29eeacf42f254b49a8b5f6056e91d972"
+                ]
+              }
+            },
+            {
+              "Key": "shortExit",
+              "Figure": "",
+              "X": 1180.0,
+              "Y": 1120.0,
+              "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
+              "Settings": {
+                "Id": "8487cf57-3812-2fd8-4c84-828c5c155fe8",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Exit short above SMA"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Operator": {
+                    "Value": "And"
+                  }
+                },
+                "InputSocketIds": [
+                  "dynsock_price",
+                  "dynsock_position",
+                  "dynsock_evaluate",
+                  "5209e0a85be847b6a7725c256e8e98ee"
+                ]
+              }
+            },
+            {
+              "Key": "closeLong",
+              "Figure": "",
+              "X": 1660.0,
+              "Y": 960.0,
+              "TypeId": "953961cd-a9ba-4afe-ac38-e8b61f84b3be",
+              "Settings": {
+                "Id": "e73e269a-a494-ab27-8173-eeb44d6dff22",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Close long"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "OnlineOnly": {
+                    "Value": true
+                  },
+                  "TimeInForce": {},
+                  "ClientCode": {},
+                  "BrokerCode": {},
+                  "MarginMode": {},
+                  "IsMarketMaker": {},
+                  "IsManual": {},
+                  "Comment": {
+                    "Value": ""
+                  },
+                  "PosCondition": {
+                    "Value": "ReduceOnly"
+                  },
+                  "Direction": {
+                    "Value": "Sell"
+                  },
+                  "Algorithm": {
+                    "Value": "MarketOrder"
+                  },
+                  "VolumePart": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Percent",
+                        "Value": 1.0
+                      }
+                    }
+                  },
+                  "TimeInterval": {
+                    "Value": "00:01:00"
+                  }
+                }
+              }
+            },
+            {
+              "Key": "closeShort",
+              "Figure": "",
+              "X": 1660.0,
+              "Y": 1120.0,
+              "TypeId": "953961cd-a9ba-4afe-ac38-e8b61f84b3be",
+              "Settings": {
+                "Id": "afa9e1e8-ec51-50df-374e-07b8ac0768cc",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Close short"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "OnlineOnly": {
+                    "Value": true
+                  },
+                  "TimeInForce": {},
+                  "ClientCode": {},
+                  "BrokerCode": {},
+                  "MarginMode": {},
+                  "IsMarketMaker": {},
+                  "IsManual": {},
+                  "Comment": {
+                    "Value": ""
+                  },
+                  "PosCondition": {
+                    "Value": "ReduceOnly"
+                  },
+                  "Direction": {
+                    "Value": "Buy"
+                  },
+                  "Algorithm": {
+                    "Value": "MarketOrder"
+                  },
+                  "VolumePart": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Percent",
+                        "Value": 1.0
+                      }
+                    }
+                  },
+                  "TimeInterval": {
+                    "Value": "00:01:00"
+                  }
+                }
+              }
+            },
+            {
+              "Key": "allFills",
+              "Figure": "",
+              "X": 1900.0,
+              "Y": 700.0,
+              "TypeId": "03bbd944-d369-4860-8d35-a642cb06fe5e",
+              "Settings": {
+                "Id": "500a4a96-2f19-5c7b-f322-384bb02cdef9",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "All entry and exit fills"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.BusinessEntities.MyTrade, StockSharp.BusinessEntities"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "Key": "dcc2a230-5893-439e-a117-a08ac1dbd06a",
+              "X": 2140.0,
+              "Y": 640.0,
+              "TypeId": "1926c40e-aaa3-4948-98e6-fba4b38b580e",
+              "Settings": {
+                "Id": "0a536227-9d47-4339-b79a-11b8f38f0e06",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Candles, range levels, SMA and all fills"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": false
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "ShowNonFormedIndicators": {
+                    "Value": false
+                  },
+                  "ChartGroupId": {
+                    "Value": ""
+                  },
+                  "AreaName": {
+                    "Value": "Chart panel"
+                  }
+                },
+                "CandleElements": [
+                  {}
+                ],
+                "IndicatorElements": [
+                  {},
+                  {},
+                  {}
+                ],
+                "OrderElements": [],
+                "TradeElements": [
+                  {}
+                ],
+                "XAxes": [
+                  {
+                    "Id": "X",
+                    "Title": "X",
+                    "IsVisible": false,
+                    "AutoRange": false,
+                    "DrawMinorTicks": false,
+                    "DrawMajorTicks": false,
+                    "DrawMajorGridLines": false,
+                    "DrawMinorGridLines": false,
+                    "DrawLabels": false,
+                    "TextFormatting": "G",
+                    "SubDayTextFormatting": "T",
+                    "SwitchAxisLocation": false,
+                    "AxisType": "CategoryDateTime"
+                  }
+                ],
+                "YAxes": [
+                  {
+                    "Id": "Y",
+                    "Title": "Y",
+                    "IsVisible": false,
+                    "AutoRange": false,
+                    "DrawMinorTicks": false,
+                    "DrawMajorTicks": false,
+                    "DrawMajorGridLines": false,
+                    "DrawMinorGridLines": false,
+                    "DrawLabels": false,
+                    "SwitchAxisLocation": false,
+                    "AxisType": "Numeric"
+                  }
+                ]
+              }
+            }
+          ],
+          "Links": [
+            {
+              "From": "position",
+              "FromPort": "Output",
+              "To": "positionAtCandle",
+              "ToPort": "Input"
+            },
+            {
+              "From": "candles",
+              "FromPort": "Output",
+              "To": "positionAtCandle",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "candles",
+              "FromPort": "Output",
+              "To": "zero",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "candles",
+              "FromPort": "Output",
+              "To": "evaluationOne",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "candles",
+              "FromPort": "Output",
+              "To": "volume",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "candles",
+              "FromPort": "Output",
+              "To": "evaluationTick",
+              "ToPort": "Input"
+            },
+            {
+              "From": "candles",
+              "FromPort": "Output",
+              "To": "high",
+              "ToPort": "Input"
+            },
+            {
+              "From": "candles",
+              "FromPort": "Output",
+              "To": "low",
+              "ToPort": "Input"
+            },
+            {
+              "From": "candles",
+              "FromPort": "Output",
+              "To": "close",
+              "ToPort": "Input"
+            },
+            {
+              "From": "high",
+              "FromPort": "Output",
+              "To": "highest",
+              "ToPort": "Input"
+            },
+            {
+              "From": "low",
+              "FromPort": "Output",
+              "To": "lowest",
+              "ToPort": "Input"
+            },
+            {
+              "From": "close",
+              "FromPort": "Output",
+              "To": "sma",
+              "ToPort": "Input"
+            },
+            {
+              "From": "highest",
+              "FromPort": "Output",
+              "To": "previousHigh",
+              "ToPort": "Input"
+            },
+            {
+              "From": "lowest",
+              "FromPort": "Output",
+              "To": "previousLow",
+              "ToPort": "Input"
+            },
+            {
+              "From": "high",
+              "FromPort": "Output",
+              "To": "highPierced",
+              "ToPort": "Input"
+            },
+            {
+              "From": "previousHigh",
+              "FromPort": "Output",
+              "To": "highPierced",
+              "ToPort": "SecondInput"
+            },
+            {
+              "From": "close",
+              "FromPort": "Output",
+              "To": "closeBelowHigh",
+              "ToPort": "Input"
+            },
+            {
+              "From": "previousHigh",
+              "FromPort": "Output",
+              "To": "closeBelowHigh",
+              "ToPort": "SecondInput"
+            },
+            {
+              "From": "low",
+              "FromPort": "Output",
+              "To": "lowPierced",
+              "ToPort": "Input"
+            },
+            {
+              "From": "previousLow",
+              "FromPort": "Output",
+              "To": "lowPierced",
+              "ToPort": "SecondInput"
+            },
+            {
+              "From": "close",
+              "FromPort": "Output",
+              "To": "closeAboveLow",
+              "ToPort": "Input"
+            },
+            {
+              "From": "previousLow",
+              "FromPort": "Output",
+              "To": "closeAboveLow",
+              "ToPort": "SecondInput"
+            },
+            {
+              "From": "positionAtCandle",
+              "FromPort": "Output",
+              "To": "isLong",
+              "ToPort": "Input"
+            },
+            {
+              "From": "positionAtCandle",
+              "FromPort": "Output",
+              "To": "isShort",
+              "ToPort": "Input"
+            },
+            {
+              "From": "zero",
+              "FromPort": "Output",
+              "To": "isLong",
+              "ToPort": "SecondInput"
+            },
+            {
+              "From": "zero",
+              "FromPort": "Output",
+              "To": "isShort",
+              "ToPort": "SecondInput"
+            },
+            {
+              "From": "close",
+              "FromPort": "Output",
+              "To": "closeBelowSma",
+              "ToPort": "Input"
+            },
+            {
+              "From": "sma",
+              "FromPort": "Output",
+              "To": "closeBelowSma",
+              "ToPort": "SecondInput"
+            },
+            {
+              "From": "close",
+              "FromPort": "Output",
+              "To": "closeAboveSma",
+              "ToPort": "Input"
+            },
+            {
+              "From": "sma",
+              "FromPort": "Output",
+              "To": "closeAboveSma",
+              "ToPort": "SecondInput"
+            },
+            {
+              "From": "evaluationOne",
+              "FromPort": "Output",
+              "To": "evaluationReady",
+              "ToPort": "SecondInput"
+            },
+            {
+              "From": "evaluationTick",
+              "FromPort": "Output",
+              "To": "evaluationOn",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "evaluationOn",
+              "FromPort": "Output",
+              "To": "evaluationReady",
+              "ToPort": "Input"
+            },
+            {
+              "From": "highPierced",
+              "FromPort": "Signal",
+              "To": "falseBreakUp",
+              "ToPort": "dynsock_pierce"
+            },
+            {
+              "From": "closeBelowHigh",
+              "FromPort": "Signal",
+              "To": "falseBreakUp",
+              "ToPort": "dynsock_return"
+            },
+            {
+              "From": "evaluationReady",
+              "FromPort": "Signal",
+              "To": "falseBreakUp",
+              "ToPort": "dynsock_evaluate"
+            },
+            {
+              "From": "lowPierced",
+              "FromPort": "Signal",
+              "To": "falseBreakDown",
+              "ToPort": "dynsock_pierce"
+            },
+            {
+              "From": "closeAboveLow",
+              "FromPort": "Signal",
+              "To": "falseBreakDown",
+              "ToPort": "dynsock_return"
+            },
+            {
+              "From": "evaluationReady",
+              "FromPort": "Signal",
+              "To": "falseBreakDown",
+              "ToPort": "dynsock_evaluate"
+            },
+            {
+              "From": "falseBreakUp",
+              "FromPort": "Signal",
+              "To": "cooldownSell",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "falseBreakUp",
+              "FromPort": "Signal",
+              "To": "cooldownDelay",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "falseBreakDown",
+              "FromPort": "Signal",
+              "To": "cooldownBuy",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "falseBreakDown",
+              "FromPort": "Signal",
+              "To": "cooldownDelay",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "candles",
+              "FromPort": "Output",
+              "To": "cooldownDelay",
+              "ToPort": "Input"
+            },
+            {
+              "From": "cooldownDelay",
+              "FromPort": "Output",
+              "To": "cooldownSell",
+              "ToPort": "Flag"
+            },
+            {
+              "From": "cooldownDelay",
+              "FromPort": "Output",
+              "To": "cooldownBuy",
+              "ToPort": "Flag"
+            },
+            {
+              "From": "cooldownSell",
+              "FromPort": "Output",
+              "To": "sellEntry",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "cooldownBuy",
+              "FromPort": "Output",
+              "To": "buyEntry",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "volume",
+              "FromPort": "Output",
+              "To": "sellEntry",
+              "ToPort": "Volume"
+            },
+            {
+              "From": "volume",
+              "FromPort": "Output",
+              "To": "buyEntry",
+              "ToPort": "Volume"
+            },
+            {
+              "From": "closeBelowSma",
+              "FromPort": "Signal",
+              "To": "longExit",
+              "ToPort": "dynsock_price"
+            },
+            {
+              "From": "isLong",
+              "FromPort": "Signal",
+              "To": "longExit",
+              "ToPort": "dynsock_position"
+            },
+            {
+              "From": "evaluationReady",
+              "FromPort": "Signal",
+              "To": "longExit",
+              "ToPort": "dynsock_evaluate"
+            },
+            {
+              "From": "closeAboveSma",
+              "FromPort": "Signal",
+              "To": "shortExit",
+              "ToPort": "dynsock_price"
+            },
+            {
+              "From": "isShort",
+              "FromPort": "Signal",
+              "To": "shortExit",
+              "ToPort": "dynsock_position"
+            },
+            {
+              "From": "evaluationReady",
+              "FromPort": "Signal",
+              "To": "shortExit",
+              "ToPort": "dynsock_evaluate"
+            },
+            {
+              "From": "longExit",
+              "FromPort": "Signal",
+              "To": "closeLong",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "shortExit",
+              "FromPort": "Signal",
+              "To": "closeShort",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "volume",
+              "FromPort": "Output",
+              "To": "closeLong",
+              "ToPort": "Volume"
+            },
+            {
+              "From": "volume",
+              "FromPort": "Output",
+              "To": "closeShort",
+              "ToPort": "Volume"
+            },
+            {
+              "From": "sellEntry",
+              "FromPort": "MyTrade",
+              "To": "allFills",
+              "ToPort": "Input"
+            },
+            {
+              "From": "buyEntry",
+              "FromPort": "MyTrade",
+              "To": "allFills",
+              "ToPort": "Input"
+            },
+            {
+              "From": "closeLong",
+              "FromPort": "MyTrade",
+              "To": "allFills",
+              "ToPort": "Input"
+            },
+            {
+              "From": "closeShort",
+              "FromPort": "MyTrade",
+              "To": "allFills",
+              "ToPort": "Input"
+            },
+            {
+              "From": "candles",
+              "FromPort": "Output",
+              "To": "evaluationTick",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "candles",
+              "FromPort": "Output",
+              "To": "dcc2a230-5893-439e-a117-a08ac1dbd06a",
+              "ToPort": "dynsock_51beee1bfd064cb3a8b5c166439c6561"
+            },
+            {
+              "From": "previousHigh",
+              "FromPort": "Output",
+              "To": "dcc2a230-5893-439e-a117-a08ac1dbd06a",
+              "ToPort": "dynsock_ed2dbb8449334991ba4aff7b577206e1"
+            },
+            {
+              "From": "previousLow",
+              "FromPort": "Output",
+              "To": "dcc2a230-5893-439e-a117-a08ac1dbd06a",
+              "ToPort": "dynsock_9cc5bfd7de0445b8aa67916085ab2f4c"
+            },
+            {
+              "From": "sma",
+              "FromPort": "Output",
+              "To": "dcc2a230-5893-439e-a117-a08ac1dbd06a",
+              "ToPort": "dynsock_4ccb790c738f4b3c866d699329ccbc29"
+            },
+            {
+              "From": "allFills",
+              "FromPort": "Output",
+              "To": "dcc2a230-5893-439e-a117-a08ac1dbd06a",
+              "ToPort": "dynsock_2707f043cd2e4e2cbc691891696248a8"
+            }
+          ]
+        },
+        "Description": "Trades failed breaks of the previous twenty-bar high or low on finished one-minute candles, applies a shared 500-candle delay to two side-specific entry flags, and exits an open position at SMA(20)."
+      },
+      "Type": "Independent"
+    }
+  }
+}
