@@ -102,8 +102,24 @@ public static class AsmInit
 		var requestedStopTime = replayDuration is { } duration ? startTime.Add(duration) : availableStopTime;
 		var stopTime = requestedStopTime < availableStopTime ? requestedStopTime : availableStopTime;
 
-		var security1 = new Security { Id = Paths.HistoryDefaultSecurity };
-		var security2 = new Security { Id = Paths.HistoryDefaultSecurity2 };
+		// A real instrument states how small an order may be and how large, and strategies are written
+		// against that: one that doubles its size after a loss asks the instrument where to stop. Left
+		// unfilled, the question has no answer, the size doubles for a month, and the run dies somewhere
+		// far away -- in the drawdown statistic, on a position of 7.5e22.
+		var security1 = new Security
+		{
+			Id = Paths.HistoryDefaultSecurity,
+			VolumeStep = 0.001m,
+			MinVolume = 0.001m,
+			MaxVolume = 1000m,
+		};
+		var security2 = new Security
+		{
+			Id = Paths.HistoryDefaultSecurity2,
+			VolumeStep = 0.1m,
+			MinVolume = 0.1m,
+			MaxVolume = 1000000m,
+		};
 		var portfolio = Portfolio.CreateSimulator();
 		portfolio.CurrentValue = 1000000m;
 
