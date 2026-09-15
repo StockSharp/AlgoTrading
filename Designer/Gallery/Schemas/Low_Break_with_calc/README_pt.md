@@ -5,7 +5,7 @@
 
 A estratégia "Rompimento de Mínimas com Cálculo" utiliza uma combinação de indicadores de preço máximo e mínimo para identificar possíveis pontos de rompimento no mercado. Esta estratégia tem como objetivo executar operações quando o preço rompe abaixo de uma mínima calculada durante um período específico, sugerindo uma possível tendência de baixa.
 
-[![schema](schema.svg)](schema_easter_egg.png)
+![schema](schema.svg)
 
 ## Detalhes da Estratégia
 

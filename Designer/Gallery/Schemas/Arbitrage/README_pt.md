@@ -34,7 +34,6 @@ Para ativar e usar esta estratégia, o StockSharp Designer deve estar instalado.
 
 É importante testar a estratégia em dados históricos para avaliar sua eficácia e riscos potenciais antes de aplicá-la no mercado real. Isso ajudará a determinar os parâmetros ótimos para o limiar de discrepâncias de preço e gestão de capital.
 
-![profit](profit.png)
 
 ## Recursos adicionais
 

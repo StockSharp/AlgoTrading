@@ -34,7 +34,6 @@ Zur Aktivierung und Nutzung dieser Strategie muss StockSharp Designer installier
 
 Es ist wichtig, die Strategie auf historischen Daten zu testen, um ihre Effektivität und potenzielle Risiken zu bewerten, bevor sie auf dem realen Markt angewendet wird. Dies hilft dabei, optimale Parameter für den Schwellenwert der Preisabweichungen und das Kapitalmanagement zu bestimmen.
 
-![profit](profit.png)
 
 ## Weitere Ressourcen
 

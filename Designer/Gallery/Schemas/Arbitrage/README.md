@@ -34,7 +34,6 @@ To activate and use this strategy, StockSharp Designer must be installed. The st
 
 It is important to test the strategy on historical data to assess its effectiveness and potential risks before applying it on the real market. This will help determine optimal parameters for the threshold of price discrepancies and capital management.
 
-![profit](profit.png)
 
 ## Additional Resources
 
