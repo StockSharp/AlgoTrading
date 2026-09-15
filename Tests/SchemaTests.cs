@@ -51,31 +51,50 @@ public class SchemaTests : BaseTestClass
 	[TestMethod]
 	public void Complete()
 	{
-		var missing = new List<string>();
+		var problems = new List<string>();
 
 		foreach (var folder in SchemaGallery.EnumerateFolders())
 		{
 			var name = Path.GetFileName(folder);
-
-			if (SchemaGallery.FindSchemaFile(folder) is null)
-				missing.Add($"{name}: no schema file");
-
-			// A generated example carries the picture the diagram control draws for it; the older ones
-			// carry the screenshot they were shipped with. Either is a picture of the schema.
-			if (!File.Exists(Path.Combine(folder, "schema.svg")) && !File.Exists(Path.Combine(folder, "schema.png")))
-				missing.Add($"{name}: no schema.svg or schema.png");
-
-			if (!File.Exists(Path.Combine(folder, "README.md")))
-				missing.Add($"{name}: no README.md");
-
-			foreach (var language in SchemaGallery.Translations)
+			var expected = new[]
 			{
-				if (!File.Exists(Path.Combine(folder, $"README_{language}.md")))
-					missing.Add($"{name}: no README_{language}.md");
+				"schema.svg",
+				"README.md",
 			}
+				.Concat(SchemaGallery.Translations.Select(language => $"README_{language}.md"))
+				.ToHashSet(StringComparer.Ordinal);
+			var actual = Directory
+				.EnumerateFileSystemEntries(folder)
+				.Select(Path.GetFileName)
+				.ToHashSet(StringComparer.Ordinal);
+
+			// The schemas are counted rather than named: what a schema file is called says nothing about
+			// the example, and a folder is free to hold more than one.
+			if (!SchemaGallery.SchemaFiles(folder).Any())
+				problems.Add($"{name}: missing a schema");
+
+			foreach (var missing in expected.Except(actual))
+				problems.Add($"{name}: missing {missing}");
+
+			foreach (var extra in actual.Except(expected).Where(f => !f.EndsWith(".json", StringComparison.OrdinalIgnoreCase)))
+				problems.Add($"{name}: unexpected {extra}");
 		}
 
-		missing.Count.AssertEqual(0, $"Incomplete examples: {string.Join("; ", missing)}");
+		problems.Count.AssertEqual(0, $"Incomplete examples: {string.Join("; ", problems)}");
+	}
+
+	/// <summary>
+	/// Every example replayed over less than the whole history is an example that still exists. A name
+	/// left behind by a renamed or deleted example would quietly shorten nothing, and the next example to
+	/// take that name would inherit a bar nobody chose for it.
+	/// </summary>
+	[TestMethod]
+	public void ShortenedReplaysNameExamplesThatExist()
+	{
+		var published = SchemaGallery.EnumerateSchemas().Select(s => s.name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+		var gone = _shortTapeReplay.Keys.Where(name => !published.Contains(name)).ToArray();
+
+		gone.Length.AssertEqual(0, $"Replayed over a shortened window but not in the gallery: {string.Join(", ", gone)}");
 	}
 
 	/// <summary>A lesson opens into a composition too; it teaches from a schema that has to work.</summary>
@@ -204,6 +223,24 @@ public class SchemaTests : BaseTestClass
 	}
 
 	/// <summary>
+	/// Examples whose decision is a print on the tape, and how much history each is replayed over. Every
+	/// print of a month of two crypto futures cannot be delivered inside the harness minute -- measured,
+	/// such a run reaches hours of the month, not days -- so these are held to the same bar over a shorter
+	/// window rather than left out. Each is named with the reason, because reading the tape is not by
+	/// itself one: an example that only prices a stop off it keeps the whole month, and adding a name here
+	/// has to be a decision rather than a side effect of subscribing ticks.
+	/// </summary>
+	private static readonly Dictionary<string, string> _shortTapeReplay = new(System.StringComparer.OrdinalIgnoreCase)
+	{
+		["Tape_Reader"] = "Every print is measured against the average size of the last hundred.",
+		["Tick_Spike_Fade"] = "The entry is the first print far enough from the close twenty bars back.",
+		["Random_Entry_Trailing_Stop"] = "The entry is a coin toss on a candle, but the stop is repriced on every print.",
+	};
+
+	/// <summary>How much history an example named in <see cref="_shortTapeReplay"/> is replayed over.</summary>
+	private static readonly TimeSpan _tapeWindow = TimeSpan.FromDays(2);
+
+	/// <summary>
 	/// Replays a composition under the harness the API strategies use. The harness only asserts that a
 	/// schema traded; how much it traded says whether the example is worth showing, so the counts are
 	/// written out for every run.
@@ -221,15 +258,19 @@ public class SchemaTests : BaseTestClass
 		strategy.OrderReceived += (_, _) => Interlocked.Increment(ref orders);
 		strategy.OwnTradeReceived += (_, _) => Interlocked.Increment(ref trades);
 
+		var tape = _shortTapeReplay.ContainsKey(name);
+
 		try
 		{
-			await AsmInit.RunStrategy(strategy);
+			await AsmInit.RunStrategy(strategy, replayDuration: tape ? _tapeWindow : null);
 		}
 		finally
 		{
 			var profit = withPnL ? $", PnL {strategy.PnL:0.##}" : string.Empty;
+			// A count off a shortened run must not read as a count off the whole month.
+			var window = tape ? $", over the first {_tapeWindow.TotalDays:0} day(s) of the tape" : string.Empty;
 
-			Console.WriteLine($"{name}: {orders} order(s), {trades} trade(s){profit}");
+			Console.WriteLine($"{name}: {orders} order(s), {trades} trade(s){profit}{window}");
 		}
 	}
 }

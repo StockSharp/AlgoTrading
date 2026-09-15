@@ -14,6 +14,14 @@ public static class SchemaGallery
 	/// <summary>Folders under the gallery that hold tooling rather than an example.</summary>
 	private const string _toolsPrefix = "_";
 
+	/// <summary>
+	/// Examples to run, by folder name, comma separated. Replaying the whole gallery takes minutes, which
+	/// is too slow to work against while an example is being written, and the test adapter cannot select
+	/// one row of a data-driven test.
+	/// </summary>
+	private static readonly string[] _only = (Environment.GetEnvironmentVariable("SCHEMA_GALLERY_ONLY") ?? string.Empty)
+		.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
 	/// <summary>Languages every example is described in, beside the English original.</summary>
 	public static readonly string[] Translations = ["ru", "zh", "es", "de", "pt", "ja"];
 
@@ -25,25 +33,40 @@ public static class SchemaGallery
 
 	/// <summary>Every example folder of the gallery.</summary>
 	public static IEnumerable<string> EnumerateFolders()
-		=> Folders(Root);
+	{
+		var folders = Folders(Root);
+
+		return _only.Length == 0
+			? folders
+			: folders.Where(dir => _only.Contains(Path.GetFileName(dir), StringComparer.OrdinalIgnoreCase));
+	}
 
 	/// <summary>Every lesson folder.</summary>
 	public static IEnumerable<string> EnumerateLessonFolders()
 		=> Folders(EducationRoot);
 
-	/// <summary>The schema file of an example folder, or null when the folder holds none.</summary>
-	public static string FindSchemaFile(string folder)
-		=> Directory.EnumerateFiles(folder, "*.json", SearchOption.TopDirectoryOnly).OrderBy(f => f, StringComparer.OrdinalIgnoreCase).FirstOrDefault();
+	/// <summary>Every schema file of an example folder, whatever each one is called.</summary>
+	public static IEnumerable<string> SchemaFiles(string folder)
+		=> Directory.EnumerateFiles(folder, "*.json", SearchOption.TopDirectoryOnly).OrderBy(f => f, StringComparer.OrdinalIgnoreCase);
 
-	/// <summary>Every example, as the folder name and the schema file inside it.</summary>
+	/// <summary>
+	/// Every example, as a name and the schema file it is in. An example is named by its folder, not by
+	/// the file inside it: what a schema file is called is nobody's business but the folder's, and a
+	/// folder holding more than one names each by the file so the two can be told apart.
+	/// </summary>
 	public static IEnumerable<(string name, string fileName)> EnumerateSchemas()
 	{
 		foreach (var folder in EnumerateFolders())
 		{
-			var file = FindSchemaFile(folder);
+			var files = SchemaFiles(folder).ToArray();
+			var folderName = Path.GetFileName(folder);
 
-			if (file is not null)
-				yield return (Path.GetFileName(folder), file);
+			foreach (var file in files)
+			{
+				yield return files.Length == 1
+					? (folderName, file)
+					: ($"{folderName}/{Path.GetFileNameWithoutExtension(file)}", file);
+			}
 		}
 	}
 

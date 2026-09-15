@@ -675,7 +675,7 @@
                   "dynsock_trend",
                   "dynsock_pullback",
                   "dynsock_position",
-                  "33818ef57d084c5094df04fe4a899a88"
+                  "0d1815fda59e49adb09c6ef534b24c69"
                 ]
               }
             },
@@ -919,7 +919,8 @@
             }
           ]
         }
-      }
+      },
+      "Type": "Independent"
     }
   }
 }

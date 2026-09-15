@@ -4,11 +4,9 @@
     "Type": "Schema",
     "Value": {
       "Version": "1.0",
-      "Type": "Independent",
       "Scheme": {
         "SchemaVersion": 1,
         "Category": "",
-        "Description": "Uses the strategy clock to place at most one scheduled SMA-filtered market order per calendar date.",
         "DocUrl": "",
         "Composition": {
           "Id": "ba8bc94d-868d-ca83-fb79-78899d3f5a06",
@@ -90,7 +88,7 @@
               "Key": "nightHour",
               "Figure": "",
               "X": 220.0,
-              "Y": 520.0,
+              "Y": 0.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "74396351-f410-8649-cab0-8922a902b35f",
@@ -135,7 +133,7 @@
               "Key": "dayHour",
               "Figure": "",
               "X": 220.0,
-              "Y": 650.0,
+              "Y": 130.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "4f296ff3-801d-2f5c-a990-6d1781bd9860",
@@ -180,7 +178,7 @@
               "Key": "zero",
               "Figure": "",
               "X": 220.0,
-              "Y": 390.0,
+              "Y": 260.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "777e1277-b207-4f3c-fb0d-08fc9d7f441b",
@@ -225,7 +223,7 @@
               "Key": "volume",
               "Figure": "",
               "X": 220.0,
-              "Y": 1040.0,
+              "Y": 390.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "0e70181f-f4ea-573a-6731-b90a5a81b5cd",
@@ -328,7 +326,7 @@
               "Key": "close",
               "Figure": "",
               "X": 220.0,
-              "Y": 0.0,
+              "Y": 520.0,
               "TypeId": "35c046c4-1b0f-4074-ac08-0c70850a8dcf",
               "Settings": {
                 "Id": "7ccd7504-be9c-e94e-8e60-e064287ffa75",
@@ -364,7 +362,7 @@
               "Key": "sma",
               "Figure": "",
               "X": 220.0,
-              "Y": 130.0,
+              "Y": 650.0,
               "TypeId": "f56c74af-7c39-464a-8b90-4eff4c8760b1",
               "Settings": {
                 "Id": "7e16e3a3-b5a3-7b59-4683-41a7056c76f7",
@@ -410,7 +408,7 @@
               "Key": "smaValue",
               "Figure": "",
               "X": 440.0,
-              "Y": 130.0,
+              "Y": 0.0,
               "TypeId": "f0edcbdf-41cb-442b-896c-332dac3caae3",
               "Settings": {
                 "Id": "7eecf2db-ea6e-4b8d-58fb-eb83d9d4546d",
@@ -442,7 +440,7 @@
               "Key": "closeAtClock",
               "Figure": "",
               "X": 440.0,
-              "Y": 0.0,
+              "Y": 130.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "c459cd3a-6a56-a1b8-b9db-3e67dd64d72e",
@@ -479,7 +477,7 @@
               "Key": "smaAtClock",
               "Figure": "",
               "X": 660.0,
-              "Y": 130.0,
+              "Y": 0.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "159efce4-d462-caaf-4c0b-42a2e9b28b9c",
@@ -516,7 +514,7 @@
               "Key": "position",
               "Figure": "",
               "X": 0.0,
-              "Y": 390.0,
+              "Y": 130.0,
               "TypeId": "83bcd64c-0f75-4572-be49-3d771a456f76",
               "Settings": {
                 "Id": "05a0ee48-ffd1-4968-a93a-d09000f723bf",
@@ -552,8 +550,8 @@
             {
               "Key": "positionAtClock",
               "Figure": "",
-              "X": 440.0,
-              "Y": 390.0,
+              "X": 220.0,
+              "Y": 780.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "59a37213-8c2a-8151-64dd-901bed83d9ed",
@@ -597,8 +595,8 @@
             {
               "Key": "lastOrderDay",
               "Figure": "",
-              "X": 440.0,
-              "Y": 1040.0,
+              "X": 220.0,
+              "Y": 910.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "d006eaa0-ee46-609c-444d-e643d273a9f9",
@@ -643,7 +641,7 @@
               "Key": "clock",
               "Figure": "",
               "X": 0.0,
-              "Y": 650.0,
+              "Y": 260.0,
               "TypeId": "2da039cc-f6e0-47e3-b997-3a24ccfd62ee",
               "Settings": {
                 "Id": "61b9666c-bf24-a244-81fa-d080f384f92c",
@@ -670,8 +668,8 @@
             {
               "Key": "hour",
               "Figure": "",
-              "X": 440.0,
-              "Y": 520.0,
+              "X": 220.0,
+              "Y": 1040.0,
               "TypeId": "35c046c4-1b0f-4074-ac08-0c70850a8dcf",
               "Settings": {
                 "Id": "e1525303-dc93-1ace-c8ea-dd80aa187e8a",
@@ -707,7 +705,7 @@
               "Key": "year",
               "Figure": "",
               "X": 220.0,
-              "Y": 780.0,
+              "Y": 1170.0,
               "TypeId": "35c046c4-1b0f-4074-ac08-0c70850a8dcf",
               "Settings": {
                 "Id": "d71ea1c3-e353-fd46-c7fa-5f070db224aa",
@@ -743,7 +741,7 @@
               "Key": "dayOfYear",
               "Figure": "",
               "X": 220.0,
-              "Y": 910.0,
+              "Y": 1300.0,
               "TypeId": "35c046c4-1b0f-4074-ac08-0c70850a8dcf",
               "Settings": {
                 "Id": "6116563a-0fcb-e309-3f6e-178deab78f21",
@@ -779,7 +777,7 @@
               "Key": "dateKey",
               "Figure": "",
               "X": 440.0,
-              "Y": 910.0,
+              "Y": 260.0,
               "TypeId": "f0edcbdf-41cb-442b-896c-332dac3caae3",
               "Settings": {
                 "Id": "8fa738c4-69f5-01c6-8d9b-6069e49c43bf",
@@ -810,8 +808,8 @@
             {
               "Key": "dateAtOrder",
               "Figure": "",
-              "X": 1320.0,
-              "Y": 1040.0,
+              "X": 660.0,
+              "Y": 130.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "85a8fecc-0735-ecd8-8689-6d1363ef9184",
@@ -937,8 +935,8 @@
             {
               "Key": "isNightHour",
               "Figure": "",
-              "X": 660.0,
-              "Y": 650.0,
+              "X": 440.0,
+              "Y": 390.0,
               "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
               "Settings": {
                 "Id": "1b45e7b0-36d3-bc6e-79ae-a61d4c73e140",
@@ -978,8 +976,8 @@
             {
               "Key": "isDayHour",
               "Figure": "",
-              "X": 660.0,
-              "Y": 780.0,
+              "X": 440.0,
+              "Y": 520.0,
               "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
               "Settings": {
                 "Id": "d598ac73-d51c-b06e-3b31-88ab334a28b9",
@@ -1019,8 +1017,8 @@
             {
               "Key": "notLong",
               "Figure": "",
-              "X": 660.0,
-              "Y": 390.0,
+              "X": 440.0,
+              "Y": 650.0,
               "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
               "Settings": {
                 "Id": "cf3cca18-d10f-9f6c-b0c0-4f97e3db9bac",
@@ -1060,8 +1058,8 @@
             {
               "Key": "notShort",
               "Figure": "",
-              "X": 660.0,
-              "Y": 520.0,
+              "X": 440.0,
+              "Y": 780.0,
               "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
               "Settings": {
                 "Id": "09a695f8-b89e-a5ef-5eaa-3e5eb2b5000b",
@@ -1101,8 +1099,8 @@
             {
               "Key": "newUtcDay",
               "Figure": "",
-              "X": 880.0,
-              "Y": 910.0,
+              "X": 660.0,
+              "Y": 260.0,
               "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
               "Settings": {
                 "Id": "deffe6d7-5dc8-6897-0671-9af3d3d9f32a",
@@ -1143,7 +1141,7 @@
               "Key": "buySignal",
               "Figure": "",
               "X": 1100.0,
-              "Y": 260.0,
+              "Y": 0.0,
               "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
               "Settings": {
                 "Id": "2d5f7ee5-26ae-4d5a-6901-66bfefd75c3a",
@@ -1173,7 +1171,7 @@
                   "dynsock_price",
                   "dynsock_position",
                   "dynsock_date",
-                  "771a3751651644bb83f7cf7f031249d0"
+                  "f8cf76edc421461a8dfe59aaefcdb136"
                 ]
               }
             },
@@ -1181,7 +1179,7 @@
               "Key": "sellSignal",
               "Figure": "",
               "X": 1100.0,
-              "Y": 520.0,
+              "Y": 130.0,
               "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
               "Settings": {
                 "Id": "4f5d98ac-be03-cb96-54f9-551d9ac6e8d9",
@@ -1211,7 +1209,7 @@
                   "dynsock_price",
                   "dynsock_position",
                   "dynsock_date",
-                  "53a75096a5aa4a1c97cb5bcb6ab5a13c"
+                  "1aee2b0b39434b18bc85eae2549e39bb"
                 ]
               }
             },
@@ -1219,7 +1217,7 @@
               "Key": "buy",
               "Figure": "",
               "X": 1320.0,
-              "Y": 260.0,
+              "Y": 0.0,
               "TypeId": "953961cd-a9ba-4afe-ac38-e8b61f84b3be",
               "Settings": {
                 "Id": "28930971-de16-0457-f58a-ef407cef60a8",
@@ -1280,7 +1278,7 @@
               "Key": "sell",
               "Figure": "",
               "X": 1320.0,
-              "Y": 520.0,
+              "Y": 130.0,
               "TypeId": "953961cd-a9ba-4afe-ac38-e8b61f84b3be",
               "Settings": {
                 "Id": "a982a8a3-0473-179b-1b89-a740b366b44f",
@@ -1339,12 +1337,12 @@
             },
             {
               "Key": "chart",
-              "Figure": "Procedure",
+              "Figure": "",
               "X": 1540.0,
-              "Y": 390.0,
+              "Y": 0.0,
               "TypeId": "1926c40e-aaa3-4948-98e6-fba4b38b580e",
               "Settings": {
-                "Id": "7edfd5f0-32df-4345-b023-1c932e617802",
+                "Id": "f70f0a16-e138-913b-5315-bcc8c8fa9cb1",
                 "CanAutoName": false,
                 "Parameters": {
                   "Name": {
@@ -1377,44 +1375,30 @@
                 },
                 "CandleElements": [
                   {
-                    "Id": "a9066f57-712b-462a-afeb-0900dda2591e",
+                    "Id": "f2d91fea-8817-de63-19eb-681026d72bcc",
                     "IsVisible": true,
                     "IsLegend": true,
                     "XAxisId": "X",
                     "YAxisId": "Y",
+                    "DrawStyle": "CandleStick",
                     "UpFillColor": -16744448,
                     "UpBorderColor": -16744448,
                     "DownFillColor": -65536,
                     "DownBorderColor": -65536,
                     "LineColor": -16777077,
                     "AreaColor": -16728065,
-                    "DrawStyle": "CandleStick",
                     "StrokeThickness": 1,
                     "AntiAliasing": false,
-                    "ShowAxisMarker": true
+                    "ShowAxisMarker": true,
+                    "ShowHorizontalVolumes": false,
+                    "LocalHorizontalVolumes": false,
+                    "HorizontalVolumeWidthFraction": 0.0,
+                    "DrawSeparateVolumes": false
                   }
                 ],
                 "IndicatorElements": [
                   {
-                    "IndicatorPainter": {
-                      "type": "StockSharp.Xaml.Charting.IndicatorPainters.DefaultPainter, StockSharp.Xaml.Charting",
-                      "settings": {
-                        "Line": {
-                          "Id": "9c3d06db-5080-4556-9dd1-8838156f63b1",
-                          "IsVisible": true,
-                          "IsLegend": true,
-                          "XAxisId": "X",
-                          "YAxisId": "Y",
-                          "Color": -16711681,
-                          "AdditionalColor": 838860939,
-                          "StrokeThickness": 1,
-                          "AntiAliasing": true,
-                          "Style": "Line",
-                          "ShowAxisMarker": false
-                        }
-                      }
-                    },
-                    "Id": "d1b365e3-7ce2-4038-a815-2ffefe954da3",
+                    "Id": "db77495b-cd11-9ca1-2511-9c2c273369ce",
                     "IsVisible": true,
                     "IsLegend": true,
                     "XAxisId": "X",
@@ -1424,7 +1408,7 @@
                 "OrderElements": [],
                 "TradeElements": [
                   {
-                    "Id": "71bef225-8676-4b21-8add-ab377623c605",
+                    "Id": "6714bc24-a1a0-9290-382e-cf2e4ec52d25",
                     "IsVisible": true,
                     "IsLegend": true,
                     "XAxisId": "X",
@@ -1437,7 +1421,7 @@
                     "DrawSize": 0.0
                   },
                   {
-                    "Id": "320be804-dca6-4da7-aa14-7c946ff9a204",
+                    "Id": "d827dc8e-98d6-91b8-103e-f3d4c36298a7",
                     "IsVisible": true,
                     "IsLegend": true,
                     "XAxisId": "X",
@@ -1790,29 +1774,30 @@
               "From": "candles",
               "FromPort": "Output",
               "To": "chart",
-              "ToPort": "dynsock_a9066f57712b462aafeb0900dda2591e"
+              "ToPort": "dynsock_f2d91fea8817de6319eb681026d72bcc"
             },
             {
               "From": "sma",
               "FromPort": "Output",
               "To": "chart",
-              "ToPort": "dynsock_d1b365e37ce24038a8152ffefe954da3"
+              "ToPort": "dynsock_db77495bcd119ca125119c2c273369ce"
             },
             {
               "From": "buy",
               "FromPort": "MyTrade",
               "To": "chart",
-              "ToPort": "dynsock_71bef22586764b218addab377623c605"
+              "ToPort": "dynsock_6714bc24a1a09290382ecf2e4ec52d25"
             },
             {
               "From": "sell",
               "FromPort": "MyTrade",
               "To": "chart",
-              "ToPort": "dynsock_320be804dca64da7aa147c946ff9a204"
+              "ToPort": "dynsock_d827dc8e98d691b8103ef3d4c36298a7"
             }
           ]
         }
-      }
+      },
+      "Type": "Independent"
     }
   }
 }

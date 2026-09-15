@@ -640,7 +640,7 @@
                 "InputSocketIds": [
                   "dynsock_channel",
                   "dynsock_position",
-                  "a6feabc45bba45d894660396472aee77"
+                  "4e179cfb0f304b95a8aba15011a35d34"
                 ]
               }
             },
@@ -676,7 +676,7 @@
                 "InputSocketIds": [
                   "dynsock_channel",
                   "dynsock_position",
-                  "93d6f2768206474d8d0f3e786232567d"
+                  "252f4ff8f6ba4233b5d3bb69ab4a7e19"
                 ]
               }
             },
@@ -1027,7 +1027,8 @@
             }
           ]
         }
-      }
+      },
+      "Type": "Independent"
     }
   }
 }

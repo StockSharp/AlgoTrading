@@ -964,7 +964,7 @@
                   "dynsock_shape",
                   "dynsock_lows",
                   "dynsock_position",
-                  "4681232a5d124ad6a8322740620b88e3"
+                  "4165b56cc425441dad47a4c6dfe4f9ff"
                 ]
               }
             },
@@ -1001,7 +1001,7 @@
                   "dynsock_shape",
                   "dynsock_highs",
                   "dynsock_position",
-                  "c36cae6bc45e452d9db305dd37175d51"
+                  "fd40e0e172b04e1ab91f0f40f8041122"
                 ]
               }
             },
@@ -1502,7 +1502,8 @@
             }
           ]
         }
-      }
+      },
+      "Type": "Independent"
     }
   }
 }

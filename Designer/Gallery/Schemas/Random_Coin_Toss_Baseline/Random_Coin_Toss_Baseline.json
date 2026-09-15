@@ -4,11 +4,9 @@
     "Type": "Schema",
     "Value": {
       "Version": "1.0",
-      "Type": "Independent",
       "Scheme": {
         "SchemaVersion": 1,
         "Category": "",
-        "Description": "Opens a random long or short position and closes it after a fixed number of finished candles.",
         "DocUrl": "",
         "Composition": {
           "Id": "bcab2ef6-f995-3e93-0174-32c9bbf8f304",
@@ -494,7 +492,7 @@
                 "InputSocketIds": [
                   "dynsock_coin",
                   "dynsock_flat",
-                  "9e9fe5a72d664ead8ab79f5492cb9b72"
+                  "7d9f5966e24e4f9cafdbfd9ec47256ba"
                 ]
               }
             },
@@ -530,7 +528,7 @@
                 "InputSocketIds": [
                   "dynsock_coin",
                   "dynsock_flat",
-                  "7bad3d469fc24817add5e17361cc2870"
+                  "f263ffd80d234e84bfe06355dcde8fb3"
                 ]
               }
             },
@@ -859,12 +857,12 @@
             },
             {
               "Key": "chart",
-              "Figure": "Procedure",
+              "Figure": "",
               "X": 1760.0,
-              "Y": 260.0,
+              "Y": 0.0,
               "TypeId": "1926c40e-aaa3-4948-98e6-fba4b38b580e",
               "Settings": {
-                "Id": "fa9f6083-fdd8-4278-92f6-03be322faea9",
+                "Id": "b21b9576-57ad-a74e-80b5-aefec31e5aa0",
                 "CanAutoName": false,
                 "Parameters": {
                   "Name": {
@@ -897,28 +895,32 @@
                 },
                 "CandleElements": [
                   {
-                    "Id": "818dc6df-a294-449f-9560-9693198b3622",
+                    "Id": "f89f715b-0dd6-c3f9-c41d-e8bc7aa107be",
                     "IsVisible": true,
                     "IsLegend": true,
                     "XAxisId": "X",
                     "YAxisId": "Y",
+                    "DrawStyle": "CandleStick",
                     "UpFillColor": -16744448,
                     "UpBorderColor": -16744448,
                     "DownFillColor": -65536,
                     "DownBorderColor": -65536,
                     "LineColor": -16777077,
                     "AreaColor": -16728065,
-                    "DrawStyle": "CandleStick",
                     "StrokeThickness": 1,
                     "AntiAliasing": false,
-                    "ShowAxisMarker": true
+                    "ShowAxisMarker": true,
+                    "ShowHorizontalVolumes": false,
+                    "LocalHorizontalVolumes": false,
+                    "HorizontalVolumeWidthFraction": 0.0,
+                    "DrawSeparateVolumes": false
                   }
                 ],
                 "IndicatorElements": [],
                 "OrderElements": [],
                 "TradeElements": [
                   {
-                    "Id": "fbdfe32a-7ce8-4c74-95e4-9ba081581b6a",
+                    "Id": "3614ddf0-2f53-0e36-e6ae-07db56b7a885",
                     "IsVisible": true,
                     "IsLegend": true,
                     "XAxisId": "X",
@@ -931,7 +933,7 @@
                     "DrawSize": 0.0
                   },
                   {
-                    "Id": "23e19b15-1e2c-45eb-a898-902f810c657e",
+                    "Id": "e899d8f6-70d3-5af3-1574-a184a137affe",
                     "IsVisible": true,
                     "IsLegend": true,
                     "XAxisId": "X",
@@ -944,7 +946,7 @@
                     "DrawSize": 0.0
                   },
                   {
-                    "Id": "82bc3396-e879-4899-aa68-c99141f6d01e",
+                    "Id": "c9f9cef1-1cc0-b11f-01a7-6191bae7193f",
                     "IsVisible": true,
                     "IsLegend": true,
                     "XAxisId": "X",
@@ -957,7 +959,7 @@
                     "DrawSize": 0.0
                   },
                   {
-                    "Id": "00ffd32e-112b-42b4-a69d-5ba53cd22910",
+                    "Id": "071ef72f-2968-39c1-298c-cdb2f35cab91",
                     "IsVisible": true,
                     "IsLegend": true,
                     "XAxisId": "X",
@@ -1154,35 +1156,36 @@
               "From": "candles",
               "FromPort": "Output",
               "To": "chart",
-              "ToPort": "dynsock_818dc6dfa294449f95609693198b3622"
+              "ToPort": "dynsock_f89f715b0dd6c3f9c41de8bc7aa107be"
             },
             {
               "From": "buy",
               "FromPort": "MyTrade",
               "To": "chart",
-              "ToPort": "dynsock_fbdfe32a7ce84c7495e49ba081581b6a"
+              "ToPort": "dynsock_3614ddf02f530e36e6ae07db56b7a885"
             },
             {
               "From": "sell",
               "FromPort": "MyTrade",
               "To": "chart",
-              "ToPort": "dynsock_23e19b151e2c45eba898902f810c657e"
+              "ToPort": "dynsock_e899d8f670d35af31574a184a137affe"
             },
             {
               "From": "closeLong",
               "FromPort": "MyTrade",
               "To": "chart",
-              "ToPort": "dynsock_82bc3396e8794899aa68c99141f6d01e"
+              "ToPort": "dynsock_c9f9cef11cc0b11f01a76191bae7193f"
             },
             {
               "From": "closeShort",
               "FromPort": "MyTrade",
               "To": "chart",
-              "ToPort": "dynsock_00ffd32e112b42b4a69d5ba53cd22910"
+              "ToPort": "dynsock_071ef72f296839c1298ccdb2f35cab91"
             }
           ]
         }
-      }
+      },
+      "Type": "Independent"
     }
   }
 }

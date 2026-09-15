@@ -51,6 +51,39 @@
               "Value": 20
             },
             "3e82c074-cd31-73f7-a2c6-ec5bb861bc4dSource": {},
+            "a13257c5-3425-df3e-d43e-4dcecfa539c8Shift": {
+              "Value": 1
+            },
+            "0fed85c0-748c-ceba-2364-b4095b837d6dShift": {
+              "Value": 1
+            },
+            "56679cd9-2d7b-1e2f-fa5a-dad7f96c7a94Value": {
+              "Value": {
+                "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                "settings": {
+                  "Type": "Absolute",
+                  "Value": 0.0
+                }
+              }
+            },
+            "db5491d9-5d23-2967-3da6-b18103189da2Value": {
+              "Value": {
+                "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                "settings": {
+                  "Type": "Absolute",
+                  "Value": 1.0
+                }
+              }
+            },
+            "cfb4acae-7638-e114-34d5-3f49bfa9d197Value": {
+              "Value": {
+                "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                "settings": {
+                  "Type": "Absolute",
+                  "Value": 1.0
+                }
+              }
+            },
             "9b5f6ad9-aa90-d3cd-a9cd-40f9bb5ad344N": {
               "Value": 500
             },
@@ -72,7 +105,7 @@
               "Key": "candles",
               "Figure": "",
               "X": 0.0,
-              "Y": 600.0,
+              "Y": 0.0,
               "TypeId": "3d773273-0cee-4d40-8eef-acded2d07ab8",
               "Settings": {
                 "Id": "cefbd12c-ba85-b252-299f-afe3e5cef6e1",
@@ -130,7 +163,7 @@
               "Key": "high",
               "Figure": "",
               "X": 220.0,
-              "Y": 360.0,
+              "Y": 0.0,
               "TypeId": "35c046c4-1b0f-4074-ac08-0c70850a8dcf",
               "Settings": {
                 "Id": "d5cd1f58-958a-8db5-dbbb-e4141531059c",
@@ -166,7 +199,7 @@
               "Key": "low",
               "Figure": "",
               "X": 220.0,
-              "Y": 540.0,
+              "Y": 130.0,
               "TypeId": "35c046c4-1b0f-4074-ac08-0c70850a8dcf",
               "Settings": {
                 "Id": "90b2fa1a-dfac-923d-2e10-d59fb70afd6a",
@@ -202,7 +235,7 @@
               "Key": "close",
               "Figure": "",
               "X": 220.0,
-              "Y": 720.0,
+              "Y": 260.0,
               "TypeId": "35c046c4-1b0f-4074-ac08-0c70850a8dcf",
               "Settings": {
                 "Id": "8424bfd9-9f51-8a9e-4b28-fb4b1b22ae1a",
@@ -237,8 +270,8 @@
             {
               "Key": "highest",
               "Figure": "",
-              "X": 460.0,
-              "Y": 360.0,
+              "X": 440.0,
+              "Y": 0.0,
               "TypeId": "f56c74af-7c39-464a-8b90-4eff4c8760b1",
               "Settings": {
                 "Id": "0019d89c-484c-bab5-2176-9e485e23949a",
@@ -283,8 +316,8 @@
             {
               "Key": "lowest",
               "Figure": "",
-              "X": 460.0,
-              "Y": 540.0,
+              "X": 440.0,
+              "Y": 130.0,
               "TypeId": "f56c74af-7c39-464a-8b90-4eff4c8760b1",
               "Settings": {
                 "Id": "14d2e463-790d-450a-d7c9-edd721efd8e9",
@@ -329,8 +362,8 @@
             {
               "Key": "sma",
               "Figure": "",
-              "X": 460.0,
-              "Y": 720.0,
+              "X": 440.0,
+              "Y": 260.0,
               "TypeId": "f56c74af-7c39-464a-8b90-4eff4c8760b1",
               "Settings": {
                 "Id": "3e82c074-cd31-73f7-a2c6-ec5bb861bc4d",
@@ -375,8 +408,8 @@
             {
               "Key": "previousHigh",
               "Figure": "",
-              "X": 700.0,
-              "Y": 360.0,
+              "X": 660.0,
+              "Y": 0.0,
               "TypeId": "835c9ae0-906a-48d6-9e20-a332b6350fd0",
               "Settings": {
                 "Id": "a13257c5-3425-df3e-d43e-4dcecfa539c8",
@@ -389,7 +422,7 @@
                     "Value": "Inherit"
                   },
                   "ShowParameters": {
-                    "Value": false
+                    "Value": true
                   },
                   "ShowSockets": {
                     "Value": true
@@ -414,8 +447,8 @@
             {
               "Key": "previousLow",
               "Figure": "",
-              "X": 700.0,
-              "Y": 540.0,
+              "X": 660.0,
+              "Y": 130.0,
               "TypeId": "835c9ae0-906a-48d6-9e20-a332b6350fd0",
               "Settings": {
                 "Id": "0fed85c0-748c-ceba-2364-b4095b837d6d",
@@ -428,7 +461,7 @@
                     "Value": "Inherit"
                   },
                   "ShowParameters": {
-                    "Value": false
+                    "Value": true
                   },
                   "ShowSockets": {
                     "Value": true
@@ -453,8 +486,8 @@
             {
               "Key": "highPierced",
               "Figure": "",
-              "X": 940.0,
-              "Y": 300.0,
+              "X": 880.0,
+              "Y": 0.0,
               "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
               "Settings": {
                 "Id": "0199f529-b378-cf4b-c441-970e067036b2",
@@ -494,8 +527,8 @@
             {
               "Key": "closeBelowHigh",
               "Figure": "",
-              "X": 940.0,
-              "Y": 440.0,
+              "X": 880.0,
+              "Y": 130.0,
               "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
               "Settings": {
                 "Id": "4cbe191f-4b5c-07ae-1eca-6ae6c411c9e6",
@@ -535,8 +568,8 @@
             {
               "Key": "lowPierced",
               "Figure": "",
-              "X": 940.0,
-              "Y": 580.0,
+              "X": 880.0,
+              "Y": 260.0,
               "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
               "Settings": {
                 "Id": "a1591f20-3f32-2d16-faf5-d8a4476d80c9",
@@ -576,8 +609,8 @@
             {
               "Key": "closeAboveLow",
               "Figure": "",
-              "X": 940.0,
-              "Y": 720.0,
+              "X": 880.0,
+              "Y": 390.0,
               "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
               "Settings": {
                 "Id": "b712011a-1a6f-5f38-bb50-c2b83f00d929",
@@ -618,7 +651,7 @@
               "Key": "position",
               "Figure": "",
               "X": 0.0,
-              "Y": 0.0,
+              "Y": 130.0,
               "TypeId": "83bcd64c-0f75-4572-be49-3d771a456f76",
               "Settings": {
                 "Id": "c33e823b-5c5a-0eee-a202-7c339a981ea4",
@@ -652,7 +685,7 @@
               "Key": "positionAtCandle",
               "Figure": "",
               "X": 220.0,
-              "Y": 0.0,
+              "Y": 390.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "020e5fb4-9dc5-937e-7496-a03e4427879f",
@@ -697,7 +730,7 @@
               "Key": "zero",
               "Figure": "",
               "X": 220.0,
-              "Y": 150.0,
+              "Y": 520.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "56679cd9-2d7b-1e2f-fa5a-dad7f96c7a94",
@@ -710,7 +743,7 @@
                     "Value": "Inherit"
                   },
                   "ShowParameters": {
-                    "Value": false
+                    "Value": true
                   },
                   "ShowSockets": {
                     "Value": true
@@ -741,8 +774,8 @@
             {
               "Key": "isLong",
               "Figure": "",
-              "X": 460.0,
-              "Y": 0.0,
+              "X": 440.0,
+              "Y": 390.0,
               "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
               "Settings": {
                 "Id": "35a8cdaf-70ad-9114-d6db-905c6cf23ec2",
@@ -782,8 +815,8 @@
             {
               "Key": "isShort",
               "Figure": "",
-              "X": 460.0,
-              "Y": 150.0,
+              "X": 440.0,
+              "Y": 520.0,
               "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
               "Settings": {
                 "Id": "01ec40c4-1493-483a-9019-6845a51cf786",
@@ -823,8 +856,8 @@
             {
               "Key": "closeBelowSma",
               "Figure": "",
-              "X": 940.0,
-              "Y": 960.0,
+              "X": 660.0,
+              "Y": 260.0,
               "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
               "Settings": {
                 "Id": "7fe73e21-75b7-13a7-ce49-878811439c8a",
@@ -864,8 +897,8 @@
             {
               "Key": "closeAboveSma",
               "Figure": "",
-              "X": 940.0,
-              "Y": 1120.0,
+              "X": 660.0,
+              "Y": 390.0,
               "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
               "Settings": {
                 "Id": "08bd84a5-69c3-123f-9de4-511902725b0b",
@@ -906,7 +939,7 @@
               "Key": "evaluationOne",
               "Figure": "",
               "X": 220.0,
-              "Y": 960.0,
+              "Y": 650.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "db5491d9-5d23-2967-3da6-b18103189da2",
@@ -919,7 +952,7 @@
                     "Value": "Inherit"
                   },
                   "ShowParameters": {
-                    "Value": false
+                    "Value": true
                   },
                   "ShowSockets": {
                     "Value": true
@@ -950,8 +983,8 @@
             {
               "Key": "evaluationOn",
               "Figure": "",
-              "X": 460.0,
-              "Y": 960.0,
+              "X": 440.0,
+              "Y": 650.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "cfb4acae-7638-e114-34d5-3f49bfa9d197",
@@ -964,7 +997,7 @@
                     "Value": "Inherit"
                   },
                   "ShowParameters": {
-                    "Value": false
+                    "Value": true
                   },
                   "ShowSockets": {
                     "Value": true
@@ -995,8 +1028,8 @@
             {
               "Key": "evaluationTick",
               "Figure": "",
-              "X": 460.0,
-              "Y": 1110.0,
+              "X": 220.0,
+              "Y": 780.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "feb36360-8440-6742-70b4-9ef1c7325b02",
@@ -1032,8 +1065,8 @@
             {
               "Key": "evaluationReady",
               "Figure": "",
-              "X": 700.0,
-              "Y": 1030.0,
+              "X": 660.0,
+              "Y": 520.0,
               "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
               "Settings": {
                 "Id": "e97c230a-92ae-c52a-3a5f-b77801fa0763",
@@ -1073,8 +1106,8 @@
             {
               "Key": "falseBreakUp",
               "Figure": "",
-              "X": 1180.0,
-              "Y": 360.0,
+              "X": 1100.0,
+              "Y": 0.0,
               "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
               "Settings": {
                 "Id": "3b0a402a-abfd-133e-b4e2-55df8de09d81",
@@ -1103,15 +1136,15 @@
                   "dynsock_pierce",
                   "dynsock_return",
                   "dynsock_evaluate",
-                  "931fda032f914c5f9d96277d44d9d0de"
+                  "d19f3d9f58424891bbb50661a9848d54"
                 ]
               }
             },
             {
               "Key": "falseBreakDown",
               "Figure": "",
-              "X": 1180.0,
-              "Y": 640.0,
+              "X": 1100.0,
+              "Y": 130.0,
               "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
               "Settings": {
                 "Id": "992d790a-3755-2b18-2cf0-6abf5266c714",
@@ -1140,15 +1173,15 @@
                   "dynsock_pierce",
                   "dynsock_return",
                   "dynsock_evaluate",
-                  "2322eecaf6ae4fc0b7ee81db3c05871b"
+                  "e81e79af80e244c387824d6689df1ac5"
                 ]
               }
             },
             {
               "Key": "cooldownSell",
               "Figure": "",
-              "X": 1420.0,
-              "Y": 360.0,
+              "X": 1540.0,
+              "Y": 0.0,
               "TypeId": "d9273c2c-6789-4ba8-a5c5-2b1eb4c4f006",
               "Settings": {
                 "Id": "7a83f2a0-0499-574e-1f11-41671b85731d",
@@ -1175,8 +1208,8 @@
             {
               "Key": "cooldownBuy",
               "Figure": "",
-              "X": 1420.0,
-              "Y": 640.0,
+              "X": 1540.0,
+              "Y": 130.0,
               "TypeId": "d9273c2c-6789-4ba8-a5c5-2b1eb4c4f006",
               "Settings": {
                 "Id": "263c2fe5-656b-d3e9-ea79-f268183b0f34",
@@ -1203,8 +1236,8 @@
             {
               "Key": "cooldownDelay",
               "Figure": "",
-              "X": 1420.0,
-              "Y": 1050.0,
+              "X": 1320.0,
+              "Y": 0.0,
               "TypeId": "823a7255-f6e1-47b6-8186-4b58ffde0a78",
               "Settings": {
                 "Id": "9b5f6ad9-aa90-d3cd-a9cd-40f9bb5ad344",
@@ -1237,8 +1270,8 @@
             {
               "Key": "volume",
               "Figure": "",
-              "X": 1420.0,
-              "Y": 850.0,
+              "X": 220.0,
+              "Y": 910.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "9d828cd1-becc-4792-5f4b-77c959ccc387",
@@ -1282,8 +1315,8 @@
             {
               "Key": "sellEntry",
               "Figure": "",
-              "X": 1660.0,
-              "Y": 360.0,
+              "X": 1760.0,
+              "Y": 0.0,
               "TypeId": "953961cd-a9ba-4afe-ac38-e8b61f84b3be",
               "Settings": {
                 "Id": "23648283-d8da-b7f7-d3fd-b99860cdbe4a",
@@ -1343,8 +1376,8 @@
             {
               "Key": "buyEntry",
               "Figure": "",
-              "X": 1660.0,
-              "Y": 640.0,
+              "X": 1760.0,
+              "Y": 130.0,
               "TypeId": "953961cd-a9ba-4afe-ac38-e8b61f84b3be",
               "Settings": {
                 "Id": "814c0b95-d4b8-f8dd-3bb1-acdbaccc0f23",
@@ -1404,8 +1437,8 @@
             {
               "Key": "longExit",
               "Figure": "",
-              "X": 1180.0,
-              "Y": 960.0,
+              "X": 880.0,
+              "Y": 520.0,
               "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
               "Settings": {
                 "Id": "d6a21e10-4633-a015-7f6b-c869ab790037",
@@ -1434,15 +1467,15 @@
                   "dynsock_price",
                   "dynsock_position",
                   "dynsock_evaluate",
-                  "29eeacf42f254b49a8b5f6056e91d972"
+                  "41a13595d999429ea10cb4c48e8cbf70"
                 ]
               }
             },
             {
               "Key": "shortExit",
               "Figure": "",
-              "X": 1180.0,
-              "Y": 1120.0,
+              "X": 880.0,
+              "Y": 650.0,
               "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
               "Settings": {
                 "Id": "8487cf57-3812-2fd8-4c84-828c5c155fe8",
@@ -1471,15 +1504,15 @@
                   "dynsock_price",
                   "dynsock_position",
                   "dynsock_evaluate",
-                  "5209e0a85be847b6a7725c256e8e98ee"
+                  "5202abbee23c47f1a2ff3c6aac72de29"
                 ]
               }
             },
             {
               "Key": "closeLong",
               "Figure": "",
-              "X": 1660.0,
-              "Y": 960.0,
+              "X": 1100.0,
+              "Y": 260.0,
               "TypeId": "953961cd-a9ba-4afe-ac38-e8b61f84b3be",
               "Settings": {
                 "Id": "e73e269a-a494-ab27-8173-eeb44d6dff22",
@@ -1539,8 +1572,8 @@
             {
               "Key": "closeShort",
               "Figure": "",
-              "X": 1660.0,
-              "Y": 1120.0,
+              "X": 1100.0,
+              "Y": 390.0,
               "TypeId": "953961cd-a9ba-4afe-ac38-e8b61f84b3be",
               "Settings": {
                 "Id": "afa9e1e8-ec51-50df-374e-07b8ac0768cc",
@@ -1600,8 +1633,8 @@
             {
               "Key": "allFills",
               "Figure": "",
-              "X": 1900.0,
-              "Y": 700.0,
+              "X": 1980.0,
+              "Y": 0.0,
               "TypeId": "03bbd944-d369-4860-8d35-a642cb06fe5e",
               "Settings": {
                 "Id": "500a4a96-2f19-5c7b-f322-384bb02cdef9",
@@ -1631,12 +1664,13 @@
               }
             },
             {
-              "Key": "dcc2a230-5893-439e-a117-a08ac1dbd06a",
-              "X": 2140.0,
-              "Y": 640.0,
+              "Key": "chart",
+              "Figure": "",
+              "X": 2200.0,
+              "Y": 0.0,
               "TypeId": "1926c40e-aaa3-4948-98e6-fba4b38b580e",
               "Settings": {
-                "Id": "0a536227-9d47-4339-b79a-11b8f38f0e06",
+                "Id": "3376eb99-3a13-28b8-96ff-1058199c2ae6",
                 "CanAutoName": false,
                 "Parameters": {
                   "Name": {
@@ -1649,7 +1683,7 @@
                     "Value": false
                   },
                   "ShowSockets": {
-                    "Value": false
+                    "Value": true
                   },
                   "ProcessNullValues": {
                     "Value": false
@@ -1665,47 +1699,96 @@
                   }
                 },
                 "CandleElements": [
-                  {}
+                  {
+                    "Id": "3f7b4172-1089-0967-1704-3d81ea9c9d80",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y",
+                    "DrawStyle": "CandleStick",
+                    "UpFillColor": -16744448,
+                    "UpBorderColor": -16744448,
+                    "DownFillColor": -65536,
+                    "DownBorderColor": -65536,
+                    "LineColor": -16777077,
+                    "AreaColor": -16728065,
+                    "StrokeThickness": 1,
+                    "AntiAliasing": false,
+                    "ShowAxisMarker": true,
+                    "ShowHorizontalVolumes": false,
+                    "LocalHorizontalVolumes": false,
+                    "HorizontalVolumeWidthFraction": 0.0,
+                    "DrawSeparateVolumes": false
+                  }
                 ],
                 "IndicatorElements": [
-                  {},
-                  {},
-                  {}
+                  {
+                    "Id": "956af15e-a257-16c9-d611-f93dd0f27442",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y"
+                  },
+                  {
+                    "Id": "e9d06848-6c32-1946-4660-292bc2f26d41",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y"
+                  },
+                  {
+                    "Id": "44e60dd0-a4e3-a1b5-1dd8-65b92c9f5d33",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y"
+                  },
+                  {
+                    "Id": "5451bb9d-8fff-a7c7-4970-c64e771cc89d",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y"
+                  }
                 ],
                 "OrderElements": [],
-                "TradeElements": [
-                  {}
-                ],
+                "TradeElements": [],
                 "XAxes": [
                   {
                     "Id": "X",
                     "Title": "X",
-                    "IsVisible": false,
+                    "IsVisible": true,
+                    "Group": "CategoryDateTimeX",
                     "AutoRange": false,
                     "DrawMinorTicks": false,
-                    "DrawMajorTicks": false,
-                    "DrawMajorGridLines": false,
-                    "DrawMinorGridLines": false,
-                    "DrawLabels": false,
+                    "DrawMajorTicks": true,
+                    "DrawMajorGridLines": true,
+                    "DrawMinorGridLines": true,
+                    "DrawLabels": true,
                     "TextFormatting": "G",
                     "SubDayTextFormatting": "T",
                     "SwitchAxisLocation": false,
-                    "AxisType": "CategoryDateTime"
+                    "AxisType": "CategoryDateTime",
+                    "TimeZone": "UTC"
                   }
                 ],
                 "YAxes": [
                   {
                     "Id": "Y",
                     "Title": "Y",
-                    "IsVisible": false,
-                    "AutoRange": false,
+                    "IsVisible": true,
+                    "Group": "NumericY2",
+                    "AutoRange": true,
                     "DrawMinorTicks": false,
-                    "DrawMajorTicks": false,
-                    "DrawMajorGridLines": false,
-                    "DrawMinorGridLines": false,
-                    "DrawLabels": false,
+                    "DrawMajorTicks": true,
+                    "DrawMajorGridLines": true,
+                    "DrawMinorGridLines": true,
+                    "DrawLabels": true,
+                    "TextFormatting": "#.####",
+                    "SubDayTextFormatting": "T",
                     "SwitchAxisLocation": false,
-                    "AxisType": "Numeric"
+                    "AxisType": "Numeric",
+                    "TimeZone": "UTC"
                   }
                 ]
               }
@@ -2105,36 +2188,35 @@
             {
               "From": "candles",
               "FromPort": "Output",
-              "To": "dcc2a230-5893-439e-a117-a08ac1dbd06a",
-              "ToPort": "dynsock_51beee1bfd064cb3a8b5c166439c6561"
+              "To": "chart",
+              "ToPort": "dynsock_3f7b41721089096717043d81ea9c9d80"
             },
             {
               "From": "previousHigh",
               "FromPort": "Output",
-              "To": "dcc2a230-5893-439e-a117-a08ac1dbd06a",
-              "ToPort": "dynsock_ed2dbb8449334991ba4aff7b577206e1"
+              "To": "chart",
+              "ToPort": "dynsock_956af15ea25716c9d611f93dd0f27442"
             },
             {
               "From": "previousLow",
               "FromPort": "Output",
-              "To": "dcc2a230-5893-439e-a117-a08ac1dbd06a",
-              "ToPort": "dynsock_9cc5bfd7de0445b8aa67916085ab2f4c"
+              "To": "chart",
+              "ToPort": "dynsock_e9d068486c3219464660292bc2f26d41"
             },
             {
               "From": "sma",
               "FromPort": "Output",
-              "To": "dcc2a230-5893-439e-a117-a08ac1dbd06a",
-              "ToPort": "dynsock_4ccb790c738f4b3c866d699329ccbc29"
+              "To": "chart",
+              "ToPort": "dynsock_44e60dd0a4e3a1b51dd865b92c9f5d33"
             },
             {
               "From": "allFills",
               "FromPort": "Output",
-              "To": "dcc2a230-5893-439e-a117-a08ac1dbd06a",
-              "ToPort": "dynsock_2707f043cd2e4e2cbc691891696248a8"
+              "To": "chart",
+              "ToPort": "dynsock_5451bb9d8fffa7c74970c64e771cc89d"
             }
           ]
-        },
-        "Description": "Trades failed breaks of the previous twenty-bar high or low on finished one-minute candles, applies a shared 500-candle delay to two side-specific entry flags, and exits an open position at SMA(20)."
+        }
       },
       "Type": "Independent"
     }

@@ -565,7 +565,7 @@
                 "InputSocketIds": [
                   "dynsock_calendar",
                   "dynsock_position",
-                  "e5f62513434143b3bd2a23b010920bb1"
+                  "35707768eb224f198953c82b64222133"
                 ]
               }
             },
@@ -601,7 +601,7 @@
                 "InputSocketIds": [
                   "dynsock_calendar",
                   "dynsock_position",
-                  "195a356b678345ebbcc6468144de32df"
+                  "d75f8840177545cdaec9acfd44f4d340"
                 ]
               }
             },
@@ -833,7 +833,8 @@
             }
           ]
         }
-      }
+      },
+      "Type": "Independent"
     }
   }
 }

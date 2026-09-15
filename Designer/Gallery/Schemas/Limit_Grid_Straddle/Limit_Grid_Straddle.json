@@ -39,6 +39,15 @@
                 }
               }
             },
+            "ce609699-c1f2-d0ba-a16a-124f77e91043Value": {
+              "Value": {
+                "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                "settings": {
+                  "Type": "Absolute",
+                  "Value": 0.0
+                }
+              }
+            },
             "adc225df-4d7c-a0bb-0b34-691705a54f7dValue": {
               "Value": {
                 "type": "StockSharp.Messages.Unit, StockSharp.Messages",
@@ -98,6 +107,15 @@
             },
             "8f44617d-f4e5-8c8b-e33f-3de41087c1e8UseMarketOrders": {
               "Value": true
+            },
+            "de8d64db-597e-d6a3-a3cc-f1f2caa05f73N": {
+              "Value": 3
+            },
+            "d1b1dfb4-5ae7-6e14-5c19-0fb7a4417a19N": {
+              "Value": 3
+            },
+            "12ed5dde-9cb6-99d3-2d0d-5132bcc528f5N": {
+              "Value": 3
             }
           },
           "TypeId": "0d7852bd-8fb6-44fe-84f0-f1db185c189d"
@@ -165,7 +183,7 @@
             {
               "Key": "close",
               "Figure": "",
-              "X": 280.0,
+              "X": 220.0,
               "Y": 0.0,
               "TypeId": "35c046c4-1b0f-4074-ac08-0c70850a8dcf",
               "Settings": {
@@ -202,7 +220,7 @@
               "Key": "position",
               "Figure": "",
               "X": 0.0,
-              "Y": 540.0,
+              "Y": 130.0,
               "TypeId": "83bcd64c-0f75-4572-be49-3d771a456f76",
               "Settings": {
                 "Id": "4ce5687e-bc90-ef80-30cf-c63a295d847d",
@@ -235,8 +253,8 @@
             {
               "Key": "positionAtCandle",
               "Figure": "",
-              "X": 280.0,
-              "Y": 540.0,
+              "X": 220.0,
+              "Y": 130.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "4fb88d9b-5e69-3077-eb97-114e0a3a4953",
@@ -280,8 +298,8 @@
             {
               "Key": "zero",
               "Figure": "",
-              "X": 280.0,
-              "Y": 720.0,
+              "X": 220.0,
+              "Y": 260.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "ce609699-c1f2-d0ba-a16a-124f77e91043",
@@ -294,7 +312,7 @@
                     "Value": "Inherit"
                   },
                   "ShowParameters": {
-                    "Value": false
+                    "Value": true
                   },
                   "ShowSockets": {
                     "Value": true
@@ -325,8 +343,8 @@
             {
               "Key": "isFlat",
               "Figure": "",
-              "X": 560.0,
-              "Y": 600.0,
+              "X": 440.0,
+              "Y": 0.0,
               "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
               "Settings": {
                 "Id": "2b3e95c4-6b35-2f03-9432-dff07e00fe7b",
@@ -366,8 +384,8 @@
             {
               "Key": "startOnce",
               "Figure": "",
-              "X": 840.0,
-              "Y": 600.0,
+              "X": 660.0,
+              "Y": 0.0,
               "TypeId": "d9273c2c-6789-4ba8-a5c5-2b1eb4c4f006",
               "Settings": {
                 "Id": "c89778e4-acca-5ffc-493f-f9857ac52634",
@@ -394,8 +412,8 @@
             {
               "Key": "startOffset",
               "Figure": "",
-              "X": 280.0,
-              "Y": 180.0,
+              "X": 220.0,
+              "Y": 390.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "adc225df-4d7c-a0bb-0b34-691705a54f7d",
@@ -439,8 +457,8 @@
             {
               "Key": "buyStartPrice",
               "Figure": "",
-              "X": 560.0,
-              "Y": 0.0,
+              "X": 440.0,
+              "Y": 130.0,
               "TypeId": "f0edcbdf-41cb-442b-896c-332dac3caae3",
               "Settings": {
                 "Id": "eb6724d3-fb7d-092b-34d8-e9b9fc2654d3",
@@ -471,8 +489,8 @@
             {
               "Key": "sellStartPrice",
               "Figure": "",
-              "X": 560.0,
-              "Y": 220.0,
+              "X": 440.0,
+              "Y": 260.0,
               "TypeId": "f0edcbdf-41cb-442b-896c-332dac3caae3",
               "Settings": {
                 "Id": "57cac07a-8de1-d012-4130-69d4210142e9",
@@ -503,8 +521,8 @@
             {
               "Key": "volume",
               "Figure": "",
-              "X": 840.0,
-              "Y": 820.0,
+              "X": 220.0,
+              "Y": 520.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "3e179f37-afa4-bb0a-7201-d86eafe58e52",
@@ -548,7 +566,7 @@
             {
               "Key": "buyStart",
               "Figure": "",
-              "X": 1120.0,
+              "X": 880.0,
               "Y": 0.0,
               "TypeId": "3038ff97-d9c6-4ef5-8a8b-280e4c754cb8",
               "Settings": {
@@ -603,8 +621,8 @@
             {
               "Key": "sellStart",
               "Figure": "",
-              "X": 1120.0,
-              "Y": 720.0,
+              "X": 880.0,
+              "Y": 130.0,
               "TypeId": "3038ff97-d9c6-4ef5-8a8b-280e4c754cb8",
               "Settings": {
                 "Id": "e7e1d0b0-0904-06de-879c-7aad6582744c",
@@ -658,8 +676,8 @@
             {
               "Key": "buyFill",
               "Figure": "",
-              "X": 1760.0,
-              "Y": 20.0,
+              "X": 0.0,
+              "Y": 260.0,
               "TypeId": "35c046c4-1b0f-4074-ac08-0c70850a8dcf",
               "Settings": {
                 "Id": "86587d84-a0ef-3ad2-583d-8a3049d49c7e",
@@ -694,8 +712,8 @@
             {
               "Key": "sellFill",
               "Figure": "",
-              "X": 1760.0,
-              "Y": 760.0,
+              "X": 0.0,
+              "Y": 390.0,
               "TypeId": "35c046c4-1b0f-4074-ac08-0c70850a8dcf",
               "Settings": {
                 "Id": "ec625d4a-a060-6453-705e-437b8d718bd2",
@@ -730,8 +748,8 @@
             {
               "Key": "gridDistance",
               "Figure": "",
-              "X": 1760.0,
-              "Y": 320.0,
+              "X": 220.0,
+              "Y": 650.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "2d337d5e-45bc-db5e-c610-094875129892",
@@ -775,8 +793,8 @@
             {
               "Key": "stepDistance",
               "Figure": "",
-              "X": 1760.0,
-              "Y": 500.0,
+              "X": 220.0,
+              "Y": 780.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "e3ec80cb-c93b-852c-f3b4-e0ef2ce59bc8",
@@ -820,8 +838,8 @@
             {
               "Key": "buyGridPrice",
               "Figure": "",
-              "X": 2060.0,
-              "Y": 60.0,
+              "X": 440.0,
+              "Y": 390.0,
               "TypeId": "f0edcbdf-41cb-442b-896c-332dac3caae3",
               "Settings": {
                 "Id": "a843d6c0-4d34-afb3-aa3d-d0aabd834547",
@@ -852,8 +870,8 @@
             {
               "Key": "sellGridPrice",
               "Figure": "",
-              "X": 2060.0,
-              "Y": 760.0,
+              "X": 440.0,
+              "Y": 520.0,
               "TypeId": "f0edcbdf-41cb-442b-896c-332dac3caae3",
               "Settings": {
                 "Id": "d8be411e-b525-0df1-a9af-1003f26ac2fa",
@@ -884,8 +902,8 @@
             {
               "Key": "buyGrid",
               "Figure": "",
-              "X": 2520.0,
-              "Y": 20.0,
+              "X": 660.0,
+              "Y": 130.0,
               "TypeId": "3038ff97-d9c6-4ef5-8a8b-280e4c754cb8",
               "Settings": {
                 "Id": "03570489-e481-933a-86fd-6ef53b6d4c3a",
@@ -939,8 +957,8 @@
             {
               "Key": "sellGrid",
               "Figure": "",
-              "X": 2520.0,
-              "Y": 720.0,
+              "X": 660.0,
+              "Y": 260.0,
               "TypeId": "3038ff97-d9c6-4ef5-8a8b-280e4c754cb8",
               "Settings": {
                 "Id": "637daa7a-3055-c942-c4f5-6e11e30a0fb6",
@@ -994,8 +1012,8 @@
             {
               "Key": "protection",
               "Figure": "",
-              "X": 2800.0,
-              "Y": 380.0,
+              "X": 1100.0,
+              "Y": 0.0,
               "TypeId": "7712ff8b-0270-49fa-9663-196a9a03bfe8",
               "Settings": {
                 "Id": "8f44617d-f4e5-8c8b-e33f-3de41087c1e8",
@@ -1055,8 +1073,8 @@
             {
               "Key": "resetOrders",
               "Figure": "",
-              "X": 3360.0,
-              "Y": 380.0,
+              "X": 0.0,
+              "Y": 520.0,
               "TypeId": "5fc4b091-50f2-43a2-b17b-d5786807d674",
               "Settings": {
                 "Id": "cae7f9a4-d56a-0d37-49a1-bc72f6870a97",
@@ -1087,8 +1105,8 @@
             {
               "Key": "strategyTrades",
               "Figure": "",
-              "X": 3360.0,
-              "Y": 700.0,
+              "X": 0.0,
+              "Y": 650.0,
               "TypeId": "7162155b-ecaa-4248-84ff-b1046e753562",
               "Settings": {
                 "Id": "fd5b8b41-0236-fb3d-d67f-2f19b78c666a",
@@ -1113,12 +1131,13 @@
               }
             },
             {
-              "Key": "88deb248-d645-422b-b737-2bfb9a6e7b09",
-              "X": 1460.0,
-              "Y": 40.0,
+              "Key": "latestBuyStartFill",
+              "Figure": "",
+              "X": 1100.0,
+              "Y": 130.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
-                "Id": "5cc932f0-d532-4fbe-878c-818e619d7e97",
+                "Id": "4be33d8b-20e4-ae03-880e-302a950e06cd",
                 "CanAutoName": false,
                 "Parameters": {
                   "Name": {
@@ -1149,12 +1168,13 @@
               }
             },
             {
-              "Key": "68acd698-2348-4add-8816-6feebe2674f5",
-              "X": 1460.0,
-              "Y": 760.0,
+              "Key": "latestSellStartFill",
+              "Figure": "",
+              "X": 1100.0,
+              "Y": 260.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
-                "Id": "8e8f87cc-f9f1-4ee6-96ca-8f28d1adfc3b",
+                "Id": "d2f7a3d0-df01-911d-ad16-c356716e7f71",
                 "CanAutoName": false,
                 "Parameters": {
                   "Name": {
@@ -1185,12 +1205,13 @@
               }
             },
             {
-              "Key": "c4e802fe-9b7f-4187-8de5-00e289af4dee",
-              "X": 1460.0,
-              "Y": 180.0,
+              "Key": "buyRungOnThe",
+              "Figure": "",
+              "X": 1100.0,
+              "Y": 390.0,
               "TypeId": "823a7255-f6e1-47b6-8186-4b58ffde0a78",
               "Settings": {
-                "Id": "4d3f1e7b-6e5a-4205-a061-03a31918cfd8",
+                "Id": "de8d64db-597e-d6a3-a3cc-f1f2caa05f73",
                 "CanAutoName": false,
                 "Parameters": {
                   "Name": {
@@ -1200,7 +1221,7 @@
                     "Value": "Inherit"
                   },
                   "ShowParameters": {
-                    "Value": false
+                    "Value": true
                   },
                   "ShowSockets": {
                     "Value": true
@@ -1209,7 +1230,7 @@
                     "Value": false
                   },
                   "N": {
-                    "Value": 2
+                    "Value": 3
                   },
                   "IsFinishedOnly": {
                     "Value": true
@@ -1218,12 +1239,13 @@
               }
             },
             {
-              "Key": "1fce6660-b385-45fd-aa7d-42cc0021b5a7",
-              "X": 1460.0,
-              "Y": 920.0,
+              "Key": "sellRungOnThe",
+              "Figure": "",
+              "X": 1100.0,
+              "Y": 520.0,
               "TypeId": "823a7255-f6e1-47b6-8186-4b58ffde0a78",
               "Settings": {
-                "Id": "aa738f14-1da8-40f2-8a3b-c5d4d9c3885c",
+                "Id": "d1b1dfb4-5ae7-6e14-5c19-0fb7a4417a19",
                 "CanAutoName": false,
                 "Parameters": {
                   "Name": {
@@ -1233,7 +1255,7 @@
                     "Value": "Inherit"
                   },
                   "ShowParameters": {
-                    "Value": false
+                    "Value": true
                   },
                   "ShowSockets": {
                     "Value": true
@@ -1242,7 +1264,7 @@
                     "Value": false
                   },
                   "N": {
-                    "Value": 2
+                    "Value": 3
                   },
                   "IsFinishedOnly": {
                     "Value": true
@@ -1251,12 +1273,13 @@
               }
             },
             {
-              "Key": "42eabd12-ae63-4fc8-897e-f58e451288ea",
-              "X": 3080.0,
-              "Y": 300.0,
+              "Key": "massResetOnThe",
+              "Figure": "",
+              "X": 1320.0,
+              "Y": 0.0,
               "TypeId": "823a7255-f6e1-47b6-8186-4b58ffde0a78",
               "Settings": {
-                "Id": "1c8cdebb-6d45-4e35-b8de-eabd5df5538f",
+                "Id": "12ed5dde-9cb6-99d3-2d0d-5132bcc528f5",
                 "CanAutoName": false,
                 "Parameters": {
                   "Name": {
@@ -1266,7 +1289,7 @@
                     "Value": "Inherit"
                   },
                   "ShowParameters": {
-                    "Value": false
+                    "Value": true
                   },
                   "ShowSockets": {
                     "Value": true
@@ -1275,7 +1298,7 @@
                     "Value": false
                   },
                   "N": {
-                    "Value": 2
+                    "Value": 3
                   },
                   "IsFinishedOnly": {
                     "Value": true
@@ -1284,12 +1307,13 @@
               }
             },
             {
-              "Key": "173df429-2d36-41a2-8cda-1fbcaf9cca03",
-              "X": 3640.0,
-              "Y": 300.0,
+              "Key": "fiveminuteCandlesFourGrid",
+              "Figure": "",
+              "X": 1100.0,
+              "Y": 650.0,
               "TypeId": "1926c40e-aaa3-4948-98e6-fba4b38b580e",
               "Settings": {
-                "Id": "23f58ffa-dfc7-490c-9887-7dc1b9391878",
+                "Id": "d32918be-0747-df30-8e0d-9109ad0e7495",
                 "CanAutoName": false,
                 "Parameters": {
                   "Name": {
@@ -1302,7 +1326,7 @@
                     "Value": false
                   },
                   "ShowSockets": {
-                    "Value": false
+                    "Value": true
                   },
                   "ProcessNullValues": {
                     "Value": false
@@ -1318,48 +1342,134 @@
                   }
                 },
                 "CandleElements": [
-                  {}
+                  {
+                    "Id": "1c4f793b-ea90-d9fe-172f-b08cc621c5c9",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y",
+                    "DrawStyle": "CandleStick",
+                    "UpFillColor": -16744448,
+                    "UpBorderColor": -16744448,
+                    "DownFillColor": -65536,
+                    "DownBorderColor": -65536,
+                    "LineColor": -16777077,
+                    "AreaColor": -16728065,
+                    "StrokeThickness": 1,
+                    "AntiAliasing": false,
+                    "ShowAxisMarker": true,
+                    "ShowHorizontalVolumes": false,
+                    "LocalHorizontalVolumes": false,
+                    "HorizontalVolumeWidthFraction": 0.0,
+                    "DrawSeparateVolumes": false
+                  }
                 ],
                 "IndicatorElements": [],
                 "OrderElements": [
-                  {},
-                  {},
-                  {},
-                  {}
+                  {
+                    "Id": "d442eb77-3519-c63a-4aed-7c44a31acde9",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y",
+                    "BuyColor": -16711936,
+                    "BuyStrokeColor": 0,
+                    "SellColor": -38476,
+                    "SellStrokeColor": 0,
+                    "UseAltIcon": false,
+                    "DrawSize": 0.0
+                  },
+                  {
+                    "Id": "1d7d203c-981d-6cda-e879-971686edf3c6",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y",
+                    "BuyColor": -16711936,
+                    "BuyStrokeColor": 0,
+                    "SellColor": -38476,
+                    "SellStrokeColor": 0,
+                    "UseAltIcon": false,
+                    "DrawSize": 0.0
+                  },
+                  {
+                    "Id": "8cc7a5c6-c372-5527-2d67-06fe99eea90e",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y",
+                    "BuyColor": -16711936,
+                    "BuyStrokeColor": 0,
+                    "SellColor": -38476,
+                    "SellStrokeColor": 0,
+                    "UseAltIcon": false,
+                    "DrawSize": 0.0
+                  },
+                  {
+                    "Id": "1cbacea2-3990-946d-5ddc-04089ce42054",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y",
+                    "BuyColor": -16711936,
+                    "BuyStrokeColor": 0,
+                    "SellColor": -38476,
+                    "SellStrokeColor": 0,
+                    "UseAltIcon": false,
+                    "DrawSize": 0.0
+                  }
                 ],
                 "TradeElements": [
-                  {}
+                  {
+                    "Id": "6451f041-d24c-c053-f701-d6e70bb3a0e5",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y",
+                    "BuyColor": -16711936,
+                    "BuyStrokeColor": -16711936,
+                    "SellColor": -38476,
+                    "SellStrokeColor": -38476,
+                    "UseAltIcon": false,
+                    "DrawSize": 0.0
+                  }
                 ],
                 "XAxes": [
                   {
                     "Id": "X",
                     "Title": "X",
-                    "IsVisible": false,
+                    "IsVisible": true,
+                    "Group": "CategoryDateTimeX",
                     "AutoRange": false,
                     "DrawMinorTicks": false,
-                    "DrawMajorTicks": false,
-                    "DrawMajorGridLines": false,
-                    "DrawMinorGridLines": false,
-                    "DrawLabels": false,
+                    "DrawMajorTicks": true,
+                    "DrawMajorGridLines": true,
+                    "DrawMinorGridLines": true,
+                    "DrawLabels": true,
                     "TextFormatting": "G",
                     "SubDayTextFormatting": "T",
                     "SwitchAxisLocation": false,
-                    "AxisType": "CategoryDateTime"
+                    "AxisType": "CategoryDateTime",
+                    "TimeZone": "UTC"
                   }
                 ],
                 "YAxes": [
                   {
                     "Id": "Y",
                     "Title": "Y",
-                    "IsVisible": false,
-                    "AutoRange": false,
+                    "IsVisible": true,
+                    "Group": "NumericY2",
+                    "AutoRange": true,
                     "DrawMinorTicks": false,
-                    "DrawMajorTicks": false,
-                    "DrawMajorGridLines": false,
-                    "DrawMinorGridLines": false,
-                    "DrawLabels": false,
+                    "DrawMajorTicks": true,
+                    "DrawMajorGridLines": true,
+                    "DrawMinorGridLines": true,
+                    "DrawLabels": true,
+                    "TextFormatting": "#.####",
+                    "SubDayTextFormatting": "T",
                     "SwitchAxisLocation": false,
-                    "AxisType": "Numeric"
+                    "AxisType": "Numeric",
+                    "TimeZone": "UTC"
                   }
                 ]
               }
@@ -1573,59 +1683,59 @@
             {
               "From": "buyStart",
               "FromPort": "MyTrade",
-              "To": "88deb248-d645-422b-b737-2bfb9a6e7b09",
+              "To": "latestBuyStartFill",
               "ToPort": "Input"
             },
             {
               "From": "sellStart",
               "FromPort": "MyTrade",
-              "To": "68acd698-2348-4add-8816-6feebe2674f5",
+              "To": "latestSellStartFill",
               "ToPort": "Input"
             },
             {
               "From": "buyStart",
               "FromPort": "MyTrade",
-              "To": "c4e802fe-9b7f-4187-8de5-00e289af4dee",
+              "To": "buyRungOnThe",
               "ToPort": "Trigger"
             },
             {
               "From": "sellStart",
               "FromPort": "MyTrade",
-              "To": "1fce6660-b385-45fd-aa7d-42cc0021b5a7",
+              "To": "sellRungOnThe",
               "ToPort": "Trigger"
             },
             {
               "From": "candles",
               "FromPort": "Output",
-              "To": "c4e802fe-9b7f-4187-8de5-00e289af4dee",
+              "To": "buyRungOnThe",
               "ToPort": "Input"
             },
             {
               "From": "candles",
               "FromPort": "Output",
-              "To": "1fce6660-b385-45fd-aa7d-42cc0021b5a7",
+              "To": "sellRungOnThe",
               "ToPort": "Input"
             },
             {
-              "From": "c4e802fe-9b7f-4187-8de5-00e289af4dee",
+              "From": "buyRungOnThe",
               "FromPort": "Output",
-              "To": "88deb248-d645-422b-b737-2bfb9a6e7b09",
+              "To": "latestBuyStartFill",
               "ToPort": "Trigger"
             },
             {
-              "From": "1fce6660-b385-45fd-aa7d-42cc0021b5a7",
+              "From": "sellRungOnThe",
               "FromPort": "Output",
-              "To": "68acd698-2348-4add-8816-6feebe2674f5",
+              "To": "latestSellStartFill",
               "ToPort": "Trigger"
             },
             {
-              "From": "88deb248-d645-422b-b737-2bfb9a6e7b09",
+              "From": "latestBuyStartFill",
               "FromPort": "Output",
               "To": "buyFill",
               "ToPort": "Input"
             },
             {
-              "From": "68acd698-2348-4add-8816-6feebe2674f5",
+              "From": "latestSellStartFill",
               "FromPort": "Output",
               "To": "sellFill",
               "ToPort": "Input"
@@ -1657,17 +1767,17 @@
             {
               "From": "protection",
               "FromPort": "MyTrade",
-              "To": "42eabd12-ae63-4fc8-897e-f58e451288ea",
+              "To": "massResetOnThe",
               "ToPort": "Trigger"
             },
             {
               "From": "candles",
               "FromPort": "Output",
-              "To": "42eabd12-ae63-4fc8-897e-f58e451288ea",
+              "To": "massResetOnThe",
               "ToPort": "Input"
             },
             {
-              "From": "42eabd12-ae63-4fc8-897e-f58e451288ea",
+              "From": "massResetOnThe",
               "FromPort": "Output",
               "To": "resetOrders",
               "ToPort": "Trigger"
@@ -1681,42 +1791,41 @@
             {
               "From": "candles",
               "FromPort": "Output",
-              "To": "173df429-2d36-41a2-8cda-1fbcaf9cca03",
-              "ToPort": "dynsock_18b0629acd56497aa156dec61228ed78"
+              "To": "fiveminuteCandlesFourGrid",
+              "ToPort": "dynsock_1c4f793bea90d9fe172fb08cc621c5c9"
             },
             {
               "From": "buyStart",
               "FromPort": "Order",
-              "To": "173df429-2d36-41a2-8cda-1fbcaf9cca03",
-              "ToPort": "dynsock_74111e71ac0d46ad9e98568932064b90"
+              "To": "fiveminuteCandlesFourGrid",
+              "ToPort": "dynsock_d442eb773519c63a4aed7c44a31acde9"
             },
             {
               "From": "sellStart",
               "FromPort": "Order",
-              "To": "173df429-2d36-41a2-8cda-1fbcaf9cca03",
-              "ToPort": "dynsock_d694814ea4bf478284a3beb5f0a9d49f"
+              "To": "fiveminuteCandlesFourGrid",
+              "ToPort": "dynsock_1d7d203c981d6cdae879971686edf3c6"
             },
             {
               "From": "buyGrid",
               "FromPort": "Order",
-              "To": "173df429-2d36-41a2-8cda-1fbcaf9cca03",
-              "ToPort": "dynsock_c2936c39af6e4d81b927d7bd58f3f6df"
+              "To": "fiveminuteCandlesFourGrid",
+              "ToPort": "dynsock_8cc7a5c6c37255272d6706fe99eea90e"
             },
             {
               "From": "sellGrid",
               "FromPort": "Order",
-              "To": "173df429-2d36-41a2-8cda-1fbcaf9cca03",
-              "ToPort": "dynsock_734c11c327644f5cae35df69c6bed000"
+              "To": "fiveminuteCandlesFourGrid",
+              "ToPort": "dynsock_1cbacea23990946d5ddc04089ce42054"
             },
             {
               "From": "strategyTrades",
               "FromPort": "Output",
-              "To": "173df429-2d36-41a2-8cda-1fbcaf9cca03",
-              "ToPort": "dynsock_7f3bc5ded14646e98859305d7857c5fb"
+              "To": "fiveminuteCandlesFourGrid",
+              "ToPort": "dynsock_6451f041d24cc053f701d6e70bb3a0e5"
             }
           ]
-        },
-        "Description": "Places one symmetric pair of five-minute limit entries, adds a single same-side grid rung 350 price units from the first fill, and closes each protected fill at a 300-unit target before cancelling remaining limits on the next finished candle."
+        }
       },
       "Type": "Independent"
     }

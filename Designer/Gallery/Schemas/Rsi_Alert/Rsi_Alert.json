@@ -4,11 +4,9 @@
     "Type": "Schema",
     "Value": {
       "Version": "1.0",
-      "Type": "Independent",
       "Scheme": {
         "SchemaVersion": 1,
         "Category": "",
-        "Description": "Trades five-minute RSI extremes from a flat position, logs the signal value, and protects each entry with percentage exits.",
         "DocUrl": "",
         "Composition": {
           "Id": "f3562ab0-76eb-11a2-9052-04cd248cdb50",
@@ -654,7 +652,7 @@
                 "InputSocketIds": [
                   "dynsock_rsi",
                   "dynsock_flat",
-                  "fa2364101a50448c8e7ae9854c642e5b"
+                  "60f989de57d64696a2dddd6a76edad42"
                 ]
               }
             },
@@ -690,7 +688,7 @@
                 "InputSocketIds": [
                   "dynsock_rsi",
                   "dynsock_flat",
-                  "2e25d4ee848444c28d4dcf30c20d02c2"
+                  "3f2efd50c9014d8bbed7c9e2d9dbb6cf"
                 ]
               }
             },
@@ -1146,12 +1144,12 @@
             },
             {
               "Key": "chart",
-              "Figure": "Procedure",
-              "X": 1760.0,
+              "Figure": "",
+              "X": 1540.0,
               "Y": 260.0,
               "TypeId": "1926c40e-aaa3-4948-98e6-fba4b38b580e",
               "Settings": {
-                "Id": "83c470a6-9975-46ba-be98-06da9d33e8c7",
+                "Id": "efe0aefa-5b52-dc83-72c5-5d67e527428e",
                 "CanAutoName": false,
                 "Parameters": {
                   "Name": {
@@ -1184,44 +1182,30 @@
                 },
                 "CandleElements": [
                   {
-                    "Id": "69b75c11-d48b-4030-8b00-2d53b24849d7",
+                    "Id": "0f10410b-c7eb-6b02-2c1b-a473650f19fc",
                     "IsVisible": true,
                     "IsLegend": true,
                     "XAxisId": "X",
                     "YAxisId": "Y",
+                    "DrawStyle": "CandleStick",
                     "UpFillColor": -16744448,
                     "UpBorderColor": -16744448,
                     "DownFillColor": -65536,
                     "DownBorderColor": -65536,
                     "LineColor": -16777077,
                     "AreaColor": -16728065,
-                    "DrawStyle": "CandleStick",
                     "StrokeThickness": 1,
                     "AntiAliasing": false,
-                    "ShowAxisMarker": true
+                    "ShowAxisMarker": true,
+                    "ShowHorizontalVolumes": false,
+                    "LocalHorizontalVolumes": false,
+                    "HorizontalVolumeWidthFraction": 0.0,
+                    "DrawSeparateVolumes": false
                   }
                 ],
                 "IndicatorElements": [
                   {
-                    "IndicatorPainter": {
-                      "type": "StockSharp.Xaml.Charting.IndicatorPainters.DefaultPainter, StockSharp.Xaml.Charting",
-                      "settings": {
-                        "Line": {
-                          "Id": "7d1a646c-97bf-4487-8b07-5d71ba3ec277",
-                          "IsVisible": true,
-                          "IsLegend": true,
-                          "XAxisId": "X",
-                          "YAxisId": "Y",
-                          "Color": -16711681,
-                          "AdditionalColor": 838860939,
-                          "StrokeThickness": 1,
-                          "AntiAliasing": true,
-                          "Style": "Line",
-                          "ShowAxisMarker": false
-                        }
-                      }
-                    },
-                    "Id": "5fa8c176-57bf-4b50-877d-a881d9b55a20",
+                    "Id": "03dafc1e-db5d-5dad-e40e-d2cfcfd8526d",
                     "IsVisible": true,
                     "IsLegend": true,
                     "XAxisId": "X",
@@ -1231,7 +1215,7 @@
                 "OrderElements": [],
                 "TradeElements": [
                   {
-                    "Id": "0f2df8e1-345c-410b-9251-91e0d0940c2d",
+                    "Id": "dfcd2a56-bc60-5c30-9678-901a2582fbb0",
                     "IsVisible": true,
                     "IsLegend": true,
                     "XAxisId": "X",
@@ -1244,7 +1228,7 @@
                     "DrawSize": 0.0
                   },
                   {
-                    "Id": "87c7832f-f139-4c44-b30f-80d9c404736b",
+                    "Id": "0740e7f5-93bf-7744-718e-5efbe9e2347a",
                     "IsVisible": true,
                     "IsLegend": true,
                     "XAxisId": "X",
@@ -1257,7 +1241,7 @@
                     "DrawSize": 0.0
                   },
                   {
-                    "Id": "10b10ad4-f0de-421c-a4e1-399c0df00717",
+                    "Id": "62c0cbf1-bc47-6f96-1ea5-41792c2af944",
                     "IsVisible": true,
                     "IsLegend": true,
                     "XAxisId": "X",
@@ -1496,35 +1480,36 @@
               "From": "candles",
               "FromPort": "Output",
               "To": "chart",
-              "ToPort": "dynsock_69b75c11d48b40308b002d53b24849d7"
+              "ToPort": "dynsock_0f10410bc7eb6b022c1ba473650f19fc"
             },
             {
               "From": "rsi",
               "FromPort": "Output",
               "To": "chart",
-              "ToPort": "dynsock_5fa8c17657bf4b50877da881d9b55a20"
+              "ToPort": "dynsock_03dafc1edb5d5dade40ed2cfcfd8526d"
             },
             {
               "From": "buy",
               "FromPort": "MyTrade",
               "To": "chart",
-              "ToPort": "dynsock_0f2df8e1345c410b925191e0d0940c2d"
+              "ToPort": "dynsock_dfcd2a56bc605c309678901a2582fbb0"
             },
             {
               "From": "sell",
               "FromPort": "MyTrade",
               "To": "chart",
-              "ToPort": "dynsock_87c7832ff1394c44b30f80d9c404736b"
+              "ToPort": "dynsock_0740e7f593bf7744718e5efbe9e2347a"
             },
             {
               "From": "protect",
               "FromPort": "MyTrade",
               "To": "chart",
-              "ToPort": "dynsock_10b10ad4f0de421ca4e1399c0df00717"
+              "ToPort": "dynsock_62c0cbf1bc476f961ea541792c2af944"
             }
           ]
         }
-      }
+      },
+      "Type": "Independent"
     }
   }
 }

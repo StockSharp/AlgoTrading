@@ -4,11 +4,9 @@
     "Type": "Schema",
     "Value": {
       "Version": "1.0",
-      "Type": "Independent",
       "Scheme": {
         "SchemaVersion": 1,
         "Category": "",
-        "Description": "Trades one-minute EMA crossovers with fixed-size market orders and writes a formatted log message for every fill.",
         "DocUrl": "",
         "Composition": {
           "Id": "87cc977d-4328-52dd-9814-fcf2f1bd854a",
@@ -570,7 +568,7 @@
                 "InputSocketIds": [
                   "dynsock_cross",
                   "dynsock_position",
-                  "b3d3da8141d44626a86a02a446432e6b"
+                  "4a75178a25954e69a4d597175c889006"
                 ]
               }
             },
@@ -606,7 +604,7 @@
                 "InputSocketIds": [
                   "dynsock_cross",
                   "dynsock_position",
-                  "ca047dfbdc904b429357a06d4f4812eb"
+                  "8e1b58038c6a45f3af26eb63f9c61431"
                 ]
               }
             },
@@ -831,12 +829,12 @@
             },
             {
               "Key": "chart",
-              "Figure": "Procedure",
+              "Figure": "",
               "X": 1320.0,
-              "Y": 260.0,
+              "Y": 0.0,
               "TypeId": "1926c40e-aaa3-4948-98e6-fba4b38b580e",
               "Settings": {
-                "Id": "a7b1c532-2fc5-448d-b7fb-a5436d1d96b7",
+                "Id": "1a2d58e9-6519-2c50-607a-d2d77acdb405",
                 "CanAutoName": false,
                 "Parameters": {
                   "Name": {
@@ -869,72 +867,38 @@
                 },
                 "CandleElements": [
                   {
-                    "Id": "f5446820-d427-4f5c-8d93-7ef22b4b97a3",
+                    "Id": "5dc79a24-052d-1b56-5f44-37985f9c927d",
                     "IsVisible": true,
                     "IsLegend": true,
                     "XAxisId": "X",
                     "YAxisId": "Y",
+                    "DrawStyle": "CandleStick",
                     "UpFillColor": -16744448,
                     "UpBorderColor": -16744448,
                     "DownFillColor": -65536,
                     "DownBorderColor": -65536,
                     "LineColor": -16777077,
                     "AreaColor": -16728065,
-                    "DrawStyle": "CandleStick",
                     "StrokeThickness": 1,
                     "AntiAliasing": false,
-                    "ShowAxisMarker": true
+                    "ShowAxisMarker": true,
+                    "ShowHorizontalVolumes": false,
+                    "LocalHorizontalVolumes": false,
+                    "HorizontalVolumeWidthFraction": 0.0,
+                    "DrawSeparateVolumes": false
                   }
                 ],
                 "IndicatorElements": [
                   {
-                    "IndicatorPainter": {
-                      "type": "StockSharp.Xaml.Charting.IndicatorPainters.DefaultPainter, StockSharp.Xaml.Charting",
-                      "settings": {
-                        "Line": {
-                          "Id": "a6fb396e-fa88-49d8-ac64-1576ec94c53a",
-                          "IsVisible": true,
-                          "IsLegend": true,
-                          "XAxisId": "X",
-                          "YAxisId": "Y",
-                          "Color": -16711681,
-                          "AdditionalColor": 838860939,
-                          "StrokeThickness": 1,
-                          "AntiAliasing": true,
-                          "Style": "Line",
-                          "ShowAxisMarker": false
-                        }
-                      }
-                    },
-                    "Id": "8537c112-3809-46a5-afe0-5b14933e4af1",
+                    "Id": "c1f6cf98-1e16-0c2f-3c0d-bb298b736c08",
                     "IsVisible": true,
-                    "FullTitle": "Fast EMA 120",
                     "IsLegend": true,
                     "XAxisId": "X",
                     "YAxisId": "Y"
                   },
                   {
-                    "IndicatorPainter": {
-                      "type": "StockSharp.Xaml.Charting.IndicatorPainters.DefaultPainter, StockSharp.Xaml.Charting",
-                      "settings": {
-                        "Line": {
-                          "Id": "c774d389-e3ee-4dbc-a99e-6545353ec8ef",
-                          "IsVisible": true,
-                          "IsLegend": true,
-                          "XAxisId": "X",
-                          "YAxisId": "Y",
-                          "Color": -23296,
-                          "AdditionalColor": 838860939,
-                          "StrokeThickness": 1,
-                          "AntiAliasing": true,
-                          "Style": "Line",
-                          "ShowAxisMarker": false
-                        }
-                      }
-                    },
-                    "Id": "3d1bd33b-2efc-4b68-a636-e4c1e1bef71c",
+                    "Id": "a3982c10-3970-df3c-c0a1-f1344bc09956",
                     "IsVisible": true,
-                    "FullTitle": "Slow EMA 450",
                     "IsLegend": true,
                     "XAxisId": "X",
                     "YAxisId": "Y"
@@ -943,7 +907,7 @@
                 "OrderElements": [],
                 "TradeElements": [
                   {
-                    "Id": "ab015581-a113-4388-9586-2c532117e9b0",
+                    "Id": "3cb8c8d8-3eea-a5eb-7762-f68ddfdb4801",
                     "IsVisible": true,
                     "IsLegend": true,
                     "XAxisId": "X",
@@ -956,7 +920,7 @@
                     "DrawSize": 0.0
                   },
                   {
-                    "Id": "d9083014-dd0d-452e-b6cd-de17930cd227",
+                    "Id": "b68c76a4-9245-0253-bed7-925d66999034",
                     "IsVisible": true,
                     "IsLegend": true,
                     "XAxisId": "X",
@@ -1153,35 +1117,36 @@
               "From": "candles",
               "FromPort": "Output",
               "To": "chart",
-              "ToPort": "dynsock_f5446820d4274f5c8d937ef22b4b97a3"
+              "ToPort": "dynsock_5dc79a24052d1b565f4437985f9c927d"
             },
             {
               "From": "fastEma",
               "FromPort": "Output",
               "To": "chart",
-              "ToPort": "dynsock_8537c112380946a5afe05b14933e4af1"
+              "ToPort": "dynsock_c1f6cf981e160c2f3c0dbb298b736c08"
             },
             {
               "From": "slowEma",
               "FromPort": "Output",
               "To": "chart",
-              "ToPort": "dynsock_3d1bd33b2efc4b68a636e4c1e1bef71c"
+              "ToPort": "dynsock_a3982c103970df3cc0a1f1344bc09956"
             },
             {
               "From": "buy",
               "FromPort": "MyTrade",
               "To": "chart",
-              "ToPort": "dynsock_ab015581a113438895862c532117e9b0"
+              "ToPort": "dynsock_3cb8c8d83eeaa5eb7762f68ddfdb4801"
             },
             {
               "From": "sell",
               "FromPort": "MyTrade",
               "To": "chart",
-              "ToPort": "dynsock_d9083014dd0d452eb6cdde17930cd227"
+              "ToPort": "dynsock_b68c76a492450253bed7925d66999034"
             }
           ]
         }
-      }
+      },
+      "Type": "Independent"
     }
   }
 }

@@ -829,7 +829,7 @@
                 "InputSocketIds": [
                   "dynsock_zscore",
                   "dynsock_position",
-                  "fcfa10586d1b4dffb36d8d297609c50d"
+                  "5b7a511df19f43fbb772a24f363ff617"
                 ]
               }
             },
@@ -865,7 +865,7 @@
                 "InputSocketIds": [
                   "dynsock_zscore",
                   "dynsock_position",
-                  "e77ede21474744dea1c715dbe7570c20"
+                  "e57a391f939b49478f1ab87114c82fca"
                 ]
               }
             },
@@ -901,7 +901,7 @@
                 "InputSocketIds": [
                   "dynsock_zscore",
                   "dynsock_position",
-                  "ce599fb5a23e433b9ec372795a205e57"
+                  "25520d4f5d66480fab96a7a7d974befb"
                 ]
               }
             },
@@ -937,7 +937,7 @@
                 "InputSocketIds": [
                   "dynsock_zscore",
                   "dynsock_position",
-                  "15ff9b77c2ee44eebee5f3df8e342de6"
+                  "057e4036e55f4138a248261e8c8d9a22"
                 ]
               }
             },
@@ -1456,7 +1456,8 @@
             }
           ]
         }
-      }
+      },
+      "Type": "Independent"
     }
   }
 }

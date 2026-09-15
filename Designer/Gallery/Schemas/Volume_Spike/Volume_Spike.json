@@ -690,7 +690,7 @@
                   "dynsock_spike",
                   "dynsock_trend",
                   "dynsock_position",
-                  "a80722c0324540c3bae3c60e65a0b238"
+                  "7fd86b9312cd4892903d4517d7dd7482"
                 ]
               }
             },
@@ -727,7 +727,7 @@
                   "dynsock_spike",
                   "dynsock_trend",
                   "dynsock_position",
-                  "49e6c54b6ab24f8297a6743ea2f56ae2"
+                  "3c2f789af00248febe224b74a3789899"
                 ]
               }
             },
@@ -1192,7 +1192,8 @@
             }
           ]
         }
-      }
+      },
+      "Type": "Independent"
     }
   }
 }

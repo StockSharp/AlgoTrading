@@ -1,21 +1,19 @@
 ﻿{
-  "Id": "f8c24762-e97c-4714-a14e-512a79973398",
+  "Id": "bc870e6a-613c-59cb-71e7-52e4d153c608",
   "Content": {
     "Type": "Schema",
     "Value": {
       "Version": "1.0",
-      "Type": "Independent",
       "Scheme": {
         "SchemaVersion": 1,
         "Category": "",
-        "Description": "Sample index candles",
         "DocUrl": "",
         "Composition": {
-          "Id": "051ac6ed-adfa-4f23-b98e-b6b0741ddb11",
+          "Id": "bc870e6a-613c-59cb-71e7-52e4d153c608",
           "CanAutoName": false,
           "Parameters": {
             "Name": {
-              "Value": "Index candles"
+              "Value": "Index_Candles"
             },
             "LogLevel": {
               "Value": "Inherit"
@@ -24,31 +22,62 @@
               "Value": true
             },
             "ShowSockets": {
-              "Value": true
+              "Value": false
             },
             "ProcessNullValues": {
               "Value": false
             },
-            "16eb01be-cda9-43c1-986b-e298de47fe5eValue": {
-              "Value": "RIZ6@FORTS"
+            "af4b6a7c-efe8-df0f-a67b-84e482e3efddSeries": {
+              "Value": {
+                "type": "StockSharp.Messages.DataType, StockSharp.Messages",
+                "settings": {
+                  "MessageType": "StockSharp.Messages.TimeFrameCandleMessage, StockSharp.Messages",
+                  "Arg": {
+                    "type": "System.TimeSpan, System.Private.CoreLib",
+                    "value": "00-05-00"
+                  }
+                }
+              }
             },
-            "8bc10769-f344-478a-ba67-a7ec8441e55aValue": {
-              "Value": "SIZ6@FORTS"
+            "59baab03-cf3e-2d14-220f-ee5e44c53a3bSeries": {
+              "Value": {
+                "type": "StockSharp.Messages.DataType, StockSharp.Messages",
+                "settings": {
+                  "MessageType": "StockSharp.Messages.TimeFrameCandleMessage, StockSharp.Messages",
+                  "Arg": {
+                    "type": "System.TimeSpan, System.Private.CoreLib",
+                    "value": "00-05-00"
+                  }
+                }
+              }
+            },
+            "112d8297-fc54-9120-4046-760e54d622f5Value": {},
+            "2b11bc35-ff3c-2d8d-0fd7-efa44c6ac432Value": {},
+            "3b062bbd-1f60-ab5d-1cb4-197d8f5e79f4Series": {
+              "Value": {
+                "type": "StockSharp.Messages.DataType, StockSharp.Messages",
+                "settings": {
+                  "MessageType": "StockSharp.Messages.TimeFrameCandleMessage, StockSharp.Messages",
+                  "Arg": {
+                    "type": "System.TimeSpan, System.Private.CoreLib",
+                    "value": "00-05-00"
+                  }
+                }
+              }
             }
           },
-          "TypeId": "ccdca5d5-ac70-4a96-9129-9908257fd84d",
-          "Type": "Independent"
+          "TypeId": "0d7852bd-8fb6-44fe-84f0-f1db185c189d"
         },
         "Model": {
           "Nodes": [
             {
-              "Key": "4",
-              "Figure": "Procedure",
-              "X": -140.0,
-              "Y": -180.0,
+              "Key": "index",
+              "Figure": "",
+              "X": 0.0,
+              "Y": 0.0,
               "TypeId": "d9f4dd6f-2676-4a3f-a279-1e7acfd44117",
               "Settings": {
-                "Id": "d212bc8a-e35a-4efb-b458-e9207b7ff798",
+                "Id": "d4681bcb-daab-dba5-7f94-95b0575a84a7",
                 "CanAutoName": true,
                 "Parameters": {
                   "Name": {
@@ -69,9 +98,7 @@
                   "ProcessNullValues": {
                     "Value": false
                   },
-                  "Index": {
-                    "Value": "RIZ6@FORTS / SIZ6@FORTS"
-                  },
+                  "Index": {},
                   "IgnoreErrors": {
                     "Value": false
                   },
@@ -82,23 +109,23 @@
               }
             },
             {
-              "Key": "2",
-              "Figure": "Procedure",
-              "X": 90.0,
-              "Y": -180.0,
+              "Key": "timeFrameCandle000500",
+              "Figure": "",
+              "X": 220.0,
+              "Y": 0.0,
               "TypeId": "3d773273-0cee-4d40-8eef-acded2d07ab8",
               "Settings": {
-                "Id": "4df4b601-a7c8-4947-928e-8ba89ffea4c5",
+                "Id": "af4b6a7c-efe8-df0f-a67b-84e482e3efdd",
                 "CanAutoName": true,
                 "Parameters": {
                   "Name": {
-                    "Value": "TimeFrameCandle__00-05-00"
+                    "Value": "TF: 00:05:00"
                   },
                   "LogLevel": {
                     "Value": "Inherit"
                   },
                   "ShowParameters": {
-                    "Value": false
+                    "Value": true
                   },
                   "ShowSockets": {
                     "Value": true
@@ -115,7 +142,7 @@
                       "settings": {
                         "MessageType": "StockSharp.Messages.TimeFrameCandleMessage, StockSharp.Messages",
                         "Arg": {
-                          "type": "System.TimeSpan, mscorlib",
+                          "type": "System.TimeSpan, System.Private.CoreLib",
                           "value": "00-05-00"
                         }
                       }
@@ -140,23 +167,23 @@
               }
             },
             {
-              "Key": "5",
-              "Figure": "Procedure",
-              "X": 90.0,
-              "Y": -360.0,
+              "Key": "timeFrameCandle0005002",
+              "Figure": "",
+              "X": 220.0,
+              "Y": 130.0,
               "TypeId": "3d773273-0cee-4d40-8eef-acded2d07ab8",
               "Settings": {
-                "Id": "d3a89f4e-f2ad-42b7-9385-69a51fe91c88",
+                "Id": "59baab03-cf3e-2d14-220f-ee5e44c53a3b",
                 "CanAutoName": true,
                 "Parameters": {
                   "Name": {
-                    "Value": "TimeFrameCandle__00-05-00"
+                    "Value": "TF: 00:05:00"
                   },
                   "LogLevel": {
                     "Value": "Inherit"
                   },
                   "ShowParameters": {
-                    "Value": false
+                    "Value": true
                   },
                   "ShowSockets": {
                     "Value": true
@@ -173,7 +200,7 @@
                       "settings": {
                         "MessageType": "StockSharp.Messages.TimeFrameCandleMessage, StockSharp.Messages",
                         "Arg": {
-                          "type": "System.TimeSpan, mscorlib",
+                          "type": "System.TimeSpan, System.Private.CoreLib",
                           "value": "00-05-00"
                         }
                       }
@@ -198,17 +225,17 @@
               }
             },
             {
-              "Key": "6",
-              "Figure": "Procedure",
-              "X": -160.0,
-              "Y": -360.0,
+              "Key": "RIZ6FORTS",
+              "Figure": "",
+              "X": 0.0,
+              "Y": 130.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
-                "Id": "16eb01be-cda9-43c1-986b-e298de47fe5e",
+                "Id": "112d8297-fc54-9120-4046-760e54d622f5",
                 "CanAutoName": true,
                 "Parameters": {
                   "Name": {
-                    "Value": "RIZ6@FORTS"
+                    "Value": "Security"
                   },
                   "LogLevel": {
                     "Value": "Inherit"
@@ -227,9 +254,7 @@
                       "Type": "StockSharp.BusinessEntities.Security, StockSharp.BusinessEntities"
                     }
                   },
-                  "Value": {
-                    "Value": "RIZ6@FORTS"
-                  },
+                  "Value": {},
                   "InputAsTrigger": {
                     "Value": false
                   }
@@ -237,17 +262,17 @@
               }
             },
             {
-              "Key": "7",
-              "Figure": "Procedure",
-              "X": -160.0,
-              "Y": -270.0,
+              "Key": "SIZ6FORTS",
+              "Figure": "",
+              "X": 0.0,
+              "Y": 260.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
-                "Id": "8bc10769-f344-478a-ba67-a7ec8441e55a",
+                "Id": "2b11bc35-ff3c-2d8d-0fd7-efa44c6ac432",
                 "CanAutoName": true,
                 "Parameters": {
                   "Name": {
-                    "Value": "SIZ6@FORTS"
+                    "Value": "Security"
                   },
                   "LogLevel": {
                     "Value": "Inherit"
@@ -266,9 +291,7 @@
                       "Type": "StockSharp.BusinessEntities.Security, StockSharp.BusinessEntities"
                     }
                   },
-                  "Value": {
-                    "Value": "SIZ6@FORTS"
-                  },
+                  "Value": {},
                   "InputAsTrigger": {
                     "Value": false
                   }
@@ -276,23 +299,23 @@
               }
             },
             {
-              "Key": "8",
-              "Figure": "Procedure",
-              "X": 90.0,
-              "Y": -270.0,
+              "Key": "timeFrameCandle0005003",
+              "Figure": "",
+              "X": 220.0,
+              "Y": 260.0,
               "TypeId": "3d773273-0cee-4d40-8eef-acded2d07ab8",
               "Settings": {
-                "Id": "a9c1c039-f396-46eb-bc97-5f4a581154bf",
+                "Id": "3b062bbd-1f60-ab5d-1cb4-197d8f5e79f4",
                 "CanAutoName": true,
                 "Parameters": {
                   "Name": {
-                    "Value": "TimeFrameCandle__00-05-00"
+                    "Value": "TF: 00:05:00"
                   },
                   "LogLevel": {
                     "Value": "Inherit"
                   },
                   "ShowParameters": {
-                    "Value": false
+                    "Value": true
                   },
                   "ShowSockets": {
                     "Value": true
@@ -309,7 +332,7 @@
                       "settings": {
                         "MessageType": "StockSharp.Messages.TimeFrameCandleMessage, StockSharp.Messages",
                         "Arg": {
-                          "type": "System.TimeSpan, mscorlib",
+                          "type": "System.TimeSpan, System.Private.CoreLib",
                           "value": "00-05-00"
                         }
                       }
@@ -334,13 +357,13 @@
               }
             },
             {
-              "Key": "3",
-              "Figure": "Procedure",
-              "X": 380.0,
-              "Y": -360.0,
+              "Key": "chartPanel",
+              "Figure": "",
+              "X": 440.0,
+              "Y": 0.0,
               "TypeId": "1926c40e-aaa3-4948-98e6-fba4b38b580e",
               "Settings": {
-                "Id": "7e678194-b935-413f-83d6-0140094243a2",
+                "Id": "a5bc0d91-0495-bd08-f899-a1d5e2da7571",
                 "CanAutoName": true,
                 "Parameters": {
                   "Name": {
@@ -373,40 +396,25 @@
                 },
                 "CandleElements": [
                   {
-                    "Id": "252cf5f8-78e3-4dcd-ba4b-6a810a6b560c",
+                    "Id": "f635557c-e3e7-d0cb-75c8-b641a0a898cd",
                     "IsVisible": true,
                     "IsLegend": true,
                     "XAxisId": "X",
                     "YAxisId": "Y",
+                    "DrawStyle": "CandleStick",
                     "UpFillColor": -16744448,
                     "UpBorderColor": -16744448,
                     "DownFillColor": -65536,
                     "DownBorderColor": -65536,
                     "LineColor": -16777077,
                     "AreaColor": -16728065,
-                    "DrawStyle": "CandleStick",
                     "StrokeThickness": 1,
                     "AntiAliasing": false,
                     "ShowAxisMarker": true,
-                    "Cluster": {
-                      "Timeframe2Multiplier": 5,
-                      "Timeframe3Multiplier": 15,
-                      "FontColor": -13421773,
-                      "Timeframe2Color": -2236963,
-                      "Timeframe2FrameColor": -43691,
-                      "Timeframe3Color": -5592406,
-                      "MaxVolumeColor": -65536,
-                      "ClusterLineColor": -5592406,
-                      "ClusterSeparatorLineColor": 855638015,
-                      "ClusterTextColor": -13421773,
-                      "ClusterColor": -7829368,
-                      "ClusterMaxColor": -65536,
-                      "ShowHorizontalVolumes": true,
-                      "LocalHorizontalVolumes": true,
-                      "HorizontalVolumeWidthFraction": 0.15,
-                      "HorizontalVolumeColor": -2147458048,
-                      "HorizontalVolumeFontColor": -16751616
-                    }
+                    "ShowHorizontalVolumes": false,
+                    "LocalHorizontalVolumes": false,
+                    "HorizontalVolumeWidthFraction": 0.0,
+                    "DrawSeparateVolumes": false
                   }
                 ],
                 "IndicatorElements": [],
@@ -418,17 +426,17 @@
                     "Title": "X",
                     "IsVisible": true,
                     "Group": "CategoryDateTimeX",
-                    "AutoRange": true,
+                    "AutoRange": false,
                     "DrawMinorTicks": false,
                     "DrawMajorTicks": true,
                     "DrawMajorGridLines": true,
-                    "DrawMinorGridLines": false,
+                    "DrawMinorGridLines": true,
                     "DrawLabels": true,
                     "TextFormatting": "G",
                     "SubDayTextFormatting": "T",
                     "SwitchAxisLocation": false,
                     "AxisType": "CategoryDateTime",
-                    "TimeZone": "Russian Standard Time"
+                    "TimeZone": "UTC"
                   }
                 ],
                 "YAxes": [
@@ -441,25 +449,25 @@
                     "DrawMinorTicks": false,
                     "DrawMajorTicks": true,
                     "DrawMajorGridLines": true,
-                    "DrawMinorGridLines": false,
+                    "DrawMinorGridLines": true,
                     "DrawLabels": true,
                     "TextFormatting": "#.####",
                     "SubDayTextFormatting": "T",
                     "SwitchAxisLocation": false,
                     "AxisType": "Numeric",
-                    "TimeZone": "Russian Standard Time"
+                    "TimeZone": "UTC"
                   }
                 ]
               }
             },
             {
-              "Key": "9",
-              "Figure": "Procedure",
-              "X": 380.0,
-              "Y": -270.0,
+              "Key": "chartPanel2",
+              "Figure": "",
+              "X": 440.0,
+              "Y": 130.0,
               "TypeId": "1926c40e-aaa3-4948-98e6-fba4b38b580e",
               "Settings": {
-                "Id": "6f48e435-5bd0-47fd-8b1b-70aee4dd936f",
+                "Id": "4a1c7cc2-8c13-3434-3ca4-f2023492593c",
                 "CanAutoName": true,
                 "Parameters": {
                   "Name": {
@@ -492,40 +500,25 @@
                 },
                 "CandleElements": [
                   {
-                    "Id": "da87cc8b-5a06-47f1-aecc-2e1c76a48122",
+                    "Id": "fe8603e8-a7b4-6cce-1cd7-ac3687b91bc7",
                     "IsVisible": true,
                     "IsLegend": true,
                     "XAxisId": "X",
                     "YAxisId": "Y",
+                    "DrawStyle": "CandleStick",
                     "UpFillColor": -16744448,
                     "UpBorderColor": -16744448,
                     "DownFillColor": -65536,
                     "DownBorderColor": -65536,
                     "LineColor": -16777077,
                     "AreaColor": -16728065,
-                    "DrawStyle": "CandleStick",
                     "StrokeThickness": 1,
                     "AntiAliasing": false,
                     "ShowAxisMarker": true,
-                    "Cluster": {
-                      "Timeframe2Multiplier": 5,
-                      "Timeframe3Multiplier": 15,
-                      "FontColor": -13421773,
-                      "Timeframe2Color": -2236963,
-                      "Timeframe2FrameColor": -43691,
-                      "Timeframe3Color": -5592406,
-                      "MaxVolumeColor": -65536,
-                      "ClusterLineColor": -5592406,
-                      "ClusterSeparatorLineColor": 855638015,
-                      "ClusterTextColor": -13421773,
-                      "ClusterColor": -7829368,
-                      "ClusterMaxColor": -65536,
-                      "ShowHorizontalVolumes": true,
-                      "LocalHorizontalVolumes": true,
-                      "HorizontalVolumeWidthFraction": 0.15,
-                      "HorizontalVolumeColor": -2147458048,
-                      "HorizontalVolumeFontColor": -16751616
-                    }
+                    "ShowHorizontalVolumes": false,
+                    "LocalHorizontalVolumes": false,
+                    "HorizontalVolumeWidthFraction": 0.0,
+                    "DrawSeparateVolumes": false
                   }
                 ],
                 "IndicatorElements": [],
@@ -537,17 +530,17 @@
                     "Title": "X",
                     "IsVisible": true,
                     "Group": "CategoryDateTimeX",
-                    "AutoRange": true,
+                    "AutoRange": false,
                     "DrawMinorTicks": false,
                     "DrawMajorTicks": true,
                     "DrawMajorGridLines": true,
-                    "DrawMinorGridLines": false,
+                    "DrawMinorGridLines": true,
                     "DrawLabels": true,
                     "TextFormatting": "G",
                     "SubDayTextFormatting": "T",
                     "SwitchAxisLocation": false,
                     "AxisType": "CategoryDateTime",
-                    "TimeZone": "Russian Standard Time"
+                    "TimeZone": "UTC"
                   }
                 ],
                 "YAxes": [
@@ -560,25 +553,25 @@
                     "DrawMinorTicks": false,
                     "DrawMajorTicks": true,
                     "DrawMajorGridLines": true,
-                    "DrawMinorGridLines": false,
+                    "DrawMinorGridLines": true,
                     "DrawLabels": true,
                     "TextFormatting": "#.####",
                     "SubDayTextFormatting": "T",
                     "SwitchAxisLocation": false,
                     "AxisType": "Numeric",
-                    "TimeZone": "Russian Standard Time"
+                    "TimeZone": "UTC"
                   }
                 ]
               }
             },
             {
-              "Key": "10",
-              "Figure": "Procedure",
-              "X": 380.0,
-              "Y": -180.0,
+              "Key": "chartPanel3",
+              "Figure": "",
+              "X": 440.0,
+              "Y": 260.0,
               "TypeId": "1926c40e-aaa3-4948-98e6-fba4b38b580e",
               "Settings": {
-                "Id": "e178a1bf-9023-466f-9690-60f20ed12d43",
+                "Id": "4486d104-eba1-a367-24ff-0a8651d7fabe",
                 "CanAutoName": true,
                 "Parameters": {
                   "Name": {
@@ -611,40 +604,25 @@
                 },
                 "CandleElements": [
                   {
-                    "Id": "aa07d8e3-936c-4694-a7ff-10fe9f30abc4",
+                    "Id": "942e86cd-5291-c1e5-2b1d-8d99d3f0b097",
                     "IsVisible": true,
                     "IsLegend": true,
                     "XAxisId": "X",
                     "YAxisId": "Y",
+                    "DrawStyle": "CandleStick",
                     "UpFillColor": -16744448,
                     "UpBorderColor": -16744448,
                     "DownFillColor": -65536,
                     "DownBorderColor": -65536,
                     "LineColor": -16777077,
                     "AreaColor": -16728065,
-                    "DrawStyle": "CandleStick",
                     "StrokeThickness": 1,
                     "AntiAliasing": false,
                     "ShowAxisMarker": true,
-                    "Cluster": {
-                      "Timeframe2Multiplier": 5,
-                      "Timeframe3Multiplier": 15,
-                      "FontColor": -13421773,
-                      "Timeframe2Color": -2236963,
-                      "Timeframe2FrameColor": -43691,
-                      "Timeframe3Color": -5592406,
-                      "MaxVolumeColor": -65536,
-                      "ClusterLineColor": -5592406,
-                      "ClusterSeparatorLineColor": 855638015,
-                      "ClusterTextColor": -13421773,
-                      "ClusterColor": -7829368,
-                      "ClusterMaxColor": -65536,
-                      "ShowHorizontalVolumes": true,
-                      "LocalHorizontalVolumes": true,
-                      "HorizontalVolumeWidthFraction": 0.15,
-                      "HorizontalVolumeColor": -2147458048,
-                      "HorizontalVolumeFontColor": -16751616
-                    }
+                    "ShowHorizontalVolumes": false,
+                    "LocalHorizontalVolumes": false,
+                    "HorizontalVolumeWidthFraction": 0.0,
+                    "DrawSeparateVolumes": false
                   }
                 ],
                 "IndicatorElements": [],
@@ -656,17 +634,17 @@
                     "Title": "X",
                     "IsVisible": true,
                     "Group": "CategoryDateTimeX",
-                    "AutoRange": true,
+                    "AutoRange": false,
                     "DrawMinorTicks": false,
                     "DrawMajorTicks": true,
                     "DrawMajorGridLines": true,
-                    "DrawMinorGridLines": false,
+                    "DrawMinorGridLines": true,
                     "DrawLabels": true,
                     "TextFormatting": "G",
                     "SubDayTextFormatting": "T",
                     "SwitchAxisLocation": false,
                     "AxisType": "CategoryDateTime",
-                    "TimeZone": "Russian Standard Time"
+                    "TimeZone": "UTC"
                   }
                 ],
                 "YAxes": [
@@ -679,13 +657,13 @@
                     "DrawMinorTicks": false,
                     "DrawMajorTicks": true,
                     "DrawMajorGridLines": true,
-                    "DrawMinorGridLines": false,
+                    "DrawMinorGridLines": true,
                     "DrawLabels": true,
                     "TextFormatting": "#.####",
                     "SubDayTextFormatting": "T",
                     "SwitchAxisLocation": false,
                     "AxisType": "Numeric",
-                    "TimeZone": "Russian Standard Time"
+                    "TimeZone": "UTC"
                   }
                 ]
               }
@@ -693,44 +671,45 @@
           ],
           "Links": [
             {
-              "From": "4",
+              "From": "index",
               "FromPort": "Security",
-              "To": "2",
+              "To": "timeFrameCandle000500",
               "ToPort": "Security"
             },
             {
-              "From": "6",
+              "From": "RIZ6FORTS",
               "FromPort": "Output",
-              "To": "5",
+              "To": "timeFrameCandle0005002",
               "ToPort": "Security"
             },
             {
-              "From": "7",
+              "From": "SIZ6FORTS",
               "FromPort": "Output",
-              "To": "8",
+              "To": "timeFrameCandle0005003",
               "ToPort": "Security"
             },
             {
-              "From": "2",
+              "From": "timeFrameCandle000500",
               "FromPort": "Output",
-              "To": "10",
-              "ToPort": "dynsock_aa07d8e3936c4694a7ff10fe9f30abc4"
+              "To": "chartPanel3",
+              "ToPort": "dynsock_942e86cd5291c1e52b1d8d99d3f0b097"
             },
             {
-              "From": "8",
+              "From": "timeFrameCandle0005003",
               "FromPort": "Output",
-              "To": "9",
-              "ToPort": "dynsock_da87cc8b5a0647f1aecc2e1c76a48122"
+              "To": "chartPanel2",
+              "ToPort": "dynsock_fe8603e8a7b46cce1cd7ac3687b91bc7"
             },
             {
-              "From": "5",
+              "From": "timeFrameCandle0005002",
               "FromPort": "Output",
-              "To": "3",
-              "ToPort": "dynsock_252cf5f878e34dcdba4b6a810a6b560c"
+              "To": "chartPanel",
+              "ToPort": "dynsock_f635557ce3e7d0cb75c8b641a0a898cd"
             }
           ]
         }
-      }
+      },
+      "Type": "Independent"
     }
   }
 }

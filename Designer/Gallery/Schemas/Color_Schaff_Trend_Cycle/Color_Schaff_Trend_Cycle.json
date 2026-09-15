@@ -808,7 +808,7 @@
                   "dynsock_isabove",
                   "dynsock_macd",
                   "dynsock_position",
-                  "c47bf73e518041a4a54d17ba69e0e3aa"
+                  "87dec2638f214397b0016d983e339ed6"
                 ]
               }
             },
@@ -846,7 +846,7 @@
                   "dynsock_isbelow",
                   "dynsock_macd",
                   "dynsock_position",
-                  "c955415832e5436d8cfc7d460f8f3d6b"
+                  "2d444249aab14e3aac7d0232d09c86ac"
                 ]
               }
             },
@@ -1251,7 +1251,8 @@
             }
           ]
         }
-      }
+      },
+      "Type": "Independent"
     }
   }
 }

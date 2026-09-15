@@ -1154,7 +1154,7 @@
                   "dynsock_rsifloor",
                   "dynsock_rsiceiling",
                   "dynsock_position",
-                  "36678bbbb50642988cc3184a52df9fd9"
+                  "3966ceaa3423479aa2cc081fc84440cf"
                 ]
               }
             },
@@ -1193,7 +1193,7 @@
                   "dynsock_rsiceiling",
                   "dynsock_rsifloor",
                   "dynsock_position",
-                  "02b4920e01464f7eb81cf9083c6dae4d"
+                  "aa61abbe101a4474957d460c70328470"
                 ]
               }
             },
@@ -1601,7 +1601,8 @@
             }
           ]
         }
-      }
+      },
+      "Type": "Independent"
     }
   }
 }

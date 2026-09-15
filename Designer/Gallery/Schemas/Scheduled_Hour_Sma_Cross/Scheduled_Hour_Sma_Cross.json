@@ -50,6 +50,42 @@
               "Value": 21
             },
             "73bd9bbd-4e4a-aabc-adf2-28323427f282Source": {},
+            "1bba4687-819a-965e-52a7-ffaa9c4fa691Value": {
+              "Value": {
+                "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                "settings": {
+                  "Type": "Absolute",
+                  "Value": 1.0
+                }
+              }
+            },
+            "e347c736-ee44-cc65-4eef-f5d22f843f0eValue": {
+              "Value": {
+                "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                "settings": {
+                  "Type": "Absolute",
+                  "Value": 0.0
+                }
+              }
+            },
+            "03e6f047-5165-3636-1468-ce85bb7767daValue": {
+              "Value": {
+                "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                "settings": {
+                  "Type": "Absolute",
+                  "Value": 0.0
+                }
+              }
+            },
+            "6689c6e3-be08-0a87-5102-9e9f54e5036bValue": {
+              "Value": {
+                "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                "settings": {
+                  "Type": "Absolute",
+                  "Value": 1.0
+                }
+              }
+            },
             "6658b7af-4146-151b-4562-91787163b1d9N": {
               "Value": 8
             },
@@ -62,12 +98,39 @@
                 }
               }
             },
+            "c175feb5-f64a-a60b-6c1b-f2a0f6299c6dValue": {
+              "Value": {
+                "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                "settings": {
+                  "Type": "Absolute",
+                  "Value": 0.0
+                }
+              }
+            },
             "136e4ce7-07e4-84eb-7998-3deb98fafea4Value": {
               "Value": {
                 "type": "StockSharp.Messages.Unit, StockSharp.Messages",
                 "settings": {
                   "Type": "Absolute",
                   "Value": 1.0
+                }
+              }
+            },
+            "8757839d-5f06-18c4-8e13-86fdeca7eeb9Value": {
+              "Value": {
+                "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                "settings": {
+                  "Type": "Absolute",
+                  "Value": 1.0
+                }
+              }
+            },
+            "9e9459ea-2135-2d69-6671-8acb9b0a5b26Value": {
+              "Value": {
+                "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                "settings": {
+                  "Type": "Absolute",
+                  "Value": -1.0
                 }
               }
             }
@@ -80,7 +143,7 @@
               "Key": "security",
               "Figure": "",
               "X": 0.0,
-              "Y": 1060.0,
+              "Y": 0.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "21cd5445-49ae-68ec-bf08-44e15aa5f812",
@@ -118,8 +181,8 @@
             {
               "Key": "candles",
               "Figure": "",
-              "X": 360.0,
-              "Y": 1060.0,
+              "X": 220.0,
+              "Y": 0.0,
               "TypeId": "3d773273-0cee-4d40-8eef-acded2d07ab8",
               "Settings": {
                 "Id": "e4c2685a-e191-205e-4c08-d73791b191af",
@@ -176,8 +239,8 @@
             {
               "Key": "fastSma",
               "Figure": "",
-              "X": 760.0,
-              "Y": 820.0,
+              "X": 440.0,
+              "Y": 0.0,
               "TypeId": "f56c74af-7c39-464a-8b90-4eff4c8760b1",
               "Settings": {
                 "Id": "28c7065a-2e6e-53da-5d24-934cdc72b2dd",
@@ -222,8 +285,8 @@
             {
               "Key": "fastValue",
               "Figure": "",
-              "X": 1120.0,
-              "Y": 820.0,
+              "X": 660.0,
+              "Y": 0.0,
               "TypeId": "f0edcbdf-41cb-442b-896c-332dac3caae3",
               "Settings": {
                 "Id": "977aece2-52c6-5200-7f15-a7c0df9b25c2",
@@ -254,8 +317,8 @@
             {
               "Key": "slowSma",
               "Figure": "",
-              "X": 760.0,
-              "Y": 1200.0,
+              "X": 440.0,
+              "Y": 130.0,
               "TypeId": "f56c74af-7c39-464a-8b90-4eff4c8760b1",
               "Settings": {
                 "Id": "73bd9bbd-4e4a-aabc-adf2-28323427f282",
@@ -300,8 +363,8 @@
             {
               "Key": "slowValue",
               "Figure": "",
-              "X": 1120.0,
-              "Y": 1200.0,
+              "X": 660.0,
+              "Y": 130.0,
               "TypeId": "f0edcbdf-41cb-442b-896c-332dac3caae3",
               "Settings": {
                 "Id": "6b690ed4-5c6f-960a-d261-3ef42e2750d2",
@@ -333,7 +396,7 @@
               "Key": "time",
               "Figure": "",
               "X": 0.0,
-              "Y": 80.0,
+              "Y": 130.0,
               "TypeId": "2da039cc-f6e0-47e3-b997-3a24ccfd62ee",
               "Settings": {
                 "Id": "b19db0a0-9396-40cc-0218-2ac66579cef1",
@@ -360,8 +423,8 @@
             {
               "Key": "hour",
               "Figure": "",
-              "X": 760.0,
-              "Y": 80.0,
+              "X": 220.0,
+              "Y": 130.0,
               "TypeId": "35c046c4-1b0f-4074-ac08-0c70850a8dcf",
               "Settings": {
                 "Id": "292bee8b-b64e-b4be-0644-d361d65cc1c8",
@@ -396,8 +459,8 @@
             {
               "Key": "readyOne",
               "Figure": "",
-              "X": 1500.0,
-              "Y": 1380.0,
+              "X": 880.0,
+              "Y": 0.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "1bba4687-819a-965e-52a7-ffaa9c4fa691",
@@ -410,7 +473,7 @@
                     "Value": "Inherit"
                   },
                   "ShowParameters": {
-                    "Value": false
+                    "Value": true
                   },
                   "ShowSockets": {
                     "Value": true
@@ -441,8 +504,8 @@
             {
               "Key": "candleReady",
               "Figure": "",
-              "X": 1860.0,
-              "Y": 1380.0,
+              "X": 1100.0,
+              "Y": 0.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "8214ec97-0542-159d-778d-50dcf056d006",
@@ -486,8 +549,8 @@
             {
               "Key": "decisionOnce",
               "Figure": "",
-              "X": 2940.0,
-              "Y": 1380.0,
+              "X": 1100.0,
+              "Y": 130.0,
               "TypeId": "d9273c2c-6789-4ba8-a5c5-2b1eb4c4f006",
               "Settings": {
                 "Id": "f70c9cee-85d9-041b-8227-fca5420add00",
@@ -514,8 +577,8 @@
             {
               "Key": "clearReady",
               "Figure": "",
-              "X": 2220.0,
-              "Y": 1680.0,
+              "X": 1320.0,
+              "Y": 0.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "e347c736-ee44-cc65-4eef-f5d22f843f0e",
@@ -528,7 +591,7 @@
                     "Value": "Inherit"
                   },
                   "ShowParameters": {
-                    "Value": false
+                    "Value": true
                   },
                   "ShowSockets": {
                     "Value": true
@@ -559,8 +622,8 @@
             {
               "Key": "cooldownState",
               "Figure": "",
-              "X": 760.0,
-              "Y": 500.0,
+              "X": 220.0,
+              "Y": 260.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "9434a4c5-01b3-c1d9-40c8-5fc75cd674db",
@@ -604,8 +667,8 @@
             {
               "Key": "blockCooldown",
               "Figure": "",
-              "X": 3800.0,
-              "Y": 120.0,
+              "X": 0.0,
+              "Y": 260.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "03e6f047-5165-3636-1468-ce85bb7767da",
@@ -618,7 +681,7 @@
                     "Value": "Inherit"
                   },
                   "ShowParameters": {
-                    "Value": false
+                    "Value": true
                   },
                   "ShowSockets": {
                     "Value": true
@@ -649,8 +712,8 @@
             {
               "Key": "releaseCooldown",
               "Figure": "",
-              "X": 4160.0,
-              "Y": 420.0,
+              "X": 0.0,
+              "Y": 390.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "6689c6e3-be08-0a87-5102-9e9f54e5036b",
@@ -663,7 +726,7 @@
                     "Value": "Inherit"
                   },
                   "ShowParameters": {
-                    "Value": false
+                    "Value": true
                   },
                   "ShowSockets": {
                     "Value": true
@@ -694,8 +757,8 @@
             {
               "Key": "cooldown",
               "Figure": "",
-              "X": 3800.0,
-              "Y": 420.0,
+              "X": 440.0,
+              "Y": 260.0,
               "TypeId": "823a7255-f6e1-47b6-8186-4b58ffde0a78",
               "Settings": {
                 "Id": "6658b7af-4146-151b-4562-91787163b1d9",
@@ -728,8 +791,8 @@
             {
               "Key": "tradeHour",
               "Figure": "",
-              "X": 360.0,
-              "Y": 0.0,
+              "X": 220.0,
+              "Y": 390.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "4dd63233-10eb-529d-2476-743dbd92eefc",
@@ -773,8 +836,8 @@
             {
               "Key": "zero",
               "Figure": "",
-              "X": 360.0,
-              "Y": 560.0,
+              "X": 220.0,
+              "Y": 520.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "c175feb5-f64a-a60b-6c1b-f2a0f6299c6d",
@@ -787,7 +850,7 @@
                     "Value": "Inherit"
                   },
                   "ShowParameters": {
-                    "Value": false
+                    "Value": true
                   },
                   "ShowSockets": {
                     "Value": true
@@ -818,8 +881,8 @@
             {
               "Key": "volume",
               "Figure": "",
-              "X": 1500.0,
-              "Y": 420.0,
+              "X": 220.0,
+              "Y": 650.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "136e4ce7-07e4-84eb-7998-3deb98fafea4",
@@ -863,8 +926,8 @@
             {
               "Key": "positionState",
               "Figure": "",
-              "X": 360.0,
-              "Y": 1840.0,
+              "X": 220.0,
+              "Y": 780.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "267cf613-4e3e-5b1c-bf4c-e6f47aee802a",
@@ -908,8 +971,8 @@
             {
               "Key": "buyDelta",
               "Figure": "",
-              "X": 360.0,
-              "Y": 2460.0,
+              "X": 220.0,
+              "Y": 910.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "8757839d-5f06-18c4-8e13-86fdeca7eeb9",
@@ -922,7 +985,7 @@
                     "Value": "Inherit"
                   },
                   "ShowParameters": {
-                    "Value": false
+                    "Value": true
                   },
                   "ShowSockets": {
                     "Value": true
@@ -953,8 +1016,8 @@
             {
               "Key": "sellDelta",
               "Figure": "",
-              "X": 360.0,
-              "Y": 2800.0,
+              "X": 220.0,
+              "Y": 1040.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "9e9459ea-2135-2d69-6671-8acb9b0a5b26",
@@ -967,7 +1030,7 @@
                     "Value": "Inherit"
                   },
                   "ShowParameters": {
-                    "Value": false
+                    "Value": true
                   },
                   "ShowSockets": {
                     "Value": true
@@ -998,8 +1061,8 @@
             {
               "Key": "scheduledBuyNext",
               "Figure": "",
-              "X": 760.0,
-              "Y": 2460.0,
+              "X": 440.0,
+              "Y": 390.0,
               "TypeId": "f0edcbdf-41cb-442b-896c-332dac3caae3",
               "Settings": {
                 "Id": "fc314501-daaa-a68b-d5ce-c1e196dcaccc",
@@ -1030,8 +1093,8 @@
             {
               "Key": "scheduledSellNext",
               "Figure": "",
-              "X": 760.0,
-              "Y": 2800.0,
+              "X": 440.0,
+              "Y": 520.0,
               "TypeId": "f0edcbdf-41cb-442b-896c-332dac3caae3",
               "Settings": {
                 "Id": "e2175e3f-3d5f-4056-c980-d771e2f673f0",
@@ -1062,8 +1125,8 @@
             {
               "Key": "scheduledBuyState",
               "Figure": "",
-              "X": 1180.0,
-              "Y": 2460.0,
+              "X": 660.0,
+              "Y": 260.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "5cea57f2-631b-1080-5085-61df391694f9",
@@ -1107,8 +1170,8 @@
             {
               "Key": "scheduledSellState",
               "Figure": "",
-              "X": 1180.0,
-              "Y": 2800.0,
+              "X": 660.0,
+              "Y": 390.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "d2ed94bf-70e6-b71c-5c95-642a5198766b",
@@ -1152,8 +1215,8 @@
             {
               "Key": "exitShortState",
               "Figure": "",
-              "X": 1180.0,
-              "Y": 3140.0,
+              "X": 440.0,
+              "Y": 650.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "f396fdfe-e4ac-44aa-8ceb-833023e730ab",
@@ -1197,8 +1260,8 @@
             {
               "Key": "exitLongState",
               "Figure": "",
-              "X": 1180.0,
-              "Y": 3480.0,
+              "X": 440.0,
+              "Y": 780.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "5c5475d6-922e-b901-10be-512d498eb6b8",
@@ -1242,8 +1305,8 @@
             {
               "Key": "bullish",
               "Figure": "",
-              "X": 1500.0,
-              "Y": 760.0,
+              "X": 880.0,
+              "Y": 130.0,
               "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
               "Settings": {
                 "Id": "63bb2a81-233c-10cc-2e03-ec5029c3a164",
@@ -1283,8 +1346,8 @@
             {
               "Key": "bearish",
               "Figure": "",
-              "X": 1500.0,
-              "Y": 1080.0,
+              "X": 880.0,
+              "Y": 260.0,
               "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
               "Settings": {
                 "Id": "899d5166-fc91-608f-95f7-55c0c2c25172",
@@ -1324,8 +1387,8 @@
             {
               "Key": "hourEqual",
               "Figure": "",
-              "X": 1120.0,
-              "Y": 0.0,
+              "X": 440.0,
+              "Y": 910.0,
               "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
               "Settings": {
                 "Id": "bd751a8f-cde9-5011-6a62-ab3c826da768",
@@ -1365,8 +1428,8 @@
             {
               "Key": "hourNotEqual",
               "Figure": "",
-              "X": 1120.0,
-              "Y": 300.0,
+              "X": 440.0,
+              "Y": 1040.0,
               "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
               "Settings": {
                 "Id": "53864d4e-7a95-06b5-f218-e66824a5cc30",
@@ -1406,8 +1469,8 @@
             {
               "Key": "positionLeZero",
               "Figure": "",
-              "X": 760.0,
-              "Y": 1640.0,
+              "X": 440.0,
+              "Y": 1170.0,
               "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
               "Settings": {
                 "Id": "0049777a-5144-f692-6a18-0ff4371e6f95",
@@ -1447,8 +1510,8 @@
             {
               "Key": "positionGeZero",
               "Figure": "",
-              "X": 1120.0,
-              "Y": 1840.0,
+              "X": 440.0,
+              "Y": 1300.0,
               "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
               "Settings": {
                 "Id": "99c3f18b-7d8e-91b7-00d6-c36d1b501d69",
@@ -1488,8 +1551,8 @@
             {
               "Key": "positionGtZero",
               "Figure": "",
-              "X": 1840.0,
-              "Y": 2180.0,
+              "X": 440.0,
+              "Y": 1430.0,
               "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
               "Settings": {
                 "Id": "865910a6-6d16-f6ee-e93c-8e8922d45c4e",
@@ -1529,8 +1592,8 @@
             {
               "Key": "positionLtZero",
               "Figure": "",
-              "X": 1480.0,
-              "Y": 2000.0,
+              "X": 440.0,
+              "Y": 1560.0,
               "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
               "Settings": {
                 "Id": "c2fe6fc9-3bcf-c789-1987-03a60c6a7efb",
@@ -1570,8 +1633,8 @@
             {
               "Key": "cooldownAvailable",
               "Figure": "",
-              "X": 1120.0,
-              "Y": 580.0,
+              "X": 440.0,
+              "Y": 1690.0,
               "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
               "Settings": {
                 "Id": "c38fa487-d6ed-cc97-9719-7ea8cae30693",
@@ -1611,8 +1674,8 @@
             {
               "Key": "ready",
               "Figure": "",
-              "X": 2580.0,
-              "Y": 1380.0,
+              "X": 1320.0,
+              "Y": 130.0,
               "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
               "Settings": {
                 "Id": "53ec4505-0125-40bf-c352-892ea1d355b7",
@@ -1652,7 +1715,7 @@
             {
               "Key": "scheduledBuy",
               "Figure": "",
-              "X": 3400.0,
+              "X": 1320.0,
               "Y": 260.0,
               "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
               "Settings": {
@@ -1684,15 +1747,15 @@
                   "dynsock_trend",
                   "dynsock_position",
                   "dynsock_ready",
-                  "d7e06a18c95d4be0895ddec670c2e734"
+                  "77ce848805a34268ba6534ade9ff4199"
                 ]
               }
             },
             {
               "Key": "scheduledSell",
               "Figure": "",
-              "X": 3400.0,
-              "Y": 720.0,
+              "X": 1320.0,
+              "Y": 390.0,
               "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
               "Settings": {
                 "Id": "650c5a4c-3970-79ca-885c-1d1c4ee24aab",
@@ -1723,15 +1786,15 @@
                   "dynsock_trend",
                   "dynsock_position",
                   "dynsock_ready",
-                  "c3a3a85768f44f77bad9eb4352bdee2f"
+                  "ea4985d71b074e58a3093bfb55cdfc30"
                 ]
               }
             },
             {
               "Key": "exitShort",
               "Figure": "",
-              "X": 3400.0,
-              "Y": 1180.0,
+              "X": 1320.0,
+              "Y": 520.0,
               "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
               "Settings": {
                 "Id": "a4f4a9ee-bd5e-b63b-ebac-9b868088a2bd",
@@ -1762,15 +1825,15 @@
                   "dynsock_trend",
                   "dynsock_position",
                   "dynsock_ready",
-                  "4e7e1e60521f420eb2d31f59a531651d"
+                  "2174f01d30d74d6580f6181b1f066cdd"
                 ]
               }
             },
             {
               "Key": "exitLong",
               "Figure": "",
-              "X": 3400.0,
-              "Y": 1640.0,
+              "X": 1320.0,
+              "Y": 650.0,
               "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
               "Settings": {
                 "Id": "a23e3f8d-5d0e-bd1b-ee4b-d9c573fbd902",
@@ -1801,15 +1864,15 @@
                   "dynsock_trend",
                   "dynsock_position",
                   "dynsock_ready",
-                  "f4891fd79ad34e9f81a1fa2f7a0955ea"
+                  "6da332e642864f8d9868394650686888"
                 ]
               }
             },
             {
               "Key": "scheduledBuyAction",
               "Figure": "",
-              "X": 4160.0,
-              "Y": 240.0,
+              "X": 1540.0,
+              "Y": 0.0,
               "TypeId": "953961cd-a9ba-4afe-ac38-e8b61f84b3be",
               "Settings": {
                 "Id": "6c095514-4692-fa9e-674d-dfb15ab9d6ff",
@@ -1869,8 +1932,8 @@
             {
               "Key": "scheduledSellAction",
               "Figure": "",
-              "X": 4160.0,
-              "Y": 720.0,
+              "X": 1540.0,
+              "Y": 130.0,
               "TypeId": "953961cd-a9ba-4afe-ac38-e8b61f84b3be",
               "Settings": {
                 "Id": "b777f7ee-6824-5b8d-fef0-6046e27d314c",
@@ -1930,8 +1993,8 @@
             {
               "Key": "exitShortAction",
               "Figure": "",
-              "X": 4160.0,
-              "Y": 1200.0,
+              "X": 1540.0,
+              "Y": 260.0,
               "TypeId": "953961cd-a9ba-4afe-ac38-e8b61f84b3be",
               "Settings": {
                 "Id": "93e0caa8-c818-6801-49eb-ae12afbf189d",
@@ -1991,8 +2054,8 @@
             {
               "Key": "exitLongAction",
               "Figure": "",
-              "X": 4160.0,
-              "Y": 1680.0,
+              "X": 1540.0,
+              "Y": 390.0,
               "TypeId": "953961cd-a9ba-4afe-ac38-e8b61f84b3be",
               "Settings": {
                 "Id": "20aff44b-d3a4-fdfb-0edf-706505cb8aa1",
@@ -2052,8 +2115,8 @@
             {
               "Key": "strategyTrades",
               "Figure": "",
-              "X": 4920.0,
-              "Y": 1780.0,
+              "X": 220.0,
+              "Y": 1170.0,
               "TypeId": "7162155b-ecaa-4248-84ff-b1046e753562",
               "Settings": {
                 "Id": "2a86deb2-b6f6-a2d3-2039-44035577b870",
@@ -2078,12 +2141,13 @@
               }
             },
             {
-              "Key": "45b9bccb-843a-4ecd-9cf9-6507aa5d3a46",
-              "X": 5700.0,
-              "Y": 980.0,
+              "Key": "BTCCandlesSMAValues",
+              "Figure": "",
+              "X": 1760.0,
+              "Y": 0.0,
               "TypeId": "1926c40e-aaa3-4948-98e6-fba4b38b580e",
               "Settings": {
-                "Id": "0ff65c2e-8a5d-4dac-90fb-60e21c1f754f",
+                "Id": "4bdc1b45-16b9-190d-79fb-2901a9d527cd",
                 "CanAutoName": false,
                 "Parameters": {
                   "Name": {
@@ -2113,49 +2177,130 @@
                 },
                 "CandleElements": [
                   {
-                    "Id": "aff90151-89d3-4393-92c2-91c096496655"
+                    "Id": "53a45e79-22b3-7fed-e66f-62226467869b",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y",
+                    "DrawStyle": "CandleStick",
+                    "UpFillColor": -16744448,
+                    "UpBorderColor": -16744448,
+                    "DownFillColor": -65536,
+                    "DownBorderColor": -65536,
+                    "LineColor": -16777077,
+                    "AreaColor": -16728065,
+                    "StrokeThickness": 1,
+                    "AntiAliasing": false,
+                    "ShowAxisMarker": true,
+                    "ShowHorizontalVolumes": false,
+                    "LocalHorizontalVolumes": false,
+                    "HorizontalVolumeWidthFraction": 0.0,
+                    "DrawSeparateVolumes": false
                   }
                 ],
                 "IndicatorElements": [
                   {
-                    "Id": "0cb2b282-3d71-4464-98d3-b8af52e178ef"
+                    "Id": "8de666da-cd2b-dcda-fea6-e553497dce1d",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y"
                   },
                   {
-                    "Id": "9c3914ab-44ce-400a-bfdd-6c5043af347f"
+                    "Id": "601347d3-fc7e-a317-bdf9-9fcecd315005",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y"
                   },
                   {
-                    "Id": "94882801-dde9-4de1-a699-4ca07be8ab86"
+                    "Id": "db77bfd6-57ed-c779-3761-1242d85553f9",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y"
                   }
                 ],
                 "OrderElements": [],
                 "TradeElements": [
                   {
-                    "Id": "2cc08d41-bfed-4dbb-9a6b-648ba97da13f"
+                    "Id": "74aff652-cfca-8f4a-c77c-6b69137ccfe4",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y",
+                    "BuyColor": -16711936,
+                    "BuyStrokeColor": -16711936,
+                    "SellColor": -38476,
+                    "SellStrokeColor": -38476,
+                    "UseAltIcon": false,
+                    "DrawSize": 0.0
                   },
                   {
-                    "Id": "527d2f05-9266-42bb-8d1d-5752ac6149bc"
+                    "Id": "5295edc2-73ee-8480-20e6-7df9fb670601",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y",
+                    "BuyColor": -16711936,
+                    "BuyStrokeColor": -16711936,
+                    "SellColor": -38476,
+                    "SellStrokeColor": -38476,
+                    "UseAltIcon": false,
+                    "DrawSize": 0.0
                   },
                   {
-                    "Id": "494e7be5-51e2-4b53-acc4-5cf2a3e2ef41"
+                    "Id": "e925144b-5738-760c-1868-6f21e0708883",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y",
+                    "BuyColor": -16711936,
+                    "BuyStrokeColor": -16711936,
+                    "SellColor": -38476,
+                    "SellStrokeColor": -38476,
+                    "UseAltIcon": false,
+                    "DrawSize": 0.0
                   },
                   {
-                    "Id": "8f7227da-24d1-4073-9628-3b7b62318c89"
+                    "Id": "f50788fa-8921-4389-9fa1-5fcc8a136211",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y",
+                    "BuyColor": -16711936,
+                    "BuyStrokeColor": -16711936,
+                    "SellColor": -38476,
+                    "SellStrokeColor": -38476,
+                    "UseAltIcon": false,
+                    "DrawSize": 0.0
                   },
                   {
-                    "Id": "e87c1cdf-e108-4afb-917a-ce49d416da85"
+                    "Id": "f3ff26ad-68b3-be30-8360-c8526c3df6bf",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y",
+                    "BuyColor": -16711936,
+                    "BuyStrokeColor": -16711936,
+                    "SellColor": -38476,
+                    "SellStrokeColor": -38476,
+                    "UseAltIcon": false,
+                    "DrawSize": 0.0
                   }
                 ],
                 "XAxes": [
                   {
                     "Id": "X",
                     "Title": "X",
-                    "IsVisible": false,
+                    "IsVisible": true,
+                    "Group": "CategoryDateTimeX",
                     "AutoRange": false,
                     "DrawMinorTicks": false,
-                    "DrawMajorTicks": false,
-                    "DrawMajorGridLines": false,
-                    "DrawMinorGridLines": false,
-                    "DrawLabels": false,
+                    "DrawMajorTicks": true,
+                    "DrawMajorGridLines": true,
+                    "DrawMinorGridLines": true,
+                    "DrawLabels": true,
                     "TextFormatting": "G",
                     "SubDayTextFormatting": "T",
                     "SwitchAxisLocation": false,
@@ -2167,13 +2312,16 @@
                   {
                     "Id": "Y",
                     "Title": "Y",
-                    "IsVisible": false,
-                    "AutoRange": false,
+                    "IsVisible": true,
+                    "Group": "NumericY2",
+                    "AutoRange": true,
                     "DrawMinorTicks": false,
-                    "DrawMajorTicks": false,
-                    "DrawMajorGridLines": false,
-                    "DrawMinorGridLines": false,
-                    "DrawLabels": false,
+                    "DrawMajorTicks": true,
+                    "DrawMajorGridLines": true,
+                    "DrawMinorGridLines": true,
+                    "DrawLabels": true,
+                    "TextFormatting": "#.####",
+                    "SubDayTextFormatting": "T",
                     "SwitchAxisLocation": false,
                     "AxisType": "Numeric",
                     "TimeZone": "UTC"
@@ -2768,60 +2916,59 @@
             {
               "From": "candles",
               "FromPort": "Output",
-              "To": "45b9bccb-843a-4ecd-9cf9-6507aa5d3a46",
-              "ToPort": "dynsock_aff9015189d3439392c291c096496655"
+              "To": "BTCCandlesSMAValues",
+              "ToPort": "dynsock_53a45e7922b37fede66f62226467869b"
             },
             {
               "From": "fastSma",
               "FromPort": "Output",
-              "To": "45b9bccb-843a-4ecd-9cf9-6507aa5d3a46",
-              "ToPort": "dynsock_0cb2b2823d71446498d3b8af52e178ef"
+              "To": "BTCCandlesSMAValues",
+              "ToPort": "dynsock_8de666dacd2bdcdafea6e553497dce1d"
             },
             {
               "From": "slowSma",
               "FromPort": "Output",
-              "To": "45b9bccb-843a-4ecd-9cf9-6507aa5d3a46",
-              "ToPort": "dynsock_9c3914ab44ce400abfdd6c5043af347f"
+              "To": "BTCCandlesSMAValues",
+              "ToPort": "dynsock_601347d3fc7ea317bdf99fcecd315005"
             },
             {
               "From": "positionState",
               "FromPort": "Output",
-              "To": "45b9bccb-843a-4ecd-9cf9-6507aa5d3a46",
-              "ToPort": "dynsock_94882801dde94de1a6994ca07be8ab86"
+              "To": "BTCCandlesSMAValues",
+              "ToPort": "dynsock_db77bfd657edc77937611242d85553f9"
             },
             {
               "From": "scheduledBuyAction",
               "FromPort": "MyTrade",
-              "To": "45b9bccb-843a-4ecd-9cf9-6507aa5d3a46",
-              "ToPort": "dynsock_2cc08d41bfed4dbb9a6b648ba97da13f"
+              "To": "BTCCandlesSMAValues",
+              "ToPort": "dynsock_74aff652cfca8f4ac77c6b69137ccfe4"
             },
             {
               "From": "scheduledSellAction",
               "FromPort": "MyTrade",
-              "To": "45b9bccb-843a-4ecd-9cf9-6507aa5d3a46",
-              "ToPort": "dynsock_527d2f05926642bb8d1d5752ac6149bc"
+              "To": "BTCCandlesSMAValues",
+              "ToPort": "dynsock_5295edc273ee848020e67df9fb670601"
             },
             {
               "From": "exitShortAction",
               "FromPort": "MyTrade",
-              "To": "45b9bccb-843a-4ecd-9cf9-6507aa5d3a46",
-              "ToPort": "dynsock_494e7be551e24b53acc45cf2a3e2ef41"
+              "To": "BTCCandlesSMAValues",
+              "ToPort": "dynsock_e925144b5738760c18686f21e0708883"
             },
             {
               "From": "exitLongAction",
               "FromPort": "MyTrade",
-              "To": "45b9bccb-843a-4ecd-9cf9-6507aa5d3a46",
-              "ToPort": "dynsock_8f7227da24d1407396283b7b62318c89"
+              "To": "BTCCandlesSMAValues",
+              "ToPort": "dynsock_f50788fa892143899fa15fcc8a136211"
             },
             {
               "From": "strategyTrades",
               "FromPort": "Output",
-              "To": "45b9bccb-843a-4ecd-9cf9-6507aa5d3a46",
-              "ToPort": "dynsock_e87c1cdfe1084afb917ace49d416da85"
+              "To": "BTCCandlesSMAValues",
+              "ToPort": "dynsock_f3ff26ad68b3be308360c8526c3df6bf"
             }
           ]
-        },
-        "Description": "On each finished BTCUSDT thirty-minute candle, samples formed SMA(8) and SMA(21), uses the candle open-time hour as a causal schedule, and performs one fixed-volume market action when the hour, trend, position and eight-bar cooldown rules agree."
+        }
       },
       "Type": "Independent"
     }

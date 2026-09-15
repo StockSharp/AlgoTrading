@@ -817,7 +817,7 @@
                   "dynsock_band",
                   "dynsock_trend",
                   "dynsock_position",
-                  "d718866014384124a3cdcadd75300a0e"
+                  "b7c2f72232584c918b49bea4cd50ab66"
                 ]
               }
             },
@@ -854,7 +854,7 @@
                   "dynsock_band",
                   "dynsock_trend",
                   "dynsock_position",
-                  "9dc736cd9bba4ae3bace2bb7529fdb5f"
+                  "1aa18f637665456a855acab523dd0284"
                 ]
               }
             },
@@ -1298,7 +1298,8 @@
             }
           ]
         }
-      }
+      },
+      "Type": "Independent"
     }
   }
 }

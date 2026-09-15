@@ -811,7 +811,7 @@
                   "dynsock_regime",
                   "dynsock_side",
                   "dynsock_position",
-                  "ed008343b58f437ab3d82bf335b7ce19"
+                  "013f40aa6fe64eb6813e61c31c54c628"
                 ]
               }
             },
@@ -848,7 +848,7 @@
                   "dynsock_regime",
                   "dynsock_side",
                   "dynsock_position",
-                  "919c86044bb14e899d6b2f24146c2854"
+                  "19260df9ca284f4c919a9dc8c168a349"
                 ]
               }
             },
@@ -884,7 +884,7 @@
                 "InputSocketIds": [
                   "dynsock_regime",
                   "dynsock_position",
-                  "64e55a401b6b4aa39846d472ae20b570"
+                  "423c2fbd2d32415193bcb174421816c8"
                 ]
               }
             },
@@ -920,7 +920,7 @@
                 "InputSocketIds": [
                   "dynsock_regime",
                   "dynsock_position",
-                  "3e4e1657e15b4e3191277c0e28a58f27"
+                  "2bb882059d254d18b24c1c42da284ede"
                 ]
               }
             },
@@ -1370,7 +1370,8 @@
             }
           ]
         }
-      }
+      },
+      "Type": "Independent"
     }
   }
 }

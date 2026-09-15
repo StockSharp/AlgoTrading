@@ -665,7 +665,7 @@
                   "dynsock_fast",
                   "dynsock_slow",
                   "dynsock_position",
-                  "c0c2a737feed45e793cce2ec07e761fa"
+                  "d0e3acc816a54cf99d8cdd973c63eaa9"
                 ]
               }
             },
@@ -702,7 +702,7 @@
                   "dynsock_fast",
                   "dynsock_slow",
                   "dynsock_position",
-                  "761c8e3575c74bdd9325b94605656707"
+                  "b183463623f747129898ffc6b5cd9542"
                 ]
               }
             },
@@ -1033,7 +1033,8 @@
             }
           ]
         }
-      }
+      },
+      "Type": "Independent"
     }
   }
 }

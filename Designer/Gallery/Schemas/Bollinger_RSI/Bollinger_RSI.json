@@ -925,7 +925,7 @@
                   "dynsock_band",
                   "dynsock_rsi",
                   "dynsock_position",
-                  "a558f214a360436d8bed7774c233934c"
+                  "bea8c0ed1b3a400bac9ed0cf3790d4b5"
                 ]
               }
             },
@@ -962,7 +962,7 @@
                   "dynsock_band",
                   "dynsock_rsi",
                   "dynsock_position",
-                  "ddb7f65cb9334b4f82fd4bdfcfb85e27"
+                  "b634161d8eda4f95ad7965a8cd93810d"
                 ]
               }
             },
@@ -1406,7 +1406,8 @@
             }
           ]
         }
-      }
+      },
+      "Type": "Independent"
     }
   }
 }

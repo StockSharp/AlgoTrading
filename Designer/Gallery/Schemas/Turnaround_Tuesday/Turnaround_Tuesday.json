@@ -648,7 +648,7 @@
                   "dynsock_weakness",
                   "dynsock_trend",
                   "dynsock_position",
-                  "52ea33255e944ec48beb4d8fe8432ba7"
+                  "5e40ddfa0ea74e7392d7181d2069d814"
                 ]
               }
             },
@@ -685,7 +685,7 @@
                   "dynsock_strength",
                   "dynsock_trend",
                   "dynsock_position",
-                  "b134c57313fd43da95708dd3dd10210a"
+                  "649f684249a34bf794be3d8513f108c0"
                 ]
               }
             },
@@ -965,7 +965,8 @@
             }
           ]
         }
-      }
+      },
+      "Type": "Independent"
     }
   }
 }

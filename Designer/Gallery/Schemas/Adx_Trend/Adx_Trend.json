@@ -711,7 +711,7 @@
                   "dynsock_trend",
                   "dynsock_strength",
                   "dynsock_position",
-                  "f32c42481b4146d4a1c8a8c2ba6cdcbb"
+                  "0ff2dd113a8a4c06b8ef71e9725ca595"
                 ]
               }
             },
@@ -748,7 +748,7 @@
                   "dynsock_trend",
                   "dynsock_strength",
                   "dynsock_position",
-                  "a1cb196675e44a2e9b441371242c078d"
+                  "60804e4acf59487983cea8477431a317"
                 ]
               }
             },
@@ -1022,7 +1022,8 @@
             }
           ]
         }
-      }
+      },
+      "Type": "Independent"
     }
   }
 }

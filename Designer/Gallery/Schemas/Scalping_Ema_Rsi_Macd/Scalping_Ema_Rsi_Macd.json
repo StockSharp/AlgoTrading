@@ -1041,7 +1041,7 @@
                   "dynsock_rsiceil",
                   "dynsock_macd",
                   "dynsock_position",
-                  "bf54d509d32349edb8ab78fd5c8e4afe"
+                  "746f972e127a4a0e8d8be97e711212c8"
                 ]
               }
             },
@@ -1081,7 +1081,7 @@
                   "dynsock_rsiceil",
                   "dynsock_macd",
                   "dynsock_position",
-                  "c3bb1a1154c246d3ad041c2d49800007"
+                  "22931114136c42498bb4ec61d106e01b"
                 ]
               }
             },
@@ -1575,7 +1575,8 @@
             }
           ]
         }
-      }
+      },
+      "Type": "Independent"
     }
   }
 }

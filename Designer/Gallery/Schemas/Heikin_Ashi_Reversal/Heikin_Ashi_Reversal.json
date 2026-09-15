@@ -919,7 +919,7 @@
                   "dynsock_turn",
                   "dynsock_wasother",
                   "dynsock_position",
-                  "27b7cc86dcea4af796b17199e9161481"
+                  "1f3dc6fc7d98454eaf8beddf9b199683"
                 ]
               }
             },
@@ -956,7 +956,7 @@
                   "dynsock_turn",
                   "dynsock_wasother",
                   "dynsock_position",
-                  "708a5676df11444ab518e27d942b3c31"
+                  "38c6704b90e040e9b862003f35c8743f"
                 ]
               }
             },
@@ -1448,7 +1448,8 @@
             }
           ]
         }
-      }
+      },
+      "Type": "Independent"
     }
   }
 }

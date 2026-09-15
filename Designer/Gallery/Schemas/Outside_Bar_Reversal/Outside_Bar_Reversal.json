@@ -846,7 +846,7 @@
                   "dynsock_lowerlow",
                   "dynsock_bullish",
                   "dynsock_position",
-                  "30ebc0bcdfbf4b2eb5d61086fd0634e6"
+                  "654a88df0d3940809ef1fc825767f37e"
                 ]
               }
             },
@@ -884,7 +884,7 @@
                   "dynsock_lowerlow",
                   "dynsock_bearish",
                   "dynsock_position",
-                  "0ee94fce72174ee6b34dac3d2b618429"
+                  "06536596325e42eba8706817f3cad4ba"
                 ]
               }
             },
@@ -1346,7 +1346,8 @@
             }
           ]
         }
-      }
+      },
+      "Type": "Independent"
     }
   }
 }

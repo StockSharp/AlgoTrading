@@ -47,6 +47,21 @@
               "Value": 96
             },
             "01616af2-16c2-8050-1293-efdfd8503442Source": {},
+            "b12ea3ca-2a96-dbe9-f6ee-ad6ff0c080f3Shift": {
+              "Value": 1
+            },
+            "be8fc94e-570c-d7f1-1a6f-740d5c7110d9Shift": {
+              "Value": 1
+            },
+            "78262dbd-fda6-8bef-5dad-0fc18b874d2aValue": {
+              "Value": {
+                "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                "settings": {
+                  "Type": "Absolute",
+                  "Value": 0.0
+                }
+              }
+            },
             "cef85625-ecad-c147-2b80-9363e5f910e4Value": {
               "Value": {
                 "type": "StockSharp.Messages.Unit, StockSharp.Messages",
@@ -89,7 +104,7 @@
               "Key": "candles",
               "Figure": "",
               "X": 0.0,
-              "Y": 760.0,
+              "Y": 0.0,
               "TypeId": "3d773273-0cee-4d40-8eef-acded2d07ab8",
               "Settings": {
                 "Id": "1708a114-76dc-d539-d6fc-557d50d54713",
@@ -146,8 +161,8 @@
             {
               "Key": "high",
               "Figure": "",
-              "X": 280.0,
-              "Y": 560.0,
+              "X": 220.0,
+              "Y": 0.0,
               "TypeId": "35c046c4-1b0f-4074-ac08-0c70850a8dcf",
               "Settings": {
                 "Id": "4e5cd0ab-7368-882c-57a4-3ec2d42ce60a",
@@ -182,8 +197,8 @@
             {
               "Key": "low",
               "Figure": "",
-              "X": 280.0,
-              "Y": 960.0,
+              "X": 220.0,
+              "Y": 130.0,
               "TypeId": "35c046c4-1b0f-4074-ac08-0c70850a8dcf",
               "Settings": {
                 "Id": "4765e5a4-4626-d976-6ac9-d55dc4d65ffe",
@@ -218,8 +233,8 @@
             {
               "Key": "close",
               "Figure": "",
-              "X": 280.0,
-              "Y": 760.0,
+              "X": 220.0,
+              "Y": 260.0,
               "TypeId": "35c046c4-1b0f-4074-ac08-0c70850a8dcf",
               "Settings": {
                 "Id": "47babad5-5e5b-66dc-fa23-04b6cb2a8418",
@@ -254,8 +269,8 @@
             {
               "Key": "highest",
               "Figure": "",
-              "X": 560.0,
-              "Y": 500.0,
+              "X": 440.0,
+              "Y": 0.0,
               "TypeId": "f56c74af-7c39-464a-8b90-4eff4c8760b1",
               "Settings": {
                 "Id": "19d71f8f-0ebb-86ab-7404-ef1d2cfd3871",
@@ -300,8 +315,8 @@
             {
               "Key": "lowest",
               "Figure": "",
-              "X": 560.0,
-              "Y": 1060.0,
+              "X": 440.0,
+              "Y": 130.0,
               "TypeId": "f56c74af-7c39-464a-8b90-4eff4c8760b1",
               "Settings": {
                 "Id": "01616af2-16c2-8050-1293-efdfd8503442",
@@ -346,8 +361,8 @@
             {
               "Key": "previousHigh",
               "Figure": "",
-              "X": 840.0,
-              "Y": 480.0,
+              "X": 660.0,
+              "Y": 0.0,
               "TypeId": "835c9ae0-906a-48d6-9e20-a332b6350fd0",
               "Settings": {
                 "Id": "b12ea3ca-2a96-dbe9-f6ee-ad6ff0c080f3",
@@ -360,7 +375,7 @@
                     "Value": "Inherit"
                   },
                   "ShowParameters": {
-                    "Value": false
+                    "Value": true
                   },
                   "ShowSockets": {
                     "Value": true
@@ -385,8 +400,8 @@
             {
               "Key": "previousLow",
               "Figure": "",
-              "X": 840.0,
-              "Y": 1080.0,
+              "X": 660.0,
+              "Y": 130.0,
               "TypeId": "835c9ae0-906a-48d6-9e20-a332b6350fd0",
               "Settings": {
                 "Id": "be8fc94e-570c-d7f1-1a6f-740d5c7110d9",
@@ -399,7 +414,7 @@
                     "Value": "Inherit"
                   },
                   "ShowParameters": {
-                    "Value": false
+                    "Value": true
                   },
                   "ShowSockets": {
                     "Value": true
@@ -424,8 +439,8 @@
             {
               "Key": "handover",
               "Figure": "",
-              "X": 840.0,
-              "Y": 720.0,
+              "X": 220.0,
+              "Y": 390.0,
               "TypeId": "51fdf3e6-36f7-454b-a706-d7b492110558",
               "Settings": {
                 "Id": "fb1904c9-3b79-c6cb-c0ba-ea15448d9497",
@@ -458,8 +473,8 @@
             {
               "Key": "tradeWindow",
               "Figure": "",
-              "X": 840.0,
-              "Y": 900.0,
+              "X": 220.0,
+              "Y": 520.0,
               "TypeId": "51fdf3e6-36f7-454b-a706-d7b492110558",
               "Settings": {
                 "Id": "bdf03227-f958-adcc-2447-8647c0652d10",
@@ -492,8 +507,8 @@
             {
               "Key": "parentHighCapture",
               "Figure": "",
-              "X": 1120.0,
-              "Y": 460.0,
+              "X": 880.0,
+              "Y": 0.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "d14a2aff-6c8d-3dee-4382-0dc1b3dc1708",
@@ -529,8 +544,8 @@
             {
               "Key": "parentHighHold",
               "Figure": "",
-              "X": 1400.0,
-              "Y": 460.0,
+              "X": 1100.0,
+              "Y": 0.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "e70eb2fc-2eb5-29e9-e21c-d33505799223",
@@ -566,8 +581,8 @@
             {
               "Key": "parentLowCapture",
               "Figure": "",
-              "X": 1120.0,
-              "Y": 1100.0,
+              "X": 880.0,
+              "Y": 130.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "ca5de551-a0e0-fc44-b901-0e86223d49ed",
@@ -603,8 +618,8 @@
             {
               "Key": "parentLowHold",
               "Figure": "",
-              "X": 1400.0,
-              "Y": 1100.0,
+              "X": 1100.0,
+              "Y": 130.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "4fb8c648-bc0e-7d6c-07ef-45b8a702fb01",
@@ -641,7 +656,7 @@
               "Key": "position",
               "Figure": "",
               "X": 0.0,
-              "Y": 40.0,
+              "Y": 130.0,
               "TypeId": "83bcd64c-0f75-4572-be49-3d771a456f76",
               "Settings": {
                 "Id": "505db3ba-9584-c134-fe95-b467d5a83bb9",
@@ -674,8 +689,8 @@
             {
               "Key": "positionAtCandle",
               "Figure": "",
-              "X": 280.0,
-              "Y": 40.0,
+              "X": 220.0,
+              "Y": 650.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "5a96c43e-31c4-4390-f462-2148da1a1875",
@@ -719,8 +734,8 @@
             {
               "Key": "zero",
               "Figure": "",
-              "X": 280.0,
-              "Y": 220.0,
+              "X": 220.0,
+              "Y": 780.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "78262dbd-fda6-8bef-5dad-0fc18b874d2a",
@@ -733,7 +748,7 @@
                     "Value": "Inherit"
                   },
                   "ShowParameters": {
-                    "Value": false
+                    "Value": true
                   },
                   "ShowSockets": {
                     "Value": true
@@ -764,8 +779,8 @@
             {
               "Key": "isFlat",
               "Figure": "",
-              "X": 560.0,
-              "Y": 100.0,
+              "X": 440.0,
+              "Y": 260.0,
               "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
               "Settings": {
                 "Id": "c81b817a-7fda-1ee8-3c98-167315b1741f",
@@ -805,8 +820,8 @@
             {
               "Key": "volume",
               "Figure": "",
-              "X": 560.0,
-              "Y": 280.0,
+              "X": 220.0,
+              "Y": 910.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "cef85625-ecad-c147-2b80-9363e5f910e4",
@@ -850,8 +865,8 @@
             {
               "Key": "highPierced",
               "Figure": "",
-              "X": 1680.0,
-              "Y": 300.0,
+              "X": 1320.0,
+              "Y": 0.0,
               "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
               "Settings": {
                 "Id": "6e9eb01c-0a39-e67d-bb5a-b702b118ee2a",
@@ -891,8 +906,8 @@
             {
               "Key": "closeBelowHigh",
               "Figure": "",
-              "X": 1680.0,
-              "Y": 500.0,
+              "X": 1320.0,
+              "Y": 130.0,
               "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
               "Settings": {
                 "Id": "c3593d99-a032-d275-6b01-f888fa5f80b0",
@@ -932,8 +947,8 @@
             {
               "Key": "lowPierced",
               "Figure": "",
-              "X": 1680.0,
-              "Y": 1080.0,
+              "X": 1320.0,
+              "Y": 260.0,
               "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
               "Settings": {
                 "Id": "a33de741-0806-388d-7ed0-2609a25e034d",
@@ -973,8 +988,8 @@
             {
               "Key": "closeAboveLow",
               "Figure": "",
-              "X": 1680.0,
-              "Y": 1280.0,
+              "X": 1320.0,
+              "Y": 390.0,
               "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
               "Settings": {
                 "Id": "9e4d74b3-beef-21ec-c4b8-ed817a13ff1c",
@@ -1014,8 +1029,8 @@
             {
               "Key": "highSweep",
               "Figure": "",
-              "X": 1960.0,
-              "Y": 420.0,
+              "X": 1540.0,
+              "Y": 0.0,
               "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
               "Settings": {
                 "Id": "b4695676-0a4a-4142-a60a-9e7db49660de",
@@ -1044,15 +1059,15 @@
                   "dynsock_pierce",
                   "dynsock_return",
                   "dynsock_window",
-                  "29e9eb6f19214c4fb0563642030ff520"
+                  "ade3da6aada04cbb8e03ec8288bc9866"
                 ]
               }
             },
             {
               "Key": "lowSweep",
               "Figure": "",
-              "X": 1960.0,
-              "Y": 1160.0,
+              "X": 1540.0,
+              "Y": 130.0,
               "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
               "Settings": {
                 "Id": "340f02d8-2acb-1047-7647-e7796355f0a8",
@@ -1081,15 +1096,15 @@
                   "dynsock_pierce",
                   "dynsock_return",
                   "dynsock_window",
-                  "8e085978f2bd47e18a5c48d7aaf19752"
+                  "63291566f7af4614ae19657f8f50a211"
                 ]
               }
             },
             {
               "Key": "notHighSweep",
               "Figure": "",
-              "X": 1960.0,
-              "Y": 760.0,
+              "X": 1760.0,
+              "Y": 0.0,
               "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
               "Settings": {
                 "Id": "81356ec4-4838-3af6-118a-757e359cbe57",
@@ -1122,8 +1137,8 @@
             {
               "Key": "shortGate",
               "Figure": "",
-              "X": 2240.0,
-              "Y": 340.0,
+              "X": 1760.0,
+              "Y": 130.0,
               "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
               "Settings": {
                 "Id": "a17b53c4-8bf7-aca0-fce1-bad716a5b34d",
@@ -1151,15 +1166,15 @@
                 "InputSocketIds": [
                   "dynsock_sweep",
                   "dynsock_flat",
-                  "6de561b9f0544b119cf0fb844bb4bbcb"
+                  "024f8ef54ea243b980f9b3583994a5d7"
                 ]
               }
             },
             {
               "Key": "longGate",
               "Figure": "",
-              "X": 2240.0,
-              "Y": 1180.0,
+              "X": 1980.0,
+              "Y": 0.0,
               "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
               "Settings": {
                 "Id": "6e8944e8-4a49-0857-d695-5558ed1ca047",
@@ -1188,15 +1203,15 @@
                   "dynsock_sweep",
                   "dynsock_priority",
                   "dynsock_flat",
-                  "e07c7594943d4942baf8e6540c4f7278"
+                  "e8455b212cb6450e875a0ef6674f9fc9"
                 ]
               }
             },
             {
               "Key": "anyEntry",
               "Figure": "",
-              "X": 2520.0,
-              "Y": 720.0,
+              "X": 2200.0,
+              "Y": 0.0,
               "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
               "Settings": {
                 "Id": "2807e696-860b-56cf-54f2-239051634134",
@@ -1224,15 +1239,15 @@
                 "InputSocketIds": [
                   "dynsock_short",
                   "dynsock_long",
-                  "22a7a79aff244053806afe13e32955c2"
+                  "609fcdb6de094b6ab5f836d8772864d6"
                 ]
               }
             },
             {
               "Key": "alertOnce",
               "Figure": "",
-              "X": 2800.0,
-              "Y": 560.0,
+              "X": 2420.0,
+              "Y": 0.0,
               "TypeId": "d9273c2c-6789-4ba8-a5c5-2b1eb4c4f006",
               "Settings": {
                 "Id": "c748d789-16ef-9c56-d3a9-d11c95f038ee",
@@ -1259,8 +1274,8 @@
             {
               "Key": "alertClose",
               "Figure": "",
-              "X": 3080.0,
-              "Y": 560.0,
+              "X": 2640.0,
+              "Y": 0.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "fb3a8298-719c-422b-017a-4648f8bd4514",
@@ -1296,8 +1311,8 @@
             {
               "Key": "message",
               "Figure": "",
-              "X": 3360.0,
-              "Y": 560.0,
+              "X": 2860.0,
+              "Y": 0.0,
               "TypeId": "96387cfd-3180-4575-9c00-df214b503d41",
               "Settings": {
                 "Id": "c4f82481-7bd2-423a-52ac-da673da31a8a",
@@ -1327,8 +1342,8 @@
             {
               "Key": "notification",
               "Figure": "",
-              "X": 3640.0,
-              "Y": 560.0,
+              "X": 3080.0,
+              "Y": 0.0,
               "TypeId": "ce4790aa-00f5-4d99-a8ae-fba174172dc1",
               "Settings": {
                 "Id": "f1427879-f3f3-c748-8912-2c789d7a08d8",
@@ -1362,8 +1377,8 @@
             {
               "Key": "sell",
               "Figure": "",
-              "X": 2520.0,
-              "Y": 280.0,
+              "X": 1980.0,
+              "Y": 130.0,
               "TypeId": "953961cd-a9ba-4afe-ac38-e8b61f84b3be",
               "Settings": {
                 "Id": "dd61bcd0-fc52-d3cd-abc1-e9995b5d94ed",
@@ -1423,8 +1438,8 @@
             {
               "Key": "buy",
               "Figure": "",
-              "X": 2520.0,
-              "Y": 1220.0,
+              "X": 2200.0,
+              "Y": 130.0,
               "TypeId": "953961cd-a9ba-4afe-ac38-e8b61f84b3be",
               "Settings": {
                 "Id": "93fac0ac-a806-0c00-6865-4edbc2825911",
@@ -1484,8 +1499,8 @@
             {
               "Key": "protection",
               "Figure": "",
-              "X": 2800.0,
-              "Y": 920.0,
+              "X": 2420.0,
+              "Y": 130.0,
               "TypeId": "7712ff8b-0270-49fa-9663-196a9a03bfe8",
               "Settings": {
                 "Id": "8cddb5d6-7464-75af-c98e-4accde615325",
@@ -1545,8 +1560,8 @@
             {
               "Key": "strategyTrades",
               "Figure": "",
-              "X": 3360.0,
-              "Y": 1080.0,
+              "X": 0.0,
+              "Y": 260.0,
               "TypeId": "7162155b-ecaa-4248-84ff-b1046e753562",
               "Settings": {
                 "Id": "bb04a33c-f58e-72bd-2153-b6855cd813a5",
@@ -1571,12 +1586,13 @@
               }
             },
             {
-              "Key": "e5144dbf-d286-4f5f-9aab-9b71f3985fcc",
-              "X": 3920.0,
-              "Y": 760.0,
+              "Key": "chart",
+              "Figure": "",
+              "X": 2420.0,
+              "Y": 260.0,
               "TypeId": "1926c40e-aaa3-4948-98e6-fba4b38b580e",
               "Settings": {
-                "Id": "bb3f00e7-ed5a-4b75-9d96-c209045cab5b",
+                "Id": "85686bf3-8690-9042-9061-26cc409677ea",
                 "CanAutoName": false,
                 "Parameters": {
                   "Name": {
@@ -1589,7 +1605,7 @@
                     "Value": false
                   },
                   "ShowSockets": {
-                    "Value": false
+                    "Value": true
                   },
                   "ProcessNullValues": {
                     "Value": false
@@ -1605,50 +1621,136 @@
                   }
                 },
                 "CandleElements": [
-                  {}
+                  {
+                    "Id": "ecfb2c53-6a2f-ea74-c4a3-19c418ddffb6",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y",
+                    "DrawStyle": "CandleStick",
+                    "UpFillColor": -16744448,
+                    "UpBorderColor": -16744448,
+                    "DownFillColor": -65536,
+                    "DownBorderColor": -65536,
+                    "LineColor": -16777077,
+                    "AreaColor": -16728065,
+                    "StrokeThickness": 1,
+                    "AntiAliasing": false,
+                    "ShowAxisMarker": true,
+                    "ShowHorizontalVolumes": false,
+                    "LocalHorizontalVolumes": false,
+                    "HorizontalVolumeWidthFraction": 0.0,
+                    "DrawSeparateVolumes": false
+                  }
                 ],
                 "IndicatorElements": [
-                  {},
-                  {},
-                  {},
-                  {}
+                  {
+                    "Id": "beaf86c9-b2d0-e256-80e5-7d6b46e37629",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y"
+                  },
+                  {
+                    "Id": "0f5a9826-8b45-590c-5b3e-24c538de891a",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y"
+                  },
+                  {
+                    "Id": "6625051c-2a9f-d950-8118-ff66939b387b",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y"
+                  },
+                  {
+                    "Id": "9a4a7cae-c7bd-69d1-b598-c37feddc9f39",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y"
+                  }
                 ],
                 "OrderElements": [],
                 "TradeElements": [
-                  {},
-                  {},
-                  {}
+                  {
+                    "Id": "03169d0d-4418-a025-2a96-d6747a657a1b",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y",
+                    "BuyColor": -16711936,
+                    "BuyStrokeColor": -16711936,
+                    "SellColor": -38476,
+                    "SellStrokeColor": -38476,
+                    "UseAltIcon": false,
+                    "DrawSize": 0.0
+                  },
+                  {
+                    "Id": "069e0890-c563-1ddc-291c-671b33db99b8",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y",
+                    "BuyColor": -16711936,
+                    "BuyStrokeColor": -16711936,
+                    "SellColor": -38476,
+                    "SellStrokeColor": -38476,
+                    "UseAltIcon": false,
+                    "DrawSize": 0.0
+                  },
+                  {
+                    "Id": "268d9e03-7758-6533-e0a3-b59332cba75d",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y",
+                    "BuyColor": -16711936,
+                    "BuyStrokeColor": -16711936,
+                    "SellColor": -38476,
+                    "SellStrokeColor": -38476,
+                    "UseAltIcon": false,
+                    "DrawSize": 0.0
+                  }
                 ],
                 "XAxes": [
                   {
                     "Id": "X",
                     "Title": "X",
-                    "IsVisible": false,
+                    "IsVisible": true,
+                    "Group": "CategoryDateTimeX",
                     "AutoRange": false,
                     "DrawMinorTicks": false,
-                    "DrawMajorTicks": false,
-                    "DrawMajorGridLines": false,
-                    "DrawMinorGridLines": false,
-                    "DrawLabels": false,
+                    "DrawMajorTicks": true,
+                    "DrawMajorGridLines": true,
+                    "DrawMinorGridLines": true,
+                    "DrawLabels": true,
                     "TextFormatting": "G",
                     "SubDayTextFormatting": "T",
                     "SwitchAxisLocation": false,
-                    "AxisType": "CategoryDateTime"
+                    "AxisType": "CategoryDateTime",
+                    "TimeZone": "UTC"
                   }
                 ],
                 "YAxes": [
                   {
                     "Id": "Y",
                     "Title": "Y",
-                    "IsVisible": false,
-                    "AutoRange": false,
+                    "IsVisible": true,
+                    "Group": "NumericY2",
+                    "AutoRange": true,
                     "DrawMinorTicks": false,
-                    "DrawMajorTicks": false,
-                    "DrawMajorGridLines": false,
-                    "DrawMinorGridLines": false,
-                    "DrawLabels": false,
+                    "DrawMajorTicks": true,
+                    "DrawMajorGridLines": true,
+                    "DrawMinorGridLines": true,
+                    "DrawLabels": true,
+                    "TextFormatting": "#.####",
+                    "SubDayTextFormatting": "T",
                     "SwitchAxisLocation": false,
-                    "AxisType": "Numeric"
+                    "AxisType": "Numeric",
+                    "TimeZone": "UTC"
                   }
                 ]
               }
@@ -1662,6 +1764,30 @@
               "ToPort": "Input"
             },
             {
+              "From": "candles",
+              "FromPort": "Output",
+              "To": "positionAtCandle",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "candles",
+              "FromPort": "Output",
+              "To": "zero",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "candles",
+              "FromPort": "Output",
+              "To": "volume",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "candles",
+              "FromPort": "Output",
+              "To": "alertOnce",
+              "ToPort": "Flag"
+            },
+            {
               "From": "positionAtCandle",
               "FromPort": "Output",
               "To": "isFlat",
@@ -1672,6 +1798,24 @@
               "FromPort": "Output",
               "To": "isFlat",
               "ToPort": "SecondInput"
+            },
+            {
+              "From": "candles",
+              "FromPort": "Output",
+              "To": "high",
+              "ToPort": "Input"
+            },
+            {
+              "From": "candles",
+              "FromPort": "Output",
+              "To": "low",
+              "ToPort": "Input"
+            },
+            {
+              "From": "candles",
+              "FromPort": "Output",
+              "To": "close",
+              "ToPort": "Input"
             },
             {
               "From": "high",
@@ -1710,6 +1854,12 @@
               "ToPort": "Input"
             },
             {
+              "From": "candles",
+              "FromPort": "Output",
+              "To": "handover",
+              "ToPort": "Time"
+            },
+            {
               "From": "handover",
               "FromPort": "Output",
               "To": "parentHighCapture",
@@ -1732,6 +1882,24 @@
               "FromPort": "Output",
               "To": "parentLowHold",
               "ToPort": "Input"
+            },
+            {
+              "From": "candles",
+              "FromPort": "Output",
+              "To": "parentHighHold",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "candles",
+              "FromPort": "Output",
+              "To": "parentLowHold",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "candles",
+              "FromPort": "Output",
+              "To": "tradeWindow",
+              "ToPort": "Time"
             },
             {
               "From": "high",
@@ -1896,6 +2064,12 @@
               "ToPort": "Trigger"
             },
             {
+              "From": "close",
+              "FromPort": "Output",
+              "To": "alertClose",
+              "ToPort": "Input"
+            },
+            {
               "From": "alertOnce",
               "FromPort": "Output",
               "To": "alertClose",
@@ -1926,134 +2100,61 @@
               "ToPort": "Trade"
             },
             {
-              "From": "candles",
-              "FromPort": "Output",
-              "To": "e5144dbf-d286-4f5f-9aab-9b71f3985fcc",
-              "ToPort": "dynsock_7b2c012f9fa14015aee3f073422cac01"
-            },
-            {
-              "From": "highest",
-              "FromPort": "Output",
-              "To": "e5144dbf-d286-4f5f-9aab-9b71f3985fcc",
-              "ToPort": "dynsock_4323adf1ab8c4a489bc3c41c306365d7"
-            },
-            {
-              "From": "lowest",
-              "FromPort": "Output",
-              "To": "e5144dbf-d286-4f5f-9aab-9b71f3985fcc",
-              "ToPort": "dynsock_ff05fee40b574991883ac4dd2db585e5"
-            },
-            {
-              "From": "parentHighHold",
-              "FromPort": "Output",
-              "To": "e5144dbf-d286-4f5f-9aab-9b71f3985fcc",
-              "ToPort": "dynsock_7da308f09fa94c7fb3fd533ccfbec012"
-            },
-            {
-              "From": "parentLowHold",
-              "FromPort": "Output",
-              "To": "e5144dbf-d286-4f5f-9aab-9b71f3985fcc",
-              "ToPort": "dynsock_1144e263624545cc88b17a10f3485570"
-            },
-            {
-              "From": "sell",
-              "FromPort": "MyTrade",
-              "To": "e5144dbf-d286-4f5f-9aab-9b71f3985fcc",
-              "ToPort": "dynsock_5d6688a6e6344e07ade3e4c0f172b72d"
-            },
-            {
-              "From": "buy",
-              "FromPort": "MyTrade",
-              "To": "e5144dbf-d286-4f5f-9aab-9b71f3985fcc",
-              "ToPort": "dynsock_b628c15121fc49778193f8d12ce2a6d6"
-            },
-            {
-              "From": "strategyTrades",
-              "FromPort": "Output",
-              "To": "e5144dbf-d286-4f5f-9aab-9b71f3985fcc",
-              "ToPort": "dynsock_0639873ddbd34124a06d9fc977e3ab02"
-            },
-            {
-              "From": "candles",
-              "FromPort": "Output",
-              "To": "positionAtCandle",
-              "ToPort": "Trigger"
-            },
-            {
-              "From": "candles",
-              "FromPort": "Output",
-              "To": "zero",
-              "ToPort": "Trigger"
-            },
-            {
-              "From": "candles",
-              "FromPort": "Output",
-              "To": "volume",
-              "ToPort": "Trigger"
-            },
-            {
-              "From": "candles",
-              "FromPort": "Output",
-              "To": "alertOnce",
-              "ToPort": "Flag"
-            },
-            {
-              "From": "candles",
-              "FromPort": "Output",
-              "To": "high",
-              "ToPort": "Input"
-            },
-            {
-              "From": "candles",
-              "FromPort": "Output",
-              "To": "low",
-              "ToPort": "Input"
-            },
-            {
-              "From": "candles",
-              "FromPort": "Output",
-              "To": "close",
-              "ToPort": "Input"
-            },
-            {
-              "From": "candles",
-              "FromPort": "Output",
-              "To": "handover",
-              "ToPort": "Time"
-            },
-            {
-              "From": "candles",
-              "FromPort": "Output",
-              "To": "parentHighHold",
-              "ToPort": "Trigger"
-            },
-            {
-              "From": "candles",
-              "FromPort": "Output",
-              "To": "parentLowHold",
-              "ToPort": "Trigger"
-            },
-            {
-              "From": "candles",
-              "FromPort": "Output",
-              "To": "tradeWindow",
-              "ToPort": "Time"
-            },
-            {
-              "From": "close",
-              "FromPort": "Output",
-              "To": "alertClose",
-              "ToPort": "Input"
-            },
-            {
               "From": "close",
               "FromPort": "Output",
               "To": "protection",
               "ToPort": "Price"
+            },
+            {
+              "From": "candles",
+              "FromPort": "Output",
+              "To": "chart",
+              "ToPort": "dynsock_ecfb2c536a2fea74c4a319c418ddffb6"
+            },
+            {
+              "From": "highest",
+              "FromPort": "Output",
+              "To": "chart",
+              "ToPort": "dynsock_beaf86c9b2d0e25680e57d6b46e37629"
+            },
+            {
+              "From": "lowest",
+              "FromPort": "Output",
+              "To": "chart",
+              "ToPort": "dynsock_0f5a98268b45590c5b3e24c538de891a"
+            },
+            {
+              "From": "parentHighHold",
+              "FromPort": "Output",
+              "To": "chart",
+              "ToPort": "dynsock_6625051c2a9fd9508118ff66939b387b"
+            },
+            {
+              "From": "parentLowHold",
+              "FromPort": "Output",
+              "To": "chart",
+              "ToPort": "dynsock_9a4a7caec7bd69d1b598c37feddc9f39"
+            },
+            {
+              "From": "sell",
+              "FromPort": "MyTrade",
+              "To": "chart",
+              "ToPort": "dynsock_03169d0d4418a0252a96d6747a657a1b"
+            },
+            {
+              "From": "buy",
+              "FromPort": "MyTrade",
+              "To": "chart",
+              "ToPort": "dynsock_069e0890c5631ddc291c671b33db99b8"
+            },
+            {
+              "From": "strategyTrades",
+              "FromPort": "Output",
+              "To": "chart",
+              "ToPort": "dynsock_268d9e0377586533e0a3b59332cba75d"
             }
           ]
-        },
-        "Description": "Captures the completed previous UTC day's high and low, trades a return inside that range after an intraday sweep, writes one log message for each accepted signal candle, and protects fills with symmetric percentage exits."
+        }
       },
       "Type": "Independent"
     }

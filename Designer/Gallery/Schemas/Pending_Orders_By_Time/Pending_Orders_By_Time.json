@@ -48,6 +48,51 @@
                 }
               }
             },
+            "e6125174-743f-6e33-35e3-f8e357ccdd07Value": {
+              "Value": {
+                "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                "settings": {
+                  "Type": "Absolute",
+                  "Value": 1.0
+                }
+              }
+            },
+            "14b6e8dc-0480-006b-0412-0518c8a8ab7fValue": {
+              "Value": {
+                "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                "settings": {
+                  "Type": "Absolute",
+                  "Value": 0.0
+                }
+              }
+            },
+            "fcb35918-6eb9-cdc6-64c0-d0079554cee7Value": {
+              "Value": {
+                "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                "settings": {
+                  "Type": "Absolute",
+                  "Value": 0.0
+                }
+              }
+            },
+            "b8bbb8e3-b8fe-1e40-3dd4-177df073b0ceValue": {
+              "Value": {
+                "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                "settings": {
+                  "Type": "Absolute",
+                  "Value": 1.0
+                }
+              }
+            },
+            "adf403c2-c5b1-e39a-9778-a94905d3718aValue": {
+              "Value": {
+                "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                "settings": {
+                  "Type": "Absolute",
+                  "Value": -1.0
+                }
+              }
+            },
             "4e37af9f-ae51-bd76-3990-95283783a37bValue": {
               "Value": {
                 "type": "StockSharp.Messages.Unit, StockSharp.Messages",
@@ -90,7 +135,7 @@
               "Key": "candles",
               "Figure": "",
               "X": 0.0,
-              "Y": 360.0,
+              "Y": 0.0,
               "TypeId": "3d773273-0cee-4d40-8eef-acded2d07ab8",
               "Settings": {
                 "Id": "e9d84737-8fec-daaa-9df6-d99d94da37f4",
@@ -148,7 +193,7 @@
               "Key": "close",
               "Figure": "",
               "X": 220.0,
-              "Y": 210.0,
+              "Y": 0.0,
               "TypeId": "35c046c4-1b0f-4074-ac08-0c70850a8dcf",
               "Settings": {
                 "Id": "c3a2114d-85cf-4077-d03e-aed290301b16",
@@ -184,7 +229,7 @@
               "Key": "high",
               "Figure": "",
               "X": 220.0,
-              "Y": 350.0,
+              "Y": 130.0,
               "TypeId": "35c046c4-1b0f-4074-ac08-0c70850a8dcf",
               "Settings": {
                 "Id": "d2299dcb-1b53-9ba0-82f0-af1035a6125c",
@@ -220,7 +265,7 @@
               "Key": "low",
               "Figure": "",
               "X": 220.0,
-              "Y": 490.0,
+              "Y": 260.0,
               "TypeId": "35c046c4-1b0f-4074-ac08-0c70850a8dcf",
               "Settings": {
                 "Id": "cedef86d-04d6-fd99-8d9a-a12f5136989b",
@@ -256,7 +301,7 @@
               "Key": "highAtCandle",
               "Figure": "",
               "X": 440.0,
-              "Y": 350.0,
+              "Y": 0.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "5c38dc9a-60ef-9f93-0a65-baff947dbe5b",
@@ -293,7 +338,7 @@
               "Key": "lowAtCandle",
               "Figure": "",
               "X": 440.0,
-              "Y": 490.0,
+              "Y": 130.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "a7ba969f-5ad8-b5b7-6d5b-62e246b3cd0f",
@@ -330,7 +375,7 @@
               "Key": "openWindow",
               "Figure": "",
               "X": 220.0,
-              "Y": 0.0,
+              "Y": 390.0,
               "TypeId": "51fdf3e6-36f7-454b-a706-d7b492110558",
               "Settings": {
                 "Id": "b7ed46f1-0c55-b2b4-d17b-d657b8759460",
@@ -343,7 +388,7 @@
                     "Value": "Inherit"
                   },
                   "ShowParameters": {
-                    "Value": false
+                    "Value": true
                   },
                   "ShowSockets": {
                     "Value": true
@@ -364,7 +409,7 @@
               "Key": "closeWindow",
               "Figure": "",
               "X": 220.0,
-              "Y": 1080.0,
+              "Y": 520.0,
               "TypeId": "51fdf3e6-36f7-454b-a706-d7b492110558",
               "Settings": {
                 "Id": "e56252c4-ebb4-0ef7-1ee3-ad2d5c48218f",
@@ -377,7 +422,7 @@
                     "Value": "Inherit"
                   },
                   "ShowParameters": {
-                    "Value": false
+                    "Value": true
                   },
                   "ShowSockets": {
                     "Value": true
@@ -397,8 +442,8 @@
             {
               "Key": "referenceClose",
               "Figure": "",
-              "X": 440.0,
-              "Y": 140.0,
+              "X": 1100.0,
+              "Y": 0.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "65d51da4-63c6-abc0-0395-789294a8470a",
@@ -434,8 +479,8 @@
             {
               "Key": "distance",
               "Figure": "",
-              "X": 660.0,
-              "Y": 140.0,
+              "X": 1100.0,
+              "Y": 130.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "4eaf07c3-88b7-8f20-4b8a-b10a1dcefaf1",
@@ -479,8 +524,8 @@
             {
               "Key": "buyLevelCalc",
               "Figure": "",
-              "X": 880.0,
-              "Y": 140.0,
+              "X": 1320.0,
+              "Y": 0.0,
               "TypeId": "f0edcbdf-41cb-442b-896c-332dac3caae3",
               "Settings": {
                 "Id": "26b09623-8b6d-0980-74f8-ed20b971367d",
@@ -511,8 +556,8 @@
             {
               "Key": "sellLevelCalc",
               "Figure": "",
-              "X": 880.0,
-              "Y": 280.0,
+              "X": 1320.0,
+              "Y": 130.0,
               "TypeId": "f0edcbdf-41cb-442b-896c-332dac3caae3",
               "Settings": {
                 "Id": "a293c2c4-08e7-c4e2-660c-7b82b1f23ef3",
@@ -543,8 +588,8 @@
             {
               "Key": "buyLevel",
               "Figure": "",
-              "X": 1100.0,
-              "Y": 140.0,
+              "X": 1540.0,
+              "Y": 0.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "4b3b8c0d-61a7-8ca2-0466-0459b01b9a20",
@@ -588,8 +633,8 @@
             {
               "Key": "sellLevel",
               "Figure": "",
-              "X": 1100.0,
-              "Y": 280.0,
+              "X": 1540.0,
+              "Y": 130.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "9bbcd37c-a5db-62c9-367d-234e1795001c",
@@ -633,8 +678,8 @@
             {
               "Key": "activeState",
               "Figure": "",
-              "X": 440.0,
-              "Y": 770.0,
+              "X": 1760.0,
+              "Y": 0.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "9b7bdb8e-413c-4073-ea4d-f2ef13dd673e",
@@ -678,8 +723,8 @@
             {
               "Key": "activeOn",
               "Figure": "",
-              "X": 660.0,
-              "Y": 910.0,
+              "X": 1540.0,
+              "Y": 260.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "e6125174-743f-6e33-35e3-f8e357ccdd07",
@@ -692,7 +737,7 @@
                     "Value": "Inherit"
                   },
                   "ShowParameters": {
-                    "Value": false
+                    "Value": true
                   },
                   "ShowSockets": {
                     "Value": true
@@ -723,8 +768,8 @@
             {
               "Key": "activeOff",
               "Figure": "",
-              "X": 660.0,
-              "Y": 1050.0,
+              "X": 440.0,
+              "Y": 260.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "14b6e8dc-0480-006b-0412-0518c8a8ab7f",
@@ -737,7 +782,7 @@
                     "Value": "Inherit"
                   },
                   "ShowParameters": {
-                    "Value": false
+                    "Value": true
                   },
                   "ShowSockets": {
                     "Value": true
@@ -768,8 +813,8 @@
             {
               "Key": "isActive",
               "Figure": "",
-              "X": 660.0,
-              "Y": 770.0,
+              "X": 1980.0,
+              "Y": 0.0,
               "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
               "Settings": {
                 "Id": "1704da92-df30-389a-93cc-99c740c3939a",
@@ -810,7 +855,7 @@
               "Key": "zero",
               "Figure": "",
               "X": 220.0,
-              "Y": 770.0,
+              "Y": 650.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "fcb35918-6eb9-cdc6-64c0-d0079554cee7",
@@ -823,7 +868,7 @@
                     "Value": "Inherit"
                   },
                   "ShowParameters": {
-                    "Value": false
+                    "Value": true
                   },
                   "ShowSockets": {
                     "Value": true
@@ -855,7 +900,7 @@
               "Key": "position",
               "Figure": "",
               "X": 0.0,
-              "Y": 0.0,
+              "Y": 130.0,
               "TypeId": "83bcd64c-0f75-4572-be49-3d771a456f76",
               "Settings": {
                 "Id": "0f86250e-129e-8379-0af0-dd5b1825e7e1",
@@ -889,7 +934,7 @@
               "Key": "positionAtOpen",
               "Figure": "",
               "X": 440.0,
-              "Y": 0.0,
+              "Y": 390.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "08c70372-0635-ac80-aae1-3f00fbe2ca80",
@@ -1003,15 +1048,15 @@
                 "InputSocketIds": [
                   "dynsock_position",
                   "dynsock_window",
-                  "8e0fa9037f9a4969acd4cb70a9164e7e"
+                  "f6f121b1d0f648dd876111f247b0391d"
                 ]
               }
             },
             {
               "Key": "highHit",
               "Figure": "",
-              "X": 1100.0,
-              "Y": 420.0,
+              "X": 1760.0,
+              "Y": 130.0,
               "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
               "Settings": {
                 "Id": "ac732637-d9d7-65f8-6357-b12d83fd1fc0",
@@ -1051,8 +1096,8 @@
             {
               "Key": "lowHit",
               "Figure": "",
-              "X": 1100.0,
-              "Y": 560.0,
+              "X": 1760.0,
+              "Y": 260.0,
               "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
               "Settings": {
                 "Id": "1403e6b1-1b11-4c35-2efa-261362a8f3bd",
@@ -1092,8 +1137,8 @@
             {
               "Key": "buyCandidate",
               "Figure": "",
-              "X": 1320.0,
-              "Y": 420.0,
+              "X": 2200.0,
+              "Y": 0.0,
               "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
               "Settings": {
                 "Id": "66111412-1d35-36a2-f1e9-7fb9852c19e6",
@@ -1121,15 +1166,15 @@
                 "InputSocketIds": [
                   "dynsock_breakout",
                   "dynsock_armed",
-                  "a64e833dd86c4aee81f5f5145d37b9e0"
+                  "0a72a6422c3549548d70b0a7670c38eb"
                 ]
               }
             },
             {
               "Key": "sellCandidate",
               "Figure": "",
-              "X": 1320.0,
-              "Y": 560.0,
+              "X": 2200.0,
+              "Y": 130.0,
               "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
               "Settings": {
                 "Id": "2f208b3b-d3de-1547-5740-29561d6b0171",
@@ -1157,15 +1202,15 @@
                 "InputSocketIds": [
                   "dynsock_breakout",
                   "dynsock_armed",
-                  "3e52302f7dd44385a3b496af4621224e"
+                  "2f344d74c183434ab5dd45f5bc2c1e46"
                 ]
               }
             },
             {
               "Key": "firstBreakout",
               "Figure": "",
-              "X": 1540.0,
-              "Y": 650.0,
+              "X": 440.0,
+              "Y": 520.0,
               "TypeId": "d9273c2c-6789-4ba8-a5c5-2b1eb4c4f006",
               "Settings": {
                 "Id": "ec6f0960-b9f9-1317-534a-79ceb02789b3",
@@ -1192,8 +1237,8 @@
             {
               "Key": "longMarker",
               "Figure": "",
-              "X": 1540.0,
-              "Y": 350.0,
+              "X": 2420.0,
+              "Y": 0.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "b8bbb8e3-b8fe-1e40-3dd4-177df073b0ce",
@@ -1206,7 +1251,7 @@
                     "Value": "Inherit"
                   },
                   "ShowParameters": {
-                    "Value": false
+                    "Value": true
                   },
                   "ShowSockets": {
                     "Value": true
@@ -1237,8 +1282,8 @@
             {
               "Key": "shortMarker",
               "Figure": "",
-              "X": 1540.0,
-              "Y": 490.0,
+              "X": 2420.0,
+              "Y": 130.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "adf403c2-c5b1-e39a-9778-a94905d3718a",
@@ -1251,7 +1296,7 @@
                     "Value": "Inherit"
                   },
                   "ShowParameters": {
-                    "Value": false
+                    "Value": true
                   },
                   "ShowSockets": {
                     "Value": true
@@ -1282,8 +1327,8 @@
             {
               "Key": "selectedSide",
               "Figure": "",
-              "X": 1760.0,
-              "Y": 490.0,
+              "X": 2640.0,
+              "Y": 0.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "bfcc1625-9e06-dde4-b62c-32b463a207e0",
@@ -1327,8 +1372,8 @@
             {
               "Key": "chooseBuy",
               "Figure": "",
-              "X": 1760.0,
-              "Y": 350.0,
+              "X": 2860.0,
+              "Y": 0.0,
               "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
               "Settings": {
                 "Id": "b72f3816-2d17-df19-5c81-41524cd73ab3",
@@ -1368,8 +1413,8 @@
             {
               "Key": "chooseSell",
               "Figure": "",
-              "X": 1760.0,
-              "Y": 630.0,
+              "X": 2860.0,
+              "Y": 130.0,
               "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
               "Settings": {
                 "Id": "9eff8863-de48-5280-750b-bb23243da968",
@@ -1410,7 +1455,7 @@
               "Key": "volume",
               "Figure": "",
               "X": 220.0,
-              "Y": 910.0,
+              "Y": 780.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "4e37af9f-ae51-bd76-3990-95283783a37b",
@@ -1454,8 +1499,8 @@
             {
               "Key": "buyOrder",
               "Figure": "",
-              "X": 1980.0,
-              "Y": 350.0,
+              "X": 3080.0,
+              "Y": 0.0,
               "TypeId": "3038ff97-d9c6-4ef5-8a8b-280e4c754cb8",
               "Settings": {
                 "Id": "d36c39d7-255e-1395-ff47-c227bb89f9e0",
@@ -1509,8 +1554,8 @@
             {
               "Key": "sellOrder",
               "Figure": "",
-              "X": 1980.0,
-              "Y": 630.0,
+              "X": 3080.0,
+              "Y": 130.0,
               "TypeId": "3038ff97-d9c6-4ef5-8a8b-280e4c754cb8",
               "Settings": {
                 "Id": "e6d08631-072c-1fc4-ac06-8695389bc9df",
@@ -1564,8 +1609,8 @@
             {
               "Key": "protection",
               "Figure": "",
-              "X": 2200.0,
-              "Y": 490.0,
+              "X": 3300.0,
+              "Y": 0.0,
               "TypeId": "7712ff8b-0270-49fa-9663-196a9a03bfe8",
               "Settings": {
                 "Id": "14cd0d81-26bd-47b1-2144-a39941bc1be0",
@@ -1625,8 +1670,8 @@
             {
               "Key": "scheduledClose",
               "Figure": "",
-              "X": 1980.0,
-              "Y": 910.0,
+              "X": 440.0,
+              "Y": 650.0,
               "TypeId": "953961cd-a9ba-4afe-ac38-e8b61f84b3be",
               "Settings": {
                 "Id": "ccd2b5e1-9339-6eb9-f541-4430fb9063f3",
@@ -1682,13 +1727,14 @@
               }
             },
             {
-              "Key": "272c33e6-94c4-4fb3-95c4-338318151260",
-              "X": 2440.0,
-              "Y": 490.0,
+              "Key": "chart",
+              "Figure": "",
+              "X": 3520.0,
+              "Y": 0.0,
               "TypeId": "1926c40e-aaa3-4948-98e6-fba4b38b580e",
               "Settings": {
-                "Id": "ac802d51-eb3c-4ac6-8d4c-755f780cfe66",
-                "CanAutoName": true,
+                "Id": "0915a3b7-54fe-4b74-5da1-8ed4272e4b45",
+                "CanAutoName": false,
                 "Parameters": {
                   "Name": {
                     "Value": "Candles, virtual levels, orders and trades"
@@ -1700,7 +1746,7 @@
                     "Value": false
                   },
                   "ShowSockets": {
-                    "Value": false
+                    "Value": true
                   },
                   "ProcessNullValues": {
                     "Value": false
@@ -1716,54 +1762,188 @@
                   }
                 },
                 "CandleElements": [
-                  {}
+                  {
+                    "Id": "584d6e10-5e70-cc45-09ac-2929ca992974",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y",
+                    "DrawStyle": "CandleStick",
+                    "UpFillColor": -16744448,
+                    "UpBorderColor": -16744448,
+                    "DownFillColor": -65536,
+                    "DownBorderColor": -65536,
+                    "LineColor": -16777077,
+                    "AreaColor": -16728065,
+                    "StrokeThickness": 1,
+                    "AntiAliasing": false,
+                    "ShowAxisMarker": true,
+                    "ShowHorizontalVolumes": false,
+                    "LocalHorizontalVolumes": false,
+                    "HorizontalVolumeWidthFraction": 0.0,
+                    "DrawSeparateVolumes": false
+                  }
                 ],
                 "IndicatorElements": [
-                  {},
-                  {}
+                  {
+                    "Id": "8883d6d1-9db2-40ce-7a8c-43dd15fec712",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y"
+                  },
+                  {
+                    "Id": "a1241a9d-64f1-18a9-00de-d6135125b60c",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y"
+                  }
                 ],
                 "OrderElements": [
-                  {},
-                  {},
-                  {},
-                  {}
+                  {
+                    "Id": "8bcbfb2c-5764-27f5-c137-22b63d1c2e3d",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y",
+                    "BuyColor": -16711936,
+                    "BuyStrokeColor": 0,
+                    "SellColor": -38476,
+                    "SellStrokeColor": 0,
+                    "UseAltIcon": false,
+                    "DrawSize": 0.0
+                  },
+                  {
+                    "Id": "f08174bf-e007-7cd8-68bf-c53bf58f5ff9",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y",
+                    "BuyColor": -16711936,
+                    "BuyStrokeColor": 0,
+                    "SellColor": -38476,
+                    "SellStrokeColor": 0,
+                    "UseAltIcon": false,
+                    "DrawSize": 0.0
+                  },
+                  {
+                    "Id": "a4a42263-3245-1bfd-de4e-89566c92a6dd",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y",
+                    "BuyColor": -16711936,
+                    "BuyStrokeColor": 0,
+                    "SellColor": -38476,
+                    "SellStrokeColor": 0,
+                    "UseAltIcon": false,
+                    "DrawSize": 0.0
+                  },
+                  {
+                    "Id": "8ded7b53-db19-2b46-5702-42cb272f62ad",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y",
+                    "BuyColor": -16711936,
+                    "BuyStrokeColor": 0,
+                    "SellColor": -38476,
+                    "SellStrokeColor": 0,
+                    "UseAltIcon": false,
+                    "DrawSize": 0.0
+                  }
                 ],
                 "TradeElements": [
-                  {},
-                  {},
-                  {},
-                  {}
+                  {
+                    "Id": "2c04f988-6da3-bd7f-1cb4-df6c0e5af11f",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y",
+                    "BuyColor": -16711936,
+                    "BuyStrokeColor": -16711936,
+                    "SellColor": -38476,
+                    "SellStrokeColor": -38476,
+                    "UseAltIcon": false,
+                    "DrawSize": 0.0
+                  },
+                  {
+                    "Id": "c3cd6b21-359a-9066-5bdc-72b5bad391c6",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y",
+                    "BuyColor": -16711936,
+                    "BuyStrokeColor": -16711936,
+                    "SellColor": -38476,
+                    "SellStrokeColor": -38476,
+                    "UseAltIcon": false,
+                    "DrawSize": 0.0
+                  },
+                  {
+                    "Id": "d34401cf-91cb-fd73-240c-a64922bce83f",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y",
+                    "BuyColor": -16711936,
+                    "BuyStrokeColor": -16711936,
+                    "SellColor": -38476,
+                    "SellStrokeColor": -38476,
+                    "UseAltIcon": false,
+                    "DrawSize": 0.0
+                  },
+                  {
+                    "Id": "20dad750-2d5d-6934-69a4-ad1fcb6899e4",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y",
+                    "BuyColor": -16711936,
+                    "BuyStrokeColor": -16711936,
+                    "SellColor": -38476,
+                    "SellStrokeColor": -38476,
+                    "UseAltIcon": false,
+                    "DrawSize": 0.0
+                  }
                 ],
                 "XAxes": [
                   {
                     "Id": "X",
                     "Title": "X",
-                    "IsVisible": false,
+                    "IsVisible": true,
+                    "Group": "CategoryDateTimeX",
                     "AutoRange": false,
                     "DrawMinorTicks": false,
-                    "DrawMajorTicks": false,
-                    "DrawMajorGridLines": false,
-                    "DrawMinorGridLines": false,
-                    "DrawLabels": false,
+                    "DrawMajorTicks": true,
+                    "DrawMajorGridLines": true,
+                    "DrawMinorGridLines": true,
+                    "DrawLabels": true,
                     "TextFormatting": "G",
                     "SubDayTextFormatting": "T",
                     "SwitchAxisLocation": false,
-                    "AxisType": "CategoryDateTime"
+                    "AxisType": "CategoryDateTime",
+                    "TimeZone": "UTC"
                   }
                 ],
                 "YAxes": [
                   {
                     "Id": "Y",
                     "Title": "Y",
-                    "IsVisible": false,
-                    "AutoRange": false,
+                    "IsVisible": true,
+                    "Group": "NumericY2",
+                    "AutoRange": true,
                     "DrawMinorTicks": false,
-                    "DrawMajorTicks": false,
-                    "DrawMajorGridLines": false,
-                    "DrawMinorGridLines": false,
-                    "DrawLabels": false,
+                    "DrawMajorTicks": true,
+                    "DrawMajorGridLines": true,
+                    "DrawMinorGridLines": true,
+                    "DrawLabels": true,
+                    "TextFormatting": "#.####",
+                    "SubDayTextFormatting": "T",
                     "SwitchAxisLocation": false,
-                    "AxisType": "Numeric"
+                    "AxisType": "Numeric",
+                    "TimeZone": "UTC"
                   }
                 ]
               }
@@ -2181,72 +2361,71 @@
             {
               "From": "candles",
               "FromPort": "Output",
-              "To": "272c33e6-94c4-4fb3-95c4-338318151260",
-              "ToPort": "dynsock_f7367adfb186490b918068c74bac2ca1"
+              "To": "chart",
+              "ToPort": "dynsock_584d6e105e70cc4509ac2929ca992974"
             },
             {
               "From": "buyLevel",
               "FromPort": "Output",
-              "To": "272c33e6-94c4-4fb3-95c4-338318151260",
-              "ToPort": "dynsock_6f03ff135ccc4d32b410282f63328a8c"
+              "To": "chart",
+              "ToPort": "dynsock_8883d6d19db240ce7a8c43dd15fec712"
             },
             {
               "From": "sellLevel",
               "FromPort": "Output",
-              "To": "272c33e6-94c4-4fb3-95c4-338318151260",
-              "ToPort": "dynsock_05e7eefdf04242a5b80dbddc1ab8e796"
+              "To": "chart",
+              "ToPort": "dynsock_a1241a9d64f118a900ded6135125b60c"
             },
             {
               "From": "buyOrder",
               "FromPort": "Order",
-              "To": "272c33e6-94c4-4fb3-95c4-338318151260",
-              "ToPort": "dynsock_0385bede61054767864e36ae4deeca0c"
+              "To": "chart",
+              "ToPort": "dynsock_8bcbfb2c576427f5c13722b63d1c2e3d"
             },
             {
               "From": "sellOrder",
               "FromPort": "Order",
-              "To": "272c33e6-94c4-4fb3-95c4-338318151260",
-              "ToPort": "dynsock_684c5b36a49a4b9baf068b2cfdfaf1e5"
+              "To": "chart",
+              "ToPort": "dynsock_f08174bfe0077cd868bfc53bf58f5ff9"
             },
             {
               "From": "protection",
               "FromPort": "Take",
-              "To": "272c33e6-94c4-4fb3-95c4-338318151260",
-              "ToPort": "dynsock_62dec84889ac4c0e8562a924286fb15c"
+              "To": "chart",
+              "ToPort": "dynsock_a4a4226332451bfdde4e89566c92a6dd"
             },
             {
               "From": "protection",
               "FromPort": "Stop",
-              "To": "272c33e6-94c4-4fb3-95c4-338318151260",
-              "ToPort": "dynsock_fb8bb5fb9b824cc6be032456fea0d042"
+              "To": "chart",
+              "ToPort": "dynsock_8ded7b53db192b46570242cb272f62ad"
             },
             {
               "From": "buyOrder",
               "FromPort": "MyTrade",
-              "To": "272c33e6-94c4-4fb3-95c4-338318151260",
-              "ToPort": "dynsock_b224bb4b5e464ddb84b484d04c38bfa1"
+              "To": "chart",
+              "ToPort": "dynsock_2c04f9886da3bd7f1cb4df6c0e5af11f"
             },
             {
               "From": "sellOrder",
               "FromPort": "MyTrade",
-              "To": "272c33e6-94c4-4fb3-95c4-338318151260",
-              "ToPort": "dynsock_a1ae67c1d757448dab0e5b891d470c8b"
+              "To": "chart",
+              "ToPort": "dynsock_c3cd6b21359a90665bdc72b5bad391c6"
             },
             {
               "From": "protection",
               "FromPort": "MyTrade",
-              "To": "272c33e6-94c4-4fb3-95c4-338318151260",
-              "ToPort": "dynsock_3e61de66e5484a2e98b3b22238aeb04b"
+              "To": "chart",
+              "ToPort": "dynsock_d34401cf91cbfd73240ca64922bce83f"
             },
             {
               "From": "scheduledClose",
               "FromPort": "MyTrade",
-              "To": "272c33e6-94c4-4fb3-95c4-338318151260",
-              "ToPort": "dynsock_09d72c21b81047c586d8b327704c3a4e"
+              "To": "chart",
+              "ToPort": "dynsock_20dad7502d5d693469a4ad1fcb6899e4"
             }
           ]
-        },
-        "Description": "Arms symmetric virtual breakout levels from the 02:00 five-minute candle, enters once at market after the first touch, protects the fill, and flattens at the 22:00 candle."
+        }
       },
       "Type": "Independent"
     }

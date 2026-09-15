@@ -736,7 +736,7 @@
                   "dynsock_volatility",
                   "dynsock_trend",
                   "dynsock_position",
-                  "2169b3f5811445b3a6551a8e06e24da7"
+                  "c8b035ac87be458cbdf4331d6791af34"
                 ]
               }
             },
@@ -773,7 +773,7 @@
                   "dynsock_volatility",
                   "dynsock_trend",
                   "dynsock_position",
-                  "f22b3a1b320c44c692bccecd9e8c113c"
+                  "6f1830ff0dfb40ff92694da0ee7b79f5"
                 ]
               }
             },
@@ -1250,7 +1250,8 @@
             }
           ]
         }
-      }
+      },
+      "Type": "Independent"
     }
   }
 }

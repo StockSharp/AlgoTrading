@@ -826,7 +826,7 @@
                   "dynsock_slope",
                   "dynsock_channel",
                   "dynsock_position",
-                  "d5a47d4beb2141e08d0c099c9f427e4b"
+                  "e5f4f5bc56f64da7938d879e19d3fb4a"
                 ]
               }
             },
@@ -863,7 +863,7 @@
                   "dynsock_slope",
                   "dynsock_channel",
                   "dynsock_position",
-                  "23587c50c50e4a3dbf3c2aaa7f3a3128"
+                  "76186b500a5d4454a6262f872bb31ba7"
                 ]
               }
             },
@@ -1376,7 +1376,8 @@
             }
           ]
         }
-      }
+      },
+      "Type": "Independent"
     }
   }
 }

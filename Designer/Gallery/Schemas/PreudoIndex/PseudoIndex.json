@@ -1,21 +1,19 @@
 ﻿{
-  "Id": "1f7d3102-d877-4957-bb73-80d9aed5f2bd",
+  "Id": "5bbe0ef4-3d9e-5e2c-52d0-d90cedbdc9ea",
   "Content": {
     "Type": "Schema",
     "Value": {
       "Version": "1.0",
-      "Type": "Independent",
       "Scheme": {
         "SchemaVersion": 1,
         "Category": "",
-        "Description": "",
         "DocUrl": "",
         "Composition": {
-          "Id": "c15ed31a-dccb-41ed-be39-ad5640ca7885",
+          "Id": "5bbe0ef4-3d9e-5e2c-52d0-d90cedbdc9ea",
           "CanAutoName": false,
           "Parameters": {
             "Name": {
-              "Value": "PseudoIndex"
+              "Value": "PreudoIndex"
             },
             "LogLevel": {
               "Value": "Inherit"
@@ -29,27 +27,50 @@
             "ProcessNullValues": {
               "Value": false
             },
-            "1714c8d5-3efe-43b9-8fc5-309d75c39887Value": {
+            "e76b37d0-3997-a659-1322-199a53a89042Value": {
               "Value": "ETHUSDT@BNB"
             },
-            "3d874ac4-2cd7-4681-919d-c082be99f562Value": {
+            "9caa44ba-c3dd-040a-8d56-9b1e97b90619Value": {
               "Value": "BTCUSDT@BNB"
+            },
+            "67435454-8bdf-086a-f190-c97a69845b73Series": {
+              "Value": {
+                "type": "StockSharp.Messages.DataType, StockSharp.Messages",
+                "settings": {
+                  "MessageType": "StockSharp.Messages.TimeFrameCandleMessage, StockSharp.Messages",
+                  "Arg": {
+                    "type": "System.TimeSpan, System.Private.CoreLib",
+                    "value": "00-05-00"
+                  }
+                }
+              }
+            },
+            "b53110a6-1c74-2767-1a2e-14b60a34e8b3Series": {
+              "Value": {
+                "type": "StockSharp.Messages.DataType, StockSharp.Messages",
+                "settings": {
+                  "MessageType": "StockSharp.Messages.TimeFrameCandleMessage, StockSharp.Messages",
+                  "Arg": {
+                    "type": "System.TimeSpan, System.Private.CoreLib",
+                    "value": "00-05-00"
+                  }
+                }
+              }
             }
           },
-          "TypeId": "5b6eca80-36e0-45e9-ae1b-85ea8f8b4029",
-          "Type": "Independent"
+          "TypeId": "0d7852bd-8fb6-44fe-84f0-f1db185c189d"
         },
         "Model": {
           "Nodes": [
             {
-              "Key": "2",
-              "Figure": "Procedure",
-              "X": -852.24097,
-              "Y": -333.15204,
+              "Key": "ethSecurity",
+              "Figure": "",
+              "X": 0.0,
+              "Y": 0.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
-                "Id": "1714c8d5-3efe-43b9-8fc5-309d75c39887",
-                "CanAutoName": true,
+                "Id": "e76b37d0-3997-a659-1322-199a53a89042",
+                "CanAutoName": false,
                 "Parameters": {
                   "Name": {
                     "Value": "ETHUSDT@BNB"
@@ -61,7 +82,7 @@
                     "Value": true
                   },
                   "ShowSockets": {
-                    "Value": false
+                    "Value": true
                   },
                   "ProcessNullValues": {
                     "Value": false
@@ -81,14 +102,14 @@
               }
             },
             {
-              "Key": "3",
-              "Figure": "Procedure",
-              "X": -850.0,
-              "Y": -250.0,
+              "Key": "btcSecurity",
+              "Figure": "",
+              "X": 0.0,
+              "Y": 130.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
-                "Id": "3d874ac4-2cd7-4681-919d-c082be99f562",
-                "CanAutoName": true,
+                "Id": "9caa44ba-c3dd-040a-8d56-9b1e97b90619",
+                "CanAutoName": false,
                 "Parameters": {
                   "Name": {
                     "Value": "BTCUSDT@BNB"
@@ -100,7 +121,7 @@
                     "Value": true
                   },
                   "ShowSockets": {
-                    "Value": false
+                    "Value": true
                   },
                   "ProcessNullValues": {
                     "Value": false
@@ -120,14 +141,14 @@
               }
             },
             {
-              "Key": "4",
-              "Figure": "Procedure",
-              "X": -610.0,
-              "Y": -330.0,
+              "Key": "ethCandles",
+              "Figure": "",
+              "X": 220.0,
+              "Y": 0.0,
               "TypeId": "3d773273-0cee-4d40-8eef-acded2d07ab8",
               "Settings": {
-                "Id": "bd6cfada-997a-4f8b-ade1-4bb320e8ad93",
-                "CanAutoName": true,
+                "Id": "67435454-8bdf-086a-f190-c97a69845b73",
+                "CanAutoName": false,
                 "Parameters": {
                   "Name": {
                     "Value": "TimeFrameCandle__00-05-00"
@@ -139,7 +160,7 @@
                     "Value": true
                   },
                   "ShowSockets": {
-                    "Value": false
+                    "Value": true
                   },
                   "ProcessNullValues": {
                     "Value": false
@@ -153,7 +174,7 @@
                       "settings": {
                         "MessageType": "StockSharp.Messages.TimeFrameCandleMessage, StockSharp.Messages",
                         "Arg": {
-                          "type": "System.TimeSpan, mscorlib",
+                          "type": "System.TimeSpan, System.Private.CoreLib",
                           "value": "00-05-00"
                         }
                       }
@@ -178,14 +199,14 @@
               }
             },
             {
-              "Key": "5",
-              "Figure": "Procedure",
-              "X": -610.0,
-              "Y": -250.0,
+              "Key": "btcCandles",
+              "Figure": "",
+              "X": 220.0,
+              "Y": 130.0,
               "TypeId": "3d773273-0cee-4d40-8eef-acded2d07ab8",
               "Settings": {
-                "Id": "a8e07325-7eea-41cf-863a-35b3f7ad0ecd",
-                "CanAutoName": true,
+                "Id": "b53110a6-1c74-2767-1a2e-14b60a34e8b3",
+                "CanAutoName": false,
                 "Parameters": {
                   "Name": {
                     "Value": "TimeFrameCandle__00-05-00"
@@ -197,7 +218,7 @@
                     "Value": true
                   },
                   "ShowSockets": {
-                    "Value": false
+                    "Value": true
                   },
                   "ProcessNullValues": {
                     "Value": false
@@ -211,7 +232,7 @@
                       "settings": {
                         "MessageType": "StockSharp.Messages.TimeFrameCandleMessage, StockSharp.Messages",
                         "Arg": {
-                          "type": "System.TimeSpan, mscorlib",
+                          "type": "System.TimeSpan, System.Private.CoreLib",
                           "value": "00-05-00"
                         }
                       }
@@ -236,14 +257,14 @@
               }
             },
             {
-              "Key": "6",
-              "Figure": "Procedure",
-              "X": -310.0,
-              "Y": -330.0,
+              "Key": "ethClose",
+              "Figure": "",
+              "X": 440.0,
+              "Y": 0.0,
               "TypeId": "35c046c4-1b0f-4074-ac08-0c70850a8dcf",
               "Settings": {
-                "Id": "0ecec547-4b34-4244-8f6e-a87ad3199103",
-                "CanAutoName": true,
+                "Id": "dbe10624-2af1-0c11-05d2-cda43616502d",
+                "CanAutoName": false,
                 "Parameters": {
                   "Name": {
                     "Value": "ClosePrice"
@@ -255,7 +276,7 @@
                     "Value": false
                   },
                   "ShowSockets": {
-                    "Value": false
+                    "Value": true
                   },
                   "ProcessNullValues": {
                     "Value": false
@@ -272,14 +293,14 @@
               }
             },
             {
-              "Key": "7",
-              "Figure": "Procedure",
-              "X": -310.0,
-              "Y": -250.0,
+              "Key": "btcClose",
+              "Figure": "",
+              "X": 440.0,
+              "Y": 130.0,
               "TypeId": "35c046c4-1b0f-4074-ac08-0c70850a8dcf",
               "Settings": {
-                "Id": "a2687a27-a42c-4bce-b096-b21e15c97a1d",
-                "CanAutoName": true,
+                "Id": "478dab84-8ae0-0631-6e90-3db88115a8a9",
+                "CanAutoName": false,
                 "Parameters": {
                   "Name": {
                     "Value": "ClosePrice"
@@ -291,7 +312,7 @@
                     "Value": false
                   },
                   "ShowSockets": {
-                    "Value": false
+                    "Value": true
                   },
                   "ProcessNullValues": {
                     "Value": false
@@ -308,14 +329,14 @@
               }
             },
             {
-              "Key": "8",
-              "Figure": "Procedure",
-              "X": -70.0,
-              "Y": -290.0,
+              "Key": "ratio",
+              "Figure": "",
+              "X": 660.0,
+              "Y": 0.0,
               "TypeId": "f0edcbdf-41cb-442b-896c-332dac3caae3",
               "Settings": {
-                "Id": "6b4ede18-27c9-4f75-80c8-82925b442389",
-                "CanAutoName": true,
+                "Id": "996b08bd-2395-c1c0-6276-396d1b5cd14b",
+                "CanAutoName": false,
                 "Parameters": {
                   "Name": {
                     "Value": "a / b"
@@ -327,7 +348,7 @@
                     "Value": false
                   },
                   "ShowSockets": {
-                    "Value": false
+                    "Value": true
                   },
                   "ProcessNullValues": {
                     "Value": false
@@ -340,14 +361,14 @@
               }
             },
             {
-              "Key": "9",
-              "Figure": "Procedure",
-              "X": 190.0,
-              "Y": -290.0,
+              "Key": "chart",
+              "Figure": "",
+              "X": 880.0,
+              "Y": 0.0,
               "TypeId": "1926c40e-aaa3-4948-98e6-fba4b38b580e",
               "Settings": {
-                "Id": "f7604b32-6302-4e98-b9f3-43173fe21225",
-                "CanAutoName": true,
+                "Id": "fa91c8e6-15a1-11b7-3bf8-5ee588a90dbf",
+                "CanAutoName": false,
                 "Parameters": {
                   "Name": {
                     "Value": "Chart panel"
@@ -362,7 +383,7 @@
                     "Value": false
                   },
                   "ShowSockets": {
-                    "Value": false
+                    "Value": true
                   },
                   "ProcessNullValues": {
                     "Value": false
@@ -380,25 +401,7 @@
                 "CandleElements": [],
                 "IndicatorElements": [
                   {
-                    "IndicatorPainter": {
-                      "type": "StockSharp.Xaml.Charting.IndicatorPainters.DefaultPainter, StockSharp.Xaml.Charting",
-                      "settings": {
-                        "Line": {
-                          "Id": "e1c8d40d-2052-4731-a16d-cc5a747a5a32",
-                          "IsVisible": true,
-                          "IsLegend": true,
-                          "XAxisId": "X",
-                          "YAxisId": "Y",
-                          "Color": -14774017,
-                          "AdditionalColor": 838860939,
-                          "StrokeThickness": 1,
-                          "AntiAliasing": true,
-                          "Style": "Line",
-                          "ShowAxisMarker": false
-                        }
-                      }
-                    },
-                    "Id": "4d04e26b-6a94-44cb-9bcb-0d7afdf403f9",
+                    "Id": "fbec2cf9-418d-1782-40a1-04fddbd09dc7",
                     "IsVisible": true,
                     "IsLegend": true,
                     "XAxisId": "X",
@@ -412,17 +415,18 @@
                     "Id": "X",
                     "Title": "X",
                     "IsVisible": true,
-                    "AutoRange": true,
+                    "Group": "CategoryDateTimeX",
+                    "AutoRange": false,
                     "DrawMinorTicks": false,
                     "DrawMajorTicks": true,
                     "DrawMajorGridLines": true,
-                    "DrawMinorGridLines": false,
+                    "DrawMinorGridLines": true,
                     "DrawLabels": true,
                     "TextFormatting": "G",
                     "SubDayTextFormatting": "T",
                     "SwitchAxisLocation": false,
                     "AxisType": "CategoryDateTime",
-                    "TimeZone": "Russian Standard Time"
+                    "TimeZone": "UTC"
                   }
                 ],
                 "YAxes": [
@@ -430,17 +434,18 @@
                     "Id": "Y",
                     "Title": "Y",
                     "IsVisible": true,
+                    "Group": "NumericY2",
                     "AutoRange": true,
                     "DrawMinorTicks": false,
                     "DrawMajorTicks": true,
                     "DrawMajorGridLines": true,
-                    "DrawMinorGridLines": false,
+                    "DrawMinorGridLines": true,
                     "DrawLabels": true,
                     "TextFormatting": "#.####",
                     "SubDayTextFormatting": "T",
                     "SwitchAxisLocation": false,
                     "AxisType": "Numeric",
-                    "TimeZone": "Russian Standard Time"
+                    "TimeZone": "UTC"
                   }
                 ]
               }
@@ -448,50 +453,51 @@
           ],
           "Links": [
             {
-              "From": "2",
+              "From": "ethSecurity",
               "FromPort": "Output",
-              "To": "4",
+              "To": "ethCandles",
               "ToPort": "Security"
             },
             {
-              "From": "3",
+              "From": "btcSecurity",
               "FromPort": "Output",
-              "To": "5",
+              "To": "btcCandles",
               "ToPort": "Security"
             },
             {
-              "From": "4",
+              "From": "ethCandles",
               "FromPort": "Output",
-              "To": "6",
+              "To": "ethClose",
               "ToPort": "Input"
             },
             {
-              "From": "5",
+              "From": "btcCandles",
               "FromPort": "Output",
-              "To": "7",
+              "To": "btcClose",
               "ToPort": "Input"
             },
             {
-              "From": "7",
+              "From": "ethClose",
               "FromPort": "Output",
-              "To": "8",
+              "To": "ratio",
               "ToPort": "dynsock_a"
             },
             {
-              "From": "6",
+              "From": "btcClose",
               "FromPort": "Output",
-              "To": "8",
+              "To": "ratio",
               "ToPort": "dynsock_b"
             },
             {
-              "From": "8",
+              "From": "ratio",
               "FromPort": "Output",
-              "To": "9",
-              "ToPort": "dynsock_4d04e26b6a9444cb9bcb0d7afdf403f9"
+              "To": "chart",
+              "ToPort": "dynsock_fbec2cf9418d178240a104fddbd09dc7"
             }
           ]
         }
-      }
+      },
+      "Type": "Independent"
     }
   }
 }

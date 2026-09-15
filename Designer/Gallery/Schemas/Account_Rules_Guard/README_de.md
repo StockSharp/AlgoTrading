@@ -1,0 +1,46 @@
+# Strategiediagramm Account Rules Guard
+[English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
+
+Dieses Diagramm handelt Kreuzungen von EMA(120)/EMA(450) auf abgeschlossenen Ein-Minuten-Kerzen und umgibt diesen gewöhnlichen Einstieg mit einer Überwachung auf Kontoebene. P&L change, eine Formel, zwei Vergleiche, ein logisches ODER, ein Flag-Latch und ein gespeichertes Flag überwachen gemeinsam das kombinierte Geldergebnis des Laufs. In dem Moment, in dem dieses Ergebnis das Verlustlimit oder das Gewinnziel erreicht, schließt die Überwachung die Position, schreibt das Geschehene in das Log und blockiert jeden weiteren Einstieg bis zum Ende des Laufs.
+
+![schema](schema.svg)
+
+## Strategieübersicht
+
+- Abgeschlossene Ein-Minuten-Kerzen speisen zwei Indicator-Blöcke, einen schnellen EMA und einen langsamen EMA, und zwei Crossing-Blöcke lesen dieses Paar in beide Richtungen.
+- P&L change meldet realisiertes und unrealisiertes Geld im selben Update, und eine Formula addiert beides zu einem kombinierten Ergebnis, das bei jedem P&L-Update neu berechnet wird.
+- Zwei Comparison-Blöcke prüfen das kombinierte Ergebnis gegen die Schwelle Max Loss und die Schwelle Profit Target, und eine Logical condition mit dem Operator OR macht aus jeder der beiden Antworten ein einziges Signal, dass die Regel ausgelöst hat.
+- Flag rastet dieses Signal beim ersten Mal ein, wenn es wahr ist. Sein Reset-Eingang bleibt bewusst unverbunden, sodass die Überwachung für den Rest des Laufs ein Einwegschalter ist.
+- Eine Variable vom Typ Flag speichert den Latch-Zustand und gibt ihn bei jeder Kerze erneut aus, was ein logisches UND zum Arbeiten benötigt; eine Logical condition mit dem Operator NOT verwandelt den gespeicherten Zustand in die Erlaubnis, die die Einstiegs-Gates lesen.
+- Jedes Einstiegs-Gate ist ein logisches UND aus drei Dingen: einer Kreuzung in seiner Richtung, der Erlaubnis der Überwachung und einer Positionsprüfung aus Current position und einem Comparison gegen null.
+- Position modify eröffnet ein Volume zum Marktpreis über die Bedingung Position eröffnen, sodass ein Einstieg nur aus der flachen Position erfolgt; die entgegengesetzte Kreuzung speist ein zweites Position modify, das Offenes schließt und das Diagramm flach lässt, statt die Position zu drehen.
+- Löst die Regel aus, stellt ein drittes Position modify die Position glatt, eine Variable hält das Ergebnis in diesem Augenblick fest, String formatter formatiert es, und Notification schreibt es zusammen mit einer zweiten Zeile in das Log, die die Handelserlaubnis der Plattform beschreibt.
+
+## Ein- und Ausstiegsregeln
+
+- **Long-Einstieg**: Eine abgeschlossene Kerze, auf der der schnelle EMA den langsamen EMA nach oben kreuzt, kauft ein Volume zum Marktpreis, sofern die Überwachung nicht ausgelöst hat und die Position nicht long ist. Die Bedingung Position eröffnen bedeutet, dass der Einstieg nur aus der flachen Position erfolgt: dasselbe Signal, das bei bereits offener Position eintrifft, wird abgelehnt, statt die Position aufzustocken.
+- **Short-Einstieg**: Eine abgeschlossene Kerze, auf der der schnelle EMA den langsamen EMA nach unten kreuzt, verkauft ein Volume zum Marktpreis, sofern die Überwachung nicht ausgelöst hat und die Position nicht short ist. Wie auf der Long-Seite lässt die Bedingung Position eröffnen den Einstieg nur aus der flachen Position zu.
+- **Ausstieg**: Der gewöhnliche Ausstieg ist die entgegengesetzte Kreuzung: der schließende Position modify-Block stellt alles Offene glatt, sodass das Diagramm flach zurückkehrt und auf eine neue Kreuzung wartet, statt die Position zu drehen. Der Notausstieg ist die Überwachung: sobald das kombinierte realisierte und unrealisierte Ergebnis die Schwelle Max Loss oder die Schwelle Profit Target erreicht, wird die Position zum Marktpreis geschlossen, der Latch gesetzt, der Betrag und die Erlaubnis der Plattform in das Log geschrieben, und für den Rest des Laufs wird kein weiterer Einstieg zugelassen.
+
+## Parameter
+
+| Parameter | Standard | Beschreibung |
+|---|---|---|
+| Candles | 00:01:00 | Zeitrahmen der Kerzenserie. Nur abgeschlossene Kerzen treiben die gleitenden Durchschnitte, die erneute Ausgabe des Latch-Zustands, den Volumenimpuls und das Lesen der Erlaubnis an. |
+| Fast EMA Length | 120 | Länge des schnellen exponentiellen gleitenden Durchschnitts. |
+| Slow EMA Length | 450 | Länge des langsamen exponentiellen gleitenden Durchschnitts. |
+| Max Loss | -5000 | Kombiniertes realisiertes und unrealisiertes Ergebnis in der Kontowährung, bei dem oder unterhalb dessen die Überwachung auslöst. Es wird als negative Zahl geschrieben und ist bewusst weit gefasst: ein zu eng gesetztes Limit stoppt das Diagramm, bevor es genug gehandelt hat, um etwas zu zeigen. |
+| Profit Target | 10000 | Kombiniertes realisiertes und unrealisiertes Ergebnis, bei dem oder oberhalb dessen die Überwachung auslöst. Es zu erreichen beendet den Lauf auf dieselbe Weise wie ein Verlust: Position geschlossen, Latch gesetzt, keine weiteren Einstiege. |
+| Volume | 1 | Feste Menge, die von beiden Einstiegsblöcken verwendet wird. Die beiden schließenden Blöcke nehmen ihre Menge aus der offenen Position und ignorieren diesen Wert. |
+
+## Diagrammdetails
+
+- [P&L change](https://doc.stocksharp.com/en/topics/designer/strategies/using_visual_designer/elements/common/pnl_strategy.html) gibt realisiertes und unrealisiertes Geld gemeinsam aus, und die [Formula](https://doc.stocksharp.com/en/topics/designer/strategies/using_visual_designer/elements/common/formula.html) `r + u` addiert sie zu dem Wert, den beide [Comparison](https://doc.stocksharp.com/en/topics/designer/strategies/using_visual_designer/elements/common/comparison.html)-Blöcke bewerten. Der Block bleibt stumm, bis sich auf dem Konto tatsächlich etwas bewegt hat, sodass die Überwachung vor der ersten Ausführung nicht auslösen kann, und die beiden Limit-Variablen werden vom kombinierten Ergebnis selbst getriggert, damit beide Seiten jedes Vergleichs immer im selben Update eintreffen.
+- Die Erlaubnis wird gespeichert, nicht gestreamt. [Flag](https://doc.stocksharp.com/en/topics/designer/strategies/using_visual_designer/elements/common/flag.html) gibt nur in dem Augenblick aus, in dem es gesetzt wird, und damit kann ein logisches UND nichts anfangen, denn UND wartet auf einen Wert an jedem Eingang und löscht sie, sobald es feuert. Der Latch-Zustand lebt daher in einer [Variable](https://doc.stocksharp.com/en/topics/designer/strategies/using_visual_designer/elements/data_sources/variable.html) vom Typ Flag, deren Standardwert false ist und deren Trigger-Eingang der Kerzenstrom ist: bei jeder Kerze gibt sie den aktuellen Zustand erneut aus, und eine [Logical condition](https://doc.stocksharp.com/en/topics/designer/strategies/using_visual_designer/elements/common/logical_condition.html) mit dem Operator NOT macht daraus die Einstiegserlaubnis.
+- Der Operator OR am ausgelösten Signal ist eine bewusste Wahl: anders als UND wartet er nicht auf einen Wert an jedem Eingang, sodass jedes Limit für sich allein das Signal setzen kann. Er gibt außerdem bei jedem ruhigen Update eine falsche Antwort aus, was stromabwärts nichts kostet: Flag ignoriert einen falschen Trigger, die Snapshot-Variablen ignorieren ihn, und [Position modify](https://doc.stocksharp.com/en/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) weigert sich, darauf zu reagieren, sodass durch eine negative Antwort nie eine Order gesendet wird.
+- Die schließenden Blöcke verwenden die Bedingung Position schließen und benötigen überhaupt keinen Volumeneingang: die Menge wird aus der offenen Position genommen. Die Einstiegsblöcke behalten ihr eigenes Volume, und [Current position](https://doc.stocksharp.com/en/topics/designer/strategies/using_visual_designer/elements/positions/current.html) gegen null verglichen gibt jedem Gate dieselben Prüfungen auf nicht-long und nicht-short, die die Einstiegsregel nennt.
+- [Is trade allowed](https://doc.stocksharp.com/en/topics/designer/strategies/using_visual_designer/elements/time/trade_allow.html) liest bei jeder Kerze die Erlaubnis der Plattform selbst, und der Block wird absichtlich aus den Einstiegs-Gates herausgehalten: auf aufgezeichneter Historie antwortet er für den gesamten Lauf „nicht erlaubt“, sodass ein darauf gebautes Gate sich nie öffnen würde und das Diagramm überhaupt nicht handeln würde. Seine Antwort wird in einer Variable erfasst und von [String formatter](https://doc.stocksharp.com/en/topics/designer/strategies/using_visual_designer/elements/notifying/string_format.html) in die zweite Zeile der [Notification](https://doc.stocksharp.com/en/topics/designer/strategies/using_visual_designer/elements/notifying/notification.html) gerendert, wohin sie gehört: sie erklärt den Zustand der Plattform in dem Augenblick, in dem die Regel ausgelöst hat, statt das Diagramm stummzuschalten. Notification ist auf den Typ Log gesetzt, den einzigen Typ, der während des Abspielens der Historie zugestellt wird.
+
+## Verwendung
+
+Importieren Sie die `.json`-Datei in Designer, testen Sie sie im Backtester mit historischen Daten und passen Sie danach Parameter oder Bausteine an Ihr Instrument an, bevor Sie live handeln.
