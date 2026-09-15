@@ -73,11 +73,11 @@ public class SchemaTests : BaseTestClass
 			if (!SchemaGallery.SchemaFiles(folder).Any())
 				problems.Add($"{name}: missing a schema");
 
+			// Only what is missing is a problem. An example is free to carry more than the set every
+			// example has -- a picture a description points at, a second schema -- and a check that called
+			// those unexpected once cost this gallery two images its own READMEs still linked to.
 			foreach (var missing in expected.Except(actual))
 				problems.Add($"{name}: missing {missing}");
-
-			foreach (var extra in actual.Except(expected).Where(f => !f.EndsWith(".json", StringComparison.OrdinalIgnoreCase)))
-				problems.Add($"{name}: unexpected {extra}");
 		}
 
 		problems.Count.AssertEqual(0, $"Incomplete examples: {string.Join("; ", problems)}");
