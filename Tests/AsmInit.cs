@@ -697,6 +697,13 @@ public static class AsmInit
 			strategyStoppedEarly = strategyStoppedBeforeConnector;
 		}
 
+		// What the strategy threw is reported before anything else. It is the cause; the failures below are
+		// often what the shutdown it triggered looks like from outside -- a subscription closed at a time
+		// the emulator has already passed, say -- and reporting those first hides the exception, its
+		// message and its stack behind noise from the teardown.
+		if (error is not null)
+			throw error;
+
 		if (finalConnectorFailureCount > 0)
 			Assert.Fail(
 				$"Connector failed {finalConnectorFailureCount} time(s): {string.Join("; ", observedConnectorFailures)} {getDiagnostics()} " +
@@ -716,9 +723,6 @@ public static class AsmInit
 
 		if (subscribeFailureCount > 0)
 			Assert.Fail($"Subscription operation failed {subscribeFailureCount} time(s): {string.Join("; ", subscribeFailures)} {getDiagnostics()}");
-
-		if (error is not null)
-			throw error;
 
 		if (result.execError is not null)
 			throw result.execError;

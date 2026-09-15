@@ -132,11 +132,20 @@ public class AdaptiveMarketLevel : BaseIndicator
 		if (r1 + r2 > 0 && r3 > 0)
 			dim = (Math.Log((double)(r1 + r2)) - Math.Log((double)r3)) * 1.44269504088896;
 
-		var alpha = (decimal)Math.Exp(-Lag * (dim - 1.0));
-		if (alpha > 1m) alpha = 1m;
-		if (alpha < 0.01m) alpha = 0.01m;
+		// Bounded while still a double: a dimension below one turns the exponent positive, and Math.Exp
+		// then returns a number no decimal can hold, so casting first would throw before any bound applies.
+		var smoothing = Math.Exp(-Lag * (dim - 1.0));
+		var alpha = smoothing >= 1.0 ? 1m : smoothing <= 0.01 ? 0.01m : (decimal)smoothing;
 
 		var price = (candle.HighPrice + candle.LowPrice + 2m * candle.OpenPrice + 2m * candle.ClosePrice) / 6m;
+
+		// The ring is sized here rather than only in Reset: nothing calls Reset on an indicator that is
+		// built and bound in one breath, and Lag may be set after construction.
+		if (_smooth.Length != Lag + 1)
+		{
+			_smooth = new decimal[Lag + 1];
+			_pos = 0;
+		}
 
 		var prevPos = (_pos - 1 + _smooth.Length) % _smooth.Length;
 		_smooth[_pos] = alpha * price + (1m - alpha) * _smooth[prevPos];
