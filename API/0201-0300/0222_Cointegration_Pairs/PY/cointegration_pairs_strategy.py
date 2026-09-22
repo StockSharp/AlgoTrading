@@ -41,6 +41,7 @@ class cointegration_pairs_strategy(Strategy):
 
         # Beta coefficient for calculation of residual.
         self._beta = self.Param("Beta", 1.0) \
+            .SetRange(0.01, 100.0) \
             .SetDisplay("Beta", "Coefficient of cointegration", "Parameters") \
             .SetCanOptimize(True) \
             .SetOptimize(0.5, 2.0, 0.1)
@@ -147,9 +148,11 @@ class cointegration_pairs_strategy(Strategy):
         # Use the same portfolio for second asset or find another portfolio
         self._asset2Portfolio = self.Portfolio
 
-        # Create subscriptions for both assets
+        # Create subscriptions for both assets. The second one names its instrument
+        # explicitly, because the optional argument right after the candle type is
+        # IsFinishedOnly, not the security.
         asset1Subscription = self.SubscribeCandles(self.CandleType)
-        asset2Subscription = self.SubscribeCandles(self.CandleType, self.Asset2)
+        asset2Subscription = self.SubscribeCandles(self.CandleType, security=self.Asset2)
 
         # Subscribe to Asset1 candles
         asset1Subscription.Bind(self.ProcessAsset1Candle).Start()
@@ -168,6 +171,7 @@ class cointegration_pairs_strategy(Strategy):
             takeProfit=Unit(0, UnitTypes.Absolute),
             stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
         )
+
     def ProcessAsset1Candle(self, candle):
         if candle.State != CandleStates.Finished:
             return

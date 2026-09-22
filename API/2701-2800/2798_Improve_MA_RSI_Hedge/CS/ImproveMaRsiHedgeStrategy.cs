@@ -20,6 +20,10 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ImproveMaRsiHedgeStrategy : Strategy
 {
+	// The bundled sample history ships this instrument next to the primary one, so the hedge leg
+	// has a tradable default.
+	private const string DefaultHedgeSecurityId = "TONUSDT@BNBFT";
+
 	private readonly StrategyParam<decimal> _profitTarget;
 	private readonly StrategyParam<Security> _hedgeSecurity;
 	private readonly StrategyParam<int> _fastPeriod;
@@ -125,7 +129,7 @@ public class ImproveMaRsiHedgeStrategy : Strategy
 			.SetDisplay("Profit Target", "Combined profit target across both legs", "Risk")
 			;
 
-		_hedgeSecurity = Param<Security>(nameof(HedgeSecurity))
+		_hedgeSecurity = Param(nameof(HedgeSecurity), new Security { Id = DefaultHedgeSecurityId })
 			.SetDisplay("Hedge Security", "Secondary instrument to trade", "General");
 
 		_fastPeriod = Param(nameof(FastMaPeriod), 8)

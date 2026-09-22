@@ -13,10 +13,37 @@ sealed class PairedOrderRecorder
 {
 	private readonly ConcurrentDictionary<long, (string securityId, Sides side, decimal volume)> _orders = new();
 
+	/// <summary>
+	/// Starts recording every order the strategy submits, keeping the instrument it went to.
+	/// </summary>
 	public void Attach(Strategy strategy)
 		=> strategy.OrderReceived += (_, order) =>
 			_orders.TryAdd(order.TransactionId, (order.Security?.Id, order.Side, order.Volume));
 
+	/// <summary>
+	/// Both instruments were traded. A hedge that opens in the same direction as the primary leg is
+	/// not balanced against it, so the pair shows up here rather than in <see cref="AssertBalanced"/>.
+	/// </summary>
+	public void AssertTradesBoth(Security primary, Security secondary)
+	{
+		var orders = _orders.Values.ToArray();
+
+		Assert.IsTrue(
+			orders.Any(order => order.securityId == primary.Id),
+			$"No orders were submitted for {primary.Id}. Observed: {Format(orders)}.");
+		Assert.IsTrue(
+			orders.Any(order => order.securityId == secondary.Id),
+			$"No orders were submitted for {secondary.Id}, so only one leg of the pair is traded. Observed: {Format(orders)}.");
+	}
+
+	private static string Format((string securityId, Sides side, decimal volume)[] orders)
+		=> orders.Length == 0
+			? "nothing"
+			: string.Join(", ", orders.Select(o => $"{o.securityId} {o.side} {o.volume}").Distinct());
+
+	/// <summary>
+	/// Buys on one instrument are offset by equal sells on the other, both ways round.
+	/// </summary>
 	public void AssertBalanced(Security primary, Security secondary)
 	{
 		var orders = _orders.Values.ToArray();

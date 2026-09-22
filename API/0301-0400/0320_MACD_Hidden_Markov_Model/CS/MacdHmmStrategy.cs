@@ -21,11 +21,14 @@ public class MacdHmmStrategy : Strategy
 	private readonly StrategyParam<int> _macdSignal;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _hmmHistoryLength;
+	private readonly StrategyParam<int> _atrPeriod;
+	private readonly StrategyParam<decimal> _atrStopMultiplier;
 	private readonly StrategyParam<int> _signalCooldownBars;
 
 	private MovingAverageConvergenceDivergenceSignal _macd;
+	private AverageTrueRange _atr;
 
-	// Hidden Markov Model states
+	// Hidden Markov Model states, listed in the order used by the model tables below.
 	private enum MarketStates
 	{
 		Bullish,
@@ -33,14 +36,27 @@ public class MacdHmmStrategy : Strategy
 		Bearish
 	}
 
+	// Typical move of every state measured in average ranges: the bullish state rises by one
+	// average range, the bearish state falls by one and the neutral state goes nowhere.
+	private static readonly double[] _stateMeans = [1.0, 0.0, -1.0];
+
+	// Transition matrix of the hidden chain. States are sticky, and a jump from bullish
+	// straight to bearish is far less likely than a stop in the neutral state.
+	private static readonly double[][] _transitions =
+	[
+		[0.80, 0.15, 0.05],
+		[0.15, 0.70, 0.15],
+		[0.05, 0.15, 0.80],
+	];
+
 	private MarketStates _currentState = MarketStates.Neutral;
 
 	// Data for HMM calculations
 	private readonly List<decimal> _priceChanges = [];
-	private readonly List<decimal> _volumes = [];
 	private decimal _prevPrice;
 	private decimal? _prevMacd;
 	private decimal? _prevSignal;
+	private decimal? _stopPrice;
 	private int _cooldownRemaining;
 
 	/// <summary>
@@ -89,6 +105,24 @@ public class MacdHmmStrategy : Strategy
 	}
 
 	/// <summary>
+	/// ATR period used to measure the stop distance.
+	/// </summary>
+	public int AtrPeriod
+	{
+		get => _atrPeriod.Value;
+		set => _atrPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Stop distance expressed in ATR multiples.
+	/// </summary>
+	public decimal AtrStopMultiplier
+	{
+		get => _atrStopMultiplier.Value;
+		set => _atrStopMultiplier.Value = value;
+	}
+
+	/// <summary>
 	/// Bars to wait between trading actions.
 	/// </summary>
 	public int SignalCooldownBars
@@ -104,26 +138,33 @@ public class MacdHmmStrategy : Strategy
 	{
 		_macdFast = Param(nameof(MacdFast), 12)
 		.SetDisplay("MACD Fast Period", "Fast EMA period for MACD", "Indicators")
-		
 		.SetOptimize(8, 20, 2);
 
 		_macdSlow = Param(nameof(MacdSlow), 26)
 		.SetDisplay("MACD Slow Period", "Slow EMA period for MACD", "Indicators")
-		
 		.SetOptimize(20, 40, 2);
 
 		_macdSignal = Param(nameof(MacdSignal), 9)
 		.SetDisplay("MACD Signal Period", "Signal EMA period for MACD", "Indicators")
-		
 		.SetOptimize(7, 15, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		_hmmHistoryLength = Param(nameof(HmmHistoryLength), 100)
-		.SetDisplay("HMM History Length", "Length of history for Hidden Markov Model", "HMM Parameters")
-		
+		.SetGreaterThanZero()
+		.SetDisplay("HMM History Length", "Number of observations the model is estimated on", "HMM Parameters")
 		.SetOptimize(50, 200, 10);
+
+		_atrPeriod = Param(nameof(AtrPeriod), 14)
+		.SetGreaterThanZero()
+		.SetDisplay("ATR Period", "ATR period used to measure the stop distance", "Protection")
+		.SetOptimize(7, 28, 7);
+
+		_atrStopMultiplier = Param(nameof(AtrStopMultiplier), 2m)
+		.SetGreaterThanZero()
+		.SetDisplay("ATR Stop Multiplier", "Stop distance in ATR multiples", "Protection")
+		.SetOptimize(1m, 4m, 0.5m);
 
 		_signalCooldownBars = Param(nameof(SignalCooldownBars), 12)
 		.SetGreaterThanZero()
@@ -145,11 +186,12 @@ public class MacdHmmStrategy : Strategy
 		_prevPrice = 0;
 		_prevMacd = null;
 		_prevSignal = null;
+		_stopPrice = null;
 		_cooldownRemaining = 0;
 		_priceChanges.Clear();
-		_volumes.Clear();
 
 		_macd?.Reset();
+		_atr?.Reset();
 	}
 
 	/// <inheritdoc />
@@ -168,11 +210,18 @@ public class MacdHmmStrategy : Strategy
 			},
 			SignalMa = { Length = MacdSignal }
 		};
-		// Create subscription and bind indicator
+
+		// ATR measures the current range and sets how far the protective stop sits from the entry
+		_atr = new AverageTrueRange
+		{
+			Length = AtrPeriod
+		};
+
+		// Create subscription and bind indicators
 		var subscription = SubscribeCandles(CandleType);
 
 		subscription
-		.BindEx(_macd, ProcessCandle)
+		.BindEx(_macd, _atr, ProcessCandle)
 		.Start();
 
 		// Setup chart visualization if available
@@ -183,15 +232,9 @@ public class MacdHmmStrategy : Strategy
 			DrawIndicator(area, _macd);
 			DrawOwnTrades(area);
 		}
-
-		// Setup position protection
-		StartProtection(
-		new Unit(2, UnitTypes.Percent), 
-		new Unit(2, UnitTypes.Percent)
-		);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue, IIndicatorValue atrValue)
 	{
 		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
@@ -222,30 +265,39 @@ public class MacdHmmStrategy : Strategy
 			return;
 		}
 
+		// Stop distance follows volatility: the wider the average range, the wider the stop.
+		var stopDistance = atrValue.ToDecimal() * AtrStopMultiplier;
+
 		var crossUp = previousMacd <= previousSignal && macd > signal;
 		var crossDown = previousMacd >= previousSignal && macd < signal;
+		var longStop = Position > 0 && _stopPrice is decimal longLevel && candle.LowPrice <= longLevel;
+		var shortStop = Position < 0 && _stopPrice is decimal shortLevel && candle.HighPrice >= shortLevel;
 		var longExit = Position > 0 && (_currentState == MarketStates.Bearish || crossDown);
 		var shortExit = Position < 0 && (_currentState == MarketStates.Bullish || crossUp);
 
 		// Generate trade signals based on MACD transitions and HMM state.
-		if (longExit)
+		if (longStop || longExit)
 		{
 			SellMarket(Position);
+			_stopPrice = null;
 			_cooldownRemaining = SignalCooldownBars;
 		}
-		else if (shortExit)
+		else if (shortStop || shortExit)
 		{
 			BuyMarket(Math.Abs(Position));
+			_stopPrice = null;
 			_cooldownRemaining = SignalCooldownBars;
 		}
 		else if (_cooldownRemaining == 0 && crossUp && _currentState == MarketStates.Bullish && Position <= 0)
 		{
 			BuyMarket(Volume + Math.Abs(Position));
+			_stopPrice = candle.ClosePrice - stopDistance;
 			_cooldownRemaining = SignalCooldownBars;
 		}
 		else if (_cooldownRemaining == 0 && crossDown && _currentState == MarketStates.Bearish && Position >= 0)
 		{
 			SellMarket(Volume + Math.Abs(Position));
+			_stopPrice = candle.ClosePrice + stopDistance;
 			_cooldownRemaining = SignalCooldownBars;
 		}
 
@@ -258,16 +310,11 @@ public class MacdHmmStrategy : Strategy
 		// Calculate price change
 		if (_prevPrice > 0)
 		{
-			decimal priceChange = candle.ClosePrice - _prevPrice;
-			_priceChanges.Add(priceChange);
-			_volumes.Add(candle.TotalVolume);
+			_priceChanges.Add(candle.ClosePrice - _prevPrice);
 
 			// Maintain the desired history length
 			while (_priceChanges.Count > HmmHistoryLength)
-			{
 				_priceChanges.RemoveAt(0);
-				_volumes.RemoveAt(0);
-			}
 		}
 
 		_prevPrice = candle.ClosePrice;
@@ -275,63 +322,66 @@ public class MacdHmmStrategy : Strategy
 
 	private void CalculateMarketState()
 	{
-		// Only perform state calculation when we have enough data
-		if (_priceChanges.Count < 10)
-		return;
+		// The model observes exactly HmmHistoryLength price changes, so it stays neutral
+		// until that much history is collected.
+		if (_priceChanges.Count < HmmHistoryLength)
+			return;
 
-		// Simple HMM approximation using recent price changes and volume patterns
-		// Note: This is a simplified implementation - a real HMM would use proper state transition probabilities
+		// The average absolute move of the window scales the observations, so the same
+		// emission shapes fit both a quiet and a volatile market.
+		var scale = 0m;
 
-		// Calculate statistics of recent price changes
-		var priceChanges = _priceChanges.ToArray();
-		var volumes = _volumes.ToArray();
-		var startIndex = Math.Max(0, priceChanges.Length - 10);
-		var positiveChanges = 0;
-		var negativeChanges = 0;
+		foreach (var change in _priceChanges)
+			scale += Math.Abs(change);
 
-		for (var i = startIndex; i < priceChanges.Length; i++)
+		scale /= _priceChanges.Count;
+
+		if (scale <= 0)
+			return;
+
+		// Forward pass of the Hidden Markov Model: the belief starts uniform and every
+		// observation of the window moves it, so the window length shapes the result.
+		var states = _stateMeans.Length;
+		var belief = new double[states];
+		var updated = new double[states];
+
+		for (var i = 0; i < states; i++)
+			belief[i] = 1.0 / states;
+
+		foreach (var change in _priceChanges)
 		{
-			if (priceChanges[i] > 0)
-				positiveChanges++;
-			else if (priceChanges[i] < 0)
-				negativeChanges++;
-		}
+			var observation = (double)(change / scale);
+			var total = 0.0;
 
-		// Calculate average volume for up and down days
-		decimal upVolume = 0;
-		decimal downVolume = 0;
-		int upCount = 0;
-		int downCount = 0;
-
-		for (var i = startIndex; i < priceChanges.Length; i++)
-		{
-			if (priceChanges[i] > 0)
+			for (var next = 0; next < states; next++)
 			{
-				upVolume += volumes[i];
-				upCount++;
+				// Chance of standing in "next" before the observation is taken into account.
+				var predicted = 0.0;
+
+				for (var current = 0; current < states; current++)
+					predicted += belief[current] * _transitions[current][next];
+
+				// Cauchy-shaped likelihood: the closer the move is to the typical move of the
+				// state, the stronger the evidence, and an extreme move never kills a state.
+				var distance = observation - _stateMeans[next];
+
+				updated[next] = predicted / (1.0 + distance * distance);
+				total += updated[next];
 			}
-			else if (priceChanges[i] < 0)
-			{
-				downVolume += volumes[i];
-				downCount++;
-			}
+
+			for (var i = 0; i < states; i++)
+				belief[i] = updated[i] / total;
 		}
 
-		upVolume = upCount > 0 ? upVolume / upCount : 0;
-		downVolume = downCount > 0 ? downVolume / downCount : 0;
+		// The state the filter considers most likely after the last observation.
+		var best = 0;
 
-		// Determine market state based on price change direction and volume
-		if (positiveChanges >= 7 || (positiveChanges >= 6 && upVolume > downVolume * 1.5m))
+		for (var i = 1; i < states; i++)
 		{
-			_currentState = MarketStates.Bullish;
+			if (belief[i] > belief[best])
+				best = i;
 		}
-		else if (negativeChanges >= 7 || (negativeChanges >= 6 && downVolume > upVolume * 1.5m))
-		{
-			_currentState = MarketStates.Bearish;
-		}
-		else
-		{
-			_currentState = MarketStates.Neutral;
-		}
+
+		_currentState = (MarketStates)best;
 	}
 }

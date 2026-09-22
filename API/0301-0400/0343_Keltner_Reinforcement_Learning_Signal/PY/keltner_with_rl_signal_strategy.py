@@ -5,9 +5,9 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan, Math, Decimal
+from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Sides
-from StockSharp.Algo.Indicators import KeltnerChannels
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -53,6 +53,7 @@ class keltner_with_rl_signal_strategy(Strategy):
         self._previous_atr = 0.0
         self._previous_price = 0.0
         self._previous_signal_price = 0.0
+        self._entry_price = 0.0
         self._consecutive_wins = 0
         self._consecutive_losses = 0
         self._cooldown_remaining = 0
@@ -76,6 +77,7 @@ class keltner_with_rl_signal_strategy(Strategy):
         self._previous_atr = 0.0
         self._previous_price = 0.0
         self._previous_signal_price = 0.0
+        self._entry_price = 0.0
         self._cooldown_remaining = 0
         self._previous_above_upper = False
         self._previous_below_lower = False
@@ -83,39 +85,37 @@ class keltner_with_rl_signal_strategy(Strategy):
     def OnStarted2(self, time):
         super(keltner_with_rl_signal_strategy, self).OnStarted2(time)
 
-        keltner = KeltnerChannels()
-        keltner.Length = int(self._ema_period.Value)
-        keltner.Multiplier = Decimal(float(self._atr_multiplier.Value))
+        # Keltner Channels built from their two parts, so each documented period drives its own
+        # indicator: the middle line is EMA(EmaPeriod), the band width is AtrMultiplier * ATR(AtrPeriod).
+        ema = ExponentialMovingAverage()
+        ema.Length = int(self._ema_period.Value)
+
+        atr = AverageTrueRange()
+        atr.Length = int(self._atr_period.Value)
 
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.BindEx(keltner, self.ProcessCandle).Start()
+        subscription.Bind(ema, atr, self.ProcessCandle).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, keltner)
+            self.DrawIndicator(area, ema)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle, keltner_value):
+    def ProcessCandle(self, candle, middle_value, atr_value):
         if candle.State != CandleStates.Finished:
             return
 
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        upper_val = keltner_value.Upper
-        lower_val = keltner_value.Lower
-        middle_val = keltner_value.Middle
+        middle_band = float(middle_value)
+        current_atr = float(atr_value)
 
-        if upper_val is None or lower_val is None or middle_val is None:
-            return
-
-        upper_band = float(upper_val)
-        lower_band = float(lower_val)
-        middle_band = float(middle_val)
-
-        atr_mult = float(self._atr_multiplier.Value)
-        current_atr = (upper_band - middle_band) / atr_mult
+        # Keltner bands: the EMA middle line widened by the ATR of its own period
+        band_offset = float(self._atr_multiplier.Value) * current_atr
+        upper_band = middle_band + band_offset
+        lower_band = middle_band - band_offset
 
         self._last_price = float(candle.ClosePrice)
 
@@ -137,6 +137,7 @@ class keltner_with_rl_signal_strategy(Strategy):
             if self.Position < 0:
                 vol = self.Volume + Math.Abs(self.Position)
             self.BuyMarket(vol)
+            self._entry_price = price
             self._previous_signal_price = price
             self._cooldown_remaining = cooldown
         elif self._cooldown_remaining == 0 and bearish_breakout and self._current_signal == self.RL_SELL and self.Position >= 0:
@@ -144,14 +145,17 @@ class keltner_with_rl_signal_strategy(Strategy):
             if self.Position > 0:
                 vol = self.Volume + Math.Abs(self.Position)
             self.SellMarket(vol)
+            self._entry_price = price
             self._previous_signal_price = price
             self._cooldown_remaining = cooldown
 
         if self.Position > 0 and price < middle_band:
             self.SellMarket(Math.Abs(self.Position))
+            self._entry_price = 0.0
             self._cooldown_remaining = cooldown
         elif self.Position < 0 and price > middle_band:
             self.BuyMarket(Math.Abs(self.Position))
+            self._entry_price = 0.0
             self._cooldown_remaining = cooldown
 
         self.ApplyAtrStopLoss(price, current_atr)
@@ -194,15 +198,25 @@ class keltner_with_rl_signal_strategy(Strategy):
             self._consecutive_wins = 0
 
     def ApplyAtrStopLoss(self, price, atr):
-        stop_loss_mult = float(self._stop_loss_atr.Value)
+        # Without an entry price there is no position of ours to protect
+        if self._entry_price == 0.0:
+            return
+
+        # The stop stands StopLossAtr ATR multiples away from the price the position was opened at
+        stop_offset = float(self._stop_loss_atr.Value) * atr
+
         if self.Position > 0:
-            stop_level = price - (stop_loss_mult * atr)
-            if self._last_price < stop_level:
+            stop_level = self._entry_price - stop_offset
+            if price < stop_level:
                 self.SellMarket(Math.Abs(self.Position))
+                self._entry_price = 0.0
+                self._cooldown_remaining = int(self._cooldown_bars.Value)
         elif self.Position < 0:
-            stop_level = price + (stop_loss_mult * atr)
-            if self._last_price > stop_level:
+            stop_level = self._entry_price + stop_offset
+            if price > stop_level:
                 self.BuyMarket(Math.Abs(self.Position))
+                self._entry_price = 0.0
+                self._cooldown_remaining = int(self._cooldown_bars.Value)
 
     def CreateClone(self):
         return keltner_with_rl_signal_strategy()

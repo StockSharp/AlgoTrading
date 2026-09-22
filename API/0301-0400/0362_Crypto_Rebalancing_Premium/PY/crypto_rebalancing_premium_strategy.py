@@ -25,7 +25,7 @@ class crypto_rebalancing_premium_strategy(Strategy):
             .SetRange(10.0, 10000.0) \
             .SetDisplay("Min Trade USD", "Minimum dollar amount per trade", "Trading")
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._secondary_security = None
@@ -100,18 +100,33 @@ class crypto_rebalancing_premium_strategy(Strategy):
         self.Rebalance()
 
     def Rebalance(self):
-        self.RebalanceSecurity(self.Security, 1.0, True)
-        self.RebalanceSecurity(self._secondary_security, 1.0, False)
+        portfolio_value = 0.0
+        if self.Portfolio is not None and self.Portfolio.CurrentValue is not None:
+            portfolio_value = float(self.Portfolio.CurrentValue)
 
-    def RebalanceSecurity(self, security, target_volume, is_primary):
+        if portfolio_value <= 0.0:
+            return
+
+        # Equal weight means equal value, not equal unit count: both legs get the same
+        # half of the basket in USD, whatever one unit of each instrument happens to cost.
+        target_value = portfolio_value / 2.0
+
+        self.RebalanceSecurity(self.Security, target_value, True)
+        self.RebalanceSecurity(self._secondary_security, target_value, False)
+
+    def RebalanceSecurity(self, security, target_value, is_primary):
         price = self._latest_primary_price if is_primary else self._latest_secondary_price
         if price <= 0.0:
             return
+
+        # The target weight is expressed in USD, so the leg price turns it into units to hold.
+        target_volume = target_value / price
 
         pos_val = self.GetPositionValue(security, self.Portfolio)
         current_pos = float(pos_val) if pos_val is not None else 0.0
         diff = target_volume - current_pos
 
+        # An adjustment worth less than this is not worth the round trip.
         min_trade = float(self._min_trade_usd.Value)
         if abs(diff) * price < min_trade:
             return

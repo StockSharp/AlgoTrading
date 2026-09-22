@@ -3,6 +3,7 @@ namespace StockSharp.Tests;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -11,17 +12,20 @@ using StockSharp.Messages;
 
 sealed class EntrySideRecorder
 {
-	private readonly object _sync = new();
+	private readonly Lock _sync = new();
 	private readonly List<Entry> _entries = new();
 	private decimal _position;
 
+	/// <summary>
+	/// Starts recording position entries: a fill is an entry when the position was flat before it.
+	/// </summary>
 	public void Attach(Strategy strategy)
 		=> strategy.OwnTradeReceived += (_, trade) =>
 		{
 			if (trade?.Order == null || trade.Trade == null)
 				return;
 
-			lock (_sync)
+			using (_sync.EnterScope())
 			{
 				if (_position == 0m)
 					_entries.Add(new(trade.Trade.ServerTime, trade.Order.Side));
@@ -31,6 +35,9 @@ sealed class EntrySideRecorder
 			}
 		};
 
+	/// <summary>
+	/// Entries were taken in both directions, and enough of them to say so.
+	/// </summary>
 	public void AssertSupportsBothSides()
 	{
 		var sides = Snapshot();
@@ -40,6 +47,9 @@ sealed class EntrySideRecorder
 		Assert.IsTrue(sides.Contains(Sides.Sell), $"No Sell entry was observed: {Format(sides)}.");
 	}
 
+	/// <summary>
+	/// Two runs entered the same way. The reference run must have entered at all.
+	/// </summary>
 	public void AssertSameAs(EntrySideRecorder expected)
 	{
 		var expectedSides = expected.Snapshot();
@@ -49,6 +59,9 @@ sealed class EntrySideRecorder
 		Assert.IsTrue(expectedSides.SequenceEqual(actualSides), $"Entry sides differ. Expected: {Format(expectedSides)}. Actual: {Format(actualSides)}.");
 	}
 
+	/// <summary>
+	/// Two runs entered differently. Both runs must have entered at all.
+	/// </summary>
 	public void AssertDiffersFrom(EntrySideRecorder other)
 	{
 		var firstSides = Snapshot();
@@ -58,10 +71,13 @@ sealed class EntrySideRecorder
 		Assert.IsFalse(firstSides.SequenceEqual(secondSides), $"Different random seeds produced the same entries: {Format(firstSides)}.");
 	}
 
+	/// <summary>
+	/// No calendar day carries more entries than allowed.
+	/// </summary>
 	public void AssertMaximumEntriesPerDay(int maximum)
 	{
 		Entry[] entries;
-		lock (_sync)
+		using (_sync.EnterScope())
 			entries = _entries.ToArray();
 
 		Assert.IsTrue(entries.Length > 0, "No position entries were filled.");
@@ -77,12 +93,12 @@ sealed class EntrySideRecorder
 
 	private Sides[] Snapshot()
 	{
-		lock (_sync)
+		using (_sync.EnterScope())
 			return _entries.Select(entry => entry.Side).ToArray();
 	}
 
 	private static string Format(IEnumerable<Sides> sides)
 		=> string.Join(", ", sides);
 
-	private readonly record struct Entry(DateTimeOffset Time, Sides Side);
+	private readonly record struct Entry(DateTime Time, Sides Side);
 }

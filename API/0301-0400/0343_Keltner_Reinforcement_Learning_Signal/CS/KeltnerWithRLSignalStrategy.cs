@@ -46,6 +46,7 @@ public class KeltnerWithRLSignalStrategy : Strategy
 	private decimal _previousAtr;
 	private decimal _previousPrice;
 	private decimal _previousSignalPrice;
+	private decimal _entryPrice;
 	private int _consecutiveWins;
 	private int _consecutiveLosses;
 	private int _cooldownRemaining;
@@ -156,7 +157,7 @@ public class KeltnerWithRLSignalStrategy : Strategy
 
 		_currentSignal = default;
 		_consecutiveWins = _consecutiveLosses = default;
-		_lastPrice = _previousEma = _previousAtr = _previousPrice = _previousSignalPrice = default;
+		_lastPrice = _previousEma = _previousAtr = _previousPrice = _previousSignalPrice = _entryPrice = default;
 		_cooldownRemaining = default;
 		_previousAboveUpperBand = default;
 		_previousBelowLowerBand = default;
@@ -166,18 +167,16 @@ public class KeltnerWithRLSignalStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create Keltner Channels using EMA and ATR
-		var keltner = new KeltnerChannels
-		{
-			Length = EmaPeriod,
-			Multiplier = AtrMultiplier
-		};
+		// Keltner Channels built from their two parts, so each documented period drives its own
+		// indicator: the middle line is EMA(EmaPeriod), the band width is AtrMultiplier * ATR(AtrPeriod).
+		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
+		var atr = new AverageTrueRange { Length = AtrPeriod };
 
 		// Subscribe to candles and bind indicators
 		var subscription = SubscribeCandles(CandleType);
 
 		subscription
-		.BindEx(keltner, ProcessCandle)
+		.Bind(ema, atr, ProcessCandle)
 		.Start();
 
 		// Create chart visualization if available
@@ -185,7 +184,7 @@ public class KeltnerWithRLSignalStrategy : Strategy
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, keltner);
+			DrawIndicator(area, ema);
 			DrawOwnTrades(area);
 		}
 	}
@@ -193,7 +192,7 @@ public class KeltnerWithRLSignalStrategy : Strategy
 	/// <summary>
 	/// Process each candle and Keltner Channel values.
 	/// </summary>
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue keltnerValue)
+	private void ProcessCandle(ICandleMessage candle, decimal middleBand, decimal currentAtr)
 	{
 		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
@@ -203,20 +202,10 @@ public class KeltnerWithRLSignalStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 		return;
 
-		// Extract Keltner Channel values
-		var keltnerTyped = (KeltnerChannelsValue)keltnerValue;
-
-		if (keltnerTyped.Upper is not decimal upperBand)
-		return;
-
-		if (keltnerTyped.Lower is not decimal lowerBand)
-		return;
-
-		if (keltnerTyped.Middle is not decimal middleBand)
-		return;
-
-		// Calculate current ATR value (upper - middle)/multiplier
-		var currentAtr = (upperBand - middleBand) / AtrMultiplier;
+		// Keltner bands: the EMA middle line widened by the ATR of its own period
+		var bandOffset = AtrMultiplier * currentAtr;
+		var upperBand = middleBand + bandOffset;
+		var lowerBand = middleBand - bandOffset;
 
 		// Update price and RL state
 		_lastPrice = candle.ClosePrice;
@@ -241,6 +230,7 @@ public class KeltnerWithRLSignalStrategy : Strategy
 		{
 			LogInfo($"Long signal: Price {price} > Upper Band {upperBand}, RL Signal = Buy");
 			BuyMarket(Volume + (Position < 0 ? Math.Abs(Position) : 0m));
+			_entryPrice = price;
 			_previousSignalPrice = price;
 			_cooldownRemaining = CooldownBars;
 		}
@@ -249,6 +239,7 @@ public class KeltnerWithRLSignalStrategy : Strategy
 		{
 			LogInfo($"Short signal: Price {price} < Lower Band {lowerBand}, RL Signal = Sell");
 			SellMarket(Volume + (Position > 0 ? Math.Abs(Position) : 0m));
+			_entryPrice = price;
 			_previousSignalPrice = price;
 			_cooldownRemaining = CooldownBars;
 		}
@@ -260,6 +251,7 @@ public class KeltnerWithRLSignalStrategy : Strategy
 		{
 			LogInfo($"Exit long: Price {price} < EMA {middleBand}");
 			SellMarket(Math.Abs(Position));
+			_entryPrice = 0m;
 			_cooldownRemaining = CooldownBars;
 		}
 		// Exit short: Price rises above EMA (middle band)
@@ -267,6 +259,7 @@ public class KeltnerWithRLSignalStrategy : Strategy
 		{
 			LogInfo($"Exit short: Price {price} > EMA {middleBand}");
 			BuyMarket(Math.Abs(Position));
+			_entryPrice = 0m;
 			_cooldownRemaining = CooldownBars;
 		}
 
@@ -372,23 +365,33 @@ _currentSignal = RLSignals.None;
 	/// </summary>
 	private void ApplyAtrStopLoss(decimal price, decimal atr)
 	{
-		// Dynamic stop loss based on ATR
+		// Without an entry price there is no position of ours to protect
+		if (_entryPrice == 0m)
+			return;
+
+		// The stop stands StopLossAtr ATR multiples away from the price the position was opened at
+		var stopOffset = StopLossAtr * atr;
+
 		if (Position > 0) // Long position
 		{
-			var stopLevel = price - (StopLossAtr * atr);
-			if (_lastPrice < stopLevel)
+			var stopLevel = _entryPrice - stopOffset;
+			if (price < stopLevel)
 			{
-				LogInfo($"ATR Stop Loss triggered for long position: Current {_lastPrice} < Stop {stopLevel}");
+				LogInfo($"ATR Stop Loss triggered for long position: Current {price} < Stop {stopLevel}");
 				SellMarket(Math.Abs(Position));
+				_entryPrice = 0m;
+				_cooldownRemaining = CooldownBars;
 			}
 		}
 		else if (Position < 0) // Short position
 		{
-			var stopLevel = price + (StopLossAtr * atr);
-			if (_lastPrice > stopLevel)
+			var stopLevel = _entryPrice + stopOffset;
+			if (price > stopLevel)
 			{
-				LogInfo($"ATR Stop Loss triggered for short position: Current {_lastPrice} > Stop {stopLevel}");
+				LogInfo($"ATR Stop Loss triggered for short position: Current {price} > Stop {stopLevel}");
 				BuyMarket(Math.Abs(Position));
+				_entryPrice = 0m;
+				_cooldownRemaining = CooldownBars;
 			}
 		}
 	}

@@ -63,7 +63,7 @@ public class CryptoRebalancingPremiumStrategy : Strategy
 			.SetRange(10m, 10000m)
 			.SetDisplay("Min Trade USD", "Minimum dollar amount per trade", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -146,18 +146,29 @@ public class CryptoRebalancingPremiumStrategy : Strategy
 
 	private void Rebalance()
 	{
-		RebalanceSecurity(Security, 1m);
-		RebalanceSecurity(_secondarySecurity, 1m);
+		var portfolioValue = Portfolio.CurrentValue ?? 0m;
+		if (portfolioValue <= 0m)
+			return;
+
+		// Equal weight means equal value, not equal unit count: both legs get the same
+		// half of the basket in USD, whatever one unit of each instrument happens to cost.
+		var targetValue = portfolioValue / 2m;
+
+		RebalanceSecurity(Security, targetValue);
+		RebalanceSecurity(_secondarySecurity, targetValue);
 	}
 
-	private void RebalanceSecurity(Security security, decimal targetVolume)
+	private void RebalanceSecurity(Security security, decimal targetValue)
 	{
 		var price = security == Security ? _latestPrimaryPrice : _latestSecondaryPrice;
 		if (price <= 0m)
 			return;
 
+		// The target weight is expressed in USD, so the leg price turns it into units to hold.
+		var targetVolume = targetValue / price;
 		var diff = targetVolume - GetPositionValue(security, Portfolio).GetValueOrDefault();
 
+		// An adjustment worth less than this is not worth the round trip.
 		if (Math.Abs(diff) * price < MinTradeUsd)
 			return;
 

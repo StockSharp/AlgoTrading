@@ -31,9 +31,16 @@
     <Compile Include="../API/*/0219_Statistical_Arbitrage/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
     <Compile Include="../API/*/0222_Cointegration_Pairs/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
     <Compile Include="../API/*/0230_Delta_Neutral_Arbitrage/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
+    <Compile Include="../API/*/0320_MACD_Hidden_Markov_Model/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
     <Compile Include="../API/*/0333_Keltner_Seasonal_Filter/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
+    <Compile Include="../API/*/0343_Keltner_Reinforcement_Learning_Signal/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
+    <Compile Include="../API/*/0362_Crypto_Rebalancing_Premium/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
     <Compile Include="../API/*/0365_Dispersion_Trading/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
     <Compile Include="../API/*/0401_Soccer_Clubs_Arbitrage/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
+    <Compile Include="../API/*/0402_Synthetic_Lending_Rates/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
+    <Compile Include="../API/*/0410_WTIBrent_Spread/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
+    <Compile Include="../API/*/0425_Grid_Bot/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
+    <Compile Include="../API/*/0498_Advanced_Adaptive_Grid/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
     <Compile Include="../API/*/0503_Advanced_Position_Management/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
     <Compile Include="../API/*/0526_Spot_Futures_Arbitrage/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
     <Compile Include="../API/*/1005_MA_With_Logistic/CS/*.cs" Link="CS\%(Filename)%(Extension)" />

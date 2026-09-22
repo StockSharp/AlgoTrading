@@ -218,6 +218,17 @@ public class Ch2010StructureStrategy : Strategy
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
+		foreach (var (_, security) in GetTradedSlots())
+		{
+			yield return (security, DailyCandleType);
+			yield return (security, IntradayCandleType);
+		}
+	}
+
+	private IEnumerable<(string alias, Security security)> GetTradedSlots()
+	{
+		var configured = false;
+
 		foreach (var slot in _instrumentSlots)
 		{
 			var security = slot.Getter(this);
@@ -225,9 +236,13 @@ public class Ch2010StructureStrategy : Strategy
 			if (security == null)
 				continue;
 
-			yield return (security, DailyCandleType);
-			yield return (security, IntradayCandleType);
+			configured = true;
+			yield return (slot.Alias, security);
 		}
+
+		// With no pair slot filled the example still trades the security it was started on.
+		if (!configured && Security != null)
+			yield return (Security.Id, Security);
 	}
 
 	/// <inheritdoc />
@@ -245,14 +260,9 @@ public class Ch2010StructureStrategy : Strategy
 
 		_contexts.Clear();
 
-		foreach (var slot in _instrumentSlots)
+		foreach (var (alias, security) in GetTradedSlots())
 		{
-			var security = slot.Getter(this);
-
-			if (security == null)
-				continue;
-
-			var context = new InstrumentContext(slot.Alias, security);
+			var context = new InstrumentContext(alias, security);
 			_contexts.Add(context);
 
 			var dailySubscription = SubscribeCandles(DailyCandleType, true, security);

@@ -13,10 +13,16 @@ sealed class OrderTraceRecorder
 {
 	private readonly ConcurrentDictionary<long, OrderTraceEntry> _orders = new();
 
+	/// <summary>
+	/// Starts recording every order the strategy submits, in the order they arrive.
+	/// </summary>
 	public void Attach(Strategy strategy)
 		=> strategy.OrderReceived += (_, order) =>
 			_orders.TryAdd(order.TransactionId, new(strategy.CurrentTime, order.Side, order.Volume, order.Comment));
 
+	/// <summary>
+	/// Nothing was submitted. Used where a setting is supposed to suppress trading.
+	/// </summary>
 	public void AssertEmpty(string reason)
 	{
 		var trace = Snapshot();
@@ -32,6 +38,9 @@ sealed class OrderTraceRecorder
 		Assert.AreEqual(expectedSide, trace[0].Side, $"Unexpected first-order side. Trace: {Format(trace)}.");
 	}
 
+	/// <summary>
+	/// The first order was submitted in the expected hour of the day.
+	/// </summary>
 	public void AssertFirstOrderHour(int expectedHour)
 	{
 		var trace = Snapshot();
@@ -40,6 +49,9 @@ sealed class OrderTraceRecorder
 		Assert.AreEqual(expectedHour, trace[0].Time.Hour, $"Unexpected first-order hour. Trace: {Format(trace)}.");
 	}
 
+	/// <summary>
+	/// The first order carried the expected volume.
+	/// </summary>
 	public void AssertFirstVolume(decimal expectedVolume)
 	{
 		var trace = Snapshot();
@@ -48,6 +60,9 @@ sealed class OrderTraceRecorder
 		Assert.AreEqual(expectedVolume, trace[0].Volume, $"Unexpected first-order volume. Trace: {Format(trace)}.");
 	}
 
+	/// <summary>
+	/// Some order carried the expected volume, whichever one it was.
+	/// </summary>
 	public void AssertContainsVolume(decimal expectedVolume)
 	{
 		var trace = Snapshot();
@@ -57,6 +72,9 @@ sealed class OrderTraceRecorder
 			$"No order used the expected volume {expectedVolume}. Trace: {Format(trace)}.");
 	}
 
+	/// <summary>
+	/// A reversal was submitted as one order of twice the base volume, and nothing exceeded it.
+	/// </summary>
 	public void AssertReverses(decimal baseVolume)
 	{
 		var trace = Snapshot();
@@ -70,6 +88,9 @@ sealed class OrderTraceRecorder
 			$"An order exceeded the bounded reversal volume {reversalVolume}. Trace: {Format(trace)}.");
 	}
 
+	/// <summary>
+	/// The first order carried the expected comment.
+	/// </summary>
 	public void AssertFirstComment(string expectedComment)
 	{
 		var trace = Snapshot();
@@ -78,6 +99,9 @@ sealed class OrderTraceRecorder
 		Assert.AreEqual(expectedComment, trace[0].Comment, $"Unexpected first-order comment. Trace: {Format(trace)}.");
 	}
 
+	/// <summary>
+	/// The first order opposite to the first entry followed it within the given time.
+	/// </summary>
 	public void AssertFirstOppositeWithin(TimeSpan maximumDelay)
 	{
 		var trace = Snapshot();
@@ -91,6 +115,9 @@ sealed class OrderTraceRecorder
 			$"The first opposite order was delayed by {opposite.Time - first.Time}, exceeding {maximumDelay}. Trace: {Format(trace)}.");
 	}
 
+	/// <summary>
+	/// The first order opposite to the first entry waited at least the given time.
+	/// </summary>
 	public void AssertFirstOppositeAfter(TimeSpan minimumDelay)
 	{
 		var trace = Snapshot();
@@ -104,6 +131,9 @@ sealed class OrderTraceRecorder
 			$"The first opposite order arrived after {opposite.Time - first.Time}, before the minimum {minimumDelay}. Trace: {Format(trace)}.");
 	}
 
+	/// <summary>
+	/// A run of same-side entries was closed by one opposite order of the expected size.
+	/// </summary>
 	public void AssertBasketExitAfterEntries(int expectedEntryCount, decimal expectedExitVolume)
 	{
 		var trace = Snapshot();
@@ -127,6 +157,9 @@ sealed class OrderTraceRecorder
 		Assert.Fail($"No {expectedEntryCount}-entry basket followed by an opposite order was submitted. Trace: {Format(trace)}.");
 	}
 
+	/// <summary>
+	/// Two runs submitted the same orders. The reference run must have submitted something.
+	/// </summary>
 	public void AssertSameAs(OrderTraceRecorder expected)
 	{
 		var expectedTrace = expected.Snapshot();
@@ -138,6 +171,9 @@ sealed class OrderTraceRecorder
 			$"Order traces differ. Expected: {Format(expectedTrace)}. Actual: {Format(actualTrace)}.");
 	}
 
+	/// <summary>
+	/// Two runs submitted different orders. Both runs must have submitted something.
+	/// </summary>
 	public void AssertDiffersFrom(OrderTraceRecorder other, string reason)
 	{
 		var firstTrace = Snapshot();

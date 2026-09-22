@@ -31,9 +31,16 @@ static class StrategyInventory
 		"0219_Statistical_Arbitrage",
 		"0222_Cointegration_Pairs",
 		"0230_Delta_Neutral_Arbitrage",
+		"0320_MACD_Hidden_Markov_Model",
 		"0333_Keltner_Seasonal_Filter",
+		"0343_Keltner_Reinforcement_Learning_Signal",
+		"0362_Crypto_Rebalancing_Premium",
 		"0365_Dispersion_Trading",
 		"0401_Soccer_Clubs_Arbitrage",
+		"0402_Synthetic_Lending_Rates",
+		"0410_WTIBrent_Spread",
+		"0425_Grid_Bot",
+		"0498_Advanced_Adaptive_Grid",
 		"0503_Advanced_Position_Management",
 		"0526_Spot_Futures_Arbitrage",
 		"1005_MA_With_Logistic",
@@ -85,7 +92,7 @@ static class StrategyInventory
 
 	/// <summary>
 	/// Names a row after the strategy, so a failure reads as S0002_NdayBreakout and
-	/// --filter "DisplayName~S0002_NdayBreakout" selects exactly it.
+	/// --filter "Name~S0002_NdayBreakout" selects exactly it.
 	/// </summary>
 	public static string RowName(MethodInfo method, object[] data)
 		=> (string)data[1];

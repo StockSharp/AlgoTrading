@@ -5,87 +5,82 @@ using System.Collections.Generic;
 
 using Ecng.Common;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 /// <summary>
 /// Grid Bot Strategy.
-/// Creates a dynamic grid around a moving average and trades grid crossings.
-/// Buys when price crosses below a grid line, sells when price crosses above.
+/// Splits the predefined price range between <see cref="LowerLimit"/> and <see cref="UpperLimit"/>
+/// into <see cref="GridCount"/> equal levels and trades the oscillations between them.
+/// Touching a level in the lower half opens a long, touching a level in the upper half opens a short,
+/// and every signal closes the opposite position first.
 /// </summary>
 public class GridBotStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleTypeParam;
-	private readonly StrategyParam<int> _maLength;
-	private readonly StrategyParam<int> _atrLength;
+	private readonly StrategyParam<decimal> _upperLimit;
+	private readonly StrategyParam<decimal> _lowerLimit;
 	private readonly StrategyParam<int> _gridCount;
-	private readonly StrategyParam<decimal> _gridMultiplier;
-	private readonly StrategyParam<int> _cooldownBars;
 
-	private ExponentialMovingAverage _ma;
-	private AverageTrueRange _atr;
-	private decimal _prevClose;
-	private int _cooldownRemaining;
+	// Grid line the previous candle closed on, -1 before the first one is evaluated.
+	private int _prevLevel;
 
+	/// <summary>
+	/// Initializes a new instance of the <see cref="GridBotStrategy"/>.
+	/// </summary>
 	public GridBotStrategy()
 	{
 		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle type", "Candle type for strategy calculation.", "General");
 
-		_maLength = Param(nameof(MALength), 50)
+		_upperLimit = Param(nameof(UpperLimit), 48000m)
 			.SetGreaterThanZero()
-			.SetDisplay("MA Length", "Moving average for grid center", "Grid Settings");
+			.SetDisplay("Upper Limit", "Top price of the grid range", "Grid Settings");
 
-		_atrLength = Param(nameof(ATRLength), 14)
+		_lowerLimit = Param(nameof(LowerLimit), 45000m)
 			.SetGreaterThanZero()
-			.SetDisplay("ATR Length", "ATR period for grid spacing", "Grid Settings");
+			.SetDisplay("Lower Limit", "Bottom price of the grid range", "Grid Settings");
 
-		_gridCount = Param(nameof(GridCount), 3)
-			.SetDisplay("Grid Count", "Number of grid levels each side", "Grid Settings");
-
-		_gridMultiplier = Param(nameof(GridMultiplier), 0.5m)
-			.SetDisplay("Grid Multiplier", "ATR multiplier for grid spacing", "Grid Settings");
-
-		_cooldownBars = Param(nameof(CooldownBars), 20)
-			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk");
+		_gridCount = Param(nameof(GridCount), 10)
+			.SetGreaterThanZero()
+			.SetDisplay("Grid Count", "Number of equal levels the range is split into", "Grid Settings");
 	}
 
+	/// <summary>
+	/// Candle type used for calculations.
+	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleTypeParam.Value;
 		set => _candleTypeParam.Value = value;
 	}
 
-	public int MALength
+	/// <summary>
+	/// Top price of the grid range.
+	/// </summary>
+	public decimal UpperLimit
 	{
-		get => _maLength.Value;
-		set => _maLength.Value = value;
+		get => _upperLimit.Value;
+		set => _upperLimit.Value = value;
 	}
 
-	public int ATRLength
+	/// <summary>
+	/// Bottom price of the grid range.
+	/// </summary>
+	public decimal LowerLimit
 	{
-		get => _atrLength.Value;
-		set => _atrLength.Value = value;
+		get => _lowerLimit.Value;
+		set => _lowerLimit.Value = value;
 	}
 
+	/// <summary>
+	/// Number of equal levels the range is split into.
+	/// </summary>
 	public int GridCount
 	{
 		get => _gridCount.Value;
 		set => _gridCount.Value = value;
-	}
-
-	public decimal GridMultiplier
-	{
-		get => _gridMultiplier.Value;
-		set => _gridMultiplier.Value = value;
-	}
-
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
 	}
 
 	/// <inheritdoc />
@@ -97,10 +92,7 @@ public class GridBotStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_ma = null;
-		_atr = null;
-		_prevClose = 0;
-		_cooldownRemaining = 0;
+		_prevLevel = -1;
 	}
 
 	/// <inheritdoc />
@@ -108,97 +100,57 @@ public class GridBotStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_ma = new ExponentialMovingAverage { Length = MALength };
-		_atr = new AverageTrueRange { Length = ATRLength };
+		if (UpperLimit <= LowerLimit)
+			throw new InvalidOperationException($"{nameof(UpperLimit)} must be above {nameof(LowerLimit)}.");
+
+		_prevLevel = -1;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_ma, _atr, OnProcess)
+			.Bind(ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _ma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void OnProcess(ICandleMessage candle, decimal maValue, decimal atrValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_ma.IsFormed || !_atr.IsFormed)
-		{
-			_prevClose = candle.ClosePrice;
-			return;
-		}
-
 		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_prevClose = candle.ClosePrice;
 			return;
-		}
 
-		if (_cooldownRemaining > 0)
-		{
-			_cooldownRemaining--;
-			_prevClose = candle.ClosePrice;
+		var level = GetLevel(candle.ClosePrice);
+
+		// A touch is the move onto another line; standing on the same one is not a new signal.
+		if (level == _prevLevel)
 			return;
-		}
 
-		if (_prevClose == 0 || atrValue <= 0)
-		{
-			_prevClose = candle.ClosePrice;
-			return;
-		}
+		_prevLevel = level;
 
-		var close = candle.ClosePrice;
-		var gridSpacing = atrValue * GridMultiplier;
+		// The middle line splits the range into halves and carries no bias of its own.
+		var middle = GridCount / 2m;
 
-		// Check grid crossings
-		for (var i = 1; i <= GridCount; i++)
-		{
-			var lowerGrid = maValue - gridSpacing * i;
-			var upperGrid = maValue + gridSpacing * i;
+		if (level < middle && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (level > middle && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
+	}
 
-			// Price crossed below a lower grid line - buy
-			if (_prevClose > lowerGrid && close <= lowerGrid && Position <= 0)
-			{
-				if (Position < 0)
-					BuyMarket(Math.Abs(Position));
-				BuyMarket(Volume);
-				_cooldownRemaining = CooldownBars;
-				_prevClose = close;
-				return;
-			}
+	// Index of the grid line the price sits on, counted from LowerLimit up to GridCount.
+	private int GetLevel(decimal price)
+	{
+		var step = (UpperLimit - LowerLimit) / GridCount;
 
-			// Price crossed above an upper grid line - sell
-			if (_prevClose < upperGrid && close >= upperGrid && Position >= 0)
-			{
-				if (Position > 0)
-					SellMarket(Math.Abs(Position));
-				SellMarket(Volume);
-				_cooldownRemaining = CooldownBars;
-				_prevClose = close;
-				return;
-			}
-		}
+		// A price outside the predefined range belongs to the outermost line of the grid.
+		var clamped = Math.Clamp(price, LowerLimit, UpperLimit);
 
-		// Mean reversion exits at MA
-		if (Position > 0 && _prevClose < maValue && close >= maValue)
-		{
-			SellMarket(Math.Abs(Position));
-			_cooldownRemaining = CooldownBars;
-		}
-		else if (Position < 0 && _prevClose > maValue && close <= maValue)
-		{
-			BuyMarket(Math.Abs(Position));
-			_cooldownRemaining = CooldownBars;
-		}
-
-		_prevClose = close;
+		return (int)Math.Floor((clamped - LowerLimit) / step + 0.5m);
 	}
 }
