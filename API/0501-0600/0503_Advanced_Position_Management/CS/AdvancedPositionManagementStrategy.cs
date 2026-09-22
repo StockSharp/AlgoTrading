@@ -26,6 +26,7 @@ public class AdvancedPositionManagementStrategy : Strategy
 	private decimal _prevSlow;
 	private decimal _entryPrice;
 	private int _cooldownRemaining;
+	private Order _protectiveExitOrder;
 
 	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
 	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
@@ -71,6 +72,7 @@ public class AdvancedPositionManagementStrategy : Strategy
 		_prevSlow = 0;
 		_entryPrice = 0;
 		_cooldownRemaining = 0;
+		_protectiveExitOrder = null;
 	}
 
 	/// <inheritdoc />
@@ -104,6 +106,24 @@ public class AdvancedPositionManagementStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
+		var exitAction = ResolveProtectiveExitAction(Position, _protectiveExitOrder?.State);
+		if (exitAction == ProtectiveExitAction.Reset)
+		{
+			_entryPrice = 0m;
+			_protectiveExitOrder = null;
+		}
+		else if (exitAction == ProtectiveExitAction.Wait)
+		{
+			_prevFast = fast;
+			_prevSlow = slow;
+			return;
+		}
+		else if (_protectiveExitOrder != null)
+		{
+			// A terminal partial/cancel leaves protection intact and permits a retry.
+			_protectiveExitOrder = null;
+		}
+
 		// Check stop/TP
 		if (Position > 0 && _entryPrice > 0)
 		{
@@ -111,8 +131,7 @@ public class AdvancedPositionManagementStrategy : Strategy
 			var tp = _entryPrice * (1m + TakeProfitPercent / 100m);
 			if (candle.ClosePrice <= sl || candle.ClosePrice >= tp)
 			{
-				SellMarket(Math.Abs(Position));
-				_entryPrice = 0;
+				_protectiveExitOrder = SellMarket(Math.Abs(Position));
 				_cooldownRemaining = CooldownBars;
 				_prevFast = fast;
 				_prevSlow = slow;
@@ -125,8 +144,7 @@ public class AdvancedPositionManagementStrategy : Strategy
 			var tp = _entryPrice * (1m - TakeProfitPercent / 100m);
 			if (candle.ClosePrice >= sl || candle.ClosePrice <= tp)
 			{
-				BuyMarket(Math.Abs(Position));
-				_entryPrice = 0;
+				_protectiveExitOrder = BuyMarket(Math.Abs(Position));
 				_cooldownRemaining = CooldownBars;
 				_prevFast = fast;
 				_prevSlow = slow;
@@ -171,5 +189,23 @@ public class AdvancedPositionManagementStrategy : Strategy
 
 		_prevFast = fast;
 		_prevSlow = slow;
+	}
+
+	internal enum ProtectiveExitAction
+	{
+		Reset,
+		Wait,
+		Evaluate,
+	}
+
+	internal static ProtectiveExitAction ResolveProtectiveExitAction(decimal position, OrderStates? exitOrderState)
+	{
+		if (position == 0m)
+			return ProtectiveExitAction.Reset;
+
+		if (exitOrderState.HasValue && exitOrderState.Value is not (OrderStates.Done or OrderStates.Failed))
+			return ProtectiveExitAction.Wait;
+
+		return ProtectiveExitAction.Evaluate;
 	}
 }

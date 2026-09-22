@@ -105,7 +105,10 @@ public class TwentyOneHourSessionBreakoutStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var hour = candle.OpenTime.Hour;
+		var scheduleTime = CandleType.Arg is TimeSpan timeFrame && timeFrame > TimeSpan.Zero
+			? candle.OpenTime + timeFrame
+			: candle.CloseTime;
+		var hour = scheduleTime.Hour;
 		var priceStep = Security?.PriceStep ?? 1m;
 
 		// Session start: record the open price

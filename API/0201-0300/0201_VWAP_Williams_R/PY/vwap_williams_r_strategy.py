@@ -6,7 +6,7 @@ clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import WilliamsR
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
@@ -56,6 +56,7 @@ class vwap_williams_r_strategy(Strategy):
 
     def OnStarted2(self, time):
         super(vwap_williams_r_strategy, self).OnStarted2(time)
+        self.StartProtection(None, Unit(self._stop_loss_percent.Value, UnitTypes.Percent))
         self._previous_williams_r = 0.0
         self._cooldown = 0
         self._vwap_date = None
@@ -101,6 +102,16 @@ class vwap_williams_r_strategy(Strategy):
         price = float(candle.ClosePrice)
         crossed_into_oversold = previous_wr > -80 and wr <= -80
         crossed_into_overbought = previous_wr < -20 and wr >= -20
+
+        if self.Position > 0 and price >= vwap_value:
+            self.SellMarket(abs(self.Position))
+            self._cooldown = int(self._cooldown_bars.Value)
+            return
+
+        if self.Position < 0 and price <= vwap_value:
+            self.BuyMarket(abs(self.Position))
+            self._cooldown = int(self._cooldown_bars.Value)
+            return
 
         if self._cooldown > 0:
             self._cooldown -= 1

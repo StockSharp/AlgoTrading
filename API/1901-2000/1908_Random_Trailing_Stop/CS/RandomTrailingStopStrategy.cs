@@ -20,15 +20,18 @@ public class RandomTrailingStopStrategy : Strategy
 	private readonly StrategyParam<decimal> _trailingStep;
 	private readonly StrategyParam<int> _sleepBars;
 	private readonly StrategyParam<int> _smaPeriod;
+	private readonly StrategyParam<int> _randomSeed;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private int _barsSinceLastTrade;
 	private decimal? _stopPrice;
+	private Random _random;
 
 	public decimal MinStopLevel { get => _minStopLevel.Value; set => _minStopLevel.Value = value; }
 	public decimal TrailingStep { get => _trailingStep.Value; set => _trailingStep.Value = value; }
 	public int SleepBars { get => _sleepBars.Value; set => _sleepBars.Value = value; }
 	public int SmaPeriod { get => _smaPeriod.Value; set => _smaPeriod.Value = value; }
+	public int RandomSeed { get => _randomSeed.Value; set => _randomSeed.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public RandomTrailingStopStrategy()
@@ -49,6 +52,9 @@ public class RandomTrailingStopStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("SMA Period", "Simple moving average period", "Indicators");
 
+		_randomSeed = Param(nameof(RandomSeed), 42)
+			.SetDisplay("Random Seed", "Seed for reproducible entry directions", "General");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type", "General");
 	}
@@ -65,12 +71,14 @@ public class RandomTrailingStopStrategy : Strategy
 		base.OnReseted();
 		_barsSinceLastTrade = 0;
 		_stopPrice = null;
+		_random = null;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_random = new Random(RandomSeed);
 
 		var sma = new SimpleMovingAverage { Length = SmaPeriod };
 		var subscription = SubscribeCandles(CandleType);
@@ -124,35 +132,53 @@ public class RandomTrailingStopStrategy : Strategy
 			return;
 		}
 
-		if (Position > 0)
-		{
-			var newStop = candle.ClosePrice - stopDist;
-			if (newStop - _stopPrice >= trailDist)
-				_stopPrice = newStop;
+		var isLong = Position > 0;
+		var (stopHit, nextStop) = EvaluateTrailingStop(
+			isLong,
+			_stopPrice.Value,
+			candle.ClosePrice,
+			candle.LowPrice,
+			candle.HighPrice,
+			stopDist,
+			trailDist);
 
-			if (candle.LowPrice <= _stopPrice)
-			{
+		if (stopHit)
+		{
+			if (isLong)
 				SellMarket();
-				_barsSinceLastTrade = 0;
-			}
-		}
-		else if (Position < 0)
-		{
-			var newStop = candle.ClosePrice + stopDist;
-			if (_stopPrice - newStop >= trailDist)
-				_stopPrice = newStop;
-
-			if (candle.HighPrice >= _stopPrice)
-			{
+			else
 				BuyMarket();
-				_barsSinceLastTrade = 0;
-			}
+
+			_barsSinceLastTrade = 0;
+			return;
 		}
+
+		_stopPrice = nextStop;
+	}
+
+	internal static (bool stopHit, decimal nextStop) EvaluateTrailingStop(
+		bool isLong,
+		decimal currentStop,
+		decimal closePrice,
+		decimal lowPrice,
+		decimal highPrice,
+		decimal stopDistance,
+		decimal trailingDistance)
+	{
+		// A level derived from this candle becomes active on the next candle.
+		if (isLong ? lowPrice <= currentStop : highPrice >= currentStop)
+			return (true, currentStop);
+
+		var candidate = isLong ? closePrice - stopDistance : closePrice + stopDistance;
+		var improvement = isLong ? candidate - currentStop : currentStop - candidate;
+
+		return (false, improvement >= trailingDistance ? candidate : currentStop);
 	}
 
 	private Sides GetRandomSide(ICandleMessage candle, decimal smaValue)
 	{
-		var rnd = (int)(Math.Abs(candle.OpenTime.Ticks) % 5);
+		_random ??= new Random(RandomSeed);
+		var rnd = _random.Next(5);
 		if (candle.ClosePrice > smaValue)
 			return rnd == 0 ? Sides.Sell : Sides.Buy;
 		else

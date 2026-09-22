@@ -1,4 +1,5 @@
 # Exp Cronex AO 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 MetaTrader 专家顾问 **Exp_CronexAO** 移植到 StockSharp 高级 API。原始机器人通过比较 Cronex Awesome Oscillator（AO） 的两条平滑曲线来交易。本移植版本订阅可配置的 K 线序列，计算 AO，并连续执行两次移动平均平滑以重建 Cronex 曲线，当快线穿越慢线时开仓或平仓。
 

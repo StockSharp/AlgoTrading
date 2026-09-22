@@ -1,4 +1,5 @@
 # Стратегия Daily Range
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Стратегия является портом на StockSharp советника MetaTrader 5 `MQL/23334/Daily range.mq5`. Оригинальная версия отслеживает максимум и минимум последних дней, добавляет к ним смещение, пропорциональное дневному диапазону, и торгует пробои. Переписанная C#-реализация полностью использует высокоуровневый API StockSharp.

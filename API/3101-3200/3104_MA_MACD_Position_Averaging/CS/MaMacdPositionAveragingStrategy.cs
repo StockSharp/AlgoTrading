@@ -131,14 +131,6 @@ public class MaMacdPositionAveragingStrategy : Strategy
 			return;
 		}
 
-		if (_cooldown > 0)
-		{
-			_cooldown--;
-			_prevFast = fastValue;
-			_prevSlow = slowValue;
-			return;
-		}
-
 		var close = candle.ClosePrice;
 		var step = Security?.PriceStep ?? 1m;
 
@@ -147,7 +139,7 @@ public class MaMacdPositionAveragingStrategy : Strategy
 		{
 			if (StopLossPoints > 0 && close <= _entryPrice - StopLossPoints * step)
 			{
-				SellMarket();
+				SellMarket(Math.Abs(Position));
 				_entryPrice = 0;
 				_cooldown = 80;
 				_prevFast = fastValue;
@@ -157,7 +149,7 @@ public class MaMacdPositionAveragingStrategy : Strategy
 
 			if (TakeProfitPoints > 0 && close >= _entryPrice + TakeProfitPoints * step)
 			{
-				SellMarket();
+				SellMarket(Math.Abs(Position));
 				_entryPrice = 0;
 				_cooldown = 80;
 				_prevFast = fastValue;
@@ -169,7 +161,7 @@ public class MaMacdPositionAveragingStrategy : Strategy
 		{
 			if (StopLossPoints > 0 && close >= _entryPrice + StopLossPoints * step)
 			{
-				BuyMarket();
+				BuyMarket(Math.Abs(Position));
 				_entryPrice = 0;
 				_cooldown = 80;
 				_prevFast = fastValue;
@@ -179,7 +171,7 @@ public class MaMacdPositionAveragingStrategy : Strategy
 
 			if (TakeProfitPoints > 0 && close <= _entryPrice - TakeProfitPoints * step)
 			{
-				BuyMarket();
+				BuyMarket(Math.Abs(Position));
 				_entryPrice = 0;
 				_cooldown = 80;
 				_prevFast = fastValue;
@@ -188,11 +180,19 @@ public class MaMacdPositionAveragingStrategy : Strategy
 			}
 		}
 
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			_prevFast = fastValue;
+			_prevSlow = slowValue;
+			return;
+		}
+
 		// WMA crossover
 		if (_prevFast <= _prevSlow && fastValue > slowValue && Position <= 0)
 		{
 			if (Position < 0)
-				BuyMarket();
+				BuyMarket(Math.Abs(Position));
 
 			BuyMarket();
 			_entryPrice = close;
@@ -201,7 +201,7 @@ public class MaMacdPositionAveragingStrategy : Strategy
 		else if (_prevFast >= _prevSlow && fastValue < slowValue && Position >= 0)
 		{
 			if (Position > 0)
-				SellMarket();
+				SellMarket(Math.Abs(Position));
 
 			SellMarket();
 			_entryPrice = close;

@@ -5,8 +5,8 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
+from System import Math, TimeSpan
+from StockSharp.Messages import DataType, CandleStates, OrderStates
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.Algo.Indicators import (
     RelativeStrengthIndex,
@@ -76,6 +76,7 @@ class self_optimizing_rsi_or_mfi_trader_v3_strategy(Strategy):
         self._entry_price = None
         self._stop_price = None
         self._take_profit_price = None
+        self._protective_exit_order = None
 
     @property
     def OptimizingPeriods(self):
@@ -145,6 +146,7 @@ class self_optimizing_rsi_or_mfi_trader_v3_strategy(Strategy):
         self._entry_price = None
         self._stop_price = None
         self._take_profit_price = None
+        self._protective_exit_order = None
 
         if self.IndicatorChoice == 1:
             self._indicator = MoneyFlowIndex()
@@ -187,7 +189,8 @@ class self_optimizing_rsi_or_mfi_trader_v3_strategy(Strategy):
         padding_pts = self.BreakEvenPaddingPoints if self.BreakEvenPaddingPoints <= self.BreakEvenTriggerPoints else 0
         padding_diff = padding_pts * price_step if self.UseBreakEven else 0.0
 
-        self._manage_open_position(candle, trigger_diff, padding_diff)
+        if self._manage_open_position(candle, trigger_diff, padding_diff):
+            return
 
         if len(self._history) < max_needed:
             return
@@ -211,7 +214,9 @@ class self_optimizing_rsi_or_mfi_trader_v3_strategy(Strategy):
         if stop_loss_diff <= 0 or take_profit_diff <= 0:
             return
 
-        volume = self.BaseVolume
+        volume = self._calculate_volume(stop_loss_diff)
+        if volume <= 0:
+            return
         step_multiplier = 1.0
 
         sell_level, sell_profit = self._calc_best_sell_level(indicator_values, close_values, stop_loss_diff, take_profit_diff, volume, step_multiplier)
@@ -229,10 +234,10 @@ class self_optimizing_rsi_or_mfi_trader_v3_strategy(Strategy):
 
         if adjusted_sell > adjusted_buy:
             if can_enter and ((current_ind < sell_level and prev_ind > sell_level) or self.UseAggressiveEntries):
-                self._enter_short(candle, stop_loss_diff, take_profit_diff)
+                self._enter_short(candle, volume, stop_loss_diff, take_profit_diff)
         elif adjusted_sell < adjusted_buy:
             if can_enter and ((current_ind > buy_level and prev_ind < buy_level) or self.UseAggressiveEntries):
-                self._enter_long(candle, stop_loss_diff, take_profit_diff)
+                self._enter_long(candle, volume, stop_loss_diff, take_profit_diff)
 
     def _calc_best_sell_level(self, ind_vals, close_vals, sl_diff, tp_diff, volume, step_mult):
         bottom = min(self.IndicatorBottomValue, self.IndicatorTopValue)
@@ -312,14 +317,64 @@ class self_optimizing_rsi_or_mfi_trader_v3_strategy(Strategy):
             i -= 1
         return total
 
-    def _enter_long(self, candle, sl_diff, tp_diff):
-        self.BuyMarket()
+    def _calculate_volume(self, stop_loss_diff):
+        volume = self.BaseVolume
+        security = self.Security
+
+        if self.UseDynamicVolume and stop_loss_diff > 0 and security is not None:
+            price_step = float(security.PriceStep) if security.PriceStep is not None else 0.0
+            step_price = price_step
+            if price_step > 0 and step_price > 0:
+                stop_points = stop_loss_diff / price_step
+                risk_per_unit = stop_points * step_price
+                capital = float(self.Portfolio.CurrentValue) if self.Portfolio is not None else 0.0
+                risk_budget = capital * (self.RiskPercent / 100.0)
+                if risk_per_unit > 0 and risk_budget > 0:
+                    raw_volume = risk_budget / risk_per_unit
+                    if raw_volume > 0:
+                        volume = raw_volume
+
+        return self._adjust_volume(volume)
+
+    def _adjust_volume(self, volume):
+        if volume <= 0:
+            return 0.0
+
+        security = self.Security
+        if security is None:
+            return volume
+
+        minimum = float(security.MinVolume) if security.MinVolume is not None else 0.0
+        maximum = float(security.MaxVolume) if security.MaxVolume is not None and security.MaxVolume > 0 else float("inf")
+        if maximum < minimum:
+            return 0.0
+
+        step = float(security.VolumeStep) if security.VolumeStep is not None else 0.0
+        if step <= 0:
+            return max(minimum, min(volume, maximum))
+
+        first = Math.Ceiling(minimum / step) * step if minimum > 0 else step
+        last = Math.Floor(maximum / step) * step if maximum != float("inf") else float("inf")
+        if last < first:
+            return 0.0
+
+        aligned = Math.Floor(volume / step) * step
+        return round(max(first, min(aligned, last)), 12)
+
+    def _enter_long(self, candle, volume, sl_diff, tp_diff):
+        order_volume = volume
+        if self.Position < 0:
+            order_volume += abs(float(self.Position))
+        self.BuyMarket(order_volume)
         self._entry_price = float(candle.ClosePrice)
         self._stop_price = self._entry_price - sl_diff
         self._take_profit_price = self._entry_price + tp_diff
 
-    def _enter_short(self, candle, sl_diff, tp_diff):
-        self.SellMarket()
+    def _enter_short(self, candle, volume, sl_diff, tp_diff):
+        order_volume = volume
+        if self.Position > 0:
+            order_volume += float(self.Position)
+        self.SellMarket(order_volume)
         self._entry_price = float(candle.ClosePrice)
         self._stop_price = self._entry_price + sl_diff
         self._take_profit_price = self._entry_price - tp_diff
@@ -328,44 +383,60 @@ class self_optimizing_rsi_or_mfi_trader_v3_strategy(Strategy):
         h = float(candle.HighPrice)
         lo = float(candle.LowPrice)
 
+        exit_state = self._protective_exit_order.State if self._protective_exit_order is not None else None
+        exit_action = self._resolve_protective_exit_action(self.Position, exit_state)
+        if exit_action == 0:
+            self._reset_position_state()
+            self._protective_exit_order = None
+            return False
+        if exit_action == 1:
+            return True
+        if self._protective_exit_order is not None:
+            # A terminal partial/cancel leaves protection intact and permits a retry.
+            self._protective_exit_order = None
+
+        # Existing protection is evaluated before this candle can arm a new breakeven level.
         if self.Position > 0:
+            if self._stop_price is not None and lo <= self._stop_price:
+                self._protective_exit_order = self.SellMarket(abs(self.Position))
+                return True
+            if self._take_profit_price is not None and h >= self._take_profit_price:
+                self._protective_exit_order = self.SellMarket(abs(self.Position))
+                return True
+
             if self.UseBreakEven and self._entry_price is not None and self._stop_price is not None:
                 trigger_price = self._entry_price + trigger_diff
                 target_stop = self._entry_price + padding_diff
                 if trigger_diff > 0 and h >= trigger_price and self._stop_price < target_stop:
                     self._stop_price = target_stop
 
-            if self._stop_price is not None and lo <= self._stop_price:
-                self.SellMarket()
-                self._reset_position_state()
-                return
-            if self._take_profit_price is not None and h >= self._take_profit_price:
-                self.SellMarket()
-                self._reset_position_state()
-                return
-
         elif self.Position < 0:
+            if self._stop_price is not None and h >= self._stop_price:
+                self._protective_exit_order = self.BuyMarket(abs(self.Position))
+                return True
+            if self._take_profit_price is not None and lo <= self._take_profit_price:
+                self._protective_exit_order = self.BuyMarket(abs(self.Position))
+                return True
+
             if self.UseBreakEven and self._entry_price is not None and self._stop_price is not None:
                 trigger_price = self._entry_price - trigger_diff
                 target_stop = self._entry_price - padding_diff
                 if trigger_diff > 0 and lo <= trigger_price and self._stop_price > target_stop:
                     self._stop_price = target_stop
 
-            if self._stop_price is not None and h >= self._stop_price:
-                self.BuyMarket()
-                self._reset_position_state()
-                return
-            if self._take_profit_price is not None and lo <= self._take_profit_price:
-                self.BuyMarket()
-                self._reset_position_state()
-                return
-        else:
-            self._reset_position_state()
+        return False
 
     def _reset_position_state(self):
         self._entry_price = None
         self._stop_price = None
         self._take_profit_price = None
+
+    def _resolve_protective_exit_action(self, position, exit_order_state):
+        if position == 0:
+            return 0  # reset
+        if exit_order_state is not None and exit_order_state not in (OrderStates.Done, OrderStates.Failed):
+            return 1  # wait
+        return 2  # evaluate/retry
 
     def OnReseted(self):
         super(self_optimizing_rsi_or_mfi_trader_v3_strategy, self).OnReseted()
@@ -373,6 +444,7 @@ class self_optimizing_rsi_or_mfi_trader_v3_strategy(Strategy):
         self._entry_price = None
         self._stop_price = None
         self._take_profit_price = None
+        self._protective_exit_order = None
 
     def CreateClone(self):
         return self_optimizing_rsi_or_mfi_trader_v3_strategy()

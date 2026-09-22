@@ -1,4 +1,5 @@
 # Стратегия Exp Cronex MFI
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 Стратегия воспроизводит советник **Exp_CronexMFI**. Денежный поток (MFI) сглаживается дважды, после чего сделки открываются **против** пересечения полученных линий. В порте сохранена контртрендовая логика и все настройки вынесены в параметры StockSharp.

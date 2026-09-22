@@ -8,7 +8,7 @@ clr.AddReference("StockSharp.Algo.Strategies")
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import ExponentialMovingAverage
-from StockSharp.Algo.Strategies import Strategy
+from StockSharp.Algo.Strategies import Strategy, StrategyHelper
 
 class ma_crossover_strategy(Strategy):
     """
@@ -76,12 +76,12 @@ class ma_crossover_strategy(Strategy):
                 if self.Position <= 0:
                     self._entry_price = float(candle.ClosePrice)
                     self._is_long_position = True
-                    self.BuyMarket()
+                    self.BuyMarket(StrategyHelper.ReversalVolume(self))
             else:
                 if self.Position >= 0:
                     self._entry_price = float(candle.ClosePrice)
                     self._is_long_position = False
-                    self.SellMarket()
+                    self.SellMarket(StrategyHelper.ReversalVolume(self))
             self._was_fast_less = is_fast_less
 
         self._check_stop_loss(float(candle.ClosePrice))

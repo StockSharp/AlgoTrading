@@ -118,27 +118,37 @@ class soccer_clubs_arbitrage_strategy(Strategy):
             primary_pos = 0
         primary_pos = float(primary_pos)
 
-        if abs(premium) < exit_thresh and primary_pos != 0:
-            self._flatten(primary_pos)
+        second_pos = self.GetPositionValue(self._second_security, self.Portfolio)
+        if second_pos is None:
+            second_pos = 0
+        second_pos = float(second_pos)
+
+        if abs(premium) < exit_thresh and (primary_pos != 0 or second_pos != 0):
+            self._flatten(primary_pos, self.Security)
+            self._flatten(second_pos, self._second_security)
             self._cooldown_remaining = cooldown
             return
 
-        if premium > entry_thresh and primary_pos >= 0:
-            if primary_pos > 0:
-                self._flatten(primary_pos)
-            self.SellMarket(self.Volume)
+        if premium > entry_thresh and not (primary_pos < 0 and second_pos > 0):
+            if primary_pos != 0 or second_pos != 0:
+                self._flatten(primary_pos, self.Security)
+                self._flatten(second_pos, self._second_security)
+            self.SellMarket(self.Volume, self.Security)
+            self.BuyMarket(self.Volume, self._second_security)
             self._cooldown_remaining = cooldown
-        elif premium < -entry_thresh and primary_pos <= 0:
-            if primary_pos < 0:
-                self._flatten(primary_pos)
-            self.BuyMarket(self.Volume)
+        elif premium < -entry_thresh and not (primary_pos > 0 and second_pos < 0):
+            if primary_pos != 0 or second_pos != 0:
+                self._flatten(primary_pos, self.Security)
+                self._flatten(second_pos, self._second_security)
+            self.BuyMarket(self.Volume, self.Security)
+            self.SellMarket(self.Volume, self._second_security)
             self._cooldown_remaining = cooldown
 
-    def _flatten(self, primary_pos):
-        if primary_pos > 0:
-            self.SellMarket(primary_pos)
-        elif primary_pos < 0:
-            self.BuyMarket(abs(primary_pos))
+    def _flatten(self, position, security):
+        if position > 0:
+            self.SellMarket(position, security)
+        elif position < 0:
+            self.BuyMarket(abs(position), security)
 
     def CreateClone(self):
         return soccer_clubs_arbitrage_strategy()

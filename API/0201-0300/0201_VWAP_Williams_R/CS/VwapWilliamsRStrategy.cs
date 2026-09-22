@@ -111,6 +111,10 @@ public class VwapWilliamsRStrategy : Strategy
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+
+		StartProtection(
+			takeProfit: null,
+			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent));
 	
 		// Initialize indicator
 		var williamsR = new WilliamsR { Length = WilliamsRPeriod };
@@ -163,6 +167,20 @@ public class VwapWilliamsRStrategy : Strategy
 		var price = candle.ClosePrice;
 		var crossedIntoOversold = previousWilliamsR > -80m && williamsRValue <= -80m;
 		var crossedIntoOverbought = previousWilliamsR < -20m && williamsRValue >= -20m;
+
+		if (Position > 0m && price >= vwapValue)
+		{
+			SellMarket(Math.Abs(Position));
+			_cooldown = CooldownBars;
+			return;
+		}
+
+		if (Position < 0m && price <= vwapValue)
+		{
+			BuyMarket(Math.Abs(Position));
+			_cooldown = CooldownBars;
+			return;
+		}
 
 		if (_cooldown > 0)
 			_cooldown--;

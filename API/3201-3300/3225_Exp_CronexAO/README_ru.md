@@ -1,4 +1,5 @@
 # Стратегия Exp Cronex AO
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия переносит советник MetaTrader **Exp_CronexAO** на высокоуровневый API StockSharp. Оригинальный робот торгует пересечения между двумя линиями индикатора Cronex Awesome Oscillator (AO). Версия для StockSharp подписывается на настраиваемую серию свечей, рассчитывает AO, дважды сглаживает его скользящими средними, чтобы восстановить линии Cronex, и открывает либо закрывает позиции при пересечении быстрой и медленной линий.
 

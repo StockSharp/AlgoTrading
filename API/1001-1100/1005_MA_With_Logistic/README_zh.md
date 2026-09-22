@@ -1,26 +1,21 @@
 # MA With Logistic 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-MA With Logistic 是一种基于移动平均线的策略，使用快慢均线判断入场，并支持百分比或逻辑概率的出场方式。
+尽管保留了历史名称，本实现实际是双 EMA 交叉策略，并不计算逻辑回归模型。已完成 K 线上的交叉会开仓或反转仓位，百分比止盈和止损从成交价计算。
 
 ## 细节
 - **数据**：价格K线。
 - **入场条件**：
-  - **多头**：收盘价 > 快速均线 且 快速均线 > 慢速均线。
-  - **空头**：收盘价 < 快速均线 且 快速均线 < 慢速均线。
-- **出场条件**：百分比目标或逻辑概率阈值。
-- **止损**：百分比或逻辑概率。
+  - **多头**：快速 EMA 向上穿越慢速 EMA。
+  - **空头**：快速 EMA 向下穿越慢速 EMA。
+- **出场条件**：达到 `TakeProfitPercent` 或 `StopLossPercent`；反向交叉会反转仓位。
+- **冷却期**：每次交叉下单后等待五根已完成 K 线。
 - **默认值**：
-  - `FastLength` = 9
-  - `SlowLength` = 21
-  - `MaType` = MaTypeEnum.EMA
-  - `ExitType` = ExitTypeEnum.Percent
-  - `TakeProfitPercent` = 20
+  - `FastLength` = 12
+  - `SlowLength` = 25
+  - `TakeProfitPercent` = 8
   - `StopLossPercent` = 5
-  - `LogisticSlope` = 10
-  - `LogisticMidpoint` = 0
-  - `TakeProfitProbability` = 0.8
-  - `StopLossProbability` = 0.2
+  - `CandleType` = 20 分钟
 - **过滤器**：
   - 分类：趋势跟随
   - 方向：多头 & 空头

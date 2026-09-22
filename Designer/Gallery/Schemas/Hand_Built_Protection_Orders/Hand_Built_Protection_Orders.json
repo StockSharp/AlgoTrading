@@ -2262,7 +2262,7 @@
                   "ExpiryDate": {},
                   "ConditionalSettings": {},
                   "ShrinkPrice": {
-                    "Value": true
+                    "Value": false
                   },
                   "Slippage": {}
                 }
@@ -2317,7 +2317,7 @@
                   "ExpiryDate": {},
                   "ConditionalSettings": {},
                   "ShrinkPrice": {
-                    "Value": true
+                    "Value": false
                   },
                   "Slippage": {}
                 }
@@ -2776,7 +2776,7 @@
                     "Value": true
                   },
                   "ShrinkPrice": {
-                    "Value": true
+                    "Value": false
                   },
                   "ZeroAsMarket": {
                     "Value": false
@@ -2813,7 +2813,7 @@
                     "Value": true
                   },
                   "ShrinkPrice": {
-                    "Value": true
+                    "Value": false
                   },
                   "ZeroAsMarket": {
                     "Value": false

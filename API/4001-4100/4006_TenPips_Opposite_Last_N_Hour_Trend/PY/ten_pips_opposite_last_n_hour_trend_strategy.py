@@ -9,6 +9,65 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Sides
 from StockSharp.Algo.Strategies import Strategy
 
+
+class _trade_episode:
+    def __init__(self):
+        self.reset()
+
+    @property
+    def is_open(self):
+        return self.side is not None and self.entry_price is not None and self.volume > 0
+
+    def register_entry(self, price, volume, side, time):
+        if price <= 0 or volume <= 0:
+            return
+        if self.is_open and self.side != side:
+            raise RuntimeError("An opposite fill must close the active trade episode.")
+
+        total_volume = self.volume + volume
+        if self.is_open:
+            self.entry_price = (self.entry_price * self.volume + price * volume) / total_volume
+        else:
+            self.entry_price = price
+        self.volume = total_volume
+        self.side = side
+        if self.entry_time is None:
+            self.entry_time = time
+
+    def register_exit(self, price, volume):
+        if not self.is_open or price <= 0 or volume <= 0:
+            return None
+
+        closed_volume = min(volume, self.volume)
+        if self.side == Sides.Buy:
+            self.realized_profit += (price - self.entry_price) * closed_volume
+        else:
+            self.realized_profit += (self.entry_price - price) * closed_volume
+        self.volume -= closed_volume
+
+        if self.volume > 0:
+            return None
+
+        closed_profit = self.realized_profit
+        self.reset()
+        return closed_profit
+
+    def reset(self):
+        self.side = None
+        self.volume = 0.0
+        self.entry_price = None
+        self.entry_time = None
+        self.realized_profit = 0.0
+
+    def __eq__(self, other):
+        return isinstance(other, _trade_episode) \
+            and self.side == other.side \
+            and self.volume == other.volume \
+            and self.entry_price == other.entry_price \
+            and self.entry_time == other.entry_time \
+            and self.realized_profit == other.realized_profit
+
+
 class ten_pips_opposite_last_n_hour_trend_strategy(Strategy):
     def __init__(self):
         super(ten_pips_opposite_last_n_hour_trend_strategy, self).__init__()
@@ -49,11 +108,8 @@ class ten_pips_opposite_last_n_hour_trend_strategy(Strategy):
         self._close_history = []
         self._closed_trade_profits = []
         self._pip_size = 0.0
-        self._last_bar_traded = None
-        self._entry_side = None
-        self._entry_volume = 0.0
-        self._entry_price = None
-        self._entry_time = None
+        self._last_trade_date = None
+        self._episode = _trade_episode()
         self._trailing_stop_price = None
 
     @property
@@ -150,7 +206,7 @@ class ten_pips_opposite_last_n_hour_trend_strategy(Strategy):
         if not self._has_trend_sample():
             return
 
-        if not self._can_open_on_bar(candle.OpenTime):
+        if not self._can_open_on_day(candle.CloseTime):
             return
 
         if self.Position != 0:
@@ -169,10 +225,10 @@ class ten_pips_opposite_last_n_hour_trend_strategy(Strategy):
         else:
             self.SellMarket(volume)
 
-        self._last_bar_traded = candle.OpenTime
+        self._last_trade_date = candle.CloseTime.Date
 
     def _update_protective_logic(self, candle):
-        if self._entry_side is None or self._entry_price is None or self._entry_volume <= 0:
+        if not self._episode.is_open:
             return False
 
         pip = self._ensure_pip_size()
@@ -184,9 +240,9 @@ class ten_pips_opposite_last_n_hour_trend_strategy(Strategy):
         trail_dist = float(self.TrailingStopPips) * pip
         high_price = float(candle.HighPrice)
         low_price = float(candle.LowPrice)
-        entry = self._entry_price
+        entry = self._episode.entry_price
 
-        if self._entry_side == Sides.Buy:
+        if self._episode.side == Sides.Buy:
             if float(self.StopLossPips) > 0 and low_price <= entry - sl_dist:
                 self.SellMarket(Math.Abs(self.Position))
                 return True
@@ -194,14 +250,15 @@ class ten_pips_opposite_last_n_hour_trend_strategy(Strategy):
                 self.SellMarket(Math.Abs(self.Position))
                 return True
             if float(self.TrailingStopPips) > 0 and trail_dist > 0:
+                # The candidate derived below becomes active on the next candle.
+                if self._trailing_stop_price is not None and low_price <= self._trailing_stop_price:
+                    self.SellMarket(Math.Abs(self.Position))
+                    return True
                 candidate = high_price - trail_dist
                 if high_price - entry > trail_dist:
                     if self._trailing_stop_price is None or candidate > self._trailing_stop_price:
                         self._trailing_stop_price = candidate
-                if self._trailing_stop_price is not None and low_price <= self._trailing_stop_price:
-                    self.SellMarket(Math.Abs(self.Position))
-                    return True
-        elif self._entry_side == Sides.Sell:
+        elif self._episode.side == Sides.Sell:
             if float(self.StopLossPips) > 0 and high_price >= entry + sl_dist:
                 self.BuyMarket(Math.Abs(self.Position))
                 return True
@@ -209,19 +266,20 @@ class ten_pips_opposite_last_n_hour_trend_strategy(Strategy):
                 self.BuyMarket(Math.Abs(self.Position))
                 return True
             if float(self.TrailingStopPips) > 0 and trail_dist > 0:
-                candidate = low_price + trail_dist
-                if self._trailing_stop_price is None or candidate < self._trailing_stop_price:
-                    self._trailing_stop_price = candidate
+                # The candidate derived below becomes active on the next candle.
                 if self._trailing_stop_price is not None and high_price >= self._trailing_stop_price:
                     self.BuyMarket(Math.Abs(self.Position))
                     return True
+                candidate = low_price + trail_dist
+                if self._trailing_stop_price is None or candidate < self._trailing_stop_price:
+                    self._trailing_stop_price = candidate
         return False
 
     def _close_expired_position(self, time):
         max_age = self.OrderMaxAgeSeconds
-        if max_age <= 0 or self._entry_time is None:
+        if max_age <= 0 or self._episode.entry_time is None:
             return False
-        age = time - self._entry_time
+        age = time - self._episode.entry_time
         if age.TotalSeconds < max_age:
             return False
         if self.Position > 0:
@@ -236,8 +294,8 @@ class ten_pips_opposite_last_n_hour_trend_strategy(Strategy):
         hour = time.Hour
         return hour == self.TradingHour
 
-    def _can_open_on_bar(self, bar_open_time):
-        if self._last_bar_traded is not None and self._last_bar_traded == bar_open_time:
+    def _can_open_on_day(self, trading_time):
+        if self._last_trade_date is not None and self._last_trade_date == trading_time.Date:
             return False
         return True
 
@@ -248,13 +306,13 @@ class ten_pips_opposite_last_n_hour_trend_strategy(Strategy):
             self.BuyMarket(Math.Abs(self.Position))
 
     def _has_trend_sample(self):
-        return self.HoursToCheckTrend > 0 and len(self._close_history) >= self.HoursToCheckTrend
+        return self.HoursToCheckTrend > 0 and len(self._close_history) > self.HoursToCheckTrend
 
     def _determine_direction(self):
         if len(self._close_history) == 0:
             return 0
         recent_close = self._close_history[-1]
-        older_index = len(self._close_history) - self.HoursToCheckTrend
+        older_index = len(self._close_history) - 1 - self.HoursToCheckTrend
         if older_index < 0 or older_index >= len(self._close_history):
             return 0
         older_close = self._close_history[older_index]
@@ -301,8 +359,6 @@ class ten_pips_opposite_last_n_hour_trend_strategy(Strategy):
             if profit < 0:
                 volume *= multipliers[i]
                 break
-            if profit > 0:
-                break
         return volume
 
     def _update_close_history(self, close):
@@ -324,19 +380,14 @@ class ten_pips_opposite_last_n_hour_trend_strategy(Strategy):
         step = float(self.Security.PriceStep) if self.Security.PriceStep is not None else 0.0
         if step <= 0:
             step = 0.0001
+        if self.Security.Decimals in (3, 5):
+            step *= 10.0
         return step
 
     def _ensure_pip_size(self):
         if self._pip_size <= 0:
             self._pip_size = self._calculate_pip_size()
         return self._pip_size
-
-    def _reset_entry_state(self):
-        self._entry_side = None
-        self._entry_volume = 0.0
-        self._entry_price = None
-        self._entry_time = None
-        self._trailing_stop_price = None
 
     def OnOwnTradeReceived(self, trade):
         super(ten_pips_opposite_last_n_hour_trend_strategy, self).OnOwnTradeReceived(trade)
@@ -350,46 +401,24 @@ class ten_pips_opposite_last_n_hour_trend_strategy(Strategy):
         if volume <= 0 or price <= 0:
             return
 
-        if self._entry_side is None or self._entry_side == trade.Order.Side:
-            total_volume = self._entry_volume + volume
-            if total_volume <= 0:
-                self._reset_entry_state()
-                return
-            if self._entry_volume > 0 and self._entry_price is not None:
-                self._entry_price = (self._entry_price * self._entry_volume + price * volume) / total_volume
-            else:
-                self._entry_price = price
-            self._entry_volume = total_volume
-            self._entry_side = trade.Order.Side
-            if self._entry_time is None:
-                self._entry_time = time
+        if not self._episode.is_open or self._episode.side == trade.Order.Side:
+            self._episode.register_entry(price, volume, trade.Order.Side, time)
+            trailing_distance = float(self.TrailingStopPips) * self._ensure_pip_size()
+            if float(self.TrailingStopPips) > 0 and trailing_distance > 0:
+                self._trailing_stop_price = self._episode.entry_price - trailing_distance \
+                    if self._episode.side == Sides.Buy else self._episode.entry_price + trailing_distance
         else:
-            if self._entry_side is None or self._entry_price is None or self._entry_volume <= 0:
-                return
-            remaining = self._entry_volume - volume
-            if remaining < 0:
-                remaining = 0
-            profit = 0.0
-            if self._entry_side == Sides.Buy:
-                profit = (price - self._entry_price) * volume
-            elif self._entry_side == Sides.Sell:
-                profit = (self._entry_price - price) * volume
-            self._add_closed_trade_profit(profit)
-            if remaining == 0:
-                self._reset_entry_state()
-            else:
-                self._entry_volume = remaining
-                self._entry_time = time
+            closed_profit = self._episode.register_exit(price, volume)
+            if closed_profit is not None:
+                self._add_closed_trade_profit(closed_profit)
+                self._trailing_stop_price = None
 
     def OnReseted(self):
         super(ten_pips_opposite_last_n_hour_trend_strategy, self).OnReseted()
         self._close_history = []
         self._closed_trade_profits = []
-        self._last_bar_traded = None
-        self._entry_side = None
-        self._entry_volume = 0.0
-        self._entry_price = None
-        self._entry_time = None
+        self._episode.reset()
+        self._last_trade_date = None
         self._trailing_stop_price = None
         self._pip_size = 0.0
 

@@ -53,7 +53,7 @@ class re_open_positions_strategy(Strategy):
 
         if self.Position > 0:
             if close <= self._current_stop or close >= self._current_take:
-                self.SellMarket()
+                self.SellMarket(abs(self.Position))
                 self._opened_count = 0
             elif self._opened_count < self._max_positions.Value and close - self._last_entry >= self._profit_threshold.Value:
                 self.BuyMarket()
@@ -63,7 +63,7 @@ class re_open_positions_strategy(Strategy):
                 self._current_take = self._last_entry + self._tp_points.Value
         elif self.Position < 0:
             if close >= self._current_stop or close <= self._current_take:
-                self.BuyMarket()
+                self.BuyMarket(abs(self.Position))
                 self._opened_count = 0
             elif self._opened_count < self._max_positions.Value and self._last_entry - close >= self._profit_threshold.Value:
                 self.SellMarket()

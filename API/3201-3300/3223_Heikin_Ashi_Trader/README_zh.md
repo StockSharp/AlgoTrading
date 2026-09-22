@@ -1,5 +1,5 @@
 # Heikin Ashi Trader 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略将 MetaTrader 4 专家顾问 “Heikin Ashi Trader” 移植到 StockSharp。原版 EA 的多指标确认流程被完整保留，并通过高级的蜡烛订阅 API 实现，因此所有决策都基于已完成的 K 线。
 

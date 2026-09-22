@@ -417,7 +417,7 @@
                 "CanAutoName": true,
                 "Parameters": {
                   "Name": {
-                    "Value": "Sell"
+                    "Value": "Open position (Sell)"
                   },
                   "LogLevel": {
                     "Value": "Inherit"
@@ -432,7 +432,7 @@
                     "Value": false
                   },
                   "OnlineOnly": {
-                    "Value": true
+                    "Value": false
                   },
                   "TimeInForce": {},
                   "ClientCode": {},
@@ -444,7 +444,7 @@
                     "Value": ""
                   },
                   "PosCondition": {
-                    "Value": "NoCondition"
+                    "Value": "OpenPosition"
                   },
                   "Direction": {
                     "Value": "Sell"
@@ -639,7 +639,7 @@
                 "CanAutoName": true,
                 "Parameters": {
                   "Name": {
-                    "Value": "Buy"
+                    "Value": "Close position (Buy)"
                   },
                   "LogLevel": {
                     "Value": "Inherit"
@@ -654,7 +654,7 @@
                     "Value": false
                   },
                   "OnlineOnly": {
-                    "Value": true
+                    "Value": false
                   },
                   "TimeInForce": {},
                   "ClientCode": {},
@@ -666,7 +666,7 @@
                     "Value": ""
                   },
                   "PosCondition": {
-                    "Value": "NoCondition"
+                    "Value": "ClosePosition"
                   },
                   "Direction": {
                     "Value": "Buy"
@@ -844,7 +844,7 @@
                 "InputSocketIds": [
                   "dynsock_block5",
                   "dynsock_block7",
-                  "18e601e47daa4330883f214880e09a12"
+                  "140a5694e9e841cdaa26333e668658f7"
                 ]
               }
             },
@@ -993,7 +993,7 @@
                 "InputSocketIds": [
                   "dynsock_block8",
                   "dynsock_block",
-                  "2147a0559c9140f39412ba7702150fea"
+                  "ac210c0cff654615bcc7cf7dd03b2a7a"
                 ]
               }
             },
@@ -1282,12 +1282,6 @@
               "FromPort": "Signal",
               "To": "buy",
               "ToPort": "Trigger"
-            },
-            {
-              "From": "position",
-              "FromPort": "Output",
-              "To": "buy",
-              "ToPort": "Volume"
             },
             {
               "From": "timeFrameCandle010000",

@@ -1,4 +1,5 @@
 # 动态均值策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 “Dynamic Averaging” 源自 MetaTrader 5 指标专家顾问“Dynamic averaging.mq5”（id 23319）。策略将快速随机指标与基于标准差的波动率过滤器结合使用。只有当当前波动率低于其滑动平均值时才允许交易，从而把入场限制在盘整阶段，让随机指标的反转信号更加可靠。

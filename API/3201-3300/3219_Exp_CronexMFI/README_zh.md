@@ -1,4 +1,5 @@
 # Exp Cronex MFI 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 本策略复刻了 **Exp_CronexMFI** 智能交易系统。它对资金流量指标（MFI）进行两次平滑处理，并在两条线发生交叉时采取**逆势**交易。移植版本保持了原始的反转思想，并将所有参数暴露为 StockSharp 策略参数。

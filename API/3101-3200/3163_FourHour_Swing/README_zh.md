@@ -1,4 +1,5 @@
 # 四小时摆动策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 **四小时摆动策略** 将 MetaTrader 的 "4H swing" 智能交易系统迁移到 StockSharp 的高级 API。原始策略结合了趋势跟踪和多时间框架振荡指标。本实现同时订阅三个周期（入场周期、确认周期与宏观过滤周期），并使用 StockSharp 自带指标重建所有信号。

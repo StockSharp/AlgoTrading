@@ -3,16 +3,14 @@
  
 A estratégia VWAP Williams %R foca na reversão intradiária em torno do Preço Médio Ponderado por Volume. Ela observa quando o preço se afasta do VWAP enquanto o oscilador Williams %R atinge território de sobrecompra ou sobrevenda. A premissa é que leituras extremas próximas ao VWAP frequentemente levam a um retrocesso em direção à média.
 
-Os testes indicam um retorno anual médio de aproximadamente 40%. Funciona melhor no mercado de criptomoedas.
-
 Quando o oscilador cai abaixo de -80 e o preço opera abaixo do VWAP, o cenário implica que a pressão de venda está diminuindo e um repique pode se seguir. Por outro lado, uma leitura acima de -20 enquanto o preço está posicionado acima do VWAP avisa que os compradores estão esgotados e uma correção é provável. A estratégia abre operações na direção de um potencial retorno ao VWAP e aguarda a conclusão desse movimento.
 
-Esta abordagem se adapta a traders ativos intradiários que preferem oportunidades frequentes de reversão à média. Um stop‑loss pequeno em relação ao VWAP mantém o risco contido enquanto ainda permite espaço suficiente para o preço flutuar antes de reverter.
+Esta abordagem busca reversões intradiárias à média. Um stop-loss percentual medido a partir de cada execução limita o movimento adverso, enquanto a saída no VWAP conclui o retorno esperado à média.
 
 ## Detalhes
 - **Critérios de entrada**:
-  - **Comprado**: Price < VWAP && Williams %R < -80 (sobrevendido abaixo do VWAP)
-  - **Vendido**: Price > VWAP && Williams %R > -20 (sobrecomprado acima do VWAP)
+  - **Comprado**: o fechamento está pelo menos 0,1% abaixo do VWAP diário e o Williams %R cruza -80 para baixo.
+  - **Vendido**: o fechamento está pelo menos 0,1% acima do VWAP diário e o Williams %R cruza -20 para cima.
 - **Comprado/Vendido**: Ambos os lados.
 - **Critérios de saída**:
   - **Comprado**: Sair da posição comprada quando o preço rompe acima do VWAP
@@ -20,8 +18,9 @@ Esta abordagem se adapta a traders ativos intradiários que preferem oportunidad
 - **Stops**: Sim.
 - **Valores padrão**:
   - `WilliamsRPeriod` = 14
-  - `StopLossPercent` = 2m
-  - `CandleType` = TimeSpan.FromMinutes(5)
+  - `CooldownBars` = 60
+  - `StopLossPercent` = 2%
+  - `CandleType` = TimeSpan.FromMinutes(30)
 - **Filtros**:
   - Categoria: Misto
   - Direção: Ambos

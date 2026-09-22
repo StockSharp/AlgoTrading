@@ -80,25 +80,19 @@ class risk_reward_ratio_strategy(Strategy):
             self._prev_slow = slow_val
             return
 
-        if self._cooldown > 0:
-            self._cooldown -= 1
-            self._prev_fast = fast_val
-            self._prev_slow = slow_val
-            return
-
         close = float(candle.ClosePrice)
         step = float(self.Security.PriceStep) if self.Security is not None and self.Security.PriceStep is not None else 1.0
 
         if self.Position > 0 and self._entry_price > 0:
             if self.stop_loss_points > 0 and close <= self._entry_price - self.stop_loss_points * step:
-                self.SellMarket()
+                self.SellMarket(abs(self.Position))
                 self._entry_price = 0.0
                 self._cooldown = 100
                 self._prev_fast = fast_val
                 self._prev_slow = slow_val
                 return
             if self.take_profit_points > 0 and close >= self._entry_price + self.take_profit_points * step:
-                self.SellMarket()
+                self.SellMarket(abs(self.Position))
                 self._entry_price = 0.0
                 self._cooldown = 100
                 self._prev_fast = fast_val
@@ -106,29 +100,35 @@ class risk_reward_ratio_strategy(Strategy):
                 return
         elif self.Position < 0 and self._entry_price > 0:
             if self.stop_loss_points > 0 and close >= self._entry_price + self.stop_loss_points * step:
-                self.BuyMarket()
+                self.BuyMarket(abs(self.Position))
                 self._entry_price = 0.0
                 self._cooldown = 100
                 self._prev_fast = fast_val
                 self._prev_slow = slow_val
                 return
             if self.take_profit_points > 0 and close <= self._entry_price - self.take_profit_points * step:
-                self.BuyMarket()
+                self.BuyMarket(abs(self.Position))
                 self._entry_price = 0.0
                 self._cooldown = 100
                 self._prev_fast = fast_val
                 self._prev_slow = slow_val
                 return
 
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            self._prev_fast = fast_val
+            self._prev_slow = slow_val
+            return
+
         if self._prev_fast <= self._prev_slow and fast_val > slow_val and self.Position <= 0:
             if self.Position < 0:
-                self.BuyMarket()
+                self.BuyMarket(abs(self.Position))
             self.BuyMarket()
             self._entry_price = close
             self._cooldown = 100
         elif self._prev_fast >= self._prev_slow and fast_val < slow_val and self.Position >= 0:
             if self.Position > 0:
-                self.SellMarket()
+                self.SellMarket(abs(self.Position))
             self.SellMarket()
             self._entry_price = close
             self._cooldown = 100

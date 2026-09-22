@@ -1,9 +1,9 @@
-# Pair Trading Strategy on BTC and ETH
+# Pair Trading Strategy on BTC and TON
 [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
 
-The Pair Trading Strategy on BTC and ETH is designed for trading two popular cryptocurrencies—Bitcoin (BTC) and Ethereum (ETH). This cryptocurrency arbitrage strategy is based on identifying arbitrage opportunities between these two assets, allowing traders to capitalize on moments when the price difference between BTC and ETH reaches a certain threshold.
+The Pair Trading Strategy on BTC and TON is designed for trading Bitcoin (BTC) and Toncoin (TON). This cryptocurrency arbitrage strategy is based on identifying opportunities between these two assets when their price ratio moves beyond a configured threshold.
 
 ![schema](schema.svg)
 
@@ -15,8 +15,8 @@ To activate and use this strategy, StockSharp Designer must be installed. The st
 
 ## Parameters
 
-- **Asset 1**: ETHUSDT@BNB
-- **Asset 2**: BTCUSDT@BNB
+- **Asset 1**: TONUSDT@BNBFT
+- **Asset 2**: BTCUSDT@BNBFT
 - **Threshold**: 0.02 (absolute)
 - **Trade Volume**: 5000 (absolute)
 - **Slippage**: 1.0 (absolute)
@@ -24,8 +24,8 @@ To activate and use this strategy, StockSharp Designer must be installed. The st
 
 ## How It Works
 
-1. **Price Data Collection**: The strategy collects price data for BTC and ETH from the Binance exchange.
-2. **Price Calculation**: It calculates the price ratio between BTC and ETH.
+1. **Price Data Collection**: The strategy collects the bundled BTC and TON futures history from Binance.
+2. **Price Calculation**: It calculates the price ratio between BTC and TON.
 3. **Signal Generation**: When the price ratio exceeds the defined threshold, the strategy generates buy and sell signals.
 4. **Order Execution**: The strategy executes market orders to buy the undervalued asset and sell the overvalued asset.
 5. **Profit Calculation**: It calculates the profit based on the executed trades and monitors the market for further opportunities.

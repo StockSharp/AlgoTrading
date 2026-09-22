@@ -1,9 +1,9 @@
-# Paarhandels-Strategie für BTC und ETH
+# Paarhandels-Strategie für BTC und TON
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Überblick
 
-Die Paarhandels-Strategie für BTC und ETH ist für den Handel mit zwei populären Kryptowährungen konzipiert — Bitcoin (BTC) und Ethereum (ETH). Diese Kryptowährungs-Arbitrage-Strategie basiert auf der Identifizierung von Arbitragemöglichkeiten zwischen diesen beiden Vermögenswerten, sodass Trader Momente nutzen können, in denen die Preisdifferenz zwischen BTC und ETH einen bestimmten Schwellenwert erreicht.
+Die Paarhandels-Strategie für BTC und TON handelt Bitcoin (BTC) und Toncoin (TON). Sie erkennt Arbitragemöglichkeiten, wenn das Preisverhältnis der beiden Werte eine konfigurierte Schwelle überschreitet.
 
 ![schema](schema.svg)
 
@@ -15,8 +15,8 @@ Zur Aktivierung und Nutzung dieser Strategie muss StockSharp Designer installier
 
 ## Parameter
 
-- **Vermögenswert 1**: ETHUSDT@BNB
-- **Vermögenswert 2**: BTCUSDT@BNB
+- **Vermögenswert 1**: TONUSDT@BNBFT
+- **Vermögenswert 2**: BTCUSDT@BNBFT
 - **Schwellenwert**: 0.02 (absolut)
 - **Handelsvolumen**: 5000 (absolut)
 - **Slippage**: 1.0 (absolut)
@@ -24,8 +24,8 @@ Zur Aktivierung und Nutzung dieser Strategie muss StockSharp Designer installier
 
 ## Funktionsweise
 
-1. **Preisdatenerfassung**: Die Strategie erfasst Preisdaten für BTC und ETH von der Binance-Börse.
-2. **Preisberechnung**: Sie berechnet das Preisverhältnis zwischen BTC und ETH.
+1. **Preisdatenerfassung**: Die Strategie nutzt die mitgelieferte Binance-Futures-Historie für BTC und TON.
+2. **Preisberechnung**: Sie berechnet das Preisverhältnis zwischen BTC und TON.
 3. **Signalgenerierung**: Wenn das Preisverhältnis den definierten Schwellenwert überschreitet, generiert die Strategie Kauf- und Verkaufssignale.
 4. **Orderausführung**: Die Strategie führt Market Orders aus, um den unterbewerteten Vermögenswert zu kaufen und den überbewerteten zu verkaufen.
 5. **Gewinnberechnung**: Sie berechnet den Gewinn auf Basis der ausgeführten Trades und überwacht den Markt auf weitere Möglichkeiten.

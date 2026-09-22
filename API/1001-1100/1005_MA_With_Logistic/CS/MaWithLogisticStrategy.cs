@@ -23,7 +23,6 @@ public class MaWithLogisticStrategy : Strategy
 
 	private ExponentialMovingAverage _fastMa;
 	private ExponentialMovingAverage _slowMa;
-	private decimal _entryPrice;
 	private decimal _prevFast;
 	private decimal _prevSlow;
 	private bool _initialized;
@@ -60,7 +59,6 @@ public class MaWithLogisticStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_entryPrice = default;
 		_prevFast = default;
 		_prevSlow = default;
 		_initialized = false;
@@ -71,6 +69,10 @@ public class MaWithLogisticStrategy : Strategy
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+
+		StartProtection(
+			takeProfit: new Unit(TakeProfitPercent, UnitTypes.Percent),
+			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent));
 
 		_fastMa = new ExponentialMovingAverage { Length = FastLength };
 		_slowMa = new ExponentialMovingAverage { Length = SlowLength };
@@ -112,26 +114,18 @@ public class MaWithLogisticStrategy : Strategy
 			return;
 		}
 
-		var close = candle.ClosePrice;
-
 		// MA crossover entry
 		var crossUp = _prevFast <= _prevSlow && fast > slow;
 		var crossDown = _prevFast >= _prevSlow && fast < slow;
 
 		if (crossUp && Position <= 0)
 		{
-			if (Position < 0)
-				BuyMarket();
-			BuyMarket();
-			_entryPrice = close;
+			BuyMarket(Volume + Math.Abs(Position));
 			_cooldown = 5;
 		}
 		else if (crossDown && Position >= 0)
 		{
-			if (Position > 0)
-				SellMarket();
-			SellMarket();
-			_entryPrice = close;
+			SellMarket(Volume + Math.Abs(Position));
 			_cooldown = 5;
 		}
 

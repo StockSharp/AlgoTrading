@@ -1,4 +1,5 @@
 # Harami 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概述
 HaramiStrategy 将 MetaTrader 的 “Harami” 专家顾问转换为 StockSharp 的高级 API 实现。策略在较高周期上寻找多头/空头的孕线形态，并通过动量扩张与长期 MACD 过滤器进行确认。系统只处理收盘后的完整K线，并使用 StockSharp 的保护模块管理风险。

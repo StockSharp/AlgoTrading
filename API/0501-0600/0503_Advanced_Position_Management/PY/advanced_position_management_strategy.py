@@ -6,7 +6,7 @@ clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Messages import DataType, CandleStates, OrderStates
 from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 
@@ -34,6 +34,7 @@ class advanced_position_management_strategy(Strategy):
         self._prev_slow = 0.0
         self._entry_price = 0.0
         self._cooldown_remaining = 0
+        self._protective_exit_order = None
 
     @property
     def candle_type(self):
@@ -45,6 +46,7 @@ class advanced_position_management_strategy(Strategy):
         self._prev_slow = 0.0
         self._entry_price = 0.0
         self._cooldown_remaining = 0
+        self._protective_exit_order = None
 
     def OnStarted2(self, time):
         super(advanced_position_management_strategy, self).OnStarted2(time)
@@ -77,13 +79,25 @@ class advanced_position_management_strategy(Strategy):
         tp_pct = float(self._take_profit_percent.Value)
         cooldown = int(self._cooldown_bars.Value)
 
+        exit_state = self._protective_exit_order.State if self._protective_exit_order is not None else None
+        exit_action = self._resolve_protective_exit_action(self.Position, exit_state)
+        if exit_action == 0:
+            self._entry_price = 0.0
+            self._protective_exit_order = None
+        elif exit_action == 1:
+            self._prev_fast = fast
+            self._prev_slow = slow
+            return
+        elif self._protective_exit_order is not None:
+            # A terminal partial/cancel leaves protection intact and permits a retry.
+            self._protective_exit_order = None
+
         # Check stop/TP
         if self.Position > 0 and self._entry_price > 0:
             sl = self._entry_price * (1.0 - sl_pct / 100.0)
             tp = self._entry_price * (1.0 + tp_pct / 100.0)
             if close <= sl or close >= tp:
-                self.SellMarket(Math.Abs(self.Position))
-                self._entry_price = 0.0
+                self._protective_exit_order = self.SellMarket(Math.Abs(self.Position))
                 self._cooldown_remaining = cooldown
                 self._prev_fast = fast
                 self._prev_slow = slow
@@ -92,8 +106,7 @@ class advanced_position_management_strategy(Strategy):
             sl = self._entry_price * (1.0 + sl_pct / 100.0)
             tp = self._entry_price * (1.0 - tp_pct / 100.0)
             if close >= sl or close <= tp:
-                self.BuyMarket(Math.Abs(self.Position))
-                self._entry_price = 0.0
+                self._protective_exit_order = self.BuyMarket(Math.Abs(self.Position))
                 self._cooldown_remaining = cooldown
                 self._prev_fast = fast
                 self._prev_slow = slow
@@ -128,6 +141,13 @@ class advanced_position_management_strategy(Strategy):
 
         self._prev_fast = fast
         self._prev_slow = slow
+
+    def _resolve_protective_exit_action(self, position, exit_order_state):
+        if position == 0:
+            return 0  # reset
+        if exit_order_state is not None and exit_order_state not in (OrderStates.Done, OrderStates.Failed):
+            return 1  # wait
+        return 2  # evaluate/retry
 
     def CreateClone(self):
         return advanced_position_management_strategy()

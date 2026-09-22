@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan
+from System import Math, TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
@@ -19,6 +19,7 @@ class statistics_repeating_behavior_strategy(Strategy):
         self._history_days = self.Param("HistoryDays", 3).SetGreaterThanZero().SetDisplay("History Days", "Number of days to collect statistics", "Parameters")
         self._minimum_body_points = self.Param("MinimumBodyPoints", 0).SetDisplay("Minimum Body (points)", "Ignore candles with smaller body", "Parameters")
         self._stop_loss_pips = self.Param("StopLossPips", 15).SetGreaterThanZero().SetDisplay("Stop Loss (pips)", "Stop loss distance in pips", "Risk")
+        self._initial_volume = self.Param("InitialVolume", 1.0).SetGreaterThanZero().SetDisplay("Initial Volume", "Starting order size", "Trading")
         self._martingale_factor = self.Param("MartingaleFactor", 1.618).SetGreaterThanZero().SetDisplay("Martingale Factor", "Multiplier after losing trade", "Trading")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))).SetDisplay("Candle Type", "Candles for analysis", "General")
 
@@ -33,6 +34,8 @@ class statistics_repeating_behavior_strategy(Strategy):
         self._entry_price = 0
         self._stop_price = 0
         self._pos_dir = 0
+        self._current_volume = 0.0
+        self._price_step = 0.0
         self._timeframe_minutes = 0
 
     def OnStarted2(self, time):
@@ -41,6 +44,8 @@ class statistics_repeating_behavior_strategy(Strategy):
         self._entry_price = 0
         self._stop_price = 0
         self._pos_dir = 0
+        self._current_volume = self._adjust_volume(float(self._initial_volume.Value))
+        self._price_step = float(self.Security.PriceStep) if self.Security.PriceStep is not None else 1.0
 
         ct = self.CandleType
         arg = ct.Arg
@@ -67,7 +72,7 @@ class statistics_repeating_behavior_strategy(Strategy):
         high = float(candle.HighPrice)
         low = float(candle.LowPrice)
         open_p = float(candle.OpenPrice)
-        stop_pips = self._stop_loss_pips.Value
+        stop_distance = float(self._stop_loss_pips.Value) * self._price_step
 
         # Close existing position
         if self._pos_dir != 0:
@@ -83,11 +88,16 @@ class statistics_repeating_behavior_strategy(Strategy):
                     stop_hit = True
 
             if self.Position > 0:
-                self.SellMarket()
+                self.SellMarket(abs(self.Position))
             elif self.Position < 0:
-                self.BuyMarket()
+                self.BuyMarket(abs(self.Position))
 
             profit = (exit_price - self._entry_price) if self._pos_dir > 0 else (self._entry_price - exit_price)
+            if profit > 0 and not stop_hit:
+                self._current_volume = self._adjust_volume(float(self._initial_volume.Value))
+            else:
+                current = self._current_volume if self._current_volume > 0 else float(self._initial_volume.Value)
+                self._current_volume = self._adjust_volume(current * float(self._martingale_factor.Value))
             self._entry_price = 0
             self._stop_price = 0
             self._pos_dir = 0
@@ -98,16 +108,18 @@ class statistics_repeating_behavior_strategy(Strategy):
             if len(stats['values']) > 0:
                 bull_sum = stats['bull_sum']
                 bear_sum = stats['bear_sum']
-                if bull_sum > bear_sum and self.Position <= 0:
-                    self._entry_price = close
-                    self._stop_price = close - stop_pips
-                    self._pos_dir = 1
-                    self.BuyMarket()
-                elif bear_sum > bull_sum and self.Position >= 0:
-                    self._entry_price = close
-                    self._stop_price = close + stop_pips
-                    self._pos_dir = -1
-                    self.SellMarket()
+                volume = self._current_volume
+                if volume > 0:
+                    if bull_sum > bear_sum and self.Position <= 0:
+                        self._entry_price = close
+                        self._stop_price = close - stop_distance
+                        self._pos_dir = 1
+                        self.BuyMarket(volume)
+                    elif bear_sum > bull_sum and self.Position >= 0:
+                        self._entry_price = close
+                        self._stop_price = close + stop_distance
+                        self._pos_dir = -1
+                        self.SellMarket(volume)
 
         # Update statistics
         current_key = open_time.Hour * 60 + open_time.Minute
@@ -115,15 +127,16 @@ class statistics_repeating_behavior_strategy(Strategy):
             self._body_stats[current_key] = {'values': deque(), 'bull_sum': 0, 'bear_sum': 0}
         stats = self._body_stats[current_key]
         body = close - open_p
+        body_points = body / self._price_step
         min_body = self._minimum_body_points.Value
-        abs_body = abs(body)
+        abs_body = abs(body_points)
         if min_body > 0 and abs_body < min_body:
             return
-        stats['values'].append(body)
-        if body > 0:
-            stats['bull_sum'] += body
-        elif body < 0:
-            stats['bear_sum'] += abs(body)
+        stats['values'].append(body_points)
+        if body_points > 0:
+            stats['bull_sum'] += body_points
+        elif body_points < 0:
+            stats['bear_sum'] += abs(body_points)
         while len(stats['values']) > self._history_days.Value:
             removed = stats['values'].popleft()
             if removed > 0:
@@ -134,6 +147,31 @@ class statistics_repeating_behavior_strategy(Strategy):
     def _get_minute_key_offset(self, dt, offset_minutes):
         total = dt.Hour * 60 + dt.Minute + offset_minutes
         return total % 1440
+
+    def _adjust_volume(self, volume):
+        if volume <= 0:
+            return 0.0
+
+        security = self.Security
+        if security is None:
+            return volume
+
+        minimum = float(security.MinVolume) if security.MinVolume is not None else 0.0
+        maximum = float(security.MaxVolume) if security.MaxVolume is not None and security.MaxVolume > 0 else float("inf")
+        if maximum < minimum:
+            return 0.0
+
+        step = float(security.VolumeStep) if security.VolumeStep is not None else 0.0
+        if step <= 0:
+            return max(minimum, min(volume, maximum))
+
+        first = Math.Ceiling(minimum / step) * step if minimum > 0 else step
+        last = Math.Floor(maximum / step) * step if maximum != float("inf") else float("inf")
+        if last < first:
+            return 0.0
+
+        aligned = Math.Floor(volume / step) * step
+        return round(max(first, min(aligned, last)), 12)
 
     def CreateClone(self):
         return statistics_repeating_behavior_strategy()

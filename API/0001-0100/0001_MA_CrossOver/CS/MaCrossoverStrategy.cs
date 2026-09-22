@@ -167,7 +167,7 @@ public class MaCrossoverStrategy : Strategy
 						{
 							_entryPrice = candle.ClosePrice;
 							_isLongPosition = true;
-							BuyMarket(Volume + Math.Abs(Position));
+							BuyMarket(this.ReversalVolume());
 						}
 					}
 					else // Fast MA crossed below Slow MA
@@ -177,7 +177,7 @@ public class MaCrossoverStrategy : Strategy
 						{
 							_entryPrice = candle.ClosePrice;
 							_isLongPosition = false;
-							SellMarket(Volume + Math.Abs(Position));
+							SellMarket(this.ReversalVolume());
 						}
 					}
 

@@ -1,9 +1,9 @@
-# Estrategia de Trading por Pares en BTC y ETH
+# Estrategia de Trading por Pares en BTC y TON
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Descripción general
 
-La Estrategia de Trading por Pares en BTC y ETH está diseñada para operar con dos criptomonedas populares: Bitcoin (BTC) y Ethereum (ETH). Esta estrategia de arbitraje de criptomonedas se basa en identificar oportunidades de arbitraje entre estos dos activos, permitiendo a los traders capitalizar los momentos en que la diferencia de precio entre BTC y ETH alcanza un determinado umbral.
+La Estrategia de Trading por Pares en BTC y TON opera con Bitcoin (BTC) y Toncoin (TON). Identifica oportunidades de arbitraje cuando la relación de precios entre ambos activos supera un umbral configurado.
 
 ![schema](schema.svg)
 
@@ -15,8 +15,8 @@ Para activar y usar esta estrategia, es necesario instalar StockSharp Designer. 
 
 ## Parámetros
 
-- **Activo 1**: ETHUSDT@BNB
-- **Activo 2**: BTCUSDT@BNB
+- **Activo 1**: TONUSDT@BNBFT
+- **Activo 2**: BTCUSDT@BNBFT
 - **Umbral**: 0.02 (absoluto)
 - **Volumen de Trading**: 5000 (absoluto)
 - **Deslizamiento**: 1.0 (absoluto)
@@ -24,8 +24,8 @@ Para activar y usar esta estrategia, es necesario instalar StockSharp Designer. 
 
 ## Cómo funciona
 
-1. **Recopilación de datos de precio**: La estrategia recopila datos de precio de BTC y ETH del exchange Binance.
-2. **Cálculo de precio**: Calcula la relación de precios entre BTC y ETH.
+1. **Recopilación de datos de precio**: La estrategia usa el historial incluido de futuros BTC y TON de Binance.
+2. **Cálculo de precio**: Calcula la relación de precios entre BTC y TON.
 3. **Generación de señales**: Cuando la relación de precios supera el umbral definido, la estrategia genera señales de compra y venta.
 4. **Ejecución de órdenes**: La estrategia ejecuta órdenes de mercado para comprar el activo infravalorado y vender el activo sobrevalorado.
 5. **Cálculo de ganancias**: Calcula el beneficio basado en las operaciones ejecutadas y monitorea el mercado en busca de más oportunidades.

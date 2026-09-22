@@ -201,9 +201,9 @@ public class StatisticsRepeatingBehaviorStrategy : Strategy
 			}
 
 			if (Position > 0)
-				SellMarket();
+				SellMarket(Math.Abs(Position));
 			else if (Position < 0)
-				BuyMarket();
+				BuyMarket(Math.Abs(Position));
 
 			UpdateVolumeAfterTrade(exitPrice, stopHit);
 		}
@@ -238,14 +238,14 @@ public class StatisticsRepeatingBehaviorStrategy : Strategy
 
 		if (isLong)
 		{
-			BuyMarket();
+			BuyMarket(volume);
 			_entryPrice = candle.ClosePrice;
 			_stopPrice = _entryPrice - stopDistance;
 			_positionDirection = 1;
 		}
 		else
 		{
-			SellMarket();
+			SellMarket(volume);
 			_entryPrice = candle.ClosePrice;
 			_stopPrice = _entryPrice + stopDistance;
 			_positionDirection = -1;
@@ -265,7 +265,8 @@ public class StatisticsRepeatingBehaviorStrategy : Strategy
 		}
 		else
 		{
-			var increased = AdjustVolume(InitialVolume * MartingaleFactor);
+			var current = _currentVolume > 0m ? _currentVolume : InitialVolume;
+			var increased = AdjustVolume(current * MartingaleFactor);
 			_currentVolume = increased;
 		}
 
@@ -300,7 +301,29 @@ public class StatisticsRepeatingBehaviorStrategy : Strategy
 
 	private decimal AdjustVolume(decimal volume)
 	{
-		return volume <= 0m ? 1m : volume;
+		if (volume <= 0m)
+			return 0m;
+
+		var security = Security;
+		if (security == null)
+			return volume;
+
+		var min = security.MinVolume ?? 0m;
+		var max = security.MaxVolume is > 0m ? security.MaxVolume.Value : decimal.MaxValue;
+		if (max < min)
+			return 0m;
+
+		var step = security.VolumeStep ?? 0m;
+		if (step <= 0m)
+			return Math.Clamp(volume, min, max);
+
+		var first = min > 0m ? Math.Ceiling(min / step) * step : step;
+		var last = max == decimal.MaxValue ? decimal.MaxValue : Math.Floor(max / step) * step;
+		if (last < first)
+			return 0m;
+
+		var aligned = Math.Floor(volume / step) * step;
+		return Math.Clamp(aligned, first, last);
 	}
 
 	private static int GetMinuteKey(DateTimeOffset time)

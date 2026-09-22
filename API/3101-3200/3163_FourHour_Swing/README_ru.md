@@ -1,4 +1,5 @@
 # Стратегия Four Hour Swing
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Обзор
 **Four Hour Swing Strategy** переносит советник MetaTrader "4H swing" на высокоуровневый API StockSharp. Оригинальная система сочетает трендовые фильтры и осцилляторы из старших таймфреймов. В версии на C# создаются три подписки на свечи (рабочий, подтверждающий и макрофильтр), а индикаторы построены на стандартных компонентах StockSharp.

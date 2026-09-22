@@ -1,4 +1,5 @@
 # Cronex RSI 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Cronex RSI 策略** 将 MQL5 中的 Exp_CronexRSI.mq5 专家顾问迁移到 StockSharp 高阶 API。策略以 RSI 为核心，通过两层移动平均
 对指标进行平滑，构建出快线与慢线。信号在两条平滑曲线交叉时触发，并提供与原始脚本一致的多空开平仓开关。

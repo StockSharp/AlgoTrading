@@ -1,26 +1,21 @@
 # MA com Função Logística
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
-MA com Função Logística é uma estratégia de média móvel que usa uma MA rápida e uma lenta para entradas e suporta saídas baseadas em percentual ou em probabilidade logística.
+Apesar do nome histórico, esta implementação é uma estratégia de cruzamento de duas EMAs e não calcula um modelo logístico. Cruzamentos em velas finalizadas abrem ou invertem a posição, e take-profit e stop-loss percentuais são medidos a partir dos preços de execução.
 
 ## Detalhes
 - **Dados**: Velas de preço.
 - **Critérios de entrada**:
-  - **Comprado**: Fechamento > MA rápida e MA rápida > MA lenta.
-  - **Vendido**: Fechamento < MA rápida e MA rápida < MA lenta.
-- **Critérios de saída**: Metas percentuais ou limiares de probabilidade logística.
-- **Stops**: Saídas baseadas em percentual ou probabilidade logística.
+  - **Comprado**: a EMA rápida cruza acima da EMA lenta.
+  - **Vendido**: a EMA rápida cruza abaixo da EMA lenta.
+- **Critérios de saída**: `TakeProfitPercent` ou `StopLossPercent` é atingido; um cruzamento oposto inverte a posição.
+- **Pausa**: cinco velas finalizadas após cada ordem de cruzamento.
 - **Valores padrão**:
-  - `FastLength` = 9
-  - `SlowLength` = 21
-  - `MaType` = MaTypeEnum.EMA
-  - `ExitType` = ExitTypeEnum.Percent
-  - `TakeProfitPercent` = 20
+  - `FastLength` = 12
+  - `SlowLength` = 25
+  - `TakeProfitPercent` = 8
   - `StopLossPercent` = 5
-  - `LogisticSlope` = 10
-  - `LogisticMidpoint` = 0
-  - `TakeProfitProbability` = 0.8
-  - `StopLossProbability` = 0.2
+  - `CandleType` = 20 minutos
 - **Filtros**:
   - Categoria: Seguidor de tendência
   - Direção: Comprado e Vendido

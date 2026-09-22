@@ -1,4 +1,5 @@
 # Cronex AC 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Cronex AC 策略在 StockSharp 高阶 API 中还原了经典的 Cronex Acceleration/Deceleration (AC) 专家顾问。策略将 Accelerator 振荡器连续进行两次平滑处理，当快速线与信号线发生交叉时执行开仓或平仓：向上交叉开多单、平空单，向下交叉开空单、平多单。
 

@@ -1,4 +1,5 @@
 # Spearman Rank Correlation Histogram 周期交易窗口策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 本策略在 StockSharp 高级 API 上复现 MetaTrader 专家顾问 **Exp_SpearmanRankCorrelation_Histogram_TimeWeekPeriod**。策略订阅单一周期的 K 线（默认 4 小时）并重算原始指标中的 Spearman 排名相关系数直方图。直方图的颜色代表短期趋势的多空倾向（大于零为多头，小于零为空头），同时借助一个可配置的周内时间窗口还原 MQL 中的 `TimeTrade` 逻辑。

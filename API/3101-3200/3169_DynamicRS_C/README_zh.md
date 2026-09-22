@@ -1,5 +1,5 @@
 # DynamicRS_C 策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 本策略将 MetaTrader 顾问 **Exp_DynamicRS_C** 移植到 StockSharp 高级 API。它跟踪自定义 DynamicRS_C 指标的颜色变化，以识别动态支撑与阻力。当指标准线变为洋红色（颜色索引 `0`）时偏多，而转为蓝紫色（颜色索引 `2`）时偏空。移植版保留原始机器人的信号节奏、权限开关以及止损/止盈结构。
 

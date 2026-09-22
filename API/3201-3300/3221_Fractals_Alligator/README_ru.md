@@ -1,5 +1,5 @@
 # Стратегия "Фракталы и Аллигатор"
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия повторяет советник MetaTrader "Fractals & Alligator". Она анализирует выравнивание линий Аллигатора Билла Вильямса, подтверждает пробой последнего фрактала фильтром импульса и контролирует диапазон через ATR или фиксированный бокс.
 

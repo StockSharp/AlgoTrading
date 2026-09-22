@@ -124,7 +124,7 @@ public class ReOpenPositionsStrategy : Strategy
 			// Check for stop loss or take profit.
 			if (close <= _currentStop || close >= _currentTake)
 			{
-				SellMarket();
+				SellMarket(Math.Abs(Position));
 				_openedCount = 0;
 			}
 			else if (_openedCount < MaxPositions && close - _lastEntryPrice >= ProfitThreshold)
@@ -141,7 +141,7 @@ public class ReOpenPositionsStrategy : Strategy
 			// Check for stop loss or take profit for short position.
 			if (close >= _currentStop || close <= _currentTake)
 			{
-				BuyMarket();
+				BuyMarket(Math.Abs(Position));
 				_openedCount = 0;
 			}
 			else if (_openedCount < MaxPositions && _lastEntryPrice - close >= ProfitThreshold)

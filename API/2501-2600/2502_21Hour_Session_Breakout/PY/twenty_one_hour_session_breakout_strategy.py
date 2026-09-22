@@ -78,7 +78,11 @@ class twenty_one_hour_session_breakout_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        hour = candle.OpenTime.Hour
+        time_frame = self.CandleType.Arg
+        schedule_time = candle.CloseTime
+        if isinstance(time_frame, TimeSpan) and time_frame > TimeSpan.Zero:
+            schedule_time = candle.OpenTime + time_frame
+        hour = schedule_time.Hour
         price_step = float(self.Security.PriceStep) if self.Security is not None and self.Security.PriceStep is not None else 1.0
         if price_step <= 0.0:
             price_step = 1.0

@@ -72,7 +72,7 @@ public class LinearRegressionSlopeV1Strategy : Strategy
 		_slopeHistory = new decimal[TriggerShift + 3];
 		_filled = 0;
 
-		var slope = new LinearReg { Length = Length };
+		var slope = CreateSlopeIndicator(Length);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -92,6 +92,9 @@ public class LinearRegressionSlopeV1Strategy : Strategy
 			DrawOwnTrades(area);
 		}
 	}
+
+	internal static LinearRegSlope CreateSlopeIndicator(int length)
+		=> new() { Length = length };
 
 	private void Shift(decimal value)
 	{

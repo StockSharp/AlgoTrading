@@ -27,8 +27,12 @@
             "ProcessNullValues": {
               "Value": false
             },
-            "f5a28cf1-3d92-fb65-55c7-40fbb725600bValue": {},
-            "d1308cdb-c142-b6b7-ca7d-59e8bc348564Value": {},
+            "f5a28cf1-3d92-fb65-55c7-40fbb725600bValue": {
+              "Value": "TONUSDT@BNBFT"
+            },
+            "d1308cdb-c142-b6b7-ca7d-59e8bc348564Value": {
+              "Value": "BTCUSDT@BNBFT"
+            },
             "6ba2bd0f-3e32-c497-d144-2cc34c539e70Series": {
               "Value": {
                 "type": "StockSharp.Messages.DataType, StockSharp.Messages",
@@ -108,7 +112,7 @@
                 "CanAutoName": true,
                 "Parameters": {
                   "Name": {
-                    "Value": "Security"
+                    "Value": "TONUSDT@BNBFT"
                   },
                   "LogLevel": {
                     "Value": "Inherit"
@@ -127,7 +131,9 @@
                       "Type": "StockSharp.BusinessEntities.Security, StockSharp.BusinessEntities"
                     }
                   },
-                  "Value": {},
+                  "Value": {
+                    "Value": "TONUSDT@BNBFT"
+                  },
                   "InputAsTrigger": {
                     "Value": false
                   }
@@ -145,7 +151,7 @@
                 "CanAutoName": true,
                 "Parameters": {
                   "Name": {
-                    "Value": "Security"
+                    "Value": "BTCUSDT@BNBFT"
                   },
                   "LogLevel": {
                     "Value": "Inherit"
@@ -164,7 +170,9 @@
                       "Type": "StockSharp.BusinessEntities.Security, StockSharp.BusinessEntities"
                     }
                   },
-                  "Value": {},
+                  "Value": {
+                    "Value": "BTCUSDT@BNBFT"
+                  },
                   "InputAsTrigger": {
                     "Value": false
                   }
@@ -1123,7 +1131,7 @@
                 "CanAutoName": false,
                 "Parameters": {
                   "Name": {
-                    "Value": "Buy ETH"
+                    "Value": "Buy TON"
                   },
                   "LogLevel": {
                     "Value": "Inherit"
@@ -1306,7 +1314,7 @@
                 "CanAutoName": false,
                 "Parameters": {
                   "Name": {
-                    "Value": "Sell ETH"
+                    "Value": "Sell TON"
                   },
                   "LogLevel": {
                     "Value": "Inherit"
@@ -1495,7 +1503,7 @@
                 "CanAutoName": false,
                 "Parameters": {
                   "Name": {
-                    "Value": "Chart ETH"
+                    "Value": "Chart TON"
                   },
                   "LogLevel": {
                     "Value": "Inherit"

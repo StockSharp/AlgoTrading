@@ -3,16 +3,14 @@
  
 La estrategia VWAP Williams %R se centra en la reversión intradía alrededor del Precio Promedio Ponderado por Volumen. Observa cuándo el precio se aleja del VWAP mientras el oscilador Williams %R alcanza territorio de sobrecompra o sobreventa. La suposición es que las lecturas extremas cerca del VWAP a menudo conducen a un retroceso hacia la media.
 
-Las pruebas indican un rendimiento anual promedio de aproximadamente 40%. Funciona mejor en el mercado cripto.
-
 Cuando el oscilador cae por debajo de -80 y el precio opera bajo el VWAP, el escenario implica que la presión vendedora se está desvaneciendo y puede seguir un rebote. A la inversa, una lectura por encima de -20 mientras el precio está posicionado sobre el VWAP advierte que los compradores están agotados y es probable una corrección. La estrategia abre operaciones en la dirección de un posible retorno al VWAP y observa que ese movimiento se complete.
 
-Este enfoque se adapta a los operadores intradía activos que prefieren oportunidades frecuentes de reversión a la media. Un stop‑loss pequeño relativo al VWAP mantiene el riesgo contenido mientras permite suficiente espacio para que el precio fluctúe antes de revertir.
+Este enfoque busca reversiones intradía a la media. Un stop-loss porcentual medido desde cada ejecución limita el movimiento adverso, mientras que la salida en el VWAP completa el retorno previsto a la media.
 
 ## Detalles
 - **Criterios de entrada**:
-  - **Largo**: Price < VWAP && Williams %R < -80 (sobreventa bajo VWAP)
-  - **Corto**: Price > VWAP && Williams %R > -20 (sobrecompra sobre VWAP)
+  - **Largo**: el cierre está al menos un 0,1% por debajo del VWAP diario y Williams %R cruza -80 hacia abajo.
+  - **Corto**: el cierre está al menos un 0,1% por encima del VWAP diario y Williams %R cruza -20 hacia arriba.
 - **Largo/Corto**: Ambos lados.
 - **Criterios de salida**:
   - **Largo**: Salir de la posición larga cuando el precio rompe por encima del VWAP
@@ -20,8 +18,9 @@ Este enfoque se adapta a los operadores intradía activos que prefieren oportuni
 - **Stops**: Sí.
 - **Valores predeterminados**:
   - `WilliamsRPeriod` = 14
-  - `StopLossPercent` = 2m
-  - `CandleType` = TimeSpan.FromMinutes(5)
+  - `CooldownBars` = 60
+  - `StopLossPercent` = 2%
+  - `CandleType` = TimeSpan.FromMinutes(30)
 - **Filtros**:
   - Categoría: Mixto
   - Dirección: Ambos

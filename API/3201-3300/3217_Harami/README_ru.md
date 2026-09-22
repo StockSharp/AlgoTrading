@@ -1,4 +1,5 @@
 # Стратегия Harami
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Общее описание
 HaramiStrategy — конвертированная версия советника MetaTrader «Harami» на платформу StockSharp. Стратегия объединяет поиск бычьих и медвежьих паттернов «беременная» на старшем таймфрейме с подтверждением через импульс и месячный MACD. Обрабатываются только закрытые свечи, а управление сделками выполняется встроенным модулем защиты StockSharp.

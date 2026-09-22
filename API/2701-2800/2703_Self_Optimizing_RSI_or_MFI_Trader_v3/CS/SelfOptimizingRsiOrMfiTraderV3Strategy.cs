@@ -47,6 +47,7 @@ public class SelfOptimizingRsiOrMfiTraderV3Strategy : Strategy
 	private decimal? _entryPrice;
 	private decimal? _stopPrice;
 	private decimal? _takeProfitPrice;
+	private Order _protectiveExitOrder;
 
 	private IIndicator _indicator;
 	private AverageTrueRange _atr;
@@ -342,6 +343,7 @@ public class SelfOptimizingRsiOrMfiTraderV3Strategy : Strategy
 		_entryPrice = null;
 		_stopPrice = null;
 		_takeProfitPrice = null;
+		_protectiveExitOrder = null;
 		_indicator = null;
 		_atr = null;
 	}
@@ -397,7 +399,8 @@ public class SelfOptimizingRsiOrMfiTraderV3Strategy : Strategy
 		var paddingPoints = BreakEvenPaddingPoints > BreakEvenTriggerPoints ? 0 : BreakEvenPaddingPoints;
 		var paddingDiff = UseBreakEven ? paddingPoints * priceStep : 0m;
 
-		ManageOpenPosition(candle, triggerDiff, paddingDiff);
+		if (ManageOpenPosition(candle, triggerDiff, paddingDiff))
+			return;
 
 		if (_history.Count < maxNeeded)
 			return;
@@ -614,30 +617,28 @@ public class SelfOptimizingRsiOrMfiTraderV3Strategy : Strategy
 
 	private decimal AdjustVolume(decimal volume)
 	{
+		if (volume <= 0m)
+			return 0m;
+
 		if (Security == null)
-			return Math.Max(volume, 0.01m);
+			return volume;
+
+		var min = Security.MinVolume ?? 0m;
+		var max = Security.MaxVolume is > 0m ? Security.MaxVolume.Value : decimal.MaxValue;
+		if (max < min)
+			return 0m;
 
 		var step = Security.VolumeStep ?? 0m;
-		var min = Security.MinVolume ?? 0m;
-		var max = Security.MaxVolume ?? decimal.MaxValue;
-
 		if (step <= 0m)
-			step = 1m;
+			return Math.Clamp(volume, min, max);
 
-		if (min <= 0m)
-			min = step;
+		var first = min > 0m ? Math.Ceiling(min / step) * step : step;
+		var last = max == decimal.MaxValue ? decimal.MaxValue : Math.Floor(max / step) * step;
+		if (last < first)
+			return 0m;
 
-		if (volume < min)
-			volume = min;
-
-		if (volume > max)
-			volume = max;
-
-		volume = Math.Floor(volume / step) * step;
-		if (volume <= 0m)
-			volume = min;
-
-		return volume;
+		var aligned = Math.Floor(volume / step) * step;
+		return Math.Clamp(aligned, first, last);
 	}
 
 	private void EnterLong(ICandleMessage candle, decimal volume, decimal stopLossDiff, decimal takeProfitDiff)
@@ -646,7 +647,7 @@ public class SelfOptimizingRsiOrMfiTraderV3Strategy : Strategy
 		if (Position < 0m)
 			orderVolume += Math.Abs(Position);
 
-		BuyMarket();
+		BuyMarket(orderVolume);
 
 		_entryPrice = candle.ClosePrice;
 		_stopPrice = _entryPrice - stopLossDiff;
@@ -659,17 +660,47 @@ public class SelfOptimizingRsiOrMfiTraderV3Strategy : Strategy
 		if (Position > 0m)
 			orderVolume += Position;
 
-		SellMarket();
+		SellMarket(orderVolume);
 
 		_entryPrice = candle.ClosePrice;
 		_stopPrice = _entryPrice + stopLossDiff;
 		_takeProfitPrice = _entryPrice - takeProfitDiff;
 	}
 
-	private void ManageOpenPosition(ICandleMessage candle, decimal triggerDiff, decimal paddingDiff)
+	private bool ManageOpenPosition(ICandleMessage candle, decimal triggerDiff, decimal paddingDiff)
 	{
+		var exitAction = ResolveProtectiveExitAction(Position, _protectiveExitOrder?.State);
+		if (exitAction == ProtectiveExitAction.Reset)
+		{
+			ResetPositionState();
+			_protectiveExitOrder = null;
+			return false;
+		}
+
+		if (exitAction == ProtectiveExitAction.Wait)
+			return true;
+
+		if (_protectiveExitOrder != null)
+		{
+			// A terminal partial/cancel leaves protection intact and permits a retry.
+			_protectiveExitOrder = null;
+		}
+
+		// Existing protection is evaluated before this candle can arm a new breakeven level.
 		if (Position > 0m)
 		{
+			if (_stopPrice is decimal stop && candle.LowPrice <= stop)
+			{
+				_protectiveExitOrder = SellMarket(Math.Abs(Position));
+				return true;
+			}
+
+			if (_takeProfitPrice is decimal target && candle.HighPrice >= target)
+			{
+				_protectiveExitOrder = SellMarket(Math.Abs(Position));
+				return true;
+			}
+
 			if (UseBreakEven && _entryPrice is decimal entry && _stopPrice is decimal currentStop)
 			{
 				var triggerPrice = entry + triggerDiff;
@@ -677,23 +708,21 @@ public class SelfOptimizingRsiOrMfiTraderV3Strategy : Strategy
 				if (triggerDiff > 0m && candle.HighPrice >= triggerPrice && currentStop < targetStop)
 					_stopPrice = targetStop;
 			}
-
-			if (_stopPrice is decimal stop && candle.LowPrice <= stop)
-			{
-				SellMarket();
-				ResetPositionState();
-				return;
-			}
-
-			if (_takeProfitPrice is decimal target && candle.HighPrice >= target)
-			{
-				SellMarket();
-				ResetPositionState();
-				return;
-			}
 		}
 		else if (Position < 0m)
 		{
+			if (_stopPrice is decimal stop && candle.HighPrice >= stop)
+			{
+				_protectiveExitOrder = BuyMarket(Math.Abs(Position));
+				return true;
+			}
+
+			if (_takeProfitPrice is decimal target && candle.LowPrice <= target)
+			{
+				_protectiveExitOrder = BuyMarket(Math.Abs(Position));
+				return true;
+			}
+
 			if (UseBreakEven && _entryPrice is decimal entry && _stopPrice is decimal currentStop)
 			{
 				var triggerPrice = entry - triggerDiff;
@@ -701,25 +730,9 @@ public class SelfOptimizingRsiOrMfiTraderV3Strategy : Strategy
 				if (triggerDiff > 0m && candle.LowPrice <= triggerPrice && currentStop > targetStop)
 					_stopPrice = targetStop;
 			}
-
-			if (_stopPrice is decimal stop && candle.HighPrice >= stop)
-			{
-				BuyMarket();
-				ResetPositionState();
-				return;
-			}
-
-			if (_takeProfitPrice is decimal target && candle.LowPrice <= target)
-			{
-				BuyMarket();
-				ResetPositionState();
-				return;
-			}
 		}
-		else
-		{
-			ResetPositionState();
-		}
+
+		return false;
 	}
 
 	private void ResetPositionState()
@@ -727,5 +740,23 @@ public class SelfOptimizingRsiOrMfiTraderV3Strategy : Strategy
 		_entryPrice = null;
 		_stopPrice = null;
 		_takeProfitPrice = null;
+	}
+
+	internal enum ProtectiveExitAction
+	{
+		Reset,
+		Wait,
+		Evaluate,
+	}
+
+	internal static ProtectiveExitAction ResolveProtectiveExitAction(decimal position, OrderStates? exitOrderState)
+	{
+		if (position == 0m)
+			return ProtectiveExitAction.Reset;
+
+		if (exitOrderState.HasValue && exitOrderState.Value is not (OrderStates.Done or OrderStates.Failed))
+			return ProtectiveExitAction.Wait;
+
+		return ProtectiveExitAction.Evaluate;
 	}
 }

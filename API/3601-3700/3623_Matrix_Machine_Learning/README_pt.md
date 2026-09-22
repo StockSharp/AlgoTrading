@@ -4,7 +4,7 @@
 ## Visão geral
 Matrix Machine Learning é uma abordagem baseada em redes neurais publicada originalmente para MetaTrader 5 dentro do projeto educacional "MQL5Book". O script especialista coleta uma janela de preços de ticks, converte diferenças de preços consecutivas em uma sequência binária e treina uma rede neural recorrente Hopfield. A rede treinada é avaliada em um segmento dentro da amostra, validada em um segmento fora da amostra e finalmente usada para inferir a direção dos próximos movimentos. As posições são abertas quando o primeiro elemento do vetor binário previsto mostra uma direção de alta (`+1`) ou de baixa (`-1`).
 
-Esta versão C# transporta a lógica original para o StockSharp API de alto nível e substitui o processamento de ticks por velas finalizadas para garantir um comportamento estável entre plataformas. Cada fechamento de vela atualiza o padrão de preço binário, treina novamente a rede Hopfield, avalia a precisão histórica e produz uma previsão online para as próximas etapas.
+As implementações C# e Python transportam a lógica original para o StockSharp API de alto nível e substituem o processamento de ticks por velas finalizadas para garantir um comportamento estável entre plataformas. Cada fechamento de vela atualiza o padrão de preço binário, treina novamente a rede Hopfield, avalia a precisão histórica e produz uma previsão online para as próximas etapas.
 
 ## Detalhes do algoritmo
 1. Colete os últimos `HistoryDepth` fechamentos de velas. Os pontos `ForwardDepth` mais recentes formam o conjunto fora da amostra, enquanto os valores restantes criam o segmento de treinamento.

@@ -1,4 +1,5 @@
 # Стратегия Cronex AC
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия Cronex AC переносит классического советника Cronex Acceleration/Deceleration (AC) на высокоуровневый API StockSharp. Она сглаживает осциллятор Accelerator (AC) двумя последовательными скользящими средними и реагирует на пересечение быстрой и медленной линий. Бычье пересечение открывает длинную позицию и закрывает короткую, медвежье — наоборот.
 

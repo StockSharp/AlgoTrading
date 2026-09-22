@@ -1,5 +1,5 @@
 # Стратегия Cronex DeMarker
-[English](README.md) | [中文](README_zh.md)
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Стратегия Cronex DeMarker** переносит на StockSharp классического советника Cronex. Она использует осциллятор DeMarker и два последовательных простых скользящих средних. Быстрая средняя сглаживает значения DeMarker, а медленная повторно сглаживает результат, формируя сигнальную линию. Взаимное расположение линий позволяет находить точки разворота и открывать сделки против текущего импульса.
 

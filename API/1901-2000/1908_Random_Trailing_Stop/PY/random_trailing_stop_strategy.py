@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan, Math
+from System import TimeSpan, Math, Random
 from StockSharp.Messages import DataType, CandleStates, Sides
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
@@ -26,10 +26,13 @@ class random_trailing_stop_strategy(Strategy):
         self._sma_period = self.Param("SmaPeriod", 50) \
             .SetGreaterThanZero() \
             .SetDisplay("SMA Period", "Simple moving average period", "Indicators")
+        self._random_seed = self.Param("RandomSeed", 42) \
+            .SetDisplay("Random Seed", "Seed for reproducible entry directions", "General")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Candle type", "General")
         self._bars_since_last_trade = 0
         self._stop_price = None
+        self._random = None
 
     @property
     def min_stop_level(self):
@@ -44,6 +47,9 @@ class random_trailing_stop_strategy(Strategy):
     def sma_period(self):
         return self._sma_period.Value
     @property
+    def random_seed(self):
+        return self._random_seed.Value
+    @property
     def candle_type(self):
         return self._candle_type.Value
 
@@ -51,9 +57,11 @@ class random_trailing_stop_strategy(Strategy):
         super(random_trailing_stop_strategy, self).OnReseted()
         self._bars_since_last_trade = 0
         self._stop_price = None
+        self._random = None
 
     def OnStarted2(self, time):
         super(random_trailing_stop_strategy, self).OnStarted2(time)
+        self._random = Random(int(self.random_seed))
         sma = SimpleMovingAverage()
         sma.Length = self.sma_period
         subscription = self.SubscribeCandles(self.candle_type)
@@ -89,23 +97,38 @@ class random_trailing_stop_strategy(Strategy):
             else:
                 self._stop_price = close + stop_dist
             return
-        if self.Position > 0:
-            new_stop = close - stop_dist
-            if new_stop - self._stop_price >= trail_dist:
-                self._stop_price = new_stop
-            if float(candle.LowPrice) <= self._stop_price:
+        is_long = self.Position > 0
+        stop_hit, next_stop = self._evaluate_trailing_stop(
+            is_long,
+            self._stop_price,
+            close,
+            float(candle.LowPrice),
+            float(candle.HighPrice),
+            stop_dist,
+            trail_dist)
+        if stop_hit:
+            if is_long:
                 self.SellMarket()
-                self._bars_since_last_trade = 0
-        elif self.Position < 0:
-            new_stop = close + stop_dist
-            if self._stop_price - new_stop >= trail_dist:
-                self._stop_price = new_stop
-            if float(candle.HighPrice) >= self._stop_price:
+            else:
                 self.BuyMarket()
-                self._bars_since_last_trade = 0
+            self._bars_since_last_trade = 0
+            return
+        self._stop_price = next_stop
+
+    @staticmethod
+    def _evaluate_trailing_stop(is_long, current_stop, close, low, high, stop_distance, trailing_distance):
+        # A level derived from this candle becomes active on the next candle.
+        stop_hit = low <= current_stop if is_long else high >= current_stop
+        if stop_hit:
+            return True, current_stop
+        candidate = close - stop_distance if is_long else close + stop_distance
+        improvement = candidate - current_stop if is_long else current_stop - candidate
+        return False, candidate if improvement >= trailing_distance else current_stop
 
     def _get_random_side(self, candle, sma_value):
-        rnd = int(abs(candle.OpenTime.Ticks)) % 5
+        if self._random is None:
+            self._random = Random(int(self.random_seed))
+        rnd = self._random.Next(5)
         if float(candle.ClosePrice) > sma_value:
             return Sides.Sell if rnd == 0 else Sides.Buy
         else:

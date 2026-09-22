@@ -64,26 +64,27 @@ public class CryptoAnalysisStrategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished) return;
 		if (!_fast.IsFormed || !_slow.IsFormed) { _prevFast = fastValue; _prevSlow = slowValue; return; }
-		if (_cooldown > 0) { _cooldown--; _prevFast = fastValue; _prevSlow = slowValue; return; }
 
 		var close = candle.ClosePrice;
 		var step = Security?.PriceStep ?? 1m;
 
 		if (Position > 0 && _entryPrice > 0)
 		{
-			if (StopLossPoints > 0 && close <= _entryPrice - StopLossPoints * step) { SellMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
-			if (TakeProfitPoints > 0 && close >= _entryPrice + TakeProfitPoints * step) { SellMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+			if (StopLossPoints > 0 && close <= _entryPrice - StopLossPoints * step) { SellMarket(Math.Abs(Position)); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+			if (TakeProfitPoints > 0 && close >= _entryPrice + TakeProfitPoints * step) { SellMarket(Math.Abs(Position)); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
 		}
 		else if (Position < 0 && _entryPrice > 0)
 		{
-			if (StopLossPoints > 0 && close >= _entryPrice + StopLossPoints * step) { BuyMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
-			if (TakeProfitPoints > 0 && close <= _entryPrice - TakeProfitPoints * step) { BuyMarket(); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+			if (StopLossPoints > 0 && close >= _entryPrice + StopLossPoints * step) { BuyMarket(Math.Abs(Position)); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
+			if (TakeProfitPoints > 0 && close <= _entryPrice - TakeProfitPoints * step) { BuyMarket(Math.Abs(Position)); _entryPrice = 0; _cooldown = 100; _prevFast = fastValue; _prevSlow = slowValue; return; }
 		}
 
+		if (_cooldown > 0) { _cooldown--; _prevFast = fastValue; _prevSlow = slowValue; return; }
+
 		if (_prevFast <= _prevSlow && fastValue > slowValue && Position <= 0)
-		{ if (Position < 0) BuyMarket(); BuyMarket(); _entryPrice = close; _cooldown = 100; }
+		{ if (Position < 0) BuyMarket(Math.Abs(Position)); BuyMarket(); _entryPrice = close; _cooldown = 100; }
 		else if (_prevFast >= _prevSlow && fastValue < slowValue && Position >= 0)
-		{ if (Position > 0) SellMarket(); SellMarket(); _entryPrice = close; _cooldown = 100; }
+		{ if (Position > 0) SellMarket(Math.Abs(Position)); SellMarket(); _entryPrice = close; _cooldown = 100; }
 
 		_prevFast = fastValue; _prevSlow = slowValue;
 	}

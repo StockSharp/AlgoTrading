@@ -196,40 +196,50 @@ public class SoccerClubsArbitrageStrategy : Strategy
 		var premium = _priceA / _priceB - 1m;
 
 		var primaryPos = GetPositionValue(Security, Portfolio) ?? 0m;
+		var secondPos = GetPositionValue(_secondSecurity, Portfolio) ?? 0m;
 
 		// Exit when premium shrinks below exit threshold
-		if (Math.Abs(premium) < ExitThreshold && primaryPos != 0)
+		if (Math.Abs(premium) < ExitThreshold && (primaryPos != 0 || secondPos != 0))
 		{
-			Flatten(primaryPos);
+			Flatten(primaryPos, Security);
+			Flatten(secondPos, _secondSecurity);
 			_cooldownRemaining = CooldownBars;
 			return;
 		}
 
 		// A is overpriced relative to B -> short A, long B
-		if (premium > EntryThreshold && primaryPos >= 0)
+		if (premium > EntryThreshold && !(primaryPos < 0 && secondPos > 0))
 		{
-			if (primaryPos > 0)
-				Flatten(primaryPos);
+			if (primaryPos != 0 || secondPos != 0)
+			{
+				Flatten(primaryPos, Security);
+				Flatten(secondPos, _secondSecurity);
+			}
 
-			SellMarket(Volume);
+			SellMarket(Volume, Security);
+			BuyMarket(Volume, _secondSecurity);
 			_cooldownRemaining = CooldownBars;
 		}
 		// B is overpriced relative to A -> long A, short B
-		else if (premium < -EntryThreshold && primaryPos <= 0)
+		else if (premium < -EntryThreshold && !(primaryPos > 0 && secondPos < 0))
 		{
-			if (primaryPos < 0)
-				Flatten(primaryPos);
+			if (primaryPos != 0 || secondPos != 0)
+			{
+				Flatten(primaryPos, Security);
+				Flatten(secondPos, _secondSecurity);
+			}
 
-			BuyMarket(Volume);
+			BuyMarket(Volume, Security);
+			SellMarket(Volume, _secondSecurity);
 			_cooldownRemaining = CooldownBars;
 		}
 	}
 
-	private void Flatten(decimal primaryPos)
+	private void Flatten(decimal position, Security security)
 	{
-		if (primaryPos > 0)
-			SellMarket(primaryPos);
-		else if (primaryPos < 0)
-			BuyMarket(Math.Abs(primaryPos));
+		if (position > 0)
+			SellMarket(position, security);
+		else if (position < 0)
+			BuyMarket(Math.Abs(position), security);
 	}
 }

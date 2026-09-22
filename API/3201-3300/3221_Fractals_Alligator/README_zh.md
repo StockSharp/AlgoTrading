@@ -1,5 +1,5 @@
 # 分形与鳄鱼策略
-[English](README.md) | [Русский](README_ru.md)
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略移植自 MetaTrader “Fractals & Alligator” 专家顾问，通过比尔·威廉姆斯鳄鱼线的同向张口、最新分形突破、动量阈值以及 ATR/固定箱体区间过滤器来产生交易信号。
 

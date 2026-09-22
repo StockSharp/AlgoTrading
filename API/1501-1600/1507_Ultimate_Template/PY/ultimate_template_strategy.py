@@ -6,7 +6,7 @@ clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import ExponentialMovingAverage, RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
 
@@ -15,12 +15,16 @@ class ultimate_template_strategy(Strategy):
     def __init__(self):
         super(ultimate_template_strategy, self).__init__()
         self._fast_length = self.Param("FastLength", 9) \
+            .SetGreaterThanZero() \
             .SetDisplay("Fast MA Length", "Period of the fast moving average", "General")
         self._slow_length = self.Param("SlowLength", 21) \
+            .SetGreaterThanZero() \
             .SetDisplay("Slow MA Length", "Period of the slow moving average", "General")
-        self._stop_loss_percent = self.Param("StopLossPercent", 1) \
+        self._stop_loss_percent = self.Param("StopLossPercent", 1.0) \
+            .SetGreaterThanZero() \
             .SetDisplay("Stop Loss %", "Percentage stop loss", "Risk")
-        self._take_profit_percent = self.Param("TakeProfitPercent", TimeSpan.FromMinutes(5)) \
+        self._take_profit_percent = self.Param("TakeProfitPercent", 3.0) \
+            .SetGreaterThanZero() \
             .SetDisplay("Take Profit %", "Percentage take profit", "Risk")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Timeframe for analysis", "General")
@@ -58,12 +62,15 @@ class ultimate_template_strategy(Strategy):
 
     def OnStarted2(self, time):
         super(ultimate_template_strategy, self).OnStarted2(time)
+        self.StartProtection(
+            Unit(self.take_profit_percent, UnitTypes.Percent),
+            Unit(self.stop_loss_percent, UnitTypes.Percent))
         rsi = RelativeStrengthIndex()
         rsi.Length = 14
         ema_fast = ExponentialMovingAverage()
-        ema_fast.Length = 8
+        ema_fast.Length = self.fast_length
         ema_slow = ExponentialMovingAverage()
-        ema_slow.Length = 21
+        ema_slow.Length = self.slow_length
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.Bind(rsi, ema_fast, ema_slow, self.on_process).Start()
         area = self.CreateChartArea()
@@ -84,23 +91,31 @@ class ultimate_template_strategy(Strategy):
             self._prev_fast = ema_fast
             self._prev_slow = ema_slow
             return
-        if self._cooldown > 0:
-            self._cooldown -= 1
-            self._prev_rsi = rsi_val
-            self._prev_fast = ema_fast
-            self._prev_slow = ema_slow
-            return
         hist = ema_fast - ema_slow
         hist_up = hist > 0
         hist_down = hist < 0
         rsi_cross_up = self._prev_rsi <= 50 and rsi_val > 50
         rsi_cross_down = self._prev_rsi >= 50 and rsi_val < 50
         if self.Position > 0 and rsi_cross_down:
-            self.SellMarket()
+            self.SellMarket(abs(self.Position))
             self._cooldown = 80
+            self._prev_rsi = rsi_val
+            self._prev_fast = ema_fast
+            self._prev_slow = ema_slow
+            return
         elif self.Position < 0 and rsi_cross_up:
-            self.BuyMarket()
+            self.BuyMarket(abs(self.Position))
             self._cooldown = 80
+            self._prev_rsi = rsi_val
+            self._prev_fast = ema_fast
+            self._prev_slow = ema_slow
+            return
+        if self._cooldown > 0:
+            self._cooldown -= 1
+            self._prev_rsi = rsi_val
+            self._prev_fast = ema_fast
+            self._prev_slow = ema_slow
+            return
         if self.Position == 0:
             if rsi_cross_up and hist_up:
                 self.BuyMarket()

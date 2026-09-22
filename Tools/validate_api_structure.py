@@ -26,6 +26,8 @@ REQUIRED_READMES = (
 
 STRATEGY_NAME = re.compile(r"^\d{4}_.+")
 RANGE_NAME = re.compile(r"^\d{4}-\d{4}$")
+LANGUAGE_LINK = re.compile(r"\]\((README(?:_[a-z]{2})?\.md)\)")
+
 STALE_PYTHON_CLAIM = re.compile(
     r"(?:"
     r"\b(?:no|not|without|omit(?:ted|s|ting)?|absent|missing|unavailable|"
@@ -39,7 +41,7 @@ STALE_PYTHON_CLAIM = re.compile(
     re.IGNORECASE,
 )
 
-CACHE_VERSION = 1
+CACHE_VERSION = 2
 CACHE_SIGNATURE = (
     f"{CACHE_VERSION}:{STALE_PYTHON_CLAIM.flags}:{STALE_PYTHON_CLAIM.pattern}"
 )
@@ -102,29 +104,51 @@ def find_stale_python_claims(text: str) -> list[tuple[int, str]]:
     return claims
 
 
+def find_language_bar_issues(readme_relative: str, text: str) -> list[str]:
+    """Every translation carries a bar linking to the other six; nothing kept it honest."""
+    expected = set(REQUIRED_READMES) - {readme_relative.rsplit("/", 1)[1]}
+    linked = set(LANGUAGE_LINK.findall(text))
+
+    found: list[str] = []
+    missing = sorted(expected - linked)
+    unknown = sorted(linked - set(REQUIRED_READMES))
+
+    if missing:
+        found.append(f"{readme_relative}: does not link to {', '.join(missing)}")
+
+    if unknown:
+        found.append(
+            f"{readme_relative}: links to unknown translation {', '.join(unknown)}"
+        )
+
+    return found
+
+
 def validate_readme_encoding(
     api_root: Path, readme_relative: str
-) -> tuple[str, list[tuple[int, str]], str | None]:
+) -> tuple[str, list[tuple[int, str]], list[str]]:
     try:
         text = (api_root / Path(readme_relative)).read_text(encoding="utf-8-sig")
     except UnicodeDecodeError as error:
         return (
             readme_relative,
             [],
-            f"{readme_relative}: invalid UTF-8 at byte {error.start}",
+            [f"{readme_relative}: invalid UTF-8 at byte {error.start}"],
         )
 
-    issue = None
+    found: list[str] = []
 
     if "\ufffd" in text:
-        issue = f"{readme_relative}: contains the Unicode replacement character"
+        found.append(f"{readme_relative}: contains the Unicode replacement character")
+
+    found.extend(find_language_bar_issues(readme_relative, text))
 
     stale_claims = (
         find_stale_python_claims(text)
         if readme_relative.endswith("/README.md")
         else []
     )
-    return readme_relative, stale_claims, issue
+    return readme_relative, stale_claims, found
 
 
 def get_git_cache_context(
@@ -239,14 +263,14 @@ def load_readme_cache(cache_path: Path | None) -> dict[str, dict[str, object]]:
 
 def read_cached_result(
     readme_relative: str, entry: object
-) -> tuple[str, list[tuple[int, str]], str | None] | None:
+) -> tuple[str, list[tuple[int, str]], list[str]] | None:
     if not isinstance(entry, dict):
         return None
 
-    issue = entry.get("issue")
+    found = entry.get("issues")
     raw_claims = entry.get("stale_claims")
 
-    if issue is not None and not isinstance(issue, str):
+    if not isinstance(found, list) or any(not isinstance(i, str) for i in found):
         return None
 
     if not isinstance(raw_claims, list):
@@ -265,7 +289,7 @@ def read_cached_result(
 
         claims.append((raw_claim[0], raw_claim[1]))
 
-    return readme_relative, claims, issue
+    return readme_relative, claims, found
 
 
 def save_readme_cache(
@@ -417,8 +441,8 @@ def main() -> int:
             readmes_to_read,
         )
 
-        for readme_relative, stale_claims, encoding_issue in results:
-            result = (readme_relative, stale_claims, encoding_issue)
+        for readme_relative, stale_claims, readme_issues in results:
+            result = (readme_relative, stale_claims, readme_issues)
             results_by_readme[readme_relative] = result
 
             blob_id = blob_ids.get(readme_relative)
@@ -427,7 +451,7 @@ def main() -> int:
                 cache_key = f"{readme_relative}:{blob_id}"
                 cache_entry = {
                     "stale_claims": stale_claims,
-                    "issue": encoding_issue,
+                    "issues": readme_issues,
                 }
                 retained_entries[cache_key] = cache_entry
                 cache_needs_save = (
@@ -442,10 +466,9 @@ def main() -> int:
     english_claims: dict[str, list[tuple[int, str]]] = {}
 
     for readme_relative in readmes_to_validate:
-        _, stale_claims, encoding_issue = results_by_readme[readme_relative]
+        _, stale_claims, readme_issues = results_by_readme[readme_relative]
 
-        if encoding_issue is not None:
-            issues.append(encoding_issue)
+        issues.extend(readme_issues)
 
         if readme_relative.endswith("/README.md"):
             english_claims[readme_relative.rsplit("/", 1)[0]] = stale_claims

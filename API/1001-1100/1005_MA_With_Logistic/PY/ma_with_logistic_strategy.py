@@ -6,7 +6,7 @@ clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 
@@ -17,8 +17,10 @@ class ma_with_logistic_strategy(Strategy):
 
     def __init__(self):
         super(ma_with_logistic_strategy, self).__init__()
-        self._fast_length = self.Param("FastLength", 12).SetDisplay("Fast MA", "Fast MA period", "Indicators")
-        self._slow_length = self.Param("SlowLength", 25).SetDisplay("Slow MA", "Slow MA period", "Indicators")
+        self._fast_length = self.Param("FastLength", 12).SetGreaterThanZero().SetDisplay("Fast MA", "Fast MA period", "Indicators")
+        self._slow_length = self.Param("SlowLength", 25).SetGreaterThanZero().SetDisplay("Slow MA", "Slow MA period", "Indicators")
+        self._take_profit_percent = self.Param("TakeProfitPercent", 8.0).SetGreaterThanZero().SetDisplay("TP %", "Take profit percent", "Risk")
+        self._stop_loss_percent = self.Param("StopLossPercent", 5.0).SetGreaterThanZero().SetDisplay("SL %", "Stop loss percent", "Risk")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(20))).SetDisplay("Candle Type", "Candles", "General")
 
         self._prev_fast = 0.0
@@ -39,6 +41,9 @@ class ma_with_logistic_strategy(Strategy):
 
     def OnStarted2(self, time):
         super(ma_with_logistic_strategy, self).OnStarted2(time)
+        self.StartProtection(
+            Unit(self._take_profit_percent.Value, UnitTypes.Percent),
+            Unit(self._stop_loss_percent.Value, UnitTypes.Percent))
         self._fast_ma = ExponentialMovingAverage()
         self._fast_ma.Length = self._fast_length.Value
         self._slow_ma = ExponentialMovingAverage()
@@ -72,14 +77,10 @@ class ma_with_logistic_strategy(Strategy):
         cross_up = self._prev_fast <= self._prev_slow and fast > slow
         cross_down = self._prev_fast >= self._prev_slow and fast < slow
         if cross_up and self.Position <= 0:
-            if self.Position < 0:
-                self.BuyMarket()
-            self.BuyMarket()
+            self.BuyMarket(self.Volume + abs(self.Position))
             self._cooldown = 5
         elif cross_down and self.Position >= 0:
-            if self.Position > 0:
-                self.SellMarket()
-            self.SellMarket()
+            self.SellMarket(self.Volume + abs(self.Position))
             self._cooldown = 5
         self._prev_fast = fast
         self._prev_slow = slow

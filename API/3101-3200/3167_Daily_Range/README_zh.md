@@ -1,4 +1,5 @@
 # Daily Range 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 该策略是 MetaTrader 5 专家顾问 `MQL/23334/Daily range.mq5` 的 StockSharp 移植版本。原始 EA 通过统计最近几天的最高价和最低价，根据每日波动区间设置偏移量并交易突破。本 C# 实现保留了核心思想，同时利用 StockSharp 的高级策略 API。

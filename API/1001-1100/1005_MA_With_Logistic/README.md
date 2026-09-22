@@ -1,26 +1,21 @@
 # MA With Logistic
 [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-MA With Logistic is a moving average strategy that uses a fast and slow moving average for entries and supports percent or logistic-based exits.
+Despite its legacy name, this implementation is an EMA crossover strategy; it does not calculate a logistic model. Finished-candle crossovers open or reverse the position, and percentage take-profit and stop-loss protection is measured from execution prices.
 
 ## Details
 - **Data**: Price candles.
 - **Entry Criteria**:
-  - **Long**: Close > fast MA and fast MA > slow MA.
-  - **Short**: Close < fast MA and fast MA < slow MA.
-- **Exit Criteria**: Percentage targets or logistic probability thresholds.
-- **Stops**: Percentage-based or logistic probability exits.
+  - **Long**: the fast EMA crosses above the slow EMA.
+  - **Short**: the fast EMA crosses below the slow EMA.
+- **Exit Criteria**: `TakeProfitPercent` or `StopLossPercent` is reached; an opposite crossover reverses the position.
+- **Cooldown**: five finished candles after each crossover order.
 - **Default Values**:
-  - `FastLength` = 9
-  - `SlowLength` = 21
-  - `MaType` = MaTypeEnum.EMA
-  - `ExitType` = ExitTypeEnum.Percent
-  - `TakeProfitPercent` = 20
+  - `FastLength` = 12
+  - `SlowLength` = 25
+  - `TakeProfitPercent` = 8
   - `StopLossPercent` = 5
-  - `LogisticSlope` = 10
-  - `LogisticMidpoint` = 0
-  - `TakeProfitProbability` = 0.8
-  - `StopLossProbability` = 0.2
+  - `CandleType` = 20 minutes
 - **Filters**:
   - Category: Trend following
   - Direction: Long & Short

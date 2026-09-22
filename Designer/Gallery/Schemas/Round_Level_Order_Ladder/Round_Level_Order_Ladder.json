@@ -1398,7 +1398,7 @@
                     "Value": true
                   },
                   "ShrinkPrice": {
-                    "Value": true
+                    "Value": false
                   },
                   "ZeroAsMarket": {
                     "Value": false
@@ -1435,7 +1435,7 @@
                     "Value": true
                   },
                   "ShrinkPrice": {
-                    "Value": true
+                    "Value": false
                   },
                   "ZeroAsMarket": {
                     "Value": false

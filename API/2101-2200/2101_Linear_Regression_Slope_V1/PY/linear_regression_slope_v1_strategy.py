@@ -7,7 +7,7 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import LinearReg
+from StockSharp.Algo.Indicators import LinearRegSlope
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -53,7 +53,7 @@ class linear_regression_slope_v1_strategy(Strategy):
         max_len = int(self.trigger_shift) + 3
         self._slope_history = [0.0] * max_len
         self._filled = 0
-        slope = LinearReg()
+        slope = LinearRegSlope()
         slope.Length = self.length
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.Bind(slope, self.process_candle).Start()

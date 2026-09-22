@@ -40,13 +40,10 @@ public class TenPipsOppositeLastNHourTrendStrategy : Strategy
 	private readonly List<int> _tradingDayHours;
 	private readonly List<decimal> _closedTradeProfits = new();
 	private readonly List<decimal> _closeHistory = new();
+	private readonly TenPipsTradeEpisode _episode = new();
 
 	private decimal _pipSize;
-	private DateTimeOffset? _lastBarTraded;
-	private Sides? _entrySide;
-	private decimal _entryVolume;
-	private decimal? _entryPrice;
-	private DateTimeOffset? _entryTime;
+	private DateTime? _lastTradeDate;
 	private decimal? _trailingStopPrice;
 
 	/// <summary>
@@ -283,11 +280,8 @@ public class TenPipsOppositeLastNHourTrendStrategy : Strategy
 
 		_closedTradeProfits.Clear();
 		_closeHistory.Clear();
-		_lastBarTraded = null;
-		_entrySide = null;
-		_entryVolume = 0m;
-		_entryPrice = null;
-		_entryTime = null;
+		_episode.Reset();
+		_lastTradeDate = null;
 		_trailingStopPrice = null;
 		_pipSize = 0m;
 	}
@@ -339,7 +333,7 @@ public class TenPipsOppositeLastNHourTrendStrategy : Strategy
 		if (!HasTrendSample())
 		return;
 
-		if (!CanOpenOnBar(candle.OpenTime))
+		if (!CanOpenOnDay(candle.CloseTime))
 		return;
 
 		if (Position != 0)
@@ -364,7 +358,7 @@ public class TenPipsOppositeLastNHourTrendStrategy : Strategy
 			SellMarket(volume);
 		}
 
-		_lastBarTraded = candle.OpenTime;
+		_lastTradeDate = candle.CloseTime.Date;
 	}
 
 	/// <inheritdoc />
@@ -382,79 +376,46 @@ public class TenPipsOppositeLastNHourTrendStrategy : Strategy
 		if (volume <= 0m || price <= 0m)
 		return;
 
-		if (_entrySide == null || _entrySide == trade.Order.Side)
+		if (!_episode.IsOpen || _episode.Side == trade.Order.Side)
 		{
 			RegisterEntryTrade(price, volume, trade.Order.Side, time);
 		}
 		else
 		{
-			RegisterExitTrade(price, volume, time);
+			RegisterExitTrade(price, volume);
 		}
 	}
 
 	private void RegisterEntryTrade(decimal price, decimal volume, Sides side, DateTimeOffset time)
 	{
-		// Weighted-average entry price for pyramided fills.
-		var totalVolume = _entryVolume + volume;
-		if (totalVolume <= 0m)
-		{
-			_entryVolume = 0m;
-			_entryPrice = null;
-			_entrySide = null;
-			_entryTime = null;
-			_trailingStopPrice = null;
-			return;
-		}
-
-		_entryPrice = _entryVolume > 0m && _entryPrice.HasValue
-		? ((_entryPrice.Value * _entryVolume) + (price * volume)) / totalVolume
-		: price;
-
-		_entryVolume = totalVolume;
-		_entrySide = side;
-		_entryTime ??= time;
+		_episode.RegisterEntry(price, volume, side, time);
 
 		var trailingDistance = GetTrailingDistance();
 		if (TrailingStopPips > 0m && trailingDistance > 0m)
 		{
-			_trailingStopPrice = side == Sides.Buy
-			? _entryPrice - trailingDistance
-			: _entryPrice + trailingDistance;
+			_trailingStopPrice = _episode.Side == Sides.Buy
+			? _episode.EntryPrice - trailingDistance
+			: _episode.EntryPrice + trailingDistance;
 		}
 	}
 
-	private void RegisterExitTrade(decimal price, decimal volume, DateTimeOffset time)
+	private void RegisterExitTrade(decimal price, decimal volume)
 	{
-		if (_entrySide == null || !_entryPrice.HasValue || _entryVolume <= 0m)
-		return;
-
-		var remaining = _entryVolume - volume;
-		if (remaining < 0m)
-		remaining = 0m;
-
-		decimal profit = 0m;
-		if (_entrySide == Sides.Buy)
-		profit = (price - _entryPrice.Value) * volume;
-		else if (_entrySide == Sides.Sell)
-		profit = (_entryPrice.Value - price) * volume;
-
-		AddClosedTradeProfit(profit);
-
-		if (remaining == 0m)
+		var closedProfit = _episode.RegisterExit(price, volume);
+		if (closedProfit.HasValue)
 		{
-			ResetEntryState();
-		}
-		else
-		{
-			_entryVolume = remaining;
-			_entryTime = time;
+			AddClosedTradeProfit(closedProfit.Value);
+			_trailingStopPrice = null;
 		}
 	}
 
 	private bool UpdateProtectiveLogic(ICandleMessage candle)
 	{
-		if (_entrySide == null || !_entryPrice.HasValue || _entryVolume <= 0m)
+		if (!_episode.IsOpen)
 		return false;
+
+		var entrySide = _episode.Side.Value;
+		var entryPrice = _episode.EntryPrice.Value;
 
 		var pip = EnsurePipSize();
 		if (pip <= 0m)
@@ -464,15 +425,15 @@ public class TenPipsOppositeLastNHourTrendStrategy : Strategy
 		var takeProfit = TakeProfitPips * pip;
 		var trailingDistance = TrailingStopPips * pip;
 
-		if (_entrySide == Sides.Buy)
+		if (entrySide == Sides.Buy)
 		{
-			if (StopLossPips > 0m && candle.LowPrice <= _entryPrice.Value - stopLoss)
+			if (StopLossPips > 0m && candle.LowPrice <= entryPrice - stopLoss)
 			{
 				SellMarket(Math.Abs(Position));
 				return true;
 			}
 
-			if (TakeProfitPips > 0m && candle.HighPrice >= _entryPrice.Value + takeProfit)
+			if (TakeProfitPips > 0m && candle.HighPrice >= entryPrice + takeProfit)
 			{
 				SellMarket(Math.Abs(Position));
 				return true;
@@ -480,26 +441,27 @@ public class TenPipsOppositeLastNHourTrendStrategy : Strategy
 
 			if (TrailingStopPips > 0m && trailingDistance > 0m)
 			{
-				var candidate = candle.HighPrice - trailingDistance;
-				if (candidate > (_trailingStopPrice ?? decimal.MinValue) && candle.HighPrice - _entryPrice.Value > trailingDistance)
-				_trailingStopPrice = candidate;
-
+				// The candidate derived below becomes active on the next candle.
 				if (_trailingStopPrice.HasValue && candle.LowPrice <= _trailingStopPrice.Value)
 				{
 					SellMarket(Math.Abs(Position));
 					return true;
 				}
+
+				var candidate = candle.HighPrice - trailingDistance;
+				if (candidate > (_trailingStopPrice ?? decimal.MinValue) && candle.HighPrice - entryPrice > trailingDistance)
+					_trailingStopPrice = candidate;
 			}
 		}
-		else if (_entrySide == Sides.Sell)
+		else if (entrySide == Sides.Sell)
 		{
-			if (StopLossPips > 0m && candle.HighPrice >= _entryPrice.Value + stopLoss)
+			if (StopLossPips > 0m && candle.HighPrice >= entryPrice + stopLoss)
 			{
 				BuyMarket(Math.Abs(Position));
 				return true;
 			}
 
-			if (TakeProfitPips > 0m && candle.LowPrice <= _entryPrice.Value - takeProfit)
+			if (TakeProfitPips > 0m && candle.LowPrice <= entryPrice - takeProfit)
 			{
 				BuyMarket(Math.Abs(Position));
 				return true;
@@ -507,15 +469,16 @@ public class TenPipsOppositeLastNHourTrendStrategy : Strategy
 
 			if (TrailingStopPips > 0m && trailingDistance > 0m)
 			{
-				var candidate = candle.LowPrice + trailingDistance;
-				if (!_trailingStopPrice.HasValue || candidate < _trailingStopPrice.Value)
-				_trailingStopPrice = candidate;
-
+				// The candidate derived below becomes active on the next candle.
 				if (_trailingStopPrice.HasValue && candle.HighPrice >= _trailingStopPrice.Value)
 				{
 					BuyMarket(Math.Abs(Position));
 					return true;
 				}
+
+				var candidate = candle.LowPrice + trailingDistance;
+				if (!_trailingStopPrice.HasValue || candidate < _trailingStopPrice.Value)
+					_trailingStopPrice = candidate;
 			}
 		}
 
@@ -524,10 +487,11 @@ public class TenPipsOppositeLastNHourTrendStrategy : Strategy
 
 	private bool CloseExpiredPosition(DateTimeOffset time)
 	{
-		if (OrderMaxAge <= TimeSpan.Zero || _entryTime == null)
+		var entryTime = _episode.EntryTime;
+		if (OrderMaxAge <= TimeSpan.Zero || !entryTime.HasValue)
 		return false;
 
-		if (time - _entryTime < OrderMaxAge)
+		if (time - entryTime.Value < OrderMaxAge)
 		return false;
 
 		if (Position > 0)
@@ -556,9 +520,9 @@ public class TenPipsOppositeLastNHourTrendStrategy : Strategy
 		return time.Hour == TradingHour;
 	}
 
-	private bool CanOpenOnBar(DateTimeOffset barOpenTime)
+	private bool CanOpenOnDay(DateTimeOffset tradingTime)
 	{
-		if (_lastBarTraded.HasValue && _lastBarTraded.Value == barOpenTime)
+		if (_lastTradeDate.HasValue && _lastTradeDate.Value == tradingTime.Date)
 		return false;
 
 		return true;
@@ -578,22 +542,25 @@ public class TenPipsOppositeLastNHourTrendStrategy : Strategy
 
 	private bool HasTrendSample()
 	{
-		return HoursToCheckTrend > 0 && _closeHistory.Count >= HoursToCheckTrend;
+		return HoursToCheckTrend > 0 && _closeHistory.Count > HoursToCheckTrend;
 	}
 
 	private int DetermineDirection()
+		=> DetermineDirection(_closeHistory, HoursToCheckTrend);
+
+	internal static int DetermineDirection(IReadOnlyList<decimal> closeHistory, int hoursToCheckTrend)
 	{
-		if (_closeHistory.Count == 0)
+		if (closeHistory == null || hoursToCheckTrend <= 0 || closeHistory.Count <= hoursToCheckTrend)
 		return 0;
 
-		var latestIndex = _closeHistory.Count - 1;
-		var recentClose = _closeHistory[latestIndex];
+		var latestIndex = closeHistory.Count - 1;
+		var recentClose = closeHistory[latestIndex];
 
-		var olderIndex = _closeHistory.Count - HoursToCheckTrend;
-		if (olderIndex < 0 || olderIndex >= _closeHistory.Count)
+		var olderIndex = latestIndex - hoursToCheckTrend;
+		if (olderIndex < 0 || olderIndex >= closeHistory.Count)
 		return 0;
 
-		var olderClose = _closeHistory[olderIndex];
+		var olderClose = closeHistory[olderIndex];
 
 		return olderClose > recentClose ? 1 : -1;
 	}
@@ -638,34 +605,32 @@ public class TenPipsOppositeLastNHourTrendStrategy : Strategy
 	}
 
 	private decimal ApplyLossMultipliers(decimal volume)
-	{
-		if (_closedTradeProfits.Count == 0)
-		return volume;
-
-		var multipliers = new[]
-		{
+		=> ApplyLossMultipliers(volume, _closedTradeProfits,
+		[
 			FirstMultiplier,
 			SecondMultiplier,
 			ThirdMultiplier,
 			FourthMultiplier,
 			FifthMultiplier,
-		};
+		]);
 
-		var count = _closedTradeProfits.Count;
-		for (var i = 0; i < multipliers.Length; i++)
+	internal static decimal ApplyLossMultipliers(decimal volume, IReadOnlyList<decimal> closedTradeProfits, IReadOnlyList<decimal> multipliers)
+	{
+		if (closedTradeProfits == null || multipliers == null || closedTradeProfits.Count == 0)
+		return volume;
+
+		var count = closedTradeProfits.Count;
+		for (var i = 0; i < multipliers.Count; i++)
 		{
 			if (count <= i)
 			break;
 
-			var profit = _closedTradeProfits[count - 1 - i];
+			var profit = closedTradeProfits[count - 1 - i];
 			if (profit < 0m)
 			{
 				volume *= multipliers[i];
 				break;
 			}
-
-			if (profit > 0m)
-			break;
 		}
 
 		return volume;
@@ -706,15 +671,6 @@ public class TenPipsOppositeLastNHourTrendStrategy : Strategy
 		_closedTradeProfits.RemoveAt(0);
 	}
 
-	private void ResetEntryState()
-	{
-		_entrySide = null;
-		_entryVolume = 0m;
-		_entryPrice = null;
-		_entryTime = null;
-		_trailingStopPrice = null;
-	}
-
 	private void InitializePipSize()
 	{
 		var security = Security;
@@ -752,4 +708,75 @@ public class TenPipsOppositeLastNHourTrendStrategy : Strategy
 	{
 		return Math.Round(value, 1, MidpointRounding.AwayFromZero);
 	}
+}
+
+internal sealed class TenPipsTradeEpisode : IEquatable<TenPipsTradeEpisode>
+{
+	public Sides? Side { get; private set; }
+	public decimal Volume { get; private set; }
+	public decimal? EntryPrice { get; private set; }
+	public DateTimeOffset? EntryTime { get; private set; }
+	public bool IsOpen => Side.HasValue && EntryPrice.HasValue && Volume > 0m;
+
+	private decimal _realizedProfit;
+
+	public void RegisterEntry(decimal price, decimal volume, Sides side, DateTimeOffset time)
+	{
+		if (price <= 0m)
+			throw new ArgumentOutOfRangeException(nameof(price));
+		if (volume <= 0m)
+			throw new ArgumentOutOfRangeException(nameof(volume));
+		if (IsOpen && Side != side)
+			throw new InvalidOperationException("An opposite fill must close the active trade episode.");
+
+		var totalVolume = Volume + volume;
+		EntryPrice = IsOpen
+			? ((EntryPrice.Value * Volume) + (price * volume)) / totalVolume
+			: price;
+		Volume = totalVolume;
+		Side = side;
+		EntryTime ??= time;
+	}
+
+	public decimal? RegisterExit(decimal price, decimal volume)
+	{
+		if (!IsOpen || price <= 0m || volume <= 0m)
+			return null;
+
+		var closedVolume = Math.Min(volume, Volume);
+		_realizedProfit += Side == Sides.Buy
+			? (price - EntryPrice.Value) * closedVolume
+			: (EntryPrice.Value - price) * closedVolume;
+		Volume -= closedVolume;
+
+		if (Volume > 0m)
+			return null;
+
+		var closedProfit = _realizedProfit;
+		Reset();
+		return closedProfit;
+	}
+
+	public void Reset()
+	{
+		Side = null;
+		Volume = 0m;
+		EntryPrice = null;
+		EntryTime = null;
+		_realizedProfit = 0m;
+	}
+
+	public bool Equals(TenPipsTradeEpisode other)
+		=> other != null
+		&& Side == other.Side
+		&& Volume == other.Volume
+		&& EntryPrice == other.EntryPrice
+		&& EntryTime == other.EntryTime
+		&& _realizedProfit == other._realizedProfit;
+
+	public override bool Equals(object obj)
+		=> Equals(obj as TenPipsTradeEpisode);
+
+	public override int GetHashCode()
+		=> HashCode.Combine(Side, Volume, EntryPrice, EntryTime, _realizedProfit);
 }

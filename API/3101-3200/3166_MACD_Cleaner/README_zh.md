@@ -1,4 +1,5 @@
 # MACD Cleaner 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## 概览
 **MACD Cleaner** 策略由 MetaTrader 5 的 "MACD Cleaner" 智能交易系统移植而来。策略在指定周期上仅分析收盘完成的 K 线，当 MACD 主线连续三个收盘柱单调上升或下降时触发交易信号。系统任何时刻只持有一个方向的仓位，当动量反转时立即反向。

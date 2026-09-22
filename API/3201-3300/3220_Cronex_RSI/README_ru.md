@@ -1,4 +1,5 @@
 # Стратегия Cronex RSI
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 **Стратегия Cronex RSI** переносит советник Exp_CronexRSI.mq5 на высокоуровневый API StockSharp. Базовый RSI проходит через две
 последовательные скользящие средние, что формирует «быструю» и «медленную» кривые. Торговые решения принимаются по их пересечению,

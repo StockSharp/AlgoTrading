@@ -46,9 +46,11 @@ public class UltimateTemplateStrategy : Strategy
 			.SetDisplay("Slow MA Length", "Period of the slow moving average", "General");
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 1m)
+			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Percentage stop loss", "Risk");
 
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 3m)
+			.SetGreaterThanZero()
 			.SetDisplay("Take Profit %", "Percentage take profit", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -76,9 +78,13 @@ public class UltimateTemplateStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
+		StartProtection(
+			takeProfit: new Unit(TakeProfitPercent, UnitTypes.Percent),
+			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent));
+
 		var rsi = new RelativeStrengthIndex { Length = 14 };
-		var emaFast = new ExponentialMovingAverage { Length = 8 };
-		var emaSlow = new ExponentialMovingAverage { Length = 21 };
+		var emaFast = new ExponentialMovingAverage { Length = FastLength };
+		var emaSlow = new ExponentialMovingAverage { Length = SlowLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(rsi, emaFast, emaSlow, ProcessCandle).Start();
@@ -106,15 +112,6 @@ public class UltimateTemplateStrategy : Strategy
 			return;
 		}
 
-		if (_cooldown > 0)
-		{
-			_cooldown--;
-			_prevRsi = rsiVal;
-			_prevFast = emaFast;
-			_prevSlow = emaSlow;
-			return;
-		}
-
 		var hist = emaFast - emaSlow;
 		var histUp = hist > 0m;
 		var histDown = hist < 0m;
@@ -125,13 +122,30 @@ public class UltimateTemplateStrategy : Strategy
 		// Exit
 		if (Position > 0 && rsiCrossDown)
 		{
-			SellMarket();
+			SellMarket(Math.Abs(Position));
 			_cooldown = 80;
+			_prevRsi = rsiVal;
+			_prevFast = emaFast;
+			_prevSlow = emaSlow;
+			return;
 		}
 		else if (Position < 0 && rsiCrossUp)
 		{
-			BuyMarket();
+			BuyMarket(Math.Abs(Position));
 			_cooldown = 80;
+			_prevRsi = rsiVal;
+			_prevFast = emaFast;
+			_prevSlow = emaSlow;
+			return;
+		}
+
+		if (_cooldown > 0)
+		{
+			_cooldown--;
+			_prevRsi = rsiVal;
+			_prevFast = emaFast;
+			_prevSlow = emaSlow;
+			return;
 		}
 
 		// Entry

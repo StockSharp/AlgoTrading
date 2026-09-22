@@ -1,4 +1,5 @@
 # 价格行为策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 该策略是 MetaTrader "PRICE_ACTION" 专家的 C# 版本。它在所选周期上结合威廉姆斯分形、加权移动平均线、动量和 MACD 滤波器，寻找由价格行为确认的突破机会。
 

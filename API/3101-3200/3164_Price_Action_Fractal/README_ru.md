@@ -1,4 +1,5 @@
 # Стратегия Price Action Fractal
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 Стратегия является портом экспертного советника MetaTrader "PRICE_ACTION" на платформу StockSharp. Она сочетает фракталы Вильямса, линейно-взвешенные скользящие средние, индикатор Momentum и MACD, чтобы торговать подтверждённые ценовым действием пробои на выбранном таймфрейме.
 

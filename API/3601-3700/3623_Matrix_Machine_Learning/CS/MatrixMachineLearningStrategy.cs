@@ -205,14 +205,14 @@ public class MatrixMachineLearningStrategy : Strategy
 		if (forecast == null || forecast.Length == 0)
 			return;
 
-		var direction = forecast.Sum();
+		var direction = forecast[0];
 		if (direction > 0 && Position <= 0m)
 		{
-			BuyMarket(Position < 0m ? Math.Abs(Position) + 1 : 1);
+			BuyMarket(Volume + Math.Abs(Position));
 		}
 		else if (direction < 0 && Position >= 0m)
 		{
-			SellMarket(Position > 0m ? Math.Abs(Position) + 1 : 1);
+			SellMarket(Volume + Math.Abs(Position));
 		}
 	}
 

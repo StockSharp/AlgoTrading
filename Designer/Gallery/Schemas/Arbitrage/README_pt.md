@@ -1,9 +1,9 @@
-# Estratégia de Negociação por Pares em BTC e ETH
+# Estratégia de Negociação por Pares em BTC e TON
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
 ## Visão geral
 
-A Estratégia de Negociação por Pares em BTC e ETH foi projetada para negociar duas criptomoedas populares — Bitcoin (BTC) e Ethereum (ETH). Esta estratégia de arbitragem de criptomoedas baseia-se na identificação de oportunidades de arbitragem entre esses dois ativos, permitindo que os traders capitalizem momentos em que a diferença de preço entre BTC e ETH atinge um determinado limiar.
+A Estratégia de Negociação por Pares em BTC e TON opera Bitcoin (BTC) e Toncoin (TON). Ela identifica oportunidades de arbitragem quando a relação de preços entre os dois ativos ultrapassa um limiar configurado.
 
 ![schema](schema.svg)
 
@@ -15,8 +15,8 @@ Para ativar e usar esta estratégia, o StockSharp Designer deve estar instalado.
 
 ## Parâmetros
 
-- **Ativo 1**: ETHUSDT@BNB
-- **Ativo 2**: BTCUSDT@BNB
+- **Ativo 1**: TONUSDT@BNBFT
+- **Ativo 2**: BTCUSDT@BNBFT
 - **Limiar**: 0.02 (absoluto)
 - **Volume de Negociação**: 5000 (absoluto)
 - **Slippage**: 1.0 (absoluto)
@@ -24,8 +24,8 @@ Para ativar e usar esta estratégia, o StockSharp Designer deve estar instalado.
 
 ## Como funciona
 
-1. **Coleta de dados de preço**: A estratégia coleta dados de preço de BTC e ETH da exchange Binance.
-2. **Cálculo de preço**: Calcula a relação de preços entre BTC e ETH.
+1. **Coleta de dados de preço**: A estratégia usa o histórico incluído de futuros BTC e TON da Binance.
+2. **Cálculo de preço**: Calcula a relação de preços entre BTC e TON.
 3. **Geração de sinais**: Quando a relação de preços excede o limiar definido, a estratégia gera sinais de compra e venda.
 4. **Execução de ordens**: A estratégia executa ordens a mercado para comprar o ativo subvalorizado e vender o ativo sobrevalorizado.
 5. **Cálculo de lucro**: Calcula o lucro com base nas negociações executadas e monitora o mercado em busca de mais oportunidades.
