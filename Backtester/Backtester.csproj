@@ -9,6 +9,9 @@
     <PackageReference Include="StockSharp.Samples.HistoryData" Version="$(StockSharpVer)" />
   </ItemGroup>
   <ItemGroup>
+    <!-- Not used by this project's own code: the strategies it compiles at run time reference the
+         indicators, and they are resolved from this output directory. -->
+    <ProjectReference Include="..\..\StockSharp (GitHub)\Algo.Indicators\Algo.Indicators.csproj" />
     <ProjectReference Include="..\..\StockSharp (GitHub)\Algo.Strategies\Algo.Strategies.csproj" />
     <ProjectReference Include="..\..\StockSharp (GitHub)\Algo.Compilation\Algo.Compilation.csproj" />
   </ItemGroup>
