@@ -3,5 +3,8 @@
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
+
+    <!-- The platform repository is a sibling checkout, not a package; see AGENTS.md. -->
+    <StockSharpDir>$(MSBuildThisFileDirectory)..\StockSharp (GitHub)\</StockSharpDir>
   </PropertyGroup>
 </Project>

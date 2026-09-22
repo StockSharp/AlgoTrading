@@ -13,10 +13,10 @@
     <PackageReference Include="StockSharp.Samples.HistoryData" Version="$(StockSharpVer)" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\StockSharp (GitHub)\Algo.Indicators\Algo.Indicators.csproj" />
-    <ProjectReference Include="..\..\StockSharp (GitHub)\Algo.Strategies\Algo.Strategies.csproj" />
-    <ProjectReference Include="..\..\StockSharp (GitHub)\Algo.Compilation\Algo.Compilation.csproj" />
-    <ProjectReference Include="..\..\StockSharp (GitHub)\Diagram.Core\Diagram.Core.csproj" />
+    <ProjectReference Include="$(StockSharpDir)Algo.Indicators\Algo.Indicators.csproj" />
+    <ProjectReference Include="$(StockSharpDir)Algo.Strategies\Algo.Strategies.csproj" />
+    <ProjectReference Include="$(StockSharpDir)Algo.Compilation\Algo.Compilation.csproj" />
+    <ProjectReference Include="$(StockSharpDir)Diagram.Core\Diagram.Core.csproj" />
   </ItemGroup>
   <!--
     Strategy folder keys whose tests are hand-written in CSharpTests.Overrides.cs. Only these are
