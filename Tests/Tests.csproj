@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\common.props" />
   <PropertyGroup>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
@@ -18,11 +18,51 @@
     <ProjectReference Include="..\..\StockSharp (GitHub)\Algo.Compilation\Algo.Compilation.csproj" />
     <ProjectReference Include="..\..\StockSharp (GitHub)\Diagram.Core\Diagram.Core.csproj" />
   </ItemGroup>
+  <!--
+    Strategy folder keys whose tests are hand-written in CSharpTests.Overrides.cs. Only these are
+    compiled into the test assembly, because those tests reach the strategy's own type to set its
+    parameters. Keep in sync with StrategyInventory.Overrides, which excludes the same keys from
+    the generated rows.
+  -->
   <ItemGroup>
-    <Compile Include="../API/**/*.cs" Link="CS\%(RecursiveDir)%(Filename)%(Extension)" />
-    <AdditionalFiles Include="../API/**/*.py" Link="PY\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="../API/*/0001_MA_CrossOver/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
+    <Compile Include="../API/*/0201_VWAP_Williams_R/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
+    <Compile Include="../API/*/0217_Pairs_Trading/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
+    <Compile Include="../API/*/0219_Statistical_Arbitrage/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
+    <Compile Include="../API/*/0222_Cointegration_Pairs/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
+    <Compile Include="../API/*/0230_Delta_Neutral_Arbitrage/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
+    <Compile Include="../API/*/0333_Keltner_Seasonal_Filter/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
+    <Compile Include="../API/*/0365_Dispersion_Trading/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
+    <Compile Include="../API/*/0401_Soccer_Clubs_Arbitrage/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
+    <Compile Include="../API/*/0503_Advanced_Position_Management/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
+    <Compile Include="../API/*/0526_Spot_Futures_Arbitrage/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
+    <Compile Include="../API/*/1005_MA_With_Logistic/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
+    <Compile Include="../API/*/1153_Pairs/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
+    <Compile Include="../API/*/1507_Ultimate_Template/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
+    <Compile Include="../API/*/1908_Random_Trailing_Stop/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
+    <Compile Include="../API/*/2000_HFT_Spreader_for_FORTS/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
+    <Compile Include="../API/*/2096_Breakout_Bars_Trend/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
+    <Compile Include="../API/*/2101_Linear_Regression_Slope_V1/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
+    <Compile Include="../API/*/2403_ReOpen_Positions/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
+    <Compile Include="../API/*/2502_21Hour_Session_Breakout/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
+    <Compile Include="../API/*/2606_Statistics_Repeating_Behavior/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
+    <Compile Include="../API/*/2679_Multicurrency_Overlay_Hedge/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
+    <Compile Include="../API/*/2703_Self_Optimizing_RSI_or_MFI_Trader_v3/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
+    <Compile Include="../API/*/2705_Spreader_2/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
+    <Compile Include="../API/*/2776_CH2010_Structure/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
+    <Compile Include="../API/*/2798_Improve_MA_RSI_Hedge/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
+    <Compile Include="../API/*/3064_Two_PerBar/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
+    <Compile Include="../API/*/3104_MA_MACD_Position_Averaging/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
+    <Compile Include="../API/*/3206_Risk_Reward_Ratio/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
+    <Compile Include="../API/*/3301_Crypto_Analysis/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
+    <Compile Include="../API/*/3623_Matrix_Machine_Learning/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
+    <Compile Include="../API/*/3710_RRSRandomness/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
+    <Compile Include="../API/*/4006_TenPips_Opposite_Last_N_Hour_Trend/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
+    <Compile Include="../API/*/4048_Burg_Extrapolator_Forecast/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="../Tests.SourceGen/Tests.SourceGen.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-  </ItemGroup>
+  <!--
+    Nothing else under API reaches the compiler. The tests enumerate the examples on disk at run
+    time and compile each one through CodeInfo, so the 3800 example classes never enter this
+    compilation and no source generator has to emit a method per strategy.
+  -->
 </Project>

@@ -42,12 +42,12 @@ public static class AsmInit
 	public static Security Security2 { get; private set; }
 
 	[AssemblyInitialize]
-	public static async Task Init(TestContext _)
+	public static async Task Init(TestContext context)
 	{
 		_logManager = new();
 		_logManager.Listeners.Add(new ConsoleLogListener());
 
-		await CompilationExtensions.Init(Paths.FileSystem, _logManager.Application, [], default);
+		await CompilationExtensions.Init(Paths.FileSystem, _logManager.Application, [], context.CancellationToken);
 
 		var drive = new LocalMarketDataDrive(Paths.FileSystem, Paths.HistoryDataPath);
 		var storageRegistry = new StorageRegistry { DefaultDrive = drive };
@@ -85,7 +85,7 @@ public static class AsmInit
 		ConfigManager.RegisterService<IPortfolioProvider>(new CollectionPortfolioProvider([pf]));
 	}
 
-	public static async Task RunStrategy<T>(T strategy, Action<T, Security> extra = null, TimeSpan? postTradeHorizon = null, TimeSpan? replayDuration = null)
+	public static async Task RunStrategy<T>(T strategy, CancellationToken cancellationToken, Action<T, Security> extra = null, TimeSpan? postTradeHorizon = null, TimeSpan? replayDuration = null, bool requireTrades = true)
 		where T : Strategy
 	{
 		if (postTradeHorizon is { } requestedPostTradeHorizon && requestedPostTradeHorizon <= TimeSpan.Zero)
@@ -594,7 +594,7 @@ public static class AsmInit
 
 			using var replayTimeoutSource = new CancellationTokenSource();
 			var replayTimeout = Task.Delay(_replayTimeout, replayTimeoutSource.Token);
-			var execTask = strategy.ExecAsync(_ => connector.StartAsync(CancellationToken.None), CancellationToken.None).AsTask();
+			var execTask = strategy.ExecAsync(_ => connector.StartAsync(cancellationToken), cancellationToken).AsTask();
 			var completedTask = await Task.WhenAny(execTask, shutdownRequested.Task, replayTimeout);
 
 			if (completedTask == replayTimeout)
@@ -741,13 +741,16 @@ public static class AsmInit
 		Assert.AreEqual(ProcessStates.Stopped, strategy.ProcessState, $"Strategy did not reach its terminal state. {getDiagnostics()}");
 		Assert.AreEqual(ChannelStates.Stopped, connector.State, $"Emulation connector did not reach its terminal state. {getDiagnostics()}");
 
-		ordersCount.AssertGreater(0, $"No orders were created by the strategy. {getDiagnostics()}");
+		if (requireTrades)
+		{
+			ordersCount.AssertGreater(0, $"No orders were created by the strategy. {getDiagnostics()}");
 
-		finalTradesCount.AssertGreater(0, $"No trades were created by the strategy. {getDiagnostics()} Orders: {string.Join("; ", observedOrders)}");
+			finalTradesCount.AssertGreater(0, $"No trades were created by the strategy. {getDiagnostics()} Orders: {string.Join("; ", observedOrders)}");
 
-		reachedPostTradeTarget.AssertTrue(
-			$"Strategy stopped before the required post-trade horizon. {getDiagnostics()} " +
-			$"Orders: {string.Join("; ", observedOrders)} Trades: {string.Join("; ", observedTrades)}");
+			reachedPostTradeTarget.AssertTrue(
+				$"Strategy stopped before the required post-trade horizon. {getDiagnostics()} " +
+				$"Orders: {string.Join("; ", observedOrders)} Trades: {string.Join("; ", observedTrades)}");
+		}
 
 		// // Check the distribution of trades over the entire period
 		// var firstTradeTime = strategy.MyTrades.Min(t => t.Trade.ServerTime);

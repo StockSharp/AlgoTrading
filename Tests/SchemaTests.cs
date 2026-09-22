@@ -21,6 +21,7 @@ using StockSharp.Diagram;
 /// unless it is a viewing example it trades on the packaged history.
 /// </summary>
 [TestClass]
+[TestCategory("Designer")]
 public class SchemaTests : BaseTestClass
 {
 	/// <summary>
@@ -148,7 +149,7 @@ public class SchemaTests : BaseTestClass
 		if (unknown.Length > 0)
 			Fail($"'{name}' trades {string.Join(", ", unknown)}, which the packaged history does not hold.");
 
-		await ReplayAsync(name, composition, withPnL: false);
+		await ReplayAsync(name, composition, withPnL: false, CancellationToken);
 	}
 
 	/// <summary>The file opens into a composition the Designer can build.</summary>
@@ -219,7 +220,7 @@ public class SchemaTests : BaseTestClass
 	{
 		var composition = await SchemaLoader.LoadAsync(fileName, CancellationToken);
 
-		await ReplayAsync(name, composition, withPnL: true);
+		await ReplayAsync(name, composition, withPnL: true, CancellationToken);
 	}
 
 	/// <summary>
@@ -248,7 +249,7 @@ public class SchemaTests : BaseTestClass
 	/// <param name="name">Example name.</param>
 	/// <param name="composition">The composition to replay.</param>
 	/// <param name="withPnL">Whether the result line carries the profit as well as the counts.</param>
-	private static async Task ReplayAsync(string name, CompositionDiagramElement composition, bool withPnL)
+	private static async Task ReplayAsync(string name, CompositionDiagramElement composition, bool withPnL, CancellationToken cancellationToken)
 	{
 		using var strategy = new DiagramStrategy { Composition = composition };
 
@@ -262,7 +263,7 @@ public class SchemaTests : BaseTestClass
 
 		try
 		{
-			await AsmInit.RunStrategy(strategy, replayDuration: tape ? _tapeWindow : null);
+			await AsmInit.RunStrategy(strategy, cancellationToken, replayDuration: tape ? _tapeWindow : null);
 		}
 		finally
 		{

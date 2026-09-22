@@ -31,9 +31,59 @@ jobs:
       - name: Validate API structure
         run: python Tools/validate_api_structure.py
 
+  build:
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: AlgoTrading
+    outputs:
+      stocksharp-sha: ${{ steps.stocksharp.outputs.commit }}
+
+    steps:
+      - name: Checkout AlgoTrading
+        uses: actions/checkout@v4
+        with:
+          path: AlgoTrading
+
+      - name: Checkout StockSharp
+        uses: actions/checkout@v4
+        with:
+          repository: StockSharp/StockSharp
+          ref: master
+          path: 'StockSharp (GitHub)'
+
+      # The shards rebuild nothing, so they have to check out the very commit this build
+      # resolved -- master moving between jobs would leave them with stale binaries.
+      - name: Pin StockSharp commit
+        id: stocksharp
+        working-directory: 'StockSharp (GitHub)'
+        run: echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Build
+        run: dotnet build Tests/Tests.csproj --restore --configuration Release
+
+      - name: Upload test binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: tests-release
+          # obj travels with bin: "dotnet test --no-build" still evaluates the project and
+          # needs the restore assets and the generated sources.
+          path: |
+            AlgoTrading/Tests/bin/
+            AlgoTrading/Tests/obj/
+          retention-days: 1
+          include-hidden-files: true
+
   tests:
     name: Tests (shard ${{ matrix.shard }})
-    needs: validate
+    needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
@@ -54,7 +104,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: StockSharp/StockSharp
-          ref: master
+          ref: ${{ needs.build.outputs.stocksharp-sha }}
           path: 'StockSharp (GitHub)'
 
       - name: Setup .NET
@@ -62,8 +112,49 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - name: Build
-        run: dotnet build Tests/Tests.csproj --restore --configuration Release
+      - name: Download test binaries
+        uses: actions/download-artifact@v4
+        with:
+          name: tests-release
+          path: AlgoTrading/Tests/
 
       - name: Run tests
         run: dotnet test Tests/Tests.csproj --no-build --configuration Release --filter "TestCategory=Shard${{ matrix.shard }}"
+
+  designer:
+    name: Designer gallery
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: AlgoTrading
+
+    steps:
+      - name: Checkout AlgoTrading
+        uses: actions/checkout@v4
+        with:
+          path: AlgoTrading
+
+      - name: Checkout StockSharp
+        uses: actions/checkout@v4
+        with:
+          repository: StockSharp/StockSharp
+          ref: ${{ needs.build.outputs.stocksharp-sha }}
+          path: 'StockSharp (GitHub)'
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Download test binaries
+        uses: actions/download-artifact@v4
+        with:
+          name: tests-release
+          path: AlgoTrading/Tests/
+
+      # The shard jobs above only select the API categories, so the gallery acceptance had no job
+      # of its own and never ran.
+      - name: Run tests
+        run: dotnet test Tests/Tests.csproj --no-build --configuration Release --filter "TestCategory=Designer"

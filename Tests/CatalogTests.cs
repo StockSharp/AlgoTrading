@@ -22,6 +22,7 @@ using StockSharp.Diagram;
 /// is generated from the running registry rather than kept by hand.
 /// </summary>
 [TestClass]
+[TestCategory("Designer")]
 public class CatalogTests : BaseTestClass
 {
 	/// <summary>Where the generated catalog is kept.</summary>
