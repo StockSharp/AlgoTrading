@@ -1494,4 +1494,22 @@ partial class PythonTests
 		recorder.AssertEmpty("With every training move classified as hold, an empty initial map must remain flat.");
 	}
 
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public async Task S1101_MultiTimeframeMacdContract()
+	{
+		const string path = "1101-1200/1101_Multi_Timeframe_MACD/PY/multi_timeframe_macd_strategy.py";
+		string[] ids = null;
+		await RunStrategy(path, CancellationToken, (strategy, _) =>
+		{
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "HigherCandleType", TimeSpan.FromMinutes(15).TimeFrame());
+			ids = strategy.Parameters.CachedKeys;
+		}, requireTrades: false);
+
+		foreach (var name in new[] { "FastLength", "SlowLength", "SignalLength", "CandleType", "HigherCandleType", "ShowCurrentTimeframe", "ShowHigherTimeframe", "Entry", "UseTrailingStop", "TrailingStopPercent" })
+			IsTrue(ids.Contains(name, StringComparer.Ordinal), $"1101 parameter '{name}' is missing.");
+		IsFalse(ids.Contains("TrendLength", StringComparer.Ordinal), "1101 must not substitute a trend EMA for the documented higher-timeframe MACD.");
+	}
+
 }

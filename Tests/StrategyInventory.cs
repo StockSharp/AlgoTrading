@@ -44,6 +44,7 @@ static class StrategyInventory
 		"0503_Advanced_Position_Management",
 		"0526_Spot_Futures_Arbitrage",
 		"1005_MA_With_Logistic",
+		"1101_Multi_Timeframe_MACD",
 		"1153_Pairs",
 		"1507_Ultimate_Template",
 		"1908_Random_Trailing_Stop",

@@ -44,6 +44,7 @@
     <Compile Include="../API/*/0503_Advanced_Position_Management/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
     <Compile Include="../API/*/0526_Spot_Futures_Arbitrage/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
     <Compile Include="../API/*/1005_MA_With_Logistic/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
+    <Compile Include="../API/*/1101_Multi_Timeframe_MACD/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
     <Compile Include="../API/*/1153_Pairs/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
     <Compile Include="../API/*/1507_Ultimate_Template/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
     <Compile Include="../API/*/1908_Random_Trailing_Stop/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
