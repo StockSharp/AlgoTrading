@@ -47,6 +47,7 @@ static class StrategyInventory
 		"1101_Multi_Timeframe_MACD",
 		"1153_Pairs",
 		"1507_Ultimate_Template",
+		"1607_Renko_Trend_Reversal_V2",
 		"1908_Random_Trailing_Stop",
 		"2000_HFT_Spreader_for_FORTS",
 		"2096_Breakout_Bars_Trend",

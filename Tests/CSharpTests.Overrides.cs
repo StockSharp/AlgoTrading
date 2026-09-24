@@ -1304,4 +1304,20 @@ partial class CSharpTests
 		IsFalse(ids.Contains("TrendLength", StringComparer.Ordinal), "1101 must not substitute a trend EMA for the documented higher-timeframe MACD.");
 	}
 
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public async Task S1607_RenkoTrendReversalContract()
+	{
+		string[] ids = null;
+		await RunStrategy<RenkoTrendReversalV2Strategy>(CancellationToken, (strategy, _) =>
+		{
+			strategy.RenkoAtrLength = 3;
+			ids = strategy.Parameters.CachedKeys;
+		}, requireTrades: false);
+
+		foreach (var name in new[] { "RenkoAtrLength", "StopLossPct", "TakeProfitPct", "AllowShorts", "TradeStart", "TradeEnd" })
+			IsTrue(ids.Contains(name, StringComparer.Ordinal), $"1607 parameter '{name}' is missing.");
+		IsFalse(ids.Contains("StdLength", StringComparer.Ordinal), "1607 README requires ATR-based bricks, not StdDev.");
+	}
+
 }
