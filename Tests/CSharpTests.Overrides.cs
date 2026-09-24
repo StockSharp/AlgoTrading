@@ -1198,4 +1198,27 @@ partial class CSharpTests
 		IsFalse(ids.Contains("SlowLength", StringComparer.Ordinal), "1407 must not be the old single-timeframe EMA placeholder.");
 	}
 
+	[TestMethod]
+	[TestCategory("Shard01")]
+	public async Task S1801_PerceptronContract()
+	{
+		const string path = "1801-1900/1801_Artificial_Intelligence_Perceptron/CS/ArtificialIntelligencePerceptronStrategy.cs";
+		var recorder = new OrderTraceRecorder();
+		string[] ids = null;
+
+		await RunStrategy(path, CancellationToken, (strategy, _) =>
+		{
+			ids = strategy.Parameters.CachedKeys;
+			foreach (var name in new[] { "X1", "X2", "X3", "X4" })
+				strategy.Parameters[name].Value = 0m;
+			recorder.Attach(strategy);
+		}, requireTrades: false);
+
+		string[] declared = ["StopLoss", "Shift", "X1", "X2", "X3", "X4", "CandleType"];
+		foreach (var name in declared)
+			IsTrue(ids.Contains(name, StringComparer.Ordinal), $"1801 perceptron parameter '{name}' is missing.");
+		IsFalse(ids.Contains("FastPeriod", StringComparer.Ordinal), "1801 must not be the EMA placeholder.");
+		recorder.AssertEmpty("Zero perceptron weights must produce no directional signal.");
+	}
+
 }
