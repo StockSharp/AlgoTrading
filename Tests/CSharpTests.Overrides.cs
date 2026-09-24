@@ -1247,4 +1247,22 @@ partial class CSharpTests
 		IsFalse(ids.Any(id => id.Contains("Ema", StringComparison.OrdinalIgnoreCase)), "2907 must not be the single-instrument EMA placeholder.");
 	}
 
+	[TestMethod]
+	[TestCategory("Shard04")]
+	public async Task S3908_FiveMaMultiTimeframeContract()
+	{
+		string[] ids = null;
+		await RunStrategy<FiveMaMultiTimeframeStrategy>(CancellationToken, (strategy, _) =>
+		{
+			strategy.CandleType = TimeSpan.FromMinutes(5).TimeFrame();
+			strategy.HigherTimeframe1 = TimeSpan.FromMinutes(15).TimeFrame();
+			strategy.HigherTimeframe2 = TimeSpan.FromHours(1).TimeFrame();
+			ids = strategy.Parameters.CachedKeys;
+		}, requireTrades: false);
+
+		foreach (var name in new[] { "CandleType", "HigherTimeframe1", "HigherTimeframe2", "FirstPeriod", "SecondPeriod", "ThirdPeriod", "FourthPeriod", "FifthPeriod", "OpenLevel", "CloseLevel" })
+			IsTrue(ids.Contains(name, StringComparer.Ordinal), $"3908 parameter '{name}' is missing.");
+		IsFalse(ids.Contains("FastPeriod", StringComparer.Ordinal), "3908 must not be the two-EMA placeholder.");
+	}
+
 }

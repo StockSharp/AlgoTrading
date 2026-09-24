@@ -65,6 +65,7 @@ static class StrategyInventory
 		"3301_Crypto_Analysis",
 		"3623_Matrix_Machine_Learning",
 		"3710_RRSRandomness",
+		"3908_Five_MA_Multi_Timeframe",
 		"4006_TenPips_Opposite_Last_N_Hour_Trend",
 		"4048_Burg_Extrapolator_Forecast",
 	};

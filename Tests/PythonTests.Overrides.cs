@@ -1452,4 +1452,23 @@ partial class PythonTests
 		IsFalse(ids.Any(id => id.Contains("Ema", StringComparison.OrdinalIgnoreCase)), "2907 must not be the single-instrument EMA placeholder.");
 	}
 
+	[TestMethod]
+	[TestCategory("Shard04")]
+	public async Task S3908_FiveMaMultiTimeframeContract()
+	{
+		const string path = "3901-4000/3908_Five_MA_Multi_Timeframe/PY/five_ma_multi_timeframe_strategy.py";
+		string[] ids = null;
+		await RunStrategy(path, CancellationToken, (strategy, _) =>
+		{
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "HigherTimeframe1", TimeSpan.FromMinutes(15).TimeFrame());
+			SetParam(strategy, "HigherTimeframe2", TimeSpan.FromHours(1).TimeFrame());
+			ids = strategy.Parameters.CachedKeys;
+		}, requireTrades: false);
+
+		foreach (var name in new[] { "CandleType", "HigherTimeframe1", "HigherTimeframe2", "FirstPeriod", "SecondPeriod", "ThirdPeriod", "FourthPeriod", "FifthPeriod", "OpenLevel", "CloseLevel" })
+			IsTrue(ids.Contains(name, StringComparer.Ordinal), $"3908 parameter '{name}' is missing.");
+		IsFalse(ids.Contains("FastPeriod", StringComparer.Ordinal), "3908 must not be the two-EMA placeholder.");
+	}
+
 }
