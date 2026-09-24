@@ -1428,4 +1428,28 @@ partial class PythonTests
 		recorder.AssertEmpty("Zero perceptron weights must produce no directional signal.");
 	}
 
+	[TestMethod]
+	[TestCategory("Shard03")]
+	public async Task S2907_CcfpCurrencyStrengthContract()
+	{
+		const string path = "2901-3000/2907_CCFp_Currency_Strength/PY/ccfp_currency_strength_strategy.py";
+		string[] ids = null;
+
+		await RunStrategy(path, CancellationToken, (strategy, second) =>
+		{
+			var firstId = strategy.Security.Id;
+			var secondId = second.Id;
+			foreach (var name in new[] { "EURUSD", "AUDUSD", "USDCAD", "USDJPY" })
+				SetParam(strategy, name, firstId);
+			foreach (var name in new[] { "GBPUSD", "NZDUSD", "USDCHF" })
+				SetParam(strategy, name, secondId);
+			ids = strategy.Parameters.CachedKeys;
+		}, requireTrades: false);
+
+		foreach (var name in new[] { "EURUSD", "GBPUSD", "AUDUSD", "NZDUSD", "USDCAD", "USDCHF", "USDJPY", "FastMa", "SlowMa", "StrengthStep", "CloseOpposite" })
+			IsTrue(ids.Contains(name, StringComparer.Ordinal), $"2907 CCFp parameter '{name}' is missing.");
+
+		IsFalse(ids.Any(id => id.Contains("Ema", StringComparison.OrdinalIgnoreCase)), "2907 must not be the single-instrument EMA placeholder.");
+	}
+
 }

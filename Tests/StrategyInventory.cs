@@ -58,6 +58,7 @@ static class StrategyInventory
 		"2705_Spreader_2",
 		"2776_CH2010_Structure",
 		"2798_Improve_MA_RSI_Hedge",
+		"2907_CCFp_Currency_Strength",
 		"3064_Two_PerBar",
 		"3104_MA_MACD_Position_Averaging",
 		"3206_Risk_Reward_Ratio",
