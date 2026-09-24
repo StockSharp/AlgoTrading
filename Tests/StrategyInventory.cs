@@ -48,6 +48,7 @@ static class StrategyInventory
 		"1153_Pairs",
 		"1507_Ultimate_Template",
 		"1607_Renko_Trend_Reversal_V2",
+		"1704_Martini_Martingale",
 		"1908_Random_Trailing_Stop",
 		"2000_HFT_Spreader_for_FORTS",
 		"2096_Breakout_Bars_Trend",

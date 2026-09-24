@@ -1320,4 +1320,20 @@ partial class CSharpTests
 		IsFalse(ids.Contains("StdLength", StringComparer.Ordinal), "1607 README requires ATR-based bricks, not StdDev.");
 	}
 
+	[TestMethod]
+	[TestCategory("Shard00")]
+	public async Task S1704_MartiniMartingaleContract()
+	{
+		string[] ids = null;
+		await RunStrategy<MartiniMartingaleStrategy>(CancellationToken, (strategy, _) =>
+		{
+			strategy.Step = 100000000m;
+			ids = strategy.Parameters.CachedKeys;
+		}, requireTrades: false);
+
+		foreach (var name in new[] { "Step", "ProfitClose", "InitialVolume", "CandleType" })
+			IsTrue(ids.Contains(name, StringComparer.Ordinal), $"1704 martingale parameter '{name}' is missing.");
+		IsFalse(ids.Contains("RsiPeriod", StringComparer.Ordinal), "1704 must not be the RSI/SMA mean-reversion placeholder.");
+	}
+
 }
