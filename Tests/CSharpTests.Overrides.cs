@@ -1135,4 +1135,20 @@ partial class CSharpTests
 		recorder.AssertEmpty("An unreachable footprint imbalance threshold must suppress entries.");
 	}
 
+	[TestMethod]
+	[TestCategory("Shard06")]
+	public async Task S0902_HurstFldContract()
+	{
+		const string path = "0901-1000/0902_Hurst_Future_Lines_of_Demarcation/CS/HurstFutureLinesOfDemarcationStrategy.cs";
+		string[] ids = null;
+
+		await RunStrategy(path, CancellationToken, (strategy, _) => ids = strategy.Parameters.CachedKeys, requireTrades: false);
+
+		string[] declared = ["SmoothFld", "FldSmoothing", "SignalCycleLength", "TradeCycleLength", "TrendCycleLength", "CloseTrigger1", "CloseTrigger2"];
+		foreach (var name in declared)
+			IsTrue(ids.Contains(name, StringComparer.Ordinal), $"Hurst FLD parameter '{name}' is missing.");
+
+		IsFalse(ids.Any(id => id.Contains("Ema", StringComparison.OrdinalIgnoreCase)), "0902 must not be an EMA-crossover placeholder.");
+	}
+
 }
