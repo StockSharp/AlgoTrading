@@ -1184,4 +1184,18 @@ partial class CSharpTests
 		IsFalse(ids.Any(id => id.Contains("Ema", StringComparison.OrdinalIgnoreCase)), "1301 must not be an EMA-crossover placeholder.");
 	}
 
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public async Task S1407_TechnicalRatingsMultiFrameContract()
+	{
+		const string path = "1401-1500/1407_Technical_Ratings_on_Multi_frames_Assets/CS/TechnicalRatingsOnMultiFramesAssetsStrategy.cs";
+		string[] ids = null;
+		await RunStrategy(path, CancellationToken, (strategy, _) => ids = strategy.Parameters.CachedKeys, requireTrades: false);
+
+		string[] declared = ["SmaPeriod", "RsiPeriod", "HourlyCandleType", "FourHourCandleType", "DailyCandleType"];
+		foreach (var name in declared)
+			IsTrue(ids.Contains(name, StringComparer.Ordinal), $"1407 contract parameter '{name}' is missing.");
+		IsFalse(ids.Contains("SlowLength", StringComparer.Ordinal), "1407 must not be the old single-timeframe EMA placeholder.");
+	}
+
 }
