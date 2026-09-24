@@ -1171,4 +1171,17 @@ partial class CSharpTests
 		recorder.AssertEmpty("Regression cannot be formed when Length exceeds the available history.");
 	}
 
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public async Task S1301_SimilarityMeasuresContract()
+	{
+		const string path = "1301-1400/1301_SimilarityMeasures/CS/SimilarityMeasuresStrategy.cs";
+		string[] ids = null;
+		await RunStrategy(path, CancellationToken, (strategy, _) => ids = strategy.Parameters.CachedKeys, requireTrades: false);
+
+		IsTrue(ids.Contains("SmaLength", StringComparer.Ordinal), "SMA reference length is missing.");
+		IsTrue(ids.Contains("DistanceThreshold", StringComparer.Ordinal), "Similarity threshold is missing.");
+		IsFalse(ids.Any(id => id.Contains("Ema", StringComparison.OrdinalIgnoreCase)), "1301 must not be an EMA-crossover placeholder.");
+	}
+
 }
