@@ -53,6 +53,7 @@ static class StrategyInventory
 		"2000_HFT_Spreader_for_FORTS",
 		"2096_Breakout_Bars_Trend",
 		"2101_Linear_Regression_Slope_V1",
+		"2208_Hedge_Average",
 		"2403_ReOpen_Positions",
 		"2502_21Hour_Session_Breakout",
 		"2606_Statistics_Repeating_Behavior",

@@ -53,6 +53,7 @@
     <Compile Include="../API/*/2000_HFT_Spreader_for_FORTS/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
     <Compile Include="../API/*/2096_Breakout_Bars_Trend/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
     <Compile Include="../API/*/2101_Linear_Regression_Slope_V1/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
+    <Compile Include="../API/*/2208_Hedge_Average/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
     <Compile Include="../API/*/2403_ReOpen_Positions/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
     <Compile Include="../API/*/2502_21Hour_Session_Breakout/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
     <Compile Include="../API/*/2606_Statistics_Repeating_Behavior/CS/*.cs" Link="CS\%(Filename)%(Extension)" />

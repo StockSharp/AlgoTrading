@@ -1546,4 +1546,17 @@ partial class PythonTests
 		IsFalse(ids.Contains("RsiPeriod", StringComparer.Ordinal), "1704 must not be the RSI/SMA mean-reversion placeholder.");
 	}
 
+	[TestMethod]
+	[TestCategory("Shard00")]
+	public async Task S2208_HedgeAverageContract()
+	{
+		const string path = "2201-2300/2208_Hedge_Average/PY/hedge_average_strategy.py";
+		string[] ids = null;
+		await RunStrategy(path, CancellationToken, (strategy, _) => ids = strategy.Parameters.CachedKeys, requireTrades: false);
+
+		foreach (var name in new[] { "Period1", "Period2", "StartHour", "EndHour", "CandleType", "TakeProfit", "StopLoss", "UseTrailing" })
+			IsTrue(ids.Contains(name, StringComparer.Ordinal), $"2208 parameter '{name}' is missing.");
+		IsFalse(ids.Contains("FastPeriod", StringComparer.Ordinal), "2208 must compare open/close averages, not cross two close-price MAs.");
+	}
+
 }
