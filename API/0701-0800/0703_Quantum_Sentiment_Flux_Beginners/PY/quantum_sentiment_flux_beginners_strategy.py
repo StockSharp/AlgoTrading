@@ -5,66 +5,123 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan
+from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
+
 
 class quantum_sentiment_flux_beginners_strategy(Strategy):
     def __init__(self):
         super(quantum_sentiment_flux_beginners_strategy, self).__init__()
-        self._fast_period = self.Param("FastEmaPeriod", 120).SetGreaterThanZero().SetDisplay("Fast EMA", "Fast EMA period", "Indicators")
-        self._slow_period = self.Param("SlowEmaPeriod", 450).SetGreaterThanZero().SetDisplay("Slow EMA", "Slow EMA period", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Candle timeframe", "General")
+
+        self._fast_period = self.Param("FastEmaPeriod", 120).SetGreaterThanZero()
+        self._slow_period = self.Param("SlowEmaPeriod", 450).SetGreaterThanZero()
+        self._atr_period = self.Param("AtrPeriod", 14).SetGreaterThanZero()
+        self._atr_multiplier = self.Param("AtrMultiplier", 1.0).SetGreaterThanZero()
+        self._ma_strength_threshold = self.Param("MaStrengthThreshold", 0.25).SetNotNegative()
+        self._cooldown_bars = self.Param("CooldownBars", 5).SetNotNegative()
+        self._quantity = self.Param("Quantity", 1.0).SetGreaterThanZero()
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1)))
+
+        self._prev_fast = 0.0
+        self._prev_slow = 0.0
+        self._entry_price = 0.0
+        self._entry_atr = 0.0
+        self._cooldown_remaining = 0
 
     @property
-    def CandleType(self): return self._candle_type.Value
-    @CandleType.setter
-    def CandleType(self, value): self._candle_type.Value = value
+    def CandleType(self):
+        return self._candle_type.Value
+
+    def GetWorkingSecurities(self):
+        return [(self.Security, self.CandleType)]
 
     def OnReseted(self):
         super(quantum_sentiment_flux_beginners_strategy, self).OnReseted()
-        self._prev_fast = 0
-        self._prev_slow = 0
+        self._prev_fast = 0.0
+        self._prev_slow = 0.0
+        self._entry_price = 0.0
+        self._entry_atr = 0.0
+        self._cooldown_remaining = 0
 
     def OnStarted2(self, time):
         super(quantum_sentiment_flux_beginners_strategy, self).OnStarted2(time)
-        self._prev_fast = 0
-        self._prev_slow = 0
 
-        fast_ema = ExponentialMovingAverage()
-        fast_ema.Length = self._fast_period.Value
-        slow_ema = ExponentialMovingAverage()
-        slow_ema.Length = self._slow_period.Value
+        fast = ExponentialMovingAverage()
+        fast.Length = int(self._fast_period.Value)
+        slow = ExponentialMovingAverage()
+        slow.Length = int(self._slow_period.Value)
+        atr = AverageTrueRange()
+        atr.Length = int(self._atr_period.Value)
 
         sub = self.SubscribeCandles(self.CandleType)
-        sub.Bind(fast_ema, slow_ema, self.OnProcess).Start()
+        sub.Bind(fast, slow, atr, self._process).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, sub)
-            self.DrawIndicator(area, fast_ema)
-            self.DrawIndicator(area, slow_ema)
+            self.DrawIndicator(area, fast)
+            self.DrawIndicator(area, slow)
+            self.DrawIndicator(area, atr)
             self.DrawOwnTrades(area)
 
-    def OnProcess(self, candle, fast_val, slow_val):
+    def _process(self, candle, fast_value, slow_value, atr_value):
         if candle.State != CandleStates.Finished:
             return
 
+        fast = float(fast_value)
+        slow = float(slow_value)
+        atr = float(atr_value)
+
         if self._prev_fast == 0 or self._prev_slow == 0:
-            self._prev_fast = fast_val
-            self._prev_slow = slow_val
+            self._prev_fast = fast
+            self._prev_slow = slow
             return
 
-        if self._prev_fast <= self._prev_slow and fast_val > slow_val and self.Position <= 0:
-            self.BuyMarket()
-        elif self._prev_fast >= self._prev_slow and fast_val < slow_val and self.Position >= 0:
-            self.SellMarket()
+        atr_multiplier = float(self._atr_multiplier.Value)
 
-        self._prev_fast = fast_val
-        self._prev_slow = slow_val
+        if self.Position > 0 and self._entry_price > 0 and self._entry_atr > 0:
+            distance = self._entry_atr * atr_multiplier
+            if float(candle.LowPrice) <= self._entry_price - distance or float(candle.HighPrice) >= self._entry_price + distance * 2:
+                self.SellMarket(Math.Abs(self.Position))
+                self._entry_price = 0.0
+                self._entry_atr = 0.0
+                self._cooldown_remaining = int(self._cooldown_bars.Value)
+                self._prev_fast = fast
+                self._prev_slow = slow
+                return
+        elif self.Position < 0 and self._entry_price > 0 and self._entry_atr > 0:
+            distance = self._entry_atr * atr_multiplier
+            if float(candle.HighPrice) >= self._entry_price + distance or float(candle.LowPrice) <= self._entry_price - distance * 2:
+                self.BuyMarket(Math.Abs(self.Position))
+                self._entry_price = 0.0
+                self._entry_atr = 0.0
+                self._cooldown_remaining = int(self._cooldown_bars.Value)
+                self._prev_fast = fast
+                self._prev_slow = slow
+                return
+
+        if self._cooldown_remaining > 0:
+            self._cooldown_remaining -= 1
+
+        cross_up = self._prev_fast <= self._prev_slow and fast > slow
+        cross_down = self._prev_fast >= self._prev_slow and fast < slow
+        strong_enough = atr > 0 and abs(fast - slow) >= atr * float(self._ma_strength_threshold.Value)
+
+        if self._cooldown_remaining == 0 and self.Position == 0 and strong_enough:
+            qty = float(self._quantity.Value)
+            if cross_up:
+                self.BuyMarket(qty)
+                self._entry_price = float(candle.ClosePrice)
+                self._entry_atr = atr
+            elif cross_down:
+                self.SellMarket(qty)
+                self._entry_price = float(candle.ClosePrice)
+                self._entry_atr = atr
+
+        self._prev_fast = fast
+        self._prev_slow = slow
 
     def CreateClone(self):
         return quantum_sentiment_flux_beginners_strategy()

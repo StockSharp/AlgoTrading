@@ -1296,4 +1296,26 @@ partial class PythonTests
 		recorder.AssertEmpty("No candle falls inside the deliberately empty 00:00:01-00:00:02 trade window.");
 	}
 
+	[TestMethod]
+	[TestCategory("Shard03")]
+	public async Task S0703_QuantumSentimentFluxContract()
+	{
+		const string path = "0701-0800/0703_Quantum_Sentiment_Flux_Beginners/PY/quantum_sentiment_flux_beginners_strategy.py";
+		var recorder = new OrderTraceRecorder();
+		string[] ids = null;
+
+		await RunStrategy(path, CancellationToken, (strategy, _) =>
+		{
+			ids = strategy.Parameters.CachedKeys;
+			SetParam(strategy, "MaStrengthThreshold", 1000000.0);
+			recorder.Attach(strategy);
+		}, requireTrades: false);
+
+		string[] declared = ["FastEmaPeriod", "SlowEmaPeriod", "AtrPeriod", "AtrMultiplier", "MaStrengthThreshold", "CooldownBars", "Quantity", "CandleType"];
+		foreach (var name in declared)
+			IsTrue(ids.Contains(name, StringComparer.Ordinal), $"README parameter '{name}' is missing.");
+
+		recorder.AssertEmpty("An unreachable MA-strength threshold must suppress entries.");
+	}
+
 }
