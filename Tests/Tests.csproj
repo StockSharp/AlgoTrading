@@ -70,6 +70,7 @@
     <Compile Include="../API/*/3406_Range_Follower/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
     <Compile Include="../API/*/3623_Matrix_Machine_Learning/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
     <Compile Include="../API/*/3710_RRSRandomness/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
+    <Compile Include="../API/*/3801_OrderStabilization/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
     <Compile Include="../API/*/3908_Five_MA_Multi_Timeframe/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
     <Compile Include="../API/*/4006_TenPips_Opposite_Last_N_Hour_Trend/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
     <Compile Include="../API/*/4048_Burg_Extrapolator_Forecast/CS/*.cs" Link="CS\%(Filename)%(Extension)" />

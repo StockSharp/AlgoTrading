@@ -1392,4 +1392,21 @@ partial class CSharpTests
 		IsFalse(ids.Contains("RangePeriod", StringComparer.Ordinal), "3406 range is the current daily session, not a rolling bar count.");
 	}
 
+	[TestMethod]
+	[TestCategory("Shard01")]
+	public async Task S3801_OrderStabilizationContract()
+	{
+		string[] ids = null;
+		await RunStrategy<OrderStabilizationStrategy>(CancellationToken, (strategy, _) =>
+		{
+			strategy.OrderDistancePoints = 100000000m;
+			ids = strategy.Parameters.CachedKeys;
+		}, requireTrades: false);
+
+		foreach (var name in new[] { "OrderVolume", "OrderDistancePoints", "ProfitThreshold", "AbsoluteFixation", "StabilizationPoints", "ExpirationMinutes", "CandleType" })
+			IsTrue(ids.Contains(name, StringComparer.Ordinal), $"3801 README parameter '{name}' is missing.");
+
+		IsFalse(ids.Contains("AtrPeriod", StringComparer.Ordinal), "3801 must not be the ATR-breakout placeholder.");
+	}
+
 }

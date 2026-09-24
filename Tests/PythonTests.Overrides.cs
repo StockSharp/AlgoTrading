@@ -1600,4 +1600,22 @@ partial class PythonTests
 		IsFalse(ids.Contains("RangePeriod", StringComparer.Ordinal), "3406 range is the current daily session, not a rolling bar count.");
 	}
 
+	[TestMethod]
+	[TestCategory("Shard01")]
+	public async Task S3801_OrderStabilizationContract()
+	{
+		const string path = "3801-3900/3801_OrderStabilization/PY/order_stabilization_strategy.py";
+		string[] ids = null;
+		await RunStrategy(path, CancellationToken, (strategy, _) =>
+		{
+			SetParam(strategy, "OrderDistancePoints", 100000000.0);
+			ids = strategy.Parameters.CachedKeys;
+		}, requireTrades: false);
+
+		foreach (var name in new[] { "OrderVolume", "OrderDistancePoints", "ProfitThreshold", "AbsoluteFixation", "StabilizationPoints", "ExpirationMinutes", "CandleType" })
+			IsTrue(ids.Contains(name, StringComparer.Ordinal), $"3801 README parameter '{name}' is missing.");
+
+		IsFalse(ids.Contains("AtrPeriod", StringComparer.Ordinal), "3801 must not be the ATR-breakout placeholder.");
+	}
+
 }
