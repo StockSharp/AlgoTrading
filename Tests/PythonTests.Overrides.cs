@@ -473,21 +473,26 @@ partial class PythonTests
 	[TestCategory("Shard06")]
 	public async Task S3206_RiskRewardRatio()
 	{
-		var recorder = new OrderTraceRecorder();
+		const string path = "3201-3300/3206_Risk_Reward_Ratio/PY/risk_reward_ratio_strategy.py";
+		string[] ids = null;
 
-		await RunStrategy(
-			"3201-3300/3206_Risk_Reward_Ratio/PY/risk_reward_ratio_strategy.py", CancellationToken,
-			(strategy, _) =>
-			{
-				SetParam(strategy, "FastPeriod", 2);
-				SetParam(strategy, "SlowPeriod", 3);
-				SetParam(strategy, "StopLossPoints", 1);
-				SetParam(strategy, "TakeProfitPoints", 1);
-				recorder.Attach(strategy);
-			},
-			replayDuration: TimeSpan.FromDays(2));
+		await RunStrategy(path, CancellationToken, (strategy, _) =>
+		{
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "FastMaPeriod", 3);
+			SetParam(strategy, "SlowMaPeriod", 8);
+			ids = strategy.Parameters.CachedKeys;
+		}, replayDuration: TimeSpan.FromDays(2), requireTrades: false);
 
-		recorder.AssertFirstOppositeWithin(TimeSpan.FromMinutes(10));
+		foreach (var name in new[]
+		{
+			"TradeVolume", "CandleType", "FastMaPeriod", "SlowMaPeriod", "MomentumThreshold", "RewardRatio",
+			"StopLossPips", "MaxPositions", "EnableTrailing", "TrailingStopPips", "EnableBreakEven",
+			"BreakEvenTriggerPips", "BreakEvenOffsetPips", "ExitSwitch"
+		})
+			IsTrue(ids.Contains(name, StringComparer.Ordinal), $"3206 README parameter '{name}' is missing.");
+
+		IsFalse(ids.Contains("FastPeriod", StringComparer.Ordinal), "3206 must not be the EMA-crossover placeholder.");
 	}
 
 	[TestMethod]

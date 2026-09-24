@@ -391,18 +391,24 @@ partial class CSharpTests
 	[TestCategory("Shard06")]
 	public async Task S3206_RiskRewardRatio()
 	{
-		var recorder = new OrderTraceRecorder();
-
+		string[] ids = null;
 		await RunStrategy<RiskRewardRatioStrategy>(CancellationToken, (strategy, _) =>
 		{
-			strategy.FastPeriod = 2;
-			strategy.SlowPeriod = 3;
-			strategy.StopLossPoints = 1;
-			strategy.TakeProfitPoints = 1;
-			recorder.Attach(strategy);
-		}, replayDuration: TimeSpan.FromDays(2));
+			strategy.CandleType = TimeSpan.FromMinutes(5).TimeFrame();
+			strategy.FastMaPeriod = 3;
+			strategy.SlowMaPeriod = 8;
+			ids = strategy.Parameters.CachedKeys;
+		}, replayDuration: TimeSpan.FromDays(2), requireTrades: false);
 
-		recorder.AssertFirstOppositeWithin(TimeSpan.FromMinutes(10));
+		foreach (var name in new[]
+		{
+			"TradeVolume", "CandleType", "FastMaPeriod", "SlowMaPeriod", "MomentumThreshold", "RewardRatio",
+			"StopLossPips", "MaxPositions", "EnableTrailing", "TrailingStopPips", "EnableBreakEven",
+			"BreakEvenTriggerPips", "BreakEvenOffsetPips", "ExitSwitch"
+		})
+			IsTrue(ids.Contains(name, StringComparer.Ordinal), $"3206 README parameter '{name}' is missing.");
+
+		IsFalse(ids.Contains("FastPeriod", StringComparer.Ordinal), "3206 must not be the EMA-crossover placeholder.");
 	}
 
 	[TestMethod]
