@@ -1268,4 +1268,32 @@ partial class PythonTests
 			0, missing.Length,
 			$"README documents these parameters and their defaults, but the strategy does not expose them: {string.Join(", ", missing)}. Parameters: {string.Join(", ", parameterIds)}.");
 	}
+	/// <summary>
+	/// Python half of 0601 must expose the same session model and obey its entry window.
+	/// </summary>
+	[TestMethod]
+	[TestCategory("Shard01")]
+	public async Task S0601_CaptainBacktestModelContract()
+	{
+		const string path = "0601-0700/0601_Captain_Backtest_Model/PY/captain_backtest_model_strategy.py";
+		var recorder = new OrderTraceRecorder();
+		string[] parameterIds = null;
+
+		await RunStrategy(path, CancellationToken, (strategy, _) =>
+		{
+			parameterIds = strategy.Parameters.CachedKeys;
+			SetParam(strategy, "TradeStart", new TimeSpan(0, 0, 1));
+			SetParam(strategy, "TradeEnd", new TimeSpan(0, 0, 2));
+			recorder.Attach(strategy);
+		}, requireTrades: false);
+
+		string[] declared = ["PrevRangeStart", "PrevRangeEnd", "TakeStart", "TakeEnd", "TradeStart", "TradeEnd", "Risk", "Reward"];
+		foreach (var name in declared)
+			IsTrue(parameterIds.Contains(name, StringComparer.Ordinal), $"README parameter '{name}' is missing.");
+
+		IsFalse(parameterIds.Contains("FastEmaPeriod", StringComparer.Ordinal), "0601 must not be an EMA-crossover placeholder.");
+		IsFalse(parameterIds.Contains("SlowEmaPeriod", StringComparer.Ordinal), "0601 must not be an EMA-crossover placeholder.");
+		recorder.AssertEmpty("No candle falls inside the deliberately empty 00:00:01-00:00:02 trade window.");
+	}
+
 }

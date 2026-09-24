@@ -1060,4 +1060,33 @@ partial class CSharpTests
 			0, missing.Length,
 			$"README documents these parameters and their defaults, but the strategy does not expose them: {string.Join(", ", missing)}. Parameters: {string.Join(", ", parameterIds)}.");
 	}
+	/// <summary>
+	/// 0601 is a session-range/retracement model. Pin the published inputs and verify that
+	/// an empty entry window suppresses every order; an EMA-crossover placeholder cannot satisfy this.
+	/// </summary>
+	[TestMethod]
+	[TestCategory("Shard01")]
+	public async Task S0601_CaptainBacktestModelContract()
+	{
+		const string path = "0601-0700/0601_Captain_Backtest_Model/CS/CaptainBacktestModelStrategy.cs";
+		var recorder = new OrderTraceRecorder();
+		string[] parameterIds = null;
+
+		await RunStrategy(path, CancellationToken, (strategy, _) =>
+		{
+			parameterIds = strategy.Parameters.CachedKeys;
+			strategy.Parameters["TradeStart"].Value = new TimeSpan(0, 0, 1);
+			strategy.Parameters["TradeEnd"].Value = new TimeSpan(0, 0, 2);
+			recorder.Attach(strategy);
+		}, requireTrades: false);
+
+		string[] declared = ["PrevRangeStart", "PrevRangeEnd", "TakeStart", "TakeEnd", "TradeStart", "TradeEnd", "Risk", "Reward"];
+		foreach (var name in declared)
+			IsTrue(parameterIds.Contains(name, StringComparer.Ordinal), $"README parameter '{name}' is missing.");
+
+		IsFalse(parameterIds.Contains("FastEmaPeriod", StringComparer.Ordinal), "0601 must not be an EMA-crossover placeholder.");
+		IsFalse(parameterIds.Contains("SlowEmaPeriod", StringComparer.Ordinal), "0601 must not be an EMA-crossover placeholder.");
+		recorder.AssertEmpty("No candle falls inside the deliberately empty 00:00:01-00:00:02 trade window.");
+	}
+
 }
