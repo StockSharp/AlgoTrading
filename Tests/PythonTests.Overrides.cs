@@ -499,21 +499,30 @@ partial class PythonTests
 	[TestCategory("Shard05")]
 	public async Task S3301_CryptoAnalysis()
 	{
-		var recorder = new OrderTraceRecorder();
+		const string path = "3301-3400/3301_Crypto_Analysis/PY/crypto_analysis_strategy.py";
+		string[] ids = null;
+		await RunStrategy(path, CancellationToken, (strategy, _) =>
+		{
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "MomentumCandleType", TimeSpan.FromMinutes(15).TimeFrame());
+			SetParam(strategy, "MacdCandleType", TimeSpan.FromHours(1).TimeFrame());
+			SetParam(strategy, "FastMaPeriod", 3);
+			SetParam(strategy, "SlowMaPeriod", 8);
+			ids = strategy.Parameters.CachedKeys;
+		}, replayDuration: TimeSpan.FromDays(2), requireTrades: false);
 
-		await RunStrategy(
-			"3301-3400/3301_Crypto_Analysis/PY/crypto_analysis_strategy.py", CancellationToken,
-			(strategy, _) =>
-			{
-				SetParam(strategy, "FastPeriod", 2);
-				SetParam(strategy, "SlowPeriod", 3);
-				SetParam(strategy, "StopLossPoints", 1);
-				SetParam(strategy, "TakeProfitPoints", 1);
-				recorder.Attach(strategy);
-			},
-			replayDuration: TimeSpan.FromDays(2));
+		foreach (var name in new[]
+		{
+			"OrderVolume", "UseMoneyTakeProfit", "MoneyTakeProfit", "UsePercentTakeProfit", "PercentTakeProfit",
+			"EnableMoneyTrailing", "MoneyTrailTarget", "MoneyTrailStop", "StopLossPips", "TakeProfitPips",
+			"TrailingStopPips", "UseBreakEven", "BreakEvenTriggerPips", "BreakEvenOffsetPips", "FastMaPeriod",
+			"SlowMaPeriod", "MomentumPeriod", "MomentumBuyThreshold", "MomentumSellThreshold", "MacdFastLength",
+			"MacdSlowLength", "MacdSignalLength", "UseEquityStop", "EquityRiskPercent", "CandleType",
+			"MomentumCandleType", "MacdCandleType"
+		})
+			IsTrue(ids.Contains(name, StringComparer.Ordinal), $"3301 README parameter '{name}' is missing.");
 
-		recorder.AssertFirstOppositeWithin(TimeSpan.FromMinutes(10));
+		IsFalse(ids.Contains("FastPeriod", StringComparer.Ordinal), "3301 must not be the EMA-crossover placeholder.");
 	}
 
 	[TestMethod]

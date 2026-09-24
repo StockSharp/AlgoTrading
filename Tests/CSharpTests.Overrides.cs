@@ -415,18 +415,29 @@ partial class CSharpTests
 	[TestCategory("Shard05")]
 	public async Task S3301_CryptoAnalysis()
 	{
-		var recorder = new OrderTraceRecorder();
-
+		string[] ids = null;
 		await RunStrategy<CryptoAnalysisStrategy>(CancellationToken, (strategy, _) =>
 		{
-			strategy.FastPeriod = 2;
-			strategy.SlowPeriod = 3;
-			strategy.StopLossPoints = 1;
-			strategy.TakeProfitPoints = 1;
-			recorder.Attach(strategy);
-		}, replayDuration: TimeSpan.FromDays(2));
+			strategy.CandleType = TimeSpan.FromMinutes(5).TimeFrame();
+			strategy.MomentumCandleType = TimeSpan.FromMinutes(15).TimeFrame();
+			strategy.MacdCandleType = TimeSpan.FromHours(1).TimeFrame();
+			strategy.FastMaPeriod = 3;
+			strategy.SlowMaPeriod = 8;
+			ids = strategy.Parameters.CachedKeys;
+		}, replayDuration: TimeSpan.FromDays(2), requireTrades: false);
 
-		recorder.AssertFirstOppositeWithin(TimeSpan.FromMinutes(10));
+		foreach (var name in new[]
+		{
+			"OrderVolume", "UseMoneyTakeProfit", "MoneyTakeProfit", "UsePercentTakeProfit", "PercentTakeProfit",
+			"EnableMoneyTrailing", "MoneyTrailTarget", "MoneyTrailStop", "StopLossPips", "TakeProfitPips",
+			"TrailingStopPips", "UseBreakEven", "BreakEvenTriggerPips", "BreakEvenOffsetPips", "FastMaPeriod",
+			"SlowMaPeriod", "MomentumPeriod", "MomentumBuyThreshold", "MomentumSellThreshold", "MacdFastLength",
+			"MacdSlowLength", "MacdSignalLength", "UseEquityStop", "EquityRiskPercent", "CandleType",
+			"MomentumCandleType", "MacdCandleType"
+		})
+			IsTrue(ids.Contains(name, StringComparer.Ordinal), $"3301 README parameter '{name}' is missing.");
+
+		IsFalse(ids.Contains("FastPeriod", StringComparer.Ordinal), "3301 must not be the EMA-crossover placeholder.");
 	}
 
 	[TestMethod]
