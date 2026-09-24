@@ -1151,4 +1151,24 @@ partial class CSharpTests
 		IsFalse(ids.Any(id => id.Contains("Ema", StringComparison.OrdinalIgnoreCase)), "0902 must not be an EMA-crossover placeholder.");
 	}
 
+	[TestMethod]
+	[TestCategory("Shard01")]
+	public async Task S1209_QuadraticRegressionContract()
+	{
+		const string path = "1201-1300/1209_Quadratic_Regression/CS/QuadraticRegressionStrategy.cs";
+		var recorder = new OrderTraceRecorder();
+		string[] ids = null;
+
+		await RunStrategy(path, CancellationToken, (strategy, _) =>
+		{
+			ids = strategy.Parameters.CachedKeys;
+			strategy.Parameters["Length"].Value = 1000000;
+			recorder.Attach(strategy);
+		}, requireTrades: false);
+
+		IsTrue(ids.Contains("Length", StringComparer.Ordinal), "README Length parameter is missing.");
+		IsFalse(ids.Contains("SlowLength", StringComparer.Ordinal), "1209 must not expose the old EMA placeholder.");
+		recorder.AssertEmpty("Regression cannot be formed when Length exceeds the available history.");
+	}
+
 }
