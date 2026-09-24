@@ -1375,4 +1375,21 @@ partial class CSharpTests
 		IsFalse(ids.Contains("FastPeriod", StringComparer.Ordinal), "2208 must compare open/close averages, not cross two close-price MAs.");
 	}
 
+	[TestMethod]
+	[TestCategory("Shard06")]
+	public async Task S3406_RangeFollowerContract()
+	{
+		string[] ids = null;
+		await RunStrategy<RangeFollowerStrategy>(CancellationToken, (strategy, _) =>
+		{
+			strategy.TriggerPercent = 60m;
+			ids = strategy.Parameters.CachedKeys;
+		}, requireTrades: false);
+
+		IsTrue(ids.Contains("CandleType", StringComparer.Ordinal));
+		IsTrue(ids.Contains("TriggerPercent", StringComparer.Ordinal));
+		IsFalse(ids.Contains("AtrPeriod", StringComparer.Ordinal), "3406 documents a fixed daily ATR(20), not a configurable intraday ATR placeholder.");
+		IsFalse(ids.Contains("RangePeriod", StringComparer.Ordinal), "3406 range is the current daily session, not a rolling bar count.");
+	}
+
 }

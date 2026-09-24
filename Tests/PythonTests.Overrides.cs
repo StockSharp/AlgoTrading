@@ -1582,4 +1582,22 @@ partial class PythonTests
 		IsFalse(ids.Contains("FastPeriod", StringComparer.Ordinal), "2208 must compare open/close averages, not cross two close-price MAs.");
 	}
 
+	[TestMethod]
+	[TestCategory("Shard06")]
+	public async Task S3406_RangeFollowerContract()
+	{
+		const string path = "3401-3500/3406_Range_Follower/PY/range_follower_strategy.py";
+		string[] ids = null;
+		await RunStrategy(path, CancellationToken, (strategy, _) =>
+		{
+			SetParam(strategy, "TriggerPercent", 60.0);
+			ids = strategy.Parameters.CachedKeys;
+		}, requireTrades: false);
+
+		IsTrue(ids.Contains("CandleType", StringComparer.Ordinal));
+		IsTrue(ids.Contains("TriggerPercent", StringComparer.Ordinal));
+		IsFalse(ids.Contains("AtrPeriod", StringComparer.Ordinal), "3406 documents a fixed daily ATR(20), not a configurable intraday ATR placeholder.");
+		IsFalse(ids.Contains("RangePeriod", StringComparer.Ordinal), "3406 range is the current daily session, not a rolling bar count.");
+	}
+
 }

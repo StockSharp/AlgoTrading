@@ -67,6 +67,7 @@ static class StrategyInventory
 		"3104_MA_MACD_Position_Averaging",
 		"3206_Risk_Reward_Ratio",
 		"3301_Crypto_Analysis",
+		"3406_Range_Follower",
 		"3623_Matrix_Machine_Learning",
 		"3710_RRSRandomness",
 		"3908_Five_MA_Multi_Timeframe",

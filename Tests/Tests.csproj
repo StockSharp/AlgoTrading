@@ -67,6 +67,7 @@
     <Compile Include="../API/*/3104_MA_MACD_Position_Averaging/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
     <Compile Include="../API/*/3206_Risk_Reward_Ratio/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
     <Compile Include="../API/*/3301_Crypto_Analysis/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
+    <Compile Include="../API/*/3406_Range_Follower/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
     <Compile Include="../API/*/3623_Matrix_Machine_Learning/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
     <Compile Include="../API/*/3710_RRSRandomness/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
     <Compile Include="../API/*/3908_Five_MA_Multi_Timeframe/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
