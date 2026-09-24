@@ -68,6 +68,7 @@ static class StrategyInventory
 		"3908_Five_MA_Multi_Timeframe",
 		"4006_TenPips_Opposite_Last_N_Hour_Trend",
 		"4048_Burg_Extrapolator_Forecast",
+		"4207_Rich_Kohonen_Map",
 	};
 
 	/// <summary>One example implementation: the folder it belongs to and the file to run.</summary>

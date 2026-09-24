@@ -1265,4 +1265,26 @@ partial class CSharpTests
 		IsFalse(ids.Contains("FastPeriod", StringComparer.Ordinal), "3908 must not be the two-EMA placeholder.");
 	}
 
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public async Task S4207_RichKohonenMapContract()
+	{
+		var recorder = new OrderTraceRecorder();
+		string[] ids = null;
+
+		await RunStrategy<RichKohonenMapStrategy>(CancellationToken, (strategy, _) =>
+		{
+			strategy.MapPath = string.Empty;
+			strategy.MinPips = 1000000000m;
+			strategy.MaxPips = 10000000000m;
+			ids = strategy.Parameters.CachedKeys;
+			recorder.Attach(strategy);
+		}, requireTrades: false);
+
+		foreach (var name in new[] { "MinPips", "MaxPips", "TakeProfit", "StopLoss", "Lots", "Slippage", "MapPath", "EAName", "CandleType" })
+			IsTrue(ids.Contains(name, StringComparer.Ordinal), $"4207 Kohonen parameter '{name}' is missing.");
+		IsFalse(ids.Any(id => id.Contains("Ema", StringComparison.OrdinalIgnoreCase)), "4207 must not be the EMA+ATR placeholder.");
+		recorder.AssertEmpty("With every training move classified as hold, an empty initial map must remain flat.");
+	}
+
 }
