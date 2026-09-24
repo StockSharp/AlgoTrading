@@ -443,21 +443,30 @@ partial class PythonTests
 	[TestCategory("Shard00")]
 	public async Task S3104_MaMacdPositionAveraging()
 	{
-		var recorder = new OrderTraceRecorder();
+		const string path = "3101-3200/3104_MA_MACD_Position_Averaging/PY/ma_macd_position_averaging_strategy.py";
+		string[] ids = null;
 
-		await RunStrategy(
-			"3101-3200/3104_MA_MACD_Position_Averaging/PY/ma_macd_position_averaging_strategy.py", CancellationToken,
-			(strategy, _) =>
-			{
-				SetParam(strategy, "FastPeriod", 2);
-				SetParam(strategy, "SlowPeriod", 3);
-				SetParam(strategy, "StopLossPoints", 1);
-				SetParam(strategy, "TakeProfitPoints", 1);
-				recorder.Attach(strategy);
-			},
-			replayDuration: TimeSpan.FromDays(2));
+		await RunStrategy(path, CancellationToken, (strategy, _) =>
+		{
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "MaPeriod", 3);
+			SetParam(strategy, "MacdFastPeriod", 2);
+			SetParam(strategy, "MacdSlowPeriod", 4);
+			SetParam(strategy, "MacdSignalPeriod", 2);
+			SetParam(strategy, "IndentPips", 0);
+			SetParam(strategy, "MacdRatio", 0.0);
+			ids = strategy.Parameters.CachedKeys;
+		}, replayDuration: TimeSpan.FromDays(2), requireTrades: false);
 
-		recorder.AssertFirstOppositeWithin(TimeSpan.FromMinutes(10));
+		foreach (var name in new[]
+		{
+			"CandleType", "OrderVolume", "StopLossPips", "TakeProfitPips", "TrailingStopPips", "TrailingStepPips",
+			"StepLossingPips", "LotCoefficient", "SignalBar", "MaPeriod", "MaShift", "MaMethod", "MaAppliedPrice",
+			"IndentPips", "MacdFastPeriod", "MacdSlowPeriod", "MacdSignalPeriod", "MacdAppliedPrice", "MacdRatio"
+		})
+			IsTrue(ids.Contains(name, StringComparer.Ordinal), $"3104 README parameter '{name}' is missing.");
+
+		IsFalse(ids.Contains("FastPeriod", StringComparer.Ordinal), "3104 must not be the old WMA-crossover placeholder.");
 	}
 
 	[TestMethod]

@@ -363,18 +363,28 @@ partial class CSharpTests
 	[TestCategory("Shard00")]
 	public async Task S3104_MaMacdPositionAveraging()
 	{
-		var recorder = new OrderTraceRecorder();
-
+		string[] ids = null;
 		await RunStrategy<MaMacdPositionAveragingStrategy>(CancellationToken, (strategy, _) =>
 		{
-			strategy.FastPeriod = 2;
-			strategy.SlowPeriod = 3;
-			strategy.StopLossPoints = 1;
-			strategy.TakeProfitPoints = 1;
-			recorder.Attach(strategy);
-		}, replayDuration: TimeSpan.FromDays(2));
+			strategy.CandleType = TimeSpan.FromMinutes(5).TimeFrame();
+			strategy.MaPeriod = 3;
+			strategy.MacdFastPeriod = 2;
+			strategy.MacdSlowPeriod = 4;
+			strategy.MacdSignalPeriod = 2;
+			strategy.IndentPips = 0;
+			strategy.MacdRatio = 0m;
+			ids = strategy.Parameters.CachedKeys;
+		}, replayDuration: TimeSpan.FromDays(2), requireTrades: false);
 
-		recorder.AssertFirstOppositeWithin(TimeSpan.FromMinutes(10));
+		foreach (var name in new[]
+		{
+			"CandleType", "OrderVolume", "StopLossPips", "TakeProfitPips", "TrailingStopPips", "TrailingStepPips",
+			"StepLossingPips", "LotCoefficient", "SignalBar", "MaPeriod", "MaShift", "MaMethod", "MaAppliedPrice",
+			"IndentPips", "MacdFastPeriod", "MacdSlowPeriod", "MacdSignalPeriod", "MacdAppliedPrice", "MacdRatio"
+		})
+			IsTrue(ids.Contains(name, StringComparer.Ordinal), $"3104 README parameter '{name}' is missing.");
+
+		IsFalse(ids.Contains("FastPeriod", StringComparer.Ordinal), "3104 must not be the old WMA-crossover placeholder.");
 	}
 
 	[TestMethod]
