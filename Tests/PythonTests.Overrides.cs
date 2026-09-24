@@ -1318,4 +1318,28 @@ partial class PythonTests
 		recorder.AssertEmpty("An unreachable MA-strength threshold must suppress entries.");
 	}
 
+	[TestMethod]
+	[TestCategory("Shard06")]
+	public async Task S0806_FootprintContract()
+	{
+		const string path = "0801-0900/0806_Footprint/PY/footprint_strategy.py";
+		var recorder = new OrderTraceRecorder();
+		string[] ids = null;
+
+		await RunStrategy(path, CancellationToken, (strategy, _) =>
+		{
+			ids = strategy.Parameters.CachedKeys;
+			SetParam(strategy, "ImbalancePercent", 1000000.0);
+			recorder.Attach(strategy);
+		}, requireTrades: false);
+
+		string[] declared = ["CandleType", "ImbalancePercent", "UseDailyTrendFilter", "DailyTrendPeriod", "StopLossPercent", "TakeProfitPercent"];
+		foreach (var name in declared)
+			IsTrue(ids.Contains(name, StringComparer.Ordinal), $"Footprint contract parameter '{name}' is missing.");
+
+		IsFalse(ids.Any(id => id.Contains("Fast", StringComparison.OrdinalIgnoreCase) && id.Contains("Ema", StringComparison.OrdinalIgnoreCase)),
+			"0806 must not expose the EMA-crossover placeholder.");
+		recorder.AssertEmpty("An unreachable footprint imbalance threshold must suppress entries.");
+	}
+
 }

@@ -6,72 +6,87 @@ clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 
-class footprint_strategy(Strategy):
-    """
-    Footprint: EMA crossover strategy.
-    Buys when fast EMA crosses above slow EMA, sells on reverse.
-    """
 
+class footprint_strategy(Strategy):
     def __init__(self):
         super(footprint_strategy, self).__init__()
-        self._fast_period = self.Param("FastPeriod", 120)             .SetDisplay("Fast EMA", "Fast EMA period", "Indicator")
-        self._slow_period = self.Param("SlowPeriod", 450)             .SetDisplay("Slow EMA", "Slow EMA period", "Indicator")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1)))             .SetDisplay("Candle Type", "Time frame for candles", "General")
 
-        self._prev_fast = 0.0
-        self._prev_slow = 0.0
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1)))
+        self._imbalance_percent = self.Param("ImbalancePercent", 25.0).SetNotNegative()
+        self._use_daily_trend_filter = self.Param("UseDailyTrendFilter", False)
+        self._daily_trend_period = self.Param("DailyTrendPeriod", 50).SetGreaterThanZero()
+        self._stop_loss_percent = self.Param("StopLossPercent", 1.0).SetNotNegative()
+        self._take_profit_percent = self.Param("TakeProfitPercent", 2.0).SetNotNegative()
+
+        self._daily_trend_bullish = False
+        self._daily_trend_ready = False
 
     @property
-    def candle_type(self):
+    def CandleType(self):
         return self._candle_type.Value
+
+    def GetWorkingSecurities(self):
+        result = [(self.Security, self.CandleType)]
+        if bool(self._use_daily_trend_filter.Value):
+            result.append((self.Security, DataType.TimeFrame(TimeSpan.FromDays(1))))
+        return result
 
     def OnReseted(self):
         super(footprint_strategy, self).OnReseted()
-        self._prev_fast = 0.0
-        self._prev_slow = 0.0
+        self._daily_trend_bullish = False
+        self._daily_trend_ready = False
 
     def OnStarted2(self, time):
         super(footprint_strategy, self).OnStarted2(time)
 
-        fast = ExponentialMovingAverage()
-        fast.Length = self._fast_period.Value
-        slow = ExponentialMovingAverage()
-        slow.Length = self._slow_period.Value
+        sl = float(self._stop_loss_percent.Value)
+        tp = float(self._take_profit_percent.Value)
+        if sl > 0 or tp > 0:
+            self.StartProtection(
+                Unit(tp, UnitTypes.Percent) if tp > 0 else None,
+                Unit(sl, UnitTypes.Percent) if sl > 0 else None)
 
-        subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(fast, slow, self._process_candle).Start()
+        if bool(self._use_daily_trend_filter.Value):
+            sma = SimpleMovingAverage()
+            sma.Length = int(self._daily_trend_period.Value)
+
+            def on_daily(candle, sma_value):
+                if candle.State != CandleStates.Finished or not sma.IsFormed:
+                    return
+                self._daily_trend_bullish = float(candle.ClosePrice) > float(sma_value)
+                self._daily_trend_ready = True
+
+            self.SubscribeCandles(DataType.TimeFrame(TimeSpan.FromDays(1))).Bind(sma, on_daily).Start()
+
+        subscription = self.SubscribeCandles(self.CandleType)
+        subscription.Bind(self._process_candle).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, fast)
-            self.DrawIndicator(area, slow)
             self.DrawOwnTrades(area)
 
-    def _process_candle(self, candle, fast_val, slow_val):
-        if candle.State != CandleStates.Finished:
+    def _process_candle(self, candle):
+        if candle.State != CandleStates.Finished or self.Position != 0:
             return
 
-        fast_v = float(fast_val)
-        slow_v = float(slow_val)
+        if bool(self._use_daily_trend_filter.Value) and (not self._daily_trend_ready or not self._daily_trend_bullish):
+            return
 
-        if self._prev_fast <= self._prev_slow and fast_val > slow_val and self.Position <= 0:
+        buy = float(candle.BuyVolume.Value) if candle.BuyVolume.HasValue else 0.0
+        sell = float(candle.SellVolume.Value) if candle.SellVolume.HasValue else 0.0
 
+        if buy <= 0 and sell <= 0:
+            return
 
+        required_buy = sell * (1.0 + float(self._imbalance_percent.Value) / 100.0)
+
+        if buy > required_buy and float(candle.ClosePrice) < float(candle.OpenPrice):
             self.BuyMarket()
-
-
-        elif self._prev_fast >= self._prev_slow and fast_val < slow_val and self.Position >= 0:
-
-
-            self.SellMarket()
-
-        self._prev_fast = fast_val
-        self._prev_slow = slow_val
 
     def CreateClone(self):
         return footprint_strategy()
