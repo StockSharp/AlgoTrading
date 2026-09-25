@@ -141,3 +141,4 @@ static class StrategyInventory
 	}
 }
 		"3008_OCO_Pending_Orders",
+		"3507_Sample_Detect_Economic_Calendar",

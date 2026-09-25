@@ -1252,4 +1252,33 @@ partial class CSharpTests
 		AreEqual(false, captured.Parameters["Armed"].Value);
 	}
 
+	[TestMethod]
+	[TestCategory("Shard03")]
+	public async Task S3507_EconomicCalendarArmsNewsStops()
+	{
+		const string path = "3501-3600/3507_Sample_Detect_Economic_Calendar/CS/SampleDetectEconomicCalendarStrategy.cs";
+		var recorder = new OrderTraceRecorder();
+		var eventTime = Paths.HistoryBeginDate.Date.AddDays(1).AddHours(12);
+
+		await RunStrategy(path, CancellationToken, (strategy, _) =>
+		{
+			strategy.Parameters["TradeNews"].Value = true;
+			strategy.Parameters["OrderVolume"].Value = 2m;
+			strategy.Parameters["StopLossPoints"].Value = 10;
+			strategy.Parameters["TakeProfitPoints"].Value = 10;
+			strategy.Parameters["TrailingStopPoints"].Value = 0;
+			strategy.Parameters["BuyDistancePoints"].Value = 1;
+			strategy.Parameters["SellDistancePoints"].Value = 1;
+			strategy.Parameters["LeadMinutes"].Value = 60;
+			strategy.Parameters["PostMinutes"].Value = 60;
+			strategy.Parameters["ExpiryMinutes"].Value = 180;
+			strategy.Parameters["BaseCurrency"].Value = "USD";
+			strategy.Parameters["CalendarDefinition"].Value = $"{eventTime:yyyy-MM-dd HH:mm};USD;High;Behavior test";
+			recorder.Attach(strategy);
+		});
+
+		recorder.AssertFirstVolume(2m);
+		recorder.AssertFirstOrderAfterStart(TimeSpan.FromMinutes(1));
+	}
+
 }

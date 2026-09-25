@@ -1427,4 +1427,33 @@ partial class PythonTests
 		AreEqual(false, captured.Parameters["Armed"].Value);
 	}
 
+	[TestMethod]
+	[TestCategory("Shard03")]
+	public async Task S3507_EconomicCalendarArmsNewsStops()
+	{
+		const string path = "3501-3600/3507_Sample_Detect_Economic_Calendar/PY/sample_detect_economic_calendar_strategy.py";
+		var recorder = new OrderTraceRecorder();
+		var eventTime = Paths.HistoryBeginDate.Date.AddDays(1).AddHours(12);
+
+		await RunStrategy(path, CancellationToken, (strategy, _) =>
+		{
+			SetParam(strategy, "TradeNews", true);
+			SetParam(strategy, "OrderVolume", 2.0);
+			SetParam(strategy, "StopLossPoints", 10);
+			SetParam(strategy, "TakeProfitPoints", 10);
+			SetParam(strategy, "TrailingStopPoints", 0);
+			SetParam(strategy, "BuyDistancePoints", 1);
+			SetParam(strategy, "SellDistancePoints", 1);
+			SetParam(strategy, "LeadMinutes", 60);
+			SetParam(strategy, "PostMinutes", 60);
+			SetParam(strategy, "ExpiryMinutes", 180);
+			SetParam(strategy, "BaseCurrency", "USD");
+			SetParam(strategy, "CalendarDefinition", $"{eventTime:yyyy-MM-dd HH:mm};USD;High;Behavior test");
+			recorder.Attach(strategy);
+		});
+
+		recorder.AssertFirstVolume(2m);
+		recorder.AssertFirstOrderAfterStart(TimeSpan.FromMinutes(1));
+	}
+
 }
