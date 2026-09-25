@@ -2,12 +2,9 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
-clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import Highest, Lowest
+from StockSharp.Messages import DataType, Level1Fields, Sides, Unit, UnitTypes
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -15,70 +12,90 @@ class oco_pending_orders_strategy(Strategy):
     def __init__(self):
         super(oco_pending_orders_strategy, self).__init__()
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
-            .SetDisplay("Candle Type", "Timeframe", "General")
-        self._period = self.Param("Period", 20) \
-            .SetDisplay("Channel Period", "Highest/Lowest lookback", "Indicators")
+        self._order_volume = self.Param("OrderVolume", 1.0).SetGreaterThanZero()
+        self._buy_limit = self.Param("BuyLimitPrice", 0.0).SetNotNegative()
+        self._buy_stop = self.Param("BuyStopPrice", 0.0).SetNotNegative()
+        self._sell_limit = self.Param("SellLimitPrice", 0.0).SetNotNegative()
+        self._sell_stop = self.Param("SellStopPrice", 0.0).SetNotNegative()
+        self._stop_loss = self.Param("StopLossPips", 0).SetNotNegative()
+        self._take_profit = self.Param("TakeProfitPips", 0).SetNotNegative()
+        self._use_oco = self.Param("UseOcoLink", True)
+        self._armed = self.Param("Armed", False)
 
-        self._prev_high = None
-        self._prev_low = None
-
-    @property
-    def CandleType(self):
-        return self._candle_type.Value
-    @property
-    def Period(self):
-        return self._period.Value
-
-    def OnReseted(self):
-        super(oco_pending_orders_strategy, self).OnReseted()
-        self._prev_high = None
-        self._prev_low = None
+    def GetWorkingSecurities(self):
+        return [(self.Security, DataType.Level1)]
 
     def OnStarted2(self, time):
         super(oco_pending_orders_strategy, self).OnStarted2(time)
-        self._prev_high = None
-        self._prev_low = None
 
-        highest = Highest()
-        highest.Length = self.Period
-        lowest = Lowest()
-        lowest.Length = self.Period
+        step = float(self.Security.PriceStep) if self.Security is not None and self.Security.PriceStep is not None else 1.0
+        if step <= 0:
+            step = 1.0
 
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(highest, lowest, self._on_process).Start()
+        tp = int(self._take_profit.Value)
+        sl = int(self._stop_loss.Value)
+        take = Unit(tp * step, UnitTypes.Absolute) if tp > 0 else None
+        stop = Unit(sl * step, UnitTypes.Absolute) if sl > 0 else None
 
-        area = self.CreateChartArea()
-        if area is not None:
-            self.DrawCandles(area, subscription)
-            self.DrawOwnTrades(area)
+        if take is not None or stop is not None:
+            self.StartProtection(takeProfit=take, stopLoss=stop, useMarketOrders=True)
 
-    def _on_process(self, candle, high_value, low_value):
-        if candle.State != CandleStates.Finished:
-            return
-        hv = float(high_value)
-        lv = float(low_value)
+        self.SubscribeLevel1().Bind(self._process_level1).Start()
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_high = hv
-            self._prev_low = lv
+    def _process_level1(self, message):
+        if not bool(self._armed.Value):
             return
 
-        if self._prev_high is None or self._prev_low is None:
-            self._prev_high = hv
-            self._prev_low = lv
-            return
-        close = float(candle.ClosePrice)
-        if close > self._prev_high and self.Position <= 0:
-            if self.Position < 0:
-                self.BuyMarket()
-            self.BuyMarket()
-        elif close < self._prev_low and self.Position >= 0:
-            if self.Position > 0:
-                self.SellMarket()
-            self.SellMarket()
-        self._prev_high = hv
-        self._prev_low = lv
+        bid = message.TryGetDecimal(Level1Fields.BestBidPrice)
+        ask = message.TryGetDecimal(Level1Fields.BestAskPrice)
+
+        if ask is not None:
+            best_ask = float(ask)
+            if float(self._buy_limit.Value) > 0 and best_ask <= float(self._buy_limit.Value):
+                self._buy_limit.Value = 0.0
+                self._execute(Sides.Buy)
+                return
+            if float(self._buy_stop.Value) > 0 and best_ask >= float(self._buy_stop.Value):
+                self._buy_stop.Value = 0.0
+                self._execute(Sides.Buy)
+                return
+
+        if bid is not None:
+            best_bid = float(bid)
+            if float(self._sell_limit.Value) > 0 and best_bid >= float(self._sell_limit.Value):
+                self._sell_limit.Value = 0.0
+                self._execute(Sides.Sell)
+                return
+            if float(self._sell_stop.Value) > 0 and best_bid <= float(self._sell_stop.Value):
+                self._sell_stop.Value = 0.0
+                self._execute(Sides.Sell)
+                return
+
+        self._disarm_if_empty()
+
+    def _execute(self, side):
+        volume = float(self._order_volume.Value)
+        if side == Sides.Buy:
+            self.BuyMarket(volume)
+        else:
+            self.SellMarket(volume)
+
+        if bool(self._use_oco.Value):
+            self._clear_levels()
+            self._armed.Value = False
+        else:
+            self._disarm_if_empty()
+
+    def _clear_levels(self):
+        self._buy_limit.Value = 0.0
+        self._buy_stop.Value = 0.0
+        self._sell_limit.Value = 0.0
+        self._sell_stop.Value = 0.0
+
+    def _disarm_if_empty(self):
+        if (float(self._buy_limit.Value) <= 0 and float(self._buy_stop.Value) <= 0 and
+                float(self._sell_limit.Value) <= 0 and float(self._sell_stop.Value) <= 0):
+            self._armed.Value = False
 
     def CreateClone(self):
         return oco_pending_orders_strategy()
