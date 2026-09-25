@@ -1463,4 +1463,14 @@ partial class CSharpTests
 			hasSupport: false, hasResistance: false));
 	}
 
+	[TestMethod]
+	[TestCategory("Shard03")]
+	public void S1437_TimeUsesTicksAboveBarOpen()
+	{
+		IsTrue(TimeStrategy.IsPriceConditionMet(
+			open: 100m, high: 101.5m, priceStep: 0.1m, ticksFromOpen: 10));
+		IsFalse(TimeStrategy.IsPriceConditionMet(
+			open: 100m, high: 100.5m, priceStep: 0.1m, ticksFromOpen: 10));
+	}
+
 }
