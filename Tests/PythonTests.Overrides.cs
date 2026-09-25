@@ -1361,4 +1361,26 @@ partial class PythonTests
 		recorder.AssertContainsTwoLegSignal("(TOPDOWN)");
 	}
 
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public async Task S1101_TrailingExitRequiresNewSignalTransition()
+	{
+		const string path = "1101-1200/1101_Multi_Timeframe_MACD/PY/multi_timeframe_macd_strategy.py";
+		var recorder = new OrderTraceRecorder();
+
+		await RunStrategy(path, CancellationToken, (strategy, _) =>
+		{
+			SetParam(strategy, "FastLength", 2);
+			SetParam(strategy, "SlowLength", 3);
+			SetParam(strategy, "SignalLength", 2);
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "HigherCandleType", TimeSpan.FromMinutes(15).TimeFrame());
+			SetParam(strategy, "UseTrailingStop", true);
+			SetParam(strategy, "TrailingStopPercent", 0.01);
+			recorder.Attach(strategy);
+		}, replayDuration: TimeSpan.FromDays(3));
+
+		recorder.AssertNoSameSideReentryWithinAfterFirstExit(TimeSpan.FromMinutes(5));
+	}
+
 }

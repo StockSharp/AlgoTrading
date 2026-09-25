@@ -1163,4 +1163,26 @@ partial class CSharpTests
 		recorder.AssertContainsTwoLegSignal("(TOPDOWN)");
 	}
 
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public async Task S1101_TrailingExitRequiresNewSignalTransition()
+	{
+		const string path = "1101-1200/1101_Multi_Timeframe_MACD/CS/MultiTimeframeMacdStrategy.cs";
+		var recorder = new OrderTraceRecorder();
+
+		await RunStrategy(path, CancellationToken, (strategy, _) =>
+		{
+			strategy.Parameters["FastLength"].Value = 2;
+			strategy.Parameters["SlowLength"].Value = 3;
+			strategy.Parameters["SignalLength"].Value = 2;
+			strategy.Parameters["CandleType"].Value = TimeSpan.FromMinutes(5).TimeFrame();
+			strategy.Parameters["HigherCandleType"].Value = TimeSpan.FromMinutes(15).TimeFrame();
+			strategy.Parameters["UseTrailingStop"].Value = true;
+			strategy.Parameters["TrailingStopPercent"].Value = 0.01m;
+			recorder.Attach(strategy);
+		}, replayDuration: TimeSpan.FromDays(3));
+
+		recorder.AssertNoSameSideReentryWithinAfterFirstExit(TimeSpan.FromMinutes(5));
+	}
+
 }

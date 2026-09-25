@@ -159,6 +159,25 @@ sealed class OrderTraceRecorder
 	/// <summary>
 	/// The first order opposite to the first entry waited at least the given time.
 	/// </summary>
+	public void AssertNoSameSideReentryWithinAfterFirstExit(TimeSpan minimumDelay)
+	{
+		var trace = Snapshot();
+
+		Assert.IsTrue(trace.Length > 1, $"Too few orders to contain an exit. Trace: {Format(trace)}.");
+		var first = trace[0];
+		var exitIndex = Array.FindIndex(trace, 1, entry => entry.Side != first.Side);
+		Assert.IsTrue(exitIndex > 0, $"No opposite exit was submitted. Trace: {Format(trace)}.");
+
+		var exit = trace[exitIndex];
+		var reentry = trace.Skip(exitIndex + 1).FirstOrDefault(entry => entry.Side == first.Side);
+		if (reentry == default)
+			return;
+
+		Assert.IsTrue(
+			reentry.Time - exit.Time > minimumDelay,
+			$"Same-side re-entry followed the exit after {reentry.Time - exit.Time}, expected more than {minimumDelay}. Trace: {Format(trace)}.");
+	}
+
 	public void AssertFirstOppositeAfter(TimeSpan minimumDelay)
 	{
 		var trace = Snapshot();
