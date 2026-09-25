@@ -1446,4 +1446,21 @@ partial class CSharpTests
 		AreEqual(0, RenkoStrategy.GetSignal(previousDirection: 1, currentDirection: 1));
 	}
 
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public void S1322_SmcUsesPremiumDiscountTrendAndOrderBlock()
+	{
+		AreEqual(1, SmcStrategy.GetSignal(
+			price: 98m, swingLow: 90m, swingHigh: 110m, sma: 95m,
+			hasSupport: true, hasResistance: false));
+
+		AreEqual(-1, SmcStrategy.GetSignal(
+			price: 102m, swingLow: 90m, swingHigh: 110m, sma: 105m,
+			hasSupport: false, hasResistance: true));
+
+		AreEqual(0, SmcStrategy.GetSignal(
+			price: 98m, swingLow: 90m, swingHigh: 110m, sma: 95m,
+			hasSupport: false, hasResistance: false));
+	}
+
 }
