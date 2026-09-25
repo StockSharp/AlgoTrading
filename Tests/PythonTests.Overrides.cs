@@ -1220,4 +1220,16 @@ partial class PythonTests
 		recorder.AssertFirstSide(Sides.Buy);
 	}
 
+	[TestMethod]
+	[TestCategory("Shard03")]
+	public async Task S0703_QuantumSentimentFluxBehavior()
+	{
+		const string path = "0701-0800/0703_Quantum_Sentiment_Flux_Beginners/PY/quantum_sentiment_flux_beginners_strategy.py";
+		var recorder = new OrderTraceRecorder();
+
+		await RunStrategy(path, CancellationToken, (strategy, _) => recorder.Attach(strategy));
+
+		recorder.AssertFirstVolume(1m);
+	}
+
 }
