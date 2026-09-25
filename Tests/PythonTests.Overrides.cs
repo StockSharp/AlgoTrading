@@ -1278,4 +1278,28 @@ partial class PythonTests
 		recorder.AssertFirstOppositeWithin(TimeSpan.FromMinutes(10));
 	}
 
+	[TestMethod]
+	[TestCategory("Shard06")]
+	public async Task S3206_RiskRewardRatioProtection()
+	{
+		const string path = "3201-3300/3206_Risk_Reward_Ratio/PY/risk_reward_ratio_strategy.py";
+		var recorder = new OrderTraceRecorder();
+
+		await RunStrategy(path, CancellationToken, (strategy, _) =>
+		{
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "FastMaPeriod", 2);
+			SetParam(strategy, "SlowMaPeriod", 3);
+			SetParam(strategy, "MomentumThreshold", 0.0);
+			SetParam(strategy, "StopLossPips", 1);
+			SetParam(strategy, "RewardRatio", 1.0);
+			SetParam(strategy, "EnableTrailing", false);
+			SetParam(strategy, "EnableBreakEven", false);
+			recorder.Attach(strategy);
+		}, replayDuration: TimeSpan.FromDays(2));
+
+		recorder.AssertFirstOppositeAfter(TimeSpan.FromTicks(1));
+		recorder.AssertFirstOppositeWithin(TimeSpan.FromMinutes(10));
+	}
+
 }

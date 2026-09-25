@@ -1080,4 +1080,28 @@ partial class CSharpTests
 		recorder.AssertFirstOppositeWithin(TimeSpan.FromMinutes(10));
 	}
 
+	[TestMethod]
+	[TestCategory("Shard06")]
+	public async Task S3206_RiskRewardRatioProtection()
+	{
+		const string path = "3201-3300/3206_Risk_Reward_Ratio/CS/RiskRewardRatioStrategy.cs";
+		var recorder = new OrderTraceRecorder();
+
+		await RunStrategy(path, CancellationToken, (strategy, _) =>
+		{
+			strategy.Parameters["CandleType"].Value = TimeSpan.FromMinutes(5).TimeFrame();
+			strategy.Parameters["FastMaPeriod"].Value = 2;
+			strategy.Parameters["SlowMaPeriod"].Value = 3;
+			strategy.Parameters["MomentumThreshold"].Value = 0m;
+			strategy.Parameters["StopLossPips"].Value = 1;
+			strategy.Parameters["RewardRatio"].Value = 1m;
+			strategy.Parameters["EnableTrailing"].Value = false;
+			strategy.Parameters["EnableBreakEven"].Value = false;
+			recorder.Attach(strategy);
+		}, replayDuration: TimeSpan.FromDays(2));
+
+		recorder.AssertFirstOppositeAfter(TimeSpan.FromTicks(1));
+		recorder.AssertFirstOppositeWithin(TimeSpan.FromMinutes(10));
+	}
+
 }
