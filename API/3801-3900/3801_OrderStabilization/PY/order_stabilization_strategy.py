@@ -27,6 +27,7 @@ class order_stabilization_strategy(Strategy):
         self._entry_price = 0.0
         self._previous_body = 0.0
         self._has_previous_body = False
+        self._entry_candle_time = None
 
     def GetWorkingSecurities(self):
         return [(self.Security, self._candle_type.Value)]
@@ -53,7 +54,7 @@ class order_stabilization_strategy(Strategy):
         body = abs(float(candle.ClosePrice) - float(candle.OpenPrice))
         body_limit = float(self._stabilization_points.Value) * point
 
-        if self.Position != 0:
+        if self.Position != 0 and (self._entry_candle_time is None or candle.OpenTime > self._entry_candle_time):
             pnl = self._floating_pnl(float(candle.ClosePrice), point)
             one_small = body <= body_limit
             two_small = one_small and self._has_previous_body and self._previous_body <= body_limit
@@ -68,10 +69,18 @@ class order_stabilization_strategy(Strategy):
 
         if (self._created_at is not None and int(self._expiration_minutes.Value) > 0 and
                 (candle.OpenTime - self._created_at).TotalMinutes >= int(self._expiration_minutes.Value)):
+            self._clear_pending()
             self._create_pending(float(candle.ClosePrice), candle.OpenTime, point)
+            self._previous_body = body
+            self._has_previous_body = True
+            return
 
+        # Stops created from a finished candle may only trigger on a later candle.
         if self._buy_stop is None and self._sell_stop is None:
             self._create_pending(float(candle.ClosePrice), candle.OpenTime, point)
+            self._previous_body = body
+            self._has_previous_body = True
+            return
 
         hit_buy = self._buy_stop is not None and float(candle.HighPrice) >= self._buy_stop
         hit_sell = self._sell_stop is not None and float(candle.LowPrice) <= self._sell_stop
@@ -93,6 +102,7 @@ class order_stabilization_strategy(Strategy):
                 self._sell_stop = None
 
             self._entry_price = trigger
+            self._entry_candle_time = candle.OpenTime
 
         self._previous_body = body
         self._has_previous_body = True
@@ -118,6 +128,7 @@ class order_stabilization_strategy(Strategy):
         elif self.Position < 0:
             self.BuyMarket(Math.Abs(self.Position))
         self._entry_price = 0.0
+        self._entry_candle_time = None
 
     def _clear_pending(self):
         self._buy_stop = None
