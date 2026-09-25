@@ -1390,4 +1390,34 @@ partial class CSharpTests
 		AreEqual(99m, sell);
 	}
 
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public void S3121_BrunoSignalFiltersMultiplyVolume()
+	{
+		var (longVolume, shortVolume) = BrunoStrategy.CalculateSignalVolumes(
+			baseVolume: 1m,
+			multiplier: 2m,
+			longDirectional: true,
+			shortDirectional: false,
+			longMomentum: true,
+			shortMomentum: false,
+			longMacd: true,
+			shortMacd: false,
+			longSar: true,
+			shortSar: false);
+
+		AreEqual(16m, longVolume);
+		AreEqual(1m, shortVolume);
+
+		(longVolume, shortVolume) = BrunoStrategy.CalculateSignalVolumes(
+			1m, 2m,
+			longDirectional: true, shortDirectional: true,
+			longMomentum: false, shortMomentum: false,
+			longMacd: false, shortMacd: false,
+			longSar: false, shortSar: false);
+
+		IsTrue(longVolume > 1m && shortVolume > 1m,
+			"Both sides must be detectable so the caller can skip conflicting signals.");
+	}
+
 }
