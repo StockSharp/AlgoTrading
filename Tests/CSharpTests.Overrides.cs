@@ -1314,4 +1314,30 @@ partial class CSharpTests
 		AreEqual(12m, go, "GO must follow the README formula over EMA(O/H/L/C) multiplied by volume.");
 	}
 
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public void S3299_JbSignalUsesBollingerSmaAndForce()
+	{
+		AreEqual(1, JbStrategy.GetSignal(
+			previousClose: 94m,
+			sma: 90m,
+			force: 1m,
+			lowerBand: 95m,
+			upperBand: 105m));
+
+		AreEqual(-1, JbStrategy.GetSignal(
+			previousClose: 106m,
+			sma: 110m,
+			force: -1m,
+			lowerBand: 95m,
+			upperBand: 105m));
+
+		AreEqual(0, JbStrategy.GetSignal(
+			previousClose: 100m,
+			sma: 90m,
+			force: 1m,
+			lowerBand: 95m,
+			upperBand: 105m));
+	}
+
 }
