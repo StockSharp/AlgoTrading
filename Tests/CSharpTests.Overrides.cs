@@ -1473,4 +1473,13 @@ partial class CSharpTests
 			open: 100m, high: 100.5m, priceStep: 0.1m, ticksFromOpen: 10));
 	}
 
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public void S1341_StochasticThresholdCrossing()
+	{
+		AreEqual(1, StochasticStrategy.GetSignal(40m, 60m, overSold: 50m, overBought: 50m));
+		AreEqual(-1, StochasticStrategy.GetSignal(60m, 40m, overSold: 50m, overBought: 50m));
+		AreEqual(0, StochasticStrategy.GetSignal(60m, 70m, overSold: 50m, overBought: 50m));
+	}
+
 }
