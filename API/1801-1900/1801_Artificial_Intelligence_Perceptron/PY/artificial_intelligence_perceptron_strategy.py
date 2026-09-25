@@ -65,7 +65,8 @@ class artificial_intelligence_perceptron_strategy(Strategy):
         ac = ao - self._avg_tail(self._ao, 5)
         self._ac.append(ac)
 
-        self._apply_stop(candle)
+        if self._apply_stop(candle):
+            return
 
         newest = len(self._ac) - 1 - int(self._shift.Value)
         if newest - 21 < 0:
@@ -114,10 +115,14 @@ class artificial_intelligence_perceptron_strategy(Strategy):
             self.SellMarket(Math.Abs(self.Position))
             self._entry_price = 0.0
             self._stop_price = None
+            return True
         elif self.Position < 0 and self._stop_price is not None and float(candle.HighPrice) >= self._stop_price:
             self.BuyMarket(Math.Abs(self.Position))
             self._entry_price = 0.0
             self._stop_price = None
+            return True
+
+        return False
 
     def _enter(self, signal, volume, price, stop_distance):
         if signal > 0:
