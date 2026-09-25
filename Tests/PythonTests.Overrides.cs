@@ -1302,4 +1302,21 @@ partial class PythonTests
 		recorder.AssertFirstOppositeWithin(TimeSpan.FromMinutes(10));
 	}
 
+	[TestMethod]
+	[TestCategory("Shard01")]
+	public async Task S3801_OrderStabilizationDoesNotLookAhead()
+	{
+		const string path = "3801-3900/3801_OrderStabilization/PY/order_stabilization_strategy.py";
+		var recorder = new OrderTraceRecorder();
+
+		await RunStrategy(path, CancellationToken, (strategy, _) =>
+		{
+			SetParam(strategy, "OrderDistancePoints", 1.0);
+			recorder.Attach(strategy);
+		});
+
+		recorder.AssertFirstOrderAfterStart(TimeSpan.FromMinutes(5));
+		recorder.AssertFirstOppositeAfter(TimeSpan.FromTicks(1));
+	}
+
 }

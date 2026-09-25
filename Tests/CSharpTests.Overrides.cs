@@ -1104,4 +1104,21 @@ partial class CSharpTests
 		recorder.AssertFirstOppositeWithin(TimeSpan.FromMinutes(10));
 	}
 
+	[TestMethod]
+	[TestCategory("Shard01")]
+	public async Task S3801_OrderStabilizationDoesNotLookAhead()
+	{
+		const string path = "3801-3900/3801_OrderStabilization/CS/OrderStabilizationStrategy.cs";
+		var recorder = new OrderTraceRecorder();
+
+		await RunStrategy(path, CancellationToken, (strategy, _) =>
+		{
+			strategy.Parameters["OrderDistancePoints"].Value = 1m;
+			recorder.Attach(strategy);
+		});
+
+		recorder.AssertFirstOrderAfterStart(TimeSpan.FromMinutes(5));
+		recorder.AssertFirstOppositeAfter(TimeSpan.FromTicks(1));
+	}
+
 }

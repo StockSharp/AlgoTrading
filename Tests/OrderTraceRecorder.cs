@@ -12,13 +12,22 @@ using StockSharp.Messages;
 sealed class OrderTraceRecorder
 {
 	private readonly ConcurrentDictionary<long, OrderTraceEntry> _orders = new();
+	private DateTime? _startedAt;
 
 	/// <summary>
 	/// Starts recording every order the strategy submits, in the order they arrive.
 	/// </summary>
 	public void Attach(Strategy strategy)
-		=> strategy.OrderReceived += (_, order) =>
+	{
+		strategy.ProcessStateChanged += changed =>
+		{
+			if (ReferenceEquals(changed, strategy) && changed.ProcessState == ProcessStates.Started)
+				_startedAt ??= strategy.CurrentTime;
+		};
+
+		strategy.OrderReceived += (_, order) =>
 			_orders.TryAdd(order.TransactionId, new(strategy.CurrentTime, order.Side, order.Volume, order.Comment));
+	}
 
 	/// <summary>
 	/// Nothing was submitted. Used where a setting is supposed to suppress trading.
@@ -41,6 +50,17 @@ sealed class OrderTraceRecorder
 	/// <summary>
 	/// The first order was submitted in the expected hour of the day.
 	/// </summary>
+	public void AssertFirstOrderAfterStart(TimeSpan minimumDelay)
+	{
+		var trace = Snapshot();
+
+		Assert.IsTrue(_startedAt is not null, "Strategy start time was not recorded.");
+		Assert.IsTrue(trace.Length > 0, "No orders were submitted.");
+		Assert.IsTrue(
+			trace[0].Time - _startedAt.Value > minimumDelay,
+			$"First order arrived after {trace[0].Time - _startedAt.Value}, expected more than {minimumDelay}. Trace: {Format(trace)}.");
+	}
+
 	public void AssertFirstOrderHour(int expectedHour)
 	{
 		var trace = Snapshot();
