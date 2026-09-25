@@ -30,6 +30,7 @@ public class HedgeAverageStrategy : Strategy
 	private decimal? _stopPrice;
 	private decimal? _takePrice;
 	private decimal? _bestPrice;
+	private DateTimeOffset? _entryCandleTime;
 
 	public int Period1 { get => _period1.Value; set => _period1.Value = value; }
 	public int Period2 { get => _period2.Value; set => _period2.Value = value; }
@@ -96,12 +97,12 @@ public class HedgeAverageStrategy : Strategy
 		var slowClose = AverageTail(_closes, Period2);
 
 		if (slowOpen > slowClose && fastOpen < fastClose)
-			Enter(Sides.Buy, candle.ClosePrice);
+			Enter(Sides.Buy, candle.ClosePrice, candle.OpenTime);
 		else if (slowOpen < slowClose && fastOpen > fastClose)
-			Enter(Sides.Sell, candle.ClosePrice);
+			Enter(Sides.Sell, candle.ClosePrice, candle.OpenTime);
 	}
 
-	private void Enter(Sides side, decimal price)
+	private void Enter(Sides side, decimal price, DateTimeOffset candleTime)
 	{
 		if (side == Sides.Buy)
 			BuyMarket();
@@ -109,6 +110,7 @@ public class HedgeAverageStrategy : Strategy
 			SellMarket();
 
 		_entryPrice = price;
+		_entryCandleTime = candleTime;
 		_bestPrice = price;
 		_stopPrice = StopLoss > 0m ? (side == Sides.Buy ? price - StopLoss : price + StopLoss) : null;
 		_takePrice = TakeProfit > 0m ? (side == Sides.Buy ? price + TakeProfit : price - TakeProfit) : null;
@@ -116,6 +118,9 @@ public class HedgeAverageStrategy : Strategy
 
 	private bool ApplyProtection(ICandleMessage candle)
 	{
+		if (_entryCandleTime is DateTimeOffset entryTime && candle.OpenTime <= entryTime)
+			return false;
+
 		if (Position > 0)
 		{
 			_bestPrice = _bestPrice is decimal best ? Math.Max(best, candle.HighPrice) : candle.HighPrice;
@@ -172,5 +177,6 @@ public class HedgeAverageStrategy : Strategy
 		_stopPrice = null;
 		_takePrice = null;
 		_bestPrice = null;
+		_entryCandleTime = null;
 	}
 }
