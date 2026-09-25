@@ -39,6 +39,16 @@ sealed class OrderTraceRecorder
 		Assert.AreEqual(0, trace.Length, $"{reason} Trace: {Format(trace)}.");
 	}
 
+	public void AssertAtMostOneOrderPerTimestamp()
+	{
+		var trace = Snapshot();
+		var duplicate = trace.GroupBy(entry => entry.Time).FirstOrDefault(group => group.Count() > 1);
+
+		Assert.IsNull(
+			duplicate,
+			duplicate is null ? null : $"Multiple orders were submitted at {duplicate.Key:O}. Trace: {Format(trace)}.");
+	}
+
 	public void AssertFirstSide(Sides expectedSide)
 	{
 		var trace = Snapshot();

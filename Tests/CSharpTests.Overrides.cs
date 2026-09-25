@@ -1121,4 +1121,21 @@ partial class CSharpTests
 		recorder.AssertFirstOppositeAfter(TimeSpan.FromTicks(1));
 	}
 
+	[TestMethod]
+	[TestCategory("Shard01")]
+	public async Task S1801_PerceptronStopEndsCurrentBar()
+	{
+		const string path = "1801-1900/1801_Artificial_Intelligence_Perceptron/CS/ArtificialIntelligencePerceptronStrategy.cs";
+		var recorder = new OrderTraceRecorder();
+
+		await RunStrategy(path, CancellationToken, (strategy, _) =>
+		{
+			strategy.Parameters["CandleType"].Value = TimeSpan.FromMinutes(5).TimeFrame();
+			strategy.Parameters["StopLoss"].Value = 1m;
+			recorder.Attach(strategy);
+		});
+
+		recorder.AssertAtMostOneOrderPerTimestamp();
+	}
+
 }

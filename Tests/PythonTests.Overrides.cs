@@ -1319,4 +1319,21 @@ partial class PythonTests
 		recorder.AssertFirstOppositeAfter(TimeSpan.FromTicks(1));
 	}
 
+	[TestMethod]
+	[TestCategory("Shard01")]
+	public async Task S1801_PerceptronStopEndsCurrentBar()
+	{
+		const string path = "1801-1900/1801_Artificial_Intelligence_Perceptron/PY/artificial_intelligence_perceptron_strategy.py";
+		var recorder = new OrderTraceRecorder();
+
+		await RunStrategy(path, CancellationToken, (strategy, _) =>
+		{
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "StopLoss", 1.0);
+			recorder.Attach(strategy);
+		});
+
+		recorder.AssertAtMostOneOrderPerTimestamp();
+	}
+
 }
