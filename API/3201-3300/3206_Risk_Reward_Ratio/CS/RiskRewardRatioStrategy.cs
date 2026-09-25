@@ -38,6 +38,7 @@ public class RiskRewardRatioStrategy : Strategy
 	private decimal? _stopPrice;
 	private decimal? _takePrice;
 	private decimal? _bestPrice;
+	private DateTimeOffset? _lastEntryCandleTime;
 
 	public decimal TradeVolume { get => _tradeVolume.Value; set => _tradeVolume.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
@@ -145,12 +146,12 @@ public class RiskRewardRatioStrategy : Strategy
 		var maxExposure = MaxPositions * TradeVolume;
 
 		if (longSignal && Position >= 0m && Position + TradeVolume <= maxExposure)
-			Enter(Sides.Buy, close);
+			Enter(Sides.Buy, close, candle.OpenTime);
 		else if (shortSignal && Position <= 0m && Math.Abs(Position - TradeVolume) <= maxExposure)
-			Enter(Sides.Sell, close);
+			Enter(Sides.Sell, close, candle.OpenTime);
 	}
 
-	private void Enter(Sides side, decimal close)
+	private void Enter(Sides side, decimal close, DateTimeOffset candleTime)
 	{
 		var previousAbs = Math.Abs(Position);
 		var newAbs = previousAbs + TradeVolume;
@@ -160,6 +161,7 @@ public class RiskRewardRatioStrategy : Strategy
 		else
 			SellMarket(TradeVolume);
 
+		_lastEntryCandleTime = candleTime;
 		_entryPrice = previousAbs > 0m
 			? (_entryPrice * previousAbs + close * TradeVolume) / newAbs
 			: close;
@@ -174,6 +176,9 @@ public class RiskRewardRatioStrategy : Strategy
 
 	private bool ApplyRisk(ICandleMessage candle)
 	{
+		if (_lastEntryCandleTime is DateTimeOffset entryTime && candle.OpenTime <= entryTime)
+			return false;
+
 		var pip = GetPipSize();
 
 		if (Position > 0m)
@@ -338,6 +343,7 @@ public class RiskRewardRatioStrategy : Strategy
 		_stopPrice = null;
 		_takePrice = null;
 		_bestPrice = null;
+		_lastEntryCandleTime = null;
 	}
 
 	private readonly record struct Bar(decimal High, decimal Low, decimal Close);
