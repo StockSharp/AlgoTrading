@@ -144,7 +144,7 @@ public class MaMacdPositionAveragingStrategy : Strategy
 
 		if (_legs.Count > 0)
 		{
-			TryAverage(candle.ClosePrice);
+			TryAverage(candle.ClosePrice, candle.OpenTime);
 			return;
 		}
 
@@ -169,9 +169,9 @@ public class MaMacdPositionAveragingStrategy : Strategy
 		var close = candle.ClosePrice;
 
 		if (main < 0m && signal < 0m && ratio >= MacdRatio && close > ma && close - ma >= indent)
-			AddLeg(Sides.Buy, NormalizeVolume(OrderVolume), close);
+			AddLeg(Sides.Buy, NormalizeVolume(OrderVolume), close, candle.OpenTime);
 		else if (main > 0m && signal > 0m && ratio >= MacdRatio && close < ma && ma - close >= indent)
-			AddLeg(Sides.Sell, NormalizeVolume(OrderVolume), close);
+			AddLeg(Sides.Sell, NormalizeVolume(OrderVolume), close, candle.OpenTime);
 	}
 
 	private void UpdateIndicators(ICandleMessage candle)
@@ -197,7 +197,7 @@ public class MaMacdPositionAveragingStrategy : Strategy
 		}
 	}
 
-	private void TryAverage(decimal close)
+	private void TryAverage(decimal close, DateTimeOffset candleTime)
 	{
 		if (StepLossingPips <= 0 || _legs.Count == 0)
 			return;
@@ -215,13 +215,13 @@ public class MaMacdPositionAveragingStrategy : Strategy
 		{
 			var bestEntry = _legs.Min(l => l.EntryPrice);
 			if (close <= bestEntry - distance)
-				AddLeg(Sides.Buy, volume, close);
+				AddLeg(Sides.Buy, volume, close, candleTime);
 		}
 		else
 		{
 			var bestEntry = _legs.Max(l => l.EntryPrice);
 			if (close >= bestEntry + distance)
-				AddLeg(Sides.Sell, volume, close);
+				AddLeg(Sides.Sell, volume, close, candleTime);
 		}
 	}
 
@@ -237,6 +237,9 @@ public class MaMacdPositionAveragingStrategy : Strategy
 		for (var i = _legs.Count - 1; i >= 0; i--)
 		{
 			var leg = _legs[i];
+			if (candle.OpenTime <= leg.EntryTime)
+				continue;
+
 			UpdateTrailing(leg, candle.ClosePrice, pip);
 
 			var stopPrice = leg.StopPrice;
@@ -290,7 +293,7 @@ public class MaMacdPositionAveragingStrategy : Strategy
 		}
 	}
 
-	private void AddLeg(Sides side, decimal volume, decimal price)
+	private void AddLeg(Sides side, decimal volume, decimal price, DateTimeOffset entryTime)
 	{
 		if (volume <= 0m)
 			return;
@@ -309,6 +312,7 @@ public class MaMacdPositionAveragingStrategy : Strategy
 			Side = side,
 			Volume = volume,
 			EntryPrice = price,
+			EntryTime = entryTime,
 			StopPrice = StopLossPips > 0 ? side == Sides.Buy ? price - stopDistance : price + stopDistance : null,
 			TakePrice = TakeProfitPips > 0 ? side == Sides.Buy ? price + takeDistance : price - takeDistance : null,
 		});
@@ -399,6 +403,7 @@ public class MaMacdPositionAveragingStrategy : Strategy
 		public Sides Side { get; init; }
 		public decimal Volume { get; init; }
 		public decimal EntryPrice { get; init; }
+		public DateTimeOffset EntryTime { get; init; }
 		public decimal? StopPrice { get; set; }
 		public decimal? TakePrice { get; init; }
 	}
