@@ -11,34 +11,51 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Timer strategy using EMA crossover.
+/// Timer ATR breakout strategy.
 /// </summary>
 public class TimerStrategy : Strategy
 {
-	private readonly StrategyParam<int> _fastPeriod;
-	private readonly StrategyParam<int> _slowPeriod;
+	private readonly StrategyParam<int> _waitSeconds;
+	private readonly StrategyParam<decimal> _pipDistance;
+	private readonly StrategyParam<int> _atrPeriod;
+	private readonly StrategyParam<decimal> _takeProfit;
+	private readonly StrategyParam<decimal> _stopLoss;
+	private readonly StrategyParam<decimal> _trailingStop;
+	private readonly StrategyParam<decimal> _tradeVolume;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<bool> _useTradingHours;
+	private readonly StrategyParam<TimeSpan> _startTime;
+	private readonly StrategyParam<TimeSpan> _stopTime;
 
-	private decimal _prevFast;
-	private decimal _prevSlow;
-	private bool _hasPrev;
+	private DateTimeOffset? _lastLevelTime;
+	private decimal? _buyLevel;
+	private decimal? _sellLevel;
 
-	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
-	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
+	public int WaitSeconds { get => _waitSeconds.Value; set => _waitSeconds.Value = value; }
+	public decimal PipDistance { get => _pipDistance.Value; set => _pipDistance.Value = value; }
+	public int AtrPeriod { get => _atrPeriod.Value; set => _atrPeriod.Value = value; }
+	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
+	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
+	public decimal TrailingStop { get => _trailingStop.Value; set => _trailingStop.Value = value; }
+	public decimal TradeVolume { get => _tradeVolume.Value; set => _tradeVolume.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public bool UseTradingHours { get => _useTradingHours.Value; set => _useTradingHours.Value = value; }
+	public TimeSpan StartTime { get => _startTime.Value; set => _startTime.Value = value; }
+	public TimeSpan StopTime { get => _stopTime.Value; set => _stopTime.Value = value; }
 
 	public TimerStrategy()
 	{
-		_fastPeriod = Param(nameof(FastPeriod), 12)
-			.SetGreaterThanZero()
-			.SetDisplay("Fast Period", "Fast EMA period", "Indicators");
-
-		_slowPeriod = Param(nameof(SlowPeriod), 26)
-			.SetGreaterThanZero()
-			.SetDisplay("Slow Period", "Slow EMA period", "Indicators");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
-			.SetDisplay("Candle Type", "Candle type", "General");
+		_waitSeconds = Param(nameof(WaitSeconds), 60).SetGreaterThanZero();
+		_pipDistance = Param(nameof(PipDistance), 10m).SetNotNegative();
+		_atrPeriod = Param(nameof(AtrPeriod), 14).SetGreaterThanZero();
+		_takeProfit = Param(nameof(TakeProfit), 100m).SetNotNegative();
+		_stopLoss = Param(nameof(StopLoss), 50m).SetNotNegative();
+		_trailingStop = Param(nameof(TrailingStop), 0m).SetNotNegative();
+		_tradeVolume = Param(nameof(TradeVolume), 1m).SetGreaterThanZero();
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame());
+		_useTradingHours = Param(nameof(UseTradingHours), false);
+		_startTime = Param(nameof(StartTime), TimeSpan.Zero);
+		_stopTime = Param(nameof(StopTime), new TimeSpan(23, 59, 59));
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -47,50 +64,89 @@ public class TimerStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevFast = 0;
-		_prevSlow = 0;
-		_hasPrev = false;
+		_lastLevelTime = null;
+		_buyLevel = null;
+		_sellLevel = null;
 	}
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var fast = new ExponentialMovingAverage { Length = FastPeriod };
-		var slow = new ExponentialMovingAverage { Length = SlowPeriod };
+		var point = Security?.PriceStep ?? 1m;
+		if (point <= 0m)
+			point = 1m;
 
+		var take = TakeProfit > 0m ? new Unit(TakeProfit * point, UnitTypes.Absolute) : null;
+
+		// StockSharp exposes one stop offset. When TrailingStop is enabled it becomes
+		// the trailing stop distance; otherwise StopLoss is the fixed stop distance.
+		var stopPoints = TrailingStop > 0m ? TrailingStop : StopLoss;
+		var stop = stopPoints > 0m ? new Unit(stopPoints * point, UnitTypes.Absolute) : null;
+
+		if (take is not null || stop is not null)
+			StartProtection(take, stop, isStopTrailing: TrailingStop > 0m, useMarketOrders: true);
+
+		var atr = new AverageTrueRange { Length = AtrPeriod };
 		SubscribeCandles(CandleType)
-			.Bind(fast, slow, ProcessCandle)
+			.Bind(atr, (candle, atrValue) =>
+			{
+				if (candle.State != CandleStates.Finished || !atr.IsFormed || atrValue <= 0m)
+					return;
+
+				ProcessCandle(candle, atrValue);
+			})
 			.Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fastVal, decimal slowVal)
+	private void ProcessCandle(ICandleMessage candle, decimal atr)
 	{
-		if (candle.State != CandleStates.Finished) return;
+		var now = candle.CloseTime;
 
-		if (!_hasPrev)
+		if (IsTradingTime(now.TimeOfDay))
 		{
-			_prevFast = fastVal;
-			_prevSlow = slowVal;
-			_hasPrev = true;
-			return;
+			if (_buyLevel is decimal buy && candle.ClosePrice >= buy && Position <= 0m)
+			{
+				BuyMarket(TradeVolume + Math.Abs(Position));
+				_buyLevel = null;
+				_sellLevel = null;
+			}
+			else if (_sellLevel is decimal sell && candle.ClosePrice <= sell && Position >= 0m)
+			{
+				SellMarket(TradeVolume + Math.Abs(Position));
+				_buyLevel = null;
+				_sellLevel = null;
+			}
 		}
 
-		var crossUp = _prevFast <= _prevSlow && fastVal > slowVal;
-		var crossDown = _prevFast >= _prevSlow && fastVal < slowVal;
-
-		if (crossUp && Position <= 0)
+		if (_lastLevelTime is null || now - _lastLevelTime.Value >= TimeSpan.FromSeconds(WaitSeconds))
 		{
-			if (Position < 0) BuyMarket();
-			BuyMarket();
-		}
-		else if (crossDown && Position >= 0)
-		{
-			if (Position > 0) SellMarket();
-			SellMarket();
-		}
+			var point = Security?.PriceStep ?? 1m;
+			if (point <= 0m)
+				point = 1m;
 
-		_prevFast = fastVal;
-		_prevSlow = slowVal;
+			(_buyLevel, _sellLevel) = CalculateLevels(candle.ClosePrice, PipDistance, point, atr);
+			_lastLevelTime = now;
+		}
+	}
+
+	private bool IsTradingTime(TimeSpan time)
+	{
+		if (!UseTradingHours)
+			return true;
+
+		return StartTime <= StopTime
+			? time >= StartTime && time <= StopTime
+			: time >= StartTime || time <= StopTime;
+	}
+
+	internal static (decimal buy, decimal sell) CalculateLevels(
+		decimal close,
+		decimal pipDistancePoints,
+		decimal priceStep,
+		decimal atr)
+	{
+		var distance = pipDistancePoints * priceStep + atr;
+		return (close + distance, close - distance);
 	}
 }
