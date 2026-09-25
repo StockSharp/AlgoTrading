@@ -1232,4 +1232,25 @@ partial class PythonTests
 		recorder.AssertFirstVolume(1m);
 	}
 
+	[TestMethod]
+	[TestCategory("Shard00")]
+	public async Task S2208_HedgeAverageProtectionStartsAfterEntryBar()
+	{
+		const string path = "2201-2300/2208_Hedge_Average/PY/hedge_average_strategy.py";
+		var recorder = new OrderTraceRecorder();
+
+		await RunStrategy(path, CancellationToken, (strategy, _) =>
+		{
+			SetParam(strategy, "Period1", 2);
+			SetParam(strategy, "Period2", 3);
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "StopLoss", 0.01);
+			SetParam(strategy, "TakeProfit", 0.01);
+			recorder.Attach(strategy);
+		}, replayDuration: TimeSpan.FromDays(2));
+
+		recorder.AssertFirstOppositeAfter(TimeSpan.FromTicks(1));
+		recorder.AssertFirstOppositeWithin(TimeSpan.FromMinutes(10));
+	}
+
 }

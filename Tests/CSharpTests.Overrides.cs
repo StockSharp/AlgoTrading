@@ -1034,4 +1034,25 @@ partial class CSharpTests
 		recorder.AssertFirstVolume(1m);
 	}
 
+	[TestMethod]
+	[TestCategory("Shard00")]
+	public async Task S2208_HedgeAverageProtectionStartsAfterEntryBar()
+	{
+		const string path = "2201-2300/2208_Hedge_Average/CS/HedgeAverageStrategy.cs";
+		var recorder = new OrderTraceRecorder();
+
+		await RunStrategy(path, CancellationToken, (strategy, _) =>
+		{
+			strategy.Parameters["Period1"].Value = 2;
+			strategy.Parameters["Period2"].Value = 3;
+			strategy.Parameters["CandleType"].Value = TimeSpan.FromMinutes(5).TimeFrame();
+			strategy.Parameters["StopLoss"].Value = 0.01m;
+			strategy.Parameters["TakeProfit"].Value = 0.01m;
+			recorder.Attach(strategy);
+		}, replayDuration: TimeSpan.FromDays(2));
+
+		recorder.AssertFirstOppositeAfter(TimeSpan.FromTicks(1));
+		recorder.AssertFirstOppositeWithin(TimeSpan.FromMinutes(10));
+	}
+
 }
