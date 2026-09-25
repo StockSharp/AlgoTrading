@@ -89,7 +89,8 @@ public class ArtificialIntelligencePerceptronStrategy : Strategy
 		var ac = ao - AverageTail(_ao, 5);
 		_ac.Add(ac);
 
-		ApplyStop(candle);
+		if (ApplyStop(candle))
+			return;
 
 		var newest = _ac.Count - 1 - Shift;
 		if (newest - 21 < 0)
@@ -143,20 +144,24 @@ public class ArtificialIntelligencePerceptronStrategy : Strategy
 		}
 	}
 
-	private void ApplyStop(ICandleMessage candle)
+	private bool ApplyStop(ICandleMessage candle)
 	{
 		if (Position > 0 && _stopPrice is decimal longStop && candle.LowPrice <= longStop)
 		{
 			SellMarket(Math.Abs(Position));
 			_entryPrice = 0m;
 			_stopPrice = null;
+			return true;
 		}
 		else if (Position < 0 && _stopPrice is decimal shortStop && candle.HighPrice >= shortStop)
 		{
 			BuyMarket(Math.Abs(Position));
 			_entryPrice = 0m;
 			_stopPrice = null;
+			return true;
 		}
+
+		return false;
 	}
 
 	private void Enter(int signal, decimal volume, decimal price, decimal stopDistance)
