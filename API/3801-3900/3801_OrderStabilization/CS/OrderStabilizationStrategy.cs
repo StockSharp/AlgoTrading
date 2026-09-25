@@ -28,6 +28,7 @@ public class OrderStabilizationStrategy : Strategy
 	private decimal _entryPrice;
 	private decimal _previousBody;
 	private bool _hasPreviousBody;
+	private DateTimeOffset? _entryCandleTime;
 
 	public decimal OrderVolume { get => _orderVolume.Value; set => _orderVolume.Value = value; }
 	public decimal OrderDistancePoints { get => _orderDistancePoints.Value; set => _orderDistancePoints.Value = value; }
@@ -58,6 +59,7 @@ public class OrderStabilizationStrategy : Strategy
 		_entryPrice = 0m;
 		_previousBody = 0m;
 		_hasPreviousBody = false;
+		_entryCandleTime = null;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -78,7 +80,7 @@ public class OrderStabilizationStrategy : Strategy
 		var body = Math.Abs(candle.ClosePrice - candle.OpenPrice);
 		var bodyLimit = StabilizationPoints * point;
 
-		if (Position != 0)
+		if (Position != 0 && (_entryCandleTime is null || candle.OpenTime > _entryCandleTime.Value))
 		{
 			var pnl = FloatingPnL(candle.ClosePrice, point);
 			var oneSmall = body <= bodyLimit;
@@ -99,10 +101,22 @@ public class OrderStabilizationStrategy : Strategy
 		if (_createdAt is DateTimeOffset created &&
 			ExpirationMinutes > 0 &&
 			candle.OpenTime - created >= TimeSpan.FromMinutes(ExpirationMinutes))
+		{
+			ClearPending();
 			CreatePending(candle.ClosePrice, candle.OpenTime, point);
+			_previousBody = body;
+			_hasPreviousBody = true;
+			return;
+		}
 
+		// Stops created from a finished candle can only be triggered by a later candle.
 		if (_buyStop is null && _sellStop is null)
+		{
 			CreatePending(candle.ClosePrice, candle.OpenTime, point);
+			_previousBody = body;
+			_hasPreviousBody = true;
+			return;
+		}
 
 		var hitBuy = _buyStop is decimal buy && candle.HighPrice >= buy;
 		var hitSell = _sellStop is decimal sell && candle.LowPrice <= sell;
@@ -127,6 +141,7 @@ public class OrderStabilizationStrategy : Strategy
 			}
 
 			_entryPrice = trigger;
+			_entryCandleTime = candle.OpenTime;
 		}
 
 		_previousBody = body;
@@ -163,6 +178,7 @@ public class OrderStabilizationStrategy : Strategy
 			BuyMarket(Math.Abs(Position));
 
 		_entryPrice = 0m;
+		_entryCandleTime = null;
 	}
 
 	private void ClearPending()
