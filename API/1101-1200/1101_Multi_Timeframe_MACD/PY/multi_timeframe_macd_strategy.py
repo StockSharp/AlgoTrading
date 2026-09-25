@@ -137,7 +137,6 @@ class multi_timeframe_macd_strategy(Strategy):
             if float(candle.LowPrice) <= stop:
                 self.SellMarket(Math.Abs(self.Position))
                 self._best_price = None
-                self._last_combined = 0
                 return True
         else:
             low = float(candle.LowPrice)
@@ -146,7 +145,6 @@ class multi_timeframe_macd_strategy(Strategy):
             if float(candle.HighPrice) >= stop:
                 self.BuyMarket(Math.Abs(self.Position))
                 self._best_price = None
-                self._last_combined = 0
                 return True
 
         return False
