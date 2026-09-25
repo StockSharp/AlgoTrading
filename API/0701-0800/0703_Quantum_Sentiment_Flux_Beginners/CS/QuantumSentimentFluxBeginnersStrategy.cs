@@ -31,6 +31,7 @@ public class QuantumSentimentFluxBeginnersStrategy : Strategy
 	private decimal _entryPrice;
 	private decimal _entryAtr;
 	private int _cooldownRemaining;
+	private int _armedDirection;
 
 	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
 	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
@@ -79,6 +80,7 @@ public class QuantumSentimentFluxBeginnersStrategy : Strategy
 		_entryPrice = 0m;
 		_entryAtr = 0m;
 		_cooldownRemaining = 0;
+		_armedDirection = 0;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -150,22 +152,33 @@ public class QuantumSentimentFluxBeginnersStrategy : Strategy
 
 		var crossUp = _prevFast <= _prevSlow && fast > slow;
 		var crossDown = _prevFast >= _prevSlow && fast < slow;
+
+		if (crossUp)
+			_armedDirection = 1;
+		else if (crossDown)
+			_armedDirection = -1;
+
+		if ((_armedDirection > 0 && fast <= slow) || (_armedDirection < 0 && fast >= slow))
+			_armedDirection = 0;
+
 		var strongEnough = atr > 0m && Math.Abs(fast - slow) >= atr * MaStrengthThreshold;
 
-		if (_cooldownRemaining == 0 && Position == 0 && strongEnough)
+		if (_cooldownRemaining == 0 && Position == 0 && strongEnough && _armedDirection != 0)
 		{
-			if (crossUp)
+			if (_armedDirection > 0)
 			{
 				BuyMarket(Quantity);
 				_entryPrice = candle.ClosePrice;
 				_entryAtr = atr;
 			}
-			else if (crossDown)
+			else
 			{
 				SellMarket(Quantity);
 				_entryPrice = candle.ClosePrice;
 				_entryAtr = atr;
 			}
+
+			_armedDirection = 0;
 		}
 
 		_prevFast = fast;
