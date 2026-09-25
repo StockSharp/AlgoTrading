@@ -1437,4 +1437,13 @@ partial class CSharpTests
 		AreEqual(-100m, RciStrategy.CalculateRci([5m, 4m, 3m, 2m, 1m]));
 	}
 
+	[TestMethod]
+	[TestCategory("Shard02")]
+	public void S1243_RenkoReversalSignal()
+	{
+		AreEqual(1, RenkoStrategy.GetSignal(previousDirection: -1, currentDirection: 1));
+		AreEqual(-1, RenkoStrategy.GetSignal(previousDirection: 1, currentDirection: -1));
+		AreEqual(0, RenkoStrategy.GetSignal(previousDirection: 1, currentDirection: 1));
+	}
+
 }
