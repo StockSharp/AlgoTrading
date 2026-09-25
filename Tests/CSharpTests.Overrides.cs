@@ -1010,4 +1010,16 @@ partial class CSharpTests
 	/// 0601 is a session-range/retracement model. Pin the published inputs and verify that
 	/// an empty entry window suppresses every order; an EMA-crossover placeholder cannot satisfy this.
 	/// </summary>
+	[TestMethod]
+	[TestCategory("Shard06")]
+	public async Task S0806_FootprintBehavior()
+	{
+		const string path = "0801-0900/0806_Footprint/CS/FootprintStrategy.cs";
+		var recorder = new OrderTraceRecorder();
+
+		await RunStrategy(path, CancellationToken, (strategy, _) => recorder.Attach(strategy));
+
+		recorder.AssertFirstSide(Sides.Buy);
+	}
+
 }

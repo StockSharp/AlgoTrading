@@ -1208,4 +1208,16 @@ partial class PythonTests
 	/// <summary>
 	/// Python half of 0601 must expose the same session model and obey its entry window.
 	/// </summary>
+	[TestMethod]
+	[TestCategory("Shard06")]
+	public async Task S0806_FootprintBehavior()
+	{
+		const string path = "0801-0900/0806_Footprint/PY/footprint_strategy.py";
+		var recorder = new OrderTraceRecorder();
+
+		await RunStrategy(path, CancellationToken, (strategy, _) => recorder.Attach(strategy));
+
+		recorder.AssertFirstSide(Sides.Buy);
+	}
+
 }
