@@ -35,6 +35,7 @@ class ccfp_currency_strength_strategy(Strategy):
         self._pairs = {}
         self._previous_strengths = {}
         self._directions = {}
+        self._last_evaluation_time = None
 
     def _definitions(self):
         return [
@@ -71,7 +72,7 @@ class ccfp_currency_strength_strategy(Strategy):
             slow = SimpleMovingAverage()
             slow.Length = int(self._slow_ma.Value)
 
-            state = {"security": security, "base": base, "quote": quote, "ratio": 0.0, "ready": False}
+            state = {"security": security, "base": base, "quote": quote, "ratio": 0.0, "ready": False, "time": None}
             self._pairs[name] = state
 
             def make_handler(pair_state, fast_indicator, slow_indicator):
@@ -83,8 +84,21 @@ class ccfp_currency_strength_strategy(Strategy):
                         return
                     pair_state["ratio"] = (float(fast_value) - slow_v) / slow_v
                     pair_state["ready"] = True
-                    if all(p["ready"] for p in self._pairs.values()):
-                        self._evaluate()
+                    pair_state["time"] = candle.OpenTime
+
+                    if not all(p["ready"] for p in self._pairs.values()):
+                        return
+
+                    times = {p["time"] for p in self._pairs.values()}
+                    if len(times) != 1:
+                        return
+
+                    current_time = next(iter(times))
+                    if current_time is None or current_time == self._last_evaluation_time:
+                        return
+
+                    self._last_evaluation_time = current_time
+                    self._evaluate()
                 return handler
 
             self.SubscribeCandles(self._candle_type.Value, security=security).Bind(
