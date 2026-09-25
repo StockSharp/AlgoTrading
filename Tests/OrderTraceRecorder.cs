@@ -29,16 +29,6 @@ sealed class OrderTraceRecorder
 			_orders.TryAdd(order.TransactionId, new(strategy.CurrentTime, order.Side, order.Volume, order.Comment, order.Security?.Id, order.Type));
 	}
 
-	/// <summary>
-	/// Nothing was submitted. Used where a setting is supposed to suppress trading.
-	/// </summary>
-	public void AssertEmpty(string reason)
-	{
-		var trace = Snapshot();
-
-		Assert.AreEqual(0, trace.Length, $"{reason} Trace: {Format(trace)}.");
-	}
-
 	public void AssertAtMostOneOrderPerTimestamp()
 	{
 		var trace = Snapshot();

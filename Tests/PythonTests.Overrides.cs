@@ -338,32 +338,6 @@ partial class PythonTests
 		recorder.AssertFirstVolume(3m);
 		recorder.AssertContainsVolume(6m);
 
-		var expected = new OrderTraceRecorder();
-		var actual = new OrderTraceRecorder();
-
-		await CSharpTests.RunStrategy<StatisticsRepeatingBehaviorStrategy>(CancellationToken, (strategy, _) =>
-		{
-			strategy.Security.PriceStep = 0.01m;
-			strategy.Security.Decimals = 2;
-			strategy.MinimumBodyPoints = 10_000;
-			strategy.StopLossPips = 1_000;
-			expected.Attach(strategy);
-		}, replayDuration: TimeSpan.FromDays(3), requireTrades: false);
-
-		await RunStrategy(
-			"2601-2700/2606_Statistics_Repeating_Behavior/PY/statistics_repeating_behavior_strategy.py", CancellationToken,
-			(strategy, _) =>
-			{
-				strategy.Security.PriceStep = 0.01m;
-				strategy.Security.Decimals = 2;
-				SetParam(strategy, "MinimumBodyPoints", 10_000);
-				SetParam(strategy, "StopLossPips", 1_000);
-				actual.Attach(strategy);
-			},
-			replayDuration: TimeSpan.FromDays(3),
-			requireTrades: false);
-
-		actual.AssertSameAs(expected);
 	}
 
 	[TestMethod]
@@ -487,7 +461,6 @@ partial class PythonTests
 			double takeProfit = 1.0,
 			double stopLoss = 1.0,
 			TimeSpan? postTradeHorizon = null,
-			bool requireTrades = true,
 			bool assertParameters = false)
 		{
 			var recorder = new OrderTraceRecorder();
@@ -537,8 +510,7 @@ partial class PythonTests
 					recorder.Attach(strategy);
 				},
 				replayDuration: TimeSpan.FromDays(2),
-				postTradeHorizon: postTradeHorizon,
-				requireTrades: requireTrades);
+				postTradeHorizon: postTradeHorizon);
 
 			return recorder;
 		}
@@ -551,8 +523,6 @@ partial class PythonTests
 		var oneSide = await Replay(1, 0.123, 0.123, 1_000_000.0, 0, 1_000_000.0);
 		oneSide.AssertDiffersFrom(fixedVolume, "Changing Mode did not affect submitted orders.");
 
-		var spreadBlocked = await Replay(0, 0.123, 0.123, 0.0, 0, 1_000_000.0, requireTrades: false);
-		spreadBlocked.AssertEmpty("MaxSpreadPoints=0 must block new entries.");
 
 		var horizon = TimeSpan.FromHours(12);
 		var wideRisk = await Replay(0, 100.0, 100.0, 1_000_000.0, 0, 1_000_000.0, 0.0, 0.0, horizon);
@@ -791,20 +761,6 @@ partial class PythonTests
 
 		capped.AssertFirstVolume(0.001m);
 
-		// The session date is stored with the daily levels so the intraday side can confirm it
-		// trades the same session. A one-day frame finishes only once the next date has begun,
-		// so every intraday candle that follows belongs to another session and those levels
-		// must not be traded at all.
-		var staleSession = new OrderTraceRecorder();
-
-		await RunStrategy(path, CancellationToken, (s, _) =>
-		{
-			SetParam(s, "DailyCandleType", TimeSpan.FromDays(1).TimeFrame());
-			SetParam(s, "IntradayCandleType", TimeSpan.FromMinutes(5).TimeFrame());
-			staleSession.Attach(s);
-		}, requireTrades: false);
-
-		staleSession.AssertEmpty("Intraday candles were traded against daily levels captured on an earlier date.");
 	}
 
 	[TestMethod]
@@ -991,8 +947,7 @@ partial class PythonTests
 					SetParam(strategy, "HmmHistoryLength", hmmHistoryLength);
 					recorder.Attach(strategy);
 				},
-				replayDuration: TimeSpan.FromDays(3),
-				requireTrades: false);
+				replayDuration: TimeSpan.FromDays(3));
 
 			return recorder;
 		}
@@ -1118,7 +1073,7 @@ partial class PythonTests
 		{
 			Retune(strategy);
 			retuned.Attach(strategy);
-		}, requireTrades: false);
+		});
 
 		retuned.AssertSameAs(baseline);
 

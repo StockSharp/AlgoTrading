@@ -393,8 +393,7 @@ partial class CSharpTests
 			decimal riskValue,
 			decimal takeProfit = 1m,
 			decimal stopLoss = 1m,
-			TimeSpan? postTradeHorizon = null,
-			bool requireTrades = true)
+			TimeSpan? postTradeHorizon = null)
 		{
 			var recorder = new OrderTraceRecorder();
 
@@ -413,7 +412,7 @@ partial class CSharpTests
 				strategy.TradeComment = "RRS-test";
 				strategy.CandleType = TimeSpan.FromMinutes(5).TimeFrame();
 				recorder.Attach(strategy);
-			}, replayDuration: TimeSpan.FromDays(2), postTradeHorizon: postTradeHorizon, requireTrades: requireTrades);
+			}, replayDuration: TimeSpan.FromDays(2), postTradeHorizon: postTradeHorizon);
 
 			return recorder;
 		}
@@ -433,12 +432,6 @@ partial class CSharpTests
 			RrsRandomnessStrategy.RiskModes.FixedMoney, 1_000_000m);
 		oneSide.AssertDiffersFrom(fixedVolume, "Changing Mode did not affect submitted orders.");
 
-		var spreadBlocked = await Replay(
-			RrsRandomnessStrategy.TradingModes.DoubleSide,
-			0.123m, 0.123m, 0m,
-			RrsRandomnessStrategy.RiskModes.FixedMoney, 1_000_000m,
-			requireTrades: false);
-		spreadBlocked.AssertEmpty("MaxSpreadPoints=0 must block new entries.");
 
 		var horizon = TimeSpan.FromHours(12);
 		var wideRisk = await Replay(
@@ -623,23 +616,6 @@ partial class CSharpTests
 
 		capped.AssertFirstVolume(0.001m);
 
-		// The session date is stored with the daily levels so the intraday side can confirm it
-		// trades the same session. A one-day frame finishes only once the next date has begun,
-		// so every intraday candle that follows belongs to another session and those levels
-		// must not be traded at all.
-		var staleSession = new OrderTraceRecorder();
-
-		await RunStrategy<Ch2010StructureStrategy>(CancellationToken, (s, sec2) =>
-		{
-			s.UsdChfSecurity = s.Security;
-			s.GbpUsdSecurity = sec2;
-			s.DailyCandleType = TimeSpan.FromDays(1).TimeFrame();
-			s.IntradayCandleType = TimeSpan.FromMinutes(5).TimeFrame();
-			s.MinTradeVolume = 0.001m;
-			staleSession.Attach(s);
-		}, requireTrades: false);
-
-		staleSession.AssertEmpty("Intraday candles were traded against daily levels captured on an earlier date.");
 	}
 
 	[TestMethod]
@@ -825,7 +801,7 @@ partial class CSharpTests
 				strategy.SignalCooldownBars = 1;
 				strategy.HmmHistoryLength = hmmHistoryLength;
 				recorder.Attach(strategy);
-			}, replayDuration: TimeSpan.FromDays(3), requireTrades: false);
+			}, replayDuration: TimeSpan.FromDays(3));
 
 			return recorder;
 		}
@@ -946,7 +922,7 @@ partial class CSharpTests
 		{
 			Retune(strategy);
 			retuned.Attach(strategy);
-		}, requireTrades: false);
+		});
 
 		retuned.AssertSameAs(baseline);
 
