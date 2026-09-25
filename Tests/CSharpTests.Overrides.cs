@@ -1420,4 +1420,13 @@ partial class CSharpTests
 			"Both sides must be detectable so the caller can skip conflicting signals.");
 	}
 
+	[TestMethod]
+	[TestCategory("Shard02")]
+	public void S1276_RsiCrossingSignal()
+	{
+		AreEqual(1, RsiStrategy.GetSignal(20m, 30m, overSold: 25m, overBought: 75m));
+		AreEqual(-1, RsiStrategy.GetSignal(80m, 70m, overSold: 25m, overBought: 75m));
+		AreEqual(0, RsiStrategy.GetSignal(50m, 55m, overSold: 25m, overBought: 75m));
+	}
+
 }
