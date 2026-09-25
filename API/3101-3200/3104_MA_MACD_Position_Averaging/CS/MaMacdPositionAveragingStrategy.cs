@@ -239,9 +239,11 @@ public class MaMacdPositionAveragingStrategy : Strategy
 			var leg = _legs[i];
 			UpdateTrailing(leg, candle.ClosePrice, pip);
 
+			var stopPrice = leg.StopPrice;
+			var takePrice = leg.TakePrice;
 			var hit = leg.Side == Sides.Buy
-				? (leg.StopPrice is decimal stop && candle.LowPrice <= stop) || (leg.TakePrice is decimal take && candle.HighPrice >= take)
-				: (leg.StopPrice is decimal stop && candle.HighPrice >= stop) || (leg.TakePrice is decimal take && candle.LowPrice <= take);
+				? (stopPrice is decimal stop && candle.LowPrice <= stop) || (takePrice is decimal take && candle.HighPrice >= take)
+				: (stopPrice is decimal shortStop && candle.HighPrice >= shortStop) || (takePrice is decimal shortTake && candle.LowPrice <= shortTake);
 
 			if (!hit)
 				continue;
