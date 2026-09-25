@@ -77,8 +77,8 @@ class footprint_strategy(Strategy):
         if bool(self._use_daily_trend_filter.Value) and (not self._daily_trend_ready or not self._daily_trend_bullish):
             return
 
-        buy = float(candle.BuyVolume.Value) if candle.BuyVolume.HasValue else 0.0
-        sell = float(candle.SellVolume.Value) if candle.SellVolume.HasValue else 0.0
+        buy = float(candle.BuyVolume) if candle.BuyVolume is not None else 0.0
+        sell = float(candle.SellVolume) if candle.SellVolume is not None else 0.0
 
         if buy <= 0 and sell <= 0:
             return
