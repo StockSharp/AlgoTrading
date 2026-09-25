@@ -120,9 +120,6 @@ public class KeltnerSeasonalStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Initialize seasonal strength for current month
-		UpdateSeasonalStrength(time);
-
 		// Create indicators for Keltner Channel
 		var ema = new EMA
 		{
@@ -168,13 +165,8 @@ public class KeltnerSeasonalStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Check if we need to update seasonal strength (month changed)
-		var candleMonth = candle.OpenTime.Month;
-		var currentMonth = CurrentTime.Month;
-		if (candleMonth != currentMonth)
-		{
-			UpdateSeasonalStrength(CurrentTime);
-		}
+		// Seasonality belongs to the candle being evaluated, never to host/start time.
+		UpdateSeasonalStrength(candle.OpenTime);
 
 		// Calculate Keltner Channel bands
 		decimal upperBand = emaValue + atrValue * AtrMultiplier;
