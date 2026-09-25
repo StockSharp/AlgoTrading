@@ -2,81 +2,60 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
-clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage
+from System import Math
+from StockSharp.Messages import DataType, RenkoCandleMessage, Unit, CandleStates
 from StockSharp.Algo.Strategies import Strategy
 
 
 class renko_strategy(Strategy):
     def __init__(self):
         super(renko_strategy, self).__init__()
-        self._slow_length = self.Param("SlowLength", 40) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Slow Length", "Slow EMA period", "General")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
-            .SetDisplay("Candle Type", "Candle type", "General")
-        self._prev_f = 0.0
-        self._prev_s = 0.0
-        self._init = False
-        self._last_signal_ticks = 0
+        self._box_size = self.Param("BoxSize", 10.0).SetGreaterThanZero()
+        self._previous_direction = 0
 
-    @property
-    def slow_length(self):
-        return self._slow_length.Value
+    def _candle_type(self):
+        return DataType.Create(clr.GetClrType(RenkoCandleMessage), Unit(float(self._box_size.Value)))
 
-    @property
-    def candle_type(self):
-        return self._candle_type.Value
+    def GetWorkingSecurities(self):
+        return [(self.Security, self._candle_type())]
 
     def OnReseted(self):
         super(renko_strategy, self).OnReseted()
-        self._prev_f = 0.0
-        self._prev_s = 0.0
-        self._init = False
-        self._last_signal_ticks = 0
+        self._previous_direction = 0
 
     def OnStarted2(self, time):
         super(renko_strategy, self).OnStarted2(time)
-        self._fast = ExponentialMovingAverage()
-        self._fast.Length = 14
-        self._slow = ExponentialMovingAverage()
-        self._slow.Length = self.slow_length
-        subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(self._fast, self._slow, self.on_candle).Start()
-        area = self.CreateChartArea()
-        if area is not None:
-            self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, self._fast)
-            self.DrawIndicator(area, self._slow)
-            self.DrawOwnTrades(area)
+        self.SubscribeCandles(self._candle_type()).Bind(self._process_candle).Start()
 
-    def on_candle(self, candle, f, s):
+    def _process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
-        if not self._fast.IsFormed or not self._slow.IsFormed:
+
+        open_price = float(candle.OpenPrice)
+        close_price = float(candle.ClosePrice)
+        current_direction = 1 if close_price > open_price else (-1 if close_price < open_price else 0)
+
+        if current_direction == 0:
             return
-        f = float(f)
-        s = float(s)
-        if not self._init:
-            self._prev_f = f
-            self._prev_s = s
-            self._init = True
-            return
-        cooldown_ticks = TimeSpan.FromMinutes(360).Ticks
-        current_ticks = candle.OpenTime.Ticks
-        if current_ticks - self._last_signal_ticks >= cooldown_ticks:
-            if self._prev_f <= self._prev_s and f > s and self.Position <= 0:
-                self.BuyMarket()
-                self._last_signal_ticks = current_ticks
-            elif self._prev_f >= self._prev_s and f < s and self.Position >= 0:
-                self.SellMarket()
-                self._last_signal_ticks = current_ticks
-        self._prev_f = f
-        self._prev_s = s
+
+        signal = self.get_signal(self._previous_direction, current_direction)
+
+        if signal > 0 and self.Position <= 0:
+            self.BuyMarket(self.Volume + Math.Abs(self.Position))
+        elif signal < 0 and self.Position >= 0:
+            self.SellMarket(self.Volume + Math.Abs(self.Position))
+
+        self._previous_direction = current_direction
+
+    @staticmethod
+    def get_signal(previous_direction, current_direction):
+        if previous_direction < 0 and current_direction > 0:
+            return 1
+        if previous_direction > 0 and current_direction < 0:
+            return -1
+        return 0
 
     def CreateClone(self):
         return renko_strategy()
