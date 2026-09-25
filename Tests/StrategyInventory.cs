@@ -140,3 +140,4 @@ static class StrategyInventory
 		return sb.ToString();
 	}
 }
+		"3008_OCO_Pending_Orders",

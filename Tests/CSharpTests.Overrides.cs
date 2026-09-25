@@ -1229,4 +1229,27 @@ partial class CSharpTests
 		recorder.AssertFirstVolume(1m);
 	}
 
+	[TestMethod]
+	[TestCategory("Shard00")]
+	public async Task S3008_OcoArmedLevel1Trigger()
+	{
+		const string path = "3001-3100/3008_OCO_Pending_Orders/CS/OcoPendingOrdersStrategy.cs";
+		var recorder = new OrderTraceRecorder();
+		Strategy captured = null;
+
+		await RunStrategy(path, CancellationToken, (strategy, _) =>
+		{
+			captured = strategy;
+			strategy.Parameters["OrderVolume"].Value = 2m;
+			strategy.Parameters["BuyStopPrice"].Value = 0.01m;
+			strategy.Parameters["UseOcoLink"].Value = true;
+			strategy.Parameters["Armed"].Value = true;
+			recorder.Attach(strategy);
+		});
+
+		recorder.AssertFirstSide(Sides.Buy);
+		recorder.AssertFirstVolume(2m);
+		AreEqual(false, captured.Parameters["Armed"].Value);
+	}
+
 }

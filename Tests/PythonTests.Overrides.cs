@@ -1404,4 +1404,27 @@ partial class PythonTests
 		recorder.AssertFirstVolume(1m);
 	}
 
+	[TestMethod]
+	[TestCategory("Shard00")]
+	public async Task S3008_OcoArmedLevel1Trigger()
+	{
+		const string path = "3001-3100/3008_OCO_Pending_Orders/PY/oco_pending_orders_strategy.py";
+		var recorder = new OrderTraceRecorder();
+		Strategy captured = null;
+
+		await RunStrategy(path, CancellationToken, (strategy, _) =>
+		{
+			captured = strategy;
+			SetParam(strategy, "OrderVolume", 2.0);
+			SetParam(strategy, "BuyStopPrice", 0.01);
+			SetParam(strategy, "UseOcoLink", true);
+			SetParam(strategy, "Armed", true);
+			recorder.Attach(strategy);
+		});
+
+		recorder.AssertFirstSide(Sides.Buy);
+		recorder.AssertFirstVolume(2m);
+		AreEqual(false, captured.Parameters["Armed"].Value);
+	}
+
 }
