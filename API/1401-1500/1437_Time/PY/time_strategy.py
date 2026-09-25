@@ -2,81 +2,90 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
-clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage
+from System import TimeSpan, Math
+from StockSharp.Messages import DataType, Level1Fields
 from StockSharp.Algo.Strategies import Strategy
 
 
 class time_strategy(Strategy):
     def __init__(self):
         super(time_strategy, self).__init__()
-        self._slow_length = self.Param("SlowLength", 40) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Slow Length", "Slow EMA period", "General")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
-            .SetDisplay("Candle Type", "Candle type", "General")
-        self._prev_f = 0.0
-        self._prev_s = 0.0
-        self._init = False
-        self._last_signal_ticks = 0
+        self._ticks_from_open = self.Param("TicksFromOpen", 0).SetNotNegative()
+        self._seconds_condition = self.Param("SecondsCondition", 20).SetNotNegative()
+        self._reset_on_new_bar = self.Param("ResetOnNewBar", True)
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1)))
 
-    @property
-    def slow_length(self):
-        return self._slow_length.Value
+        self._bar_start = None
+        self._bar_open = 0.0
+        self._bar_high = 0.0
+        self._condition_since = None
 
-    @property
-    def candle_type(self):
-        return self._candle_type.Value
+    def GetWorkingSecurities(self):
+        return [(self.Security, DataType.Level1)]
 
     def OnReseted(self):
         super(time_strategy, self).OnReseted()
-        self._prev_f = 0.0
-        self._prev_s = 0.0
-        self._init = False
-        self._last_signal_ticks = 0
+        self._bar_start = None
+        self._bar_open = 0.0
+        self._bar_high = 0.0
+        self._condition_since = None
 
     def OnStarted2(self, time):
         super(time_strategy, self).OnStarted2(time)
-        self._fast = ExponentialMovingAverage()
-        self._fast.Length = 14
-        self._slow = ExponentialMovingAverage()
-        self._slow.Length = self.slow_length
-        subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(self._fast, self._slow, self.on_candle).Start()
-        area = self.CreateChartArea()
-        if area is not None:
-            self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, self._fast)
-            self.DrawIndicator(area, self._slow)
-            self.DrawOwnTrades(area)
+        self.SubscribeLevel1().Bind(self._process_level1).Start()
 
-    def on_candle(self, candle, f, s):
-        if candle.State != CandleStates.Finished:
+    def _process_level1(self, message):
+        price = message.TryGetDecimal(Level1Fields.LastTradePrice)
+        if price is None:
+            price = message.TryGetDecimal(Level1Fields.BestAskPrice)
+        if price is None:
+            price = message.TryGetDecimal(Level1Fields.BestBidPrice)
+        if price is None or float(price) <= 0:
             return
-        if not self._fast.IsFormed or not self._slow.IsFormed:
+
+        current_price = float(price)
+        arg = self._candle_type.Value.Arg
+        frame = arg if isinstance(arg, TimeSpan) and arg > TimeSpan.Zero else TimeSpan.FromMinutes(1)
+        current_bar_start = self._align(message.ServerTime, frame)
+
+        if self._bar_start != current_bar_start:
+            self._bar_start = current_bar_start
+            self._bar_open = current_price
+            self._bar_high = current_price
+            if bool(self._reset_on_new_bar.Value):
+                self._condition_since = None
+        else:
+            self._bar_high = max(self._bar_high, current_price)
+
+        point = float(self.Security.PriceStep) if self.Security is not None and self.Security.PriceStep is not None else 0.0001
+        if point <= 0:
+            point = 0.0001
+
+        condition = self.is_price_condition_met(
+            self._bar_open, self._bar_high, point, int(self._ticks_from_open.Value))
+
+        if not condition:
+            self._condition_since = None
+            if self.Position > 0:
+                self.SellMarket(Math.Abs(self.Position))
             return
-        f = float(f)
-        s = float(s)
-        if not self._init:
-            self._prev_f = f
-            self._prev_s = s
-            self._init = True
-            return
-        cooldown_ticks = TimeSpan.FromMinutes(360).Ticks
-        current_ticks = candle.OpenTime.Ticks
-        if current_ticks - self._last_signal_ticks >= cooldown_ticks:
-            if self._prev_f <= self._prev_s and f > s and self.Position <= 0:
-                self.BuyMarket()
-                self._last_signal_ticks = current_ticks
-            elif self._prev_f >= self._prev_s and f < s and self.Position >= 0:
-                self.SellMarket()
-                self._last_signal_ticks = current_ticks
-        self._prev_f = f
-        self._prev_s = s
+
+        if self._condition_since is None:
+            self._condition_since = message.ServerTime
+
+        if self.Position == 0 and (message.ServerTime - self._condition_since).TotalSeconds >= int(self._seconds_condition.Value):
+            self.BuyMarket()
+
+    @staticmethod
+    def is_price_condition_met(open_price, high, price_step, ticks_from_open):
+        return high - open_price >= ticks_from_open * price_step
+
+    @staticmethod
+    def _align(time, frame):
+        ticks = (time.TimeOfDay.Ticks // frame.Ticks) * frame.Ticks
+        return time.Date.AddTicks(ticks)
 
     def CreateClone(self):
         return time_strategy()

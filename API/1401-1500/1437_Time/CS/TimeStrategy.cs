@@ -3,7 +3,6 @@ using System.Collections.Generic;
 
 using Ecng.Common;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -11,51 +10,111 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Time strategy using EMA crossover.
+/// Timed intrabar high-above-open strategy.
 /// </summary>
 public class TimeStrategy : Strategy
 {
-	private readonly StrategyParam<int> _slowLength;
+	private readonly StrategyParam<int> _ticksFromOpen;
+	private readonly StrategyParam<int> _secondsCondition;
+	private readonly StrategyParam<bool> _resetOnNewBar;
 	private readonly StrategyParam<DataType> _candleType;
 
-	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	private DateTime? _barStart;
+	private decimal _barOpen;
+	private decimal _barHigh;
+	private DateTime? _conditionSince;
+
+	public int TicksFromOpen { get => _ticksFromOpen.Value; set => _ticksFromOpen.Value = value; }
+	public int SecondsCondition { get => _secondsCondition.Value; set => _secondsCondition.Value = value; }
+	public bool ResetOnNewBar { get => _resetOnNewBar.Value; set => _resetOnNewBar.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public TimeStrategy()
 	{
-		_slowLength = Param(nameof(SlowLength), 40)
-			.SetGreaterThanZero()
-			.SetDisplay("Slow Length", "Slow EMA period", "General");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Candle type", "General");
+		_ticksFromOpen = Param(nameof(TicksFromOpen), 0).SetNotNegative();
+		_secondsCondition = Param(nameof(SecondsCondition), 20).SetNotNegative();
+		_resetOnNewBar = Param(nameof(ResetOnNewBar), true);
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame());
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> [(Security, CandleType)];
+		=> [(Security, DataType.Level1)];
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_barStart = null;
+		_barOpen = 0m;
+		_barHigh = 0m;
+		_conditionSince = null;
+	}
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		var fast = new ExponentialMovingAverage { Length = 14 };
-		var slow = new ExponentialMovingAverage { Length = SlowLength };
-		var prevF = 0m; var prevS = 0m; var init = false;
-		var lastSignal = DateTimeOffset.MinValue;
-		var cooldown = TimeSpan.FromMinutes(360);
-		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(fast, slow, (candle, f, s) =>
+		SubscribeLevel1().Bind(ProcessLevel1).Start();
+	}
+
+	private void ProcessLevel1(Level1ChangeMessage message)
+	{
+		var price =
+			message.TryGetDecimal(Level1Fields.LastTradePrice) ??
+			message.TryGetDecimal(Level1Fields.BestAskPrice) ??
+			message.TryGetDecimal(Level1Fields.BestBidPrice);
+
+		if (price is not decimal currentPrice || currentPrice <= 0m)
+			return;
+
+		var timeFrame = CandleType.Arg is TimeSpan tf && tf > TimeSpan.Zero
+			? tf
+			: TimeSpan.FromMinutes(1);
+
+		var currentBarStart = Align(message.ServerTime, timeFrame);
+		if (_barStart != currentBarStart)
 		{
-			if (candle.State != CandleStates.Finished) return;
-			if (!fast.IsFormed || !slow.IsFormed) return;
-			if (!init) { prevF = f; prevS = s; init = true; return; }
-			if (candle.OpenTime - lastSignal >= cooldown)
-			{
-				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
-				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
-			}
-			prevF = f; prevS = s;
-		}).Start();
-		var area = CreateChartArea();
-		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
+			_barStart = currentBarStart;
+			_barOpen = currentPrice;
+			_barHigh = currentPrice;
+
+			if (ResetOnNewBar)
+				_conditionSince = null;
+		}
+		else
+			_barHigh = Math.Max(_barHigh, currentPrice);
+
+		var point = Security?.PriceStep ?? 0m;
+		if (point <= 0m)
+			point = 0.0001m;
+
+		var condition = IsPriceConditionMet(_barOpen, _barHigh, point, TicksFromOpen);
+
+		if (!condition)
+		{
+			_conditionSince = null;
+
+			if (Position > 0m)
+				SellMarket(Math.Abs(Position));
+
+			return;
+		}
+
+		_conditionSince ??= message.ServerTime;
+
+		if (Position == 0m &&
+			message.ServerTime - _conditionSince.Value >= TimeSpan.FromSeconds(SecondsCondition))
+			BuyMarket();
+	}
+
+	internal static bool IsPriceConditionMet(
+		decimal open,
+		decimal high,
+		decimal priceStep,
+		int ticksFromOpen)
+		=> high - open >= ticksFromOpen * priceStep;
+
+	private static DateTime Align(DateTime time, TimeSpan frame)
+	{
+		var ticks = time.TimeOfDay.Ticks / frame.Ticks * frame.Ticks;
+		return time.Date + TimeSpan.FromTicks(ticks);
 	}
 }
