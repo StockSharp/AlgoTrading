@@ -1349,4 +1349,18 @@ partial class CSharpTests
 		AreEqual(0, VladoStrategy.GetSignal(-50m, oversoldLevel: -75m, overboughtLevel: -25m));
 	}
 
+	[TestMethod]
+	[TestCategory("Shard00")]
+	public void S1788_TimerAtrBreakoutLevels()
+	{
+		var (buy, sell) = TimerStrategy.CalculateLevels(
+			close: 100m,
+			pipDistancePoints: 10m,
+			priceStep: 0.1m,
+			atr: 2m);
+
+		AreEqual(103m, buy);
+		AreEqual(97m, sell);
+	}
+
 }
