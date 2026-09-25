@@ -1281,4 +1281,16 @@ partial class CSharpTests
 		recorder.AssertFirstOrderAfterStart(TimeSpan.FromMinutes(1));
 	}
 
+	[TestMethod]
+	[TestCategory("Shard00")]
+	public async Task S1704_MartiniStartsWithRealStopOrders()
+	{
+		const string path = "1701-1800/1704_Martini_Martingale/CS/MartiniMartingaleStrategy.cs";
+		var recorder = new OrderTraceRecorder();
+
+		await RunStrategy(path, CancellationToken, (strategy, _) => recorder.Attach(strategy));
+
+		recorder.AssertFirstTwoAreOppositeConditionalStops();
+	}
+
 }

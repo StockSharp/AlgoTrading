@@ -26,7 +26,7 @@ sealed class OrderTraceRecorder
 		};
 
 		strategy.OrderReceived += (_, order) =>
-			_orders.TryAdd(order.TransactionId, new(strategy.CurrentTime, order.Side, order.Volume, order.Comment, order.Security?.Id));
+			_orders.TryAdd(order.TransactionId, new(strategy.CurrentTime, order.Side, order.Volume, order.Comment, order.Security?.Id, order.Type));
 	}
 
 	/// <summary>
@@ -47,6 +47,16 @@ sealed class OrderTraceRecorder
 		Assert.IsNull(
 			duplicate,
 			duplicate is null ? null : $"Multiple orders were submitted at {duplicate.Key:O}. Trace: {Format(trace)}.");
+	}
+
+	public void AssertFirstTwoAreOppositeConditionalStops()
+	{
+		var trace = Snapshot();
+
+		Assert.IsTrue(trace.Length >= 2, $"Expected at least two orders. Trace: {Format(trace)}.");
+		AreEqual(OrderTypes.Conditional, trace[0].Type, $"First order must be a conditional stop. Trace: {Format(trace)}.");
+		AreEqual(OrderTypes.Conditional, trace[1].Type, $"Second order must be a conditional stop. Trace: {Format(trace)}.");
+		Assert.AreNotEqual(trace[0].Side, trace[1].Side, $"Initial stop orders must be opposite sides. Trace: {Format(trace)}.");
 	}
 
 	public void AssertFirstSide(Sides expectedSide)
@@ -256,9 +266,9 @@ sealed class OrderTraceRecorder
 	private static string Format(OrderTraceEntry[] trace)
 	{
 		const int previewLength = 20;
-		var preview = string.Join(", ", trace.Take(previewLength).Select(entry => $"{entry.Time:O} {entry.SecurityId ?? "<null>"} {entry.Side} {entry.Volume} '{entry.Comment}'"));
+		var preview = string.Join(", ", trace.Take(previewLength).Select(entry => $"{entry.Time:O} {entry.SecurityId ?? "<null>"} {entry.Type} {entry.Side} {entry.Volume} '{entry.Comment}'"));
 		return trace.Length <= previewLength ? preview : $"{preview}, ... ({trace.Length} total)";
 	}
 
-	private readonly record struct OrderTraceEntry(DateTime Time, Sides Side, decimal Volume, string Comment, string SecurityId);
+	private readonly record struct OrderTraceEntry(DateTime Time, Sides Side, decimal Volume, string Comment, string SecurityId, OrderTypes Type);
 }
