@@ -60,6 +60,7 @@ public class CryptoAnalysisStrategy : Strategy
 	private decimal _initialEquity;
 	private decimal _peakEquity;
 	private decimal? _moneyTrailPeak;
+	private DateTimeOffset? _entryCandleTime;
 
 	public decimal OrderVolume { get => _orderVolume.Value; set => _orderVolume.Value = value; }
 	public bool UseMoneyTakeProfit { get => _useMoneyTakeProfit.Value; set => _useMoneyTakeProfit.Value = value; }
@@ -232,12 +233,12 @@ public class CryptoAnalysisStrategy : Strategy
 			macdMain < macdSignal;
 
 		if (longSignal && Position <= 0m)
-			Enter(Sides.Buy, candle.ClosePrice);
+			Enter(Sides.Buy, candle.ClosePrice, candle.OpenTime);
 		else if (shortSignal && Position >= 0m)
-			Enter(Sides.Sell, candle.ClosePrice);
+			Enter(Sides.Sell, candle.ClosePrice, candle.OpenTime);
 	}
 
-	private void Enter(Sides side, decimal price)
+	private void Enter(Sides side, decimal price, DateTimeOffset candleTime)
 	{
 		var volume = OrderVolume + Math.Abs(Position);
 		if (side == Sides.Buy)
@@ -246,6 +247,7 @@ public class CryptoAnalysisStrategy : Strategy
 			SellMarket(volume);
 
 		_entryPrice = price;
+		_entryCandleTime = candleTime;
 		var pip = GetPipSize();
 		_stopPrice = StopLossPips > 0
 			? side == Sides.Buy ? price - StopLossPips * pip : price + StopLossPips * pip
@@ -255,10 +257,14 @@ public class CryptoAnalysisStrategy : Strategy
 			: null;
 		_bestPrice = price;
 		_moneyTrailPeak = null;
+		_entryCandleTime = null;
 	}
 
 	private bool ApplyRisk(ICandleMessage candle)
 	{
+		if (_entryCandleTime is DateTimeOffset entryTime && candle.OpenTime <= entryTime)
+			return false;
+
 		var close = candle.ClosePrice;
 		var floating = FloatingPnL(close);
 		var equity = (Portfolio?.CurrentValue ?? Portfolio?.BeginValue ?? _initialEquity) + floating;

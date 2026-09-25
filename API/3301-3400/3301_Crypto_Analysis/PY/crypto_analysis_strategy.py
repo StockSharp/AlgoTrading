@@ -57,6 +57,7 @@ class crypto_analysis_strategy(Strategy):
         self._initial_equity = 0.0
         self._peak_equity = 0.0
         self._money_trail_peak = None
+        self._entry_candle_time = None
 
     def GetWorkingSecurities(self):
         return [(self.Security, self._candle_type.Value), (self.Security, self._momentum_type.Value), (self.Security, self._macd_type.Value)]
@@ -141,11 +142,11 @@ class crypto_analysis_strategy(Strategy):
                         momentum >= float(self._momentum_sell.Value) and main < signal)
 
         if long_signal and self.Position <= 0:
-            self._enter(Sides.Buy, float(candle.ClosePrice))
+            self._enter(Sides.Buy, float(candle.ClosePrice), candle.OpenTime)
         elif short_signal and self.Position >= 0:
-            self._enter(Sides.Sell, float(candle.ClosePrice))
+            self._enter(Sides.Sell, float(candle.ClosePrice), candle.OpenTime)
 
-    def _enter(self, side, price):
+    def _enter(self, side, price, candle_time):
         volume = float(self._order_volume.Value) + abs(float(self.Position))
         if side == Sides.Buy:
             self.BuyMarket(volume)
@@ -153,6 +154,7 @@ class crypto_analysis_strategy(Strategy):
             self.SellMarket(volume)
 
         self._entry_price = price
+        self._entry_candle_time = candle_time
         pip = self._pip_size()
         sl = int(self._stop_loss.Value) * pip
         tp = int(self._take_profit.Value) * pip
@@ -162,6 +164,9 @@ class crypto_analysis_strategy(Strategy):
         self._money_trail_peak = None
 
     def _apply_risk(self, candle):
+        if self._entry_candle_time is not None and candle.OpenTime <= self._entry_candle_time:
+            return False
+
         close = float(candle.ClosePrice)
         floating = self._floating_pnl(close)
         base = self._initial_equity
@@ -288,6 +293,7 @@ class crypto_analysis_strategy(Strategy):
         self._take_price = None
         self._best_price = None
         self._money_trail_peak = None
+        self._entry_candle_time = None
 
     def CreateClone(self):
         return crypto_analysis_strategy()
