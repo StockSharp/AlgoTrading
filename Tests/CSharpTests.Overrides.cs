@@ -1429,4 +1429,12 @@ partial class CSharpTests
 		AreEqual(0, RsiStrategy.GetSignal(50m, 55m, overSold: 25m, overBought: 75m));
 	}
 
+	[TestMethod]
+	[TestCategory("Shard02")]
+	public void S1228_RciUsesRankCorrelation()
+	{
+		AreEqual(100m, RciStrategy.CalculateRci([1m, 2m, 3m, 4m, 5m]));
+		AreEqual(-100m, RciStrategy.CalculateRci([5m, 4m, 3m, 2m, 1m]));
+	}
+
 }
