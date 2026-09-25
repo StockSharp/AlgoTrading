@@ -29,6 +29,7 @@ class quantum_sentiment_flux_beginners_strategy(Strategy):
         self._entry_price = 0.0
         self._entry_atr = 0.0
         self._cooldown_remaining = 0
+        self._armed_direction = 0
 
     @property
     def CandleType(self):
@@ -44,6 +45,7 @@ class quantum_sentiment_flux_beginners_strategy(Strategy):
         self._entry_price = 0.0
         self._entry_atr = 0.0
         self._cooldown_remaining = 0
+        self._armed_direction = 0
 
     def OnStarted2(self, time):
         super(quantum_sentiment_flux_beginners_strategy, self).OnStarted2(time)
@@ -107,18 +109,27 @@ class quantum_sentiment_flux_beginners_strategy(Strategy):
 
         cross_up = self._prev_fast <= self._prev_slow and fast > slow
         cross_down = self._prev_fast >= self._prev_slow and fast < slow
+
+        if cross_up:
+            self._armed_direction = 1
+        elif cross_down:
+            self._armed_direction = -1
+
+        if (self._armed_direction > 0 and fast <= slow) or (self._armed_direction < 0 and fast >= slow):
+            self._armed_direction = 0
+
         strong_enough = atr > 0 and abs(fast - slow) >= atr * float(self._ma_strength_threshold.Value)
 
-        if self._cooldown_remaining == 0 and self.Position == 0 and strong_enough:
+        if self._cooldown_remaining == 0 and self.Position == 0 and strong_enough and self._armed_direction != 0:
             qty = float(self._quantity.Value)
-            if cross_up:
+            if self._armed_direction > 0:
                 self.BuyMarket(qty)
-                self._entry_price = float(candle.ClosePrice)
-                self._entry_atr = atr
-            elif cross_down:
+            else:
                 self.SellMarket(qty)
-                self._entry_price = float(candle.ClosePrice)
-                self._entry_atr = atr
+
+            self._entry_price = float(candle.ClosePrice)
+            self._entry_atr = atr
+            self._armed_direction = 0
 
         self._prev_fast = fast
         self._prev_slow = slow
