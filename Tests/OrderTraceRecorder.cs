@@ -54,8 +54,8 @@ sealed class OrderTraceRecorder
 		var trace = Snapshot();
 
 		Assert.IsTrue(trace.Length >= 2, $"Expected at least two orders. Trace: {Format(trace)}.");
-		AreEqual(OrderTypes.Conditional, trace[0].Type, $"First order must be a conditional stop. Trace: {Format(trace)}.");
-		AreEqual(OrderTypes.Conditional, trace[1].Type, $"Second order must be a conditional stop. Trace: {Format(trace)}.");
+		Assert.AreEqual(OrderTypes.Conditional, trace[0].Type, $"First order must be a conditional stop. Trace: {Format(trace)}.");
+		Assert.AreEqual(OrderTypes.Conditional, trace[1].Type, $"Second order must be a conditional stop. Trace: {Format(trace)}.");
 		Assert.AreNotEqual(trace[0].Side, trace[1].Side, $"Initial stop orders must be opposite sides. Trace: {Format(trace)}.");
 	}
 
