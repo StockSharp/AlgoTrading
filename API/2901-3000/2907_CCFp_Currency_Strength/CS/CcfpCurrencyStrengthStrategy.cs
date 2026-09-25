@@ -32,6 +32,7 @@ public class CcfpCurrencyStrengthStrategy : Strategy
 	private readonly Dictionary<string, PairState> _pairs = new(StringComparer.OrdinalIgnoreCase);
 	private readonly Dictionary<string, decimal> _previousStrengths = new(StringComparer.OrdinalIgnoreCase);
 	private readonly Dictionary<string, int> _directions = new(StringComparer.OrdinalIgnoreCase);
+	private DateTimeOffset? _lastEvaluationTime;
 
 	public string EURUSD { get => _eurusd.Value; set => _eurusd.Value = value; }
 	public string GBPUSD { get => _gbpusd.Value; set => _gbpusd.Value = value; }
@@ -74,6 +75,7 @@ public class CcfpCurrencyStrengthStrategy : Strategy
 		_pairs.Clear();
 		_previousStrengths.Clear();
 		_directions.Clear();
+		_lastEvaluationTime = null;
 	}
 
 	protected override void OnStarted2(DateTime time)
@@ -96,9 +98,17 @@ public class CcfpCurrencyStrengthStrategy : Strategy
 
 					state.Ratio = (fastValue - slowValue) / slowValue;
 					state.HasValue = true;
+					state.LastTime = candle.OpenTime;
 
-					if (_pairs.Values.All(p => p.HasValue))
-						Evaluate();
+					if (!_pairs.Values.All(p => p.HasValue))
+						return;
+
+					var times = _pairs.Values.Select(p => p.LastTime).Distinct().ToArray();
+					if (times.Length != 1 || times[0] is null || times[0] == _lastEvaluationTime)
+						return;
+
+					_lastEvaluationTime = times[0];
+					Evaluate();
 				})
 				.Start();
 		}
@@ -215,5 +225,6 @@ public class CcfpCurrencyStrengthStrategy : Strategy
 		public string QuoteCurrency { get; } = quoteCurrency;
 		public decimal Ratio { get; set; }
 		public bool HasValue { get; set; }
+		public DateTimeOffset? LastTime { get; set; }
 	}
 }
