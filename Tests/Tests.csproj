@@ -15,6 +15,7 @@
     <Compile Include="../API/*/3299_JB/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
     <Compile Include="../API/*/3122_Vlado/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
     <Compile Include="../API/*/1788_Timer/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
+    <Compile Include="../API/*/3114_LBS/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
 </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(StockSharpDir)Algo.Indicators\Algo.Indicators.csproj" />

@@ -1363,4 +1363,31 @@ partial class CSharpTests
 		AreEqual(97m, sell);
 	}
 
+	[TestMethod]
+	[TestCategory("Shard04")]
+	public void S3114_LbsBreakoutLevelsUseCandleAndFreezeBuffer()
+	{
+		var (buy, sell) = LbsStrategy.CalculateBreakoutLevels(
+			candleHigh: 105m,
+			candleLow: 95m,
+			bid: 100m,
+			ask: 101m,
+			priceStep: 0.1m);
+
+		// Spread = 1, so 3 spreads = 3 > 10 pips (= 1 at this price step).
+		AreEqual(105m, buy);
+		AreEqual(95m, sell);
+
+		(buy, sell) = LbsStrategy.CalculateBreakoutLevels(
+			candleHigh: 101m,
+			candleLow: 99m,
+			bid: 100m,
+			ask: 100.1m,
+			priceStep: 0.1m);
+
+		// Freeze buffer is at least ten pips = 1.0.
+		AreEqual(101.1m, buy);
+		AreEqual(99m, sell);
+	}
+
 }
