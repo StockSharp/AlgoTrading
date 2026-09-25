@@ -85,7 +85,7 @@ class ma_macd_position_averaging_strategy(Strategy):
         self._apply_protection(candle)
 
         if self._legs:
-            self._try_average(float(candle.ClosePrice))
+            self._try_average(float(candle.ClosePrice), candle.OpenTime)
             return
 
         if self.Position != 0:
@@ -107,9 +107,9 @@ class ma_macd_position_averaging_strategy(Strategy):
         close = float(candle.ClosePrice)
 
         if main < 0 and signal < 0 and ratio >= float(self._macd_ratio.Value) and close > ma and close - ma >= indent:
-            self._add_leg(Sides.Buy, self._normalize_volume(float(self._order_volume.Value)), close)
+            self._add_leg(Sides.Buy, self._normalize_volume(float(self._order_volume.Value)), close, candle.OpenTime)
         elif main > 0 and signal > 0 and ratio >= float(self._macd_ratio.Value) and close < ma and ma - close >= indent:
-            self._add_leg(Sides.Sell, self._normalize_volume(float(self._order_volume.Value)), close)
+            self._add_leg(Sides.Sell, self._normalize_volume(float(self._order_volume.Value)), close, candle.OpenTime)
 
     def _update_indicators(self, candle):
         ma_price = self._applied_price(candle, int(self._ma_applied.Value))
@@ -132,7 +132,7 @@ class ma_macd_position_averaging_strategy(Strategy):
             del self._ma_values[:remove]
             del self._macd_values[:remove]
 
-    def _try_average(self, close):
+    def _try_average(self, close, candle_time):
         step_pips = int(self._step_lossing.Value)
         if step_pips <= 0 or not self._legs:
             return
@@ -147,11 +147,11 @@ class ma_macd_position_averaging_strategy(Strategy):
         if side == Sides.Buy:
             best = min(leg["entry"] for leg in self._legs)
             if close <= best - distance:
-                self._add_leg(Sides.Buy, volume, close)
+                self._add_leg(Sides.Buy, volume, close, candle_time)
         else:
             best = max(leg["entry"] for leg in self._legs)
             if close >= best + distance:
-                self._add_leg(Sides.Sell, volume, close)
+                self._add_leg(Sides.Sell, volume, close, candle_time)
 
     def _apply_protection(self, candle):
         if not self._legs:
@@ -163,6 +163,9 @@ class ma_macd_position_averaging_strategy(Strategy):
 
         for i in range(len(self._legs) - 1, -1, -1):
             leg = self._legs[i]
+            if candle.OpenTime <= leg["entry_time"]:
+                continue
+
             self._update_trailing(leg, float(candle.ClosePrice), pip)
 
             if leg["side"] == Sides.Buy:
@@ -208,7 +211,7 @@ class ma_macd_position_averaging_strategy(Strategy):
             if leg["stop"] is None or candidate <= leg["stop"] - step:
                 leg["stop"] = candidate
 
-    def _add_leg(self, side, volume, price):
+    def _add_leg(self, side, volume, price, entry_time):
         if volume <= 0:
             return
 
@@ -225,6 +228,7 @@ class ma_macd_position_averaging_strategy(Strategy):
             "side": side,
             "volume": volume,
             "entry": price,
+            "entry_time": entry_time,
             "stop": (price - sl if side == Sides.Buy else price + sl) if int(self._stop_loss.Value) > 0 else None,
             "take": (price + tp if side == Sides.Buy else price - tp) if int(self._take_profit.Value) > 0 else None,
         })
