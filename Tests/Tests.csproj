@@ -11,7 +11,8 @@
     <PackageReference Include="MSTest.TestAdapter" Version="$(MsTestVer)" />
     <PackageReference Include="MSTest.TestFramework" Version="$(MsTestVer)" />
     <PackageReference Include="StockSharp.Samples.HistoryData" Version="$(StockSharpVer)" />
-  </ItemGroup>
+      <Compile Include="../API/*/1807_GO/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
+</ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(StockSharpDir)Algo.Indicators\Algo.Indicators.csproj" />
     <ProjectReference Include="$(StockSharpDir)Algo.Strategies\Algo.Strategies.csproj" />

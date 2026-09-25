@@ -1300,4 +1300,18 @@ partial class CSharpTests
 		recorder.AssertFirstOppositeWithin(TimeSpan.FromMinutes(10));
 	}
 
+	[TestMethod]
+	[TestCategory("Shard01")]
+	public void S1807_GoFormula()
+	{
+		var go = GoStrategy.CalculateGo(
+			openEma: 10m,
+			highEma: 11m,
+			lowEma: 9m,
+			closeEma: 12m,
+			volume: 2m);
+
+		AreEqual(12m, go, "GO must follow the README formula over EMA(O/H/L/C) multiplied by volume.");
+	}
+
 }
