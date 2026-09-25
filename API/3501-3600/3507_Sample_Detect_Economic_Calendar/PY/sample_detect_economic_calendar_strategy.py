@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import DateTimeOffset, TimeSpan, Math
+from System import DateTime, TimeSpan, Math
 from System.Globalization import CultureInfo, DateTimeStyles
 from StockSharp.Messages import DataType, Level1Fields, Sides
 from StockSharp.Algo.Strategies import Strategy
@@ -219,11 +219,11 @@ class sample_detect_economic_calendar_strategy(Strategy):
             if len(parts) < 4:
                 continue
 
-            parsed = DateTimeOffset()
+            parsed = DateTime()
             ok = False
             for fmt in formats:
                 try:
-                    parsed = DateTimeOffset.ParseExact(
+                    parsed = DateTime.ParseExact(
                         parts[0].strip(), fmt, CultureInfo.InvariantCulture,
                         DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal)
                     ok = True

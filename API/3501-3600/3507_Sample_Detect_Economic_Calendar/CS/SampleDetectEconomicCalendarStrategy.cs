@@ -35,7 +35,7 @@ public class SampleDetectEconomicCalendarStrategy : Strategy
 	private decimal? _bestBid;
 	private decimal? _bestAsk;
 	private CalendarEvent _armedEvent;
-	private DateTimeOffset? _armedAt;
+	private DateTime? _armedAt;
 	private decimal? _buyStop;
 	private decimal? _sellStop;
 	private decimal _entryPrice;
@@ -139,7 +139,7 @@ public class SampleDetectEconomicCalendarStrategy : Strategy
 			Execute(Sides.Sell, _bestBid.Value);
 	}
 
-	private void TryArm(DateTimeOffset now)
+	private void TryArm(DateTime now)
 	{
 		var evt = _events
 			.Where(e => !e.Consumed &&
@@ -160,7 +160,7 @@ public class SampleDetectEconomicCalendarStrategy : Strategy
 		_sellStop = _bestBid.Value - SellDistancePoints * step;
 	}
 
-	private bool IsExpired(DateTimeOffset now)
+	private bool IsExpired(DateTime now)
 	{
 		if (_armedEvent is null || _armedAt is null)
 			return true;
@@ -287,7 +287,7 @@ public class SampleDetectEconomicCalendarStrategy : Strategy
 			if (parts.Length < 4)
 				continue;
 
-			if (!DateTimeOffset.TryParseExact(parts[0].Trim(), formats, CultureInfo.InvariantCulture,
+			if (!DateTime.TryParseExact(parts[0].Trim(), formats, CultureInfo.InvariantCulture,
 				DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var when))
 				continue;
 
@@ -323,7 +323,7 @@ public class SampleDetectEconomicCalendarStrategy : Strategy
 
 	private sealed class CalendarEvent
 	{
-		public DateTimeOffset Time { get; init; }
+		public DateTime Time { get; init; }
 		public string Currency { get; init; }
 		public bool HighImpact { get; init; }
 		public string Title { get; init; }
