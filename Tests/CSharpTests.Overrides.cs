@@ -2,6 +2,7 @@ namespace StockSharp.Tests;
 
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 using Ecng.Common;
@@ -718,16 +719,38 @@ partial class CSharpTests
 
 	[TestMethod]
 	[TestCategory("Shard05")]
-	public Task S0333_KeltnerSeasonalFilter()
-		// Compact periods make the signal reachable in the bundled history window.
-		=> RunStrategy<KeltnerSeasonalStrategy>(CancellationToken, (s, _) =>
+	[DoNotParallelize]
+	public async Task S0333_KeltnerSeasonalFilter()
+	{
+		async Task<OrderTraceRecorder> Replay(int startedMonth)
 		{
-			s.EmaPeriod = 2;
-			s.AtrPeriod = 2;
-			s.AtrMultiplier = 0.01m;
-			s.SeasonalThreshold = 0m;
-			s.CandleType = TimeSpan.FromMinutes(5).TimeFrame();
-		});
+			KeltnerSeasonalStartedMonthProbe.StartedMonth.Value = startedMonth;
+			var recorder = new OrderTraceRecorder();
+
+			await RunStrategy<KeltnerSeasonalStartedMonthProbe>(CancellationToken, (strategy, _) =>
+			{
+				recorder.Attach(strategy);
+			});
+
+			return recorder;
+		}
+
+		var januaryStart = await Replay(1);
+		var septemberStart = await Replay(9);
+
+		januaryStart.AssertSameAs(septemberStart);
+	}
+
+	private sealed class KeltnerSeasonalStartedMonthProbe : KeltnerSeasonalStrategy
+	{
+		public static readonly AsyncLocal<int> StartedMonth = new();
+
+		protected override void OnStarted2(DateTime time)
+		{
+			var month = StartedMonth.Value is >= 1 and <= 12 ? StartedMonth.Value : time.Month;
+			base.OnStarted2(new DateTime(time.Year, month, 1, time.Hour, time.Minute, time.Second, time.Kind));
+		}
+	}
 
 	[TestMethod]
 	[TestCategory("Shard01")]
