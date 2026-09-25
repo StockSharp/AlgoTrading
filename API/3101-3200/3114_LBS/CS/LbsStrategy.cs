@@ -3,212 +3,291 @@ using System.Collections.Generic;
 
 using Ecng.Common;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
+using StockSharp.MatchingEngine;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
+public enum LbsMoneyMode
+{
+	FixedLot,
+	RiskPercent,
+}
+
 /// <summary>
-/// London Breakout Strategy using EMA crossover as breakout direction filter.
-/// Buys when fast EMA crosses above slow EMA, sells on reverse.
+/// Previous-candle breakout strategy with paired conditional stops and Level1 trailing.
 /// </summary>
 public class LbsStrategy : Strategy
 {
-	private readonly StrategyParam<int> _fastPeriod;
-	private readonly StrategyParam<int> _slowPeriod;
-	private readonly StrategyParam<int> _stopLossPoints;
-	private readonly StrategyParam<int> _takeProfitPoints;
+	private readonly StrategyParam<int> _stopLossPips;
+	private readonly StrategyParam<int> _trailingStopPips;
+	private readonly StrategyParam<int> _trailingStepPips;
+	private readonly StrategyParam<LbsMoneyMode> _moneyMode;
+	private readonly StrategyParam<decimal> _volumeOrRisk;
+	private readonly StrategyParam<int> _hour1;
+	private readonly StrategyParam<int> _hour2;
+	private readonly StrategyParam<int> _hour3;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private ExponentialMovingAverage _fast;
-	private ExponentialMovingAverage _slow;
-
-	private decimal _prevFast;
-	private decimal _prevSlow;
+	private decimal? _bid;
+	private decimal? _ask;
+	private Order _buyPending;
+	private Order _sellPending;
+	private Order _protectiveStop;
 	private decimal _entryPrice;
-	private int _cooldown;
 
-	/// <summary>
-	/// Fast EMA period.
-	/// </summary>
-	public int FastPeriod
-	{
-		get => _fastPeriod.Value;
-		set => _fastPeriod.Value = value;
-	}
+	public int StopLossPips { get => _stopLossPips.Value; set => _stopLossPips.Value = value; }
+	public int TrailingStopPips { get => _trailingStopPips.Value; set => _trailingStopPips.Value = value; }
+	public int TrailingStepPips { get => _trailingStepPips.Value; set => _trailingStepPips.Value = value; }
+	public LbsMoneyMode MoneyMode { get => _moneyMode.Value; set => _moneyMode.Value = value; }
+	public decimal VolumeOrRisk { get => _volumeOrRisk.Value; set => _volumeOrRisk.Value = value; }
+	public int Hour1 { get => _hour1.Value; set => _hour1.Value = value; }
+	public int Hour2 { get => _hour2.Value; set => _hour2.Value = value; }
+	public int Hour3 { get => _hour3.Value; set => _hour3.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Slow EMA period.
-	/// </summary>
-	public int SlowPeriod
-	{
-		get => _slowPeriod.Value;
-		set => _slowPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Stop-loss distance in price steps.
-	/// </summary>
-	public int StopLossPoints
-	{
-		get => _stopLossPoints.Value;
-		set => _stopLossPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Take-profit distance in price steps.
-	/// </summary>
-	public int TakeProfitPoints
-	{
-		get => _takeProfitPoints.Value;
-		set => _takeProfitPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="LbsStrategy"/> class.
-	/// </summary>
 	public LbsStrategy()
 	{
-		_fastPeriod = Param(nameof(FastPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("Fast Period", "Fast EMA period", "Indicator");
-
-		_slowPeriod = Param(nameof(SlowPeriod), 100)
-			.SetGreaterThanZero()
-			.SetDisplay("Slow Period", "Slow EMA period", "Indicator");
-
-		_stopLossPoints = Param(nameof(StopLossPoints), 200)
-			.SetNotNegative()
-			.SetDisplay("Stop Loss", "Stop-loss in price steps", "Risk");
-
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 400)
-			.SetNotNegative()
-			.SetDisplay("Take Profit", "Take-profit in price steps", "Risk");
+		_stopLossPips = Param(nameof(StopLossPips), 50).SetNotNegative();
+		_trailingStopPips = Param(nameof(TrailingStopPips), 5).SetNotNegative();
+		_trailingStepPips = Param(nameof(TrailingStepPips), 15).SetNotNegative();
+		_moneyMode = Param(nameof(MoneyMode), LbsMoneyMode.FixedLot);
+		_volumeOrRisk = Param(nameof(VolumeOrRisk), 1m).SetGreaterThanZero();
+		_hour1 = Param(nameof(Hour1), 10).SetRange(0, 23);
+		_hour2 = Param(nameof(Hour2), 11).SetRange(0, 23);
+		_hour3 = Param(nameof(Hour3), 12).SetRange(0, 23);
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame());
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		yield return (Security, TimeSpan.FromMinutes(5).TimeFrame());
-	}
+		=> [(Security, CandleType), (Security, DataType.Level1)];
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_fast = null;
-		_slow = null;
-		_prevFast = 0;
-		_prevSlow = 0;
-		_entryPrice = 0;
-		_cooldown = 0;
+		_bid = null;
+		_ask = null;
+		_buyPending = null;
+		_sellPending = null;
+		_protectiveStop = null;
+		_entryPrice = 0m;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_fast = new ExponentialMovingAverage { Length = FastPeriod };
-		_slow = new ExponentialMovingAverage { Length = SlowPeriod };
-
-		var subscription = SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame());
-		subscription.Bind(_fast, _slow, ProcessCandle);
-		subscription.Start();
+		SubscribeLevel1().Bind(ProcessLevel1).Start();
+		SubscribeCandles(CandleType).Bind(ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
-		if (candle.State != CandleStates.Finished)
+		if (candle.State != CandleStates.Finished || Position != 0m)
 			return;
 
-		if (!_fast.IsFormed || !_slow.IsFormed)
+		var hour = candle.CloseTime.Hour;
+		if (!IsTradingHour(hour) || _bid is not decimal bid || _ask is not decimal ask)
+			return;
+
+		CancelEntryStops();
+
+		var point = GetPoint();
+		var (buyPrice, sellPrice) = CalculateBreakoutLevels(
+			candle.HighPrice, candle.LowPrice, bid, ask, point);
+
+		var volume = CalculateVolume(point);
+		if (volume <= 0m)
+			return;
+
+		_buyPending = CreateStopOrder(Sides.Buy, buyPrice, volume, "LBS buy breakout");
+		_sellPending = CreateStopOrder(Sides.Sell, sellPrice, volume, "LBS sell breakout");
+
+		RegisterOrder(_buyPending);
+		RegisterOrder(_sellPending);
+	}
+
+	private void ProcessLevel1(Level1ChangeMessage message)
+	{
+		if (message.TryGetDecimal(Level1Fields.BestBidPrice) is decimal bid && bid > 0m)
+			_bid = bid;
+		if (message.TryGetDecimal(Level1Fields.BestAskPrice) is decimal ask && ask > 0m)
+			_ask = ask;
+
+		if (Position == 0m || _protectiveStop is null || TrailingStopPips <= 0 || TrailingStepPips <= 0)
+			return;
+
+		var point = GetPoint();
+		var trail = TrailingStopPips * point;
+		var step = TrailingStepPips * point;
+
+		if (Position > 0m && _bid is decimal longPrice)
 		{
-			_prevFast = fastValue;
-			_prevSlow = slowValue;
+			if (longPrice - _entryPrice < trail + step)
+				return;
+
+			var candidate = longPrice - trail;
+			var current = GetActivation(_protectiveStop);
+			if (candidate >= current + step)
+				ReplaceProtectiveStop(Sides.Sell, candidate);
+		}
+		else if (Position < 0m && _ask is decimal shortPrice)
+		{
+			if (_entryPrice - shortPrice < trail + step)
+				return;
+
+			var candidate = shortPrice + trail;
+			var current = GetActivation(_protectiveStop);
+			if (candidate <= current - step)
+				ReplaceProtectiveStop(Sides.Buy, candidate);
+		}
+	}
+
+	protected override void OnOwnTradeReceived(MyTrade trade)
+	{
+		base.OnOwnTradeReceived(trade);
+
+		if (trade?.Order is null || trade.Trade is null)
+			return;
+
+		if (IsSameOrder(trade.Order, _buyPending) || IsSameOrder(trade.Order, _sellPending))
+		{
+			var filledSide = trade.Order.Side;
+			_entryPrice = trade.Trade.Price;
+
+			if (filledSide == Sides.Buy)
+				CancelIfActive(_sellPending);
+			else
+				CancelIfActive(_buyPending);
+
+			_buyPending = null;
+			_sellPending = null;
+
+			if (StopLossPips > 0 && Position != 0m)
+			{
+				var point = GetPoint();
+				var stop = filledSide == Sides.Buy
+					? _entryPrice - StopLossPips * point
+					: _entryPrice + StopLossPips * point;
+
+				ReplaceProtectiveStop(filledSide.Invert(), stop);
+			}
+
 			return;
 		}
 
-		if (_cooldown > 0)
+		if (IsSameOrder(trade.Order, _protectiveStop) && Position == 0m)
 		{
-			_cooldown--;
-			_prevFast = fastValue;
-			_prevSlow = slowValue;
+			_protectiveStop = null;
+			_entryPrice = 0m;
+		}
+	}
+
+	private bool IsTradingHour(int hour)
+		=> (Hour1 != 0 && hour == Hour1) ||
+		   (Hour2 != 0 && hour == Hour2) ||
+		   (Hour3 != 0 && hour == Hour3);
+
+	private decimal CalculateVolume(decimal point)
+	{
+		if (MoneyMode == LbsMoneyMode.FixedLot)
+			return NormalizeVolume(VolumeOrRisk);
+
+		if (StopLossPips <= 0)
+			return 0m;
+
+		var balance = Portfolio?.CurrentValue ?? Portfolio?.BeginValue ?? 0m;
+		if (balance <= 0m)
+			return 0m;
+
+		var riskMoney = balance * VolumeOrRisk / 100m;
+		var stepPrice = Security?.StepPrice ?? 0m;
+		var lossPerUnit = stepPrice > 0m
+			? StopLossPips * stepPrice
+			: StopLossPips * point * (Security?.Multiplier ?? 1m);
+
+		return lossPerUnit > 0m ? NormalizeVolume(riskMoney / lossPerUnit) : 0m;
+	}
+
+	private Order CreateStopOrder(Sides side, decimal activationPrice, decimal volume, string comment)
+		=> new()
+		{
+			Security = Security,
+			Portfolio = Portfolio,
+			Type = OrderTypes.Conditional,
+			Condition = new StopOrderCondition { ActivationPrice = Security.ShrinkPrice(activationPrice) },
+			Side = side,
+			Volume = volume,
+			Comment = comment,
+		};
+
+	private void ReplaceProtectiveStop(Sides side, decimal activationPrice)
+	{
+		var old = _protectiveStop;
+		var volume = Math.Abs(Position);
+		if (volume <= 0m)
 			return;
-		}
 
-		var close = candle.ClosePrice;
-		var step = Security?.PriceStep ?? 1m;
+		var replacement = CreateStopOrder(side, activationPrice, volume, "LBS protective stop");
 
-		// Check SL/TP
-		if (Position > 0 && _entryPrice > 0)
-		{
-			if (StopLossPoints > 0 && close <= _entryPrice - StopLossPoints * step)
-			{
-				SellMarket();
-				_entryPrice = 0;
-				_cooldown = 80;
-				_prevFast = fastValue;
-				_prevSlow = slowValue;
-				return;
-			}
+		if (old is { State: OrderStates.Active })
+			ReRegisterOrder(old, replacement);
+		else
+			RegisterOrder(replacement);
 
-			if (TakeProfitPoints > 0 && close >= _entryPrice + TakeProfitPoints * step)
-			{
-				SellMarket();
-				_entryPrice = 0;
-				_cooldown = 80;
-				_prevFast = fastValue;
-				_prevSlow = slowValue;
-				return;
-			}
-		}
-		else if (Position < 0 && _entryPrice > 0)
-		{
-			if (StopLossPoints > 0 && close >= _entryPrice + StopLossPoints * step)
-			{
-				BuyMarket();
-				_entryPrice = 0;
-				_cooldown = 80;
-				_prevFast = fastValue;
-				_prevSlow = slowValue;
-				return;
-			}
+		_protectiveStop = replacement;
+	}
 
-			if (TakeProfitPoints > 0 && close <= _entryPrice - TakeProfitPoints * step)
-			{
-				BuyMarket();
-				_entryPrice = 0;
-				_cooldown = 80;
-				_prevFast = fastValue;
-				_prevSlow = slowValue;
-				return;
-			}
-		}
+	private void CancelEntryStops()
+	{
+		CancelIfActive(_buyPending);
+		CancelIfActive(_sellPending);
+		_buyPending = null;
+		_sellPending = null;
+	}
 
-		// EMA crossover
-		if (_prevFast <= _prevSlow && fastValue > slowValue && Position <= 0)
-		{
-			if (Position < 0)
-				BuyMarket();
+	private void CancelIfActive(Order order)
+	{
+		if (order is { State: OrderStates.Active })
+			CancelOrder(order);
+	}
 
-			BuyMarket();
-			_entryPrice = close;
-			_cooldown = 80;
-		}
-		else if (_prevFast >= _prevSlow && fastValue < slowValue && Position >= 0)
-		{
-			if (Position > 0)
-				SellMarket();
+	private static bool IsSameOrder(Order left, Order right)
+		=> left is not null && right is not null &&
+		   (ReferenceEquals(left, right) || left.TransactionId == right.TransactionId);
 
-			SellMarket();
-			_entryPrice = close;
-			_cooldown = 80;
-		}
+	private static decimal GetActivation(Order order)
+		=> order?.Condition is StopOrderCondition stop ? stop.ActivationPrice ?? 0m : 0m;
 
-		_prevFast = fastValue;
-		_prevSlow = slowValue;
+	private decimal NormalizeVolume(decimal volume)
+	{
+		if (Security?.MaxVolume is decimal max && max > 0m)
+			volume = Math.Min(volume, max);
+		if (Security?.MinVolume is decimal min && min > 0m)
+			volume = Math.Max(volume, min);
+		if (Security?.VolumeStep is decimal step && step > 0m)
+			volume = Math.Floor(volume / step) * step;
+
+		return volume;
+	}
+
+	private decimal GetPoint()
+	{
+		var point = Security?.PriceStep ?? 0m;
+		return point > 0m ? point : 0.0001m;
+	}
+
+	internal static (decimal buy, decimal sell) CalculateBreakoutLevels(
+		decimal candleHigh,
+		decimal candleLow,
+		decimal bid,
+		decimal ask,
+		decimal priceStep)
+	{
+		var spread = Math.Max(0m, ask - bid);
+		var buffer = Math.Max(3m * spread, 10m * priceStep);
+		return (Math.Max(candleHigh, ask + buffer), Math.Min(candleLow, bid - buffer));
 	}
 }
