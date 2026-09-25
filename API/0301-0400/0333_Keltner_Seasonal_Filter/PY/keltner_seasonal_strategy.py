@@ -55,8 +55,6 @@ class keltner_seasonal_strategy(Strategy):
     def OnStarted2(self, time):
         super(keltner_seasonal_strategy, self).OnStarted2(time)
 
-        self._update_seasonal_strength(time)
-
         ema = ExponentialMovingAverage()
         ema.Length = int(self._ema_period.Value)
 
@@ -84,10 +82,8 @@ class keltner_seasonal_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        candle_month = candle.OpenTime.Month
-        current_month = self.CurrentTime.Month
-        if candle_month != current_month:
-            self._update_seasonal_strength(self.CurrentTime)
+        # Seasonality belongs to the candle being evaluated, never to host/start time.
+        self._update_seasonal_strength(candle.OpenTime)
 
         multiplier = float(self._atr_multiplier.Value)
         threshold = float(self._seasonal_threshold.Value)
