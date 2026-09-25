@@ -5,12 +5,13 @@ using Ecng.Common;
 
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
+using StockSharp.MatchingEngine;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Hedged martingale grid with symmetric initial triggers and basket profit close.
+/// Hedged martingale grid using real server-side conditional stop orders for the initial OCO pair.
 /// </summary>
 public class MartiniMartingaleStrategy : Strategy
 {
@@ -19,12 +20,14 @@ public class MartiniMartingaleStrategy : Strategy
 	private readonly StrategyParam<decimal> _initialVolume;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly List<Leg> _legs = [];
-	private decimal? _buyTrigger;
-	private decimal? _sellTrigger;
+	private Order _buyStopOrder;
+	private Order _sellStopOrder;
 	private decimal _lastExecutionPrice;
 	private decimal _lastLegVolume;
 	private int _orderCount;
+	private bool _martingaleOrderPending;
+	private bool _closingCycle;
+	private decimal _cyclePnlBase;
 
 	public decimal Step { get => _step.Value; set => _step.Value = value; }
 	public decimal ProfitClose { get => _profitClose.Value; set => _profitClose.Value = value; }
@@ -33,14 +36,10 @@ public class MartiniMartingaleStrategy : Strategy
 
 	public MartiniMartingaleStrategy()
 	{
-		_step = Param(nameof(Step), 10m).SetGreaterThanZero()
-			.SetDisplay("Step", "Absolute price step between martingale actions.", "Grid");
-		_profitClose = Param(nameof(ProfitClose), 10m).SetGreaterThanZero()
-			.SetDisplay("Profit Close", "Combined floating PnL required to flatten the basket.", "Risk");
-		_initialVolume = Param(nameof(InitialVolume), 0.1m).SetGreaterThanZero()
-			.SetDisplay("Initial Volume", "Starting volume for the first triggered order.", "Trading");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Candle series used to monitor trigger levels.", "General");
+		_step = Param(nameof(Step), 10m).SetGreaterThanZero();
+		_profitClose = Param(nameof(ProfitClose), 10m).SetGreaterThanZero();
+		_initialVolume = Param(nameof(InitialVolume), 0.1m).SetGreaterThanZero();
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -49,23 +48,14 @@ public class MartiniMartingaleStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		ResetCycle();
+		ResetCycleState();
 	}
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		ResetCycle();
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawOwnTrades(area);
-		}
+		ResetCycleState();
+		SubscribeCandles(CandleType).Bind(ProcessCandle).Start();
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -73,100 +63,161 @@ public class MartiniMartingaleStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var close = candle.ClosePrice;
-
-		if (_legs.Count > 0 && CalculateFloatingPnL(close) >= ProfitClose)
+		if (Position == 0m)
 		{
-			Flatten();
-			ResetCycle();
+			if (!_closingCycle && _buyStopOrder is null && _sellStopOrder is null)
+				PlaceInitialStops(candle.ClosePrice);
+
 			return;
 		}
 
-		if (_legs.Count == 0)
+		if (!_closingCycle && PnL - _cyclePnlBase >= ProfitClose)
 		{
-			if (_buyTrigger is null || _sellTrigger is null)
-			{
-				_buyTrigger = close + Step;
-				_sellTrigger = close - Step;
-				return;
-			}
-
-			var buyHit = candle.HighPrice >= _buyTrigger.Value;
-			var sellHit = candle.LowPrice <= _sellTrigger.Value;
-
-			if (!buyHit && !sellHit)
-				return;
-
-			// With bar data the path is unknown when both stops were crossed. Resolve
-			// deterministically from candle direction and still honour OCO semantics.
-			var side = buyHit && sellHit
-				? (candle.ClosePrice >= candle.OpenPrice ? Sides.Buy : Sides.Sell)
-				: buyHit ? Sides.Buy : Sides.Sell;
-
-			ExecuteLeg(side, InitialVolume, side == Sides.Buy ? _buyTrigger.Value : _sellTrigger.Value);
-			_buyTrigger = null;
-			_sellTrigger = null;
+			_closingCycle = true;
+			CancelInitialStops();
+			CloseNetPosition();
 			return;
 		}
+
+		if (_closingCycle || _martingaleOrderPending || _lastLegVolume <= 0m || _orderCount <= 0)
+			return;
 
 		var adverseDistance = Step * _orderCount;
 
-		if (Position > 0 && candle.LowPrice <= _lastExecutionPrice - adverseDistance)
-			ExecuteLeg(Sides.Sell, _lastLegVolume * 2m, _lastExecutionPrice - adverseDistance);
-		else if (Position < 0 && candle.HighPrice >= _lastExecutionPrice + adverseDistance)
-			ExecuteLeg(Sides.Buy, _lastLegVolume * 2m, _lastExecutionPrice + adverseDistance);
+		if (Position > 0m && candle.LowPrice <= _lastExecutionPrice - adverseDistance)
+			PlaceMartingale(Sides.Sell, _lastLegVolume * 2m);
+		else if (Position < 0m && candle.HighPrice >= _lastExecutionPrice + adverseDistance)
+			PlaceMartingale(Sides.Buy, _lastLegVolume * 2m);
 	}
 
-	private void ExecuteLeg(Sides side, decimal volume, decimal price)
+	private void PlaceInitialStops(decimal center)
 	{
+		_cyclePnlBase = PnL;
+
+		_buyStopOrder = CreateStopOrder(Sides.Buy, center + Step, InitialVolume, "Martini initial buy stop");
+		_sellStopOrder = CreateStopOrder(Sides.Sell, center - Step, InitialVolume, "Martini initial sell stop");
+
+		RegisterOrder(_buyStopOrder);
+		RegisterOrder(_sellStopOrder);
+	}
+
+	private Order CreateStopOrder(Sides side, decimal activationPrice, decimal volume, string comment)
+		=> new()
+		{
+			Security = Security,
+			Portfolio = Portfolio,
+			Type = OrderTypes.Conditional,
+			Condition = new StopOrderCondition { ActivationPrice = activationPrice },
+			Side = side,
+			Volume = volume,
+			Comment = comment,
+		};
+
+	private void PlaceMartingale(Sides side, decimal volume)
+	{
+		volume = NormalizeVolume(volume);
+		if (volume <= 0m)
+			return;
+
+		_martingaleOrderPending = true;
+
 		if (side == Sides.Buy)
 			BuyMarket(volume);
 		else
 			SellMarket(volume);
-
-		_legs.Add(new Leg(side, volume, price));
-		_lastExecutionPrice = price;
-		_lastLegVolume = volume;
-		_orderCount++;
 	}
 
-	private decimal CalculateFloatingPnL(decimal marketPrice)
+	protected override void OnOwnTradeReceived(MyTrade trade)
 	{
-		var priceStep = Security?.PriceStep ?? 0m;
-		var stepPrice = Security?.StepPrice ?? 0m;
-		var multiplier = Security?.Multiplier ?? 1m;
-		var total = 0m;
+		base.OnOwnTradeReceived(trade);
 
-		foreach (var leg in _legs)
+		if (trade?.Order is null || trade.Trade is null)
+			return;
+
+		if (_closingCycle)
 		{
-			var direction = leg.Side == Sides.Buy ? 1m : -1m;
-			var difference = (marketPrice - leg.Price) * direction;
-
-			total += priceStep > 0m && stepPrice > 0m
-				? difference / priceStep * stepPrice * leg.Volume
-				: difference * multiplier * leg.Volume;
+			if (Position == 0m)
+			{
+				_closingCycle = false;
+				ResetCycleState(keepPnlBase: false);
+			}
+			return;
 		}
 
-		return total;
+		if (trade.Order.Type == OrderTypes.Conditional)
+		{
+			if (trade.Order.Side == Sides.Buy)
+				CancelIfActive(_sellStopOrder);
+			else
+				CancelIfActive(_buyStopOrder);
+
+			_buyStopOrder = null;
+			_sellStopOrder = null;
+		}
+
+		_lastExecutionPrice = trade.Trade.Price;
+		_lastLegVolume = trade.Trade.Volume;
+		_orderCount++;
+		_martingaleOrderPending = false;
 	}
 
-	private void Flatten()
+	protected override void OnOrderChanged(Order order)
 	{
-		if (Position > 0)
+		base.OnOrderChanged(order);
+
+		if (order is null || order.State != OrderStates.Done)
+			return;
+
+		if (_buyStopOrder is not null && order.TransactionId == _buyStopOrder.TransactionId && order.Balance == order.Volume)
+			_buyStopOrder = null;
+
+		if (_sellStopOrder is not null && order.TransactionId == _sellStopOrder.TransactionId && order.Balance == order.Volume)
+			_sellStopOrder = null;
+	}
+
+	private void CancelInitialStops()
+	{
+		CancelIfActive(_buyStopOrder);
+		CancelIfActive(_sellStopOrder);
+		_buyStopOrder = null;
+		_sellStopOrder = null;
+	}
+
+	private void CancelIfActive(Order order)
+	{
+		if (order is { State: OrderStates.Active })
+			CancelOrder(order);
+	}
+
+	private void CloseNetPosition()
+	{
+		if (Position > 0m)
 			SellMarket(Math.Abs(Position));
-		else if (Position < 0)
+		else if (Position < 0m)
 			BuyMarket(Math.Abs(Position));
 	}
 
-	private void ResetCycle()
+	private decimal NormalizeVolume(decimal volume)
 	{
-		_legs.Clear();
-		_buyTrigger = null;
-		_sellTrigger = null;
+		if (Security?.MaxVolume is decimal max && max > 0m)
+			volume = Math.Min(volume, max);
+		if (Security?.MinVolume is decimal min && min > 0m)
+			volume = Math.Max(volume, min);
+		if (Security?.VolumeStep is decimal step && step > 0m)
+			volume = Math.Floor(volume / step) * step;
+		return volume;
+	}
+
+	private void ResetCycleState(bool keepPnlBase = false)
+	{
+		_buyStopOrder = null;
+		_sellStopOrder = null;
 		_lastExecutionPrice = 0m;
 		_lastLegVolume = 0m;
 		_orderCount = 0;
+		_martingaleOrderPending = false;
+		_closingCycle = false;
+		if (!keepPnlBase)
+			_cyclePnlBase = PnL;
 	}
-
-	private readonly record struct Leg(Sides Side, decimal Volume, decimal Price);
 }

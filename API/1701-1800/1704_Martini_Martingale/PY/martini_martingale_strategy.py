@@ -1,11 +1,16 @@
 import clr
+import math
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Strategies")
+clr.AddReference("StockSharp.BusinessEntities")
+clr.AddReference("StockSharp.MatchingEngine")
 
 from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates, Sides
+from StockSharp.Messages import DataType, CandleStates, Sides, OrderTypes, OrderStates
+from StockSharp.BusinessEntities import Order
+from StockSharp.MatchingEngine import StopOrderCondition
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -18,103 +23,150 @@ class martini_martingale_strategy(Strategy):
         self._initial_volume = self.Param("InitialVolume", 0.1).SetGreaterThanZero()
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5)))
 
-        self._legs = []
-        self._buy_trigger = None
-        self._sell_trigger = None
+        self._buy_stop_order = None
+        self._sell_stop_order = None
         self._last_execution_price = 0.0
         self._last_leg_volume = 0.0
         self._order_count = 0
+        self._martingale_order_pending = False
+        self._closing_cycle = False
+        self._cycle_pnl_base = 0.0
 
     def GetWorkingSecurities(self):
         return [(self.Security, self._candle_type.Value)]
 
     def OnReseted(self):
         super(martini_martingale_strategy, self).OnReseted()
-        self._reset_cycle()
+        self._reset_cycle_state()
 
     def OnStarted2(self, time):
         super(martini_martingale_strategy, self).OnStarted2(time)
-        self._reset_cycle()
+        self._reset_cycle_state()
         self.SubscribeCandles(self._candle_type.Value).Bind(self._process_candle).Start()
 
     def _process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
 
-        close = float(candle.ClosePrice)
-
-        if self._legs and self._floating_pnl(close) >= float(self._profit_close.Value):
-            self._flatten()
-            self._reset_cycle()
+        if self.Position == 0:
+            if not self._closing_cycle and self._buy_stop_order is None and self._sell_stop_order is None:
+                self._place_initial_stops(float(candle.ClosePrice))
             return
 
-        step = float(self._step.Value)
-
-        if not self._legs:
-            if self._buy_trigger is None or self._sell_trigger is None:
-                self._buy_trigger = close + step
-                self._sell_trigger = close - step
-                return
-
-            buy_hit = float(candle.HighPrice) >= self._buy_trigger
-            sell_hit = float(candle.LowPrice) <= self._sell_trigger
-            if not buy_hit and not sell_hit:
-                return
-
-            if buy_hit and sell_hit:
-                side = Sides.Buy if float(candle.ClosePrice) >= float(candle.OpenPrice) else Sides.Sell
-            else:
-                side = Sides.Buy if buy_hit else Sides.Sell
-
-            price = self._buy_trigger if side == Sides.Buy else self._sell_trigger
-            self._execute_leg(side, float(self._initial_volume.Value), price)
-            self._buy_trigger = None
-            self._sell_trigger = None
+        if not self._closing_cycle and float(self.PnL) - self._cycle_pnl_base >= float(self._profit_close.Value):
+            self._closing_cycle = True
+            self._cancel_initial_stops()
+            self._close_net_position()
             return
 
-        adverse = step * self._order_count
+        if self._closing_cycle or self._martingale_order_pending or self._last_leg_volume <= 0 or self._order_count <= 0:
+            return
+
+        adverse = float(self._step.Value) * self._order_count
         if self.Position > 0 and float(candle.LowPrice) <= self._last_execution_price - adverse:
-            self._execute_leg(Sides.Sell, self._last_leg_volume * 2.0, self._last_execution_price - adverse)
+            self._place_martingale(Sides.Sell, self._last_leg_volume * 2.0)
         elif self.Position < 0 and float(candle.HighPrice) >= self._last_execution_price + adverse:
-            self._execute_leg(Sides.Buy, self._last_leg_volume * 2.0, self._last_execution_price + adverse)
+            self._place_martingale(Sides.Buy, self._last_leg_volume * 2.0)
 
-    def _execute_leg(self, side, volume, price):
+    def _place_initial_stops(self, center):
+        self._cycle_pnl_base = float(self.PnL)
+        self._buy_stop_order = self._create_stop(Sides.Buy, center + float(self._step.Value), float(self._initial_volume.Value), "Martini initial buy stop")
+        self._sell_stop_order = self._create_stop(Sides.Sell, center - float(self._step.Value), float(self._initial_volume.Value), "Martini initial sell stop")
+        self.RegisterOrder(self._buy_stop_order)
+        self.RegisterOrder(self._sell_stop_order)
+
+    def _create_stop(self, side, activation, volume, comment):
+        order = Order()
+        order.Security = self.Security
+        order.Portfolio = self.Portfolio
+        order.Type = OrderTypes.Conditional
+        condition = StopOrderCondition()
+        condition.ActivationPrice = activation
+        order.Condition = condition
+        order.Side = side
+        order.Volume = volume
+        order.Comment = comment
+        return order
+
+    def _place_martingale(self, side, volume):
+        volume = self._normalize_volume(volume)
+        if volume <= 0:
+            return
+        self._martingale_order_pending = True
         if side == Sides.Buy:
             self.BuyMarket(volume)
         else:
             self.SellMarket(volume)
 
-        self._legs.append((side, volume, price))
-        self._last_execution_price = price
-        self._last_leg_volume = volume
+    def OnOwnTradeReceived(self, trade):
+        super(martini_martingale_strategy, self).OnOwnTradeReceived(trade)
+        if trade is None or trade.Order is None or trade.Trade is None:
+            return
+
+        if self._closing_cycle:
+            if self.Position == 0:
+                self._reset_cycle_state()
+            return
+
+        if trade.Order.Type == OrderTypes.Conditional:
+            if trade.Order.Side == Sides.Buy:
+                self._cancel_if_active(self._sell_stop_order)
+            else:
+                self._cancel_if_active(self._buy_stop_order)
+            self._buy_stop_order = None
+            self._sell_stop_order = None
+
+        self._last_execution_price = float(trade.Trade.TradePrice)
+        self._last_leg_volume = float(trade.Trade.Volume)
         self._order_count += 1
+        self._martingale_order_pending = False
 
-    def _floating_pnl(self, market_price):
-        price_step = float(self.Security.PriceStep) if self.Security is not None and self.Security.PriceStep is not None else 0.0
-        step_price = float(self.Security.StepPrice) if self.Security is not None and self.Security.StepPrice is not None else 0.0
-        multiplier = float(self.Security.Multiplier) if self.Security is not None and self.Security.Multiplier is not None else 1.0
+    def OnOrderChanged(self, order):
+        super(martini_martingale_strategy, self).OnOrderChanged(order)
+        if order is None or order.State != OrderStates.Done:
+            return
 
-        total = 0.0
-        for side, volume, price in self._legs:
-            direction = 1.0 if side == Sides.Buy else -1.0
-            difference = (market_price - price) * direction
-            total += difference / price_step * step_price * volume if price_step > 0 and step_price > 0 else difference * multiplier * volume
+        if self._buy_stop_order is not None and order.TransactionId == self._buy_stop_order.TransactionId and order.Balance == order.Volume:
+            self._buy_stop_order = None
+        if self._sell_stop_order is not None and order.TransactionId == self._sell_stop_order.TransactionId and order.Balance == order.Volume:
+            self._sell_stop_order = None
 
-        return total
+    def _cancel_initial_stops(self):
+        self._cancel_if_active(self._buy_stop_order)
+        self._cancel_if_active(self._sell_stop_order)
+        self._buy_stop_order = None
+        self._sell_stop_order = None
 
-    def _flatten(self):
+    def _cancel_if_active(self, order):
+        if order is not None and order.State == OrderStates.Active:
+            self.CancelOrder(order)
+
+    def _close_net_position(self):
         if self.Position > 0:
             self.SellMarket(Math.Abs(self.Position))
         elif self.Position < 0:
             self.BuyMarket(Math.Abs(self.Position))
 
-    def _reset_cycle(self):
-        self._legs = []
-        self._buy_trigger = None
-        self._sell_trigger = None
+    def _normalize_volume(self, volume):
+        if self.Security is not None:
+            if self.Security.MaxVolume is not None and float(self.Security.MaxVolume) > 0:
+                volume = min(volume, float(self.Security.MaxVolume))
+            if self.Security.MinVolume is not None and float(self.Security.MinVolume) > 0:
+                volume = max(volume, float(self.Security.MinVolume))
+            if self.Security.VolumeStep is not None and float(self.Security.VolumeStep) > 0:
+                step = float(self.Security.VolumeStep)
+                volume = math.floor(volume / step) * step
+        return volume
+
+    def _reset_cycle_state(self):
+        self._buy_stop_order = None
+        self._sell_stop_order = None
         self._last_execution_price = 0.0
         self._last_leg_volume = 0.0
         self._order_count = 0
+        self._martingale_order_pending = False
+        self._closing_cycle = False
+        self._cycle_pnl_base = float(self.PnL)
 
     def CreateClone(self):
         return martini_martingale_strategy()
