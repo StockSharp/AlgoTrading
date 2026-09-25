@@ -184,10 +184,10 @@ public class RangeFollowerStrategy : Strategy
 	private void ApplyProtection(decimal high, decimal low)
 	{
 		if (Position > 0 &&
-			((_stopPrice is decimal stop && low <= stop) || (_takePrice is decimal take && high >= take)))
+			((_stopPrice is decimal longStop && low <= longStop) || (_takePrice is decimal longTake && high >= longTake)))
 			Flatten();
 		else if (Position < 0 &&
-			((_stopPrice is decimal stop && high >= stop) || (_takePrice is decimal take && low <= take)))
+			((_stopPrice is decimal shortStop && high >= shortStop) || (_takePrice is decimal shortTake && low <= shortTake)))
 			Flatten();
 	}
 
