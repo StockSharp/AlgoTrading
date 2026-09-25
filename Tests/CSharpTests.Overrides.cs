@@ -1138,4 +1138,29 @@ partial class CSharpTests
 		recorder.AssertAtMostOneOrderPerTimestamp();
 	}
 
+	[TestMethod]
+	[TestCategory("Shard03")]
+	public async Task S2907_CcfpProducesTwoLegNonUsdSignal()
+	{
+		const string path = "2901-3000/2907_CCFp_Currency_Strength/CS/CcfpCurrencyStrengthStrategy.cs";
+		var recorder = new OrderTraceRecorder();
+
+		await RunStrategy(path, CancellationToken, (strategy, second) =>
+		{
+			var firstId = strategy.Security.Id;
+			var secondId = second.Id;
+			foreach (var name in new[] { "EURUSD", "AUDUSD", "USDCAD", "USDJPY" })
+				strategy.Parameters[name].Value = firstId;
+			foreach (var name in new[] { "GBPUSD", "NZDUSD", "USDCHF" })
+				strategy.Parameters[name].Value = secondId;
+			strategy.Parameters["FastMa"].Value = 2;
+			strategy.Parameters["SlowMa"].Value = 3;
+			strategy.Parameters["StrengthStep"].Value = 0.000001m;
+			strategy.Parameters["CandleType"].Value = TimeSpan.FromMinutes(5).TimeFrame();
+			recorder.Attach(strategy);
+		});
+
+		recorder.AssertContainsTwoLegSignal("(TOPDOWN)");
+	}
+
 }

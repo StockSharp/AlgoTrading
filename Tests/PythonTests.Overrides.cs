@@ -1336,4 +1336,29 @@ partial class PythonTests
 		recorder.AssertAtMostOneOrderPerTimestamp();
 	}
 
+	[TestMethod]
+	[TestCategory("Shard03")]
+	public async Task S2907_CcfpProducesTwoLegNonUsdSignal()
+	{
+		const string path = "2901-3000/2907_CCFp_Currency_Strength/PY/ccfp_currency_strength_strategy.py";
+		var recorder = new OrderTraceRecorder();
+
+		await RunStrategy(path, CancellationToken, (strategy, second) =>
+		{
+			var firstId = strategy.Security.Id;
+			var secondId = second.Id;
+			foreach (var name in new[] { "EURUSD", "AUDUSD", "USDCAD", "USDJPY" })
+				SetParam(strategy, name, firstId);
+			foreach (var name in new[] { "GBPUSD", "NZDUSD", "USDCHF" })
+				SetParam(strategy, name, secondId);
+			SetParam(strategy, "FastMa", 2);
+			SetParam(strategy, "SlowMa", 3);
+			SetParam(strategy, "StrengthStep", 0.000001);
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			recorder.Attach(strategy);
+		});
+
+		recorder.AssertContainsTwoLegSignal("(TOPDOWN)");
+	}
+
 }

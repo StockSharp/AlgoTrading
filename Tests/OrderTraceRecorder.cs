@@ -26,7 +26,7 @@ sealed class OrderTraceRecorder
 		};
 
 		strategy.OrderReceived += (_, order) =>
-			_orders.TryAdd(order.TransactionId, new(strategy.CurrentTime, order.Side, order.Volume, order.Comment));
+			_orders.TryAdd(order.TransactionId, new(strategy.CurrentTime, order.Side, order.Volume, order.Comment, order.Security?.Id));
 	}
 
 	/// <summary>
@@ -121,6 +121,17 @@ sealed class OrderTraceRecorder
 	/// <summary>
 	/// The first order carried the expected comment.
 	/// </summary>
+	public void AssertContainsTwoLegSignal(string expectedComment)
+	{
+		var trace = Snapshot();
+		var group = trace
+			.Where(entry => entry.Comment == expectedComment)
+			.GroupBy(entry => entry.Time)
+			.FirstOrDefault(entries => entries.Select(entry => entry.SecurityId).Where(id => !string.IsNullOrEmpty(id)).Distinct(StringComparer.Ordinal).Count() >= 2);
+
+		Assert.IsNotNull(group, $"No two-leg '{expectedComment}' signal was submitted. Trace: {Format(trace)}.");
+	}
+
 	public void AssertFirstComment(string expectedComment)
 	{
 		var trace = Snapshot();
@@ -226,9 +237,9 @@ sealed class OrderTraceRecorder
 	private static string Format(OrderTraceEntry[] trace)
 	{
 		const int previewLength = 20;
-		var preview = string.Join(", ", trace.Take(previewLength).Select(entry => $"{entry.Time:O} {entry.Side} {entry.Volume} '{entry.Comment}'"));
+		var preview = string.Join(", ", trace.Take(previewLength).Select(entry => $"{entry.Time:O} {entry.SecurityId ?? "<null>"} {entry.Side} {entry.Volume} '{entry.Comment}'"));
 		return trace.Length <= previewLength ? preview : $"{preview}, ... ({trace.Length} total)";
 	}
 
-	private readonly record struct OrderTraceEntry(DateTime Time, Sides Side, decimal Volume, string Comment);
+	private readonly record struct OrderTraceEntry(DateTime Time, Sides Side, decimal Volume, string Comment, string SecurityId);
 }
