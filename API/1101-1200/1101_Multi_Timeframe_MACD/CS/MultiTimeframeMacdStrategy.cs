@@ -163,7 +163,6 @@ public class MultiTimeframeMacdStrategy : Strategy
 			{
 				SellMarket(Math.Abs(Position));
 				_bestPrice = null;
-				_lastCombined = 0;
 				return true;
 			}
 		}
@@ -175,7 +174,6 @@ public class MultiTimeframeMacdStrategy : Strategy
 			{
 				BuyMarket(Math.Abs(Position));
 				_bestPrice = null;
-				_lastCombined = 0;
 				return true;
 			}
 		}
