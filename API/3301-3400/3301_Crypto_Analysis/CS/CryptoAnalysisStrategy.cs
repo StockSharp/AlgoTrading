@@ -164,7 +164,7 @@ public class CryptoAnalysisStrategy : Strategy
 		if (_momentumCloses.Count <= MomentumPeriod)
 			return;
 
-		var previous = _momentumCloses[^1 - MomentumPeriod];
+		var previous = _momentumCloses[^(MomentumPeriod + 1)];
 		if (previous == 0m)
 			return;
 
