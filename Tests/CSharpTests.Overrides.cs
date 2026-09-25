@@ -1055,4 +1055,29 @@ partial class CSharpTests
 		recorder.AssertFirstOppositeWithin(TimeSpan.FromMinutes(10));
 	}
 
+	[TestMethod]
+	[TestCategory("Shard00")]
+	public async Task S3104_MaMacdPositionAveragingProtection()
+	{
+		const string path = "3101-3200/3104_MA_MACD_Position_Averaging/CS/MaMacdPositionAveragingStrategy.cs";
+		var recorder = new OrderTraceRecorder();
+
+		await RunStrategy(path, CancellationToken, (strategy, _) =>
+		{
+			strategy.Parameters["CandleType"].Value = TimeSpan.FromMinutes(5).TimeFrame();
+			strategy.Parameters["MaPeriod"].Value = 3;
+			strategy.Parameters["MacdFastPeriod"].Value = 2;
+			strategy.Parameters["MacdSlowPeriod"].Value = 4;
+			strategy.Parameters["MacdSignalPeriod"].Value = 2;
+			strategy.Parameters["IndentPips"].Value = 0;
+			strategy.Parameters["MacdRatio"].Value = 0m;
+			strategy.Parameters["StopLossPips"].Value = 1;
+			strategy.Parameters["TakeProfitPips"].Value = 1;
+			recorder.Attach(strategy);
+		}, replayDuration: TimeSpan.FromDays(2));
+
+		recorder.AssertFirstOppositeAfter(TimeSpan.FromTicks(1));
+		recorder.AssertFirstOppositeWithin(TimeSpan.FromMinutes(10));
+	}
+
 }

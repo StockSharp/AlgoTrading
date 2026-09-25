@@ -1253,4 +1253,29 @@ partial class PythonTests
 		recorder.AssertFirstOppositeWithin(TimeSpan.FromMinutes(10));
 	}
 
+	[TestMethod]
+	[TestCategory("Shard00")]
+	public async Task S3104_MaMacdPositionAveragingProtection()
+	{
+		const string path = "3101-3200/3104_MA_MACD_Position_Averaging/PY/ma_macd_position_averaging_strategy.py";
+		var recorder = new OrderTraceRecorder();
+
+		await RunStrategy(path, CancellationToken, (strategy, _) =>
+		{
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "MaPeriod", 3);
+			SetParam(strategy, "MacdFastPeriod", 2);
+			SetParam(strategy, "MacdSlowPeriod", 4);
+			SetParam(strategy, "MacdSignalPeriod", 2);
+			SetParam(strategy, "IndentPips", 0);
+			SetParam(strategy, "MacdRatio", 0.0);
+			SetParam(strategy, "StopLossPips", 1);
+			SetParam(strategy, "TakeProfitPips", 1);
+			recorder.Attach(strategy);
+		}, replayDuration: TimeSpan.FromDays(2));
+
+		recorder.AssertFirstOppositeAfter(TimeSpan.FromTicks(1));
+		recorder.AssertFirstOppositeWithin(TimeSpan.FromMinutes(10));
+	}
+
 }
