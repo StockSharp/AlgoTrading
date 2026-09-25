@@ -47,13 +47,10 @@
     <Compile Include="../API/*/1101_Multi_Timeframe_MACD/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
     <Compile Include="../API/*/1153_Pairs/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
     <Compile Include="../API/*/1507_Ultimate_Template/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
-    <Compile Include="../API/*/1607_Renko_Trend_Reversal_V2/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
-    <Compile Include="../API/*/1704_Martini_Martingale/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
     <Compile Include="../API/*/1908_Random_Trailing_Stop/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
     <Compile Include="../API/*/2000_HFT_Spreader_for_FORTS/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
     <Compile Include="../API/*/2096_Breakout_Bars_Trend/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
     <Compile Include="../API/*/2101_Linear_Regression_Slope_V1/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
-    <Compile Include="../API/*/2208_Hedge_Average/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
     <Compile Include="../API/*/2403_ReOpen_Positions/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
     <Compile Include="../API/*/2502_21Hour_Session_Breakout/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
     <Compile Include="../API/*/2606_Statistics_Repeating_Behavior/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
@@ -64,17 +61,11 @@
     <Compile Include="../API/*/2798_Improve_MA_RSI_Hedge/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
     <Compile Include="../API/*/2907_CCFp_Currency_Strength/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
     <Compile Include="../API/*/3064_Two_PerBar/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
-    <Compile Include="../API/*/3104_MA_MACD_Position_Averaging/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
-    <Compile Include="../API/*/3206_Risk_Reward_Ratio/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
     <Compile Include="../API/*/3301_Crypto_Analysis/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
-    <Compile Include="../API/*/3406_Range_Follower/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
     <Compile Include="../API/*/3623_Matrix_Machine_Learning/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
     <Compile Include="../API/*/3710_RRSRandomness/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
-    <Compile Include="../API/*/3801_OrderStabilization/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
-    <Compile Include="../API/*/3908_Five_MA_Multi_Timeframe/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
     <Compile Include="../API/*/4006_TenPips_Opposite_Last_N_Hour_Trend/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
     <Compile Include="../API/*/4048_Burg_Extrapolator_Forecast/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
-    <Compile Include="../API/*/4207_Rich_Kohonen_Map/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
   </ItemGroup>
   <!--
     Nothing else under API reaches the compiler. The tests enumerate the examples on disk at run
