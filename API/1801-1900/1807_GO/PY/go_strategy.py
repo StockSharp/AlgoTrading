@@ -2,73 +2,95 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
-clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan
+from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 
 
 class go_strategy(Strategy):
     def __init__(self):
         super(go_strategy, self).__init__()
-        self._fast_period = self.Param("FastPeriod", 12)             .SetDisplay("Fast Period", "Fast EMA period", "Indicators")
-        self._slow_period = self.Param("SlowPeriod", 26)             .SetDisplay("Slow Period", "Slow EMA period", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4)))             .SetDisplay("Candle Type", "Candle type", "General")
-        self._prev_fast = 0.0
-        self._prev_slow = 0.0
-        self._has_prev = False
+        self._ma_period = self.Param("MaPeriod", 14).SetGreaterThanZero()
+        self._open_level = self.Param("OpenLevel", 0.0).SetNotNegative()
+        self._close_level_diff = self.Param("CloseLevelDiff", 0.0).SetNotNegative()
+        self._show_go = self.Param("ShowGo", False)
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4)))
 
-    @property
-    def fast_period(self):
-        return self._fast_period.Value
+        self._open_ema = None
+        self._high_ema = None
+        self._low_ema = None
+        self._close_ema = None
+        self._samples = 0
 
-    @property
-    def slow_period(self):
-        return self._slow_period.Value
-
-    @property
-    def candle_type(self):
-        return self._candle_type.Value
+    def GetWorkingSecurities(self):
+        return [(self.Security, self._candle_type.Value)]
 
     def OnReseted(self):
         super(go_strategy, self).OnReseted()
-        self._prev_fast = 0.0
-        self._prev_slow = 0.0
-        self._has_prev = False
+        self._open_ema = None
+        self._high_ema = None
+        self._low_ema = None
+        self._close_ema = None
+        self._samples = 0
 
     def OnStarted2(self, time):
         super(go_strategy, self).OnStarted2(time)
-        fast = ExponentialMovingAverage()
-        fast.Length = self.fast_period
-        slow = ExponentialMovingAverage()
-        slow.Length = self.slow_period
-        self.SubscribeCandles(self.candle_type).Bind(fast, slow, self.process_candle).Start()
+        self.SubscribeCandles(self._candle_type.Value).Bind(self._process_candle).Start()
 
-    def process_candle(self, candle, fast_val, slow_val):
+    def _process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
-        fv = float(fast_val)
-        sv = float(slow_val)
-        if not self._has_prev:
-            self._prev_fast = fv
-            self._prev_slow = sv
-            self._has_prev = True
+
+        period = int(self._ma_period.Value)
+        self._samples += 1
+        self._open_ema = self._ema(self._open_ema, float(candle.OpenPrice), period)
+        self._high_ema = self._ema(self._high_ema, float(candle.HighPrice), period)
+        self._low_ema = self._ema(self._low_ema, float(candle.LowPrice), period)
+        self._close_ema = self._ema(self._close_ema, float(candle.ClosePrice), period)
+
+        if self._samples < period:
             return
-        cross_up = self._prev_fast <= self._prev_slow and fv > sv
-        cross_down = self._prev_fast >= self._prev_slow and fv < sv
-        if cross_up and self.Position <= 0:
-            if self.Position < 0:
-                self.BuyMarket()
+
+        go = self.calculate_go(
+            self._open_ema, self._high_ema, self._low_ema, self._close_ema, float(candle.TotalVolume))
+
+        if bool(self._show_go.Value):
+            self.LogInfo("GO={0}", go)
+
+        open_level = float(self._open_level.Value)
+        close_level = open_level - float(self._close_level_diff.Value)
+
+        if self.Position > 0:
+            if go < close_level:
+                self.SellMarket(Math.Abs(self.Position))
+            return
+
+        if self.Position < 0:
+            if go > -close_level:
+                self.BuyMarket(Math.Abs(self.Position))
+            return
+
+        if go > open_level:
             self.BuyMarket()
-        elif cross_down and self.Position >= 0:
-            if self.Position > 0:
-                self.SellMarket()
+        elif go < -open_level:
             self.SellMarket()
-        self._prev_fast = fv
-        self._prev_slow = sv
+
+    @staticmethod
+    def calculate_go(open_ema, high_ema, low_ema, close_ema, volume):
+        return ((close_ema - open_ema) +
+                (high_ema - open_ema) +
+                (low_ema - open_ema) +
+                (close_ema - low_ema) +
+                (close_ema - high_ema)) * volume
+
+    @staticmethod
+    def _ema(previous, value, period):
+        if previous is None:
+            return value
+        alpha = 2.0 / (period + 1.0)
+        return previous + alpha * (value - previous)
 
     def CreateClone(self):
         return go_strategy()

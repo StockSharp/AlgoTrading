@@ -3,7 +3,6 @@ using System.Collections.Generic;
 
 using Ecng.Common;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -11,32 +10,43 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// GO-based trading strategy using EMA crossover as signal.
+/// GO strategy: EMA-smoothed OHLC composite multiplied by candle volume.
 /// </summary>
 public class GoStrategy : Strategy
 {
-	private readonly StrategyParam<int> _fastPeriod;
-	private readonly StrategyParam<int> _slowPeriod;
+	private readonly StrategyParam<int> _maPeriod;
+	private readonly StrategyParam<decimal> _openLevel;
+	private readonly StrategyParam<decimal> _closeLevelDiff;
+	private readonly StrategyParam<bool> _showGo;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevFast;
-	private decimal _prevSlow;
-	private bool _hasPrev;
+	private decimal? _openEma;
+	private decimal? _highEma;
+	private decimal? _lowEma;
+	private decimal? _closeEma;
+	private int _samples;
 
-	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
-	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
+	public int MaPeriod { get => _maPeriod.Value; set => _maPeriod.Value = value; }
+	public decimal OpenLevel { get => _openLevel.Value; set => _openLevel.Value = value; }
+	public decimal CloseLevelDiff { get => _closeLevelDiff.Value; set => _closeLevelDiff.Value = value; }
+	public bool ShowGo { get => _showGo.Value; set => _showGo.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public GoStrategy()
 	{
-		_fastPeriod = Param(nameof(FastPeriod), 12)
+		_maPeriod = Param(nameof(MaPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("Fast Period", "Fast EMA period", "Parameters");
-		_slowPeriod = Param(nameof(SlowPeriod), 26)
-			.SetGreaterThanZero()
-			.SetDisplay("Slow Period", "Slow EMA period", "Parameters");
+			.SetDisplay("MA Period", "EMA period for O/H/L/C smoothing.", "GO");
+		_openLevel = Param(nameof(OpenLevel), 0m)
+			.SetNotNegative()
+			.SetDisplay("Open Level", "Absolute GO threshold required for entry.", "GO");
+		_closeLevelDiff = Param(nameof(CloseLevelDiff), 0m)
+			.SetNotNegative()
+			.SetDisplay("Close Level Diff", "Distance between entry and exit GO thresholds.", "GO");
+		_showGo = Param(nameof(ShowGo), false)
+			.SetDisplay("Show GO", "Log computed GO values.", "GO");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
-			.SetDisplay("Candle Type", "Candle type", "General");
+			.SetDisplay("Candle Type", "Candle type.", "General");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -45,50 +55,73 @@ public class GoStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevFast = 0;
-		_prevSlow = 0;
-		_hasPrev = false;
+		_openEma = null;
+		_highEma = null;
+		_lowEma = null;
+		_closeEma = null;
+		_samples = 0;
 	}
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		var fast = new ExponentialMovingAverage { Length = FastPeriod };
-		var slow = new ExponentialMovingAverage { Length = SlowPeriod };
-
-		SubscribeCandles(CandleType)
-			.Bind(fast, slow, ProcessCandle)
-			.Start();
+		SubscribeCandles(CandleType).Bind(ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fastVal, decimal slowVal)
+	private void ProcessCandle(ICandleMessage candle)
 	{
-		if (candle.State != CandleStates.Finished) return;
+		if (candle.State != CandleStates.Finished)
+			return;
 
-		if (!_hasPrev)
+		_samples++;
+		_openEma = Ema(_openEma, candle.OpenPrice, MaPeriod);
+		_highEma = Ema(_highEma, candle.HighPrice, MaPeriod);
+		_lowEma = Ema(_lowEma, candle.LowPrice, MaPeriod);
+		_closeEma = Ema(_closeEma, candle.ClosePrice, MaPeriod);
+
+		if (_samples < MaPeriod)
+			return;
+
+		var go = CalculateGo(_openEma.Value, _highEma.Value, _lowEma.Value, _closeEma.Value, candle.TotalVolume);
+
+		if (ShowGo)
+			LogInfo("GO={0}", go);
+
+		var closeLevel = OpenLevel - CloseLevelDiff;
+
+		if (Position > 0m)
 		{
-			_prevFast = fastVal;
-			_prevSlow = slowVal;
-			_hasPrev = true;
+			if (go < closeLevel)
+				SellMarket(Math.Abs(Position));
 			return;
 		}
 
-		var crossUp = _prevFast <= _prevSlow && fastVal > slowVal;
-		var crossDown = _prevFast >= _prevSlow && fastVal < slowVal;
-
-		if (crossUp && Position <= 0)
+		if (Position < 0m)
 		{
-			if (Position < 0) BuyMarket();
+			if (go > -closeLevel)
+				BuyMarket(Math.Abs(Position));
+			return;
+		}
+
+		if (go > OpenLevel)
 			BuyMarket();
-		}
-		else if (crossDown && Position >= 0)
-		{
-			if (Position > 0) SellMarket();
+		else if (go < -OpenLevel)
 			SellMarket();
-		}
+	}
 
-		_prevFast = fastVal;
-		_prevSlow = slowVal;
+	internal static decimal CalculateGo(decimal openEma, decimal highEma, decimal lowEma, decimal closeEma, decimal volume)
+		=> ((closeEma - openEma) +
+			(highEma - openEma) +
+			(lowEma - openEma) +
+			(closeEma - lowEma) +
+			(closeEma - highEma)) * volume;
+
+	private static decimal Ema(decimal? previous, decimal value, int period)
+	{
+		if (previous is null)
+			return value;
+
+		var alpha = 2m / (period + 1m);
+		return previous.Value + alpha * (value - previous.Value);
 	}
 }
