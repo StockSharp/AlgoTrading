@@ -1482,4 +1482,24 @@ partial class CSharpTests
 		AreEqual(0, StochasticStrategy.GetSignal(60m, 70m, overSold: 50m, overBought: 50m));
 	}
 
+	[TestMethod]
+	[TestCategory("Shard04")]
+	public void S1189_PriceFlipUsesMirroredRangeAndSmaCross()
+	{
+		AreEqual(96m, PriceFlipStrategy.CalculateInvertedPrice(
+			recentHigh: 110m, recentLow: 90m, price: 104m));
+
+		AreEqual(1, PriceFlipStrategy.GetSignal(
+			previousClose: 104m, previousInverted: 96m,
+			previousFast: 99m, previousSlow: 100m,
+			fast: 101m, slow: 100m,
+			currentClose: 102m, useTrendFilter: true));
+
+		AreEqual(-1, PriceFlipStrategy.GetSignal(
+			previousClose: 96m, previousInverted: 104m,
+			previousFast: 101m, previousSlow: 100m,
+			fast: 99m, slow: 100m,
+			currentClose: 98m, useTrendFilter: true));
+	}
+
 }

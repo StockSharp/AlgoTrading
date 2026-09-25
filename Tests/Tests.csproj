@@ -23,6 +23,7 @@
     <Compile Include="../API/*/1322_SMC/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
     <Compile Include="../API/*/1437_Time/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
     <Compile Include="../API/*/1341_Stochastic/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
+    <Compile Include="../API/*/1189_Price_Flip/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
 </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(StockSharpDir)Algo.Indicators\Algo.Indicators.csproj" />
