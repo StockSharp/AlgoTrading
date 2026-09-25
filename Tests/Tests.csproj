@@ -13,6 +13,7 @@
     <PackageReference Include="StockSharp.Samples.HistoryData" Version="$(StockSharpVer)" />
       <Compile Include="../API/*/1807_GO/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
     <Compile Include="../API/*/3299_JB/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
+    <Compile Include="../API/*/3122_Vlado/CS/*.cs" Link="CS\%(Filename)%(Extension)" />
 </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(StockSharpDir)Algo.Indicators\Algo.Indicators.csproj" />

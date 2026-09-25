@@ -1340,4 +1340,13 @@ partial class CSharpTests
 			upperBand: 105m));
 	}
 
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public void S3122_VladoWilliamsRSignal()
+	{
+		AreEqual(1, VladoStrategy.GetSignal(-80m, oversoldLevel: -75m, overboughtLevel: -25m));
+		AreEqual(-1, VladoStrategy.GetSignal(-20m, oversoldLevel: -75m, overboughtLevel: -25m));
+		AreEqual(0, VladoStrategy.GetSignal(-50m, oversoldLevel: -75m, overboughtLevel: -25m));
+	}
+
 }
