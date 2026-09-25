@@ -28,6 +28,7 @@ class hedge_average_strategy(Strategy):
         self._stop_price = None
         self._take_price = None
         self._best_price = None
+        self._entry_candle_time = None
 
     def GetWorkingSecurities(self):
         return [(self.Security, self._candle_type.Value)]
@@ -68,11 +69,11 @@ class hedge_average_strategy(Strategy):
         slow_close = sum(self._closes[-p2:]) / p2
 
         if slow_open > slow_close and fast_open < fast_close:
-            self._enter(Sides.Buy, float(candle.ClosePrice))
+            self._enter(Sides.Buy, float(candle.ClosePrice), candle.OpenTime)
         elif slow_open < slow_close and fast_open > fast_close:
-            self._enter(Sides.Sell, float(candle.ClosePrice))
+            self._enter(Sides.Sell, float(candle.ClosePrice), candle.OpenTime)
 
-    def _enter(self, side, price):
+    def _enter(self, side, price, candle_time):
         if side == Sides.Buy:
             self.BuyMarket()
         else:
@@ -81,11 +82,15 @@ class hedge_average_strategy(Strategy):
         sl = float(self._stop_loss.Value)
         tp = float(self._take_profit.Value)
         self._entry_price = price
+        self._entry_candle_time = candle_time
         self._best_price = price
         self._stop_price = (price - sl if side == Sides.Buy else price + sl) if sl > 0 else None
         self._take_price = (price + tp if side == Sides.Buy else price - tp) if tp > 0 else None
 
     def _apply_protection(self, candle):
+        if self._entry_candle_time is not None and candle.OpenTime <= self._entry_candle_time:
+            return False
+
         sl = float(self._stop_loss.Value)
 
         if self.Position > 0:
@@ -128,6 +133,7 @@ class hedge_average_strategy(Strategy):
         self._stop_price = None
         self._take_price = None
         self._best_price = None
+        self._entry_candle_time = None
 
     def CreateClone(self):
         return hedge_average_strategy()
