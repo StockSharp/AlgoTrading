@@ -36,6 +36,7 @@ class risk_reward_ratio_strategy(Strategy):
         self._stop_price = None
         self._take_price = None
         self._best_price = None
+        self._last_entry_candle_time = None
 
     def GetWorkingSecurities(self):
         return [(self.Security, self._candle_type.Value)]
@@ -96,11 +97,11 @@ class risk_reward_ratio_strategy(Strategy):
         max_exposure = int(self._max_positions.Value) * volume
 
         if long_signal and self.Position >= 0 and float(self.Position) + volume <= max_exposure:
-            self._enter(Sides.Buy, close)
+            self._enter(Sides.Buy, close, candle.OpenTime)
         elif short_signal and self.Position <= 0 and abs(float(self.Position) - volume) <= max_exposure:
-            self._enter(Sides.Sell, close)
+            self._enter(Sides.Sell, close, candle.OpenTime)
 
-    def _enter(self, side, close):
+    def _enter(self, side, close, candle_time):
         volume = float(self._trade_volume.Value)
         previous = abs(float(self.Position))
         new_abs = previous + volume
@@ -110,6 +111,7 @@ class risk_reward_ratio_strategy(Strategy):
         else:
             self.SellMarket(volume)
 
+        self._last_entry_candle_time = candle_time
         self._entry_price = ((self._entry_price * previous + close * volume) / new_abs) if previous > 0 else close
         pip = self._pip_size()
         stop_distance = int(self._stop_loss.Value) * pip
@@ -119,6 +121,9 @@ class risk_reward_ratio_strategy(Strategy):
         self._best_price = close
 
     def _apply_risk(self, candle):
+        if self._last_entry_candle_time is not None and candle.OpenTime <= self._last_entry_candle_time:
+            return False
+
         pip = self._pip_size()
 
         if self.Position > 0:
@@ -234,6 +239,7 @@ class risk_reward_ratio_strategy(Strategy):
         self._stop_price = None
         self._take_price = None
         self._best_price = None
+        self._last_entry_candle_time = None
 
     def CreateClone(self):
         return risk_reward_ratio_strategy()
