@@ -59,6 +59,7 @@ static class StrategyInventory
 		"2705_Spreader_2",
 		"2776_CH2010_Structure",
 		"2798_Improve_MA_RSI_Hedge",
+		"2808_Multi_Pair_Closer",
 		"2907_CCFp_Currency_Strength",
 		"3064_Two_PerBar",
 		"3301_Crypto_Analysis",

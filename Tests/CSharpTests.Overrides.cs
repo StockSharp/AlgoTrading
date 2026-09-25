@@ -1208,4 +1208,25 @@ partial class CSharpTests
 		recorder.AssertNoSameSideReentryWithinAfterFirstExit(TimeSpan.FromMinutes(5));
 	}
 
+	[TestMethod]
+	[TestCategory("Shard00")]
+	public async Task S2808_MultiPairCloserClosesExistingPosition()
+	{
+		const string path = "2801-2900/2808_Multi_Pair_Closer/CS/MultiPairCloserStrategy.cs";
+		var recorder = new OrderTraceRecorder();
+
+		await RunStrategy(path, CancellationToken, (strategy, _) =>
+		{
+			strategy.Parameters["WatchedSymbols"].Value = string.Empty;
+			strategy.Parameters["ProfitTarget"].Value = 0m;
+			strategy.Parameters["MinAgeSeconds"].Value = 0;
+			strategy.Parameters["CandleType"].Value = TimeSpan.FromMinutes(1).TimeFrame();
+			strategy.SetPositionValue(strategy.Security, strategy.Portfolio, 1m, DateTime.MinValue);
+			recorder.Attach(strategy);
+		});
+
+		recorder.AssertFirstSide(Sides.Sell);
+		recorder.AssertFirstVolume(1m);
+	}
+
 }

@@ -1383,4 +1383,25 @@ partial class PythonTests
 		recorder.AssertNoSameSideReentryWithinAfterFirstExit(TimeSpan.FromMinutes(5));
 	}
 
+	[TestMethod]
+	[TestCategory("Shard00")]
+	public async Task S2808_MultiPairCloserClosesExistingPosition()
+	{
+		const string path = "2801-2900/2808_Multi_Pair_Closer/PY/multi_pair_closer_strategy.py";
+		var recorder = new OrderTraceRecorder();
+
+		await RunStrategy(path, CancellationToken, (strategy, _) =>
+		{
+			SetParam(strategy, "WatchedSymbols", "");
+			SetParam(strategy, "ProfitTarget", 0.0);
+			SetParam(strategy, "MinAgeSeconds", 0);
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(1).TimeFrame());
+			strategy.SetPositionValue(strategy.Security, strategy.Portfolio, 1m, DateTime.MinValue);
+			recorder.Attach(strategy);
+		});
+
+		recorder.AssertFirstSide(Sides.Sell);
+		recorder.AssertFirstVolume(1m);
+	}
+
 }
