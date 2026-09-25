@@ -1269,4 +1269,35 @@ partial class CSharpTests
 		recorder.AssertFirstTwoAreOppositeConditionalStops();
 	}
 
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public async Task S3301_CryptoAnalysisProtection()
+	{
+		const string path = "3301-3400/3301_Crypto_Analysis/CS/CryptoAnalysisStrategy.cs";
+		var recorder = new OrderTraceRecorder();
+
+		await RunStrategy(path, CancellationToken, (strategy, _) =>
+		{
+			strategy.Parameters["CandleType"].Value = TimeSpan.FromMinutes(5).TimeFrame();
+			strategy.Parameters["MomentumCandleType"].Value = TimeSpan.FromMinutes(5).TimeFrame();
+			strategy.Parameters["MacdCandleType"].Value = TimeSpan.FromMinutes(5).TimeFrame();
+			strategy.Parameters["FastMaPeriod"].Value = 2;
+			strategy.Parameters["SlowMaPeriod"].Value = 3;
+			strategy.Parameters["MomentumPeriod"].Value = 2;
+			strategy.Parameters["MomentumBuyThreshold"].Value = 0m;
+			strategy.Parameters["MomentumSellThreshold"].Value = 0m;
+			strategy.Parameters["MacdFastLength"].Value = 2;
+			strategy.Parameters["MacdSlowLength"].Value = 3;
+			strategy.Parameters["MacdSignalLength"].Value = 2;
+			strategy.Parameters["StopLossPips"].Value = 1;
+			strategy.Parameters["TakeProfitPips"].Value = 1;
+			strategy.Parameters["TrailingStopPips"].Value = 0;
+			strategy.Parameters["UseBreakEven"].Value = false;
+			recorder.Attach(strategy);
+		}, replayDuration: TimeSpan.FromDays(3));
+
+		recorder.AssertFirstOppositeAfter(TimeSpan.FromTicks(1));
+		recorder.AssertFirstOppositeWithin(TimeSpan.FromMinutes(10));
+	}
+
 }

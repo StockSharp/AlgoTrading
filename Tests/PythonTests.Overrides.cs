@@ -1423,4 +1423,35 @@ partial class PythonTests
 		recorder.AssertFirstTwoAreOppositeConditionalStops();
 	}
 
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public async Task S3301_CryptoAnalysisProtection()
+	{
+		const string path = "3301-3400/3301_Crypto_Analysis/PY/crypto_analysis_strategy.py";
+		var recorder = new OrderTraceRecorder();
+
+		await RunStrategy(path, CancellationToken, (strategy, _) =>
+		{
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "MomentumCandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "MacdCandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "FastMaPeriod", 2);
+			SetParam(strategy, "SlowMaPeriod", 3);
+			SetParam(strategy, "MomentumPeriod", 2);
+			SetParam(strategy, "MomentumBuyThreshold", 0.0);
+			SetParam(strategy, "MomentumSellThreshold", 0.0);
+			SetParam(strategy, "MacdFastLength", 2);
+			SetParam(strategy, "MacdSlowLength", 3);
+			SetParam(strategy, "MacdSignalLength", 2);
+			SetParam(strategy, "StopLossPips", 1);
+			SetParam(strategy, "TakeProfitPips", 1);
+			SetParam(strategy, "TrailingStopPips", 0);
+			SetParam(strategy, "UseBreakEven", false);
+			recorder.Attach(strategy);
+		}, replayDuration: TimeSpan.FromDays(3));
+
+		recorder.AssertFirstOppositeAfter(TimeSpan.FromTicks(1));
+		recorder.AssertFirstOppositeWithin(TimeSpan.FromMinutes(10));
+	}
+
 }
