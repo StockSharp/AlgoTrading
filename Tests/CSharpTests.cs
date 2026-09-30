@@ -3,6 +3,7 @@ namespace StockSharp.Tests;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,8 +20,15 @@ using StockSharp.Algo.Compilation;
 using StockSharp.Algo.Strategies;
 
 [TestClass]
-public partial class CSharpTests : BaseTestClass
+public partial class CSharpTests : StrategyTests
 {
+	/// <inheritdoc />
+	protected override string Extension => ".cs";
+
+	/// <inheritdoc />
+	protected override Task RunFile(string filePath, Action<Strategy, Security> setup, TimeSpan? replayDuration, TimeSpan? postTradeHorizon)
+		=> RunStrategy(filePath, CancellationToken, setup, replayDuration, postTradeHorizon);
+
 	/// <summary>
 	/// Run a strategy that is compiled into this assembly. Used by the hand-written tests, which
 	/// need the concrete type to reach the strategy's own parameters.
@@ -62,6 +70,14 @@ public partial class CSharpTests : BaseTestClass
 	/// </summary>
 	private static void ResolveLocalReferences(CodeInfo code)
 	{
+		// Runtime-compiled examples can use emulator stop conditions, settings conversion and the platform configuration.
+		string[] additional = ["StockSharp.MatchingEngine.dll", "StockSharp.Configuration.dll", "System.Collections.Concurrent.dll", "System.Runtime.InteropServices.dll"];
+		foreach (var fileName in additional)
+		{
+			if (!code.AssemblyReferences.Any(reference => Path.GetFileName(reference.FileName).Equals(fileName, StringComparison.OrdinalIgnoreCase)))
+				code.AssemblyReferences.Add(new() { FileName = fileName });
+		}
+
 		foreach (var reference in code.AssemblyReferences)
 		{
 			if (Path.IsPathRooted(reference.FileName))
@@ -71,6 +87,12 @@ public partial class CSharpTests : BaseTestClass
 
 			if (File.Exists(localPath))
 				reference.FileName = localPath;
+			else
+			{
+				var runtimePath = Path.Combine(Path.GetDirectoryName(typeof(object).Assembly.Location), reference.FileName);
+				if (File.Exists(runtimePath))
+					reference.FileName = runtimePath;
+			}
 		}
 	}
 
@@ -117,20 +139,4 @@ public partial class CSharpTests : BaseTestClass
 	[TestMethod, TestCategory("Shard07")]
 	[DynamicData(nameof(Shard07), DynamicDataDisplayName = nameof(RowName))]
 	public Task Strategies07(string path, string name) => RunStrategy(path, CancellationToken);
-
-	/// <summary>
-	/// Run one example on demand, for digging into a failure. It carries no shard, so no CI job
-	/// selects it; pass the path it should run as a run parameter:
-	/// dotnet test --filter "FullyQualifiedName~CSharpTests.Debug" -- TestRunParameters.Parameter(name="strategy",value="0001-0100/0002_NDay_Breakout/CS/NdayBreakoutStrategy.cs")
-	/// </summary>
-	[TestMethod, TestCategory("Manual")]
-	public async Task Debug()
-	{
-		var path = TestContext.Properties.TryGetValue("strategy", out var value) ? value as string : null;
-
-		if (path.IsEmpty())
-			Inconclusive("Pass the example to run as TestRunParameters.Parameter(name=\"strategy\", value=\"<path under API/>\").");
-
-		await RunStrategy(path, CancellationToken);
-	}
 }

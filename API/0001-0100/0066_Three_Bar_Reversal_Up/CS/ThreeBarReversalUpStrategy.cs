@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using Ecng.Common;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -11,163 +11,132 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Three-Bar Reversal Up strategy.
-/// Pattern: 1st bar bearish, 2nd bar bearish with lower low, 3rd bar bullish closing above 2nd high.
-/// Uses SMA for exit.
+/// Long-only three-bar reversal after an optional net downtrend.
+/// A pattern-low stop and an opposite three-bar reversal close the full position.
 /// </summary>
 public class ThreeBarReversalUpStrategy : Strategy
 {
-	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<bool> _requireDowntrend;
+	private readonly StrategyParam<int> _downtrendLength;
 
-	private ICandleMessage _bar1;
-	private ICandleMessage _bar2;
-	private int _cooldown;
+	private readonly List<ICandleMessage> _recent = new();
+	private decimal? _patternStop;
+	private Order _entryOrder;
+	private Order _exitOrder;
 
-	/// <summary>
-	/// MA Period.
-	/// </summary>
-	public int MAPeriod
-	{
-		get => _maPeriod.Value;
-		set => _maPeriod.Value = value;
-	}
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public decimal StopLossPercent { get => _stopLossPercent.Value; set => _stopLossPercent.Value = value; }
+	public bool RequireDowntrend { get => _requireDowntrend.Value; set => _requireDowntrend.Value = value; }
+	public int DowntrendLength { get => _downtrendLength.Value; set => _downtrendLength.Value = value; }
 
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Cooldown bars.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public ThreeBarReversalUpStrategy()
 	{
-		_maPeriod = Param(nameof(MAPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("MA Period", "Period for SMA", "Indicators");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_cooldownBars = Param(nameof(CooldownBars), 500)
-			.SetRange(1, 1000)
-			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+			.SetDisplay("Candle Type", "Three-bar pattern timeframe", "General");
+		_stopLossPercent = Param(nameof(StopLossPercent), 1m).SetRange(0m, 99m)
+			.SetDisplay("Stop below pattern low (%)", "Buffer below the lowest of all three pattern lows; zero places the stop at that low.", "Protection");
+		_requireDowntrend = Param(nameof(RequireDowntrend), true)
+			.SetDisplay("Require Downtrend", "Require a net Close decline before the signal candle.", "Pattern");
+		_downtrendLength = Param(nameof(DowntrendLength), 5).SetRange(2, 100)
+			.SetDisplay("Downtrend Length", "Number of preceding candles from first Close to last Close, including the two bearish pattern bars.", "Pattern");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType), (Security, DataType.Level1)];
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_bar1 = null;
-		_bar2 = null;
-		_cooldown = default;
+		ClearState();
 	}
 
-	/// <inheritdoc />
+	private void ClearState()
+	{
+		_recent.Clear();
+		_patternStop = null;
+		_entryOrder = _exitOrder = null;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_bar1 = null;
-		_bar2 = null;
-		_cooldown = 0;
-
-		var sma = new SimpleMovingAverage { Length = MAPeriod };
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(sma, ProcessCandle)
-			.Start();
-
+		ClearState();
+		var bids = new Subscription(DataType.Level1, Security);
+		bids.MarketData.BuildField = Level1Fields.BestBidPrice;
+		SubscribeLevel1(bids).Bind(ProcessBid).Start();
+		var candles = SubscribeCandles(CandleType);
+		candles.Bind(ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, sma);
+			DrawCandles(area, candles);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
+	private static bool IsPending(Order order)
+		=> order is not null && order.State is not (OrderStates.Done or OrderStates.Failed);
+
+	private void ProcessBid(Level1ChangeMessage message)
+	{
+		if (message.TryGetDecimal(Level1Fields.BestBidPrice) is decimal bid && bid > 0m)
+			CheckStop(bid);
+	}
+
+	private bool CheckStop(decimal executableBid)
+	{
+		if (Position <= 0m || _patternStop is not decimal stop || executableBid > stop || IsPending(_exitOrder))
+			return false;
+		_exitOrder = SellMarket(Position);
+		_recent.Clear();
+		_patternStop = null;
+		return true;
+	}
+
+	private void Append(ICandleMessage candle)
+	{
+		_recent.Add(candle);
+		if (_recent.Count > DowntrendLength)
+			_recent.RemoveAt(0);
+	}
+
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (Position > 0m && CheckStop(candle.LowPrice))
 			return;
-
-		if (_cooldown > 0)
+		if (IsPending(_entryOrder) || IsPending(_exitOrder))
 		{
-			_cooldown--;
-			_bar1 = _bar2;
-			_bar2 = candle;
+			Append(candle);
 			return;
 		}
+		var previous = _recent.Count >= 1 ? _recent[^1] : null;
+		var older = _recent.Count >= 2 ? _recent[^2] : null;
+		var upPattern = older is not null && previous.ClosePrice < previous.OpenPrice &&
+			older.ClosePrice < older.OpenPrice && previous.LowPrice < older.LowPrice &&
+			candle.ClosePrice > candle.OpenPrice && candle.ClosePrice > previous.HighPrice;
+		var downPattern = older is not null && previous.ClosePrice > previous.OpenPrice &&
+			older.ClosePrice > older.OpenPrice && previous.HighPrice > older.HighPrice &&
+			candle.ClosePrice < candle.OpenPrice && candle.ClosePrice < previous.LowPrice;
 
-		if (_bar1 != null && _bar2 != null)
+		if (Position > 0m && downPattern && IsFormedAndOnlineAndAllowTrading())
 		{
-			// Three-bar reversal up: bar1 bearish, bar2 bearish with lower low, bar3 (current) bullish closing above bar2 high
-			var bar1Bearish = _bar1.ClosePrice < _bar1.OpenPrice;
-			var bar2Bearish = _bar2.ClosePrice < _bar2.OpenPrice;
-			var bar2LowerLow = _bar2.LowPrice < _bar1.LowPrice;
-			var bar3Bullish = candle.ClosePrice > candle.OpenPrice;
-			var bar3AboveBar2High = candle.ClosePrice > _bar2.HighPrice;
-
-			var threeBarReversalUp = bar1Bearish && bar2Bearish && bar2LowerLow && bar3Bullish && bar3AboveBar2High;
-
-			// Three-bar reversal down: bar1 bullish, bar2 bullish with higher high, bar3 bearish closing below bar2 low
-			var bar1Bullish = _bar1.ClosePrice > _bar1.OpenPrice;
-			var bar2Bullish = _bar2.ClosePrice > _bar2.OpenPrice;
-			var bar2HigherHigh = _bar2.HighPrice > _bar1.HighPrice;
-			var bar3Bearish = candle.ClosePrice < candle.OpenPrice;
-			var bar3BelowBar2Low = candle.ClosePrice < _bar2.LowPrice;
-
-			var threeBarReversalDown = bar1Bullish && bar2Bullish && bar2HigherHigh && bar3Bearish && bar3BelowBar2Low;
-
-			if (Position == 0 && threeBarReversalUp)
-			{
-				BuyMarket();
-				_cooldown = CooldownBars;
-			}
-			else if (Position == 0 && threeBarReversalDown)
-			{
-				SellMarket();
-				_cooldown = CooldownBars;
-			}
-			else if (Position > 0 && candle.ClosePrice < smaValue)
-			{
-				SellMarket();
-				_cooldown = CooldownBars;
-			}
-			else if (Position < 0 && candle.ClosePrice > smaValue)
-			{
-				BuyMarket();
-				_cooldown = CooldownBars;
-			}
+			_exitOrder = SellMarket(Position);
+			_recent.Clear();
+			_patternStop = null;
 		}
-
-		_bar1 = _bar2;
-		_bar2 = candle;
+		else if (Position == 0m && upPattern &&
+			(!RequireDowntrend || _recent.Count >= DowntrendLength &&
+				_recent[^1].ClosePrice < _recent[^DowntrendLength].ClosePrice) &&
+			IsFormedAndOnlineAndAllowTrading())
+		{
+			_patternStop = Math.Min(Math.Min(older.LowPrice, previous.LowPrice), candle.LowPrice) *
+				(1m - StopLossPercent / 100m);
+			_entryOrder = BuyMarket(Volume);
+		}
+		Append(candle);
 	}
 }

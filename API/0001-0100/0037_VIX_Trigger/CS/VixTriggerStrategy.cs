@@ -26,11 +26,15 @@ public class VixTriggerStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<Security> _vixSecurity;
 
-	private decimal _prevVix;
-
-	// Latest VIX value and trend flags
-	private decimal _latestVix;
-	private bool _isVixRising;
+	private decimal? _previousVix;
+	private DateTime? _vixBarTime;
+	private int _vixDirection;
+	private bool _hasVixDirection;
+	private DateTime? _mainBarTime;
+	private decimal _mainPrice;
+	private decimal _mainAverage;
+	private DateTime? _processedPairTime;
+	private Order _pendingOrder;
 
 	/// <summary>
 	/// Period for Moving Average calculation (default: 20)
@@ -73,12 +77,12 @@ public class VixTriggerStrategy : Strategy
 	/// </summary>
 	public VixTriggerStrategy()
 	{
-		_maPeriod = Param(nameof(MAPeriod), 20)
+		_maPeriod = Param(nameof(MAPeriod), 20).SetGreaterThanZero()
 			.SetDisplay("MA Period", "Period for Moving Average calculation", "Technical Parameters")
 			
 			.SetOptimize(10, 50, 5);
 
-		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
+		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m).SetNotNegative()
 			.SetDisplay("Stop Loss %", "Stop loss as percentage from entry price", "Risk Management")
 			
 			.SetOptimize(1.0m, 5.0m, 0.5m);
@@ -89,37 +93,53 @@ public class VixTriggerStrategy : Strategy
 		_vixSecurity = Param<Security>(nameof(VixSecurity))
 			.SetDisplay("VIX Security", "VIX Security to use for signals", "Data")
 			.SetRequired();
+		OrderRegistering += order => _pendingOrder = order;
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		// We need both the primary security and VIX
-		return
-		[
-			(Security, CandleType),
-			(VixSecurity, CandleType)
-		];
+		return [(Security, CandleType), (VixSecurity, CandleType), (Security, DataType.Level1)];
 	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		// Reset state variables
-		_prevVix = 0;
-		_latestVix = 0;
-		_isVixRising = false;
+		ClearSignalState();
+	}
 
+	private void ClearSignalState()
+	{
+		_previousVix = null;
+		_vixBarTime = null;
+		_vixDirection = 0;
+		_hasVixDirection = false;
+		_mainBarTime = null;
+		_mainPrice = 0m;
+		_mainAverage = 0m;
+		_processedPairTime = null;
+		_pendingOrder = null;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
+		// Reject before any startup side effects: SubscribeCandles(null) falls back to the primary.
+		if (VixSecurity is null || Security is null || string.Equals(VixSecurity.Id, Security.Id, StringComparison.OrdinalIgnoreCase))
+			throw new InvalidOperationException("VixSecurity must explicitly identify a different external instrument.");
 		base.OnStarted2(time);
+		ClearSignalState();
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
 
 		// Create indicator
-		var sma = new SMA { Length = MAPeriod };
+		var sma = new SimpleMovingAverage { Length = MAPeriod };
 
 		// Create subscriptions
 		var mainSubscription = SubscribeCandles(CandleType);
@@ -127,7 +147,7 @@ public class VixTriggerStrategy : Strategy
 
 		// Bind indicator to main security candles
 		mainSubscription
-			.Bind(sma, ProcessMainCandle)
+			.BindEx(sma, ProcessMainCandle, false)
 			.Start();
 
 		// Process VIX candles separately
@@ -144,90 +164,55 @@ public class VixTriggerStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		// Setup protection with stop-loss
-		StartProtection(
-			new Unit(0), // No take profit
-			new Unit(StopLossPercent, UnitTypes.Percent) // Stop loss as percentage of entry price
-		);
+
 	}
 
-	/// <summary>
-	/// Process VIX candle to track VIX movements
-	/// </summary>
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// Native protection runs before this callback, including between signal pairs.
+	}
+
 	private void ProcessVixCandle(ICandleMessage candle)
 	{
-		// Skip unfinished candles
-		if (candle.State != CandleStates.Finished)
+		if (candle.State != CandleStates.Finished || _vixBarTime is DateTime previousTime && candle.OpenTime <= previousTime)
 			return;
-
-		// Store latest VIX value
-		_latestVix = candle.ClosePrice;
-
-		// Initialize _prevVix on first VIX candle
-		if (_prevVix == 0)
-		{
-			_prevVix = _latestVix;
-			return;
-		}
-
-		// Check if VIX is rising
-		_isVixRising = _latestVix > _prevVix;
-
-		// Update previous VIX value
-		_prevVix = _latestVix;
+		_vixBarTime = candle.OpenTime;
+		_hasVixDirection = _previousVix.HasValue;
+		_vixDirection = _previousVix is decimal previous ? Math.Sign(candle.ClosePrice - previous) : 0;
+		_previousVix = candle.ClosePrice;
+		ProcessMatchedPair();
 	}
 
-	/// <summary>
-	/// Process main security candle and check for trading signals
-	/// </summary>
-	private void ProcessMainCandle(ICandleMessage candle, decimal smaValue)
+	private void ProcessMainCandle(ICandleMessage candle, IIndicatorValue average)
 	{
-		// Skip unfinished candles
-		if (candle.State != CandleStates.Finished)
+		if (candle.State != CandleStates.Finished || !average.Indicator.IsFormed
+			|| _mainBarTime is DateTime previousTime && candle.OpenTime <= previousTime)
 			return;
+		_mainBarTime = candle.OpenTime;
+		_mainPrice = candle.ClosePrice;
+		_mainAverage = average.GetValue<decimal>();
+		ProcessMatchedPair();
+	}
 
-		// Check if strategy is ready to trade
-		if (!IsFormedAndOnlineAndAllowTrading())
+	private void ProcessMatchedPair()
+	{
+		// Keep only the newest bar from each source; never reuse stale unmatched bars.
+		if (!_hasVixDirection || _mainBarTime is not DateTime time || _vixBarTime != time || _processedPairTime == time)
 			return;
-
-		// Check if we have received VIX data
-		if (_prevVix == 0)
+		_processedPairTime = time;
+		if (!IsFormedAndOnlineAndAllowTrading()
+			|| _pendingOrder is not null && _pendingOrder.State is not (OrderStates.Done or OrderStates.Failed))
 			return;
-
-		// Determine price position relative to MA
-		bool isPriceBelowMA = candle.ClosePrice < smaValue;
-
-		if (Position == 0)
+		if (Position != 0m && _vixDirection < 0)
 		{
-			// No position - check for entry signals
-			if (_isVixRising && isPriceBelowMA)
-			{
-				// VIX is rising and price is below MA - buy (contrarian strategy)
-				BuyMarket(Volume);
-			}
-			else if (_isVixRising && !isPriceBelowMA)
-			{
-				// VIX is rising and price is above MA - sell (contrarian strategy)
-				SellMarket(Volume);
-			}
+			if (Position > 0m) SellMarket(Position);
+			else BuyMarket(Math.Abs(Position));
 		}
-		else if (Position > 0)
+		else if (Position == 0m && _vixDirection > 0)
 		{
-			// Long position - check for exit signal
-			if (!_isVixRising)
-			{
-				// VIX is decreasing - exit long
-				SellMarket(Position);
-			}
+			if (_mainPrice < _mainAverage) BuyMarket(Volume);
+			else if (_mainPrice > _mainAverage) SellMarket(Volume);
 		}
-		else if (Position < 0)
-		{
-			// Short position - check for exit signal
-			if (!_isVixRising)
-			{
-				// VIX is decreasing - exit short
-				BuyMarket(Math.Abs(Position));
-			}
-		}
+		// Equal index closes are not falling, and equal price/MA is not a short signal.
 	}
 }

@@ -20,12 +20,15 @@ public class ElderImpulseStrategy : Strategy
 {
 	private readonly StrategyParam<int> _emaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _macdFastPeriod;
+	private readonly StrategyParam<int> _macdSlowPeriod;
+	private readonly StrategyParam<int> _macdSignalPeriod;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 
 	private decimal _prevEma;
 	private decimal _prevHistogram;
 	private bool _hasPrevValues;
-	private int _prevImpulse; // 1=green, -1=red, 0=neutral
-	private int _cooldown;
+	private Order _pendingOrder;
 
 	/// <summary>
 	/// EMA period.
@@ -45,23 +48,37 @@ public class ElderImpulseStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
+	public int MacdFastPeriod { get => _macdFastPeriod.Value; set => _macdFastPeriod.Value = value; }
+	public int MacdSlowPeriod { get => _macdSlowPeriod.Value; set => _macdSlowPeriod.Value = value; }
+	public int MacdSignalPeriod { get => _macdSignalPeriod.Value; set => _macdSignalPeriod.Value = value; }
+	public decimal StopLossPercent { get => _stopLossPercent.Value; set => _stopLossPercent.Value = value; }
+
 	/// <summary>
 	/// Initializes a new instance of the <see cref="ElderImpulseStrategy"/>.
 	/// </summary>
 	public ElderImpulseStrategy()
 	{
-		_emaPeriod = Param(nameof(EmaPeriod), 13)
+		_emaPeriod = Param(nameof(EmaPeriod), 13).SetGreaterThanZero()
 			.SetDisplay("EMA Period", "Period for EMA calculation", "Indicators")
 			.SetOptimize(8, 21, 3);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
+		_macdFastPeriod = Param(nameof(MacdFastPeriod), 12).SetGreaterThanZero()
+			.SetDisplay("MACD Fast Period", "Fast EMA period.", "Indicators");
+		_macdSlowPeriod = Param(nameof(MacdSlowPeriod), 26).SetGreaterThanZero()
+			.SetDisplay("MACD Slow Period", "Slow EMA period.", "Indicators");
+		_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 9).SetGreaterThanZero()
+			.SetDisplay("MACD Signal Period", "Signal EMA period.", "Indicators");
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m).SetNotNegative()
+			.SetDisplay("Stop Loss (%)", "Actual-fill percent stop; zero disables it.", "Protection");
+		OrderRegistering += order => _pendingOrder = order;
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, CandleType)];
+		return [(Security, CandleType), (Security, DataType.Level1)];
 	}
 
 	/// <inheritdoc />
@@ -71,8 +88,7 @@ public class ElderImpulseStrategy : Strategy
 		_prevEma = default;
 		_prevHistogram = default;
 		_hasPrevValues = default;
-		_prevImpulse = default;
-		_cooldown = default;
+		_pendingOrder = null;
 	}
 
 	/// <inheritdoc />
@@ -82,10 +98,20 @@ public class ElderImpulseStrategy : Strategy
 
 		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
 		var macdSignal = new MovingAverageConvergenceDivergenceSignal();
+		macdSignal.Macd.ShortMa.Length = MacdFastPeriod;
+		macdSignal.Macd.LongMa.Length = MacdSlowPeriod;
+		macdSignal.SignalMa.Length = MacdSignalPeriod;
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(ema, macdSignal, ProcessCandle)
+			.BindEx(ema, macdSignal, ProcessCandle, false)
 			.Start();
 
 		var area = CreateChartArea();
@@ -96,6 +122,11 @@ public class ElderImpulseStrategy : Strategy
 			DrawIndicator(area, macdSignal);
 			DrawOwnTrades(area);
 		}
+	}
+
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// Native protection runs before the callback, including between finished candles.
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue emaValue, IIndicatorValue macdValue)
@@ -127,43 +158,34 @@ public class ElderImpulseStrategy : Strategy
 			return;
 		}
 
-		var emaRising = emaDec > _prevEma;
-		var histogramRising = histogram > _prevHistogram;
+		// Both slopes must be strict; a flat EMA or histogram is neutral.
+		var impulse = emaDec > _prevEma && histogram > _prevHistogram ? 1
+			: emaDec < _prevEma && histogram < _prevHistogram ? -1 : 0;
 
-		// Determine current impulse
-		int impulse;
-		if (emaRising && histogramRising)
-			impulse = 1;  // Green bar
-		else if (!emaRising && !histogramRising && emaDec != _prevEma)
-			impulse = -1; // Red bar
-		else
-			impulse = 0;  // Neutral (blue bar)
-
-		if (_cooldown > 0)
+		if (_pendingOrder is not null && _pendingOrder.State is not (OrderStates.Done or OrderStates.Failed))
 		{
-			_cooldown--;
 			_prevEma = emaDec;
 			_prevHistogram = histogram;
-			_prevImpulse = impulse;
 			return;
 		}
 
-		// Trade only on impulse change
-		if (impulse == 1 && _prevImpulse != 1 && Position <= 0)
+		// A qualified opposite entry reverses fully; otherwise loss of the held color exits only.
+		if (impulse == 1 && candle.ClosePrice > emaDec && Position <= 0)
 		{
 			var volume = Volume + Math.Abs(Position);
 			BuyMarket(volume);
-			_cooldown = 65;
 		}
-		else if (impulse == -1 && _prevImpulse != -1 && Position >= 0)
+		else if (impulse == -1 && candle.ClosePrice < emaDec && Position >= 0)
 		{
 			var volume = Volume + Math.Abs(Position);
 			SellMarket(volume);
-			_cooldown = 65;
 		}
+		else if (Position > 0m && impulse != 1)
+			SellMarket(Position);
+		else if (Position < 0m && impulse != -1)
+			BuyMarket(Math.Abs(Position));
 
 		_prevEma = emaDec;
 		_prevHistogram = histogram;
-		_prevImpulse = impulse;
 	}
 }

@@ -23,7 +23,7 @@ public class GridBotStrategy : Strategy
 	private readonly StrategyParam<decimal> _lowerLimit;
 	private readonly StrategyParam<int> _gridCount;
 
-	// Grid line the previous candle closed on, -1 before the first one is evaluated.
+	// Most recently touched grid line; -1 when the candle did not touch any line.
 	private int _prevLevel;
 
 	/// <summary>
@@ -126,9 +126,16 @@ public class GridBotStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var level = GetLevel(candle.ClosePrice);
+		var level = GetTouchedLevel(candle);
 
-		// A touch is the move onto another line; standing on the same one is not a new signal.
+		// A gap entirely outside the grid is not a touch of its outermost line.
+		if (level < 0)
+		{
+			_prevLevel = -1;
+			return;
+		}
+
+		// Repeated touches of the same line do not create duplicate signals.
 		if (level == _prevLevel)
 			return;
 
@@ -143,14 +150,24 @@ public class GridBotStrategy : Strategy
 			SellMarket(Volume + Math.Abs(Position));
 	}
 
-	// Index of the grid line the price sits on, counted from LowerLimit up to GridCount.
-	private int GetLevel(decimal price)
+	// Use only lines the candle actually traded through. If several were touched, use the
+	// one nearest the close, breaking equal-distance ties toward the lower line.
+	private int GetTouchedLevel(ICandleMessage candle)
 	{
 		var step = (UpperLimit - LowerLimit) / GridCount;
-
-		// A price outside the predefined range belongs to the outermost line of the grid.
-		var clamped = Math.Clamp(price, LowerLimit, UpperLimit);
-
-		return (int)Math.Floor((clamped - LowerLimit) / step + 0.5m);
+		var touched = -1;
+		var distance = decimal.MaxValue;
+		for (var index = 0; index <= GridCount; index++)
+		{
+			var price = LowerLimit + index * step;
+			if (price < candle.LowPrice || price > candle.HighPrice)
+				continue;
+			var candidateDistance = Math.Abs(price - candle.ClosePrice);
+			if (candidateDistance >= distance)
+				continue;
+			distance = candidateDistance;
+			touched = index;
+		}
+		return touched;
 	}
 }

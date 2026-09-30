@@ -21,10 +21,9 @@ public class ZScoreStrategy : Strategy
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _stdDevPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 
-	private decimal _prevZScore;
-	private int _cooldown;
+	private Order _pendingOrder;
 
 	/// <summary>
 	/// Z-Score threshold for entry (default: 2.0)
@@ -36,7 +35,7 @@ public class ZScoreStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Z-Score threshold for exit (default: 0.5)
+	/// Half-width of the neutral exit zone (default: 0).
 	/// </summary>
 	public decimal ZScoreExitThreshold
 	{
@@ -72,55 +71,47 @@ public class ZScoreStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Cooldown bars between trades.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
 	/// Initialize the Z-Score strategy.
 	/// </summary>
 	public ZScoreStrategy()
 	{
-		_zScoreEntryThreshold = Param(nameof(ZScoreEntryThreshold), 1.5m)
+		_zScoreEntryThreshold = Param(nameof(ZScoreEntryThreshold), 2m).SetGreaterThanZero()
 			.SetDisplay("Z-Score Entry", "Distance from mean in std devs for entry", "Z-Score")
 			.SetOptimize(1.5m, 3.0m, 0.5m);
 
-		_zScoreExitThreshold = Param(nameof(ZScoreExitThreshold), 0.5m)
-			.SetDisplay("Z-Score Exit", "Distance from mean in std devs for exit", "Z-Score")
+		_zScoreExitThreshold = Param(nameof(ZScoreExitThreshold), 0m).SetNotNegative()
+			.SetDisplay("Z-Score Exit", "Half-width of the neutral exit zone in standard deviations", "Z-Score")
 			.SetOptimize(0.0m, 1.0m, 0.2m);
 
-		_maPeriod = Param(nameof(MAPeriod), 10)
+		_maPeriod = Param(nameof(MAPeriod), 20).SetGreaterThanZero()
 			.SetDisplay("MA Period", "Period for Moving Average", "Indicators")
 			.SetOptimize(10, 50, 5);
 
-		_stdDevPeriod = Param(nameof(StdDevPeriod), 10)
+		_stdDevPeriod = Param(nameof(StdDevPeriod), 20).SetGreaterThanZero()
 			.SetDisplay("StdDev Period", "Period for Standard Deviation", "Indicators")
 			.SetOptimize(10, 50, 5);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_cooldownBars = Param(nameof(CooldownBars), 500)
-			.SetRange(1, 1000)
-			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m).SetNotNegative()
+			.SetDisplay("Stop Loss (%)", "Actual-fill percent stop; zero disables it.", "Protection");
+		OrderRegistering += order => _pendingOrder = order;
 	}
+
+	public decimal StopLossPercent { get => _stopLossPercent.Value; set => _stopLossPercent.Value = value; }
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, CandleType)];
+		return [(Security, CandleType), (Security, DataType.Level1)];
 	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevZScore = default;
-		_cooldown = default;
+		_pendingOrder = null;
 	}
 
 	/// <inheritdoc />
@@ -128,15 +119,22 @@ public class ZScoreStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_prevZScore = 0;
-		_cooldown = 0;
+		if (ZScoreExitThreshold >= ZScoreEntryThreshold)
+			throw new InvalidOperationException("ZScoreExitThreshold must be below ZScoreEntryThreshold.");
 
 		var sma = new SimpleMovingAverage { Length = MAPeriod };
 		var stdDev = new StandardDeviation { Length = StdDevPeriod };
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(sma, stdDev, ProcessCandle)
+			.BindEx(sma, stdDev, ProcessCandle, false)
 			.Start();
 
 		var area = CreateChartArea();
@@ -144,63 +142,37 @@ public class ZScoreStrategy : Strategy
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, sma);
+			DrawIndicator(area, stdDev);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal maValue, decimal stdDevValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// Native protection runs before the callback, including between finished candles.
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue maValue, IIndicatorValue stdDevValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!maValue.IsFormed || !stdDevValue.IsFormed || !IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (stdDevValue == 0)
+		if (_pendingOrder is not null && _pendingOrder.State is not (OrderStates.Done or OrderStates.Failed))
 			return;
 
-		var zScore = (candle.ClosePrice - maValue) / stdDevValue;
-
-		if (_cooldown > 0)
-		{
-			_cooldown--;
-			_prevZScore = zScore;
-			return;
-		}
-
-		if (Position == 0)
-		{
-			// Entry: price far below mean -> buy, far above -> sell
-			if (zScore < -ZScoreEntryThreshold)
-			{
-				BuyMarket();
-				_cooldown = CooldownBars;
-			}
-			else if (zScore > ZScoreEntryThreshold)
-			{
-				SellMarket();
-				_cooldown = CooldownBars;
-			}
-		}
-		else if (Position > 0)
-		{
-			// Exit long: z-score crossed above exit threshold
-			if (zScore > ZScoreExitThreshold)
-			{
-				SellMarket();
-				_cooldown = CooldownBars;
-			}
-		}
-		else if (Position < 0)
-		{
-			// Exit short: z-score crossed below negative exit threshold
-			if (zScore < -ZScoreExitThreshold)
-			{
-				BuyMarket();
-				_cooldown = CooldownBars;
-			}
-		}
-
-		_prevZScore = zScore;
+		var sigma = stdDevValue.GetValue<decimal>();
+		// A constant-price variance window is explicitly neutral, not an exit blackout.
+		var zScore = sigma == 0m ? 0m : (candle.ClosePrice - maValue.GetValue<decimal>()) / sigma;
+		if (Position > 0m && zScore >= -ZScoreExitThreshold)
+			SellMarket(Position);
+		else if (Position < 0m && zScore <= ZScoreExitThreshold)
+			BuyMarket(Math.Abs(Position));
+		else if (Position == 0m && zScore < -ZScoreEntryThreshold)
+			BuyMarket(Volume);
+		else if (Position == 0m && zScore > ZScoreEntryThreshold)
+			SellMarket(Volume);
 	}
 }

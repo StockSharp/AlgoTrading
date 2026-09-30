@@ -21,10 +21,12 @@ public class AtrReversionStrategy : Strategy
 	private readonly StrategyParam<decimal> _atrMultiplier;
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 
 	private decimal _prevClose;
-	private int _cooldown;
+	private decimal _prevMean;
+	private bool _hasPrevious;
+	private Order _pendingOrder;
 
 	/// <summary>
 	/// Period for ATR calculation.
@@ -63,43 +65,36 @@ public class AtrReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Cooldown bars between trades.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
 	/// Initialize the ATR Reversion strategy.
 	/// </summary>
 	public AtrReversionStrategy()
 	{
-		_atrPeriod = Param(nameof(AtrPeriod), 14)
+		_atrPeriod = Param(nameof(AtrPeriod), 14).SetGreaterThanZero()
 			.SetDisplay("ATR Period", "Period for ATR calculation", "Indicators")
 			.SetOptimize(7, 21, 7);
 
-		_atrMultiplier = Param(nameof(AtrMultiplier), 2.0m)
+		_atrMultiplier = Param(nameof(AtrMultiplier), 2.0m).SetGreaterThanZero()
 			.SetDisplay("ATR Multiplier", "ATR multiplier for entry signal", "Entry")
 			.SetOptimize(1.5m, 3.0m, 0.5m);
 
-		_maPeriod = Param(nameof(MAPeriod), 20)
+		_maPeriod = Param(nameof(MAPeriod), 20).SetGreaterThanZero()
 			.SetDisplay("MA Period", "Period for MA calculation for exit", "Indicators")
 			.SetOptimize(10, 50, 5);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_cooldownBars = Param(nameof(CooldownBars), 500)
-			.SetRange(1, 1000)
-			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m).SetNotNegative()
+			.SetDisplay("Stop Loss (%)", "Actual-fill percent stop; zero disables it.", "Protection");
+		OrderRegistering += order => _pendingOrder = order;
 	}
+
+	public decimal StopLossPercent { get => _stopLossPercent.Value; set => _stopLossPercent.Value = value; }
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, CandleType)];
+		return [(Security, CandleType), (Security, DataType.Level1)];
 	}
 
 	/// <inheritdoc />
@@ -107,7 +102,9 @@ public class AtrReversionStrategy : Strategy
 	{
 		base.OnReseted();
 		_prevClose = default;
-		_cooldown = default;
+		_prevMean = default;
+		_hasPrevious = false;
+		_pendingOrder = null;
 	}
 
 	/// <inheritdoc />
@@ -115,15 +112,19 @@ public class AtrReversionStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_prevClose = 0;
-		_cooldown = 0;
-
 		var atr = new AverageTrueRange { Length = AtrPeriod };
 		var sma = new SimpleMovingAverage { Length = MAPeriod };
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(atr, sma, ProcessCandle)
+			.BindEx(atr, sma, ProcessCandle, false)
 			.Start();
 
 		var area = CreateChartArea();
@@ -131,67 +132,52 @@ public class AtrReversionStrategy : Strategy
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, sma);
+			DrawIndicator(area, atr);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal atrValue, decimal smaValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// Native protection runs before the callback, including between finished candles.
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue atrValue, IIndicatorValue smaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!atrValue.IsFormed || !smaValue.IsFormed || !IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (_prevClose == 0)
+		var atr = atrValue.GetValue<decimal>();
+		var mean = smaValue.GetValue<decimal>();
+		var close = candle.ClosePrice;
+		if (!_hasPrevious)
 		{
-			_prevClose = candle.ClosePrice;
-			return;
-		}
-
-		if (_cooldown > 0)
-		{
-			_cooldown--;
-			_prevClose = candle.ClosePrice;
+			_hasPrevious = true;
+			_prevClose = close;
+			_prevMean = mean;
 			return;
 		}
 
-		var priceChange = candle.ClosePrice - _prevClose;
-
-		decimal normalizedChange = 0;
-		if (atrValue > 0)
-			normalizedChange = priceChange / atrValue;
-
-		if (Position == 0)
+		if (_pendingOrder is not null && _pendingOrder.State is not (OrderStates.Done or OrderStates.Failed))
 		{
-			if (normalizedChange < -AtrMultiplier)
-			{
-				BuyMarket();
-				_cooldown = CooldownBars;
-			}
-			else if (normalizedChange > AtrMultiplier)
-			{
-				SellMarket();
-				_cooldown = CooldownBars;
-			}
-		}
-		else if (Position > 0)
-		{
-			if (candle.ClosePrice > smaValue)
-			{
-				SellMarket();
-				_cooldown = CooldownBars;
-			}
-		}
-		else if (Position < 0)
-		{
-			if (candle.ClosePrice < smaValue)
-			{
-				BuyMarket();
-				_cooldown = CooldownBars;
-			}
+			_prevClose = close;
+			_prevMean = mean;
+			return;
 		}
 
-		_prevClose = candle.ClosePrice;
+		// A current level is not a crossing: compare each close against its own SMA.
+		if (Position > 0m && _prevClose <= _prevMean && close > mean)
+			SellMarket(Position);
+		else if (Position < 0m && _prevClose >= _prevMean && close < mean)
+			BuyMarket(Math.Abs(Position));
+		else if (Position == 0m && atr > 0m && close - _prevClose < -AtrMultiplier * atr)
+			BuyMarket(Volume);
+		else if (Position == 0m && atr > 0m && close - _prevClose > AtrMultiplier * atr)
+			SellMarket(Volume);
+		_prevClose = close;
+		_prevMean = mean;
 	}
 }

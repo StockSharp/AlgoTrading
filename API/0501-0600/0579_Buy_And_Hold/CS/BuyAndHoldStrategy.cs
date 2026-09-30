@@ -1,105 +1,79 @@
+namespace StockSharp.Samples.Strategies;
+
 using System;
 using System.Collections.Generic;
 
 using Ecng.Common;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-namespace StockSharp.Samples.Strategies;
-
 /// <summary>
-/// Buy and hold strategy using EMA crossover for trend timing.
-/// Enters long on golden cross, short on death cross.
+/// Buys once at the start date and holds the long until the end date.
 /// </summary>
 public class BuyAndHoldStrategy : Strategy
 {
-	private readonly StrategyParam<int> _fastEmaPeriod;
-	private readonly StrategyParam<int> _slowEmaPeriod;
+	private readonly StrategyParam<DateTimeOffset> _startDate;
+	private readonly StrategyParam<DateTimeOffset> _endDate;
 	private readonly StrategyParam<DataType> _candleType;
+	private bool _entrySubmitted;
+	private bool _exitSubmitted;
 
-	private decimal _prevFastEma;
-	private decimal _prevSlowEma;
-
-	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
-	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public DateTimeOffset StartDate { get => _startDate.Value; set => _startDate.Value = value; }
+	public DateTimeOffset EndDate { get => _endDate.Value; set => _endDate.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public BuyAndHoldStrategy()
 	{
-		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
-			.SetGreaterThanZero()
-			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
-
-		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
-			.SetGreaterThanZero()
-			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
-
+		_startDate = Param(nameof(StartDate), new DateTimeOffset(2018, 1, 1, 0, 0, 0, TimeSpan.Zero))
+			.SetDisplay("Start Date", "Buy once on or after this date", "General");
+		_endDate = Param(nameof(EndDate), new DateTimeOffset(2069, 12, 31, 0, 0, 0, TimeSpan.Zero))
+			.SetDisplay("End Date", "Close the long on or after this date", "General");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevFastEma = 0m;
-		_prevSlowEma = 0m;
+		_entrySubmitted = _exitSubmitted = false;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
-		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
-
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(fastEma, slowEma, ProcessCandle)
-			.Start();
-
+		subscription.Bind(ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, fastEma);
-			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
-		if (candle.State != CandleStates.Finished)
+		if (candle.State != CandleStates.Finished || !IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (_prevFastEma == 0m || _prevSlowEma == 0m)
+		if (candle.OpenTime >= EndDate.UtcDateTime)
 		{
-			_prevFastEma = fastEmaValue;
-			_prevSlowEma = slowEmaValue;
-			return;
+			if (!_exitSubmitted && Position > 0)
+			{
+				SellMarket(Position);
+				_exitSubmitted = true;
+			}
 		}
-
-		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+		else if (!_entrySubmitted && candle.OpenTime >= StartDate.UtcDateTime && Position == 0)
 		{
 			BuyMarket();
+			// Remember the submitted entry even while its fill is still pending.
+			_entrySubmitted = true;
 		}
-		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
-		{
-			SellMarket();
-		}
-
-		_prevFastEma = fastEmaValue;
-		_prevSlowEma = slowEmaValue;
 	}
 }

@@ -4,94 +4,108 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import KeltnerChannels
+from System import TimeSpan, Decimal, Math
+from StockSharp.Messages import DataType, CandleStates, Unit, OrderStates, OrderTypes, Sides, Level1Fields
+from StockSharp.BusinessEntities import Subscription, Order
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
 
+
 class keltner_channel_reversal_strategy(Strategy):
-    """
-    Keltner Channel Reversal strategy.
-    Enters long when price is below lower Keltner Channel with a bullish candle.
-    Enters short when price is above upper Keltner Channel with a bearish candle.
-    Exits at middle band.
-    """
+    """Fade a directional outside close with separate EMA/ATR lengths and frozen ATR protection."""
 
     def __init__(self):
         super(keltner_channel_reversal_strategy, self).__init__()
-        self._ema_period = self.Param("EmaPeriod", 20).SetDisplay("EMA Period", "Period for EMA in Keltner Channel", "Indicators")
-        self._atr_multiplier = self.Param("AtrMultiplier", 2.0).SetDisplay("ATR Multiplier", "Multiplier for ATR in Keltner Channel", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Type of candles to use", "General")
-        self._cooldown_bars = self.Param("CooldownBars", 500).SetDisplay("Cooldown Bars", "Bars to wait between trades", "General")
-
-        self._cooldown = 0
+        self._ema_period = self.Param("EmaPeriod", 20).SetGreaterThanZero().SetDisplay("EMA Period", "Close EMA length for middle band", "Indicators")
+        self._atr_period = self.Param("AtrPeriod", 14).SetGreaterThanZero().SetDisplay("ATR Period", "Wilder ATR length for channel width and stop", "Indicators")
+        self._atr_multiplier = self.Param("AtrMultiplier", 2.0).SetNotNegative().SetDisplay("ATR Multiplier", "ATR multiple for channel width", "Indicators")
+        self._stop_loss_atr_multiplier = self.Param("StopLossAtrMultiplier", 2.0).SetNotNegative().SetDisplay("Stop ATR Multiplier", "Frozen entry ATR distance; zero disables the stop", "Protection")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Keltner and stop candle timeframe", "General")
+        self._pending_order = None
+        self._stop_distance = None
+        self._protection_started = False
+        self.OrderRegistering += self._track_pending
 
     @property
     def candle_type(self):
         return self._candle_type.Value
 
+    def GetWorkingSecurities(self):
+        return [(self.Security, self.candle_type), (self.Security, DataType.Level1)]
+
+    def _track_pending(self, order):
+        self._pending_order = order
+
     def OnReseted(self):
         super(keltner_channel_reversal_strategy, self).OnReseted()
-        self._cooldown = 0
+        self._pending_order = None
+        self._stop_distance = None
+        self._protection_started = False
 
     def OnStarted2(self, time):
         super(keltner_channel_reversal_strategy, self).OnStarted2(time)
-
-        self._cooldown = 0
-
-        keltner = KeltnerChannels()
-        keltner.Length = self._ema_period.Value
-        keltner.Multiplier = self._atr_multiplier.Value
-
-        subscription = self.SubscribeCandles(self.candle_type)
-        subscription.BindEx(keltner, self._process_candle).Start()
-
+        self._pending_order = None
+        self._stop_distance = None
+        self._protection_started = False
+        ema = ExponentialMovingAverage()
+        ema.Length = self._ema_period.Value
+        atr = AverageTrueRange()
+        atr.Length = self._atr_period.Value
+        for field in (Level1Fields.BestBidPrice, Level1Fields.BestAskPrice):
+            quotes = Subscription(DataType.Level1, self.Security)
+            quotes.MarketData.BuildField = field
+            self.SubscribeLevel1(quotes).Bind(self._observe_protection_quote).Start()
+        candles = self.SubscribeCandles(self.candle_type)
+        candles.BindEx(ema, atr, self._process_candle, False).Start()
         area = self.CreateChartArea()
         if area is not None:
-            self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, keltner)
+            self.DrawCandles(area, candles)
+            self.DrawIndicator(area, ema)
+            self.DrawIndicator(area, atr)
             self.DrawOwnTrades(area)
 
-    def _process_candle(self, candle, keltner_value):
-        if candle.State != CandleStates.Finished:
+    def _observe_protection_quote(self, quote):
+        # Native protection evaluates executable quotes between finished signal candles.
+        pass
+
+    def _process_candle(self, candle, ema_value, atr_value):
+        if (candle.State != CandleStates.Finished or not ema_value.IsFormed or
+                not atr_value.IsFormed or not self.IsFormedAndOnlineAndAllowTrading()):
             return
-
-        if not keltner_value.IsFormed:
+        if self._pending_order is not None and self._pending_order.State not in (OrderStates.Done, OrderStates.Failed):
             return
+        middle = ema_value.GetValue[Decimal](None)
+        atr = atr_value.GetValue[Decimal](None)
+        lower = middle - atr * Decimal(self._atr_multiplier.Value)
+        upper = middle + atr * Decimal(self._atr_multiplier.Value)
+        close = candle.ClosePrice
+        if self.Position > 0 and close >= middle:
+            self.SellMarket(self.Position)
+        elif self.Position < 0 and close <= middle:
+            self.BuyMarket(Math.Abs(self.Position))
+        elif self.Position == 0 and close < lower and close > candle.OpenPrice:
+            self._enter(Sides.Buy, atr)
+        elif self.Position == 0 and close > upper and close < candle.OpenPrice:
+            self._enter(Sides.Sell, atr)
 
-        if self._cooldown > 0:
-            self._cooldown -= 1
-            return
-
-        upper = keltner_value.Upper
-        lower = keltner_value.Lower
-        middle = keltner_value.Middle
-
-        if upper is None or lower is None or middle is None:
-            return
-
-        close = float(candle.ClosePrice)
-        ub = float(upper)
-        lb = float(lower)
-        mb = float(middle)
-        cd = self._cooldown_bars.Value
-
-        is_bullish = candle.ClosePrice > candle.OpenPrice
-        is_bearish = candle.ClosePrice < candle.OpenPrice
-
-        if self.Position == 0 and close < lb and is_bullish:
-            self.BuyMarket()
-            self._cooldown = cd
-        elif self.Position == 0 and close > ub and is_bearish:
-            self.SellMarket()
-            self._cooldown = cd
-        elif self.Position > 0 and close > mb:
-            self.SellMarket()
-            self._cooldown = cd
-        elif self.Position < 0 and close < mb:
-            self.BuyMarket()
-            self._cooldown = cd
+    def _enter(self, side, atr):
+        distance = atr * Decimal(self._stop_loss_atr_multiplier.Value)
+        if self._stop_distance is None:
+            self._stop_distance = Unit(distance)
+        self._stop_distance.Value = distance
+        if not self._protection_started and distance > 0:
+            self.StartProtection(Unit(), self._stop_distance, useMarketOrders=True, isLocalStop=True)
+            self._protection_started = True
+        order = Order()
+        order.Security = self.Security
+        order.Portfolio = self.Portfolio
+        order.Type = OrderTypes.Market
+        order.Side = side
+        order.Volume = self.Volume
+        order.Comment = "Keltner reversal entry"
+        self.RegisterOrder(order)
 
     def CreateClone(self):
         return keltner_channel_reversal_strategy()

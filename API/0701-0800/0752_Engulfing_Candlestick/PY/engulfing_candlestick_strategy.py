@@ -2,78 +2,81 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
-clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage
+from System import TimeSpan, ArgumentOutOfRangeException
+from StockSharp.Messages import DataType, CandleStates, Sides, OrderStates
 from StockSharp.Algo.Strategies import Strategy
 
+
 class engulfing_candlestick_strategy(Strategy):
-    """
-    EMA crossover strategy.
-    Uses fast and slow EMA to generate entry/exit signals.
-    """
+    """Trades a selected engulfing pattern and exits after HoldPeriods bars."""
 
     def __init__(self):
         super(engulfing_candlestick_strategy, self).__init__()
-        self._fast_ema_period = self.Param("FastEmaPeriod", 120) \
-            .SetDisplay("Fast EMA", "Fast EMA period", "Indicators")
-        self._slow_ema_period = self.Param("SlowEmaPeriod", 450) \
-            .SetDisplay("Slow EMA", "Slow EMA period", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
-            .SetDisplay("Candle Type", "Candle type for strategy", "General")
-
-        self._prev_fast_ema = 0.0
-        self._prev_slow_ema = 0.0
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
+            .SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._hold_periods = self.Param("HoldPeriods", 17) \
+            .SetDisplay("Hold Periods", "Bars to hold the position", "Trading")
+        self._pattern = self.Param("Pattern", "Bullish") \
+            .SetDisplay("Pattern", "Bullish or Bearish engulfing", "Trading")
+        self._side = self.Param("Side", Sides.Buy) \
+            .SetDisplay("Side", "Buy for long, Sell for short", "Trading")
+        self._previous_open = None
+        self._previous_close = None
+        self._bars_held = 0
+        self._pending_order = None
 
     @property
     def candle_type(self):
         return self._candle_type.Value
 
+    def GetWorkingSecurities(self):
+        return [(self.Security, self.candle_type)]
 
     def OnReseted(self):
         super(engulfing_candlestick_strategy, self).OnReseted()
-        self._prev_fast_ema = 0.0
-        self._prev_slow_ema = 0.0
+        self._previous_open = None
+        self._previous_close = None
+        self._bars_held = 0
+        self._pending_order = None
+
     def OnStarted2(self, time):
         super(engulfing_candlestick_strategy, self).OnStarted2(time)
-
-        fast_ema = ExponentialMovingAverage()
-        fast_ema.Length = self._fast_ema_period.Value
-        slow_ema = ExponentialMovingAverage()
-        slow_ema.Length = self._slow_ema_period.Value
-
+        if self._pattern.Value not in ("Bullish", "Bearish"):
+            raise ArgumentOutOfRangeException("Pattern", self._pattern.Value, "Choose Bullish or Bearish.")
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(fast_ema, slow_ema, self.on_process).Start()
-
+        subscription.Bind(self.process_candle).Start()
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, fast_ema)
-            self.DrawIndicator(area, slow_ema)
             self.DrawOwnTrades(area)
 
-    def on_process(self, candle, fast_val, slow_val):
+    def process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
 
-        fast_v = float(fast_val)
-        slow_v = float(slow_val)
+        bullish = (self._previous_open is not None and self._previous_close < self._previous_open
+                   and candle.ClosePrice > candle.OpenPrice and candle.OpenPrice <= self._previous_close
+                   and candle.ClosePrice >= self._previous_open)
+        bearish = (self._previous_open is not None and self._previous_close > self._previous_open
+                   and candle.ClosePrice < candle.OpenPrice and candle.OpenPrice >= self._previous_close
+                   and candle.ClosePrice <= self._previous_open)
 
-        if self._prev_fast_ema == 0.0 or self._prev_slow_ema == 0.0:
-            self._prev_fast_ema = fast_v
-            self._prev_slow_ema = slow_v
-            return
+        if self.Position != 0:
+            self._bars_held += 1
+        if self._pending_order is not None and self._pending_order.State in (OrderStates.Done, OrderStates.Failed):
+            self._pending_order = None
 
-        if self._prev_fast_ema <= self._prev_slow_ema and fast_v > slow_v and self.Position <= 0:
-            self.BuyMarket()
-        elif self._prev_fast_ema >= self._prev_slow_ema and fast_v < slow_v and self.Position >= 0:
-            self.SellMarket()
+        if self._pending_order is None and self.IsFormedAndOnlineAndAllowTrading():
+            if self.Position != 0 and self._bars_held >= int(self._hold_periods.Value):
+                self._pending_order = self.SellMarket(self.Position) if self.Position > 0 else self.BuyMarket(-self.Position)
+            elif self.Position == 0 and (bullish if self._pattern.Value == "Bullish" else bearish):
+                self._pending_order = self.BuyMarket() if self._side.Value == Sides.Buy else self.SellMarket()
+                self._bars_held = 0
 
-        self._prev_fast_ema = fast_v
-        self._prev_slow_ema = slow_v
+        self._previous_open = candle.OpenPrice
+        self._previous_close = candle.ClosePrice
 
     def CreateClone(self):
         return engulfing_candlestick_strategy()

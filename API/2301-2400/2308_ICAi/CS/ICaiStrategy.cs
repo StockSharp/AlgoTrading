@@ -1,3 +1,5 @@
+namespace StockSharp.Samples.Strategies;
+
 using System;
 using System.Collections.Generic;
 
@@ -8,8 +10,6 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-namespace StockSharp.Samples.Strategies;
-
 /// <summary>
 /// Strategy based on the ICAi adaptive moving average.
 /// Computes an adaptive MA using SMA and StdDev, trades on slope reversal.
@@ -18,6 +18,8 @@ public class ICaiStrategy : Strategy
 {
 	private readonly StrategyParam<int> _length;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<decimal> _stopLoss;
+	private readonly StrategyParam<decimal> _takeProfit;
 
 	private SimpleMovingAverage _ma;
 	private StandardDeviation _std;
@@ -36,6 +38,18 @@ public class ICaiStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
+	public decimal StopLoss
+	{
+		get => _stopLoss.Value;
+		set => _stopLoss.Value = value;
+	}
+
+	public decimal TakeProfit
+	{
+		get => _takeProfit.Value;
+		set => _takeProfit.Value = value;
+	}
+
 	public ICaiStrategy()
 	{
 		_length = Param(nameof(Length), 12)
@@ -44,6 +58,14 @@ public class ICaiStrategy : Strategy
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for strategy", "General");
+
+		_stopLoss = Param(nameof(StopLoss), 1000m)
+			.SetRange(0m, decimal.MaxValue)
+			.SetDisplay("Stop Loss", "Fixed price distance (zero disables)", "Protection");
+
+		_takeProfit = Param(nameof(TakeProfit), 2000m)
+			.SetRange(0m, decimal.MaxValue)
+			.SetDisplay("Take Profit", "Fixed price distance (zero disables)", "Protection");
 	}
 
 	/// <inheritdoc />
@@ -69,6 +91,8 @@ public class ICaiStrategy : Strategy
 
 		_prevIcai = null;
 		_prevSlope = null;
+
+		StartProtection(new Unit(TakeProfit, UnitTypes.Absolute), new Unit(StopLoss, UnitTypes.Absolute), useMarketOrders: true, isLocalStop: true);
 
 		_ma = new SimpleMovingAverage { Length = Length };
 		_std = new StandardDeviation { Length = Length };
@@ -126,12 +150,14 @@ public class ICaiStrategy : Strategy
 
 		var slope = icai - prev;
 
-		// Slope reversal: was negative, now positive -> buy
-		if (_prevSlope <= 0 && slope > 0 && Position <= 0)
-			BuyMarket();
-		// Slope reversal: was positive, now negative -> sell
-		else if (_prevSlope >= 0 && slope < 0 && Position >= 0)
-			SellMarket();
+		// A plateau after a strictly falling/rising value is also a reversal.
+		if (IsFormedAndOnlineAndAllowTrading())
+		{
+			if (_prevSlope < 0 && slope >= 0 && Position <= 0)
+				BuyMarket(Volume + Math.Abs(Position));
+			else if (_prevSlope > 0 && slope <= 0 && Position >= 0)
+				SellMarket(Volume + Math.Abs(Position));
+		}
 
 		_prevSlope = slope;
 	}

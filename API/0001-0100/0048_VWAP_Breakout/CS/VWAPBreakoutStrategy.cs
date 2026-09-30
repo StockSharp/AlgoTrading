@@ -11,137 +11,104 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// VWAP Breakout strategy.
-/// Enters long when price breaks above VWAP, short when below.
+/// Trades actual same-UTC-session Close crossings of cumulative candle VWAP.
+/// The opposite crossing reverses the position; actual-fill percent protection flattens it.
 /// </summary>
 public class VWAPBreakoutStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 
-	private decimal _previousClosePrice;
-	private decimal _previousVWAP;
-	private int _cooldown;
+	private VolumeWeightedAveragePrice _vwap;
+	private DateTime? _sessionDate;
+	private decimal? _previousClose;
+	private decimal _previousVwap;
+	private Order _pendingOrder;
 
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public decimal StopLossPercent { get => _stopLossPercent.Value; set => _stopLossPercent.Value = value; }
 
-	/// <summary>
-	/// Cooldown bars between trades.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize the VWAP Breakout strategy.
-	/// </summary>
 	public VWAPBreakoutStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_cooldownBars = Param(nameof(CooldownBars), 500)
-			.SetRange(1, 1000)
-			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m).SetNotNegative()
+			.SetDisplay("Stop Loss (%)", "Actual-fill percent stop; zero disables it.", "Protection");
+		OrderRegistering += order => _pendingOrder = order;
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType), (Security, DataType.Level1)];
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_previousClosePrice = default;
-		_previousVWAP = default;
-		_cooldown = default;
+		ClearSignalState();
+		_vwap = null;
 	}
 
-	/// <inheritdoc />
+	private void ClearSignalState()
+	{
+		_sessionDate = null;
+		_previousClose = null;
+		_previousVwap = 0m;
+		_pendingOrder = null;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_previousClosePrice = 0;
-		_previousVWAP = 0;
-		_cooldown = 0;
-
-		var vwap = new VolumeWeightedMovingAverage();
-
+		ClearSignalState();
+		_vwap = new VolumeWeightedAveragePrice();
+		Indicators.Add(_vwap);
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(vwap, ProcessCandle)
-			.Start();
-
+		subscription.Bind(ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, vwap);
+			DrawIndicator(area, _vwap);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal vwapPrice)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// Native protection runs before this callback, including between finished candles.
+	}
+
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
+		var date = candle.OpenTime.ToUniversalTime().Date;
+		if (_sessionDate != date)
+		{
+			_sessionDate = date;
+			// Reset BEFORE this day's first final bar; a reset jump is not a price crossing.
+			_vwap.Reset();
+			_previousClose = null;
+		}
+		var value = _vwap.Process(candle);
+		if (value.IsEmpty || !_vwap.IsFormed)
 			return;
-
-		if (_previousClosePrice == 0)
-		{
-			_previousClosePrice = candle.ClosePrice;
-			_previousVWAP = vwapPrice;
+		var vwap = value.GetValue<decimal>();
+		var upwardCross = _previousClose is decimal up && up <= _previousVwap && candle.ClosePrice > vwap;
+		var downwardCross = _previousClose is decimal down && down >= _previousVwap && candle.ClosePrice < vwap;
+		// Seed the first valid session value and advance history even while orders are pending.
+		_previousClose = candle.ClosePrice;
+		_previousVwap = vwap;
+		if (!IsFormedAndOnlineAndAllowTrading() ||
+			_pendingOrder is not null && _pendingOrder.State is not (OrderStates.Done or OrderStates.Failed))
 			return;
-		}
-
-		if (_cooldown > 0)
-		{
-			_cooldown--;
-			_previousClosePrice = candle.ClosePrice;
-			_previousVWAP = vwapPrice;
-			return;
-		}
-
-		var breakoutUp = _previousClosePrice <= _previousVWAP && candle.ClosePrice > vwapPrice;
-		var breakoutDown = _previousClosePrice >= _previousVWAP && candle.ClosePrice < vwapPrice;
-
-		if (Position == 0 && breakoutUp)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position == 0 && breakoutDown)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position > 0 && candle.ClosePrice < vwapPrice)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position < 0 && candle.ClosePrice > vwapPrice)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-
-		_previousClosePrice = candle.ClosePrice;
-		_previousVWAP = vwapPrice;
+		if (upwardCross && Position <= 0m) BuyMarket(this.ReversalVolume());
+		else if (downwardCross && Position >= 0m) SellMarket(this.ReversalVolume());
 	}
 }

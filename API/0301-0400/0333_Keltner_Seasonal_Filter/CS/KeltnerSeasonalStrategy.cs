@@ -27,6 +27,7 @@ public class KeltnerSeasonalStrategy : Strategy
 
 	private readonly Dictionary<int, decimal> _monthlyReturns = [];
 	private decimal _currentSeasonalStrength;
+	private decimal _stopPrice;
 
 	/// <summary>
 	/// Strategy parameter: EMA period for Keltner Channel.
@@ -93,7 +94,7 @@ public class KeltnerSeasonalStrategy : Strategy
 		_seasonalThreshold = Param(nameof(SeasonalThreshold), 0.5m)
 			.SetDisplay("Seasonal Threshold", "Minimum seasonal strength to consider for trading", "Seasonal Settings");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		// Initialize seasonal returns (this would typically be loaded from historical data)
@@ -113,15 +114,13 @@ public class KeltnerSeasonalStrategy : Strategy
 		base.OnReseted();
 
 		_currentSeasonalStrength = 0;
+		_stopPrice = 0;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		// Initialize seasonal strength for current month
-		UpdateSeasonalStrength(time);
 
 		// Create indicators for Keltner Channel
 		var ema = new EMA
@@ -150,12 +149,6 @@ public class KeltnerSeasonalStrategy : Strategy
 			DrawIndicator(area, ema);
 			DrawOwnTrades(area);
 		}
-
-		// Start position protection with ATR-based stop-loss
-		StartProtection(
-			takeProfit: new Unit(0), // No fixed take profit
-			stopLoss: new Unit(AtrMultiplier, UnitTypes.Absolute)
-		);
 	}
 
 	private void ProcessKeltner(ICandleMessage candle, decimal emaValue, decimal atrValue)
@@ -168,17 +161,23 @@ public class KeltnerSeasonalStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Check if we need to update seasonal strength (month changed)
-		var candleMonth = candle.OpenTime.Month;
-		var currentMonth = CurrentTime.Month;
-		if (candleMonth != currentMonth)
-		{
-			UpdateSeasonalStrength(CurrentTime);
-		}
+		// Seasonality belongs to the candle being evaluated, never to host/start time.
+		UpdateSeasonalStrength(candle.OpenTime);
 
 		// Calculate Keltner Channel bands
 		decimal upperBand = emaValue + atrValue * AtrMultiplier;
 		decimal lowerBand = emaValue - atrValue * AtrMultiplier;
+
+		// Stop placed AtrMultiplier x ATR from the entry close, checked on the finished candle
+		if (_stopPrice > 0m &&
+		((Position > 0 && candle.ClosePrice <= _stopPrice) ||
+		(Position < 0 && candle.ClosePrice >= _stopPrice)))
+		{
+			LogInfo($"Stop exit: close {candle.ClosePrice} reached ATR stop ({_stopPrice})");
+			ClosePosition();
+			_stopPrice = 0m;
+			return;
+		}
 
 		// Check for breakout signals with seasonal filter
 		if (_currentSeasonalStrength > SeasonalThreshold)
@@ -189,6 +188,8 @@ public class KeltnerSeasonalStrategy : Strategy
 				// Breakout above upper band - Buy signal
 				LogInfo($"Buy signal: Breakout above Keltner upper band ({upperBand}) with positive seasonal bias ({_currentSeasonalStrength})");
 				BuyMarket(Volume + Math.Abs(Position));
+				_stopPrice = candle.ClosePrice - atrValue * AtrMultiplier;
+				return;
 			}
 		}
 		else if (_currentSeasonalStrength < -SeasonalThreshold)
@@ -199,6 +200,8 @@ public class KeltnerSeasonalStrategy : Strategy
 				// Breakout below lower band - Sell signal
 				LogInfo($"Sell signal: Breakout below Keltner lower band ({lowerBand}) with negative seasonal bias ({_currentSeasonalStrength})");
 				SellMarket(Volume + Math.Abs(Position));
+				_stopPrice = candle.ClosePrice + atrValue * AtrMultiplier;
+				return;
 			}
 		}
 
@@ -208,6 +211,7 @@ public class KeltnerSeasonalStrategy : Strategy
 		{
 			LogInfo($"Exit signal: Price reverted to EMA ({emaValue})");
 			ClosePosition();
+			_stopPrice = 0m;
 		}
 	}
 

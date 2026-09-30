@@ -7,7 +7,7 @@ Tests zeigen eine durchschnittliche jährliche Rendite von etwa 73%. Sie funktio
 
 Nach der Anmeldung auf dem ausgewählten Zeitrahmen überwacht sie die %K- und %D-Linien. Ein bullisches Setup entsteht, wenn %K unter 20 fällt und dann beginnt, sich zu erholen. Umgekehrt erscheint ein bärisches Setup, wenn %K über 80 steigt und anfängt, sich nach unten zu drehen. Ein fester prozentualer Stop kontrolliert das Risiko für beide Seiten.
 
-Positionen werden geschlossen, wenn die %K-Linie wieder durch das Niveau 50 kreuzt, was signalisiert, dass sich der Schwung in die entgegengesetzte Richtung verschoben hat. Da die Stops mit dem aktuellen ATR skalieren, passt sich die Handelsgröße an die Volatilität an.
+Positionen werden geschlossen, wenn die %K-Linie wieder durch das Niveau 50 kreuzt, was signalisiert, dass sich der Schwung in die entgegengesetzte Richtung verschoben hat.
 
 ## Details
 

@@ -1,12 +1,10 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -14,23 +12,39 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Closes the current position when floating PnL reaches a profit target or maximum loss.
-/// Simplified from the multi-pair closer utility to work with a single security.
+/// Supervises the account positions of a basket of instruments and closes them when their combined floating
+/// profit, as the connector reports it, reaches the profit target or drops below the loss limit.
+/// This utility never opens positions.
 /// </summary>
 public class MultiPairCloserStrategy : Strategy
 {
+	private const string _profitTargetReason = "reached the profit target";
+	private const string _maxLossReason = "fell below the loss limit";
+
+	private readonly StrategyParam<string> _watchedSymbols;
 	private readonly StrategyParam<decimal> _profitTarget;
 	private readonly StrategyParam<decimal> _maxLoss;
+	private readonly StrategyParam<int> _slippage;
 	private readonly StrategyParam<int> _minAgeSeconds;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _smaPeriod;
 
-	private SimpleMovingAverage _sma;
-	private decimal _entryPrice;
-	private DateTimeOffset? _entryTime;
+	private readonly List<Security> _watched = [];
+	private readonly Dictionary<string, DateTime?> _firstSeen = new(StringComparer.OrdinalIgnoreCase);
+	private readonly Dictionary<string, Order> _exitOrders = new(StringComparer.OrdinalIgnoreCase);
+	private IConnector _positionSource;
+	private DateTime? _startTime;
 
 	/// <summary>
-	/// Profit target in price units.
+	/// Comma-separated identifiers of the securities to supervise. Empty means the assigned <see cref="Strategy.Security"/>.
+	/// </summary>
+	public string WatchedSymbols
+	{
+		get => _watchedSymbols.Value;
+		set => _watchedSymbols.Value = value;
+	}
+
+	/// <summary>
+	/// Combined floating profit, in portfolio currency, that closes every watched position.
 	/// </summary>
 	public decimal ProfitTarget
 	{
@@ -39,7 +53,7 @@ public class MultiPairCloserStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Maximum tolerated loss in price units.
+	/// Maximum acceptable combined floating loss, in portfolio currency, before the basket is force-closed.
 	/// </summary>
 	public decimal MaxLoss
 	{
@@ -48,7 +62,16 @@ public class MultiPairCloserStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Minimum age of an open position in seconds before exit is permitted.
+	/// Slippage allowed by the original script. Exits are market orders, so the value is only logged.
+	/// </summary>
+	public int Slippage
+	{
+		get => _slippage.Value;
+		set => _slippage.Value = value;
+	}
+
+	/// <summary>
+	/// Minimum lifetime of a position, in seconds, before the strategy may close it.
 	/// </summary>
 	public int MinAgeSeconds
 	{
@@ -57,7 +80,7 @@ public class MultiPairCloserStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Candle type for price monitoring.
+	/// Candle type whose finished candles trigger the profit evaluation.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -66,52 +89,47 @@ public class MultiPairCloserStrategy : Strategy
 	}
 
 	/// <summary>
-	/// SMA period for entry signals.
-	/// </summary>
-	public int SmaPeriod
-	{
-		get => _smaPeriod.Value;
-		set => _smaPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes strategy parameters.
+	/// Initializes a new instance of the <see cref="MultiPairCloserStrategy"/>.
 	/// </summary>
 	public MultiPairCloserStrategy()
 	{
-		_profitTarget = Param(nameof(ProfitTarget), 5m)
-			.SetNotNegative()
-			.SetDisplay("Profit Target", "Close position when floating profit reaches this value", "Risk Management");
+		_watchedSymbols = Param(nameof(WatchedSymbols), "GBPUSD,USDCAD,USDCHF,USDSEK")
+			.SetDisplay("Watched Symbols", "Comma-separated security identifiers to supervise; empty means the assigned security", "Basket");
 
-		_maxLoss = Param(nameof(MaxLoss), 10m)
+		_profitTarget = Param(nameof(ProfitTarget), 60m)
 			.SetNotNegative()
-			.SetDisplay("Maximum Loss", "Close position when floating loss reaches this value", "Risk Management");
+			.SetDisplay("Profit Target", "Combined floating profit in portfolio currency that closes every watched position", "Risk");
+
+		_maxLoss = Param(nameof(MaxLoss), 60m)
+			.SetNotNegative()
+			.SetDisplay("Max Loss", "Maximum acceptable combined floating loss in portfolio currency before the basket is force-closed", "Risk");
+
+		_slippage = Param(nameof(Slippage), 10)
+			.SetNotNegative()
+			.SetDisplay("Slippage", "Slippage allowed by the original script; exits are market orders, so it is only logged", "Execution");
 
 		_minAgeSeconds = Param(nameof(MinAgeSeconds), 60)
 			.SetNotNegative()
-			.SetDisplay("Min Age (s)", "Minimum holding time before exit is allowed", "Execution");
+			.SetDisplay("Min Age (s)", "Minimum lifetime of a position before the strategy may close it", "Execution");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
-			.SetDisplay("Candle Type", "Candle series for monitoring", "General");
-
-		_smaPeriod = Param(nameof(SmaPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("SMA Period", "Moving average period for entry signal", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Every finished candle of this type triggers a profit evaluation", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		yield return (Security, CandleType);
-	}
+		=> ResolveWatched(false).Select(security => (security, CandleType));
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_sma = null;
-		_entryPrice = 0m;
-		_entryTime = null;
+
+		DetachPositionSource();
+		_watched.Clear();
+		_firstSeen.Clear();
+		_exitOrders.Clear();
+		_startTime = null;
 	}
 
 	/// <inheritdoc />
@@ -119,66 +137,202 @@ public class MultiPairCloserStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_sma = new SimpleMovingAverage { Length = SmaPeriod };
+		_watched.Clear();
+		_watched.AddRange(ResolveWatched(true));
+		_firstSeen.Clear();
+		_exitOrders.Clear();
 
-		SubscribeCandles(CandleType)
-			.Bind(_sma, ProcessCandle)
-			.Start();
+		// The start is taken on the market clock, which a backtest sets only once the replay begins.
+		_startTime = GetMarketTime();
+
+		foreach (var security in _watched)
+		{
+			if (GetReportedPosition(security).volume != 0m)
+				_firstSeen[security.Id] = _startTime;
+		}
+
+		_positionSource = Connector;
+		_positionSource.PositionChanged += OnReportedPositionChanged;
+
+		foreach (var security in _watched)
+		{
+			SubscribeCandles(CandleType, security: security)
+				.Bind(ProcessCandle)
+				.Start();
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
+	/// <inheritdoc />
+	protected override void OnStopped()
+	{
+		DetachPositionSource();
+
+		base.OnStopped();
+	}
+
+	private void DetachPositionSource()
+	{
+		if (_positionSource is null)
+			return;
+
+		_positionSource.PositionChanged -= OnReportedPositionChanged;
+		_positionSource = null;
+	}
+
+	private List<Security> ResolveWatched(bool strict)
+	{
+		var ids = (WatchedSymbols ?? string.Empty)
+			.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+			.Distinct(StringComparer.OrdinalIgnoreCase)
+			.ToArray();
+
+		var securities = new List<Security>();
+
+		if (ids.Length == 0)
+		{
+			if (Security is not null)
+				securities.Add(Security);
+			else if (strict)
+				throw new InvalidOperationException("WatchedSymbols is empty and no Security is assigned.");
+
+			return securities;
+		}
+
+		if (Connector is null)
+			return securities;
+
+		foreach (var id in ids)
+		{
+			var security = this.LookupById(id);
+
+			if (security is not null)
+				securities.Add(security);
+			else if (strict)
+				throw new InvalidOperationException($"Security '{id}' is not available through the connector.");
+		}
+
+		return securities;
+	}
+
+	private void OnReportedPositionChanged(Position position)
+	{
+		var security = FindWatched(position);
+
+		if (security is null)
+			return;
+
+		if (GetReportedPosition(security).volume == 0m)
+			_firstSeen.Remove(security.Id);
+		else if (!_firstSeen.ContainsKey(security.Id))
+			_firstSeen[security.Id] = GetMarketTime() ?? _startTime;
+	}
+
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormed)
+		EvaluateBasket();
+	}
+
+	private void EvaluateBasket()
+	{
+		var now = CurrentTime;
+		_startTime ??= now;
+
+		var summary = new List<string>(_watched.Count + 1);
+		var open = new List<(Security security, decimal volume)>();
+		decimal? total = 0m;
+
+		foreach (var security in _watched)
+		{
+			var (volume, profit) = GetReportedPosition(security);
+
+			if (volume == 0m)
+			{
+				summary.Add($"{security.Id}: {Format(0m)}");
+				continue;
+			}
+
+			open.Add((security, volume));
+			total += profit;
+			summary.Add($"{security.Id}: {(profit is decimal value ? Format(value) : "n/a")}");
+		}
+
+		summary.Add($"Basket: {(total is decimal sum ? Format(sum) : "n/a")}");
+		LogInfo(string.Join("; ", summary));
+
+		// A position without a reported floating profit leaves the basket result unknown, so nothing is decided.
+		if (open.Count == 0 || total is not decimal basket)
 			return;
 
-		var price = candle.ClosePrice;
-		var time = candle.CloseTime;
+		string reason;
 
-		// Check exit conditions for open position
-		if (Position != 0 && _entryPrice > 0m)
+		if (basket >= ProfitTarget)
+			reason = _profitTargetReason;
+		else if (basket < -MaxLoss)
+			reason = _maxLossReason;
+		else
+			return;
+
+		foreach (var (security, volume) in open)
 		{
-			var pnl = Position > 0
-				? price - _entryPrice
-				: _entryPrice - price;
+			if (_exitOrders.TryGetValue(security.Id, out var pending) && !pending.State.IsFinal())
+				continue;
 
-			var canClose = MinAgeSeconds <= 0 ||
-				(_entryTime.HasValue && (time - _entryTime.Value).TotalSeconds >= MinAgeSeconds);
+			var firstSeen = (_firstSeen.TryGetValue(security.Id, out var seen) ? seen : null) ?? _startTime.Value;
 
-			if (canClose)
-			{
-				if ((ProfitTarget > 0m && pnl >= ProfitTarget) ||
-					(MaxLoss > 0m && pnl <= -MaxLoss))
-				{
-					if (Position > 0)
-						SellMarket(Math.Abs(Position));
-					else
-						BuyMarket(Math.Abs(Position));
+			if ((now - firstSeen).TotalSeconds < MinAgeSeconds)
+				continue;
 
-					_entryPrice = 0m;
-					_entryTime = null;
-					return;
-				}
-			}
-		}
+			var quantity = Math.Abs(volume);
+			LogInfo($"Closing {security.Id}: basket {Format(basket)} {reason}, {(volume > 0m ? "sell" : "buy")} {Format(quantity)} at market (slippage {Slippage}).");
 
-		// Entry logic: trend following with SMA
-		if (Position == 0)
-		{
-			if (price > smaValue)
-			{
-				BuyMarket();
-				_entryPrice = price;
-				_entryTime = time;
-			}
-			else if (price < smaValue)
-			{
-				SellMarket();
-				_entryPrice = price;
-				_entryTime = time;
-			}
+			_exitOrders[security.Id] = volume > 0m
+				? SellMarket(quantity, security)
+				: BuyMarket(quantity, security);
 		}
 	}
+
+	private Security FindWatched(Position position)
+		=> IsAccountPosition(position)
+			? _watched.FirstOrDefault(security => security.Id.EqualsIgnoreCase(position.Security.Id))
+			: null;
+
+	// Floating profit is summed as the connector reports it; one missing value makes the whole sum unknown.
+	private (decimal volume, decimal? profit) GetReportedPosition(Security security)
+	{
+		var volume = 0m;
+		decimal? profit = 0m;
+
+		foreach (var position in Connector.Positions)
+		{
+			if (!IsAccountPosition(position) || !position.Security.Id.EqualsIgnoreCase(security.Id))
+				continue;
+
+			if (position.CurrentValue is not decimal value || value == 0m)
+				continue;
+
+			volume += value;
+			profit += position.UnrealizedPnL;
+		}
+
+		return (volume, profit);
+	}
+
+	// Rows a connector keeps per strategy repeat part of the account row, so only account rows are read.
+	private bool IsAccountPosition(Position position)
+		=> position.Security is not null
+			&& position.StrategyId.IsEmpty()
+			&& Portfolio is not null
+			&& position.PortfolioName.EqualsIgnoreCase(Portfolio.Name);
+
+	private DateTime? GetMarketTime()
+	{
+		var now = CurrentTime;
+		return now == default ? null : now;
+	}
+
+	private static string Format(decimal value)
+		=> value.ToString(CultureInfo.InvariantCulture);
 }

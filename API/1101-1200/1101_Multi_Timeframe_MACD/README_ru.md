@@ -15,7 +15,7 @@
   - `SlowLength` = 26
   - `SignalLength` = 9
   - `CandleType` = tf(5)
-  - `HigherCandleType` = tf(1d)
+  - `HigherCandleType` = tf(1h)
   - `ShowCurrentTimeframe` = true
   - `ShowHigherTimeframe` = true
   - `Entry` = Crossover
@@ -27,7 +27,7 @@
   - Индикаторы: MACD
   - Стопы: Да
   - Сложность: Средняя
-  - Таймфрейм: Мульти-таймфрейм (5m/1d)
+  - Таймфрейм: Мульти-таймфрейм (5m/1h)
   - Сезонность: Нет
   - Нейросети: Нет
   - Дивергенция: Нет

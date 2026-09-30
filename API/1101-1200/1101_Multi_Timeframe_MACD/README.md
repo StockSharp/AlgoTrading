@@ -15,7 +15,7 @@ Multi-Timeframe MACD combines MACD signals from the working timeframe and a high
   - `SlowLength` = 26
   - `SignalLength` = 9
   - `CandleType` = tf(5)
-  - `HigherCandleType` = tf(1d)
+  - `HigherCandleType` = tf(1h)
   - `ShowCurrentTimeframe` = true
   - `ShowHigherTimeframe` = true
   - `Entry` = Crossover
@@ -27,7 +27,7 @@ Multi-Timeframe MACD combines MACD signals from the working timeframe and a high
   - Indicators: MACD
   - Stops: Yes
   - Complexity: Intermediate
-  - Timeframe: Multi-timeframe (5m/1d)
+  - Timeframe: Multi-timeframe (5m/1h)
   - Seasonality: No
   - Neural Networks: No
   - Divergence: No

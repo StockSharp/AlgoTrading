@@ -44,6 +44,7 @@ public static class AsmInit
 	[AssemblyInitialize]
 	public static async Task Init(TestContext context)
 	{
+		PathsHolder.CompanyPath = System.IO.Path.Combine(AppContext.BaseDirectory, "StockSharpTestData");
 		_logManager = new();
 		_logManager.Listeners.Add(new ConsoleLogListener());
 
@@ -73,16 +74,25 @@ public static class AsmInit
 		}
 
 		var secId1 = Paths.HistoryDefaultSecurity;
-		Security1 = new Security { Id = secId1 };
+		Security1 = new Security { Id = secId1, PriceStep = await ReadArchivePriceStep(storageRegistry, secId1, context.CancellationToken) };
 
 		var secId2 = Paths.HistoryDefaultSecurity2;
-		Security2 = new Security { Id = secId2 };
+		Security2 = new Security { Id = secId2, PriceStep = await ReadArchivePriceStep(storageRegistry, secId2, context.CancellationToken) };
 
 		var pf = Portfolio.CreateSimulator();
 		pf.CurrentValue = 1000000m;
 
 		ConfigManager.RegisterService<ISecurityProvider>(new CollectionSecurityProvider([Security1, Security2]));
 		ConfigManager.RegisterService<IPortfolioProvider>(new CollectionPortfolioProvider([pf]));
+	}
+
+	private static async Task<decimal> ReadArchivePriceStep(StorageRegistry registry, string securityId, CancellationToken cancellationToken)
+	{
+		var metadata = await registry.GetStorage(securityId.ToSecurityId(), DataType.Level1)
+			.GetMetaInfoAsync(Paths.HistoryBeginDate, cancellationToken);
+		if (metadata == null || metadata.PriceStep <= 0m)
+			throw new InvalidOperationException($"No positive price step in packaged history metadata for {securityId}.");
+		return metadata.PriceStep;
 	}
 
 	public static async Task RunStrategy<T>(T strategy, CancellationToken cancellationToken, Action<T, Security> extra = null, TimeSpan? postTradeHorizon = null, TimeSpan? replayDuration = null, bool requireTrades = true)
@@ -109,6 +119,7 @@ public static class AsmInit
 		var security1 = new Security
 		{
 			Id = Paths.HistoryDefaultSecurity,
+			PriceStep = await ReadArchivePriceStep(storageRegistry, Paths.HistoryDefaultSecurity, cancellationToken),
 			VolumeStep = 0.001m,
 			MinVolume = 0.001m,
 			MaxVolume = 1000m,
@@ -116,6 +127,7 @@ public static class AsmInit
 		var security2 = new Security
 		{
 			Id = Paths.HistoryDefaultSecurity2,
+			PriceStep = await ReadArchivePriceStep(storageRegistry, Paths.HistoryDefaultSecurity2, cancellationToken),
 			VolumeStep = 0.1m,
 			MinVolume = 0.1m,
 			MaxVolume = 1000000m,

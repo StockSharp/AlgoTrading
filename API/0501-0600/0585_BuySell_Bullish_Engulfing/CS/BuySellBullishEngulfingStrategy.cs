@@ -10,96 +10,100 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
+public enum BullishEngulfingTrendMode
+{
+	None,
+	SMA50,
+}
+
 /// <summary>
-/// Buy/sell bullish engulfing strategy using EMA crossover for trend timing.
-/// Enters long on golden cross, short on death cross.
+/// Buys bullish body engulfings, optionally following a below-SMA50 bearish bar.
+/// Allocates a percentage of current equity and closes longs through local SL/TP.
 /// </summary>
 public class BuySellBullishEngulfingStrategy : Strategy
 {
-	private readonly StrategyParam<int> _fastEmaPeriod;
-	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<decimal> _takeProfitPercent;
+	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<decimal> _orderPercent;
+	private readonly StrategyParam<BullishEngulfingTrendMode> _trendMode;
+	private (decimal Open, decimal Close, decimal Sma, bool SmaReady)? _previousBar;
 
-	private decimal _prevFastEma;
-	private decimal _prevSlowEma;
-
-	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
-	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public decimal TakeProfitPercent { get => _takeProfitPercent.Value; set => _takeProfitPercent.Value = value; }
+	public decimal StopLossPercent { get => _stopLossPercent.Value; set => _stopLossPercent.Value = value; }
+	public decimal OrderPercent { get => _orderPercent.Value; set => _orderPercent.Value = value; }
+	public BullishEngulfingTrendMode TrendMode { get => _trendMode.Value; set => _trendMode.Value = value; }
 
 	public BuySellBullishEngulfingStrategy()
 	{
-		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
-			.SetGreaterThanZero()
-			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
-
-		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
-			.SetGreaterThanZero()
-			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame());
+		_takeProfitPercent = Param(nameof(TakeProfitPercent), 2m).SetRange(0m, 100m);
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m).SetRange(0m, 100m);
+		_orderPercent = Param(nameof(OrderPercent), 30m).SetRange(0m, 100m).SetGreaterThanZero();
+		_trendMode = Param(nameof(TrendMode), BullishEngulfingTrendMode.SMA50);
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType), (Security, DataType.Level1)];
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevFastEma = 0m;
-		_prevSlowEma = 0m;
+		_previousBar = null;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		if (TrendMode is not (BullishEngulfingTrendMode.None or BullishEngulfingTrendMode.SMA50))
+			throw new ArgumentOutOfRangeException(nameof(TrendMode));
+		_previousBar = null;
+		StartProtection(new Unit(TakeProfitPercent, UnitTypes.Percent), new Unit(StopLossPercent, UnitTypes.Percent),
+			useMarketOrders: true, isLocalStop: true);
 
-		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
-		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
-
+		var sma = new SimpleMovingAverage { Length = TrendMode == BullishEngulfingTrendMode.SMA50 ? 50 : 1 };
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(fastEma, slowEma, ProcessCandle)
-			.Start();
+		subscription.Bind(sma, (candle, value) => ProcessCandle(candle, value, sma.IsFormed)).Start();
+
+		// Feed real bid updates to the native long-position protection between candle closes.
+		var quotes = new Subscription(DataType.Level1, Security);
+		quotes.MarketData.BuildField = Level1Fields.BestBidPrice;
+		SubscribeLevel1(quotes).Bind(_ => { }).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, fastEma);
-			DrawIndicator(area, slowEma);
+			if (TrendMode == BullishEngulfingTrendMode.SMA50)
+				DrawIndicator(area, sma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue, bool smaReady)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_prevFastEma == 0m || _prevSlowEma == 0m)
-		{
-			_prevFastEma = fastEmaValue;
-			_prevSlowEma = slowEmaValue;
+		var previous = _previousBar;
+		_previousBar = (candle.OpenPrice, candle.ClosePrice, smaValue, smaReady);
+		if (previous is not { } bar || Position != 0m || !IsFormedAndOnlineAndAllowTrading())
 			return;
-		}
 
-		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
-		{
-			BuyMarket();
-		}
-		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
-		{
-			SellMarket();
-		}
+		var engulfing = bar.Open > bar.Close && candle.ClosePrice > candle.OpenPrice
+			&& candle.OpenPrice <= bar.Close && candle.ClosePrice >= bar.Open;
+		var trend = TrendMode == BullishEngulfingTrendMode.None || bar.SmaReady && bar.Close < bar.Sma;
+		if (!engulfing || !trend || candle.ClosePrice <= 0m)
+			return;
 
-		_prevFastEma = fastEmaValue;
-		_prevSlowEma = slowEmaValue;
+		var equity = Portfolio.CurrentValue ?? Portfolio.BeginValue ?? 0m;
+		var step = Security.VolumeStep ?? 1m;
+		if (equity <= 0m || step <= 0m)
+			return;
+		var volume = equity * OrderPercent / 100m / candle.ClosePrice;
+		volume = Math.Floor(Math.Min(volume, Security.MaxVolume ?? decimal.MaxValue) / step) * step;
+		if (volume > 0m && volume >= (Security.MinVolume ?? step))
+			BuyMarket(volume);
 	}
 }

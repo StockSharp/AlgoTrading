@@ -11,26 +11,17 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on RSI with Laguerre-style smoothing approach.
-/// Uses longer RSI period for smoother signal and trades on oversold/overbought crossings.
+/// Native four-stage Laguerre RSI crossings with midpoint exits and actual-fill percent protection.
 /// </summary>
 public class LaguerreRsiStrategy : Strategy
 {
-	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<decimal> _gamma;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 
 	private decimal _prevRsi;
 	private bool _hasPrevValues;
-	private int _cooldown;
-
-	/// <summary>
-	/// RSI period.
-	/// </summary>
-	public int RsiPeriod
-	{
-		get => _rsiPeriod.Value;
-		set => _rsiPeriod.Value = value;
-	}
+	private Order _pendingOrder;
 
 	/// <summary>
 	/// Candle type.
@@ -41,23 +32,27 @@ public class LaguerreRsiStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
+	public decimal Gamma { get => _gamma.Value; set => _gamma.Value = value; }
+	public decimal StopLossPercent { get => _stopLossPercent.Value; set => _stopLossPercent.Value = value; }
+
 	/// <summary>
 	/// Initializes a new instance of the <see cref="LaguerreRsiStrategy"/>.
 	/// </summary>
 	public LaguerreRsiStrategy()
 	{
-		_rsiPeriod = Param(nameof(RsiPeriod), 10)
-			.SetDisplay("RSI Period", "Period for RSI calculation", "Indicators")
-			.SetOptimize(7, 14, 2);
-
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
+		_gamma = Param(nameof(Gamma), 0.7m).SetRange(0.000001m, 0.999999m)
+			.SetDisplay("Gamma", "Four-stage Laguerre smoothing coefficient.", "Indicators");
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m).SetNotNegative()
+			.SetDisplay("Stop Loss (%)", "Actual-fill percent stop; zero disables it.", "Protection");
+		OrderRegistering += order => _pendingOrder = order;
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, CandleType)];
+		return [(Security, CandleType), (Security, DataType.Level1)];
 	}
 
 	/// <inheritdoc />
@@ -66,7 +61,7 @@ public class LaguerreRsiStrategy : Strategy
 		base.OnReseted();
 		_prevRsi = default;
 		_hasPrevValues = default;
-		_cooldown = default;
+		_pendingOrder = null;
 	}
 
 	/// <inheritdoc />
@@ -74,7 +69,14 @@ public class LaguerreRsiStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
+		var rsi = new LaguerreRSI { Gamma = Gamma };
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -90,15 +92,17 @@ public class LaguerreRsiStrategy : Strategy
 		}
 	}
 
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// Native protection runs before the callback, including between finished candles.
+	}
+
 	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (rsiValue == 0)
 			return;
 
 		if (!_hasPrevValues)
@@ -108,9 +112,8 @@ public class LaguerreRsiStrategy : Strategy
 			return;
 		}
 
-		if (_cooldown > 0)
+		if (_pendingOrder is not null && _pendingOrder.State is not (OrderStates.Done or OrderStates.Failed))
 		{
-			_cooldown--;
 			_prevRsi = rsiValue;
 			return;
 		}
@@ -120,15 +123,17 @@ public class LaguerreRsiStrategy : Strategy
 		{
 			var volume = Volume + Math.Abs(Position);
 			BuyMarket(volume);
-			_cooldown = 12;
 		}
 		// RSI crosses down from overbought (70) - sell
 		else if (_prevRsi > 70 && rsiValue <= 70 && Position >= 0)
 		{
 			var volume = Volume + Math.Abs(Position);
 			SellMarket(volume);
-			_cooldown = 12;
 		}
+		else if (Position > 0m && rsiValue >= 50m)
+			SellMarket(Position);
+		else if (Position < 0m && rsiValue <= 50m)
+			BuyMarket(Math.Abs(Position));
 
 		_prevRsi = rsiValue;
 	}

@@ -12,18 +12,19 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Strategy based on Bollinger Bands mean reversion.
-/// Enters when price touches bands, exits when price returns to middle.
+/// Enters against outside closes, exits on return inside, protects actual fills with frozen ATR.
 /// </summary>
 public class BollingerReversionStrategy : Strategy
 {
 	private readonly StrategyParam<int> _bollingerPeriod;
 	private readonly StrategyParam<decimal> _bollingerDeviation;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
-	private readonly StrategyParam<int> _maxHoldBars;
+	private readonly StrategyParam<int> _atrPeriod;
+	private readonly StrategyParam<decimal> _atrMultiplier;
 
-	private int _cooldown;
-	private int _holdBars;
+	private Order _pendingOrder;
+	private Unit _stopDistance;
+	private bool _protectionStarted;
 
 	/// <summary>
 	/// Bollinger Bands period.
@@ -52,23 +53,8 @@ public class BollingerReversionStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Cooldown bars between trades.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
-	/// Maximum bars to hold position before forced exit.
-	/// </summary>
-	public int MaxHoldBars
-	{
-		get => _maxHoldBars.Value;
-		set => _maxHoldBars.Value = value;
-	}
+	public int AtrPeriod { get => _atrPeriod.Value; set => _atrPeriod.Value = value; }
+	public decimal AtrMultiplier { get => _atrMultiplier.Value; set => _atrMultiplier.Value = value; }
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="BollingerReversionStrategy"/>.
@@ -77,38 +63,35 @@ public class BollingerReversionStrategy : Strategy
 	{
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
 			.SetRange(5, 50)
-			.SetDisplay("Bollinger Period", "Period for Bollinger Bands calculation", "Indicators")
-			;
+			.SetDisplay("Bollinger Period", "Period for Bollinger Bands calculation", "Indicators");
 
 		_bollingerDeviation = Param(nameof(BollingerDeviation), 2.0m)
 			.SetRange(0.5m, 4m)
-			.SetDisplay("Bollinger Deviation", "Standard deviation multiplier for Bollinger Bands", "Indicators")
-			;
+			.SetDisplay("Bollinger Deviation", "Standard deviation multiplier for Bollinger Bands", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_cooldownBars = Param(nameof(CooldownBars), 500)
-			.SetRange(1, 1000)
-			.SetDisplay("Cooldown Bars", "Number of bars to wait between trades", "General");
-
-		_maxHoldBars = Param(nameof(MaxHoldBars), 300)
-			.SetRange(1, 1000)
-			.SetDisplay("Max Hold Bars", "Maximum bars to hold a position", "General");
+		_atrPeriod = Param(nameof(AtrPeriod), 14).SetGreaterThanZero()
+			.SetDisplay("ATR Period", "Wilder ATR lookback for local protection.", "Protection");
+		_atrMultiplier = Param(nameof(AtrMultiplier), 2m).SetNotNegative()
+			.SetDisplay("ATR Multiplier", "Frozen signal ATR distance; zero disables the stop.", "Protection");
+		OrderRegistering += order => _pendingOrder = order;
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, CandleType)];
+		return [(Security, CandleType), (Security, DataType.Level1)];
 	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_cooldown = default;
-		_holdBars = default;
+		_pendingOrder = null;
+		_stopDistance = null;
+		_protectionStarted = false;
 	}
 
 	/// <inheritdoc />
@@ -116,18 +99,22 @@ public class BollingerReversionStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_cooldown = 0;
-		_holdBars = 0;
-
 		var bollingerBands = new BollingerBands
 		{
 			Length = BollingerPeriod,
 			Width = BollingerDeviation
 		};
+		var atr = new AverageTrueRange { Length = AtrPeriod };
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(bollingerBands, ProcessCandle)
+			.BindEx(bollingerBands, atr, ProcessCandle, false)
 			.Start();
 
 		// Setup chart visualization
@@ -136,66 +123,65 @@ public class BollingerReversionStrategy : Strategy
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, bollingerBands);
+			DrawIndicator(area, atr);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// Native protection runs before the callback, including between finished candles.
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue, IIndicatorValue atrValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!bollingerValue.IsFormed)
+		if (!bollingerValue.IsFormed || !atrValue.IsFormed || !IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Track hold duration
-		if (Position != 0)
-			_holdBars++;
-		else
-			_holdBars = 0;
-
-		if (_cooldown > 0)
-		{
-			_cooldown--;
+		if (_pendingOrder is not null && _pendingOrder.State is not (OrderStates.Done or OrderStates.Failed))
 			return;
-		}
 
-		var bb = (BollingerBandsValue)bollingerValue;
+		var bb = (IBollingerBandsValue)bollingerValue;
 
 		if (bb.UpBand is not decimal upper ||
-			bb.LowBand is not decimal lower ||
-			bb.MovingAverage is not decimal middle)
+			bb.LowBand is not decimal lower)
 			return;
 
 		var close = candle.ClosePrice;
 
-		// Exit logic: revert to middle or time-based forced exit
-		if (Position > 0 && (close >= middle || _holdBars >= MaxHoldBars))
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-			_holdBars = 0;
-			return;
-		}
+		// Return inside the entry-side band exits, without waiting for the middle band.
+		if (Position > 0m && close >= lower)
+			SellMarket(Position);
+		else if (Position < 0m && close <= upper)
+			BuyMarket(Math.Abs(Position));
+		else if (Position == 0m && close < lower)
+			Enter(Sides.Buy, atrValue.GetValue<decimal>());
+		else if (Position == 0m && close > upper)
+			Enter(Sides.Sell, atrValue.GetValue<decimal>());
+	}
 
-		if (Position < 0 && (close <= middle || _holdBars >= MaxHoldBars))
+	private void Enter(Sides side, decimal atr)
+	{
+		var distance = atr * AtrMultiplier;
+		_stopDistance ??= new Unit(distance);
+		// Flat entries update the SAME Unit retained by native cached position controllers.
+		_stopDistance.Value = distance;
+		if (!_protectionStarted && distance > 0m)
 		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-			_holdBars = 0;
-			return;
+			StartProtection(new Unit(), _stopDistance, useMarketOrders: true, isLocalStop: true);
+			_protectionStarted = true;
 		}
-
-		// Entry logic - buy below lower band, sell above upper band
-		if (Position == 0 && close < lower)
+		RegisterOrder(new Order
 		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position == 0 && close > upper)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
+			Security = Security,
+			Portfolio = Portfolio,
+			Type = OrderTypes.Market,
+			Side = side,
+			Volume = Volume,
+			Comment = "Bollinger reversion entry",
+		});
 	}
 }

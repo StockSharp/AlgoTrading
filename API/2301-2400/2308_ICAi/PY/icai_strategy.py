@@ -6,7 +6,7 @@ clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
 from indicator_extensions import *
@@ -18,6 +18,10 @@ class icai_strategy(Strategy):
             .SetDisplay("Length", "Indicator smoothing length", "Indicator")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Timeframe for strategy", "General")
+        self._stop_loss = self.Param("StopLoss", 1000.0) \
+            .SetDisplay("Stop Loss", "Fixed price distance (zero disables)", "Protection")
+        self._take_profit = self.Param("TakeProfit", 2000.0) \
+            .SetDisplay("Take Profit", "Fixed price distance (zero disables)", "Protection")
         self._ma = None
         self._std = None
         self._prev_icai = None
@@ -43,6 +47,9 @@ class icai_strategy(Strategy):
         self._prev_icai = None
         self._prev_slope = None
         self._ma = SimpleMovingAverage()
+        self.StartProtection(Unit(float(self._take_profit.Value), UnitTypes.Absolute),
+                             Unit(float(self._stop_loss.Value), UnitTypes.Absolute),
+                             useMarketOrders=True, isLocalStop=True)
         self._ma.Length = self.length
         self._std = StandardDeviation()
         self._std.Length = self.length
@@ -79,10 +86,11 @@ class icai_strategy(Strategy):
             self._prev_slope = 0.0
             return
         slope = icai - prev
-        if self._prev_slope <= 0 and slope > 0 and self.Position <= 0:
-            self.BuyMarket()
-        elif self._prev_slope >= 0 and slope < 0 and self.Position >= 0:
-            self.SellMarket()
+        if self.IsFormedAndOnlineAndAllowTrading():
+            if self._prev_slope < 0 and slope >= 0 and self.Position <= 0:
+                self.BuyMarket(self.Volume + abs(self.Position))
+            elif self._prev_slope > 0 and slope <= 0 and self.Position >= 0:
+                self.SellMarket(self.Volume + abs(self.Position))
         self._prev_slope = slope
 
     def CreateClone(self):

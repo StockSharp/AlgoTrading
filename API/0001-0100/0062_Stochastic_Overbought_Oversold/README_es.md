@@ -7,7 +7,7 @@ Las pruebas indican un rendimiento anual promedio de aproximadamente el 73%. Fun
 
 Después de suscribirse al marco temporal seleccionado, monitorea las líneas %K y %D. Una configuración alcista se forma cuando %K cae por debajo de 20 y luego comienza a recuperarse. Por el contrario, una configuración bajista aparece si %K sube por encima de 80 y empieza a girar hacia abajo. Un stop de porcentaje fijo controla el riesgo para ambos lados.
 
-Las posiciones se cierran cuando la línea %K cruza de nuevo el nivel 50, señalando que el impulso ha cambiado hacia la dirección opuesta. Dado que los stops escalan con el ATR más reciente, el tamaño de la operación se adapta a la volatilidad.
+Las posiciones se cierran cuando la línea %K cruza de nuevo el nivel 50, señalando que el impulso ha cambiado hacia la dirección opuesta.
 
 ## Detalles
 

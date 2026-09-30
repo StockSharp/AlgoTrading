@@ -11,96 +11,65 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Volume Weighted Moving Average (VWMA) Strategy.
-/// Long entry: Price crosses above VWMA.
-/// Short entry: Price crosses below VWMA.
+/// Trades actual Close crossings of native rolling Close/volume VWMA.
+/// The opposite crossing reverses the position; actual-fill percent protection flattens it.
 /// </summary>
 public class VWMAStrategy : Strategy
 {
 	private readonly StrategyParam<int> _vwmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 
-	private decimal _previousClosePrice;
-	private decimal _previousVWMA;
-	private int _cooldown;
+	private decimal? _previousClose;
+	private decimal _previousVwma;
+	private Order _pendingOrder;
 
-	/// <summary>
-	/// VWMA Period.
-	/// </summary>
-	public int VWMAPeriod
-	{
-		get => _vwmaPeriod.Value;
-		set => _vwmaPeriod.Value = value;
-	}
+	public int VWMAPeriod { get => _vwmaPeriod.Value; set => _vwmaPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public decimal StopLossPercent { get => _stopLossPercent.Value; set => _stopLossPercent.Value = value; }
 
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Cooldown bars between trades.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize <see cref="VWMAStrategy"/>.
-	/// </summary>
 	public VWMAStrategy()
 	{
-		_vwmaPeriod = Param(nameof(VWMAPeriod), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("VWMA Period", "Period for Volume Weighted Moving Average", "Indicators")
+		_vwmaPeriod = Param(nameof(VWMAPeriod), 14).SetGreaterThanZero()
+			.SetDisplay("VWMA Period", "Current-inclusive rolling Close/volume mean length", "Indicators")
 			.SetOptimize(5, 30, 5);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_cooldownBars = Param(nameof(CooldownBars), 500)
-			.SetRange(1, 1000)
-			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m).SetNotNegative()
+			.SetDisplay("Stop Loss (%)", "Actual-fill percent stop; zero disables it.", "Protection");
+		OrderRegistering += order => _pendingOrder = order;
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType), (Security, DataType.Level1)];
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_previousClosePrice = default;
-		_previousVWMA = default;
-		_cooldown = default;
+		ClearSignalState();
 	}
 
-	/// <inheritdoc />
+	private void ClearSignalState()
+	{
+		_previousClose = null;
+		_previousVwma = 0m;
+		_pendingOrder = null;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_previousClosePrice = 0;
-		_previousVWMA = 0;
-		_cooldown = 0;
-
+		ClearSignalState();
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
 		var vwma = new VolumeWeightedMovingAverage { Length = VWMAPeriod };
-
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(vwma, ProcessCandle)
-			.Start();
-
+		subscription.BindEx(vwma, ProcessCandle, false).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -110,54 +79,31 @@ public class VWMAStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal vwmaPrice)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// Native protection runs before this callback, including between finished candles.
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue value)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (_previousClosePrice == 0)
+		if (value.IsEmpty || !value.Indicator.IsFormed)
 		{
-			_previousClosePrice = candle.ClosePrice;
-			_previousVWMA = vwmaPrice;
+			// A zero-volume window has no mean and cannot connect crossing history across it.
+			_previousClose = null;
 			return;
 		}
-
-		if (_cooldown > 0)
-		{
-			_cooldown--;
-			_previousClosePrice = candle.ClosePrice;
-			_previousVWMA = vwmaPrice;
+		var vwma = value.GetValue<decimal>();
+		var upwardCross = _previousClose is decimal up && up <= _previousVwma && candle.ClosePrice > vwma;
+		var downwardCross = _previousClose is decimal down && down >= _previousVwma && candle.ClosePrice < vwma;
+		// The first formed value only seeds; history continues while an order is pending.
+		_previousClose = candle.ClosePrice;
+		_previousVwma = vwma;
+		if (!IsFormedAndOnlineAndAllowTrading() ||
+			_pendingOrder is not null && _pendingOrder.State is not (OrderStates.Done or OrderStates.Failed))
 			return;
-		}
-
-		var crossoverUp = _previousClosePrice <= _previousVWMA && candle.ClosePrice > vwmaPrice;
-		var crossoverDown = _previousClosePrice >= _previousVWMA && candle.ClosePrice < vwmaPrice;
-
-		if (Position == 0 && crossoverUp)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position == 0 && crossoverDown)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position > 0 && crossoverDown)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position < 0 && crossoverUp)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-
-		_previousClosePrice = candle.ClosePrice;
-		_previousVWMA = vwmaPrice;
+		if (upwardCross && Position <= 0m) BuyMarket(this.ReversalVolume());
+		else if (downwardCross && Position >= 0m) SellMarket(this.ReversalVolume());
 	}
 }

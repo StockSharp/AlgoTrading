@@ -11,193 +11,126 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Volume MA Cross strategy.
-/// Uses fast/slow volume MA crossover with price MA for direction.
-/// Long: Volume expanding and price above SMA.
-/// Short: Volume expanding and price below SMA.
+/// Trades actual fast/slow native TotalVolume SMA crosses with Close/SMA entry confirmation.
+/// Fully exits on the opposite volume cross or actual-fill percent protection.
 /// </summary>
 public class VolumeMAXrossStrategy : Strategy
 {
 	private readonly StrategyParam<int> _priceMaPeriod;
-	private readonly StrategyParam<int> _fastVolPeriod;
-	private readonly StrategyParam<int> _slowVolPeriod;
+	private readonly StrategyParam<int> _fastVolumeMaLength;
+	private readonly StrategyParam<int> _slowVolumeMaLength;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 
-	private SimpleMovingAverage _fastVolMA;
-	private SimpleMovingAverage _slowVolMA;
-	private decimal _prevClose;
-	private decimal _prevMa;
-	private int _cooldown;
+	private SimpleMovingAverage _priceMa;
+	private SimpleMovingAverage _fastVolumeMa;
+	private SimpleMovingAverage _slowVolumeMa;
+	private decimal? _previousFast;
+	private decimal? _previousSlow;
+	private Order _pendingOrder;
 
-	/// <summary>
-	/// Price MA Period.
-	/// </summary>
-	public int PriceMaPeriod
-	{
-		get => _priceMaPeriod.Value;
-		set => _priceMaPeriod.Value = value;
-	}
+	public int PriceMaPeriod { get => _priceMaPeriod.Value; set => _priceMaPeriod.Value = value; }
+	public int FastVolumeMALength { get => _fastVolumeMaLength.Value; set => _fastVolumeMaLength.Value = value; }
+	public int SlowVolumeMALength { get => _slowVolumeMaLength.Value; set => _slowVolumeMaLength.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public decimal StopLossPercent { get => _stopLossPercent.Value; set => _stopLossPercent.Value = value; }
 
-	/// <summary>
-	/// Fast Volume MA Period.
-	/// </summary>
-	public int FastVolPeriod
-	{
-		get => _fastVolPeriod.Value;
-		set => _fastVolPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Slow Volume MA Period.
-	/// </summary>
-	public int SlowVolPeriod
-	{
-		get => _slowVolPeriod.Value;
-		set => _slowVolPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Cooldown bars between trades.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize <see cref="VolumeMAXrossStrategy"/>.
-	/// </summary>
 	public VolumeMAXrossStrategy()
 	{
-		_priceMaPeriod = Param(nameof(PriceMaPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("Price MA Period", "Period for price SMA", "Indicators");
-
-		_fastVolPeriod = Param(nameof(FastVolPeriod), 10)
-			.SetGreaterThanZero()
-			.SetDisplay("Fast Vol Period", "Period for fast volume MA", "Indicators");
-
-		_slowVolPeriod = Param(nameof(SlowVolPeriod), 30)
-			.SetGreaterThanZero()
-			.SetDisplay("Slow Vol Period", "Period for slow volume MA", "Indicators");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_priceMaPeriod = Param(nameof(PriceMaPeriod), 20).SetGreaterThanZero()
+			.SetDisplay("Price MA Period", "Current-inclusive Close SMA entry filter", "Indicators");
+		_fastVolumeMaLength = Param(nameof(FastVolumeMALength), 10).SetGreaterThanZero()
+			.SetDisplay("Fast Volume MA Length", "Current-inclusive fast TotalVolume SMA length", "Indicators");
+		_slowVolumeMaLength = Param(nameof(SlowVolumeMALength), 50).SetGreaterThanZero()
+			.SetDisplay("Slow Volume MA Length", "Current-inclusive slow TotalVolume SMA length", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_cooldownBars = Param(nameof(CooldownBars), 500)
-			.SetRange(1, 1000)
-			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m).SetNotNegative()
+			.SetDisplay("Stop Loss (%)", "Actual-fill percent stop; zero disables it.", "Protection");
+		OrderRegistering += order => _pendingOrder = order;
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType), (Security, DataType.Level1)];
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_fastVolMA = null;
-		_slowVolMA = null;
-		_prevClose = default;
-		_prevMa = default;
-		_cooldown = default;
+		ClearSignalState();
 	}
 
-	/// <inheritdoc />
+	private void ClearSignalState()
+	{
+		_priceMa = null;
+		_fastVolumeMa = null;
+		_slowVolumeMa = null;
+		_previousFast = null;
+		_previousSlow = null;
+		_pendingOrder = null;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_prevClose = 0;
-		_prevMa = 0;
-		_cooldown = 0;
-
-		_fastVolMA = new SimpleMovingAverage { Length = FastVolPeriod };
-		_slowVolMA = new SimpleMovingAverage { Length = SlowVolPeriod };
-
-		var sma = new SimpleMovingAverage { Length = PriceMaPeriod };
-
+		ClearSignalState();
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
+		_priceMa = new SimpleMovingAverage { Length = PriceMaPeriod, Name = "Price SMA" };
+		_fastVolumeMa = new SimpleMovingAverage { Length = FastVolumeMALength, Name = "Fast volume SMA" };
+		_slowVolumeMa = new SimpleMovingAverage { Length = SlowVolumeMALength, Name = "Slow volume SMA" };
+		Indicators.Add(_priceMa);
+		Indicators.Add(_fastVolumeMa);
+		Indicators.Add(_slowVolumeMa);
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(sma, ProcessCandle)
-			.Start();
-
+		subscription.Bind(ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, sma);
+			DrawIndicator(area, _priceMa);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// Native protection runs before this callback, including between finished candles.
+	}
+
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
+		var priceValue = _priceMa.Process(candle);
+		// Process actual candle TotalVolume, not a price or previous-volume proxy.
+		var fastValue = _fastVolumeMa.Process(new DecimalIndicatorValue(_fastVolumeMa, candle.TotalVolume, candle.OpenTime) { IsFinal = true });
+		var slowValue = _slowVolumeMa.Process(new DecimalIndicatorValue(_slowVolumeMa, candle.TotalVolume, candle.OpenTime) { IsFinal = true });
+		decimal? priceMa = !priceValue.IsEmpty && _priceMa.IsFormed ? priceValue.GetValue<decimal>() : null;
+		decimal? fast = !fastValue.IsEmpty && _fastVolumeMa.IsFormed ? fastValue.GetValue<decimal>() : null;
+		decimal? slow = !slowValue.IsEmpty && _slowVolumeMa.IsFormed ? slowValue.GetValue<decimal>() : null;
+		var up = _previousFast is decimal oldFastUp && _previousSlow is decimal oldSlowUp &&
+			fast is decimal currentFastUp && slow is decimal currentSlowUp &&
+			oldFastUp <= oldSlowUp && currentFastUp > currentSlowUp;
+		var down = _previousFast is decimal oldFastDown && _previousSlow is decimal oldSlowDown &&
+			fast is decimal currentFastDown && slow is decimal currentSlowDown &&
+			oldFastDown >= oldSlowDown && currentFastDown < currentSlowDown;
+		// Independently formed values seed the next cross even while trading is unavailable.
+		_previousFast = fast;
+		_previousSlow = slow;
+		if (!IsFormedAndOnlineAndAllowTrading() ||
+			_pendingOrder is not null && _pendingOrder.State is not (OrderStates.Done or OrderStates.Failed))
 			return;
-
-		// Process volume through manual MAs
-		var fastVol = _fastVolMA.Process(new DecimalIndicatorValue(_fastVolMA, candle.TotalVolume, candle.ServerTime)).ToDecimal();
-		var slowVol = _slowVolMA.Process(new DecimalIndicatorValue(_slowVolMA, candle.TotalVolume, candle.ServerTime)).ToDecimal();
-
-		if (_prevClose == 0)
+		if (Position > 0m && down) SellMarket(Position);
+		else if (Position < 0m && up) BuyMarket(Math.Abs(Position));
+		else if (Position == 0m && priceMa is decimal mean)
 		{
-			_prevClose = candle.ClosePrice;
-			_prevMa = smaValue;
-			return;
+			if (up && candle.ClosePrice > mean) BuyMarket(Volume);
+			else if (down && candle.ClosePrice < mean) SellMarket(Volume);
 		}
-
-		if (_cooldown > 0)
-		{
-			_cooldown--;
-			_prevClose = candle.ClosePrice;
-			_prevMa = smaValue;
-			return;
-		}
-
-		var crossUp = _prevClose <= _prevMa && candle.ClosePrice > smaValue;
-		var crossDown = _prevClose >= _prevMa && candle.ClosePrice < smaValue;
-		var volumeExpanding = _slowVolMA.IsFormed && fastVol > slowVol;
-
-		if (Position == 0 && crossUp)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position == 0 && crossDown)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position > 0 && (crossDown || (volumeExpanding && candle.ClosePrice < smaValue)))
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position < 0 && (crossUp || (volumeExpanding && candle.ClosePrice > smaValue)))
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-
-		_prevClose = candle.ClosePrice;
-		_prevMa = smaValue;
 	}
 }

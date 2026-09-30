@@ -11,155 +11,96 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Pinbar Reversal strategy.
-/// Enters long on bullish pinbar (long lower wick) below SMA.
-/// Enters short on bearish pinbar (long upper wick) above SMA.
-/// Exits via SMA crossover.
+/// Enters in the SMA-aligned direction of a formed pinbar and exits on the opposite pinbar or stop.
 /// </summary>
 public class PinbarReversalStrategy : Strategy
 {
 	private readonly StrategyParam<decimal> _tailToBodyRatio;
+	private readonly StrategyParam<decimal> _oppositeTailRatio;
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 
-	private int _cooldown;
+	private Order _pendingOrder;
 
-	/// <summary>
-	/// Tail to body ratio.
-	/// </summary>
-	public decimal TailToBodyRatio
-	{
-		get => _tailToBodyRatio.Value;
-		set => _tailToBodyRatio.Value = value;
-	}
+	public decimal TailToBodyRatio { get => _tailToBodyRatio.Value; set => _tailToBodyRatio.Value = value; }
+	public decimal OppositeTailRatio { get => _oppositeTailRatio.Value; set => _oppositeTailRatio.Value = value; }
+	public int MAPeriod { get => _maPeriod.Value; set => _maPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public decimal StopLossPercent { get => _stopLossPercent.Value; set => _stopLossPercent.Value = value; }
 
-	/// <summary>
-	/// MA Period.
-	/// </summary>
-	public int MAPeriod
-	{
-		get => _maPeriod.Value;
-		set => _maPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Cooldown bars.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public PinbarReversalStrategy()
 	{
-		_tailToBodyRatio = Param(nameof(TailToBodyRatio), 2.0m)
-			.SetRange(1.5m, 5.0m)
-			.SetDisplay("Tail/Body Ratio", "Min tail to body ratio", "Pattern");
-
-		_maPeriod = Param(nameof(MAPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("MA Period", "Period for SMA", "Indicators");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_cooldownBars = Param(nameof(CooldownBars), 500)
-			.SetRange(1, 1000)
-			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
+		_tailToBodyRatio = Param(nameof(TailToBodyRatio), 2m).SetRange(1m, 10m)
+			.SetDisplay("Tail/Body Ratio", "Minimum dominant shadow relative to the body", "Pattern");
+		_oppositeTailRatio = Param(nameof(OppositeTailRatio), 0.5m).SetRange(0m, 2m)
+			.SetDisplay("Opposite Tail Ratio", "Maximum opposite shadow relative to the body", "Pattern");
+		_maPeriod = Param(nameof(MAPeriod), 20).SetGreaterThanZero()
+			.SetDisplay("MA Period", "Close SMA trend filter", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+			.SetDisplay("Candle Type", "Pinbar and MA timeframe", "General");
+		_stopLossPercent = Param(nameof(StopLossPercent), 1m).SetNotNegative()
+			.SetDisplay("Stop Loss (%)", "Actual-fill percent stop; zero disables it.", "Protection");
+		OrderRegistering += order => _pendingOrder = order;
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType), (Security, DataType.Level1)];
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_cooldown = default;
+		_pendingOrder = null;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_cooldown = 0;
-
+		_pendingOrder = null;
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
 		var sma = new SimpleMovingAverage { Length = MAPeriod };
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(sma, ProcessCandle)
-			.Start();
-
+		var candles = SubscribeCandles(CandleType);
+		candles.Bind(sma, ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
-			DrawCandles(area, subscription);
+			DrawCandles(area, candles);
 			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
 		}
 	}
 
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// Native actual-fill protection evaluates executable quotes between signal candles.
+	}
+
 	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
 	{
-		if (candle.State != CandleStates.Finished)
+		if (candle.State != CandleStates.Finished || !IsFormedAndOnlineAndAllowTrading() ||
+			_pendingOrder is not null && _pendingOrder.State is not (OrderStates.Done or OrderStates.Failed))
 			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
+		var body = Math.Abs(candle.ClosePrice - candle.OpenPrice);
+		if (body <= 0m)
 			return;
+		var lower = Math.Min(candle.OpenPrice, candle.ClosePrice) - candle.LowPrice;
+		var upper = candle.HighPrice - Math.Max(candle.OpenPrice, candle.ClosePrice);
+		var bullish = lower >= body * TailToBodyRatio && upper <= body * OppositeTailRatio;
+		var bearish = upper >= body * TailToBodyRatio && lower <= body * OppositeTailRatio;
 
-		if (_cooldown > 0)
-		{
-			_cooldown--;
-			return;
-		}
-
-		var bodySize = Math.Abs(candle.OpenPrice - candle.ClosePrice);
-		var lowerWick = Math.Min(candle.OpenPrice, candle.ClosePrice) - candle.LowPrice;
-		var upperWick = candle.HighPrice - Math.Max(candle.OpenPrice, candle.ClosePrice);
-
-		// Bullish pinbar: long lower wick, small upper wick
-		var isBullishPinbar = bodySize > 0 && lowerWick > bodySize * TailToBodyRatio && upperWick < bodySize * 0.5m;
-		// Bearish pinbar: long upper wick, small lower wick
-		var isBearishPinbar = bodySize > 0 && upperWick > bodySize * TailToBodyRatio && lowerWick < bodySize * 0.5m;
-
-		if (Position == 0 && isBullishPinbar && candle.ClosePrice < smaValue)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position == 0 && isBearishPinbar && candle.ClosePrice > smaValue)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position > 0 && candle.ClosePrice < smaValue)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position < 0 && candle.ClosePrice > smaValue)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
+		if (Position > 0m && bearish)
+			SellMarket(Position);
+		else if (Position < 0m && bullish)
+			BuyMarket(Math.Abs(Position));
+		else if (Position == 0m && bullish && candle.ClosePrice > smaValue)
+			BuyMarket(Volume);
+		else if (Position == 0m && bearish && candle.ClosePrice < smaValue)
+			SellMarket(Volume);
 	}
 }

@@ -2,7 +2,7 @@
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Visión general
-Esta estrategia es un port para StockSharp del asesor experto de MetaTrader 4 "Crypto Analysis". Busca rupturas que aparecen después de que el precio toque la banda exterior de Bollinger en el marco principal de negociación, mientras la estructura del mercado permanece bajista (LWMA rápida por debajo de la LWMA lenta). El sistema solo permite operaciones cuando una ráfaga de momentum en un marco superior y un filtro MACD mensual coinciden con la dirección deseada. Una vez dentro del mercado, la posición se gestiona mediante un bloque de protección por capas que replica el EA original: stops basados en pips, trailing basado en dinero, reubicación a break-even y controles de drawdown de cartera.
+Esta estrategia es un port para StockSharp del asesor experto de MetaTrader 4 "Crypto Analysis". Busca rupturas que aparecen después de que el precio toque la banda exterior de Bollinger en el marco principal de negociación, mientras la estructura del mercado permanece bajista (LWMA rápida por debajo de la LWMA lenta). El sistema solo permite operaciones cuando una ráfaga de momentum en un marco superior y un filtro MACD en un marco temporal aún mayor coinciden con la dirección deseada. Una vez dentro del mercado, la posición se gestiona mediante un bloque de protección por capas que replica el EA original: stops basados en pips, trailing basado en dinero, reubicación a break-even y controles de drawdown de cartera.
 
 ## Lógica de negociación
 - **Marco de señal:** configurable (M15 por defecto). Todas las reglas de entrada/salida se evalúan en estas velas.
@@ -10,7 +10,7 @@ Esta estrategia es un port para StockSharp del asesor experto de MetaTrader 4 "C
 - **Filtro de tendencia:** ambos escenarios requieren que la media móvil ponderada lineal rápida (LWMA, 6 por defecto) permanezca por debajo de la LWMA lenta (85 por defecto), replicando el sesgo bajista del EA.
 - **Confirmación RSI:** RSI(14) debe estar por encima de 50 para largos y por debajo de 50 para cortos.
 - **Ráfaga de momentum:** la desviación absoluta máxima de los tres últimos valores Momentum(14) del marco superior frente a la línea base 100 debe superar los umbrales de compra/venta. Esto captura los picos de momentum usados por el código MQL.
-- **Filtro MACD mensual:** un MACD separado mensual (velas de 30 días por defecto) (12, 26, 9) confirma la dirección; los largos requieren MACD principal sobre señal, los cortos exigen lo contrario.
+- **Filtro MACD de marco superior:** un MACD (12, 26, 9) separado sobre velas de un marco superior (H4 por defecto) confirma la dirección; los largos requieren MACD principal sobre señal, los cortos exigen lo contrario.
 - **Ejecución de entrada:** cuando todos los filtros se alinean, la estrategia abre una orden de mercado. Las posiciones opuestas se aplanan antes de revertir para mantener una sola posición neta, lo que refleja el comportamiento del EA al cerrar operaciones contrarias.
 
 ## Gestión de posición
@@ -25,7 +25,7 @@ Esta estrategia es un port para StockSharp del asesor experto de MetaTrader 4 "C
 Se registran automáticamente tres suscripciones:
 1. Serie principal de velas para las reglas Bollinger/LWMA/RSI.
 2. Velas de marco superior para el filtro de momentum (H1 por defecto).
-3. Velas mensuales para la confirmación MACD (barras de 30 días por defecto).
+3. Velas de un marco superior para la confirmación MACD (H4 por defecto).
 
 ## Parámetros
 | Parámetro | Descripción |

@@ -1,10 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,13 +12,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Keltner with Reinforcement Learning Signal strategy.
-/// Entry condition:
-/// Long: Price > EMA + k*ATR && RL_Signal = Buy
-/// Short: Price < EMA - k*ATR && RL_Signal = Sell
-/// Exit condition:
-/// Long: Price < EMA
-/// Short: Price > EMA
+/// Keltner breakouts filtered by an online, one-hidden-layer neural Q learner.
 /// </summary>
 public class KeltnerWithRLSignalStrategy : Strategy
 {
@@ -30,156 +22,90 @@ public class KeltnerWithRLSignalStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLossAtr;
 	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<double> _learningRate;
+	private readonly StrategyParam<double> _discountFactor;
+	private readonly StrategyParam<double> _exploration;
+	private readonly StrategyParam<int> _randomSeed;
 
-	private enum RLSignals
-	{
-		None,
-		Buy,
-		Sell
-	}
-
-	private RLSignals _currentSignal = RLSignals.None;
-
-	// State variables for RL
-	private decimal _lastPrice;
-	private decimal _previousEma;
-	private decimal _previousAtr;
+	private double[] _previousFeatures;
+	private int _previousAction;
 	private decimal _previousPrice;
-	private decimal _previousSignalPrice;
+	private decimal _previousAtr;
 	private decimal _entryPrice;
-	private int _consecutiveWins;
-	private int _consecutiveLosses;
 	private int _cooldownRemaining;
 	private bool _previousAboveUpperBand;
 	private bool _previousBelowLowerBand;
+	private Order _pendingOrder;
 
-	/// <summary>
-	/// EMA period.
-	/// </summary>
-	public int EmaPeriod
-	{
-		get => _emaPeriod.Value;
-		set => _emaPeriod.Value = value;
-	}
+	public int EmaPeriod { get => _emaPeriod.Value; set => _emaPeriod.Value = value; }
+	public int AtrPeriod { get => _atrPeriod.Value; set => _atrPeriod.Value = value; }
+	public decimal AtrMultiplier { get => _atrMultiplier.Value; set => _atrMultiplier.Value = value; }
+	public decimal StopLossAtr { get => _stopLossAtr.Value; set => _stopLossAtr.Value = value; }
+	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public double LearningRate { get => _learningRate.Value; set => _learningRate.Value = value; }
+	public double DiscountFactor { get => _discountFactor.Value; set => _discountFactor.Value = value; }
+	public double Exploration { get => _exploration.Value; set => _exploration.Value = value; }
+	public int RandomSeed { get => _randomSeed.Value; set => _randomSeed.Value = value; }
 
-	/// <summary>
-	/// ATR period.
-	/// </summary>
-	public int AtrPeriod
-	{
-		get => _atrPeriod.Value;
-		set => _atrPeriod.Value = value;
-	}
+	// Read-only model diagnostics; learned weights are deliberately not strategy settings.
+	public NeuralQModel LearningModel { get; private set; }
+	public int CurrentSignal { get; private set; }
 
-	/// <summary>
-	/// ATR multiplier for Keltner channel.
-	/// </summary>
-	public decimal AtrMultiplier
-	{
-		get => _atrMultiplier.Value;
-		set => _atrMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss in ATR multiples.
-	/// </summary>
-	public decimal StopLossAtr
-	{
-		get => _stopLossAtr.Value;
-		set => _stopLossAtr.Value = value;
-	}
-
-	/// <summary>
-	/// Closed candles to wait between position changes.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
-	/// Type of candles to use.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Constructor with default parameters.
-	/// </summary>
 	public KeltnerWithRLSignalStrategy()
 	{
-		_emaPeriod = Param(nameof(EmaPeriod), 20)
-		.SetGreaterThanZero()
-		.SetDisplay("EMA Period", "Period for the exponential moving average", "Keltner Settings")
-		
-		.SetOptimize(10, 30, 5);
-
-		_atrPeriod = Param(nameof(AtrPeriod), 14)
-		.SetGreaterThanZero()
-		.SetDisplay("ATR Period", "Period for the average true range", "Keltner Settings")
-		
-		.SetOptimize(7, 21, 7);
-
-		_atrMultiplier = Param(nameof(AtrMultiplier), 1.25m)
-		.SetGreaterThanZero()
-		.SetDisplay("ATR Multiplier", "Multiplier for ATR in Keltner Channels", "Keltner Settings")
-		
-		.SetOptimize(1.5m, 3m, 0.5m);
-
-		_cooldownBars = Param(nameof(CooldownBars), 48)
-		.SetNotNegative()
-		.SetDisplay("Cooldown Bars", "Closed candles to wait before another position change", "General");
-
-		_stopLossAtr = Param(nameof(StopLossAtr), 2m)
-		.SetGreaterThanZero()
-		.SetDisplay("Stop Loss (ATR)", "Stop Loss in multiples of ATR", "Risk Management")
-		
-		.SetOptimize(1m, 3m, 0.5m);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
-		.SetDisplay("Candle Type", "Type of candles to use", "General");
+		_emaPeriod = Param(nameof(EmaPeriod), 20).SetGreaterThanZero()
+			.SetDisplay("EMA Period", "Period for the exponential moving average", "Keltner Settings").SetOptimize(10, 30, 5);
+		_atrPeriod = Param(nameof(AtrPeriod), 14).SetGreaterThanZero()
+			.SetDisplay("ATR Period", "Period for the average true range", "Keltner Settings").SetOptimize(7, 21, 7);
+		_atrMultiplier = Param(nameof(AtrMultiplier), 2m).SetGreaterThanZero()
+			.SetDisplay("ATR Multiplier", "Multiplier for ATR in Keltner Channels", "Keltner Settings").SetOptimize(1.5m, 3m, 0.5m);
+		_stopLossAtr = Param(nameof(StopLossAtr), 2m).SetGreaterThanZero()
+			.SetDisplay("Stop Loss (ATR)", "Stop Loss in multiples of ATR", "Risk Management").SetOptimize(1m, 3m, 0.5m);
+		_cooldownBars = Param(nameof(CooldownBars), 48).SetNotNegative()
+			.SetDisplay("Cooldown Bars", "Closed candles to wait before another position change", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
+		_learningRate = Param(nameof(LearningRate), 0.05).SetNotNegative();
+		_discountFactor = Param(nameof(DiscountFactor), 0.9).SetNotNegative();
+		_exploration = Param(nameof(Exploration), 0.1).SetNotNegative();
+		_randomSeed = Param(nameof(RandomSeed), 42).SetNotNegative();
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
+	public NeuralQModel CreateLearningModel()
+		=> new(RandomSeed, LearningRate, DiscountFactor, Exploration);
+
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		ResetState();
+	}
 
-		_currentSignal = default;
-		_consecutiveWins = _consecutiveLosses = default;
-		_lastPrice = _previousEma = _previousAtr = _previousPrice = _previousSignalPrice = _entryPrice = default;
-		_cooldownRemaining = default;
-		_previousAboveUpperBand = default;
-		_previousBelowLowerBand = default;
+	private void ResetState()
+	{
+		LearningModel = null;
+		CurrentSignal = 0;
+		_previousFeatures = null;
+		_previousAction = 0;
+		_previousPrice = _previousAtr = _entryPrice = 0m;
+		_cooldownRemaining = 0;
+		_previousAboveUpperBand = _previousBelowLowerBand = false;
+		_pendingOrder = null;
 	}
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		// Keltner Channels built from their two parts, so each documented period drives its own
-		// indicator: the middle line is EMA(EmaPeriod), the band width is AtrMultiplier * ATR(AtrPeriod).
+		ResetState();
+		LearningModel = CreateLearningModel();
 		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
 		var atr = new AverageTrueRange { Length = AtrPeriod };
-
-		// Subscribe to candles and bind indicators
 		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(ema, atr, ProcessCandle).Start();
 
-		subscription
-		.Bind(ema, atr, ProcessCandle)
-		.Start();
-
-		// Create chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -189,210 +115,173 @@ public class KeltnerWithRLSignalStrategy : Strategy
 		}
 	}
 
-	/// <summary>
-	/// Process each candle and Keltner Channel values.
-	/// </summary>
-	private void ProcessCandle(ICandleMessage candle, decimal middleBand, decimal currentAtr)
+	private void ProcessCandle(ICandleMessage candle, decimal middleBand, decimal atr)
 	{
-		// Skip unfinished candles
-		if (candle.State != CandleStates.Finished)
-		return;
+		if (candle.State != CandleStates.Finished || !IsFormedAndOnlineAndAllowTrading() || atr <= 0m)
+			return;
 
-		// Check if strategy is ready to trade
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+		var price = candle.ClosePrice;
+		double[] features =
+		[
+			Math.Tanh((double)((price - middleBand) / atr)),
+			_previousPrice == 0m ? 0.0 : Math.Tanh((double)((price - _previousPrice) / atr)),
+			_previousAtr == 0m ? 0.0 : Math.Tanh((double)((atr - _previousAtr) / _previousAtr)),
+			Math.Tanh((double)((price - candle.OpenPrice) / atr)),
+		];
 
-		// Keltner bands: the EMA middle line widened by the ATR of its own period
-		var bandOffset = AtrMultiplier * currentAtr;
-		var upperBand = middleBand + bandOffset;
-		var lowerBand = middleBand - bandOffset;
-
-		// Update price and RL state
-		_lastPrice = candle.ClosePrice;
-
-		// Generate RL signal based on current state
-		UpdateRLSignal(candle, middleBand, currentAtr);
+		// Reward the preceding policy action only after its next close is known.
+		// This is a hypothetical one-bar return, not a fill-price PnL estimate.
+		if (_previousFeatures != null)
+		{
+			var direction = _previousAction == 1 ? 1.0 : _previousAction == 2 ? -1.0 : 0.0;
+			var reward = Math.Clamp(direction * (double)((price - _previousPrice) / _previousAtr), -1.0, 1.0);
+			LearningModel.Learn(_previousFeatures, _previousAction, reward, features);
+		}
+		CurrentSignal = LearningModel.SelectAction(features);
+		_previousFeatures = features;
+		_previousAction = CurrentSignal;
+		_previousPrice = price;
+		_previousAtr = atr;
 
 		if (_cooldownRemaining > 0)
 			_cooldownRemaining--;
-
-		// Trading logic
-		var price = candle.ClosePrice;
-		var priceAboveUpperBand = price > upperBand;
-		var priceBelowLowerBand = price < lowerBand;
-		var bullishBreakout = !_previousAboveUpperBand && priceAboveUpperBand;
-		var bearishBreakout = !_previousBelowLowerBand && priceBelowLowerBand;
-
-		// Entry conditions
-
-		// Long entry: Price above upper band and RL signal is Buy
-		if (_cooldownRemaining == 0 && bullishBreakout && _currentSignal == RLSignals.Buy && Position <= 0)
-		{
-			LogInfo($"Long signal: Price {price} > Upper Band {upperBand}, RL Signal = Buy");
-			BuyMarket(Volume + (Position < 0 ? Math.Abs(Position) : 0m));
-			_entryPrice = price;
-			_previousSignalPrice = price;
-			_cooldownRemaining = CooldownBars;
-		}
-		// Short entry: Price below lower band and RL signal is Sell
-		else if (_cooldownRemaining == 0 && bearishBreakout && _currentSignal == RLSignals.Sell && Position >= 0)
-		{
-			LogInfo($"Short signal: Price {price} < Lower Band {lowerBand}, RL Signal = Sell");
-			SellMarket(Volume + (Position > 0 ? Math.Abs(Position) : 0m));
-			_entryPrice = price;
-			_previousSignalPrice = price;
-			_cooldownRemaining = CooldownBars;
-		}
-
-		// Exit conditions
-
-		// Exit long: Price drops below EMA (middle band)
-		if (Position > 0 && price < middleBand)
-		{
-			LogInfo($"Exit long: Price {price} < EMA {middleBand}");
-			SellMarket(Math.Abs(Position));
+		if (_pendingOrder?.State is OrderStates.Done or OrderStates.Failed)
+			_pendingOrder = null;
+		if (Position == 0m)
 			_entryPrice = 0m;
-			_cooldownRemaining = CooldownBars;
-		}
-		// Exit short: Price rises above EMA (middle band)
-		else if (Position < 0 && price > middleBand)
-		{
-			LogInfo($"Exit short: Price {price} > EMA {middleBand}");
-			BuyMarket(Math.Abs(Position));
-			_entryPrice = 0m;
-			_cooldownRemaining = CooldownBars;
-		}
 
-		// Set stop loss based on ATR
-		ApplyAtrStopLoss(price, currentAtr);
+		var above = price > middleBand + AtrMultiplier * atr;
+		var below = price < middleBand - AtrMultiplier * atr;
+		var buy = !_previousAboveUpperBand && above && CurrentSignal == 1;
+		var sell = !_previousBelowLowerBand && below && CurrentSignal == 2;
+		_previousAboveUpperBand = above;
+		_previousBelowLowerBand = below;
 
-		// Update previous values for next iteration
-		_previousEma = middleBand;
-		_previousAtr = currentAtr;
-		_previousPrice = price;
-		_previousAboveUpperBand = priceAboveUpperBand;
-		_previousBelowLowerBand = priceBelowLowerBand;
-	}
-
-	/// <summary>
-	/// Update Reinforcement Learning signal based on current state.
-	/// This is a simplified RL model (Q-learning) for demonstration.
-	/// In a real system, this would likely be a more sophisticated model.
-	/// </summary>
-	private void UpdateRLSignal(ICandleMessage candle, decimal ema, decimal atr)
-	{
-		// Features for RL decision:
-		// 1. Price position relative to EMA
-		bool priceAboveEma = candle.ClosePrice > ema;
-
-		// 2. Recent momentum
-		bool priceIncreasing = candle.ClosePrice > _previousPrice;
-
-		// 3. Volatility
-		bool volatilityIncreasing = atr > _previousAtr;
-
-		// 4. Candle pattern (bullish/bearish)
-		bool bullishCandle = candle.ClosePrice > candle.OpenPrice;
-
-		// 5. Previous trade outcome
-		// More conservative after losses, more aggressive after wins
-		bool aggressiveMode = _consecutiveWins > _consecutiveLosses;
-
-		// Simplified Q-learning decision matrix
-		if (bullishCandle && priceAboveEma && (priceIncreasing || aggressiveMode))
-		{
-_currentSignal = RLSignals.Buy;
-			LogInfo("RL Signal: Buy");
-		}
-		else if (!bullishCandle && !priceAboveEma && (!priceIncreasing || aggressiveMode))
-		{
-_currentSignal = RLSignals.Sell;
-			LogInfo("RL Signal: Sell");
-		}
-		else
-		{
-			// If conditions are mixed, maintain current signal or go neutral
-			if (volatilityIncreasing)
-			{
-				// High volatility might warrant reducing exposure
-_currentSignal = RLSignals.None;
-				LogInfo("RL Signal: None (high volatility)");
-			}
-			// Otherwise keep current signal
-		}
-	}
-
-	/// <summary>
-	/// Process own trades for reinforcement learning feedback.
-	/// </summary>
-	protected override void OnOwnTradeReceived(MyTrade trade)
-	{
-		// Skip if we don't have a previous signal price (first trade)
-		if (_previousSignalPrice == 0)
-		return;
-
-		// Determine if the trade was profitable
-		bool profitable;
-
-		if (trade.Order.Side == Sides.Buy)
-		{
-			// For buys, it's profitable if current price > entry price
-			profitable = _lastPrice > trade.Trade.Price;
-		}
-		else
-		{
-			// For sells, it's profitable if current price < entry price
-			profitable = _lastPrice < trade.Trade.Price;
-		}
-
-		// Update consecutive win/loss counters for RL state
-		if (profitable)
-		{
-			_consecutiveWins++;
-			_consecutiveLosses = 0;
-			LogInfo($"Profitable trade: Win streak = {_consecutiveWins}");
-		}
-		else
-		{
-			_consecutiveLosses++;
-			_consecutiveWins = 0;
-			LogInfo($"Unprofitable trade: Loss streak = {_consecutiveLosses}");
-		}
-	}
-
-	/// <summary>
-	/// Apply ATR-based stop loss.
-	/// </summary>
-	private void ApplyAtrStopLoss(decimal price, decimal atr)
-	{
-		// Without an entry price there is no position of ours to protect
-		if (_entryPrice == 0m)
+		if (_pendingOrder != null)
 			return;
 
-		// The stop stands StopLossAtr ATR multiples away from the price the position was opened at
-		var stopOffset = StopLossAtr * atr;
+		// One order per callback: a reversal must not also submit an EMA/stop exit.
+		if (_cooldownRemaining == 0 && buy && Position <= 0m)
+			Submit(Sides.Buy, Volume + Math.Abs(Position), price);
+		else if (_cooldownRemaining == 0 && sell && Position >= 0m)
+			Submit(Sides.Sell, Volume + Math.Abs(Position), price);
+		else if (Position > 0m && (price < middleBand || (_entryPrice > 0m && price < _entryPrice - StopLossAtr * atr)))
+			Submit(Sides.Sell, Math.Abs(Position), 0m);
+		else if (Position < 0m && (price > middleBand || (_entryPrice > 0m && price > _entryPrice + StopLossAtr * atr)))
+			Submit(Sides.Buy, Math.Abs(Position), 0m);
+	}
 
-		if (Position > 0) // Long position
+	private void Submit(Sides side, decimal volume, decimal entryPrice)
+	{
+		_entryPrice = entryPrice;
+		_cooldownRemaining = CooldownBars;
+		_pendingOrder = side == Sides.Buy ? BuyMarket(volume) : SellMarket(volume);
+	}
+
+	/// <summary>
+	/// Four inputs, eight tanh hidden neurons and three linear Q outputs:
+	/// neutral, buy and sell. Both layers learn with a detached TD target.
+	/// </summary>
+	public sealed class NeuralQModel
+	{
+		private readonly double[][] _hidden = new double[8][];
+		private readonly double[][] _output = new double[3][];
+		private readonly double _learningRate;
+		private readonly double _discount;
+		private readonly double _exploration;
+		private uint _randomState;
+
+		public int Updates { get; private set; }
+
+		public NeuralQModel(int seed, double learningRate, double discount, double exploration)
 		{
-			var stopLevel = _entryPrice - stopOffset;
-			if (price < stopLevel)
-			{
-				LogInfo($"ATR Stop Loss triggered for long position: Current {price} < Stop {stopLevel}");
-				SellMarket(Math.Abs(Position));
-				_entryPrice = 0m;
-				_cooldownRemaining = CooldownBars;
-			}
+			if (seed < 0)
+				throw new ArgumentOutOfRangeException(nameof(seed));
+			if (!double.IsFinite(learningRate) || learningRate < 0.0 || learningRate > 1.0)
+				throw new ArgumentOutOfRangeException(nameof(learningRate));
+			if (!double.IsFinite(discount) || discount < 0.0 || discount > 1.0)
+				throw new ArgumentOutOfRangeException(nameof(discount));
+			if (!double.IsFinite(exploration) || exploration < 0.0 || exploration > 1.0)
+				throw new ArgumentOutOfRangeException(nameof(exploration));
+			_learningRate = learningRate;
+			_discount = discount;
+			_exploration = exploration;
+			_randomState = (uint)seed;
+			for (var i = 0; i < 8; i++)
+				_hidden[i] = Enumerable.Range(0, 5).Select(_ => (NextRandom() - 0.5) * 0.2).ToArray();
+			for (var i = 0; i < 3; i++)
+				_output[i] = Enumerable.Range(0, 9).Select(_ => (NextRandom() - 0.5) * 0.2).ToArray();
 		}
-		else if (Position < 0) // Short position
+
+		private double NextRandom()
 		{
-			var stopLevel = _entryPrice + stopOffset;
-			if (price > stopLevel)
-			{
-				LogInfo($"ATR Stop Loss triggered for short position: Current {price} > Stop {stopLevel}");
-				BuyMarket(Math.Abs(Position));
-				_entryPrice = 0m;
-				_cooldownRemaining = CooldownBars;
-			}
+			_randomState = unchecked(1664525u * _randomState + 1013904223u);
+			return _randomState / 4294967296.0;
 		}
+
+		private double[] HiddenValues(double[] features)
+		{
+			if (features.Length != 4 || features.Any(value => !double.IsFinite(value)))
+				throw new ArgumentException("Four finite features are required.", nameof(features));
+			var values = new double[8];
+			for (var neuron = 0; neuron < 8; neuron++)
+			{
+				var sum = _hidden[neuron][4];
+				for (var feature = 0; feature < 4; feature++)
+					sum += _hidden[neuron][feature] * features[feature];
+				values[neuron] = Math.Tanh(sum);
+			}
+			return values;
+		}
+
+		public double[] Predict(double[] features)
+		{
+			var hidden = HiddenValues(features);
+			var result = new double[3];
+			for (var action = 0; action < 3; action++)
+			{
+				result[action] = _output[action][8];
+				for (var neuron = 0; neuron < 8; neuron++)
+					result[action] += _output[action][neuron] * hidden[neuron];
+			}
+			return result;
+		}
+
+		public int SelectAction(double[] features)
+		{
+			var values = Predict(features);
+			if (NextRandom() < _exploration)
+				return (int)(NextRandom() * 3);
+			var best = 0;
+			for (var action = 1; action < 3; action++)
+				if (values[action] > values[best])
+					best = action;
+			return best;
+		}
+
+		public void Learn(double[] state, int action, double reward, double[] nextState)
+		{
+			if (action < 0 || action > 2 || !double.IsFinite(reward))
+				throw new ArgumentOutOfRangeException(nameof(action));
+			var hidden = HiddenValues(state);
+			var error = Math.Clamp(reward + _discount * Predict(nextState).Max() - Predict(state)[action], -1.0, 1.0);
+			if (_learningRate == 0.0)
+				return;
+			// Backprop uses the output weights from BEFORE their update.
+			var previousOutput = (double[])_output[action].Clone();
+			for (var neuron = 0; neuron < 8; neuron++)
+			{
+				_output[action][neuron] += _learningRate * error * hidden[neuron];
+				var gradient = error * previousOutput[neuron] * (1.0 - hidden[neuron] * hidden[neuron]);
+				for (var feature = 0; feature < 4; feature++)
+					_hidden[neuron][feature] += _learningRate * gradient * state[feature];
+				_hidden[neuron][4] += _learningRate * gradient;
+			}
+			_output[action][8] += _learningRate * error;
+			Updates++;
+		}
+
+		public double[] GetWeights()
+			=> _hidden.Concat(_output).SelectMany(layer => layer).ToArray();
 	}
 }

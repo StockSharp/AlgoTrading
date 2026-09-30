@@ -12,7 +12,7 @@ Standard deviation bands offer a statistical view of overextension. Entering aft
 
 ## Details
 
-- **Entry Criteria**: Signals based on RSI, ATR, Bollinger.
+- **Entry Criteria**: Signals based on ATR, Bollinger.
 - **Long/Short**: Both directions.
 - **Exit Criteria**: Opposite signal or stop.
 - **Stops**: Yes.
@@ -24,7 +24,7 @@ Standard deviation bands offer a statistical view of overextension. Entering aft
 - **Filters**:
   - Category: Mean Reversion
   - Direction: Both
-  - Indicators: RSI, ATR, Bollinger
+  - Indicators: ATR, Bollinger
   - Stops: Yes
   - Complexity: Basic
   - Timeframe: Intraday (5m)

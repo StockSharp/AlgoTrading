@@ -15,7 +15,7 @@
   - `SlowLength` = 26
   - `SignalLength` = 9
   - `CandleType` = tf(5)
-  - `HigherCandleType` = tf(1d)
+  - `HigherCandleType` = tf(1h)
   - `ShowCurrentTimeframe` = true
   - `ShowHigherTimeframe` = true
   - `Entry` = Crossover
@@ -27,7 +27,7 @@
   - 指标：MACD
   - 止损：是
   - 复杂度：中等
-  - 时间框架：多时间框架 (5m/1d)
+  - 时间框架：多时间框架 (5m/1h)
   - 季节性：否
   - 神经网络：否
   - 背离：否

@@ -11,95 +11,157 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Bullish Reversal Bar strategy using EMA crossover.
-/// Enters long on golden cross, short on death cross.
+/// Confirms a bullish reversal below the shifted Alligator with a later close above its high.
+/// Optional AO and MFI squat filters qualify the setup; its low protects the long position.
 /// </summary>
 public class BullishReversalBarStrategy : Strategy
 {
-	private readonly StrategyParam<int> _fastEmaPeriod;
-	private readonly StrategyParam<int> _slowEmaPeriod;
+	private readonly StrategyParam<bool> _enableAo;
+	private readonly StrategyParam<bool> _enableMfi;
 	private readonly StrategyParam<DataType> _candleType;
+	private Alligator _alligator;
+	private AwesomeOscillator _ao;
+	private MarketFacilitationIndex _mfi;
+	private decimal? _previousLow, _previousLips, _previousAo, _previousMfi;
+	private decimal _previousVolume;
+	private (decimal High, decimal Low)? _pending;
+	private decimal _stopLoss;
+	private bool _exitPending;
 
-	private decimal _prevFastEma;
-	private decimal _prevSlowEma;
-
-	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
-	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public bool EnableAo { get => _enableAo.Value; set => _enableAo.Value = value; }
+	public bool EnableMfi { get => _enableMfi.Value; set => _enableMfi.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public BullishReversalBarStrategy()
 	{
-		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
-			.SetGreaterThanZero()
-			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
-
-		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
-			.SetGreaterThanZero()
-			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
+		_enableAo = Param(nameof(EnableAo), false);
+		_enableMfi = Param(nameof(EnableMfi), false);
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType), (Security, DataType.Level1)];
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevFastEma = 0m;
-		_prevSlowEma = 0m;
+		ResetState();
+		_alligator = null;
+		_ao = null;
+		_mfi = null;
 	}
 
-	/// <inheritdoc />
+	private void ResetState()
+	{
+		_previousLow = _previousLips = _previousAo = _previousMfi = null;
+		_previousVolume = _stopLoss = 0m;
+		_pending = null;
+		_exitPending = false;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
-		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
-
+		ResetState();
+		_alligator = new Alligator();
+		_ao = EnableAo ? new AwesomeOscillator() : null;
+		_mfi = EnableMfi ? new MarketFacilitationIndex() : null;
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(fastEma, slowEma, ProcessCandle)
-			.Start();
+		subscription.BindEx(_alligator, (candle, value) => ProcessCandle(candle, (IAlligatorValue)value), true).Start();
+		var quotes = new Subscription(DataType.Level1, Security);
+		quotes.MarketData.BuildField = Level1Fields.BestBidPrice;
+		SubscribeLevel1(quotes).Bind(ProcessQuote).Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, fastEma);
-			DrawIndicator(area, slowEma);
+			DrawIndicator(area, _alligator);
+			if (_ao != null)
+				DrawIndicator(area, _ao);
+			if (_mfi != null)
+				DrawIndicator(area, _mfi);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
+	private static decimal? ProcessFilter(IIndicator indicator, ICandleMessage candle)
+	{
+		if (indicator == null)
+			return null;
+		var value = indicator.Process(new CandleIndicatorValue(indicator, candle));
+		return indicator.IsFormed && !value.IsEmpty ? value.GetValue<decimal>() : null;
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IAlligatorValue value)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_prevFastEma == 0m || _prevSlowEma == 0m)
+		var previousLow = _previousLow;
+		var previousLips = _previousLips;
+		var previousAo = _previousAo;
+		var previousMfi = _previousMfi;
+		var previousVolume = _previousVolume;
+		var ao = ProcessFilter(_ao, candle);
+		var mfi = ProcessFilter(_mfi, candle);
+		_previousLow = candle.LowPrice;
+		_previousLips = value.Lips;
+		_previousAo = ao;
+		_previousMfi = mfi;
+		_previousVolume = candle.TotalVolume;
+
+		if (value.Jaw is not decimal jaw || value.Teeth is not decimal teeth || value.Lips is not decimal lips
+			|| !IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (Position > 0m)
 		{
-			_prevFastEma = fastEmaValue;
-			_prevSlowEma = slowEmaValue;
+			if (candle.LowPrice <= _stopLoss || lips < previousLips)
+				CloseLong();
+			return;
+		}
+		if (Position != 0m)
+			return;
+		_exitPending = false;
+
+		// A setup is invalidated before confirmation if its low has already been touched.
+		if (_pending is { } invalidated && candle.LowPrice <= invalidated.Low)
+			_pending = null;
+		if (_pending is { } confirmation && candle.ClosePrice > confirmation.High)
+		{
+			_stopLoss = confirmation.Low;
+			_pending = null;
+			BuyMarket();
 			return;
 		}
 
-		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
-		{
-			BuyMarket();
-		}
-		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
-		{
-			SellMarket();
-		}
+		var median = (candle.HighPrice + candle.LowPrice) / 2m;
+		var reversal = candle.LowPrice < previousLow && candle.ClosePrice > median
+			&& candle.HighPrice < Math.Min(jaw, Math.Min(teeth, lips)) && lips > previousLips;
+		var aoFilter = !EnableAo || ao is decimal a && previousAo is decimal pa && a > pa;
+		var squat = !EnableMfi || mfi is decimal m && previousMfi is decimal pm && m < pm && candle.TotalVolume > previousVolume;
+		if (reversal && aoFilter && squat)
+			_pending = (candle.HighPrice, candle.LowPrice);
+	}
 
-		_prevFastEma = fastEmaValue;
-		_prevSlowEma = slowEmaValue;
+	private void ProcessQuote(Level1ChangeMessage message)
+	{
+		if (Position == 0m)
+		{
+			_exitPending = false;
+			return;
+		}
+		if (Position > 0m && _stopLoss > 0m
+			&& message.TryGetDecimal(Level1Fields.BestBidPrice) is decimal bid && bid <= _stopLoss)
+			CloseLong();
+	}
+
+	private void CloseLong()
+	{
+		if (_exitPending || Position <= 0m)
+			return;
+		_exitPending = true;
+		SellMarket(Position);
 	}
 }

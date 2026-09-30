@@ -11,8 +11,8 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that trades MACD crossings of the zero line.
-/// Buys when MACD crosses above zero, sells when MACD crosses below zero.
+/// Enters while the MACD line approaches zero, before reaching it.
+/// Exits on a signal-line crossing and protects actual fills with a percent stop.
 /// </summary>
 public class MacdZeroStrategy : Strategy
 {
@@ -20,11 +20,12 @@ public class MacdZeroStrategy : Strategy
 	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<int> _signalPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 
 	private decimal _prevMacd;
 	private bool _hasPrev;
-	private int _cooldown;
+	private decimal _prevSignal;
+	private Order _pendingOrder;
 
 	/// <summary>
 	/// Fast EMA period for MACD calculation.
@@ -63,43 +64,36 @@ public class MacdZeroStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Cooldown bars between trades.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
 	/// Initialize the MACD Zero strategy.
 	/// </summary>
 	public MacdZeroStrategy()
 	{
-		_fastPeriod = Param(nameof(FastPeriod), 8)
+		_fastPeriod = Param(nameof(FastPeriod), 12).SetGreaterThanZero()
 			.SetDisplay("Fast EMA", "Fast EMA period for MACD", "MACD")
 			.SetOptimize(8, 16, 2);
 
-		_slowPeriod = Param(nameof(SlowPeriod), 17)
+		_slowPeriod = Param(nameof(SlowPeriod), 26).SetGreaterThanZero()
 			.SetDisplay("Slow EMA", "Slow EMA period for MACD", "MACD")
 			.SetOptimize(15, 30, 2);
 
-		_signalPeriod = Param(nameof(SignalPeriod), 9)
+		_signalPeriod = Param(nameof(SignalPeriod), 9).SetGreaterThanZero()
 			.SetDisplay("Signal", "Signal line period for MACD", "MACD")
 			.SetOptimize(7, 12, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_cooldownBars = Param(nameof(CooldownBars), 700)
-			.SetRange(1, 1000)
-			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m).SetNotNegative()
+			.SetDisplay("Stop Loss (%)", "Actual-fill percent stop; zero disables it.", "Protection");
+		OrderRegistering += order => _pendingOrder = order;
 	}
+
+	public decimal StopLossPercent { get => _stopLossPercent.Value; set => _stopLossPercent.Value = value; }
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, CandleType)];
+		return [(Security, CandleType), (Security, DataType.Level1)];
 	}
 
 	/// <inheritdoc />
@@ -108,7 +102,8 @@ public class MacdZeroStrategy : Strategy
 		base.OnReseted();
 		_prevMacd = default;
 		_hasPrev = default;
-		_cooldown = default;
+		_prevSignal = default;
+		_pendingOrder = null;
 	}
 
 	/// <inheritdoc />
@@ -116,9 +111,15 @@ public class MacdZeroStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_prevMacd = 0;
-		_hasPrev = false;
-		_cooldown = 0;
+		if (FastPeriod >= SlowPeriod)
+			throw new InvalidOperationException("FastPeriod must be below SlowPeriod.");
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
 
 		var macd = new MovingAverageConvergenceDivergenceSignal
 		{
@@ -144,59 +145,46 @@ public class MacdZeroStrategy : Strategy
 		}
 	}
 
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// Native protection runs before this callback, including between finished candles.
+	}
+
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue)
 	{
-		if (candle.State != CandleStates.Finished)
+		// Complex values capture formation before processing their inner indicators.
+		// Check the indicator's post-processing state to seed the first fully formed bar.
+		if (candle.State != CandleStates.Finished || !macdValue.Indicator.IsFormed || !IsFormedAndOnlineAndAllowTrading())
 			return;
-
-		if (!macdValue.IsFormed)
+		var value = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
+		if (value.Macd is not decimal macd || value.Signal is not decimal signal)
 			return;
-
-		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
-		if (macdTyped.Macd is not decimal macdLine || macdTyped.Signal is not decimal signal)
-			return;
-
 		if (!_hasPrev)
 		{
-			_prevMacd = macdLine;
 			_hasPrev = true;
+			_prevMacd = macd;
+			_prevSignal = signal;
 			return;
 		}
-
-		if (_cooldown > 0)
+		if (_pendingOrder is not null && _pendingOrder.State is not (OrderStates.Done or OrderStates.Failed))
 		{
-			_cooldown--;
-			_prevMacd = macdLine;
+			_prevMacd = macd;
+			_prevSignal = signal;
 			return;
 		}
-
-		// Zero line crossover signals
-		var prevBelow = _prevMacd < 0;
-		var currAbove = macdLine >= 0;
-		var prevAbove = _prevMacd >= 0;
-		var currBelow = macdLine < 0;
-
-		if (Position == 0 && prevBelow && currAbove)
+		var signalCross = _prevMacd <= _prevSignal && macd > signal
+			|| _prevMacd >= _prevSignal && macd < signal;
+		// The published exit is a crossing in either direction, not a zero-line exit.
+		if (Position != 0m && signalCross)
 		{
-			BuyMarket();
-			_cooldown = CooldownBars;
+			if (Position > 0m) SellMarket(Position);
+			else BuyMarket(Math.Abs(Position));
 		}
-		else if (Position == 0 && prevAbove && currBelow)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position > 0 && prevAbove && currBelow)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position < 0 && prevBelow && currAbove)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-
-		_prevMacd = macdLine;
+		else if (Position == 0m && macd < 0m && macd > _prevMacd)
+			BuyMarket(Volume);
+		else if (Position == 0m && macd > 0m && macd < _prevMacd)
+			SellMarket(Volume);
+		_prevMacd = macd;
+		_prevSignal = signal;
 	}
 }

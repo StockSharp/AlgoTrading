@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using Ecng.Common;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -11,154 +11,127 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Bearish Engulfing strategy.
-/// Enters short on bearish engulfing pattern above SMA.
-/// Enters long on bullish engulfing pattern below SMA.
-/// Exits via SMA crossover.
+/// Short-only bearish body engulfing after optional consecutive bullish candles.
+/// Protection sits above the higher of the two pattern highs.
 /// </summary>
 public class EngulfingBearishStrategy : Strategy
 {
-	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<bool> _requireUptrend;
+	private readonly StrategyParam<int> _uptrendBars;
 
-	private ICandleMessage _previousCandle;
-	private int _cooldown;
+	private readonly List<ICandleMessage> _recent = new();
+	private decimal? _patternStop;
+	private Order _entryOrder;
+	private Order _exitOrder;
 
-	/// <summary>
-	/// MA Period.
-	/// </summary>
-	public int MAPeriod
-	{
-		get => _maPeriod.Value;
-		set => _maPeriod.Value = value;
-	}
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public decimal StopLossPercent { get => _stopLossPercent.Value; set => _stopLossPercent.Value = value; }
+	public bool RequireUptrend { get => _requireUptrend.Value; set => _requireUptrend.Value = value; }
+	public int UptrendBars { get => _uptrendBars.Value; set => _uptrendBars.Value = value; }
 
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Cooldown bars.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public EngulfingBearishStrategy()
 	{
-		_maPeriod = Param(nameof(MAPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("MA Period", "Period for SMA", "Indicators");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_cooldownBars = Param(nameof(CooldownBars), 500)
-			.SetRange(1, 1000)
-			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+			.SetDisplay("Candle Type", "Engulfing timeframe", "General");
+		_stopLossPercent = Param(nameof(StopLossPercent), 1m).SetRange(0m, 99m)
+			.SetDisplay("Stop above pattern high (%)", "Buffer above the higher of the two pattern highs; zero places the stop at the high.", "Protection");
+		_requireUptrend = Param(nameof(RequireUptrend), true)
+			.SetDisplay("Require Uptrend", "Require consecutive bullish candles immediately before the engulfing candle.", "Pattern");
+		_uptrendBars = Param(nameof(UptrendBars), 3).SetRange(1, 100)
+			.SetDisplay("Uptrend Bars", "Number of prior consecutive bullish candles, including the engulfed candle.", "Pattern");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType), (Security, DataType.Level1)];
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_previousCandle = null;
-		_cooldown = default;
+		ClearState();
 	}
 
-	/// <inheritdoc />
+	private void ClearState()
+	{
+		_recent.Clear();
+		_patternStop = null;
+		_entryOrder = _exitOrder = null;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_previousCandle = null;
-		_cooldown = 0;
-
-		var sma = new SimpleMovingAverage { Length = MAPeriod };
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(sma, ProcessCandle)
-			.Start();
-
+		ClearState();
+		var asks = new Subscription(DataType.Level1, Security);
+		asks.MarketData.BuildField = Level1Fields.BestAskPrice;
+		SubscribeLevel1(asks).Bind(ProcessAsk).Start();
+		var candles = SubscribeCandles(CandleType);
+		candles.Bind(ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, sma);
+			DrawCandles(area, candles);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
+	private static bool IsPending(Order order)
+		=> order is not null && order.State is not (OrderStates.Done or OrderStates.Failed);
+
+	private void ProcessAsk(Level1ChangeMessage message)
+	{
+		if (message.TryGetDecimal(Level1Fields.BestAskPrice) is decimal ask && ask > 0m)
+			CheckStop(ask);
+	}
+
+	private void CheckStop(decimal executableAsk)
+	{
+		if (Position < 0m && _patternStop is decimal stop && executableAsk >= stop && !IsPending(_exitOrder))
+		{
+			_exitOrder = BuyMarket(Math.Abs(Position));
+			_recent.Clear();
+			_patternStop = null;
+		}
+	}
+
+	private void Append(ICandleMessage candle)
+	{
+		_recent.Add(candle);
+		if (_recent.Count > UptrendBars)
+			_recent.RemoveAt(0);
+	}
+
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (_cooldown > 0)
+		if (Position < 0m)
 		{
-			_cooldown--;
-			_previousCandle = candle;
+			// Bar-high fallback covers gaps or missing executable quote updates.
+			CheckStop(candle.HighPrice);
+			if (Position < 0m && !IsPending(_exitOrder))
+				Append(candle);
 			return;
 		}
-
-		if (_previousCandle != null)
+		if (IsPending(_entryOrder) || IsPending(_exitOrder))
 		{
-			var isPrevBullish = _previousCandle.ClosePrice > _previousCandle.OpenPrice;
-			var isPrevBearish = _previousCandle.ClosePrice < _previousCandle.OpenPrice;
-			var isCurrBearish = candle.ClosePrice < candle.OpenPrice;
-			var isCurrBullish = candle.ClosePrice > candle.OpenPrice;
-
-			var bearishEngulfing = isPrevBullish && isCurrBearish &&
-				candle.ClosePrice < _previousCandle.OpenPrice &&
-				candle.OpenPrice > _previousCandle.ClosePrice;
-
-			var bullishEngulfing = isPrevBearish && isCurrBullish &&
-				candle.ClosePrice > _previousCandle.OpenPrice &&
-				candle.OpenPrice < _previousCandle.ClosePrice;
-
-			if (Position == 0 && bearishEngulfing && candle.ClosePrice > smaValue)
-			{
-				SellMarket();
-				_cooldown = CooldownBars;
-			}
-			else if (Position == 0 && bullishEngulfing && candle.ClosePrice < smaValue)
-			{
-				BuyMarket();
-				_cooldown = CooldownBars;
-			}
-			else if (Position > 0 && candle.ClosePrice < smaValue)
-			{
-				SellMarket();
-				_cooldown = CooldownBars;
-			}
-			else if (Position < 0 && candle.ClosePrice > smaValue)
-			{
-				BuyMarket();
-				_cooldown = CooldownBars;
-			}
+			Append(candle);
+			return;
 		}
-
-		_previousCandle = candle;
+		var previous = _recent.LastOrDefault();
+		var uptrend = !RequireUptrend ||
+			_recent.Count >= UptrendBars &&
+			_recent.TakeLast(UptrendBars).All(bar => bar.ClosePrice > bar.OpenPrice);
+		var engulfing = previous is not null && previous.ClosePrice > previous.OpenPrice &&
+			candle.ClosePrice < candle.OpenPrice &&
+			candle.OpenPrice >= previous.ClosePrice &&
+			candle.ClosePrice <= previous.OpenPrice;
+		if (engulfing && uptrend && IsFormedAndOnlineAndAllowTrading())
+		{
+			_patternStop = Math.Max(previous.HighPrice, candle.HighPrice) * (1m + StopLossPercent / 100m);
+			_entryOrder = SellMarket(Volume);
+		}
+		Append(candle);
 	}
 }

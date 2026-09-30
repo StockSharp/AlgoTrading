@@ -12,7 +12,7 @@ Las bandas de desviación estándar ofrecen una vista estadística de la sobreex
 
 ## Detalles
 
-- **Criterios de entrada**: Señales basadas en RSI, ATR, Bollinger.
+- **Criterios de entrada**: Señales basadas en ATR, Bollinger.
 - **Largo/Corto**: Ambos direcciones.
 - **Criterios de salida**: Señal opuesta o stop.
 - **Stops**: Sí.
@@ -24,7 +24,7 @@ Las bandas de desviación estándar ofrecen una vista estadística de la sobreex
 - **Filtros**:
   - Categoría: Reversión a la media
   - Dirección: Ambos
-  - Indicadores: RSI, ATR, Bollinger
+  - Indicadores: ATR, Bollinger
   - Stops: Sí
   - Complejidad: Básico
   - Marco temporal: Intradía (5m)

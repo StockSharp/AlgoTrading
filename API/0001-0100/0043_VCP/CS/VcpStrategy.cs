@@ -11,190 +11,146 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Volume Contraction Pattern (VCP) strategy.
-/// Looks for narrowing volatility (ATR declining) and breakouts above/below MA bands.
+/// Volatility Contraction Pattern using prior rolling High/Low range breakouts.
+/// Exits on an adverse price/SMA crossing or actual-fill percent protection.
 /// </summary>
 public class VcpStrategy : Strategy
 {
 	private readonly StrategyParam<int> _maPeriod;
-	private readonly StrategyParam<int> _atrPeriod;
-	private readonly StrategyParam<decimal> _atrMultiplier;
+	private readonly StrategyParam<int> _lookbackPeriod;
+	private readonly StrategyParam<int> _contractionBars;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
 
-	private decimal _prevAtr;
+	private decimal? _previousHigh;
+	private decimal _previousLow;
 	private int _contractionCount;
-	private int _cooldown;
+	private decimal? _previousClose;
+	private decimal _previousMean;
+	private Order _pendingOrder;
 
-	/// <summary>
-	/// MA Period.
-	/// </summary>
-	public int MAPeriod
-	{
-		get => _maPeriod.Value;
-		set => _maPeriod.Value = value;
-	}
+	public int MAPeriod { get => _maPeriod.Value; set => _maPeriod.Value = value; }
+	public int LookbackPeriod { get => _lookbackPeriod.Value; set => _lookbackPeriod.Value = value; }
+	public int ContractionBars { get => _contractionBars.Value; set => _contractionBars.Value = value; }
+	public decimal StopLossPercent { get => _stopLossPercent.Value; set => _stopLossPercent.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// ATR Period.
-	/// </summary>
-	public int AtrPeriod
-	{
-		get => _atrPeriod.Value;
-		set => _atrPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// ATR multiplier for breakout band.
-	/// </summary>
-	public decimal AtrMultiplier
-	{
-		get => _atrMultiplier.Value;
-		set => _atrMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Cooldown bars between trades.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize the VCP strategy.
-	/// </summary>
 	public VcpStrategy()
 	{
-		_maPeriod = Param(nameof(MAPeriod), 20)
+		_maPeriod = Param(nameof(MAPeriod), 20).SetGreaterThanZero()
 			.SetDisplay("MA Period", "Period for Moving Average calculation", "Indicators")
 			.SetOptimize(10, 50, 10);
-
-		_atrPeriod = Param(nameof(AtrPeriod), 14)
-			.SetDisplay("ATR Period", "Period for ATR calculation", "Indicators")
-			.SetOptimize(7, 21, 7);
-
-		_atrMultiplier = Param(nameof(AtrMultiplier), 2.0m)
-			.SetDisplay("ATR Multiplier", "ATR multiplier for breakout band", "Entry")
-			.SetOptimize(1.0m, 3.0m, 0.5m);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_lookbackPeriod = Param(nameof(LookbackPeriod), 20).SetGreaterThanZero()
+			.SetDisplay("Lookback Period", "Rolling High/Low range length", "Indicators");
+		_contractionBars = Param(nameof(ContractionBars), 3).SetGreaterThanZero()
+			.SetDisplay("Contractions", "Strict range reductions without an intervening expansion; equal widths are neutral.", "Entry");
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m).SetNotNegative()
+			.SetDisplay("Stop Loss (%)", "Actual-fill percent stop; zero disables it.", "Protection");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_cooldownBars = Param(nameof(CooldownBars), 500)
-			.SetRange(1, 1000)
-			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
+		OrderRegistering += order => _pendingOrder = order;
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType), (Security, DataType.Level1)];
+
+	private void ResetPattern()
 	{
-		return [(Security, CandleType)];
+		_previousHigh = null;
+		_previousLow = default;
+		_contractionCount = 0;
+		_previousClose = null;
+		_previousMean = default;
+		_pendingOrder = null;
 	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevAtr = default;
-		_contractionCount = default;
-		_cooldown = default;
+		ResetPattern();
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_prevAtr = 0;
-		_contractionCount = 0;
-		_cooldown = 0;
-
-		var ma = new SimpleMovingAverage { Length = MAPeriod };
-		var atr = new AverageTrueRange { Length = AtrPeriod };
-
+		ResetPattern();
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
+		var highest = new Highest { Length = LookbackPeriod };
+		var lowest = new Lowest { Length = LookbackPeriod };
+		var sma = new SimpleMovingAverage { Length = MAPeriod };
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(ma, atr, ProcessCandle)
-			.Start();
-
+		subscription.BindEx(highest, lowest, sma, ProcessCandle, false).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, ma);
+			DrawIndicator(area, highest);
+			DrawIndicator(area, lowest);
+			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal maValue, decimal atrValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
 	{
-		if (candle.State != CandleStates.Finished)
+		// Native protection runs before this callback, including between finished candles.
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue highestValue, IIndicatorValue lowestValue, IIndicatorValue smaValue)
+	{
+		if (candle.State != CandleStates.Finished || !highestValue.Indicator.IsFormed || !lowestValue.Indicator.IsFormed)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (_prevAtr == 0)
+		// The setup and breakout boundaries belong to the PRIOR completed channel.
+		var upper = _previousHigh;
+		var lower = _previousLow;
+		var contracted = _contractionCount >= ContractionBars;
+		var high = highestValue.GetValue<decimal>();
+		var low = lowestValue.GetValue<decimal>();
+		if (upper is decimal previousHigh)
 		{
-			_prevAtr = atrValue;
-			return;
+			var change = high - low - (previousHigh - lower);
+			if (change < 0m) _contractionCount++;
+			else if (change > 0m) _contractionCount = 0;
+			// Equal width preserves, but does not add to, the contraction sequence.
 		}
+		_previousHigh = high;
+		_previousLow = low;
 
-		// Track contraction
-		if (atrValue < _prevAtr)
-			_contractionCount++;
-		else
-			_contractionCount = 0;
-
-		if (_cooldown > 0)
-		{
-			_cooldown--;
-			_prevAtr = atrValue;
+		if (!smaValue.Indicator.IsFormed || !IsFormedAndOnlineAndAllowTrading())
 			return;
-		}
-
-		// After 3+ contracting bars, look for breakout
-		var isContracted = _contractionCount >= 3;
-		var upperBand = maValue + atrValue * AtrMultiplier;
-		var lowerBand = maValue - atrValue * AtrMultiplier;
-
-		if (Position == 0 && isContracted)
+		var close = candle.ClosePrice;
+		var mean = smaValue.GetValue<decimal>();
+		var upwardCross = _previousClose is decimal up && up <= _previousMean && close > mean;
+		var downwardCross = _previousClose is decimal down && down >= _previousMean && close < mean;
+		var seeded = _previousClose.HasValue;
+		_previousClose = close;
+		_previousMean = mean;
+		if (!seeded || upper is not decimal previousUpper
+			|| _pendingOrder is not null && _pendingOrder.State is not (OrderStates.Done or OrderStates.Failed))
+			return;
+		if (Position > 0m && downwardCross)
+			SellMarket(Position);
+		else if (Position < 0m && upwardCross)
+			BuyMarket(Math.Abs(Position));
+		else if (Position == 0m && contracted)
 		{
-			if (candle.ClosePrice > upperBand)
+			if (close > previousUpper)
 			{
-				BuyMarket();
-				_cooldown = CooldownBars;
 				_contractionCount = 0;
+				BuyMarket(Volume);
 			}
-			else if (candle.ClosePrice < lowerBand)
+			else if (close < lower)
 			{
-				SellMarket();
-				_cooldown = CooldownBars;
 				_contractionCount = 0;
+				SellMarket(Volume);
 			}
 		}
-		else if (Position > 0 && candle.ClosePrice < maValue)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position < 0 && candle.ClosePrice > maValue)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-
-		_prevAtr = atrValue;
 	}
 }

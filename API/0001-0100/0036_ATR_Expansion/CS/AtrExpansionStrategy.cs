@@ -12,21 +12,21 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Strategy that trades on volatility expansion as measured by ATR.
-/// Enters when ATR expands above threshold and price is above/below MA,
+/// Enters on any one-bar increase in formed ATR in the price/SMA direction,
 /// exits when volatility contracts.
 /// </summary>
 public class AtrExpansionStrategy : Strategy
 {
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<int> _maPeriod;
-	private readonly StrategyParam<decimal> _atrExpansionRatio;
+	private readonly StrategyParam<decimal> _atrMultiplier;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
-	private readonly StrategyParam<int> _lookback;
 
 	private decimal _prevAtr;
 	private bool _hasPrev;
-	private int _cooldown;
+	private Order _pendingOrder;
+	private Unit _stopDistance;
+	private bool _protectionStarted;
 
 	/// <summary>
 	/// Period for ATR calculation.
@@ -47,15 +47,6 @@ public class AtrExpansionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Ratio of current ATR to previous ATR needed for expansion signal.
-	/// </summary>
-	public decimal AtrExpansionRatio
-	{
-		get => _atrExpansionRatio.Value;
-		set => _atrExpansionRatio.Value = value;
-	}
-
-	/// <summary>
 	/// Type of candles used for strategy calculation.
 	/// </summary>
 	public DataType CandleType
@@ -65,57 +56,34 @@ public class AtrExpansionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Cooldown bars between trades.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
-	/// Lookback period for ATR comparison.
-	/// </summary>
-	public int Lookback
-	{
-		get => _lookback.Value;
-		set => _lookback.Value = value;
-	}
-
-	/// <summary>
 	/// Initialize the ATR Expansion strategy.
 	/// </summary>
 	public AtrExpansionStrategy()
 	{
-		_atrPeriod = Param(nameof(AtrPeriod), 14)
+		_atrPeriod = Param(nameof(AtrPeriod), 14).SetGreaterThanZero()
 			.SetDisplay("ATR Period", "Period for ATR calculation", "Indicators")
 			.SetOptimize(7, 21, 7);
 
-		_maPeriod = Param(nameof(MAPeriod), 20)
+		_maPeriod = Param(nameof(MAPeriod), 20).SetGreaterThanZero()
 			.SetDisplay("MA Period", "Period for MA calculation", "Indicators")
 			.SetOptimize(10, 50, 5);
 
-		_atrExpansionRatio = Param(nameof(AtrExpansionRatio), 1.05m)
-			.SetDisplay("Expansion Ratio", "ATR expansion ratio for entry signal", "Entry")
-			.SetOptimize(1.1m, 2.0m, 0.1m);
+		_atrMultiplier = Param(nameof(AtrMultiplier), 2m).SetNotNegative()
+			.SetDisplay("ATR Stop Multiplier", "Frozen entry ATR stop distance; zero disables it", "Protection");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_cooldownBars = Param(nameof(CooldownBars), 500)
-			.SetRange(1, 100)
-			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
-
-		_lookback = Param(nameof(Lookback), 5)
-			.SetRange(1, 50)
-			.SetDisplay("Lookback", "Bars to look back for ATR comparison", "General");
+		OrderRegistering += order => _pendingOrder = order;
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, CandleType)];
+		return [(Security, CandleType), (Security, DataType.Level1)];
 	}
+
+	public decimal AtrMultiplier { get => _atrMultiplier.Value; set => _atrMultiplier.Value = value; }
 
 	/// <inheritdoc />
 	protected override void OnReseted()
@@ -123,7 +91,9 @@ public class AtrExpansionStrategy : Strategy
 		base.OnReseted();
 		_prevAtr = default;
 		_hasPrev = default;
-		_cooldown = default;
+		_pendingOrder = null;
+		_stopDistance = null;
+		_protectionStarted = false;
 	}
 
 	/// <inheritdoc />
@@ -133,14 +103,19 @@ public class AtrExpansionStrategy : Strategy
 
 		_prevAtr = 0;
 		_hasPrev = false;
-		_cooldown = 0;
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
 
 		var atr = new AverageTrueRange { Length = AtrPeriod };
 		var sma = new SimpleMovingAverage { Length = MAPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(atr, sma, ProcessCandle)
+			.BindEx(atr, sma, ProcessCandle, false)
 			.Start();
 
 		var area = CreateChartArea();
@@ -152,58 +127,60 @@ public class AtrExpansionStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal atrValue, decimal smaValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
+		// Native protection runs before this callback, including between finished candles.
+	}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue atrValue, IIndicatorValue smaValue)
+	{
+		if (candle.State != CandleStates.Finished || !atrValue.Indicator.IsFormed || !smaValue.Indicator.IsFormed
+			|| !IsFormedAndOnlineAndAllowTrading())
 			return;
-
+		var atr = atrValue.GetValue<decimal>();
+		var mean = smaValue.GetValue<decimal>();
 		if (!_hasPrev)
 		{
-			_prevAtr = atrValue;
 			_hasPrev = true;
+			_prevAtr = atr;
 			return;
 		}
-
-		if (_cooldown > 0)
-		{
-			_cooldown--;
-			_prevAtr = atrValue;
+		var previous = _prevAtr;
+		_prevAtr = atr;
+		if (_pendingOrder is not null && _pendingOrder.State is not (OrderStates.Done or OrderStates.Failed))
 			return;
-		}
-
-		var isExpanding = _prevAtr > 0 && atrValue / _prevAtr >= AtrExpansionRatio;
-		var isContracting = _prevAtr > 0 && atrValue / _prevAtr < 1m / AtrExpansionRatio;
-
-		if (Position == 0 && isExpanding)
+		// Any contraction closes, including a zero ATR; the MA direction is entry-only.
+		if (Position != 0m && atr < previous)
 		{
-			// ATR expanding - enter in direction of price vs MA
-			if (candle.ClosePrice > smaValue)
-			{
-				BuyMarket();
-				_cooldown = CooldownBars;
-			}
-			else if (candle.ClosePrice < smaValue)
-			{
-				SellMarket();
-				_cooldown = CooldownBars;
-			}
+			if (Position > 0m) SellMarket(Position);
+			else BuyMarket(Math.Abs(Position));
 		}
-		else if (Position > 0 && isContracting)
+		else if (Position == 0m && atr > previous)
 		{
-			// Volatility contracting - exit long
-			SellMarket();
-			_cooldown = CooldownBars;
+			if (candle.ClosePrice > mean) Enter(Sides.Buy, atr);
+			else if (candle.ClosePrice < mean) Enter(Sides.Sell, atr);
 		}
-		else if (Position < 0 && isContracting)
-		{
-			// Volatility contracting - exit short
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
+	}
 
-		_prevAtr = atrValue;
+	private void Enter(Sides side, decimal atr)
+	{
+		var distance = atr * AtrMultiplier;
+		_stopDistance ??= new Unit(distance);
+		// Keep the Unit reference held by native cached protection controllers.
+		_stopDistance.Value = distance;
+		if (!_protectionStarted && distance > 0m)
+		{
+			StartProtection(new Unit(), _stopDistance, useMarketOrders: true, isLocalStop: true);
+			_protectionStarted = true;
+		}
+		RegisterOrder(new Order
+		{
+			Security = Security,
+			Portfolio = Portfolio,
+			Type = OrderTypes.Market,
+			Side = side,
+			Volume = Volume,
+			Comment = "ATR expansion entry",
+		});
 	}
 }

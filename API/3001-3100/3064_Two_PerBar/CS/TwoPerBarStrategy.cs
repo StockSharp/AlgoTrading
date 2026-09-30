@@ -124,6 +124,7 @@ public class TwoPerBarStrategy : Strategy
 
 		_legs.Clear();
 		_lastCycleVolume = 0m;
+		_pointSize = 0m;
 	}
 
 	/// <inheritdoc />

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 
 using Ecng.Common;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -11,208 +10,142 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Double Bottom reversal strategy.
-/// Detects two similar bottoms and enters long on confirmation.
-/// Uses SMA for exit signal.
+/// Long-only double bottom: two confirmed pivot lows followed by a bullish candle.
+/// A pattern-low stop is checked against executable best bids and finished-bar lows.
 /// </summary>
 public class DoubleBottomStrategy : Strategy
 {
-	private readonly StrategyParam<int> _distanceParam;
+	private readonly StrategyParam<int> _distance;
 	private readonly StrategyParam<decimal> _similarityPercent;
-	private readonly StrategyParam<int> _maPeriod;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
 
-	private decimal _recentLow;
-	private decimal _prevLow;
-	private int _barsSinceLow;
-	private int _cooldown;
+	private ICandleMessage _twoBack;
+	private ICandleMessage _previous;
+	private (int Bar, decimal Low)? _lastPivot;
+	private decimal? _candidateLow;
+	private int _candidateExpires;
+	private decimal? _patternStop;
+	private int _bar;
+	private Order _entryOrder;
+	private Order _exitOrder;
 
-	/// <summary>
-	/// Distance between bottoms in bars.
-	/// </summary>
-	public int Distance
-	{
-		get => _distanceParam.Value;
-		set => _distanceParam.Value = value;
-	}
+	public int Distance { get => _distance.Value; set => _distance.Value = value; }
+	public decimal SimilarityPercent { get => _similarityPercent.Value; set => _similarityPercent.Value = value; }
+	public decimal StopLossPercent { get => _stopLossPercent.Value; set => _stopLossPercent.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Maximum percent difference between two bottoms.
-	/// </summary>
-	public decimal SimilarityPercent
-	{
-		get => _similarityPercent.Value;
-		set => _similarityPercent.Value = value;
-	}
-
-	/// <summary>
-	/// MA Period for exit.
-	/// </summary>
-	public int MAPeriod
-	{
-		get => _maPeriod.Value;
-		set => _maPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Type of candles to use.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Cooldown bars between trades.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="DoubleBottomStrategy"/>.
-	/// </summary>
 	public DoubleBottomStrategy()
 	{
-		_distanceParam = Param(nameof(Distance), 20)
-			.SetRange(3, 100)
-			.SetDisplay("Distance", "Bars between bottoms", "Pattern");
-
-		_similarityPercent = Param(nameof(SimilarityPercent), 1.0m)
-			.SetRange(0.1m, 5.0m)
-			.SetDisplay("Similarity %", "Max % diff between bottoms", "Pattern");
-
-		_maPeriod = Param(nameof(MAPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("MA Period", "Period for exit SMA", "Indicators");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_cooldownBars = Param(nameof(CooldownBars), 500)
-			.SetRange(1, 1000)
-			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
+		_distance = Param(nameof(Distance), 5).SetRange(3, 100)
+			.SetDisplay("Distance", "Minimum bars between confirmed pivot lows", "Pattern");
+		_similarityPercent = Param(nameof(SimilarityPercent), 2m).SetRange(0.1m, 5m)
+			.SetDisplay("Similarity %", "Maximum relative difference between pivot lows", "Pattern");
+		_stopLossPercent = Param(nameof(StopLossPercent), 1m).SetRange(0m, 99m)
+			.SetDisplay("Stop below lows (%)", "Percentage buffer below the lower pattern low; zero places it at the low.", "Protection");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe for pivot lows and bullish confirmation", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType), (Security, DataType.Level1)];
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_recentLow = default;
-		_prevLow = default;
-		_barsSinceLow = default;
-		_cooldown = default;
+		ClearState();
 	}
 
-	/// <inheritdoc />
+	private void ClearState()
+	{
+		_twoBack = _previous = null;
+		_lastPivot = null;
+		_candidateLow = null;
+		_candidateExpires = 0;
+		_patternStop = null;
+		_bar = 0;
+		_entryOrder = _exitOrder = null;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_recentLow = 0;
-		_prevLow = 0;
-		_barsSinceLow = 0;
-		_cooldown = 0;
-
-		var sma = new SimpleMovingAverage { Length = MAPeriod };
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(sma, ProcessCandle)
-			.Start();
-
+		ClearState();
+		var bids = new Subscription(DataType.Level1, Security);
+		bids.MarketData.BuildField = Level1Fields.BestBidPrice;
+		SubscribeLevel1(bids).Bind(ProcessBid).Start();
+		var candles = SubscribeCandles(CandleType);
+		candles.Bind(ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, sma);
+			DrawCandles(area, candles);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
+	private static bool IsPending(Order order)
+		=> order is not null && order.State is not (OrderStates.Done or OrderStates.Failed);
+
+	private void ProcessBid(Level1ChangeMessage message)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
+		if (message.TryGetDecimal(Level1Fields.BestBidPrice) is decimal bid && bid > 0m)
+			CheckStop(bid);
+	}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (_cooldown > 0)
+	private void CheckStop(decimal executableBid)
+	{
+		if (Position > 0m && _patternStop is decimal stop && executableBid <= stop && !IsPending(_exitOrder))
 		{
-			_cooldown--;
-			TrackLows(candle);
-			return;
-		}
-
-		// Track new lows
-		if (_recentLow == 0 || candle.LowPrice < _recentLow)
-		{
-			if (_recentLow > 0)
-				_prevLow = _recentLow;
-
-			_recentLow = candle.LowPrice;
-			_barsSinceLow = 0;
-		}
-		else
-		{
-			_barsSinceLow++;
-		}
-
-		if (Position == 0 && _prevLow > 0 && _barsSinceLow >= Distance)
-		{
-			var priceDiff = Math.Abs((_recentLow - _prevLow) / _prevLow * 100);
-
-			if (priceDiff <= SimilarityPercent && candle.ClosePrice > smaValue)
-			{
-				BuyMarket();
-				_cooldown = CooldownBars;
-				_recentLow = 0;
-				_prevLow = 0;
-			}
-			else if (priceDiff <= SimilarityPercent && candle.ClosePrice < smaValue)
-			{
-				SellMarket();
-				_cooldown = CooldownBars;
-				_recentLow = 0;
-				_prevLow = 0;
-			}
-		}
-		else if (Position > 0 && candle.ClosePrice < smaValue)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position < 0 && candle.ClosePrice > smaValue)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
+			_exitOrder = SellMarket(Position);
+			// An exited pattern cannot be reused to open another position.
+			_twoBack = _previous = null;
+			_lastPivot = null;
+			_candidateLow = null;
 		}
 	}
 
-	private void TrackLows(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle)
 	{
-		if (_recentLow == 0 || candle.LowPrice < _recentLow)
+		if (candle.State != CandleStates.Finished)
+			return;
+		_bar++;
+		var older = _twoBack;
+		var middle = _previous;
+		_twoBack = middle;
+		_previous = candle;
+		if (Position > 0m)
 		{
-			if (_recentLow > 0)
-				_prevLow = _recentLow;
-
-			_recentLow = candle.LowPrice;
-			_barsSinceLow = 0;
+			// Covers missing/stale quotes or a gap; the next market order may fill beyond the stop.
+			CheckStop(candle.LowPrice);
+			return;
 		}
-		else
+		if (IsPending(_entryOrder) || IsPending(_exitOrder))
+			return;
+		if (older is not null && middle is not null &&
+			middle.LowPrice < older.LowPrice && middle.LowPrice <= candle.LowPrice)
 		{
-			_barsSinceLow++;
+			var pivot = (Bar: _bar - 1, Low: middle.LowPrice);
+			if (_lastPivot is { } first && pivot.Bar - first.Bar >= Distance &&
+				Math.Abs(pivot.Low - first.Low) * 100m <= first.Low * SimilarityPercent)
+			{
+				_candidateLow = Math.Min(first.Low, pivot.Low);
+				_candidateExpires = _bar + Distance;
+			}
+			_lastPivot = pivot;
 		}
+		if (_candidateLow is not decimal low)
+			return;
+		if (_bar > _candidateExpires || candle.LowPrice < low)
+		{
+			_candidateLow = null;
+			return;
+		}
+		if (candle.ClosePrice <= candle.OpenPrice || !IsFormedAndOnlineAndAllowTrading())
+			return;
+		_patternStop = low * (1m - StopLossPercent / 100m);
+		_entryOrder = BuyMarket(Volume);
+		_candidateLow = null;
+		_lastPivot = null;
 	}
 }

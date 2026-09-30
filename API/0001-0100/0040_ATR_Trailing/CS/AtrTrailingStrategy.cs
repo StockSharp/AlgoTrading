@@ -11,9 +11,8 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that uses ATR for trailing stop management.
-/// It enters positions using a simple moving average and manages exits with a dynamic
-/// trailing stop calculated as a multiple of ATR.
+/// Enters on price/SMA crossings; a crossing against the open position closes it and opens the crossing side.
+/// A fill-anchored, finished-close/current-ATR ratchet exits at market on fresh executable quotes.
 /// </summary>
 public class AtrTrailingStrategy : Strategy
 {
@@ -21,114 +20,71 @@ public class AtrTrailingStrategy : Strategy
 	private readonly StrategyParam<decimal> _atrMultiplier;
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
 
-	private decimal _entryPrice;
-	private decimal _trailingStopLevel;
-	private int _cooldown;
+	private decimal? _previousClose;
+	private decimal _previousMean;
+	private decimal? _trailingStopLevel;
+	private decimal _entryDistance;
+	private decimal _entryVolume;
+	private decimal _entryValue;
+	private Sides _entrySide;
+	private Order _pendingOrder;
 
-	/// <summary>
-	/// Period for ATR calculation.
-	/// </summary>
-	public int AtrPeriod
-	{
-		get => _atrPeriod.Value;
-		set => _atrPeriod.Value = value;
-	}
+	public int AtrPeriod { get => _atrPeriod.Value; set => _atrPeriod.Value = value; }
+	public decimal AtrMultiplier { get => _atrMultiplier.Value; set => _atrMultiplier.Value = value; }
+	public int MAPeriod { get => _maPeriod.Value; set => _maPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// ATR multiplier for trailing stop calculation.
-	/// </summary>
-	public decimal AtrMultiplier
-	{
-		get => _atrMultiplier.Value;
-		set => _atrMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Period for Moving Average calculation for entry.
-	/// </summary>
-	public int MAPeriod
-	{
-		get => _maPeriod.Value;
-		set => _maPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Type of candles used for strategy calculation.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Cooldown bars between trades.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize the ATR Trailing strategy.
-	/// </summary>
 	public AtrTrailingStrategy()
 	{
-		_atrPeriod = Param(nameof(AtrPeriod), 14)
+		_atrPeriod = Param(nameof(AtrPeriod), 14).SetGreaterThanZero()
 			.SetDisplay("ATR Period", "Period for ATR calculation", "Indicators")
 			.SetOptimize(7, 21, 7);
-
-		_atrMultiplier = Param(nameof(AtrMultiplier), 3.0m)
-			.SetDisplay("ATR Multiplier", "ATR multiplier for trailing stop", "Risk")
-			.SetOptimize(2.0m, 4.0m, 0.5m);
-
-		_maPeriod = Param(nameof(MAPeriod), 20)
+		_atrMultiplier = Param(nameof(AtrMultiplier), 3m).SetNotNegative()
+			.SetDisplay("ATR Multiplier", "ATR multiplier for trailing stop; zero disables it", "Risk")
+			.SetOptimize(2m, 4m, 0.5m);
+		_maPeriod = Param(nameof(MAPeriod), 20).SetGreaterThanZero()
 			.SetDisplay("MA Period", "Period for Moving Average calculation for entry", "Indicators")
 			.SetOptimize(10, 50, 5);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_cooldownBars = Param(nameof(CooldownBars), 500)
-			.SetRange(1, 1000)
-			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
+		OrderRegistering += order => _pendingOrder = order;
+		Trades.TradeAdded += ObserveActualFill;
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType), (Security, DataType.Level1)];
 
-	/// <inheritdoc />
+	private bool HasPendingOrder => _pendingOrder is not null && _pendingOrder.State is not (OrderStates.Done or OrderStates.Failed);
+
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_entryPrice = default;
-		_trailingStopLevel = default;
-		_cooldown = default;
+		_previousClose = null;
+		_previousMean = default;
+		_trailingStopLevel = null;
+		_entryDistance = _entryVolume = _entryValue = default;
+		_entrySide = default;
+		_pendingOrder = null;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_entryPrice = 0;
-		_trailingStopLevel = 0;
-		_cooldown = 0;
-
+		_previousClose = null;
+		_trailingStopLevel = null;
+		_entryVolume = _entryValue = 0m;
+		_pendingOrder = null;
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ProcessQuote).Start();
+		}
 		var atr = new AverageTrueRange { Length = AtrPeriod };
 		var sma = new SimpleMovingAverage { Length = MAPeriod };
-
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(atr, sma, ProcessCandle)
-			.Start();
-
+		subscription.BindEx(atr, sma, ProcessCandle, false).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -138,62 +94,86 @@ public class AtrTrailingStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal atrValue, decimal smaValue)
+	private void Ratchet(decimal candidate)
 	{
-		if (candle.State != CandleStates.Finished)
+		_trailingStopLevel = _trailingStopLevel is decimal previous
+			? (_entrySide == Sides.Buy ? Math.Max(previous, candidate) : Math.Min(previous, candidate))
+			: candidate;
+	}
+
+	private void ObserveActualFill(MyTrade trade)
+	{
+		if (Position == 0m)
+		{
+			_trailingStopLevel = null;
+			_entryVolume = _entryValue = 0m;
+		}
+		else if (trade.Order.Side == _entrySide && AtrMultiplier > 0m)
+		{
+			_entryVolume += trade.Trade.Volume;
+			_entryValue += trade.Trade.Price * trade.Trade.Volume;
+			var actualEntry = _entryValue / _entryVolume;
+			Ratchet(_entrySide == Sides.Buy ? actualEntry - _entryDistance : actualEntry + _entryDistance);
+		}
+	}
+
+	private void ProcessQuote(Level1ChangeMessage quote)
+	{
+		if (AtrMultiplier == 0m || Position == 0m || _trailingStopLevel is not decimal stop
+			|| HasPendingOrder || !IsFormedAndOnlineAndAllowTrading())
 			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
+		// Only a fresh executable-side price can activate; never reuse another side's stale quote.
+		var field = Position > 0m ? Level1Fields.BestBidPrice : Level1Fields.BestAskPrice;
+		if (!quote.Changes.TryGetValue(field, out var raw) || raw is not decimal price || price <= 0m)
 			return;
+		if (Position > 0m ? price <= stop : price >= stop)
+			ClosePosition("ATR trailing stop");
+	}
 
-		var trailingStopDistance = atrValue * AtrMultiplier;
-
-		if (_cooldown > 0)
+	private void ClosePosition(string comment)
+	{
+		RegisterOrder(new Order
 		{
-			_cooldown--;
+			Security = Security, Portfolio = Portfolio, Type = OrderTypes.Market,
+			Side = Position > 0m ? Sides.Sell : Sides.Buy,
+			Volume = Math.Abs(Position), Comment = comment,
+		});
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue atrValue, IIndicatorValue smaValue)
+	{
+		if (candle.State != CandleStates.Finished || !atrValue.Indicator.IsFormed || !smaValue.Indicator.IsFormed
+			|| !IsFormedAndOnlineAndAllowTrading())
 			return;
-		}
-
-		if (Position == 0)
+		var atr = atrValue.GetValue<decimal>();
+		var mean = smaValue.GetValue<decimal>();
+		var close = candle.ClosePrice;
+		var downwardCross = _previousClose is decimal prevDown && prevDown >= _previousMean && close < mean;
+		var upwardCross = _previousClose is decimal prevUp && prevUp <= _previousMean && close > mean;
+		_previousClose = close;
+		_previousMean = mean;
+		// While a reversal is unfilled the old side is still held; its close must not seed the new side's stop.
+		if (Position != 0m && (Position > 0m) == (_entrySide == Sides.Buy) && AtrMultiplier > 0m)
+			Ratchet(Position > 0m ? close - atr * AtrMultiplier : close + atr * AtrMultiplier);
+		if (HasPendingOrder)
+			return;
+		if (upwardCross || downwardCross)
 		{
-			if (candle.ClosePrice > smaValue)
+			var side = upwardCross ? Sides.Buy : Sides.Sell;
+			// A crossing against the open position closes it and opens the crossing side in one order.
+			if (Position == 0m || (Position > 0m) != (side == Sides.Buy))
 			{
-				BuyMarket();
-				_entryPrice = candle.ClosePrice;
-				_trailingStopLevel = _entryPrice - trailingStopDistance;
-				_cooldown = CooldownBars;
-			}
-			else if (candle.ClosePrice < smaValue)
-			{
-				SellMarket();
-				_entryPrice = candle.ClosePrice;
-				_trailingStopLevel = _entryPrice + trailingStopDistance;
-				_cooldown = CooldownBars;
-			}
-		}
-		else if (Position > 0)
-		{
-			var newTrailingStopLevel = candle.ClosePrice - trailingStopDistance;
-			if (newTrailingStopLevel > _trailingStopLevel)
-				_trailingStopLevel = newTrailingStopLevel;
-
-			if (candle.LowPrice <= _trailingStopLevel)
-			{
-				SellMarket();
-				_cooldown = CooldownBars;
+				_entrySide = side;
+				_entryDistance = atr * AtrMultiplier;
+				_entryVolume = _entryValue = 0m;
+				_trailingStopLevel = null;
+				RegisterOrder(new Order
+				{
+					Security = Security, Portfolio = Portfolio, Type = OrderTypes.Market,
+					Side = side, Volume = Volume + Math.Abs(Position), Comment = "ATR trailing entry",
+				});
 			}
 		}
-		else if (Position < 0)
-		{
-			var newTrailingStopLevel = candle.ClosePrice + trailingStopDistance;
-			if (newTrailingStopLevel < _trailingStopLevel || _trailingStopLevel == 0)
-				_trailingStopLevel = newTrailingStopLevel;
-
-			if (candle.HighPrice >= _trailingStopLevel)
-			{
-				BuyMarket();
-				_cooldown = CooldownBars;
-			}
-		}
+		// A newly tightened level is eligible only for subsequent quote updates, not this bar's old wick.
 	}
 }

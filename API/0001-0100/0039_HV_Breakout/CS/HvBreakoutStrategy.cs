@@ -11,175 +11,112 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that trades breakouts based on historical volatility.
-/// It calculates price levels for breakouts using the historical volatility
-/// and enters positions when price breaks above or below those levels.
+/// Breakouts beyond SMA-anchored levels widened by relative population price dispersion (StdDev / Close).
+/// Exits on an adverse price/SMA crossing or native actual-fill percent protection.
 /// </summary>
 public class HvBreakoutStrategy : Strategy
 {
 	private readonly StrategyParam<int> _hvPeriod;
 	private readonly StrategyParam<int> _maPeriod;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
 
-	private decimal _referencePrice;
-	private bool _isReferenceSet;
-	private int _cooldown;
+	private decimal? _previousClose;
+	private decimal _previousMean;
+	private Order _pendingOrder;
 
-	/// <summary>
-	/// Period for Historical Volatility calculation.
-	/// </summary>
-	public int HvPeriod
-	{
-		get => _hvPeriod.Value;
-		set => _hvPeriod.Value = value;
-	}
+	public int HvPeriod { get => _hvPeriod.Value; set => _hvPeriod.Value = value; }
+	public int MAPeriod { get => _maPeriod.Value; set => _maPeriod.Value = value; }
+	public decimal StopLossPercent { get => _stopLossPercent.Value; set => _stopLossPercent.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Period for Moving Average calculation for exit.
-	/// </summary>
-	public int MAPeriod
-	{
-		get => _maPeriod.Value;
-		set => _maPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Type of candles used for strategy calculation.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Cooldown bars between trades.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize the Historical Volatility Breakout strategy.
-	/// </summary>
 	public HvBreakoutStrategy()
 	{
-		_hvPeriod = Param(nameof(HvPeriod), 20)
+		_hvPeriod = Param(nameof(HvPeriod), 20).SetGreaterThanZero()
 			.SetDisplay("HV Period", "Period for Historical Volatility calculation", "Indicators")
 			.SetOptimize(10, 30, 5);
-
-		_maPeriod = Param(nameof(MAPeriod), 20)
-			.SetDisplay("MA Period", "Period for Moving Average calculation for exit", "Indicators")
+		_maPeriod = Param(nameof(MAPeriod), 20).SetGreaterThanZero()
+			.SetDisplay("MA Period", "Period for the Moving Average that anchors the breakout levels and exits", "Indicators")
 			.SetOptimize(10, 50, 5);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m).SetNotNegative()
+			.SetDisplay("Stop Loss (%)", "Actual-fill percent stop; zero disables it.", "Protection");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_cooldownBars = Param(nameof(CooldownBars), 500)
-			.SetRange(1, 1000)
-			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
+		OrderRegistering += order => _pendingOrder = order;
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType), (Security, DataType.Level1)];
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_referencePrice = default;
-		_isReferenceSet = default;
-		_cooldown = default;
+		_previousClose = null;
+		_previousMean = default;
+		_pendingOrder = null;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_referencePrice = 0;
-		_isReferenceSet = false;
-		_cooldown = 0;
-
-		var standardDeviation = new StandardDeviation { Length = HvPeriod };
+		_previousClose = null;
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
+		var deviation = new StandardDeviation { Length = HvPeriod };
 		var sma = new SimpleMovingAverage { Length = MAPeriod };
-
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(standardDeviation, sma, ProcessCandle)
-			.Start();
-
+		subscription.BindEx(deviation, sma, ProcessCandle, false).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, deviation);
 			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal stdDevValue, decimal smaValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
 	{
-		if (candle.State != CandleStates.Finished)
+		// Native protection runs before this callback, including between finished candles.
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue deviationValue, IIndicatorValue smaValue)
+	{
+		if (candle.State != CandleStates.Finished || !deviationValue.Indicator.IsFormed || !smaValue.Indicator.IsFormed
+			|| !IsFormedAndOnlineAndAllowTrading() || candle.ClosePrice <= 0m)
 			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var hv = candle.ClosePrice > 0 ? stdDevValue / candle.ClosePrice : 0;
-
-		if (!_isReferenceSet)
+		var close = candle.ClosePrice;
+		var mean = smaValue.GetValue<decimal>();
+		if (_previousClose is not decimal prior)
 		{
-			_referencePrice = candle.ClosePrice;
-			_isReferenceSet = true;
-			return;
-		}
-
-		if (_cooldown > 0)
-		{
-			_cooldown--;
+			_previousClose = close;
+			_previousMean = mean;
 			return;
 		}
-
-		var upperBreakoutLevel = _referencePrice * (1 + hv);
-		var lowerBreakoutLevel = _referencePrice * (1 - hv);
-
-		if (Position == 0)
+		var upwardCross = prior <= _previousMean && close > mean;
+		var downwardCross = prior >= _previousMean && close < mean;
+		_previousClose = close;
+		_previousMean = mean;
+		if (_pendingOrder is not null && _pendingOrder.State is not (OrderStates.Done or OrderStates.Failed))
+			return;
+		if (Position > 0m && downwardCross)
+			SellMarket(Position);
+		else if (Position < 0m && upwardCross)
+			BuyMarket(Math.Abs(Position));
+		else if (Position == 0m)
 		{
-			if (candle.ClosePrice > upperBreakoutLevel)
-			{
-				BuyMarket();
-				_cooldown = CooldownBars;
-				_referencePrice = candle.ClosePrice;
-			}
-			else if (candle.ClosePrice < lowerBreakoutLevel)
-			{
-				SellMarket();
-				_cooldown = CooldownBars;
-				_referencePrice = candle.ClosePrice;
-			}
-		}
-		else if (Position > 0)
-		{
-			if (candle.ClosePrice < smaValue)
-			{
-				SellMarket();
-				_cooldown = CooldownBars;
-			}
-		}
-		else if (Position < 0)
-		{
-			if (candle.ClosePrice > smaValue)
-			{
-				BuyMarket();
-				_cooldown = CooldownBars;
-			}
+			// HV is the relative price dispersion StdDev / Close.
+			var relativeDeviation = deviationValue.GetValue<decimal>() / close;
+			if (close > mean * (1m + relativeDeviation))
+				BuyMarket(Volume);
+			else if (close < mean * (1m - relativeDeviation))
+				SellMarket(Volume);
 		}
 	}
 }

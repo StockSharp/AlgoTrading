@@ -19,8 +19,15 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 
 [TestClass]
-public partial class PythonTests : BaseTestClass
+public partial class PythonTests : StrategyTests
 {
+	/// <inheritdoc />
+	protected override string Extension => ".py";
+
+	/// <inheritdoc />
+	protected override Task RunFile(string filePath, Action<Strategy, Security> setup, TimeSpan? replayDuration, TimeSpan? postTradeHorizon)
+		=> RunStrategy(filePath, CancellationToken, setup, replayDuration, postTradeHorizon);
+
 	public static async Task RunStrategy(string filePath, CancellationToken cancellationToken, Action<Strategy, Security> extra = null, TimeSpan? replayDuration = null, TimeSpan? postTradeHorizon = null, bool requireTrades = true)
 	{
 		var strategyPath = Path.Combine("../../../../API/", filePath);
@@ -85,20 +92,4 @@ public partial class PythonTests : BaseTestClass
 	[TestMethod, TestCategory("Shard07")]
 	[DynamicData(nameof(Shard07), DynamicDataDisplayName = nameof(RowName))]
 	public Task Strategies07(string path, string name) => RunStrategy(path, CancellationToken);
-
-	/// <summary>
-	/// Run one example on demand, for digging into a failure. It carries no shard, so no CI job
-	/// selects it; pass the path it should run as a run parameter:
-	/// dotnet test --filter "FullyQualifiedName~PythonTests.Debug" -- TestRunParameters.Parameter(name="strategy",value="0001-0100/0002_NDay_Breakout/PY/nday_breakout_strategy.py")
-	/// </summary>
-	[TestMethod, TestCategory("Manual")]
-	public async Task Debug()
-	{
-		var path = TestContext.Properties.TryGetValue("strategy", out var value) ? value as string : null;
-
-		if (path.IsEmpty())
-			Inconclusive("Pass the example to run as TestRunParameters.Parameter(name=\"strategy\", value=\"<path under API/>\").");
-
-		await RunStrategy(path, CancellationToken);
-	}
 }

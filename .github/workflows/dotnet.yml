@@ -31,6 +31,9 @@ jobs:
       - name: Validate API structure
         run: python Tools/validate_api_structure.py
 
+      - name: Test README audit tooling
+        run: python -m unittest Tools.test_audit_readme_contracts
+
   build:
     needs: validate
     runs-on: ubuntu-latest

@@ -21,12 +21,12 @@ public class LowVolReversionStrategy : Strategy
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<int> _atrLookbackPeriod;
 	private readonly StrategyParam<decimal> _atrThresholdPercent;
+	private readonly StrategyParam<decimal> _atrMultiplier;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
-
-	private decimal _avgAtr;
-	private int _lookbackCounter;
-	private int _cooldown;
+	private SimpleMovingAverage _atrAverage;
+	private Order _pendingOrder;
+	private Unit _stopDistance;
+	private bool _protectionStarted;
 
 	/// <summary>
 	/// Period for Moving Average calculation.
@@ -65,6 +65,15 @@ public class LowVolReversionStrategy : Strategy
 	}
 
 	/// <summary>
+	/// ATR multiplier for the stop-loss distance frozen at entry; zero disables the stop.
+	/// </summary>
+	public decimal AtrMultiplier
+	{
+		get => _atrMultiplier.Value;
+		set => _atrMultiplier.Value = value;
+	}
+
+	/// <summary>
 	/// Type of candles used for strategy calculation.
 	/// </summary>
 	public DataType CandleType
@@ -74,56 +83,49 @@ public class LowVolReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Cooldown bars between trades.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
 	/// Initialize the Low Volatility Reversion strategy.
 	/// </summary>
 	public LowVolReversionStrategy()
 	{
-		_maPeriod = Param(nameof(MAPeriod), 20)
+		_maPeriod = Param(nameof(MAPeriod), 20).SetGreaterThanZero()
 			.SetDisplay("MA Period", "Period for Moving Average calculation", "Indicators")
 			.SetOptimize(10, 50, 5);
 
-		_atrPeriod = Param(nameof(AtrPeriod), 14)
+		_atrPeriod = Param(nameof(AtrPeriod), 14).SetGreaterThanZero()
 			.SetDisplay("ATR Period", "Period for ATR calculation", "Indicators")
 			.SetOptimize(7, 21, 7);
 
-		_atrLookbackPeriod = Param(nameof(AtrLookbackPeriod), 20)
+		_atrLookbackPeriod = Param(nameof(AtrLookbackPeriod), 20).SetGreaterThanZero()
 			.SetDisplay("ATR Lookback", "Lookback period for ATR average calculation", "Indicators")
 			.SetOptimize(10, 50, 10);
 
-		_atrThresholdPercent = Param(nameof(AtrThresholdPercent), 80m)
+		_atrThresholdPercent = Param(nameof(AtrThresholdPercent), 50m).SetNotNegative()
 			.SetDisplay("ATR Threshold %", "ATR threshold as percentage of average ATR", "Entry")
 			.SetOptimize(30m, 90m, 10m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_atrMultiplier = Param(nameof(AtrMultiplier), 2m).SetNotNegative()
+			.SetDisplay("ATR Stop Multiplier", "Frozen entry ATR stop distance; zero disables it", "Protection");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_cooldownBars = Param(nameof(CooldownBars), 500)
-			.SetRange(1, 1000)
-			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
+		OrderRegistering += order => _pendingOrder = order;
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, CandleType)];
+		return [(Security, CandleType), (Security, DataType.Level1)];
 	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_avgAtr = default;
-		_lookbackCounter = default;
-		_cooldown = default;
+		_atrAverage = null;
+		_pendingOrder = null;
+		_stopDistance = null;
+		_protectionStarted = false;
 	}
 
 	/// <inheritdoc />
@@ -131,16 +133,21 @@ public class LowVolReversionStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_avgAtr = 0;
-		_lookbackCounter = 0;
-		_cooldown = 0;
+		_atrAverage = new SimpleMovingAverage { Length = AtrLookbackPeriod, Name = "ATR rolling mean" };
+		Indicators.Add(_atrAverage);
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
 
 		var sma = new SimpleMovingAverage { Length = MAPeriod };
 		var atr = new AverageTrueRange { Length = AtrPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(sma, atr, ProcessCandle)
+			.BindEx(sma, atr, ProcessCandle, false)
 			.Start();
 
 		var area = CreateChartArea();
@@ -152,68 +159,54 @@ public class LowVolReversionStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal smaValue, decimal atrValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
 	{
-		if (candle.State != CandleStates.Finished)
+		// Native protection runs before this callback, including between finished candles.
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue smaValue, IIndicatorValue atrValue)
+	{
+		if (candle.State != CandleStates.Finished || !atrValue.Indicator.IsFormed)
 			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
+		var atr = atrValue.GetValue<decimal>();
+		// Feed only fully formed ATR samples; the current sample belongs to the rolling window.
+		var average = _atrAverage.Process(new DecimalIndicatorValue(_atrAverage, atr, candle.OpenTime) { IsFinal = true }).GetValue<decimal>();
+		if (!_atrAverage.IsFormed || !smaValue.Indicator.IsFormed || !IsFormedAndOnlineAndAllowTrading())
 			return;
-
-		// Gather ATR values for average calculation
-		if (_lookbackCounter < AtrLookbackPeriod)
-		{
-			if (_lookbackCounter == 0)
-				_avgAtr = atrValue;
-			else
-				_avgAtr = (_avgAtr * _lookbackCounter + atrValue) / (_lookbackCounter + 1);
-
-			_lookbackCounter++;
+		if (_pendingOrder is not null && _pendingOrder.State is not (OrderStates.Done or OrderStates.Failed))
 			return;
-		}
-		else
+		var mean = smaValue.GetValue<decimal>();
+		// Quiet-market filtering never blocks an existing position's mean-touch exit.
+		if (Position > 0m && candle.ClosePrice >= mean)
+			SellMarket(Position);
+		else if (Position < 0m && candle.ClosePrice <= mean)
+			BuyMarket(Math.Abs(Position));
+		else if (Position == 0m && atr > 0m && atr < average * AtrThresholdPercent / 100m)
 		{
-			_avgAtr = (_avgAtr * (AtrLookbackPeriod - 1) + atrValue) / AtrLookbackPeriod;
+			if (candle.ClosePrice < mean) Enter(Sides.Buy, atr);
+			else if (candle.ClosePrice > mean) Enter(Sides.Sell, atr);
 		}
+	}
 
-		if (_cooldown > 0)
+	private void Enter(Sides side, decimal atr)
+	{
+		var distance = atr * AtrMultiplier;
+		_stopDistance ??= new Unit(distance);
+		// Preserve the Unit reference retained by native cached protection controllers.
+		_stopDistance.Value = distance;
+		if (!_protectionStarted && distance > 0m)
 		{
-			_cooldown--;
-			return;
+			StartProtection(new Unit(), _stopDistance, useMarketOrders: true, isLocalStop: true);
+			_protectionStarted = true;
 		}
-
-		// Check if we're in a low volatility period
-		decimal atrThreshold = _avgAtr * (AtrThresholdPercent / 100);
-		bool isLowVolatility = atrValue < atrThreshold;
-
-		if (Position == 0 && isLowVolatility)
+		RegisterOrder(new Order
 		{
-			if (candle.ClosePrice < smaValue)
-			{
-				BuyMarket();
-				_cooldown = CooldownBars;
-			}
-			else if (candle.ClosePrice > smaValue)
-			{
-				SellMarket();
-				_cooldown = CooldownBars;
-			}
-		}
-		else if (Position > 0)
-		{
-			if (candle.ClosePrice > smaValue)
-			{
-				SellMarket();
-				_cooldown = CooldownBars;
-			}
-		}
-		else if (Position < 0)
-		{
-			if (candle.ClosePrice < smaValue)
-			{
-				BuyMarket();
-				_cooldown = CooldownBars;
-			}
-		}
+			Security = Security,
+			Portfolio = Portfolio,
+			Type = OrderTypes.Market,
+			Side = side,
+			Volume = Volume,
+			Comment = "Low volatility entry",
+		});
 	}
 }

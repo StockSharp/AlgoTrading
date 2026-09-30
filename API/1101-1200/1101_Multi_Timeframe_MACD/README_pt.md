@@ -15,7 +15,7 @@ O MACD Multitemporal combina sinais MACD do período de trabalho e de um períod
   - `SlowLength` = 26
   - `SignalLength` = 9
   - `CandleType` = tf(5)
-  - `HigherCandleType` = tf(1d)
+  - `HigherCandleType` = tf(1h)
   - `ShowCurrentTimeframe` = true
   - `ShowHigherTimeframe` = true
   - `Entry` = Crossover
@@ -27,7 +27,7 @@ O MACD Multitemporal combina sinais MACD do período de trabalho e de um períod
   - Indicadores: MACD
   - Stops: Sim
   - Complexidade: Intermediário
-  - Período: Multitemporal (5m/1d)
+  - Período: Multitemporal (5m/1h)
   - Sazonalidade: Não
   - Redes neurais: Não
   - Divergência: Não

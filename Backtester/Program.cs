@@ -225,6 +225,13 @@ static class Program
 
 	private static void ResolveLocalReferences(CodeInfo code)
 	{
+		string[] additional = ["StockSharp.MatchingEngine.dll", "StockSharp.Configuration.dll", "System.Collections.Concurrent.dll", "System.Runtime.InteropServices.dll"];
+		foreach (var fileName in additional)
+		{
+			if (!code.AssemblyReferences.Any(reference => Path.GetFileName(reference.FileName).Equals(fileName, StringComparison.OrdinalIgnoreCase)))
+				code.AssemblyReferences.Add(new() { FileName = fileName });
+		}
+
 		foreach (var reference in code.AssemblyReferences)
 		{
 			if (Path.IsPathRooted(reference.FileName))
@@ -233,6 +240,12 @@ static class Program
 			var localPath = Path.Combine(AppContext.BaseDirectory, reference.FileName);
 			if (File.Exists(localPath))
 				reference.FileName = localPath;
+			else
+			{
+				var runtimePath = Path.Combine(Path.GetDirectoryName(typeof(object).Assembly.Location), reference.FileName);
+				if (File.Exists(runtimePath))
+					reference.FileName = runtimePath;
+			}
 		}
 	}
 

@@ -1,84 +1,22 @@
 namespace StockSharp.Tests;
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
-
-using Ecng.Common;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
+using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 using StockSharp.Samples.Strategies;
 
 partial class CSharpTests
 {
-	[TestMethod]
-	[TestCategory("Shard01")]
-	public async Task S0001_MaCrossover()
-	{
-		var recorder = new OrderTraceRecorder();
-		MaCrossoverStrategy strategy = null;
-
-		await RunStrategy<MaCrossoverStrategy>(CancellationToken, (current, _) =>
-		{
-			strategy = current;
-			current.FastLength = 5;
-			current.SlowLength = 20;
-			current.StopLossPercent = 100m;
-			recorder.Attach(current);
-		});
-
-		recorder.AssertReverses(strategy.Volume);
-	}
-
-	[TestMethod]
-	[TestCategory("Shard01")]
-	public async Task S0201_VwapWilliamsR()
-	{
-		var tightStop = new OrderTraceRecorder();
-		var wideStop = new OrderTraceRecorder();
-
-		await RunStrategy<VwapWilliamsRStrategy>(CancellationToken, (strategy, _) =>
-		{
-			strategy.WilliamsRPeriod = 5;
-			strategy.CooldownBars = 1;
-			strategy.StopLossPercent = 0.5m;
-			tightStop.Attach(strategy);
-		}, replayDuration: TimeSpan.FromDays(7));
-
-		await RunStrategy<VwapWilliamsRStrategy>(CancellationToken, (strategy, _) =>
-		{
-			strategy.WilliamsRPeriod = 5;
-			strategy.CooldownBars = 1;
-			strategy.StopLossPercent = 5m;
-			wideStop.Attach(strategy);
-		}, replayDuration: TimeSpan.FromDays(7));
-
-		tightStop.AssertDiffersFrom(wideStop, "Changing StopLossPercent did not affect submitted orders.");
-	}
-
-	[TestMethod]
-	[TestCategory("Shard01")]
-	public async Task S0401_SoccerClubsArbitrage()
-	{
-		var recorder = new PairedOrderRecorder();
-		SoccerClubsArbitrageStrategy strategy = null;
-		Security secondSecurity = null;
-
-		await RunStrategy<SoccerClubsArbitrageStrategy>(CancellationToken, (current, second) =>
-		{
-			strategy = current;
-			secondSecurity = second;
-			current.Security2Id = second.Id;
-			recorder.Attach(current);
-		});
-
-		recorder.AssertBalanced(strategy.Security, secondSecurity);
-	}
-
 	[TestMethod]
 	[TestCategory("Shard07")]
 	public async Task S0503_AdvancedPositionManagement()
@@ -102,64 +40,6 @@ partial class CSharpTests
 			strategy.TakeProfitPercent = 0.01m;
 			strategy.CooldownBars = 1;
 		}, replayDuration: TimeSpan.FromDays(7));
-	}
-
-	[TestMethod]
-	[TestCategory("Shard05")]
-	public async Task S1005_MaWithLogistic()
-	{
-		async Task<OrderTraceRecorder> Replay(decimal takeProfit, decimal stopLoss)
-		{
-			var recorder = new OrderTraceRecorder();
-
-			await RunStrategy<MaWithLogisticStrategy>(CancellationToken, (strategy, _) =>
-			{
-				strategy.FastLength = 3;
-				strategy.SlowLength = 8;
-				strategy.TakeProfitPercent = takeProfit;
-				strategy.StopLossPercent = stopLoss;
-				recorder.Attach(strategy);
-			}, replayDuration: TimeSpan.FromDays(7));
-
-			return recorder;
-		}
-
-		var wideProtection = await Replay(100m, 100m);
-		var tightTakeProfit = await Replay(0.5m, 100m);
-		var tightStopLoss = await Replay(100m, 0.5m);
-
-		tightTakeProfit.AssertDiffersFrom(wideProtection, "Changing TakeProfitPercent did not affect submitted orders.");
-		tightStopLoss.AssertDiffersFrom(wideProtection, "Changing StopLossPercent did not affect submitted orders.");
-	}
-
-	[TestMethod]
-	[TestCategory("Shard03")]
-	public async Task S1507_UltimateTemplate()
-	{
-		async Task<OrderTraceRecorder> Replay(int fastLength, int slowLength, decimal takeProfit, decimal stopLoss)
-		{
-			var recorder = new OrderTraceRecorder();
-
-			await RunStrategy<UltimateTemplateStrategy>(CancellationToken, (strategy, _) =>
-			{
-				strategy.FastLength = fastLength;
-				strategy.SlowLength = slowLength;
-				strategy.TakeProfitPercent = takeProfit;
-				strategy.StopLossPercent = stopLoss;
-				recorder.Attach(strategy);
-			}, replayDuration: TimeSpan.FromDays(7));
-
-			return recorder;
-		}
-
-		var baseline = await Replay(9, 21, 100m, 100m);
-		var alternatePeriods = await Replay(2, 60, 100m, 100m);
-		var tightTakeProfit = await Replay(9, 21, 0.5m, 100m);
-		var tightStopLoss = await Replay(9, 21, 100m, 0.01m);
-
-		alternatePeriods.AssertDiffersFrom(baseline, "Changing FastLength and SlowLength did not affect submitted orders.");
-		tightTakeProfit.AssertDiffersFrom(baseline, "Changing TakeProfitPercent did not affect submitted orders.");
-		tightStopLoss.AssertDiffersFrom(baseline, "Changing StopLossPercent did not affect submitted orders.");
 	}
 
 	[TestMethod]
@@ -234,67 +114,6 @@ partial class CSharpTests
 	}
 
 	[TestMethod]
-	[TestCategory("Shard03")]
-	public async Task S2403_ReOpenPositions()
-	{
-		var recorder = new OrderTraceRecorder();
-
-		await RunStrategy<ReOpenPositionsStrategy>(CancellationToken, (strategy, _) =>
-		{
-			strategy.CandleType = TimeSpan.FromMinutes(5).TimeFrame();
-			strategy.ProfitThreshold = -1_000_000m;
-			strategy.MaxPositions = 3;
-			strategy.StopLossPoints = 100m;
-			strategy.TakeProfitPoints = 100m;
-			recorder.Attach(strategy);
-		}, replayDuration: TimeSpan.FromDays(2));
-
-		recorder.AssertFirstSide(Sides.Buy);
-		recorder.AssertBasketExitAfterEntries(3, 3m);
-	}
-
-	[TestMethod]
-	[TestCategory("Shard06")]
-	public async Task S2502_21HourSessionBreakout()
-	{
-		var recorder = new OrderTraceRecorder();
-
-		await RunStrategy<TwentyOneHourSessionBreakoutStrategy>(CancellationToken, (strategy, _) =>
-		{
-			strategy.Security.PriceStep = 0.01m;
-			strategy.CandleType = TimeSpan.FromHours(4).TimeFrame();
-			strategy.FirstSessionStartHour = 20;
-			strategy.FirstSessionStopHour = 21;
-			strategy.StepPoints = 1m;
-			strategy.TakeProfitPoints = 1_000_000m;
-			recorder.Attach(strategy);
-		}, replayDuration: TimeSpan.FromDays(2));
-
-		recorder.AssertFirstOrderHour(20);
-	}
-
-	[TestMethod]
-	[TestCategory("Shard06")]
-	public async Task S2606_StatisticsRepeatingBehavior()
-	{
-		var recorder = new OrderTraceRecorder();
-
-		await RunStrategy<StatisticsRepeatingBehaviorStrategy>(CancellationToken, (strategy, _) =>
-		{
-			strategy.Security.VolumeStep = 0.5m;
-			strategy.Security.MinVolume = 1m;
-			strategy.Security.MaxVolume = 10m;
-			strategy.InitialVolume = 3.4m;
-			strategy.MartingaleFactor = 2m;
-			strategy.StopLossPips = 1;
-			recorder.Attach(strategy);
-		}, replayDuration: TimeSpan.FromDays(2));
-
-		recorder.AssertFirstVolume(3m);
-		recorder.AssertContainsVolume(6m);
-	}
-
-	[TestMethod]
 	[TestCategory("Shard07")]
 	public async Task S2703_SelfOptimizingRsiOrMfiTraderV3()
 	{
@@ -360,60 +179,6 @@ partial class CSharpTests
 	}
 
 	[TestMethod]
-	[TestCategory("Shard00")]
-	public async Task S3104_MaMacdPositionAveraging()
-	{
-		var recorder = new OrderTraceRecorder();
-
-		await RunStrategy<MaMacdPositionAveragingStrategy>(CancellationToken, (strategy, _) =>
-		{
-			strategy.FastPeriod = 2;
-			strategy.SlowPeriod = 3;
-			strategy.StopLossPoints = 1;
-			strategy.TakeProfitPoints = 1;
-			recorder.Attach(strategy);
-		}, replayDuration: TimeSpan.FromDays(2));
-
-		recorder.AssertFirstOppositeWithin(TimeSpan.FromMinutes(10));
-	}
-
-	[TestMethod]
-	[TestCategory("Shard06")]
-	public async Task S3206_RiskRewardRatio()
-	{
-		var recorder = new OrderTraceRecorder();
-
-		await RunStrategy<RiskRewardRatioStrategy>(CancellationToken, (strategy, _) =>
-		{
-			strategy.FastPeriod = 2;
-			strategy.SlowPeriod = 3;
-			strategy.StopLossPoints = 1;
-			strategy.TakeProfitPoints = 1;
-			recorder.Attach(strategy);
-		}, replayDuration: TimeSpan.FromDays(2));
-
-		recorder.AssertFirstOppositeWithin(TimeSpan.FromMinutes(10));
-	}
-
-	[TestMethod]
-	[TestCategory("Shard05")]
-	public async Task S3301_CryptoAnalysis()
-	{
-		var recorder = new OrderTraceRecorder();
-
-		await RunStrategy<CryptoAnalysisStrategy>(CancellationToken, (strategy, _) =>
-		{
-			strategy.FastPeriod = 2;
-			strategy.SlowPeriod = 3;
-			strategy.StopLossPoints = 1;
-			strategy.TakeProfitPoints = 1;
-			recorder.Attach(strategy);
-		}, replayDuration: TimeSpan.FromDays(2));
-
-		recorder.AssertFirstOppositeWithin(TimeSpan.FromMinutes(10));
-	}
-
-	[TestMethod]
 	[TestCategory("Shard07")]
 	public async Task S3623_MatrixMachineLearning()
 	{
@@ -431,87 +196,6 @@ partial class CSharpTests
 		});
 
 		recorder.AssertFirstVolume(3m);
-	}
-
-	[TestMethod]
-	[TestCategory("Shard06")]
-	public async Task S3710_Rrsrandomness()
-	{
-		async Task<OrderTraceRecorder> Replay(
-			RrsRandomnessStrategy.TradingModes mode,
-			decimal minVolume,
-			decimal maxVolume,
-			decimal maxSpread,
-			RrsRandomnessStrategy.RiskModes riskMode,
-			decimal riskValue,
-			decimal takeProfit = 1m,
-			decimal stopLoss = 1m,
-			TimeSpan? postTradeHorizon = null,
-			bool requireTrades = true)
-		{
-			var recorder = new OrderTraceRecorder();
-
-			await RunStrategy<RrsRandomnessStrategy>(CancellationToken, (strategy, _) =>
-			{
-				strategy.Mode = mode;
-				strategy.MinVolume = minVolume;
-				strategy.MaxVolume = maxVolume;
-				strategy.MaxSpreadPoints = maxSpread;
-				strategy.MoneyRiskMode = riskMode;
-				strategy.RiskValue = riskValue;
-				strategy.TakeProfitPoints = takeProfit;
-				strategy.StopLossPoints = stopLoss;
-				strategy.TrailingStartPoints = 0m;
-				strategy.TrailingGapPoints = 0m;
-				strategy.TradeComment = "RRS-test";
-				strategy.CandleType = TimeSpan.FromMinutes(5).TimeFrame();
-				recorder.Attach(strategy);
-			}, replayDuration: TimeSpan.FromDays(2), postTradeHorizon: postTradeHorizon, requireTrades: requireTrades);
-
-			return recorder;
-		}
-
-		var fixedVolume = await Replay(
-			RrsRandomnessStrategy.TradingModes.DoubleSide,
-			0.123m, 0.123m, 1_000_000m,
-			RrsRandomnessStrategy.RiskModes.FixedMoney, 1_000_000m);
-
-		fixedVolume.AssertFirstSide(Sides.Buy);
-		fixedVolume.AssertFirstVolume(0.123m);
-		fixedVolume.AssertFirstComment("RRS-test");
-
-		var oneSide = await Replay(
-			RrsRandomnessStrategy.TradingModes.OneSide,
-			0.123m, 0.123m, 1_000_000m,
-			RrsRandomnessStrategy.RiskModes.FixedMoney, 1_000_000m);
-		oneSide.AssertDiffersFrom(fixedVolume, "Changing Mode did not affect submitted orders.");
-
-		var spreadBlocked = await Replay(
-			RrsRandomnessStrategy.TradingModes.DoubleSide,
-			0.123m, 0.123m, 0m,
-			RrsRandomnessStrategy.RiskModes.FixedMoney, 1_000_000m,
-			requireTrades: false);
-		spreadBlocked.AssertEmpty("MaxSpreadPoints=0 must block new entries.");
-
-		var horizon = TimeSpan.FromHours(12);
-		var wideRisk = await Replay(
-			RrsRandomnessStrategy.TradingModes.DoubleSide,
-			100m, 100m, 1_000_000m,
-			RrsRandomnessStrategy.RiskModes.FixedMoney, 1_000_000m,
-			takeProfit: 0m, stopLoss: 0m, postTradeHorizon: horizon);
-		var tightRisk = await Replay(
-			RrsRandomnessStrategy.TradingModes.DoubleSide,
-			100m, 100m, 1_000_000m,
-			RrsRandomnessStrategy.RiskModes.FixedMoney, 0.01m,
-			takeProfit: 0m, stopLoss: 0m, postTradeHorizon: horizon);
-		var percentageRisk = await Replay(
-			RrsRandomnessStrategy.TradingModes.DoubleSide,
-			100m, 100m, 1_000_000m,
-			RrsRandomnessStrategy.RiskModes.BalancePercentage, 0.01m,
-			takeProfit: 0m, stopLoss: 0m, postTradeHorizon: horizon);
-
-		tightRisk.AssertDiffersFrom(wideRisk, "Changing RiskValue did not affect submitted orders.");
-		percentageRisk.AssertDiffersFrom(tightRisk, "Changing MoneyRiskMode did not affect submitted orders.");
 	}
 
 	[TestMethod]
@@ -601,36 +285,6 @@ partial class CSharpTests
 
 	[TestMethod]
 	[TestCategory("Shard00")]
-	public Task S2000_HftSpreaderForForts()
-		// A full month creates tens of thousands of fills. One natural day still
-		// exercises hundreds of entry/exit cycles without turning CI into a load test.
-		=> RunStrategy<HftSpreaderForFortsStrategy>(CancellationToken, replayDuration: TimeSpan.FromDays(1));
-
-	[TestMethod]
-	[TestCategory("Shard00")]
-	public Task S3064_TwoPerbar()
-		// This intentionally trades on nearly every bar. A natural one-day window
-		// retains high trade coverage without generating ~16k fills per language.
-		=> RunStrategy<TwoPerBarStrategy>(CancellationToken, replayDuration: TimeSpan.FromDays(1));
-
-	[TestMethod]
-	[TestCategory("Shard00")]
-	public Task S4048_BurgExtrapolatorForecast()
-		=> RunStrategy<BurgExtrapolatorForecastStrategy>(CancellationToken, replayDuration: TimeSpan.FromDays(1));
-
-	[TestMethod]
-	[TestCategory("Shard00")]
-	public Task S2096_BreakoutBarsTrend()
-		// Compact parameters make the signal reachable in the bundled history window.
-		=> RunStrategy<BreakoutBarsTrendStrategy>(CancellationToken, (s, _) =>
-		{
-			s.Volume = 0.001m;
-			s.CandleType = TimeSpan.FromMinutes(5).TimeFrame();
-			s.Negatives = 0;
-		});
-
-	[TestMethod]
-	[TestCategory("Shard00")]
 	public async Task S2776_Ch2010Structure()
 	{
 		var primaryTraded = false;
@@ -676,388 +330,782 @@ partial class CSharpTests
 
 		capped.AssertFirstVolume(0.001m);
 
-		// The session date is stored with the daily levels so the intraday side can confirm it
-		// trades the same session. A one-day frame finishes only once the next date has begun,
-		// so every intraday candle that follows belongs to another session and those levels
-		// must not be traded at all.
-		var staleSession = new OrderTraceRecorder();
-
-		await RunStrategy<Ch2010StructureStrategy>(CancellationToken, (s, sec2) =>
-		{
-			s.UsdChfSecurity = s.Security;
-			s.GbpUsdSecurity = sec2;
-			s.DailyCandleType = TimeSpan.FromDays(1).TimeFrame();
-			s.IntradayCandleType = TimeSpan.FromMinutes(5).TimeFrame();
-			s.MinTradeVolume = 0.001m;
-			staleSession.Attach(s);
-		}, requireTrades: false);
-
-		staleSession.AssertEmpty("Intraday candles were traded against daily levels captured on an earlier date.");
 	}
 
 	[TestMethod]
 	[TestCategory("Shard05")]
-	public Task S0365_DispersionTrading()
-		=> RunStrategy<DispersionTradingStrategy>(CancellationToken, (s, sec2) => s.Constituents = new[] { sec2 });
-
-	/// <summary>
-	/// The pair is the whole example, and Beta = 1 is the ratio it documents. Only the presence of
-	/// both legs is asserted: how the two sides net out over a month depends on when positions are
-	/// closed, and the audit makes no claim about that.
-	/// </summary>
-	[TestMethod]
-	[TestCategory("Shard06")]
-	public async Task S0222_CointegrationPairs()
+	[DoNotParallelize]
+	public async Task S0333_KeltnerSeasonalFilter()
 	{
-		var recorder = new PairedOrderRecorder();
-		Security primary = null;
-		Security hedge = null;
-
-		await RunStrategy<CointegrationPairsStrategy>(CancellationToken, (strategy, second) =>
+		async Task<OrderTraceRecorder> Replay(int startedMonth)
 		{
-			strategy.Asset2 = second;
-			strategy.Beta = 1m;
-			primary = strategy.Security;
-			hedge = second;
-			recorder.Attach(strategy);
-		});
+			KeltnerSeasonalStartedMonthProbe.StartedMonth.Value = startedMonth;
+			var recorder = new OrderTraceRecorder();
 
-		recorder.AssertTradesBoth(primary, hedge);
+			await RunStrategy<KeltnerSeasonalStartedMonthProbe>(CancellationToken, (strategy, _) =>
+			{
+				recorder.Attach(strategy);
+			});
+
+			return recorder;
+		}
+
+		var januaryStart = await Replay(1);
+		var septemberStart = await Replay(9);
+
+		januaryStart.AssertSameAs(septemberStart);
+	}
+
+	private sealed class KeltnerSeasonalStartedMonthProbe : KeltnerSeasonalStrategy
+	{
+		public static readonly AsyncLocal<int> StartedMonth = new();
+
+		protected override void OnStarted2(DateTime time)
+		{
+			var month = StartedMonth.Value is >= 1 and <= 12 ? StartedMonth.Value : time.Month;
+			base.OnStarted2(new DateTime(time.Year, month, 1, time.Hour, time.Minute, time.Second, time.Kind));
+		}
 	}
 
 	[TestMethod]
-	[TestCategory("Shard06")]
-	public Task S0230_DeltaNeutralArbitrage()
-		=> RunStrategy<DeltaNeutralArbitrageStrategy>(CancellationToken, (s, sec2) => { s.Asset2Security = sec2; s.Asset2Portfolio = s.Portfolio; });
-
-	[TestMethod]
-	[TestCategory("Shard07")]
-	public Task S2679_MulticurrencyOverlayHedge()
-		=> RunStrategy<MulticurrencyOverlayHedgeStrategy>(CancellationToken, (s, sec2) =>
-		{
-			s.Universe = new[] { s.Security, sec2 };
-			s.CandleType = TimeSpan.FromMinutes(5).TimeFrame();
-			s.CorrelationThreshold = 0.01m;
-			s.CorrelationLookback = 50;
-			s.RangeLength = 20;
-			s.AtrLookback = 20;
-			s.MaxSpread = 100000m;
-			s.OverlayThreshold = 0.001m;
-			s.RecalculationHour = 0;
-		});
-
-	/// <summary>
-	/// The hedge is the example: both legs open in the same direction and are closed together when
-	/// their combined open profit reaches the money target. One filled order on one instrument is
-	/// not that, so the orders have to show both.
-	/// </summary>
-	[TestMethod]
-	[TestCategory("Shard06")]
-	public async Task S2798_ImproveMaRsiHedge()
+	[TestCategory("Shard01")]
+	public void S1807_GoFormula()
 	{
-		var recorder = new PairedOrderRecorder();
-		Security primary = null;
-		Security hedge = null;
+		var go = GoStrategy.CalculateGo(
+			openEma: 10m,
+			highEma: 11m,
+			lowEma: 9m,
+			closeEma: 12m,
+			volume: 2m);
 
-		await RunStrategy<ImproveMaRsiHedgeStrategy>(CancellationToken, (strategy, second) =>
-		{
-			strategy.HedgeSecurity = second;
-			primary = strategy.Security;
-			hedge = second;
-			recorder.Attach(strategy);
-		});
-
-		recorder.AssertTradesBoth(primary, hedge);
+		AreEqual(12m, go, "GO must follow the README formula over EMA(O/H/L/C) multiplied by volume.");
 	}
 
 	[TestMethod]
 	[TestCategory("Shard05")]
-	public Task S0333_KeltnerSeasonalFilter()
-		// Compact periods make the signal reachable in the bundled history window.
-		=> RunStrategy<KeltnerSeasonalStrategy>(CancellationToken, (s, _) =>
-		{
-			s.EmaPeriod = 2;
-			s.AtrPeriod = 2;
-			s.AtrMultiplier = 0.01m;
-			s.SeasonalThreshold = 0m;
-			s.CandleType = TimeSpan.FromMinutes(5).TimeFrame();
-		});
+	public void S3299_JbSignalUsesBollingerSmaAndForce()
+	{
+		AreEqual(1, JbStrategy.GetSignal(
+			previousClose: 94m,
+			sma: 90m,
+			force: 1m,
+			lowerBand: 95m,
+			upperBand: 105m));
+
+		AreEqual(-1, JbStrategy.GetSignal(
+			previousClose: 106m,
+			sma: 110m,
+			force: -1m,
+			lowerBand: 95m,
+			upperBand: 105m));
+
+		AreEqual(0, JbStrategy.GetSignal(
+			previousClose: 100m,
+			sma: 90m,
+			force: 1m,
+			lowerBand: 95m,
+			upperBand: 105m));
+	}
 
 	[TestMethod]
-	[TestCategory("Shard01")]
-	public Task S1153_Pairs()
-		=> RunStrategy<PairsStrategy>(CancellationToken, (s, sec2) => s.ReferenceSecurity = sec2);
+	[TestCategory("Shard05")]
+	public void S3122_VladoWilliamsRSignal()
+	{
+		AreEqual(1, VladoStrategy.GetSignal(-80m, oversoldLevel: -75m, overboughtLevel: -25m));
+		AreEqual(-1, VladoStrategy.GetSignal(-20m, oversoldLevel: -75m, overboughtLevel: -25m));
+		AreEqual(0, VladoStrategy.GetSignal(-50m, oversoldLevel: -75m, overboughtLevel: -25m));
+		AreEqual(1, VladoStrategy.GetSignal(-75m, oversoldLevel: -75m, overboughtLevel: -25m));
+		AreEqual(-1, VladoStrategy.GetSignal(-25m, oversoldLevel: -75m, overboughtLevel: -25m));
+	}
 
 	[TestMethod]
-	[TestCategory("Shard01")]
-	public Task S0217_PairsTrading()
-		=> RunStrategy<PairsTradingStrategy>(CancellationToken, (s, sec2) => s.SecondSecurity = sec2);
+	[TestCategory("Shard00")]
+	public void S1788_TimerAtrBreakoutLevels()
+	{
+		var (buy, sell) = TimerStrategy.CalculateLevels(
+			close: 100m,
+			pipDistancePoints: 10m,
+			priceStep: 0.1m,
+			atr: 2m);
+
+		AreEqual(103m, buy);
+		AreEqual(97m, sell);
+	}
 
 	[TestMethod]
-	[TestCategory("Shard06")]
-	public Task S0526_SpotFuturesArbitrage()
-		=> RunStrategy<SpotFuturesArbitrageStrategy>(CancellationToken, (s, sec2) => { s.Spot = s.Security; s.Future = sec2; });
+	[TestCategory("Shard04")]
+	public void S3114_LbsBreakoutLevelsUseCandleAndFreezeBuffer()
+	{
+		var (buy, sell) = LbsStrategy.CalculateBreakoutLevels(
+			candleHigh: 105m,
+			candleLow: 95m,
+			bid: 100m,
+			ask: 101m,
+			priceStep: 0.1m);
+
+		// Spread = 1, so 3 spreads = 3 > 10 pips (= 1 at this price step).
+		AreEqual(105m, buy);
+		AreEqual(95m, sell);
+
+		(buy, sell) = LbsStrategy.CalculateBreakoutLevels(
+			candleHigh: 101m,
+			candleLow: 99m,
+			bid: 100m,
+			ask: 100.1m,
+			priceStep: 0.1m);
+
+		// Freeze buffer is at least ten pips = 1.0.
+		AreEqual(101.1m, buy);
+		AreEqual(99m, sell);
+	}
 
 	[TestMethod]
-	[TestCategory("Shard01")]
-	public Task S2705_Spreader2()
-		=> RunStrategy<Spreader2Strategy>(CancellationToken, (s, sec2) => { s.SecondSecurity = sec2; s.DayBars = 10; s.ShiftLength = 3; s.TargetProfit = 1m; });
+	[TestCategory("Shard05")]
+	public void S3121_BrunoSignalFiltersMultiplyVolume()
+	{
+		var (longVolume, shortVolume) = BrunoStrategy.CalculateSignalVolumes(
+			baseVolume: 1m,
+			multiplier: 2m,
+			longDirectional: true,
+			shortDirectional: false,
+			longMomentum: true,
+			shortMomentum: false,
+			longMacd: true,
+			shortMacd: false,
+			longSar: true,
+			shortSar: false);
+
+		AreEqual(16m, longVolume);
+		AreEqual(1m, shortVolume);
+
+		(longVolume, shortVolume) = BrunoStrategy.CalculateSignalVolumes(
+			1m, 2m,
+			longDirectional: true, shortDirectional: true,
+			longMomentum: false, shortMomentum: false,
+			longMacd: false, shortMacd: false,
+			longSar: false, shortSar: false);
+
+		IsTrue(longVolume > 1m && shortVolume > 1m,
+			"Both sides must be detectable so the caller can skip conflicting signals.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard02")]
+	public void S1276_RsiCrossingSignal()
+	{
+		AreEqual(1, RsiStrategy.GetSignal(20m, 30m, overSold: 25m, overBought: 75m));
+		AreEqual(-1, RsiStrategy.GetSignal(80m, 70m, overSold: 25m, overBought: 75m));
+		AreEqual(0, RsiStrategy.GetSignal(50m, 55m, overSold: 25m, overBought: 75m));
+	}
+
+	[TestMethod]
+	[TestCategory("Shard02")]
+	public void S1228_RciUsesRankCorrelation()
+	{
+		AreEqual(100m, RciStrategy.CalculateRci([1m, 2m, 3m, 4m, 5m]));
+		AreEqual(-100m, RciStrategy.CalculateRci([5m, 4m, 3m, 2m, 1m]));
+	}
+
+	[TestMethod]
+	[TestCategory("Shard02")]
+	public void S1243_RenkoReversalSignal()
+	{
+		AreEqual(1, RenkoStrategy.GetSignal(previousDirection: -1, currentDirection: 1));
+		AreEqual(-1, RenkoStrategy.GetSignal(previousDirection: 1, currentDirection: -1));
+		AreEqual(0, RenkoStrategy.GetSignal(previousDirection: 1, currentDirection: 1));
+	}
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public void S1322_SmcUsesPremiumDiscountTrendAndOrderBlock()
+	{
+		AreEqual(1, SmcStrategy.GetSignal(
+			price: 98m, swingLow: 90m, swingHigh: 110m, sma: 95m,
+			hasSupport: true, hasResistance: false));
+
+		AreEqual(-1, SmcStrategy.GetSignal(
+			price: 102m, swingLow: 90m, swingHigh: 110m, sma: 105m,
+			hasSupport: false, hasResistance: true));
+
+		AreEqual(0, SmcStrategy.GetSignal(
+			price: 98m, swingLow: 90m, swingHigh: 110m, sma: 95m,
+			hasSupport: false, hasResistance: false));
+	}
 
 	[TestMethod]
 	[TestCategory("Shard03")]
-	public Task S0219_StatisticalArbitrage()
-		=> RunStrategy<StatisticalArbitrageStrategy>(CancellationToken, (s, sec2) => s.SecondSecurity = sec2);
+	public void S1437_TimeUsesTicksAboveBarOpen()
+	{
+		IsTrue(TimeStrategy.IsPriceConditionMet(
+			open: 100m, high: 101.5m, priceStep: 0.1m, ticksFromOpen: 10));
+		IsFalse(TimeStrategy.IsPriceConditionMet(
+			open: 100m, high: 100.5m, priceStep: 0.1m, ticksFromOpen: 10));
+		IsFalse(TimeStrategy.IsPriceConditionMet(
+			open: 100m, high: 101m, priceStep: 0.1m, ticksFromOpen: 10));
+		IsTrue(TimeStrategy.IsPriceConditionMet(
+			open: 100m, high: 101.1m, priceStep: 0.1m, ticksFromOpen: 10));
+		IsFalse(TimeStrategy.IsPriceConditionMet(
+			open: 100m, high: 100m, priceStep: 0.1m, ticksFromOpen: 0));
+		IsTrue(TimeStrategy.IsPriceConditionMet(
+			open: 100m, high: 100.1m, priceStep: 0.1m, ticksFromOpen: 0));
+	}
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public void S1341_StochasticThresholdCrossing()
+	{
+		AreEqual(1, StochasticStrategy.GetSignal(40m, 60m, overSold: 50m, overBought: 50m));
+		AreEqual(-1, StochasticStrategy.GetSignal(60m, 40m, overSold: 50m, overBought: 50m));
+		AreEqual(0, StochasticStrategy.GetSignal(60m, 70m, overSold: 50m, overBought: 50m));
+	}
+
+	[TestMethod]
+	[TestCategory("Shard04")]
+	public void S1189_PriceFlipUsesMirroredRangeAndSmaCross()
+	{
+		AreEqual(96m, PriceFlipStrategy.CalculateInvertedPrice(
+			recentHigh: 110m, recentLow: 90m, price: 104m));
+
+		AreEqual(1, PriceFlipStrategy.GetSignal(
+			previousClose: 104m, previousInverted: 96m,
+			previousFast: 99m, previousSlow: 100m,
+			fast: 101m, slow: 100m,
+			currentClose: 102m, useTrendFilter: true));
+
+		AreEqual(-1, PriceFlipStrategy.GetSignal(
+			previousClose: 96m, previousInverted: 104m,
+			previousFast: 101m, previousSlow: 100m,
+			fast: 99m, slow: 100m,
+			currentClose: 98m, useTrendFilter: true));
+	}
+
+	[TestMethod]
+	[TestCategory("Shard00")]
+	public async Task S4104_PinballMachineRandomDrawContract()
+	{
+		var draw = PinballMachineRandomDrawStrategy.DrawEvaluation(
+			new Random(42),
+			randomMaxValue: 0,
+			minStopLossPoints: 7,
+			maxStopLossPoints: 7,
+			minTakeProfitPoints: 11,
+			maxTakeProfitPoints: 11);
+
+		IsTrue(draw.EnterLong, "The first independently drawn pair must be able to trigger a long entry.");
+		IsTrue(draw.EnterShort, "The second independently drawn pair must be able to trigger a short entry on the same candle.");
+		AreEqual(7, draw.StopLossPoints);
+		AreEqual(11, draw.TakeProfitPoints);
+
+		const string path = "4101-4200/4104_Pinball_Machine_Random_Draw/CS/PinballMachineRandomDrawStrategy.cs";
+		var recorder = new OrderTraceRecorder();
+
+		await RunStrategy(path, CancellationToken, (strategy, _) =>
+		{
+			strategy.Security.PriceStep = 0.01m;
+			strategy.Parameters["CandleType"].Value = TimeSpan.FromMinutes(5).TimeFrame();
+			strategy.Parameters["TradeVolume"].Value = 2m;
+			strategy.Parameters["RandomMaxValue"].Value = 0;
+			strategy.Parameters["MinStopLossPoints"].Value = 0;
+			strategy.Parameters["MaxStopLossPoints"].Value = 0;
+			strategy.Parameters["MinTakeProfitPoints"].Value = 0;
+			strategy.Parameters["MaxTakeProfitPoints"].Value = 0;
+			strategy.Parameters["RandomSeed"].Value = 42;
+			recorder.Attach(strategy);
+		}, replayDuration: TimeSpan.FromDays(1));
+
+		recorder.AssertContainsOppositePairAtSameTimestamp(2m, "Pinball entry");
+
+		var protectedRecorder = new OrderTraceRecorder();
+		await RunStrategy(path, CancellationToken, (strategy, _) =>
+		{
+			strategy.Security.PriceStep = 0.01m;
+			strategy.Parameters["CandleType"].Value = TimeSpan.FromMinutes(5).TimeFrame();
+			strategy.Parameters["TradeVolume"].Value = 1m;
+			strategy.Parameters["RandomMaxValue"].Value = 4;
+			strategy.Parameters["MinStopLossPoints"].Value = 1;
+			strategy.Parameters["MaxStopLossPoints"].Value = 1;
+			strategy.Parameters["MinTakeProfitPoints"].Value = 1;
+			strategy.Parameters["MaxTakeProfitPoints"].Value = 1;
+			strategy.Parameters["RandomSeed"].Value = 5;
+			protectedRecorder.Attach(strategy);
+		}, replayDuration: TimeSpan.FromDays(1));
+
+		protectedRecorder.AssertContainsComment("Pinball protection exit");
+	}
 
 	/// <summary>
-	/// The README sells this example as a 5-minute strategy whose stops are ATR multiples and whose
-	/// HmmHistoryLength is the model's history. The implementation runs hour candles, protects the
-	/// position with two fixed 2-percent offsets and never looks past the last ten observations, so
-	/// HmmHistoryLength only sizes a buffer. The first replay keeps the acceptance the generated row
-	/// gave this example; the assertions state the declared contract and fail until it is met.
+	/// Runs both versions of the example and compares their orders, so it runs once rather than once per language.
 	/// </summary>
 	[TestMethod]
 	[TestCategory("Shard00")]
-	public async Task S0320_MacdHiddenMarkovModel()
+	public async Task S0408_CSharpAndPythonSubmitIdenticalOrders()
 	{
-		DataType declaredCandleType = null;
-		string[] parameterIds = null;
+		var traces = new List<(bool IsOption, DateTime Bar, string SecurityId, Sides Side, decimal Volume, string Comment)>[2];
 
-		await RunStrategy<MacdHmmStrategy>(CancellationToken, (strategy, _) =>
+		foreach (var python in new[] { false, true })
 		{
-			declaredCandleType = strategy.CandleType;
-			parameterIds = strategy.Parameters.CachedKeys;
-		});
+			VrpRecorder recorder = null;
 
-		AreEqual(
-			TimeSpan.FromMinutes(5).TimeFrame(), declaredCandleType,
-			"README documents CandleType = 5-minute timeframe and an intraday (5m) filter.");
-
-		var hasAtrInput = false;
-
-		foreach (var id in parameterIds)
-		{
-			if (!id.ContainsIgnoreCase("Atr"))
-				continue;
-
-			hasAtrInput = true;
-			break;
-		}
-
-		IsTrue(hasAtrInput,
-			$"README states the stops are ATR multiples the reader adjusts, so an ATR input must exist instead of the two fixed percent offsets handed to StartProtection. Parameters: {string.Join(", ", parameterIds)}.");
-
-		async Task<OrderTraceRecorder> Replay(int hmmHistoryLength)
-		{
-			var recorder = new OrderTraceRecorder();
-
-			await RunStrategy<MacdHmmStrategy>(CancellationToken, (strategy, _) =>
+			Action<Strategy, Security> setup = (strategy, secondary) =>
 			{
-				strategy.CandleType = TimeSpan.FromMinutes(5).TimeFrame();
-				strategy.SignalCooldownBars = 1;
-				strategy.HmmHistoryLength = hmmHistoryLength;
-				recorder.Attach(strategy);
-			}, replayDuration: TimeSpan.FromDays(3), requireTrades: false);
+				var option = VolatilityRiskPremiumOptionFixture.QuarterlyCall(secondary, strategy.Security);
+				SetParam(strategy, "Option", option);
+				recorder = new(strategy, option);
+			};
 
-			return recorder;
+			await (python
+				? PythonTests.RunStrategy(StrategyInventory.GetFile(VolatilityRiskPremium, ".py"), CancellationToken, setup, replayDuration: TimeSpan.FromDays(31))
+				: Replay(VolatilityRiskPremium, setup, TimeSpan.FromDays(31)));
+
+			traces[python ? 1 : 0] = [.. recorder.Orders.Select(entry => (recorder.Candles[entry.Candle].IsOption, recorder.Candles[entry.Candle].OpenTime,
+				entry.Order.Security.Id, entry.Order.Side, entry.Order.Volume, entry.Order.Comment))];
 		}
 
-		var shortHistory = await Replay(20);
-		var longHistory = await Replay(200);
+		IsTrue(traces[0].Count > 0);
+		AreEqual(traces[0], traces[1], "C# and Python must submit the same orders on the same candles.");
+	}
 
-		shortHistory.AssertDiffersFrom(longHistory,
-			"HmmHistoryLength is published as the model history and as an optimization range, so its value must change the detected state and the orders that follow from it.");
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public async Task S1101_TrailingStopExitsTwoPercentFromTheBestPriceInBothLanguages()
+	{
+		var csharp = await ReplayMultiTimeframeMacdTrailing(false);
+		var python = await ReplayMultiTimeframeMacdTrailing(true);
+
+		AreEqual(csharp.Orders, python.Orders, "Python must submit the same orders as C# on the same bars.");
 	}
 
 	/// <summary>
-	/// The README declares an ATR stop whose width is StopLossAtr and an ATR whose period is
-	/// AtrPeriod. Neither parameter reaches a submitted order today: ApplyAtrStopLoss compares the
-	/// candle close with itself, and the Keltner channel is built from EmaPeriod alone. The two
-	/// AssertDiffersFrom calls below state the declared behaviour and therefore fail.
+	/// The orders of one replay with the trailing stop on, and what the README stop model found in them.
 	/// </summary>
-	[TestMethod]
-	[TestCategory("Shard07")]
-	public async Task S0343_KeltnerReinforcementLearningSignal()
+	private sealed class MultiTimeframeMacdTrailingRun
 	{
-		// Compact channel settings and a one-bar cooldown make the breakout reachable in the bundled
-		// history, so a risk parameter that is actually wired has room to show in the order trace.
-		async Task<OrderTraceRecorder> Replay(int atrPeriod, decimal stopLossAtr)
+		public List<(DateTime Time, Sides Side, decimal Volume)> Orders { get; } = [];
+		public List<string> Violations { get; } = [];
+		public int TrailingExits { get; set; }
+	}
+
+	/// <summary>
+	/// Replays a week with the trailing stop on against an independent model of the README stop: while a position is open,
+	/// the best price since its entry is the highest high (long) or the lowest low (short) of the finished working candles,
+	/// the stop sits the published 2% below (long) or above (short) that price, and the first candle that touches the stop
+	/// closes the whole position. No other order may leave the position flat.
+	/// </summary>
+	private async Task<MultiTimeframeMacdTrailingRun> ReplayMultiTimeframeMacdTrailing(bool python)
+	{
+		const decimal trailingPercent = 2m;
+		var working = TimeSpan.FromMinutes(5).TimeFrame();
+		var run = new MultiTimeframeMacdTrailingRun();
+		(int Sign, decimal Price)? best = null;
+		(Sides Side, decimal Volume)? exit = null;
+
+		void violate(string message)
 		{
-			var recorder = new OrderTraceRecorder();
-
-			await RunStrategy<KeltnerWithRLSignalStrategy>(CancellationToken, (strategy, _) =>
-			{
-				strategy.CandleType = TimeSpan.FromMinutes(5).TimeFrame();
-				strategy.EmaPeriod = 5;
-				strategy.AtrMultiplier = 0.2m;
-				strategy.CooldownBars = 1;
-				strategy.AtrPeriod = atrPeriod;
-				strategy.StopLossAtr = stopLossAtr;
-				recorder.Attach(strategy);
-			}, replayDuration: TimeSpan.FromDays(7));
-
-			return recorder;
+			if (run.Violations.Count < 12)
+				run.Violations.Add(message);
 		}
 
-		// The defaults, run the way the generated row ran them.
-		await RunStrategy<KeltnerWithRLSignalStrategy>(CancellationToken);
+		Action<Strategy, Security> setup = (strategy, _) =>
+		{
+			AssertMultiTimeframeMacdDefaults(strategy);
 
-		var baseline = await Replay(atrPeriod: 14, stopLossAtr: 5m);
-		var tightStop = await Replay(atrPeriod: 14, stopLossAtr: 0.01m);
-		var shortAtr = await Replay(atrPeriod: 2, stopLossAtr: 5m);
+			SetParam(strategy, "UseTrailingStop", true);
 
-		// A stop a hundredth of an ATR wide cannot close positions at the same moments as one five
-		// ATR wide. The traces are identical because the stop condition compares the candle close
-		// with itself and is unreachable for any positive StopLossAtr.
-		tightStop.AssertDiffersFrom(baseline, "Changing StopLossAtr did not affect submitted orders: the declared ATR stop never fires.");
+			// Raised before the strategy handles the candle, so the position read here is the one the stop protects on it.
+			strategy.CandleReceived += (subscription, candle) =>
+			{
+				if (candle.State != CandleStates.Finished || strategy.ProcessState != ProcessStates.Started)
+					return;
 
-		// With EmaPeriod fixed, an ATR of period 2 and one of period 14 give different channel
-		// widths and therefore different breakouts. The traces are identical because the channel is
-		// created with Length = EmaPeriod only and AtrPeriod is applied nowhere.
-		shortAtr.AssertDiffersFrom(baseline, "Changing AtrPeriod did not affect submitted orders: the declared ATR period is never applied.");
+				if (exit is { } due)
+					violate($"{candle.OpenTime:O}: the previous finished candle reached the stop, but no {due.Side} {due.Volume} exit followed it.");
+
+				exit = null;
+
+				var position = strategy.Position;
+
+				if (!subscription.DataType.Equals(working) || position == 0m)
+					return;
+
+				var sign = Math.Sign(position);
+				var price = sign > 0 ? candle.HighPrice : candle.LowPrice;
+
+				if (best is { } tracked && tracked.Sign == sign)
+					price = sign > 0 ? Math.Max(tracked.Price, price) : Math.Min(tracked.Price, price);
+
+				best = (sign, price);
+
+				var reached = sign > 0
+					? candle.LowPrice <= price * (1m - trailingPercent / 100m)
+					: candle.HighPrice >= price * (1m + trailingPercent / 100m);
+
+				if (reached)
+					exit = (sign > 0 ? Sides.Sell : Sides.Buy, Math.Abs(position));
+			};
+
+			strategy.OrderRegistering += order =>
+			{
+				run.Orders.Add((strategy.CurrentTime, order.Side, order.Volume));
+
+				var position = strategy.Position;
+
+				if (exit is { } due)
+				{
+					if (order.Side == due.Side && order.Volume == due.Volume)
+						run.TrailingExits++;
+					else
+						violate($"{strategy.CurrentTime:O}: the candle reached the stop, so its order must be the {due.Side} {due.Volume} exit, not {order.Side} {order.Volume}.");
+				}
+				else if (position != 0m && order.Side == (position > 0m ? Sides.Sell : Sides.Buy) && order.Volume == Math.Abs(position))
+				{
+					violate($"{strategy.CurrentTime:O}: {order.Side} {order.Volume} left the position flat although no finished candle reached the stop {trailingPercent}% from the best price since entry.");
+				}
+
+				// An entry or a reversal opens a position with its own best price, and an exit leaves nothing to trail.
+				exit = null;
+				best = null;
+			};
+		};
+
+		// The test compares both languages, so the Python half runs through PythonTests.
+		if (python)
+			await PythonTests.RunStrategy(StrategyInventory.GetFile(MultiTimeframeMacd, ".py"), CancellationToken, setup, replayDuration: TimeSpan.FromDays(7));
+		else
+			await Replay(MultiTimeframeMacd, setup, TimeSpan.FromDays(7));
+
+		if (exit is { } last)
+			violate($"End of replay: the last finished candle reached the stop, but no {last.Side} {last.Volume} exit followed it.");
+
+		var language = python ? "Python" : "C#";
+		TestContext.WriteLine($"{language}: orders={run.Orders.Count}, trailing exits={run.TrailingExits}.");
+
+		IsTrue(run.Violations.Count == 0, $"{language}: {string.Join(Environment.NewLine, run.Violations)}");
+		IsTrue(run.TrailingExits > 0, $"{language}: the fixture must reach trailing exits as well as MACD agreement orders.");
+
+		return run;
 	}
 
-	/// <summary>
-	/// The README trades the differential between two front-month oil futures: long the cheaper
-	/// grade, short the expensive one, both legs closed on convergence. The packaged history carries
-	/// two crypto instruments, not two grades of oil. The example is still replayed, but what it
-	/// declares cannot be shown on this data, so that half is reported rather than asserted.
-	/// </summary>
+	private static readonly decimal _rangeFollowerPercentStep = new(1, 0, 0, false, 27);
+
 	[TestMethod]
-	[TestCategory("Shard02")]
-	public async Task S0410_WtibrentSpread()
+	[TestCategory("Shard06")]
+	public async Task S3406_QuoteExactlyOnTheTriggerDistanceDoesNotEnter()
 	{
-		await RunStrategy<WTIBrentSpreadStrategy>(CancellationToken);
+		var session = DateTime.MinValue;
+		var sessionAtr = 0m;
+		var skipped = false;
+		var high = 0m;
+		var low = 0m;
+		decimal? bid = null;
+		decimal? ask = null;
+		var currentPercent = 60m;
+		Level1ChangeMessage tiedQuote = null;
+		var tiedSessions = new HashSet<DateTime>();
+		var tradedSessions = new HashSet<DateTime>();
+		var entries = 0;
+		var violations = new List<string>();
 
-		Inconclusive("The packaged history holds two crypto instruments. This example declares a spread between two front-month oil futures, which the history does not contain, so its declared behaviour cannot be exercised here.");
+		await Replay(RangeFollower, (strategy, _) =>
+		{
+			var percent = strategy.Parameters["TriggerPercent"];
+			AreEqual(60m, Convert.ToDecimal(percent.Value));
+			strategy.Volume = 0.1m;
+
+			void SetPercent(decimal value)
+			{
+				if (currentPercent == value)
+					return;
+
+				currentPercent = value;
+				SetParam(strategy, "TriggerPercent", value);
+			}
+
+			strategy.ProcessStateChanged += changed =>
+			{
+				if (ReferenceEquals(changed, strategy) && changed.ProcessState == ProcessStates.Stopped)
+					SetPercent(60m);
+			};
+
+			strategy.CandleReceived += (subscription, candle) =>
+			{
+				if (candle.State != CandleStates.Finished || subscription.DataType.Arg is not TimeSpan frame || frame != TimeSpan.FromMinutes(15))
+					return;
+
+				tiedQuote = null;
+				SetPercent(60m);
+
+				if (candle.OpenTime.Date == session)
+				{
+					high = Math.Max(high, candle.HighPrice);
+					low = Math.Min(low, candle.LowPrice);
+					return;
+				}
+
+				session = candle.OpenTime.Date;
+				high = candle.HighPrice;
+				low = candle.LowPrice;
+				var atr = strategy.Indicators.OfType<AverageTrueRange>().Single();
+				sessionAtr = atr.IsFormed ? atr.GetCurrentValue() : 0m;
+				skipped = sessionAtr > 0m && high - low > sessionAtr * 60m / 100m;
+			};
+
+			// Once a session, the percent is set for one quote so that the trigger equals its larger distance exactly.
+			// The quote reaches this handler once per Level1 subscription; the percent stays set for all of them.
+			strategy.Level1Received += (_, quote) =>
+			{
+				if (ReferenceEquals(quote, tiedQuote))
+					return;
+
+				tiedQuote = null;
+				SetPercent(60m);
+
+				if (!RangeFollowerTakeQuote(quote, ref bid, ref ask) || bid is not decimal currentBid || ask is not decimal currentAsk)
+					return;
+
+				if (session == quote.ServerTime.Date)
+				{
+					high = Math.Max(high, Math.Max(currentBid, currentAsk));
+					low = Math.Min(low, Math.Min(currentBid, currentAsk));
+				}
+
+				if (sessionAtr <= 0m || skipped || session != quote.ServerTime.Date || session != strategy.CurrentTime.Date
+					|| tiedSessions.Contains(session) || tradedSessions.Contains(session) || strategy.Position != 0m || !strategy.IsFormedAndOnlineAndAllowTrading()
+					|| strategy.Orders.Any(order => order.State is not (OrderStates.Done or OrderStates.Failed)))
+					return;
+
+				var distance = Math.Max(currentBid - low, high - currentAsk);
+				if (distance >= sessionAtr * 60m / 100m || RangeFollowerTiePercent(sessionAtr, distance) is not decimal tie)
+					return;
+
+				tiedSessions.Add(session);
+				tiedQuote = quote;
+				SetPercent(tie);
+			};
+
+			strategy.OrderRegistering += order =>
+			{
+				if (strategy.Position != 0m)
+					return;
+
+				entries++;
+				tradedSessions.Add(session);
+
+				var trigger = sessionAtr * currentPercent / 100m;
+				var longDistance = bid.GetValueOrDefault() - low;
+				var shortDistance = high - ask.GetValueOrDefault();
+
+				if (Math.Max(longDistance, shortDistance) <= trigger && violations.Count < 12)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} entry with bid - low = {longDistance} and high - ask = {shortDistance}, neither more than the trigger {trigger}{(currentPercent != 60m ? ", which this quote matches exactly" : string.Empty)}.");
+			};
+		}, TimeSpan.FromDays(31));
+
+		TestContext.WriteLine($"ties={tiedSessions.Count}, entries={entries}");
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations));
+		IsTrue(tiedSessions.Count > 0, "The fixture must put a live quote exactly on the trigger distance.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard06")]
+	public async Task S3406_InitialRangeEqualToTheTriggerDoesNotSkipTheDay()
+	{
+		var session = DateTime.MinValue;
+		var sessionAtr = 0m;
+		var trigger = 0m;
+		var skipped = false;
+		var high = 0m;
+		var low = 0m;
+		decimal? bid = null;
+		decimal? ask = null;
+		var tiedSessions = new HashSet<DateTime>();
+		var entriesPerSession = new Dictionary<DateTime, int>();
+		var violations = new List<string>();
+
+		await Replay(RangeFollower, (strategy, _) =>
+		{
+			var percent = strategy.Parameters["TriggerPercent"];
+			AreEqual(60m, Convert.ToDecimal(percent.Value));
+			strategy.Volume = 0.1m;
+			SetParam(strategy, "CandleType", TimeSpan.FromHours(4).TimeFrame());
+
+			strategy.ProcessStateChanged += changed =>
+			{
+				if (ReferenceEquals(changed, strategy) && changed.ProcessState == ProcessStates.Stopped)
+					SetParam(strategy, "TriggerPercent", 60m);
+			};
+
+			// Each session's percent puts the trigger exactly on the range of its first working candle.
+			strategy.CandleReceived += (subscription, candle) =>
+			{
+				if (candle.State != CandleStates.Finished || subscription.DataType.Arg is not TimeSpan frame || frame != TimeSpan.FromHours(4))
+					return;
+
+				if (candle.OpenTime.Date == session)
+				{
+					high = Math.Max(high, candle.HighPrice);
+					low = Math.Min(low, candle.LowPrice);
+					return;
+				}
+
+				session = candle.OpenTime.Date;
+				high = candle.HighPrice;
+				low = candle.LowPrice;
+				var atr = strategy.Indicators.OfType<AverageTrueRange>().Single();
+				sessionAtr = atr.IsFormed ? atr.GetCurrentValue() : 0m;
+				var tie = sessionAtr > 0m ? RangeFollowerTiePercent(sessionAtr, high - low) : null;
+				if (tie is not null)
+					tiedSessions.Add(session);
+
+				var sessionPercent = tie ?? 60m;
+				SetParam(strategy, "TriggerPercent", sessionPercent);
+				trigger = sessionAtr * sessionPercent / 100m;
+				skipped = sessionAtr > 0m && high - low > trigger;
+			};
+
+			strategy.Level1Received += (_, quote) =>
+			{
+				if (!RangeFollowerTakeQuote(quote, ref bid, ref ask) || bid is not decimal currentBid || ask is not decimal currentAsk || session != quote.ServerTime.Date)
+					return;
+
+				high = Math.Max(high, Math.Max(currentBid, currentAsk));
+				low = Math.Min(low, Math.Min(currentBid, currentAsk));
+			};
+
+			strategy.OrderRegistering += order =>
+			{
+				if (strategy.Position != 0m)
+					return;
+
+				entriesPerSession[session] = entriesPerSession.GetValueOrDefault(session) + 1;
+
+				var longDistance = bid.GetValueOrDefault() - low;
+				var shortDistance = high - ask.GetValueOrDefault();
+
+				if ((skipped || sessionAtr <= 0m || strategy.CurrentTime.Date != session || Math.Max(longDistance, shortDistance) <= trigger) && violations.Count < 12)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} entry on {session:yyyy-MM-dd} (skipped={skipped}) with bid - low = {longDistance} and high - ask = {shortDistance} against the trigger {trigger}.");
+			};
+		}, TimeSpan.FromDays(31));
+
+		var tiedEntries = tiedSessions.Count(entriesPerSession.ContainsKey);
+		TestContext.WriteLine($"tiedSessions={tiedSessions.Count}, tiedSessionsTraded={tiedEntries}, sessionsTraded={entriesPerSession.Count}");
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations));
+		IsTrue(entriesPerSession.Values.All(count => count == 1), "Only one trade is allowed per day.");
+		IsTrue(tiedSessions.Count > 0, "The fixture must open a session whose first working candle spans exactly the trigger.");
+		IsTrue(tiedEntries > 0, "A day whose initial range only equals the trigger does not exceed it, so the day is not skipped and its later breakout trades.");
 	}
 
 	/// <summary>
-	/// The README declares a grid over a predefined price range (UpperLimit 48000, LowerLimit 45000,
-	/// GridCount 10). Such a grid is fixed, so this pins both halves of that contract: the declared
-	/// parameters themselves, and the fact that no moving-average or ATR setting may move the lines.
+	/// A <c>TriggerPercent</c> within 10..90 for which <c>atr * percent / 100m</c>, as the strategy computes it, equals <paramref name="distance"/> exactly.
+	/// </summary>
+	/// <remarks>
+	/// The Python example turns its float percent into a decimal of fifteen digits, which cannot land the trigger exactly on a
+	/// price distance, so the tie tests run on the C# example.
+	/// </remarks>
+	private static decimal? RangeFollowerTiePercent(decimal atr, decimal distance)
+	{
+		var guess = distance * 100m / atr;
+
+		for (var offset = 0; offset <= 4; offset++)
+		{
+			foreach (var percent in new[] { guess - offset * _rangeFollowerPercentStep, guess + offset * _rangeFollowerPercentStep })
+			{
+				if (percent >= 10m && percent <= 90m && atr * percent / 100m == distance)
+					return percent;
+			}
+		}
+
+		return null;
+	}
+
+	/// <summary>
+	/// Runs both versions of the example and compares their order and fill traces, so it runs once rather than once per language.
 	/// </summary>
 	[TestMethod]
 	[TestCategory("Shard01")]
-	public async Task S0425_GridBot()
+	public async Task S3801_CSharpAndPythonOrderAndFillTracesMatch()
 	{
-		static decimal? Declared(GridBotStrategy strategy, string name)
-			=> strategy.Parameters.TryGetValue(name, out var param) ? param.Value.To<decimal>() : null;
+		var traces = new List<List<string>>();
 
-		// The inputs of a dynamic grid. A predefined range does not read them, so moving them must
-		// leave every line - and therefore every order - where the baseline run put it.
-		static void Retune(GridBotStrategy strategy)
+		foreach (var python in new[] { false, true })
 		{
-			if (strategy.Parameters.TryGetValue("MALength", out var maLength))
-				maLength.Value = 20;
+			var trace = new List<string>();
 
-			if (strategy.Parameters.TryGetValue("ATRLength", out var atrLength))
-				atrLength.Value = 7;
+			Action<Strategy, Security> setup = (strategy, _) =>
+			{
+				strategy.Security.StepPrice = strategy.Security.PriceStep * 2m;
+				strategy.OrderRegistering += order => trace.Add($"O|{strategy.CurrentTime:O}|{order.Type}|{order.Side}|{order.Volume}|{OrderStabilizationActivation(order)}");
+				strategy.OrderCanceling += order => trace.Add($"C|{strategy.CurrentTime:O}|{order.Side}|{OrderStabilizationActivation(order)}");
+				strategy.Trades.TradeAdded += trade => trace.Add($"F|{strategy.CurrentTime:O}|{trade.Order.Side}|{trade.Trade.Price}|{trade.Trade.Volume}|{strategy.Position}");
+			};
 
-			if (strategy.Parameters.TryGetValue("GridMultiplier", out var gridMultiplier))
-				gridMultiplier.Value = 0.25m;
+			await (python
+				? PythonTests.RunStrategy(StrategyInventory.GetFile(OrderStabilization, ".py"), CancellationToken, setup, replayDuration: TimeSpan.FromDays(3))
+				: Replay(OrderStabilization, setup, TimeSpan.FromDays(3)));
+
+			traces.Add(trace);
 		}
 
-		var baseline = new OrderTraceRecorder();
-		var retuned = new OrderTraceRecorder();
-		decimal? upperLimit = null;
-		decimal? lowerLimit = null;
-		decimal? gridCount = null;
+		IsTrue(traces[0].Count > 100, $"The default parameters must trade on the archive, but C# produced only {traces[0].Count} events.");
+		IsTrue(traces[0].SequenceEqual(traces[1]),
+			$"Both languages must place, cancel and fill the same orders on the same archive: {FirstOrderStabilizationTraceDifference(traces[0], traces[1])}.");
+	}
 
-		await RunStrategy<GridBotStrategy>(CancellationToken, (strategy, _) =>
+	private static string FirstOrderStabilizationTraceDifference(List<string> csharp, List<string> python)
+	{
+		var length = Math.Min(csharp.Count, python.Count);
+
+		for (var i = 0; i < length; i++)
 		{
-			upperLimit = Declared(strategy, "UpperLimit");
-			lowerLimit = Declared(strategy, "LowerLimit");
-			gridCount = Declared(strategy, "GridCount");
-			baseline.Attach(strategy);
-		});
+			if (csharp[i] != python[i])
+				return $"event {i}: C# '{csharp[i]}', Python '{python[i]}'";
+		}
 
-		// The comparison run need not trade on its own: a fixed grid repeats the baseline orders,
-		// and an empty trace would itself mean the lines moved with the retuned indicators.
-		await RunStrategy<GridBotStrategy>(CancellationToken, (strategy, _) =>
-		{
-			Retune(strategy);
-			retuned.Attach(strategy);
-		}, requireTrades: false);
-
-		retuned.AssertSameAs(baseline);
-
-		Assert.AreEqual<decimal?>(48000m, upperLimit, "The declared grid range has UpperLimit 48000.");
-		Assert.AreEqual<decimal?>(45000m, lowerLimit, "The declared grid range has LowerLimit 45000.");
-		Assert.AreEqual<decimal?>(10m, gridCount, "The declared grid splits the range into GridCount 10 levels.");
+		return $"C# {csharp.Count} events, Python {python.Count} events";
 	}
 
 	/// <summary>
-	/// The README describes an equal-weight basket of two crypto assets rebalanced weekly. Whatever
-	/// the weights end up being, both assets have to be traded; a basket with one leg is not one.
+	/// Replays both versions of the example and compares their traces, so it runs once rather than once per language.
 	/// </summary>
 	[TestMethod]
-	[TestCategory("Shard02")]
-	public async Task S0362_CryptoRebalancingPremium()
+	[TestCategory("Shard00")]
+	public async Task S0040_CSharpAndPythonActualOrderAndFillTracesMatch()
 	{
-		var recorder = new PairedOrderRecorder();
-		Security primary = null;
-		Security secondary = null;
-
-		await RunStrategy<CryptoRebalancingPremiumStrategy>(CancellationToken, (strategy, second) =>
+		var traces = new List<List<string>>();
+		foreach (var python in new[] { false, true })
 		{
-			strategy.SecondarySecurityId = second.Id;
-			primary = strategy.Security;
-			secondary = second;
-			recorder.Attach(strategy);
-		});
-
-		recorder.AssertTradesBoth(primary, secondary);
+			var trace = new List<string>();
+			Action<Strategy, Security> setup = (strategy, _) =>
+			{
+				strategy.OrderRegistering += order => trace.Add($"O|{strategy.CurrentTime:O}|{order.Side}|{order.Volume}|{order.Comment}");
+				strategy.Trades.TradeAdded += trade => trace.Add($"F|{strategy.CurrentTime:O}|{trade.Order.Side}|{trade.Trade.Price}|{trade.Trade.Volume}|{strategy.Position}");
+			};
+			await (python
+				? PythonTests.RunStrategy(StrategyInventory.GetFile(AtrTrailing, ".py"), CancellationToken, setup, replayDuration: TimeSpan.FromDays(31))
+				: Replay(AtrTrailing, setup, TimeSpan.FromDays(31)));
+			traces.Add(trace);
+		}
+		IsTrue(traces[0].Count > 100 && traces[0].SequenceEqual(traces[1]), "Both languages must produce identical causal order and actual-fill traces on the same real archive/default parameters.");
 	}
 
 	/// <summary>
-	/// The README builds this example on funding and lending rates quoted by two venues, with the
-	/// spread between them as the signal and a liquidity check as the risk block. The packaged
-	/// history carries candles for two crypto instruments and nothing else: no rates, no second
-	/// venue. The example is still replayed, but what it declares cannot be shown on this data, so
-	/// that half is reported rather than asserted.
+	/// Runs both versions of the example and compares their order and fill events, so it runs once rather than once per language.
 	/// </summary>
 	[TestMethod]
-	[TestCategory("Shard02")]
-	public async Task S0402_SyntheticLendingRates()
+	[TestCategory("Shard04")]
+	public async Task S1788_CSharpAndPythonFollowTheSameRules()
 	{
-		await RunStrategy<SyntheticLendingRatesStrategy>(CancellationToken);
+		var csharp = await ReplayTimer(waitSeconds: 300, takeProfit: 100m, stopLoss: 50m, trailingStop: 50m);
+		var python = await ReplayTimer((setup, duration) => PythonTests.RunStrategy(StrategyInventory.GetFile(TimerExample, ".py"), CancellationToken, setup, replayDuration: duration),
+			waitSeconds: 300, takeProfit: 100m, stopLoss: 50m, trailingStop: 50m);
 
-		Inconclusive("The packaged history holds candles for two crypto instruments. This example declares funding and lending rates from two venues as its data, which the history does not contain, so its declared behaviour cannot be exercised here.");
-	}
+		IsTrue(csharp.Violations.Count == 0, string.Join(Environment.NewLine, csharp.Violations));
+		IsTrue(python.Violations.Count == 0, string.Join(Environment.NewLine, python.Violations));
+		IsTrue(csharp.Entries > 0 && csharp.ProtectiveExits > 0 && csharp.TrailingExits > 0,
+			"Take-profit, stop-loss and trailing stop run together, so the archive must exercise entries, protective exits and trailing exits.");
 
-	/// <summary>
-	/// The README publishes this example as a volatility-adaptive grid with a full risk block, and
-	/// lists the defaults a reader is expected to tune: BaseGridSize, MaxPositions, UseVolatilityGrid,
-	/// AtrLength, AtrMultiplier, UseTrailingStop, TrailingStopPercent, MaxLossPerDay, TimeBasedExit
-	/// and MaxHoldingPeriod. The implementation is an RSI and two moving averages with percent stops,
-	/// and exposes none of them.
-	/// </summary>
-	[TestMethod]
-	[TestCategory("Shard02")]
-	public async Task S0498_AdvancedAdaptiveGrid()
-	{
-		string[] parameterIds = null;
-
-		await RunStrategy<AdvancedAdaptiveGridStrategy>(CancellationToken, (strategy, _) =>
-			parameterIds = strategy.Parameters.CachedKeys);
-
-		string[] declared =
-		[
-			"BaseGridSize",
-			"MaxPositions",
-			"UseVolatilityGrid",
-			"AtrLength",
-			"AtrMultiplier",
-			"UseTrailingStop",
-			"TrailingStopPercent",
-			"MaxLossPerDay",
-			"TimeBasedExit",
-			"MaxHoldingPeriod",
-		];
-		var missing = declared.Where(name => !parameterIds.Contains(name, StringComparer.Ordinal)).ToArray();
-
-		AreEqual(
-			0, missing.Length,
-			$"README documents these parameters and their defaults, but the strategy does not expose them: {string.Join(", ", missing)}. Parameters: {string.Join(", ", parameterIds)}.");
+		var mismatch = Enumerable.Range(0, Math.Min(csharp.Trace.Count, python.Trace.Count)).FirstOrDefault(i => csharp.Trace[i] != python.Trace[i], -1);
+		IsTrue(csharp.Trace.Count > 0 && mismatch < 0 && csharp.Trace.Count == python.Trace.Count,
+			mismatch < 0
+				? $"C# produced {csharp.Trace.Count} order and fill events, Python {python.Trace.Count}."
+				: $"First difference at event {mismatch}: C# {csharp.Trace[mismatch]}, Python {python.Trace[mismatch]}.");
 	}
 }

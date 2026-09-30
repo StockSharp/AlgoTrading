@@ -6,28 +6,70 @@ using System.Linq;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
+using StockSharp.Algo;
 using StockSharp.Algo.Strategies;
 using StockSharp.Messages;
 
 sealed class OrderTraceRecorder
 {
 	private readonly ConcurrentDictionary<long, OrderTraceEntry> _orders = new();
+	private DateTime? _startedAt;
 
 	/// <summary>
 	/// Starts recording every order the strategy submits, in the order they arrive.
 	/// </summary>
 	public void Attach(Strategy strategy)
-		=> strategy.OrderReceived += (_, order) =>
-			_orders.TryAdd(order.TransactionId, new(strategy.CurrentTime, order.Side, order.Volume, order.Comment));
+	{
+		strategy.ProcessStateChanged += changed =>
+		{
+			if (ReferenceEquals(changed, strategy) && changed.ProcessState == ProcessStates.Started)
+				_startedAt ??= strategy.CurrentTime;
+		};
 
-	/// <summary>
-	/// Nothing was submitted. Used where a setting is supposed to suppress trading.
-	/// </summary>
-	public void AssertEmpty(string reason)
+		strategy.OrderReceived += (_, order) =>
+			_orders.TryAdd(order.TransactionId, new(strategy.CurrentTime, order.Side, order.Volume, order.Comment, order.Security?.Id, order.Type));
+	}
+
+	public void AssertAtMostOneOrderPerTimestamp()
+	{
+		var trace = Snapshot();
+		var duplicate = trace.GroupBy(entry => entry.Time).FirstOrDefault(group => group.Count() > 1);
+
+		Assert.IsNull(
+			duplicate,
+			duplicate is null ? null : $"Multiple orders were submitted at {duplicate.Key:O}. Trace: {Format(trace)}.");
+	}
+
+	public void AssertFirstTwoAreOppositeConditionalStops()
 	{
 		var trace = Snapshot();
 
-		Assert.AreEqual(0, trace.Length, $"{reason} Trace: {Format(trace)}.");
+		Assert.IsTrue(trace.Length >= 2, $"Expected at least two orders. Trace: {Format(trace)}.");
+		Assert.AreEqual(OrderTypes.Conditional, trace[0].Type, $"First order must be a conditional stop. Trace: {Format(trace)}.");
+		Assert.AreEqual(OrderTypes.Conditional, trace[1].Type, $"Second order must be a conditional stop. Trace: {Format(trace)}.");
+		Assert.AreNotEqual(trace[0].Side, trace[1].Side, $"Initial stop orders must be opposite sides. Trace: {Format(trace)}.");
+	}
+
+	public void AssertContainsOppositePairAtSameTimestamp(decimal expectedVolume, string expectedComment)
+	{
+		var trace = Snapshot();
+		var pair = trace
+			.Where(entry => entry.Volume == expectedVolume && entry.Comment == expectedComment)
+			.GroupBy(entry => entry.Time)
+			.FirstOrDefault(group => group.Select(entry => entry.Side).Distinct().Count() == 2);
+
+		Assert.IsNotNull(
+			pair,
+			$"No same-timestamp Buy/Sell pair with volume {expectedVolume} and comment '{expectedComment}' was submitted. Trace: {Format(trace)}.");
+	}
+
+	public void AssertContainsComment(string expectedComment)
+	{
+		var trace = Snapshot();
+
+		Assert.IsTrue(
+			trace.Any(entry => entry.Comment == expectedComment),
+			$"No order with comment '{expectedComment}' was submitted. Trace: {Format(trace)}.");
 	}
 
 	public void AssertFirstSide(Sides expectedSide)
@@ -41,6 +83,17 @@ sealed class OrderTraceRecorder
 	/// <summary>
 	/// The first order was submitted in the expected hour of the day.
 	/// </summary>
+	public void AssertFirstOrderAfterStart(TimeSpan minimumDelay)
+	{
+		var trace = Snapshot();
+
+		Assert.IsTrue(_startedAt is not null, "Strategy start time was not recorded.");
+		Assert.IsTrue(trace.Length > 0, "No orders were submitted.");
+		Assert.IsTrue(
+			trace[0].Time - _startedAt.Value > minimumDelay,
+			$"First order arrived after {trace[0].Time - _startedAt.Value}, expected more than {minimumDelay}. Trace: {Format(trace)}.");
+	}
+
 	public void AssertFirstOrderHour(int expectedHour)
 	{
 		var trace = Snapshot();
@@ -91,6 +144,17 @@ sealed class OrderTraceRecorder
 	/// <summary>
 	/// The first order carried the expected comment.
 	/// </summary>
+	public void AssertContainsTwoLegSignal(string expectedComment)
+	{
+		var trace = Snapshot();
+		var group = trace
+			.Where(entry => entry.Comment == expectedComment)
+			.GroupBy(entry => entry.Time)
+			.FirstOrDefault(entries => entries.Select(entry => entry.SecurityId).Where(id => !string.IsNullOrEmpty(id)).Distinct(StringComparer.Ordinal).Count() >= 2);
+
+		Assert.IsNotNull(group, $"No two-leg '{expectedComment}' signal was submitted. Trace: {Format(trace)}.");
+	}
+
 	public void AssertFirstComment(string expectedComment)
 	{
 		var trace = Snapshot();
@@ -115,9 +179,37 @@ sealed class OrderTraceRecorder
 			$"The first opposite order was delayed by {opposite.Time - first.Time}, exceeding {maximumDelay}. Trace: {Format(trace)}.");
 	}
 
+	public void AssertFirstOppositeVolume(decimal expectedVolume)
+	{
+		var trace = Snapshot();
+		Assert.IsTrue(trace.Length > 0, "No orders were submitted.");
+		var opposite = trace.Skip(1).FirstOrDefault(entry => entry.Side != trace[0].Side);
+		Assert.AreNotEqual(default, opposite, $"No opposite order was submitted. Trace: {Format(trace)}.");
+		Assert.AreEqual(expectedVolume, opposite.Volume, $"Unexpected first-exit volume. Trace: {Format(trace)}.");
+	}
+
 	/// <summary>
 	/// The first order opposite to the first entry waited at least the given time.
 	/// </summary>
+	public void AssertNoSameSideReentryWithinAfterFirstExit(TimeSpan minimumDelay)
+	{
+		var trace = Snapshot();
+
+		Assert.IsTrue(trace.Length > 1, $"Too few orders to contain an exit. Trace: {Format(trace)}.");
+		var first = trace[0];
+		var exitIndex = Array.FindIndex(trace, 1, entry => entry.Side != first.Side);
+		Assert.IsTrue(exitIndex > 0, $"No opposite exit was submitted. Trace: {Format(trace)}.");
+
+		var exit = trace[exitIndex];
+		var reentry = trace.Skip(exitIndex + 1).FirstOrDefault(entry => entry.Side == first.Side);
+		if (reentry == default)
+			return;
+
+		Assert.IsTrue(
+			reentry.Time - exit.Time > minimumDelay,
+			$"Same-side re-entry followed the exit after {reentry.Time - exit.Time}, expected more than {minimumDelay}. Trace: {Format(trace)}.");
+	}
+
 	public void AssertFirstOppositeAfter(TimeSpan minimumDelay)
 	{
 		var trace = Snapshot();
@@ -196,9 +288,9 @@ sealed class OrderTraceRecorder
 	private static string Format(OrderTraceEntry[] trace)
 	{
 		const int previewLength = 20;
-		var preview = string.Join(", ", trace.Take(previewLength).Select(entry => $"{entry.Time:O} {entry.Side} {entry.Volume} '{entry.Comment}'"));
+		var preview = string.Join(", ", trace.Take(previewLength).Select(entry => $"{entry.Time:O} {entry.SecurityId ?? "<null>"} {entry.Type} {entry.Side} {entry.Volume} '{entry.Comment}'"));
 		return trace.Length <= previewLength ? preview : $"{preview}, ... ({trace.Length} total)";
 	}
 
-	private readonly record struct OrderTraceEntry(DateTime Time, Sides Side, decimal Volume, string Comment);
+	private readonly record struct OrderTraceEntry(DateTime Time, Sides Side, decimal Volume, string Comment, string SecurityId, OrderTypes? Type);
 }

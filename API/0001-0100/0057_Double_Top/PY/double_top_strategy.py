@@ -2,118 +2,114 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
-clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import SimpleMovingAverage
+from System import TimeSpan, Decimal, Math
+from StockSharp.Messages import DataType, CandleStates, Level1Fields, OrderStates
+from StockSharp.BusinessEntities import Subscription
 from StockSharp.Algo.Strategies import Strategy
 
 class double_top_strategy(Strategy):
     """
-    Double Top reversal strategy.
-    Detects two similar tops and enters short on confirmation.
-    Uses SMA for exit signal.
+    Short-only double top: two confirmed pivot highs followed by a bearish candle.
+    A pattern-high stop watches executable best asks and finished-bar highs.
     """
 
     def __init__(self):
         super(double_top_strategy, self).__init__()
-        self._distance = self.Param("Distance", 20).SetDisplay("Distance", "Bars between tops", "Pattern")
-        self._similarity_pct = self.Param("SimilarityPercent", 1.0).SetDisplay("Similarity %", "Max % diff between tops", "Pattern")
-        self._ma_period = self.Param("MAPeriod", 20).SetDisplay("MA Period", "Period for exit SMA", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Type of candles to use", "General")
-        self._cooldown_bars = self.Param("CooldownBars", 500).SetDisplay("Cooldown Bars", "Bars to wait between trades", "General")
-
-        self._recent_high = 0.0
-        self._prev_high = 0.0
-        self._bars_since_high = 0
-        self._cooldown = 0
+        self._distance = self.Param("Distance", 5).SetRange(3, 100).SetDisplay("Distance", "Minimum bars between confirmed pivot highs", "Pattern")
+        self._similarity_percent = self.Param("SimilarityPercent", 2.0).SetRange(0.1, 5.0).SetDisplay("Similarity %", "Maximum relative difference between pivot highs", "Pattern")
+        self._stop_loss_percent = self.Param("StopLossPercent", 1.0).SetRange(0.0, 99.0).SetDisplay("Stop above highs (%)", "Percentage buffer above the higher pattern high; zero places it at the high.", "Protection")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))).SetDisplay("Candle Type", "Timeframe for pivot highs and bearish confirmation", "General")
+        self._clear_state()
 
     @property
     def candle_type(self):
         return self._candle_type.Value
 
+    def GetWorkingSecurities(self):
+        return [(self.Security, self.candle_type), (self.Security, DataType.Level1)]
+
+    def _clear_state(self):
+        self._two_back = None
+        self._previous = None
+        self._last_pivot = None
+        self._candidate_high = None
+        self._candidate_expires = 0
+        self._pattern_stop = None
+        self._bar = 0
+        self._entry_order = None
+        self._exit_order = None
+
     def OnReseted(self):
         super(double_top_strategy, self).OnReseted()
-        self._recent_high = 0.0
-        self._prev_high = 0.0
-        self._bars_since_high = 0
-        self._cooldown = 0
+        self._clear_state()
 
     def OnStarted2(self, time):
         super(double_top_strategy, self).OnStarted2(time)
-
-        self._recent_high = 0.0
-        self._prev_high = 0.0
-        self._bars_since_high = 0
-        self._cooldown = 0
-
-        sma = SimpleMovingAverage()
-        sma.Length = self._ma_period.Value
-
-        subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(sma, self._process_candle).Start()
-
+        self._clear_state()
+        asks = Subscription(DataType.Level1, self.Security)
+        asks.MarketData.BuildField = Level1Fields.BestAskPrice
+        self.SubscribeLevel1(asks).Bind(self._process_ask).Start()
+        candles = self.SubscribeCandles(self.candle_type)
+        candles.Bind(self._process_candle).Start()
         area = self.CreateChartArea()
         if area is not None:
-            self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, sma)
+            self.DrawCandles(area, candles)
             self.DrawOwnTrades(area)
 
-    def _track_highs(self, candle):
-        high = float(candle.HighPrice)
-        if self._recent_high == 0 or high > self._recent_high:
-            if self._recent_high > 0:
-                self._prev_high = self._recent_high
-            self._recent_high = high
-            self._bars_since_high = 0
-        else:
-            self._bars_since_high += 1
+    def _is_pending(self, order):
+        return order is not None and order.State not in (OrderStates.Done, OrderStates.Failed)
 
-    def _process_candle(self, candle, sma_val):
+    def _process_ask(self, message):
+        if message.Changes.ContainsKey(Level1Fields.BestAskPrice):
+            ask = message.Changes[Level1Fields.BestAskPrice]
+            if ask is not None and ask > Decimal(0):
+                self._check_stop(ask)
+
+    def _check_stop(self, executable_ask):
+        if self.Position < 0 and self._pattern_stop is not None and executable_ask >= self._pattern_stop and not self._is_pending(self._exit_order):
+            self._exit_order = self.BuyMarket(Math.Abs(self.Position))
+            # Never reuse an exited pattern for another entry.
+            self._two_back = None
+            self._previous = None
+            self._last_pivot = None
+            self._candidate_high = None
+
+    def _process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
-
-        if self._cooldown > 0:
-            self._cooldown -= 1
-            self._track_highs(candle)
+        self._bar += 1
+        older = self._two_back
+        middle = self._previous
+        self._two_back = middle
+        self._previous = candle
+        if self.Position < 0:
+            # A bar-low fallback handles absent/stale quotes or gaps; fills can slip.
+            self._check_stop(candle.HighPrice)
             return
-
-        # Track new highs
-        high = float(candle.HighPrice)
-        if self._recent_high == 0 or high > self._recent_high:
-            if self._recent_high > 0:
-                self._prev_high = self._recent_high
-            self._recent_high = high
-            self._bars_since_high = 0
-        else:
-            self._bars_since_high += 1
-
-        close = float(candle.ClosePrice)
-        sv = float(sma_val)
-        cd = self._cooldown_bars.Value
-        dist = self._distance.Value
-        sim = float(self._similarity_pct.Value)
-
-        if self.Position == 0 and self._prev_high > 0 and self._bars_since_high >= dist:
-            price_diff = abs((self._recent_high - self._prev_high) / self._prev_high * 100.0)
-            if price_diff <= sim and close < sv:
-                self.SellMarket()
-                self._cooldown = cd
-                self._recent_high = 0.0
-                self._prev_high = 0.0
-            elif price_diff <= sim and close > sv:
-                self.BuyMarket()
-                self._cooldown = cd
-                self._recent_high = 0.0
-                self._prev_high = 0.0
-        elif self.Position > 0 and close < sv:
-            self.SellMarket()
-            self._cooldown = cd
-        elif self.Position < 0 and close > sv:
-            self.BuyMarket()
-            self._cooldown = cd
+        if self._is_pending(self._entry_order) or self._is_pending(self._exit_order):
+            return
+        if older is not None and middle is not None and middle.HighPrice > older.HighPrice and middle.HighPrice >= candle.HighPrice:
+            pivot = (self._bar - 1, middle.HighPrice)
+            first = self._last_pivot
+            if first is not None and pivot[0] - first[0] >= self._distance.Value and Math.Abs(pivot[1] - first[1]) * Decimal(100) <= first[1] * Decimal(self._similarity_percent.Value):
+                self._candidate_high = max(first[1], pivot[1])
+                self._candidate_expires = self._bar + self._distance.Value
+            self._last_pivot = pivot
+        high = self._candidate_high
+        if high is None:
+            return
+        if self._bar > self._candidate_expires or candle.HighPrice > high:
+            self._candidate_high = None
+            return
+        if candle.ClosePrice >= candle.OpenPrice or not self.IsFormedAndOnlineAndAllowTrading():
+            return
+        self._pattern_stop = high * (Decimal(1) + Decimal(self._stop_loss_percent.Value) / Decimal(100))
+        self._entry_order = self.SellMarket(self.Volume)
+        self._candidate_high = None
+        self._last_pivot = None
 
     def CreateClone(self):
         return double_top_strategy()

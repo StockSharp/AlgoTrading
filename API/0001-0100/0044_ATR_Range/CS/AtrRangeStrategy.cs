@@ -11,124 +11,83 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// ATR Range strategy.
-/// Enters long when price moves up by at least ATR over N candles,
-/// enters short when price moves down by at least ATR over N candles.
+/// Trades strict N-interval Close movement beyond current Wilder ATR at every Nth bar.
+/// Exits on any ready bar's adverse SMA crossing or frozen entry-ATR actual-fill protection.
 /// </summary>
 public class AtrRangeStrategy : Strategy
 {
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<int> _lookbackPeriod;
+	private readonly StrategyParam<decimal> _atrMultiplier;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
 
-	private decimal _nBarsAgoPrice;
-	private int _barCounter;
-	private int _cooldown;
+	private readonly Queue<decimal> _closes = new();
+	private long _barCount;
+	private decimal? _previousClose;
+	private decimal _previousMean;
+	private Order _pendingOrder;
+	private Unit _stopDistance;
+	private bool _protectionStarted;
 
-	/// <summary>
-	/// MA Period.
-	/// </summary>
-	public int MAPeriod
-	{
-		get => _maPeriod.Value;
-		set => _maPeriod.Value = value;
-	}
+	public int MAPeriod { get => _maPeriod.Value; set => _maPeriod.Value = value; }
+	public int ATRPeriod { get => _atrPeriod.Value; set => _atrPeriod.Value = value; }
+	public int LookbackPeriod { get => _lookbackPeriod.Value; set => _lookbackPeriod.Value = value; }
+	public decimal AtrMultiplier { get => _atrMultiplier.Value; set => _atrMultiplier.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// ATR Period.
-	/// </summary>
-	public int ATRPeriod
-	{
-		get => _atrPeriod.Value;
-		set => _atrPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Lookback Period (N candles for price movement).
-	/// </summary>
-	public int LookbackPeriod
-	{
-		get => _lookbackPeriod.Value;
-		set => _lookbackPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Cooldown bars between trades.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize the ATR Range strategy.
-	/// </summary>
 	public AtrRangeStrategy()
 	{
-		_maPeriod = Param(nameof(MAPeriod), 20)
+		_maPeriod = Param(nameof(MAPeriod), 20).SetGreaterThanZero()
 			.SetDisplay("MA Period", "Period for Moving Average calculation", "Indicators")
 			.SetOptimize(10, 50, 10);
-
-		_atrPeriod = Param(nameof(ATRPeriod), 14)
+		_atrPeriod = Param(nameof(ATRPeriod), 14).SetGreaterThanZero()
 			.SetDisplay("ATR Period", "Period for ATR calculation", "Indicators")
 			.SetOptimize(7, 28, 7);
-
-		_lookbackPeriod = Param(nameof(LookbackPeriod), 5)
-			.SetDisplay("Lookback Period", "Number of candles to measure price movement", "Entry")
+		_lookbackPeriod = Param(nameof(LookbackPeriod), 5).SetGreaterThanZero()
+			.SetDisplay("Lookback Period", "N intervals for movement and N-bar entry-check cadence", "Entry")
 			.SetOptimize(3, 10, 1);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_atrMultiplier = Param(nameof(AtrMultiplier), 2m).SetNotNegative()
+			.SetDisplay("ATR Stop Multiplier", "Frozen entry ATR distance; zero disables only protection", "Protection");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_cooldownBars = Param(nameof(CooldownBars), 500)
-			.SetRange(1, 1000)
-			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
+		OrderRegistering += order => _pendingOrder = order;
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType), (Security, DataType.Level1)];
+
+	private void ResetState()
 	{
-		return [(Security, CandleType)];
+		_closes.Clear();
+		_barCount = 0;
+		_previousClose = null;
+		_previousMean = default;
+		_pendingOrder = null;
+		_stopDistance = null;
+		_protectionStarted = false;
 	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_nBarsAgoPrice = default;
-		_barCounter = default;
-		_cooldown = default;
+		ResetState();
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_nBarsAgoPrice = 0;
-		_barCounter = 0;
-		_cooldown = 0;
-
+		ResetState();
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
 		var ma = new SimpleMovingAverage { Length = MAPeriod };
 		var atr = new AverageTrueRange { Length = ATRPeriod };
-
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(ma, atr, ProcessCandle)
-			.Start();
-
+		subscription.BindEx(ma, atr, ProcessCandle, false).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -138,59 +97,62 @@ public class AtrRangeStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal maValue, decimal atrValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// Native protection runs before this callback, including between finished candles.
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue maValue, IIndicatorValue atrValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
+		_barCount++;
+		_closes.Enqueue(candle.ClosePrice);
+		if (_closes.Count > LookbackPeriod + 1) _closes.Dequeue();
+		if (!maValue.Indicator.IsFormed || !atrValue.Indicator.IsFormed || !IsFormedAndOnlineAndAllowTrading())
 			return;
-
-		_barCounter++;
-
-		if (_barCounter == 1 || _barCounter % LookbackPeriod == 1)
-		{
-			_nBarsAgoPrice = candle.ClosePrice;
+		var close = candle.ClosePrice;
+		var mean = maValue.GetValue<decimal>();
+		var downwardCross = _previousClose is decimal down && down >= _previousMean && close < mean;
+		var upwardCross = _previousClose is decimal up && up <= _previousMean && close > mean;
+		_previousClose = close;
+		_previousMean = mean;
+		if (_pendingOrder is not null && _pendingOrder.State is not (OrderStates.Done or OrderStates.Failed))
 			return;
-		}
-
-		if (_cooldown > 0)
+		// Exits run on every ready bar, independent of the entry checkpoint.
+		if (Position > 0m && downwardCross)
+			SellMarket(Position);
+		else if (Position < 0m && upwardCross)
+			BuyMarket(Math.Abs(Position));
+		else if (Position == 0m && _barCount % LookbackPeriod == 0 && _closes.Count == LookbackPeriod + 1)
 		{
-			_cooldown--;
-			return;
+			// N intervals need N+1 closes, not N closes in a non-overlapping block.
+			var movement = close - _closes.Peek();
+			var atr = atrValue.GetValue<decimal>();
+			if (Math.Abs(movement) > atr)
+				Enter(movement > 0m ? Sides.Buy : Sides.Sell, atr);
 		}
+	}
 
-		// Check at end of each lookback period
-		if (_barCounter % LookbackPeriod == 0)
+	private void Enter(Sides side, decimal atr)
+	{
+		var distance = atr * AtrMultiplier;
+		_stopDistance ??= new Unit(distance);
+		// Keep the Unit reference held by native cached protection controllers.
+		_stopDistance.Value = distance;
+		if (!_protectionStarted && distance > 0m)
 		{
-			var priceMovement = candle.ClosePrice - _nBarsAgoPrice;
-			var absMovement = Math.Abs(priceMovement);
-
-			if (absMovement >= atrValue)
-			{
-				if (Position == 0 && priceMovement > 0)
-				{
-					BuyMarket();
-					_cooldown = CooldownBars;
-				}
-				else if (Position == 0 && priceMovement < 0)
-				{
-					SellMarket();
-					_cooldown = CooldownBars;
-				}
-			}
+			StartProtection(new Unit(), _stopDistance, useMarketOrders: true, isLocalStop: true);
+			_protectionStarted = true;
 		}
-
-		// Exit logic: price crosses MA
-		if (Position > 0 && candle.ClosePrice < maValue)
+		RegisterOrder(new Order
 		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position < 0 && candle.ClosePrice > maValue)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
+			Security = Security,
+			Portfolio = Portfolio,
+			Type = OrderTypes.Market,
+			Side = side,
+			Volume = Volume,
+			Comment = "ATR range entry",
+		});
 	}
 }

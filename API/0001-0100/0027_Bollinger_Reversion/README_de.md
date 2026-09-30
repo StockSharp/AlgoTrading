@@ -12,7 +12,7 @@ Standardabweichungsbänder bieten eine statistische Sicht auf Überextensionen. 
 
 ## Details
 
-- **Einstiegskriterien**: Signale basierend auf RSI, ATR, Bollinger.
+- **Einstiegskriterien**: Signale basierend auf ATR, Bollinger.
 - **Long/Short**: Beide Richtungen.
 - **Ausstiegskriterien**: Gegensätzliches Signal oder Stop.
 - **Stops**: Ja.
@@ -24,7 +24,7 @@ Standardabweichungsbänder bieten eine statistische Sicht auf Überextensionen. 
 - **Filter**:
   - Kategorie: Mean Reversion
   - Richtung: Beide
-  - Indikatoren: RSI, ATR, Bollinger
+  - Indikatoren: ATR, Bollinger
   - Stops: Ja
   - Komplexität: Grundlegend
   - Zeitrahmen: Intraday (5m)

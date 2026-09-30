@@ -11,161 +11,151 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Volume Divergence strategy.
-/// Long entry: Price falls but volume increases (possible accumulation).
-/// Short entry: Price rises but volume increases (possible distribution).
-/// Exit: Price crosses MA.
+/// Buys a lower close and sells a higher close when volume rises over the previous candle.
+/// Fully exits when Close crosses the SMA in either direction or on actual-fill entry-ATR protection.
 /// </summary>
 public class VolumeDivergenceStrategy : Strategy
 {
 	private readonly StrategyParam<int> _maPeriod;
+	private readonly StrategyParam<int> _atrPeriod;
+	private readonly StrategyParam<decimal> _stopLossAtrMultiplier;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
 
-	private decimal _previousClose;
-	private decimal _previousVolume;
-	private int _cooldown;
+	private SimpleMovingAverage _ma;
+	private AverageTrueRange _atr;
+	private decimal? _previousClose;
+	private decimal? _previousVolume;
+	private decimal? _previousMa;
+	private Order _pendingOrder;
+	private Unit _stopDistance;
+	private bool _protectionStarted;
 
-	/// <summary>
-	/// MA Period.
-	/// </summary>
-	public int MAPeriod
-	{
-		get => _maPeriod.Value;
-		set => _maPeriod.Value = value;
-	}
+	public int MAPeriod { get => _maPeriod.Value; set => _maPeriod.Value = value; }
+	public int ATRPeriod { get => _atrPeriod.Value; set => _atrPeriod.Value = value; }
+	public decimal StopLossATRMultiplier { get => _stopLossAtrMultiplier.Value; set => _stopLossAtrMultiplier.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Cooldown bars between trades.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize <see cref="VolumeDivergenceStrategy"/>.
-	/// </summary>
 	public VolumeDivergenceStrategy()
 	{
-		_maPeriod = Param(nameof(MAPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("MA Period", "Period for Moving Average", "Indicators")
+		_maPeriod = Param(nameof(MAPeriod), 20).SetGreaterThanZero()
+			.SetDisplay("MA Period", "Current-inclusive Close SMA length", "Indicators")
 			.SetOptimize(10, 50, 10);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_atrPeriod = Param(nameof(ATRPeriod), 14).SetGreaterThanZero()
+			.SetDisplay("ATR Period", "Wilder ATR length for actual-fill protection", "Indicators")
+			.SetOptimize(7, 28, 7);
+		_stopLossAtrMultiplier = Param(nameof(StopLossATRMultiplier), 2m).SetNotNegative()
+			.SetDisplay("ATR Stop Multiplier", "Frozen signal ATR distance from actual fills; zero disables it", "Protection");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_cooldownBars = Param(nameof(CooldownBars), 500)
-			.SetRange(1, 1000)
-			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
+		OrderRegistering += order => _pendingOrder = order;
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType), (Security, DataType.Level1)];
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_previousClose = default;
-		_previousVolume = default;
-		_cooldown = default;
+		ClearSignalState();
 	}
 
-	/// <inheritdoc />
+	private void ClearSignalState()
+	{
+		_ma = null;
+		_atr = null;
+		_previousClose = null;
+		_previousVolume = null;
+		_previousMa = null;
+		_pendingOrder = null;
+		_stopDistance = null;
+		_protectionStarted = false;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_previousClose = 0;
-		_previousVolume = 0;
-		_cooldown = 0;
-
-		var ma = new SimpleMovingAverage { Length = MAPeriod };
-
+		ClearSignalState();
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
+		_ma = new SimpleMovingAverage { Length = MAPeriod };
+		_atr = new AverageTrueRange { Length = ATRPeriod };
+		Indicators.Add(_ma);
+		Indicators.Add(_atr);
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(ma, ProcessCandle)
-			.Start();
-
+		subscription.Bind(ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, ma);
+			DrawIndicator(area, _ma);
+			DrawIndicator(area, _atr);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal maValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// Native protection runs before this callback, including between finished candles.
+	}
+
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
+		var maValue = _ma.Process(candle);
+		var atrValue = _atr.Process(candle);
+		decimal? ma = !maValue.IsEmpty && _ma.IsFormed ? maValue.GetValue<decimal>() : null;
+		decimal? atr = !atrValue.IsEmpty && _atr.IsFormed ? atrValue.GetValue<decimal>() : null;
+		var close = candle.ClosePrice;
+		var volume = candle.TotalVolume;
+		var priceDown = _previousClose is decimal down && close < down;
+		var priceUp = _previousClose is decimal up && close > up;
+		var volumeUp = _previousVolume is decimal priorVolume && volume > priorVolume;
+		var maUp = _previousClose is decimal priorUpClose && _previousMa is decimal priorUpMa &&
+			ma is decimal currentUpMa && priorUpClose <= priorUpMa && close > currentUpMa;
+		var maDown = _previousClose is decimal priorDownClose && _previousMa is decimal priorDownMa &&
+			ma is decimal currentDownMa && priorDownClose >= priorDownMa && close < currentDownMa;
+		// Warmup and unavailable trading still advance raw price/volume and formed MA history.
+		_previousClose = close;
+		_previousVolume = volume;
+		_previousMa = ma;
+		if (ma is null || atr is not decimal currentAtr ||
+			!IsFormedAndOnlineAndAllowTrading() ||
+			_pendingOrder is not null && _pendingOrder.State is not (OrderStates.Done or OrderStates.Failed))
 			return;
-
-		if (_previousClose == 0)
+		var maCross = maUp || maDown;
+		if (Position > 0m && maCross) SellMarket(Position);
+		else if (Position < 0m && maCross) BuyMarket(Math.Abs(Position));
+		else if (Position == 0m)
 		{
-			_previousClose = candle.ClosePrice;
-			_previousVolume = candle.TotalVolume;
-			return;
+			if (priceDown && volumeUp) Enter(Sides.Buy, currentAtr);
+			else if (priceUp && volumeUp) Enter(Sides.Sell, currentAtr);
 		}
+	}
 
-		if (_cooldown > 0)
+	private void Enter(Sides side, decimal atr)
+	{
+		var distance = atr * StopLossATRMultiplier;
+		_stopDistance ??= new Unit(distance);
+		// The cached native controller keeps this same Unit reference across entries.
+		_stopDistance.Value = distance;
+		if (!_protectionStarted && distance > 0m)
 		{
-			_cooldown--;
-			_previousClose = candle.ClosePrice;
-			_previousVolume = candle.TotalVolume;
-			return;
+			StartProtection(new Unit(), _stopDistance, useMarketOrders: true, isLocalStop: true);
+			_protectionStarted = true;
 		}
-
-		var priceDown = candle.ClosePrice < _previousClose;
-		var priceUp = candle.ClosePrice > _previousClose;
-		var volumeUp = candle.TotalVolume > _previousVolume;
-
-		var bullishDivergence = priceDown && volumeUp;
-		var bearishDivergence = priceUp && volumeUp;
-
-		if (Position == 0)
+		RegisterOrder(new Order
 		{
-			if (bullishDivergence && candle.ClosePrice < maValue)
-			{
-				BuyMarket();
-				_cooldown = CooldownBars;
-			}
-			else if (bearishDivergence && candle.ClosePrice > maValue)
-			{
-				SellMarket();
-				_cooldown = CooldownBars;
-			}
-		}
-		else if (Position > 0 && candle.ClosePrice < maValue && !bullishDivergence)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position < 0 && candle.ClosePrice > maValue && !bearishDivergence)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-
-		_previousClose = candle.ClosePrice;
-		_previousVolume = candle.TotalVolume;
+			Security = Security,
+			Portfolio = Portfolio,
+			Type = OrderTypes.Market,
+			Side = side,
+			Volume = Volume,
+			Comment = "Volume divergence entry",
+		});
 	}
 }

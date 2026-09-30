@@ -7,7 +7,7 @@ Testing indicates an average annual return of about 73%. It performs best in the
 
 After subscribing to the selected timeframe it monitors the %K and %D lines. A bullish setup forms when %K falls below 20 and then begins to recover. Conversely, a bearish setup appears if %K rallies above 80 and starts to turn down. A fixed percent stop controls risk for either side.
 
-Positions are exited when the %K line crosses back through the 50 level, signaling momentum has shifted toward the opposite direction. Because stops scale with the latest ATR, the trade size adapts to volatility.
+Positions are exited when the %K line crosses back through the 50 level, signaling momentum has shifted toward the opposite direction.
 
 ## Details
 

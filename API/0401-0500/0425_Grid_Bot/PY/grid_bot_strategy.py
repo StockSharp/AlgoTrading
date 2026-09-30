@@ -24,7 +24,7 @@ class grid_bot_strategy(Strategy):
         self._grid_count = self.Param("GridCount", 10) \
             .SetDisplay("Grid Count", "Number of equal levels the range is split into", "Grid Settings")
 
-        # Grid line the previous candle closed on, -1 before the first one is evaluated.
+        # Most recently touched line, or -1 if no line was touched.
         self._prev_level = -1
 
     @property
@@ -58,7 +58,12 @@ class grid_bot_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        level = self._get_level(float(candle.ClosePrice))
+        level = self._get_touched_level(candle)
+
+        # Never clamp an out-of-range candle to an untouched outer line.
+        if level < 0:
+            self._prev_level = -1
+            return
 
         # A touch is the move onto another line; standing on the same one is not a new signal.
         if level == self._prev_level:
@@ -74,17 +79,24 @@ class grid_bot_strategy(Strategy):
         elif level > middle and self.Position >= 0:
             self.SellMarket(self.Volume + Math.Abs(self.Position))
 
-    def _get_level(self, price):
-        """Index of the grid line the price sits on, counted from LowerLimit up to GridCount."""
+    def _get_touched_level(self, candle):
+        """Among lines actually touched, select the nearest to the close; prefer the lower tie."""
         upper = float(self._upper_limit.Value)
         lower = float(self._lower_limit.Value)
         count = int(self._grid_count.Value)
         step = (upper - lower) / count
 
-        # A price outside the predefined range belongs to the outermost line of the grid.
-        clamped = min(max(price, lower), upper)
-
-        return int(Math.Floor((clamped - lower) / step + 0.5))
+        touched = -1
+        distance = float("inf")
+        for index in range(count + 1):
+            price = lower + index * step
+            if price < float(candle.LowPrice) or price > float(candle.HighPrice):
+                continue
+            candidate_distance = abs(price - float(candle.ClosePrice))
+            if candidate_distance < distance:
+                touched = index
+                distance = candidate_distance
+        return touched
 
     def CreateClone(self):
         return grid_bot_strategy()

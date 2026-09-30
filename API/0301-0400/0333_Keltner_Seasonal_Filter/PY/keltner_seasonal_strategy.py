@@ -6,7 +6,7 @@ clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import ExponentialMovingAverage, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
 
@@ -34,11 +34,12 @@ class keltner_seasonal_strategy(Strategy):
         self._seasonal_threshold = self.Param("SeasonalThreshold", 0.5) \
             .SetDisplay("Seasonal Threshold", "Minimum seasonal strength to consider for trading", "Seasonal Settings")
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._monthly_returns = {}
         self._current_seasonal_strength = 0.0
+        self._stop_price = 0.0
         self._initialize_seasonal_data()
 
     @property
@@ -51,11 +52,10 @@ class keltner_seasonal_strategy(Strategy):
     def OnReseted(self):
         super(keltner_seasonal_strategy, self).OnReseted()
         self._current_seasonal_strength = 0.0
+        self._stop_price = 0.0
 
     def OnStarted2(self, time):
         super(keltner_seasonal_strategy, self).OnStarted2(time)
-
-        self._update_seasonal_strength(time)
 
         ema = ExponentialMovingAverage()
         ema.Length = int(self._ema_period.Value)
@@ -72,11 +72,6 @@ class keltner_seasonal_strategy(Strategy):
             self.DrawIndicator(area, ema)
             self.DrawOwnTrades(area)
 
-        self.StartProtection(
-            takeProfit=Unit(0),
-            stopLoss=Unit(float(self._atr_multiplier.Value), UnitTypes.Absolute)
-        )
-
     def _process_keltner(self, candle, ema_value, atr_value):
         if candle.State != CandleStates.Finished:
             return
@@ -84,10 +79,8 @@ class keltner_seasonal_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        candle_month = candle.OpenTime.Month
-        current_month = self.CurrentTime.Month
-        if candle_month != current_month:
-            self._update_seasonal_strength(self.CurrentTime)
+        # Seasonality belongs to the candle being evaluated, never to host/start time.
+        self._update_seasonal_strength(candle.OpenTime)
 
         multiplier = float(self._atr_multiplier.Value)
         threshold = float(self._seasonal_threshold.Value)
@@ -98,19 +91,34 @@ class keltner_seasonal_strategy(Strategy):
         lower_band = ema_val - atr_val * multiplier
         close_price = float(candle.ClosePrice)
 
+        # Stop placed AtrMultiplier x ATR from the entry close, checked on the finished candle
+        if self._stop_price > 0 and \
+           ((self.Position > 0 and close_price <= self._stop_price) or
+            (self.Position < 0 and close_price >= self._stop_price)):
+            self._close_position()
+            return
+
         if self._current_seasonal_strength > threshold:
             if close_price > upper_band and self.Position <= 0:
                 self.BuyMarket(self.Volume + Math.Abs(self.Position))
+                self._stop_price = close_price - atr_val * multiplier
+                return
         elif self._current_seasonal_strength < -threshold:
             if close_price < lower_band and self.Position >= 0:
                 self.SellMarket(self.Volume + Math.Abs(self.Position))
+                self._stop_price = close_price + atr_val * multiplier
+                return
 
         if (self.Position > 0 and close_price < ema_val) or \
            (self.Position < 0 and close_price > ema_val):
-            if self.Position > 0:
-                self.SellMarket(self.Position)
-            elif self.Position < 0:
-                self.BuyMarket(Math.Abs(self.Position))
+            self._close_position()
+
+    def _close_position(self):
+        if self.Position > 0:
+            self.SellMarket(self.Position)
+        elif self.Position < 0:
+            self.BuyMarket(Math.Abs(self.Position))
+        self._stop_price = 0.0
 
     def _initialize_seasonal_data(self):
         self._monthly_returns[1] = 0.8

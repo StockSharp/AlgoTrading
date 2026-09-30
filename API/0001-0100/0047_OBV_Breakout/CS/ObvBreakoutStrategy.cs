@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using Ecng.Common;
 
@@ -11,92 +12,77 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// On-Balance Volume (OBV) Breakout strategy.
-/// Enters when OBV crosses its moving average indicating volume confirmation of trend.
+/// Trades strict breaks of prior rolling OBV extrema with matching price direction.
+/// Fully exits on any actual OBV/OBV-SMA crossing or actual-fill percent protection.
 /// </summary>
 public class ObvBreakoutStrategy : Strategy
 {
-	private readonly StrategyParam<int> _maPeriod;
+	private readonly StrategyParam<int> _lookbackPeriod;
+	private readonly StrategyParam<int> _obvMaPeriod;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
 
-	private decimal _prevObv;
-	private int _cooldown;
+	private readonly Queue<decimal> _priorObvs = new();
+	private SimpleMovingAverage _obvAverage;
+	private decimal? _previousPrice;
+	private decimal? _previousReadyObv;
+	private decimal _previousMean;
+	private Order _pendingOrder;
 
-	/// <summary>
-	/// MA Period for OBV average.
-	/// </summary>
-	public int MAPeriod
-	{
-		get => _maPeriod.Value;
-		set => _maPeriod.Value = value;
-	}
+	public int LookbackPeriod { get => _lookbackPeriod.Value; set => _lookbackPeriod.Value = value; }
+	public int OBVMAPeriod { get => _obvMaPeriod.Value; set => _obvMaPeriod.Value = value; }
+	public decimal StopLossPercent { get => _stopLossPercent.Value; set => _stopLossPercent.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Cooldown bars between trades.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize the OBV Breakout strategy.
-	/// </summary>
 	public ObvBreakoutStrategy()
 	{
-		_maPeriod = Param(nameof(MAPeriod), 20)
-			.SetDisplay("MA Period", "Period for OBV moving average", "Indicators")
+		_lookbackPeriod = Param(nameof(LookbackPeriod), 20).SetGreaterThanZero()
+			.SetDisplay("Lookback Period", "Number of PRIOR finished OBV values in the breakout range", "Entry");
+		_obvMaPeriod = Param(nameof(OBVMAPeriod), 20).SetGreaterThanZero()
+			.SetDisplay("OBV MA Period", "Current-inclusive SMA length for OBV, not price", "Indicators")
 			.SetOptimize(10, 50, 10);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m).SetNotNegative()
+			.SetDisplay("Stop Loss (%)", "Actual-fill percent stop; zero disables it.", "Protection");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_cooldownBars = Param(nameof(CooldownBars), 500)
-			.SetRange(1, 1000)
-			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
+		OrderRegistering += order => _pendingOrder = order;
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType), (Security, DataType.Level1)];
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevObv = default;
-		_cooldown = default;
+		ClearSignalState();
+		_obvAverage = null;
 	}
 
-	/// <inheritdoc />
+	private void ClearSignalState()
+	{
+		_priorObvs.Clear();
+		_previousPrice = null;
+		_previousReadyObv = null;
+		_previousMean = 0m;
+		_pendingOrder = null;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_prevObv = 0;
-		_cooldown = 0;
-
+		ClearSignalState();
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
 		var obv = new OnBalanceVolume();
-		var sma = new SimpleMovingAverage { Length = MAPeriod };
-
+		_obvAverage = new SimpleMovingAverage { Length = OBVMAPeriod };
+		Indicators.Add(_obvAverage);
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(obv, sma, ProcessCandle)
-			.Start();
-
+		subscription.BindEx(obv, ProcessCandle, false).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -105,54 +91,51 @@ public class ObvBreakoutStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal obvValue, decimal smaValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// Native protection runs before this callback, including between finished candles.
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue obvValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		// The native SMA averages OBV itself, including warmup and pending-order bars.
+		var meanValue = _obvAverage.Process(obvValue);
+		var currentObv = obvValue.GetValue<decimal>();
+		var priorPrice = _previousPrice;
+		_previousPrice = candle.ClosePrice;
+
+		// Capture the PRIOR range before inserting the breakout candle.
+		var rangeReady = _priorObvs.Count == LookbackPeriod;
+		var upper = rangeReady ? _priorObvs.Max() : 0m;
+		var lower = rangeReady ? _priorObvs.Min() : 0m;
+		_priorObvs.Enqueue(currentObv);
+		while (_priorObvs.Count > LookbackPeriod)
+			_priorObvs.Dequeue();
+
+		if (!obvValue.Indicator.IsFormed || !_obvAverage.IsFormed)
 			return;
+		var mean = meanValue.GetValue<decimal>();
+		var upwardCross = _previousReadyObv is decimal up && up <= _previousMean && currentObv > mean;
+		var downwardCross = _previousReadyObv is decimal down && down >= _previousMean && currentObv < mean;
+		// Zero OBV/mean are valid values, not an uninitialized sentinel.
+		_previousReadyObv = currentObv;
+		_previousMean = mean;
 
-		if (_prevObv == 0)
-		{
-			_prevObv = obvValue;
+		if (!IsFormedAndOnlineAndAllowTrading() ||
+			_pendingOrder is not null && _pendingOrder.State is not (OrderStates.Done or OrderStates.Failed))
 			return;
-		}
-
-		if (_cooldown > 0)
+		if (Position != 0m && (upwardCross || downwardCross))
 		{
-			_cooldown--;
-			_prevObv = obvValue;
-			return;
+			if (Position > 0m) SellMarket(Position);
+			else BuyMarket(Math.Abs(Position));
 		}
-
-		// Use OBV direction + price vs SMA for signals
-		var obvRising = obvValue > _prevObv;
-
-		if (Position == 0)
+		else if (Position == 0m && rangeReady && priorPrice is decimal previousClose)
 		{
-			if (obvRising && candle.ClosePrice > smaValue)
-			{
-				BuyMarket();
-				_cooldown = CooldownBars;
-			}
-			else if (!obvRising && candle.ClosePrice < smaValue)
-			{
-				SellMarket();
-				_cooldown = CooldownBars;
-			}
+			if (currentObv > upper && candle.ClosePrice > previousClose) BuyMarket(Volume);
+			else if (currentObv < lower && candle.ClosePrice < previousClose) SellMarket(Volume);
 		}
-		else if (Position > 0 && !obvRising)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position < 0 && obvRising)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-
-		_prevObv = obvValue;
 	}
 }

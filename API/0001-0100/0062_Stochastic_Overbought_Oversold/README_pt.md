@@ -7,7 +7,7 @@ Os testes indicam um retorno anual médio de aproximadamente 73%. Tem melhor des
 
 Após assinar o período selecionado, monitora as linhas %K e %D. Uma configuração altista se forma quando %K cai abaixo de 20 e começa a se recuperar. Por outro lado, uma configuração baixista aparece se %K sobe acima de 80 e começa a virar para baixo. Um stop de percentual fixo controla o risco para ambos os lados.
 
-As posições são encerradas quando a linha %K cruza de volta pelo nível 50, sinalizando que o momento mudou para a direção oposta. Como os stops escalam com o ATR mais recente, o tamanho da operação se adapta à volatilidade.
+As posições são encerradas quando a linha %K cruza de volta pelo nível 50, sinalizando que o momento mudou para a direção oposta.
 
 ## Detalhes
 

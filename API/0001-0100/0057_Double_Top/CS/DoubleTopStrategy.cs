@@ -3,7 +3,6 @@ using System.Collections.Generic;
 
 using Ecng.Common;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -11,208 +10,142 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Double Top reversal strategy.
-/// Detects two similar tops and enters short on confirmation.
-/// Uses SMA for exit signal.
+/// Short-only double top: two confirmed pivot highs followed by a bearish candle.
+/// A pattern-high stop is checked against executable best asks and finished-bar highs.
 /// </summary>
 public class DoubleTopStrategy : Strategy
 {
-	private readonly StrategyParam<int> _distanceParam;
+	private readonly StrategyParam<int> _distance;
 	private readonly StrategyParam<decimal> _similarityPercent;
-	private readonly StrategyParam<int> _maPeriod;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
 
-	private decimal _recentHigh;
-	private decimal _prevHigh;
-	private int _barsSinceHigh;
-	private int _cooldown;
+	private ICandleMessage _twoBack;
+	private ICandleMessage _previous;
+	private (int Bar, decimal High)? _lastPivot;
+	private decimal? _candidateHigh;
+	private int _candidateExpires;
+	private decimal? _patternStop;
+	private int _bar;
+	private Order _entryOrder;
+	private Order _exitOrder;
 
-	/// <summary>
-	/// Distance between tops in bars.
-	/// </summary>
-	public int Distance
-	{
-		get => _distanceParam.Value;
-		set => _distanceParam.Value = value;
-	}
+	public int Distance { get => _distance.Value; set => _distance.Value = value; }
+	public decimal SimilarityPercent { get => _similarityPercent.Value; set => _similarityPercent.Value = value; }
+	public decimal StopLossPercent { get => _stopLossPercent.Value; set => _stopLossPercent.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Maximum percent difference between two tops.
-	/// </summary>
-	public decimal SimilarityPercent
-	{
-		get => _similarityPercent.Value;
-		set => _similarityPercent.Value = value;
-	}
-
-	/// <summary>
-	/// MA Period for exit.
-	/// </summary>
-	public int MAPeriod
-	{
-		get => _maPeriod.Value;
-		set => _maPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Type of candles to use.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Cooldown bars between trades.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="DoubleTopStrategy"/>.
-	/// </summary>
 	public DoubleTopStrategy()
 	{
-		_distanceParam = Param(nameof(Distance), 20)
-			.SetRange(3, 100)
-			.SetDisplay("Distance", "Bars between tops", "Pattern");
-
-		_similarityPercent = Param(nameof(SimilarityPercent), 1.0m)
-			.SetRange(0.1m, 5.0m)
-			.SetDisplay("Similarity %", "Max % diff between tops", "Pattern");
-
-		_maPeriod = Param(nameof(MAPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("MA Period", "Period for exit SMA", "Indicators");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_cooldownBars = Param(nameof(CooldownBars), 500)
-			.SetRange(1, 1000)
-			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
+		_distance = Param(nameof(Distance), 5).SetRange(3, 100)
+			.SetDisplay("Distance", "Minimum bars between confirmed pivot highs", "Pattern");
+		_similarityPercent = Param(nameof(SimilarityPercent), 2m).SetRange(0.1m, 5m)
+			.SetDisplay("Similarity %", "Maximum relative difference between pivot highs", "Pattern");
+		_stopLossPercent = Param(nameof(StopLossPercent), 1m).SetRange(0m, 99m)
+			.SetDisplay("Stop above highs (%)", "Percentage buffer above the higher pattern high; zero places it at the high.", "Protection");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+			.SetDisplay("Candle Type", "Timeframe for pivot highs and bearish confirmation", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType), (Security, DataType.Level1)];
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_recentHigh = default;
-		_prevHigh = default;
-		_barsSinceHigh = default;
-		_cooldown = default;
+		ClearState();
 	}
 
-	/// <inheritdoc />
+	private void ClearState()
+	{
+		_twoBack = _previous = null;
+		_lastPivot = null;
+		_candidateHigh = null;
+		_candidateExpires = 0;
+		_patternStop = null;
+		_bar = 0;
+		_entryOrder = _exitOrder = null;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_recentHigh = 0;
-		_prevHigh = 0;
-		_barsSinceHigh = 0;
-		_cooldown = 0;
-
-		var sma = new SimpleMovingAverage { Length = MAPeriod };
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(sma, ProcessCandle)
-			.Start();
-
+		ClearState();
+		var asks = new Subscription(DataType.Level1, Security);
+		asks.MarketData.BuildField = Level1Fields.BestAskPrice;
+		SubscribeLevel1(asks).Bind(ProcessAsk).Start();
+		var candles = SubscribeCandles(CandleType);
+		candles.Bind(ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, sma);
+			DrawCandles(area, candles);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
+	private static bool IsPending(Order order)
+		=> order is not null && order.State is not (OrderStates.Done or OrderStates.Failed);
+
+	private void ProcessAsk(Level1ChangeMessage message)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
+		if (message.TryGetDecimal(Level1Fields.BestAskPrice) is decimal ask && ask > 0m)
+			CheckStop(ask);
+	}
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (_cooldown > 0)
+	private void CheckStop(decimal executableAsk)
+	{
+		if (Position < 0m && _patternStop is decimal stop && executableAsk >= stop && !IsPending(_exitOrder))
 		{
-			_cooldown--;
-			TrackHighs(candle);
-			return;
-		}
-
-		// Track new highs
-		if (_recentHigh == 0 || candle.HighPrice > _recentHigh)
-		{
-			if (_recentHigh > 0)
-				_prevHigh = _recentHigh;
-
-			_recentHigh = candle.HighPrice;
-			_barsSinceHigh = 0;
-		}
-		else
-		{
-			_barsSinceHigh++;
-		}
-
-		if (Position == 0 && _prevHigh > 0 && _barsSinceHigh >= Distance)
-		{
-			var priceDiff = Math.Abs((_recentHigh - _prevHigh) / _prevHigh * 100);
-
-			if (priceDiff <= SimilarityPercent && candle.ClosePrice < smaValue)
-			{
-				SellMarket();
-				_cooldown = CooldownBars;
-				_recentHigh = 0;
-				_prevHigh = 0;
-			}
-			else if (priceDiff <= SimilarityPercent && candle.ClosePrice > smaValue)
-			{
-				BuyMarket();
-				_cooldown = CooldownBars;
-				_recentHigh = 0;
-				_prevHigh = 0;
-			}
-		}
-		else if (Position > 0 && candle.ClosePrice < smaValue)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position < 0 && candle.ClosePrice > smaValue)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
+			_exitOrder = BuyMarket(Math.Abs(Position));
+			// An exited pattern cannot be reused to open another position.
+			_twoBack = _previous = null;
+			_lastPivot = null;
+			_candidateHigh = null;
 		}
 	}
 
-	private void TrackHighs(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle)
 	{
-		if (_recentHigh == 0 || candle.HighPrice > _recentHigh)
+		if (candle.State != CandleStates.Finished)
+			return;
+		_bar++;
+		var older = _twoBack;
+		var middle = _previous;
+		_twoBack = middle;
+		_previous = candle;
+		if (Position < 0m)
 		{
-			if (_recentHigh > 0)
-				_prevHigh = _recentHigh;
-
-			_recentHigh = candle.HighPrice;
-			_barsSinceHigh = 0;
+			// Covers missing/stale quotes or a gap; the next market order may fill beyond the stop.
+			CheckStop(candle.HighPrice);
+			return;
 		}
-		else
+		if (IsPending(_entryOrder) || IsPending(_exitOrder))
+			return;
+		if (older is not null && middle is not null &&
+			middle.HighPrice > older.HighPrice && middle.HighPrice >= candle.HighPrice)
 		{
-			_barsSinceHigh++;
+			var pivot = (Bar: _bar - 1, High: middle.HighPrice);
+			if (_lastPivot is { } first && pivot.Bar - first.Bar >= Distance &&
+				Math.Abs(pivot.High - first.High) * 100m <= first.High * SimilarityPercent)
+			{
+				_candidateHigh = Math.Max(first.High, pivot.High);
+				_candidateExpires = _bar + Distance;
+			}
+			_lastPivot = pivot;
 		}
+		if (_candidateHigh is not decimal high)
+			return;
+		if (_bar > _candidateExpires || candle.HighPrice > high)
+		{
+			_candidateHigh = null;
+			return;
+		}
+		if (candle.ClosePrice >= candle.OpenPrice || !IsFormedAndOnlineAndAllowTrading())
+			return;
+		_patternStop = high * (1m + StopLossPercent / 100m);
+		_entryOrder = SellMarket(Volume);
+		_candidateHigh = null;
+		_lastPivot = null;
 	}
 }

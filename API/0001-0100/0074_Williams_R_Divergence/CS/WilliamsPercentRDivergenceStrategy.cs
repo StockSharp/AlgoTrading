@@ -11,155 +11,110 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Williams %R Divergence strategy.
-/// Detects divergences between price and Williams %R for reversal signals.
-/// Bullish: price falling but Williams %R rising (oversold zone).
-/// Bearish: price rising but Williams %R falling (overbought zone).
+/// Compares each finished bar's close and Williams %R with the reading DivergencePeriod bars back
+/// and trades the divergence in the %R extreme zone.
+/// Exits at the opposite %R extreme or native actual-fill percent protection.
 /// </summary>
 public class WilliamsPercentRDivergenceStrategy : Strategy
 {
 	private readonly StrategyParam<int> _williamsRPeriod;
+	private readonly StrategyParam<int> _divergencePeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly Queue<(decimal Close, decimal WilliamsR)> _history = new();
+	private WilliamsR _williamsR;
+	private Order _pendingOrder;
 
-	private decimal _prevPrice;
-	private decimal _prevWR;
-	private int _cooldown;
+	public int WilliamsRPeriod { get => _williamsRPeriod.Value; set => _williamsRPeriod.Value = value; }
+	public int DivergencePeriod { get => _divergencePeriod.Value; set => _divergencePeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public decimal StopLossPercent { get => _stopLossPercent.Value; set => _stopLossPercent.Value = value; }
 
-	/// <summary>
-	/// Williams %R period.
-	/// </summary>
-	public int WilliamsRPeriod
-	{
-		get => _williamsRPeriod.Value;
-		set => _williamsRPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Cooldown bars.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public WilliamsPercentRDivergenceStrategy()
 	{
-		_williamsRPeriod = Param(nameof(WilliamsRPeriod), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("Williams %R Period", "Period for Williams %R", "Indicators");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_cooldownBars = Param(nameof(CooldownBars), 500)
-			.SetRange(1, 1000)
-			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
+		_williamsRPeriod = Param(nameof(WilliamsRPeriod), 14).SetGreaterThanZero()
+			.SetDisplay("Williams %R Period", "Highest-high/lowest-low lookback", "Indicators");
+		_divergencePeriod = Param(nameof(DivergencePeriod), 5).SetGreaterThanZero()
+			.SetDisplay("Divergence Period", "Bars back to the compared close and %R reading", "Pattern");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Williams %R and divergence timeframe", "General");
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m).SetNotNegative()
+			.SetDisplay("Stop Loss (%)", "Actual-fill percent stop; zero disables it", "Protection");
+		OrderRegistering += order => _pendingOrder = order;
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType), (Security, DataType.Level1)];
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevPrice = default;
-		_prevWR = default;
-		_cooldown = default;
+		ClearState();
 	}
 
-	/// <inheritdoc />
+	private void ClearState()
+	{
+		_history.Clear();
+		_williamsR = null;
+		_pendingOrder = null;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_prevPrice = 0;
-		_prevWR = 0;
-		_cooldown = 0;
-
-		var williamsR = new WilliamsR { Length = WilliamsRPeriod };
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(williamsR, ProcessCandle)
-			.Start();
-
+		ClearState();
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
+		_williamsR = new WilliamsR { Length = WilliamsRPeriod };
+		var candles = SubscribeCandles(CandleType);
+		candles.Bind(_williamsR, ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, williamsR);
+			DrawCandles(area, candles);
+			DrawIndicator(area, _williamsR);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal wrValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
 	{
-		if (candle.State != CandleStates.Finished)
+		// Native actual-fill protection evaluates executable quotes between signal candles.
+	}
+
+	private void ProcessCandle(ICandleMessage candle, decimal value)
+	{
+		if (candle.State != CandleStates.Finished || !_williamsR.IsFormed)
 			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
+		var bullish = false;
+		var bearish = false;
+		if (_history.Count == DivergencePeriod)
+		{
+			var prior = _history.Peek();
+			bullish = candle.ClosePrice < prior.Close && value > prior.WilliamsR && value < -80m;
+			bearish = candle.ClosePrice > prior.Close && value < prior.WilliamsR && value > -20m;
+		}
+		_history.Enqueue((candle.ClosePrice, value));
+		if (_history.Count > DivergencePeriod)
+			_history.Dequeue();
+		if (!IsFormedAndOnlineAndAllowTrading() ||
+			_pendingOrder is not null && _pendingOrder.State is not (OrderStates.Done or OrderStates.Failed))
 			return;
-
-		if (_prevPrice == 0)
+		if (Position > 0m && value >= -20m)
+			SellMarket(Position);
+		else if (Position < 0m && value <= -80m)
+			BuyMarket(Math.Abs(Position));
+		else if (Position == 0m)
 		{
-			_prevPrice = candle.ClosePrice;
-			_prevWR = wrValue;
-			return;
+			if (bullish)
+				BuyMarket(Volume);
+			else if (bearish)
+				SellMarket(Volume);
 		}
-
-		if (_cooldown > 0)
-		{
-			_cooldown--;
-			_prevPrice = candle.ClosePrice;
-			_prevWR = wrValue;
-			return;
-		}
-
-		// Bullish divergence: price lower but WR higher (in oversold zone)
-		var bullishDiv = candle.ClosePrice < _prevPrice && wrValue > _prevWR;
-		// Bearish divergence: price higher but WR lower (in overbought zone)
-		var bearishDiv = candle.ClosePrice > _prevPrice && wrValue < _prevWR;
-
-		if (Position == 0 && bullishDiv && wrValue < -80)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position == 0 && bearishDiv && wrValue > -20)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position > 0 && wrValue > -20)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position < 0 && wrValue < -80)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-
-		_prevPrice = candle.ClosePrice;
-		_prevWR = wrValue;
 	}
 }

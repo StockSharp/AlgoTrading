@@ -2,7 +2,7 @@
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
 ## Visão geral
-Esta estratégia é um port para StockSharp do expert advisor "Crypto Analysis" do MetaTrader 4. Ela procura rompimentos que ocorrem depois que o preço toca a banda externa de Bollinger no timeframe principal de negociação, enquanto a estrutura de mercado permanece baixista (LWMA rápida abaixo da LWMA lenta). O sistema só permite operações quando um surto de momentum em timeframe superior e um filtro MACD mensal concordam com a direção desejada. Depois de entrar no mercado, a posição é gerenciada por um bloco de proteção em camadas que espelha o EA original: stops baseados em pips, trailing baseado em dinheiro, realocação para break-even e controles de drawdown da carteira.
+Esta estratégia é um port para StockSharp do expert advisor "Crypto Analysis" do MetaTrader 4. Ela procura rompimentos que ocorrem depois que o preço toca a banda externa de Bollinger no timeframe principal de negociação, enquanto a estrutura de mercado permanece baixista (LWMA rápida abaixo da LWMA lenta). O sistema só permite operações quando um surto de momentum em timeframe superior e um filtro MACD em um timeframe ainda maior concordam com a direção desejada. Depois de entrar no mercado, a posição é gerenciada por um bloco de proteção em camadas que espelha o EA original: stops baseados em pips, trailing baseado em dinheiro, realocação para break-even e controles de drawdown da carteira.
 
 ## Lógica de negociação
 - **Timeframe de sinal:** configurável (M15 por padrão). Todas as regras de entrada/saída são avaliadas nesses candles.
@@ -10,7 +10,7 @@ Esta estratégia é um port para StockSharp do expert advisor "Crypto Analysis" 
 - **Filtro de tendência:** ambos os cenários exigem que a média móvel linearmente ponderada rápida (LWMA, padrão 6) permaneça abaixo da LWMA lenta (padrão 85), replicando a checagem de viés baixista do EA.
 - **Confirmação RSI:** RSI(14) precisa estar acima de 50 para compras e abaixo de 50 para vendas.
 - **Surto de momentum:** o desvio absoluto máximo dos três últimos valores Momentum(14) do timeframe superior em relação à linha-base 100 deve exceder os limiares de compra/venda. Isso captura os picos de momentum usados pelo código MQL.
-- **Filtro MACD mensal:** um MACD mensal separado (candles de 30 dias por padrão) (12, 26, 9) confirma a direção; compras exigem MACD principal acima do sinal, vendas exigem o oposto.
+- **Filtro MACD de timeframe superior:** um MACD (12, 26, 9) separado sobre candles de um timeframe superior (H4 por padrão) confirma a direção; compras exigem MACD principal acima do sinal, vendas exigem o oposto.
 - **Execução de entrada:** quando todos os filtros se alinham, a estratégia abre uma ordem a mercado. Posições opostas são zeradas antes da reversão para manter uma única posição líquida, espelhando o comportamento do EA de fechar operações contrárias.
 
 ## Gestão de posição
@@ -25,7 +25,7 @@ Esta estratégia é um port para StockSharp do expert advisor "Crypto Analysis" 
 Três assinaturas são registradas automaticamente:
 1. Série principal de candles para as regras de Bollinger/LWMA/RSI.
 2. Candles de timeframe superior para o filtro de momentum (H1 por padrão).
-3. Candles mensais para a confirmação MACD (barras de 30 dias por padrão).
+3. Candles de um timeframe superior para a confirmação MACD (H4 por padrão).
 
 ## Parâmetros
 | Parâmetro | Descrição |

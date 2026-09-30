@@ -2,7 +2,7 @@
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Überblick
-Diese Strategie ist ein StockSharp-Port des MetaTrader-4-Expert-Advisors "Crypto Analysis". Sie sucht nach Ausbrüchen, die auftreten, nachdem der Preis das äußere Bollinger-Band im Haupt-Handelszeitrahmen berührt, während die Marktstruktur bärisch bleibt (schnelle LWMA unter der langsamen LWMA). Das System erlaubt Trades nur, wenn ein Momentum-Schub im höheren Zeitrahmen und ein monatlicher MACD-Filter mit der gewünschten Richtung übereinstimmen. Nach dem Einstieg wird die Position durch einen mehrschichtigen Schutzblock verwaltet, der den ursprünglichen EA nachbildet: pipbasierte Stops, geldbasierter Trail, Break-even-Verschiebung und Portfolio-Drawdown-Kontrollen.
+Diese Strategie ist ein StockSharp-Port des MetaTrader-4-Expert-Advisors "Crypto Analysis". Sie sucht nach Ausbrüchen, die auftreten, nachdem der Preis das äußere Bollinger-Band im Haupt-Handelszeitrahmen berührt, während die Marktstruktur bärisch bleibt (schnelle LWMA unter der langsamen LWMA). Das System erlaubt Trades nur, wenn ein Momentum-Schub im höheren Zeitrahmen und ein MACD-Filter in einem noch höheren Zeitrahmen mit der gewünschten Richtung übereinstimmen. Nach dem Einstieg wird die Position durch einen mehrschichtigen Schutzblock verwaltet, der den ursprünglichen EA nachbildet: pipbasierte Stops, geldbasierter Trail, Break-even-Verschiebung und Portfolio-Drawdown-Kontrollen.
 
 ## Handelslogik
 - **Signalzeitrahmen:** konfigurierbar (standardmäßig M15). Alle Ein-/Ausstiegsregeln werden auf diesen Kerzen ausgewertet.
@@ -10,7 +10,7 @@ Diese Strategie ist ein StockSharp-Port des MetaTrader-4-Expert-Advisors "Crypto
 - **Trendfilter:** Beide Szenarien verlangen, dass die schnelle linear gewichtete gleitende Durchschnittslinie (LWMA, Standard 6) unter der langsamen LWMA (Standard 85) bleibt, wodurch der bärische Bias des EA repliziert wird.
 - **RSI-Bestätigung:** RSI(14) muss für Longs über 50 und für Shorts unter 50 liegen.
 - **Momentum-Schub:** Die maximale absolute Abweichung der letzten drei Momentum(14)-Werte des höheren Zeitrahmens von der 100-Basislinie muss die Kauf-/Verkaufsschwellen überschreiten. Dies erfasst die Momentum-Spitzen des MQL-Codes.
-- **Monatlicher MACD-Filter:** Ein separater monatlicher MACD (standardmäßig 30-Tage-Kerzen) (12, 26, 9) bestätigt die Richtung; Longs erfordern MACD-Hauptlinie über Signal, Shorts das Gegenteil.
+- **MACD-Filter im höheren Zeitrahmen:** Ein separater MACD (12, 26, 9) auf Kerzen eines höheren Zeitrahmens (standardmäßig H4) bestätigt die Richtung; Longs erfordern MACD-Hauptlinie über Signal, Shorts das Gegenteil.
 - **Einstiegsausführung:** Sobald alle Filter übereinstimmen, eröffnet die Strategie eine Marktorder. Gegenpositionen werden vor einer Umkehr glattgestellt, um eine einzelne Nettoposition zu behalten, was dem Verhalten des EA beim Schließen entgegengesetzter Trades entspricht.
 
 ## Positionsverwaltung
@@ -25,7 +25,7 @@ Diese Strategie ist ein StockSharp-Port des MetaTrader-4-Expert-Advisors "Crypto
 Drei Abonnements werden automatisch registriert:
 1. Primäre Kerzenserie für Bollinger-/LWMA-/RSI-Regeln.
 2. Kerzen des höheren Zeitrahmens für den Momentum-Filter (standardmäßig H1).
-3. Monatskerzen für die MACD-Bestätigung (standardmäßig 30-Tage-Bars).
+3. Kerzen eines höheren Zeitrahmens für die MACD-Bestätigung (standardmäßig H4).
 
 ## Parameter
 | Parameter | Beschreibung |

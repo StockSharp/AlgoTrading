@@ -18,9 +18,11 @@ public class TradingViewSupertrendFlipStrategy : Strategy
 {
 	private readonly StrategyParam<int> _supertrendPeriod;
 	private readonly StrategyParam<decimal> _supertrendMultiplier;
+	private readonly StrategyParam<int> _volumeAvgPeriod;
+	private readonly StrategyParam<bool> _useVolumeFilter;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevSupertrendValue;
+	private SimpleMovingAverage _volumeAverage;
 	private bool _prevIsUpTrend;
 	private bool _hasPrevValues;
 
@@ -42,6 +44,9 @@ public class TradingViewSupertrendFlipStrategy : Strategy
 		set => _supertrendMultiplier.Value = value;
 	}
 
+	public int VolumeAvgPeriod { get => _volumeAvgPeriod.Value; set => _volumeAvgPeriod.Value = value; }
+	public bool UseVolumeFilter { get => _useVolumeFilter.Value; set => _useVolumeFilter.Value = value; }
+
 	/// <summary>
 	/// Candle type.
 	/// </summary>
@@ -57,12 +62,17 @@ public class TradingViewSupertrendFlipStrategy : Strategy
 	public TradingViewSupertrendFlipStrategy()
 	{
 		_supertrendPeriod = Param(nameof(SupertrendPeriod), 10)
+			.SetGreaterThanZero()
 			.SetDisplay("Supertrend Period", "Period for Supertrend calculation", "Indicators")
 			.SetOptimize(7, 14, 1);
 
-		_supertrendMultiplier = Param(nameof(SupertrendMultiplier), 4.0m)
+		_supertrendMultiplier = Param(nameof(SupertrendMultiplier), 3.0m)
+			.SetGreaterThanZero()
 			.SetDisplay("Supertrend Multiplier", "Multiplier for Supertrend", "Indicators")
 			.SetOptimize(3.0m, 5.0m, 0.5m);
+
+		_volumeAvgPeriod = Param(nameof(VolumeAvgPeriod), 20).SetGreaterThanZero();
+		_useVolumeFilter = Param(nameof(UseVolumeFilter), true);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -78,7 +88,7 @@ public class TradingViewSupertrendFlipStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevSupertrendValue = default;
+		_volumeAverage = null;
 		_prevIsUpTrend = default;
 		_hasPrevValues = default;
 	}
@@ -87,6 +97,7 @@ public class TradingViewSupertrendFlipStrategy : Strategy
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_volumeAverage = new SimpleMovingAverage { Length = VolumeAvgPeriod };
 
 		var supertrend = new SuperTrend
 		{
@@ -96,7 +107,7 @@ public class TradingViewSupertrendFlipStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(supertrend, ProcessCandle)
+			.BindEx(supertrend, ProcessCandle, allowEmpty: true)
 			.Start();
 
 		var area = CreateChartArea();
@@ -108,25 +119,24 @@ public class TradingViewSupertrendFlipStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal supertrendValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue supertrendValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		// Feed volume during Supertrend warm-up, using the current bar in the 20-bar SMA.
+		var volumeValue = _volumeAverage.Process(new DecimalIndicatorValue(_volumeAverage, candle.TotalVolume, candle.OpenTime) { IsFinal = true });
+		if (!supertrendValue.IsFormed || supertrendValue.IsEmpty || !IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (supertrendValue == 0)
-			return;
-
-		// Determine trend direction
-		var isUpTrend = candle.ClosePrice > supertrendValue;
+		// The native direction preserves inclusive flips when the close equals a band.
+		var isUpTrend = ((SuperTrendIndicatorValue)supertrendValue).IsUpTrend;
+		var confirmed = !UseVolumeFilter || (_volumeAverage.IsFormed && candle.TotalVolume > volumeValue.GetValue<decimal>());
 
 		if (!_hasPrevValues)
 		{
 			_hasPrevValues = true;
 			_prevIsUpTrend = isUpTrend;
-			_prevSupertrendValue = supertrendValue;
 			return;
 		}
 
@@ -135,17 +145,20 @@ public class TradingViewSupertrendFlipStrategy : Strategy
 		var isFlippedBearish = !isUpTrend && _prevIsUpTrend;
 
 		_prevIsUpTrend = isUpTrend;
-		_prevSupertrendValue = supertrendValue;
 
 		if (isFlippedBullish && Position <= 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
+			if (confirmed)
+				BuyMarket(Volume + Math.Abs(Position));
+			else if (Position < 0m)
+				BuyMarket(Math.Abs(Position));
 		}
 		else if (isFlippedBearish && Position >= 0)
 		{
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
+			if (confirmed)
+				SellMarket(Volume + Math.Abs(Position));
+			else if (Position > 0m)
+				SellMarket(Math.Abs(Position));
 		}
 	}
 }

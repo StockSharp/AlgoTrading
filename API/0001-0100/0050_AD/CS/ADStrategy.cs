@@ -11,94 +11,64 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Accumulation/Distribution (A/D) Strategy.
-/// Long entry: A/D rising and price above MA.
-/// Short entry: A/D falling and price below MA.
+/// Trades strict native A/D changes confirmed by the Close/price-SMA direction.
+/// Fully exits on a strict adverse A/D step or actual-fill percent protection.
 /// </summary>
 public class ADStrategy : Strategy
 {
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 
-	private decimal _previousADValue;
-	private int _cooldown;
+	private decimal? _previousAd;
+	private Order _pendingOrder;
 
-	/// <summary>
-	/// MA Period.
-	/// </summary>
-	public int MAPeriod
-	{
-		get => _maPeriod.Value;
-		set => _maPeriod.Value = value;
-	}
+	public int MAPeriod { get => _maPeriod.Value; set => _maPeriod.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public decimal StopLossPercent { get => _stopLossPercent.Value; set => _stopLossPercent.Value = value; }
 
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Cooldown bars between trades.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize <see cref="ADStrategy"/>.
-	/// </summary>
 	public ADStrategy()
 	{
-		_maPeriod = Param(nameof(MAPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("MA Period", "Period for Moving Average", "Indicators")
+		_maPeriod = Param(nameof(MAPeriod), 20).SetGreaterThanZero()
+			.SetDisplay("MA Period", "Current-inclusive Close SMA length", "Indicators")
 			.SetOptimize(10, 50, 10);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_cooldownBars = Param(nameof(CooldownBars), 500)
-			.SetRange(1, 1000)
-			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m).SetNotNegative()
+			.SetDisplay("Stop Loss (%)", "Actual-fill percent stop; zero disables it.", "Protection");
+		OrderRegistering += order => _pendingOrder = order;
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType), (Security, DataType.Level1)];
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_previousADValue = default;
-		_cooldown = default;
+		ClearSignalState();
 	}
 
-	/// <inheritdoc />
+	private void ClearSignalState()
+	{
+		_previousAd = null;
+		_pendingOrder = null;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_previousADValue = 0;
-		_cooldown = 0;
-
+		ClearSignalState();
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
 		var ma = new SimpleMovingAverage { Length = MAPeriod };
 		var ad = new AccumulationDistributionLine();
-
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(ma, ad, ProcessCandle)
-			.Start();
-
+		subscription.BindEx(ma, ad, ProcessCandle, false).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -108,53 +78,33 @@ public class ADStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal maValue, decimal adValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
 	{
-		if (candle.State != CandleStates.Finished)
+		// Native protection runs before this callback, including between finished candles.
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue maValue, IIndicatorValue adValue)
+	{
+		if (candle.State != CandleStates.Finished || !adValue.Indicator.IsFormed || adValue.IsEmpty)
 			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
+		var ad = adValue.GetValue<decimal>();
+		var previous = _previousAd;
+		// Preserve real zero values and advance A/D during SMA warmup and pending orders.
+		_previousAd = ad;
+		if (!maValue.Indicator.IsFormed || maValue.IsEmpty || previous is not decimal previousAd ||
+			!IsFormedAndOnlineAndAllowTrading() ||
+			_pendingOrder is not null && _pendingOrder.State is not (OrderStates.Done or OrderStates.Failed))
 			return;
-
-		if (_previousADValue == 0)
+		var rising = ad > previousAd;
+		var falling = ad < previousAd;
+		// An unchanged A/D step is neutral, never a substitute for a strict decline.
+		if (Position > 0m && falling) SellMarket(Position);
+		else if (Position < 0m && rising) BuyMarket(Math.Abs(Position));
+		else if (Position == 0m)
 		{
-			_previousADValue = adValue;
-			return;
+			var mean = maValue.GetValue<decimal>();
+			if (rising && candle.ClosePrice > mean) BuyMarket(Volume);
+			else if (falling && candle.ClosePrice < mean) SellMarket(Volume);
 		}
-
-		if (_cooldown > 0)
-		{
-			_cooldown--;
-			_previousADValue = adValue;
-			return;
-		}
-
-		var adRising = adValue > _previousADValue;
-
-		if (Position == 0)
-		{
-			if (adRising && candle.ClosePrice > maValue)
-			{
-				BuyMarket();
-				_cooldown = CooldownBars;
-			}
-			else if (!adRising && candle.ClosePrice < maValue)
-			{
-				SellMarket();
-				_cooldown = CooldownBars;
-			}
-		}
-		else if (Position > 0 && !adRising)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position < 0 && adRising)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-
-		_previousADValue = adValue;
 	}
 }

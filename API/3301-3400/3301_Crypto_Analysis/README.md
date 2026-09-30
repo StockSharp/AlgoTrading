@@ -2,7 +2,7 @@
 [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 ## Overview
-This strategy is a StockSharp port of the MetaTrader 4 expert advisor "Crypto Analysis". It hunts for breakouts that occur after price tags the outer Bollinger Band on the main trading timeframe while the market structure remains bearish (fast LWMA below the slow LWMA). The system only allows trades when a higher timeframe momentum burst and a monthly MACD filter both agree with the desired direction. Once in the market, the position is managed by a layered protection block that mirrors the original EA: pip-based stops, money-based trailing, break-even relocation, and portfolio drawdown controls.
+This strategy is a StockSharp port of the MetaTrader 4 expert advisor "Crypto Analysis". It hunts for breakouts that occur after price tags the outer Bollinger Band on the main trading timeframe while the market structure remains bearish (fast LWMA below the slow LWMA). The system only allows trades when a higher timeframe momentum burst and a MACD filter on an even higher timeframe both agree with the desired direction. Once in the market, the position is managed by a layered protection block that mirrors the original EA: pip-based stops, money-based trailing, break-even relocation, and portfolio drawdown controls.
 
 ## Trading logic
 - **Signal timeframe:** configurable (default M15). All entry/exit rules are evaluated on these candles.
@@ -10,7 +10,7 @@ This strategy is a StockSharp port of the MetaTrader 4 expert advisor "Crypto An
 - **Trend filter:** both scenarios require the fast linear weighted moving average (LWMA, default 6) to stay below the slow LWMA (default 85), replicating the bearish bias check in the EA.
 - **RSI confirmation:** RSI(14) has to be above 50 for longs and below 50 for shorts.
 - **Momentum burst:** the maximum absolute deviation of the last three higher-timeframe Momentum(14) values from the 100 baseline must exceed the buy/sell thresholds. This captures the momentum spikes used by the MQL code.
-- **Monthly MACD filter:** a separate monthly (default 30-day candles) MACD (12, 26, 9) confirms direction; longs require MACD main above signal, shorts demand the opposite.
+- **Higher timeframe MACD filter:** a separate MACD (12, 26, 9) on higher timeframe candles (default H4) confirms direction; longs require MACD main above signal, shorts demand the opposite.
 - **Entry execution:** once all filters align, the strategy opens a market order. Opposite positions are flattened before reversing to keep a single net position, which mirrors the EA’s behaviour of closing opposing trades.
 
 ## Position management
@@ -25,7 +25,7 @@ This strategy is a StockSharp port of the MetaTrader 4 expert advisor "Crypto An
 Three subscriptions are registered automatically:
 1. Primary candle series for the Bollinger/LWMA/RSI rules.
 2. Higher timeframe candles for the momentum filter (default H1).
-3. Monthly candles for the MACD confirmation (default 30-day bars).
+3. Higher timeframe candles for the MACD confirmation (default H4).
 
 ## Parameters
 | Parameter | Description |

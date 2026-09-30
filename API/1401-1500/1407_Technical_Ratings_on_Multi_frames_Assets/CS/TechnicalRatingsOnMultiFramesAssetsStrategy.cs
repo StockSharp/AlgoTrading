@@ -11,51 +11,95 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Technical Ratings on Multi Frames Assets strategy using EMA crossover.
+/// Aggregates SMA/RSI technical ratings from 1h, 4h and daily time frames.
 /// </summary>
 public class TechnicalRatingsOnMultiFramesAssetsStrategy : Strategy
 {
-	private readonly StrategyParam<int> _slowLength;
-	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _smaPeriod;
+	private readonly StrategyParam<int> _rsiPeriod;
+	private readonly StrategyParam<decimal> _bullRsi;
+	private readonly StrategyParam<decimal> _bearRsi;
+	private readonly StrategyParam<DataType> _hourly;
+	private readonly StrategyParam<DataType> _fourHourly;
+	private readonly StrategyParam<DataType> _daily;
 
-	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	private readonly Dictionary<string, decimal> _ratings = [];
+
+	public int SmaPeriod { get => _smaPeriod.Value; set => _smaPeriod.Value = value; }
+	public int RsiPeriod { get => _rsiPeriod.Value; set => _rsiPeriod.Value = value; }
+	public decimal BullRsiThreshold { get => _bullRsi.Value; set => _bullRsi.Value = value; }
+	public decimal BearRsiThreshold { get => _bearRsi.Value; set => _bearRsi.Value = value; }
+	public DataType HourlyCandleType { get => _hourly.Value; set => _hourly.Value = value; }
+	public DataType FourHourCandleType { get => _fourHourly.Value; set => _fourHourly.Value = value; }
+	public DataType DailyCandleType { get => _daily.Value; set => _daily.Value = value; }
 
 	public TechnicalRatingsOnMultiFramesAssetsStrategy()
 	{
-		_slowLength = Param(nameof(SlowLength), 40)
-			.SetGreaterThanZero()
-			.SetDisplay("Slow Length", "Slow EMA period", "General");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Candle type", "General");
+		_smaPeriod = Param(nameof(SmaPeriod), 20).SetGreaterThanZero()
+			.SetDisplay("SMA Period", "SMA period used by each rating.", "Indicators");
+		_rsiPeriod = Param(nameof(RsiPeriod), 14).SetGreaterThanZero()
+			.SetDisplay("RSI Period", "RSI period used by each rating.", "Indicators");
+		_bullRsi = Param(nameof(BullRsiThreshold), 55m)
+			.SetDisplay("Bull RSI", "RSI threshold contributing a bullish vote.", "Indicators");
+		_bearRsi = Param(nameof(BearRsiThreshold), 45m)
+			.SetDisplay("Bear RSI", "RSI threshold contributing a bearish vote.", "Indicators");
+		_hourly = Param(nameof(HourlyCandleType), TimeSpan.FromHours(1).TimeFrame())
+			.SetDisplay("1h", "Primary technical-rating timeframe.", "Timeframes");
+		_fourHourly = Param(nameof(FourHourCandleType), TimeSpan.FromHours(4).TimeFrame())
+			.SetDisplay("4h", "Confirmation technical-rating timeframe.", "Timeframes");
+		_daily = Param(nameof(DailyCandleType), TimeSpan.FromDays(1).TimeFrame())
+			.SetDisplay("1d", "Daily technical-rating timeframe.", "Timeframes");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> [(Security, CandleType)];
+		=> [(Security, HourlyCandleType), (Security, FourHourCandleType), (Security, DailyCandleType)];
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_ratings.Clear();
+	}
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		var fast = new ExponentialMovingAverage { Length = 14 };
-		var slow = new ExponentialMovingAverage { Length = SlowLength };
-		var prevF = 0m; var prevS = 0m; var init = false;
-		var lastSignal = DateTimeOffset.MinValue;
-		var cooldown = TimeSpan.FromMinutes(360);
-		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(fast, slow, (candle, f, s) =>
+		StartRating("1h", HourlyCandleType);
+		StartRating("4h", FourHourCandleType);
+		StartRating("1d", DailyCandleType);
+	}
+
+	private void StartRating(string key, DataType candleType)
+	{
+		var sma = new SimpleMovingAverage { Length = SmaPeriod };
+		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
+
+		var subscription = SubscribeCandles(candleType);
+		subscription.Bind(sma, rsi, (candle, smaValue, rsiValue) =>
 		{
-			if (candle.State != CandleStates.Finished) return;
-			if (!fast.IsFormed || !slow.IsFormed) return;
-			if (!init) { prevF = f; prevS = s; init = true; return; }
-			if (candle.OpenTime - lastSignal >= cooldown)
-			{
-				if (prevF <= prevS && f > s && Position <= 0) { BuyMarket(); lastSignal = candle.OpenTime; }
-				else if (prevF >= prevS && f < s && Position >= 0) { SellMarket(); lastSignal = candle.OpenTime; }
-			}
-			prevF = f; prevS = s;
+			if (candle.State != CandleStates.Finished || !sma.IsFormed || !rsi.IsFormed)
+				return;
+
+			var maVote = candle.ClosePrice > smaValue ? 1m : candle.ClosePrice < smaValue ? -1m : 0m;
+			var rsiVote = rsiValue >= BullRsiThreshold ? 1m : rsiValue <= BearRsiThreshold ? -1m : 0m;
+			_ratings[key] = (maVote + rsiVote) / 2m;
+			Evaluate();
 		}).Start();
+
 		var area = CreateChartArea();
-		if (area != null) { DrawCandles(area, subscription); DrawIndicator(area, fast); DrawIndicator(area, slow); DrawOwnTrades(area); }
+		if (area != null)
+			DrawCandles(area, subscription);
+	}
+
+	private void Evaluate()
+	{
+		if (_ratings.Count < 3)
+			return;
+
+		var average = (_ratings["1h"] + _ratings["4h"] + _ratings["1d"]) / 3m;
+
+		if (average > 0m && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (average < 0m && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
 	}
 }

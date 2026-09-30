@@ -3,7 +3,6 @@ using System.Collections.Generic;
 
 using Ecng.Common;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -11,181 +10,127 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Doji Reversal strategy.
-/// Looks for doji candlestick patterns after a trend and takes a reversal position.
-/// Doji after downtrend = buy, doji after uptrend = sell.
-/// Uses SMA for exit signals.
+/// Enters against the preceding two-close move on a finished doji.
+/// Exits at the opposite doji extreme or native actual-fill percent protection.
 /// </summary>
 public class DojiReversalStrategy : Strategy
 {
-	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _dojiThreshold;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 
-	private ICandleMessage _bar1;
-	private ICandleMessage _bar2;
-	private int _cooldown;
+	private ICandleMessage _older;
+	private ICandleMessage _previous;
+	private decimal? _targetHigh;
+	private decimal? _targetLow;
+	private Order _pendingOrder;
 
-	/// <summary>
-	/// MA Period.
-	/// </summary>
-	public int MAPeriod
-	{
-		get => _maPeriod.Value;
-		set => _maPeriod.Value = value;
-	}
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public decimal DojiThreshold { get => _dojiThreshold.Value; set => _dojiThreshold.Value = value; }
+	public decimal StopLossPercent { get => _stopLossPercent.Value; set => _stopLossPercent.Value = value; }
 
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Doji threshold as fraction of candle range.
-	/// </summary>
-	public decimal DojiThreshold
-	{
-		get => _dojiThreshold.Value;
-		set => _dojiThreshold.Value = value;
-	}
-
-	/// <summary>
-	/// Cooldown bars.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
-	/// Constructor.
-	/// </summary>
 	public DojiReversalStrategy()
 	{
-		_maPeriod = Param(nameof(MAPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("MA Period", "Period for SMA", "Indicators");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_dojiThreshold = Param(nameof(DojiThreshold), 0.1m)
-			.SetNotNegative()
-			.SetDisplay("Doji Threshold", "Max body/range ratio for doji", "Indicators");
-
-		_cooldownBars = Param(nameof(CooldownBars), 500)
-			.SetRange(1, 1000)
-			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Doji and prior-close timeframe", "General");
+		_dojiThreshold = Param(nameof(DojiThreshold), 0.1m).SetRange(0m, 1m)
+			.SetDisplay("Doji Threshold", "Strict upper bound for absolute body divided by high-low range", "Pattern");
+		_stopLossPercent = Param(nameof(StopLossPercent), 1m).SetNotNegative()
+			.SetDisplay("Stop Loss (%)", "Actual-fill percent stop; zero disables it", "Protection");
+		OrderRegistering += order =>
+		{
+			_pendingOrder = order;
+			if (Position > 0m && order.Side == Sides.Sell ||
+				Position < 0m && order.Side == Sides.Buy)
+				_targetHigh = _targetLow = null;
+		};
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType), (Security, DataType.Level1)];
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_bar1 = null;
-		_bar2 = null;
-		_cooldown = default;
+		ClearState();
 	}
 
-	/// <inheritdoc />
+	private void ClearState()
+	{
+		_older = _previous = null;
+		_targetHigh = _targetLow = null;
+		_pendingOrder = null;
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_bar1 = null;
-		_bar2 = null;
-		_cooldown = 0;
-
-		var sma = new SimpleMovingAverage { Length = MAPeriod };
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(sma, ProcessCandle)
-			.Start();
-
+		ClearState();
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ProcessQuote).Start();
+		}
+		var candles = SubscribeCandles(CandleType);
+		candles.Bind(ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, sma);
+			DrawCandles(area, candles);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
+	private bool Pending => _pendingOrder is not null &&
+		_pendingOrder.State is not (OrderStates.Done or OrderStates.Failed);
+
+	private void ProcessQuote(Level1ChangeMessage message)
+	{
+		if (Pending)
+			return;
+		if (Position > 0m && _targetHigh is decimal high &&
+			message.TryGetDecimal(Level1Fields.BestBidPrice) is decimal bid &&
+			bid > high)
+			SellMarket(Position);
+		else if (Position < 0m && _targetLow is decimal low &&
+			message.TryGetDecimal(Level1Fields.BestAskPrice) is decimal ask &&
+			ask > 0m && ask < low)
+			BuyMarket(Math.Abs(Position));
+	}
+
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (_cooldown > 0)
+		if (!Pending && Position > 0m && _targetHigh is decimal high && candle.HighPrice > high)
+			SellMarket(Position);
+		else if (!Pending && Position < 0m && _targetLow is decimal low && candle.LowPrice < low)
+			BuyMarket(Math.Abs(Position));
+		else if (!Pending && Position == 0m && _older is not null && _previous is not null &&
+			IsDoji(candle) && IsFormedAndOnlineAndAllowTrading())
 		{
-			_cooldown--;
-			_bar1 = _bar2;
-			_bar2 = candle;
-			return;
-		}
-
-		if (_bar1 != null && _bar2 != null)
-		{
-			var isDoji = IsDoji(candle);
-
-			if (isDoji)
+			if (_previous.ClosePrice < _older.ClosePrice)
 			{
-				var isDowntrend = _bar2.ClosePrice < _bar1.ClosePrice;
-				var isUptrend = _bar2.ClosePrice > _bar1.ClosePrice;
-
-				if (Position == 0 && isDowntrend)
-				{
-					BuyMarket();
-					_cooldown = CooldownBars;
-				}
-				else if (Position == 0 && isUptrend)
-				{
-					SellMarket();
-					_cooldown = CooldownBars;
-				}
+				_targetHigh = candle.HighPrice;
+				_targetLow = null;
+				BuyMarket(Volume);
 			}
-
-			// Exit on SMA cross
-			if (Position > 0 && candle.ClosePrice < smaValue)
+			else if (_previous.ClosePrice > _older.ClosePrice)
 			{
-				SellMarket();
-				_cooldown = CooldownBars;
-			}
-			else if (Position < 0 && candle.ClosePrice > smaValue)
-			{
-				BuyMarket();
-				_cooldown = CooldownBars;
+				_targetLow = candle.LowPrice;
+				_targetHigh = null;
+				SellMarket(Volume);
 			}
 		}
-
-		_bar1 = _bar2;
-		_bar2 = candle;
+		_older = _previous;
+		_previous = candle;
 	}
 
 	private bool IsDoji(ICandleMessage candle)
 	{
-		var bodySize = Math.Abs(candle.OpenPrice - candle.ClosePrice);
-		var totalRange = candle.HighPrice - candle.LowPrice;
-
-		if (totalRange == 0)
-			return false;
-
-		return bodySize / totalRange < DojiThreshold;
+		var range = candle.HighPrice - candle.LowPrice;
+		return range > 0m && Math.Abs(candle.ClosePrice - candle.OpenPrice) / range < DojiThreshold;
 	}
 }

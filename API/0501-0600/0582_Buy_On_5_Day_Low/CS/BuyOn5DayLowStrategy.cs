@@ -1,105 +1,86 @@
+namespace StockSharp.Samples.Strategies;
+
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using Ecng.Common;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-namespace StockSharp.Samples.Strategies;
-
 /// <summary>
-/// Buy on 5 day low strategy using EMA crossover for trend timing.
-/// Enters long on golden cross, short on death cross.
+/// Buys below the previous N-bar low and closes the long above the previous bar's high.
 /// </summary>
 public class BuyOn5DayLowStrategy : Strategy
 {
-	private readonly StrategyParam<int> _fastEmaPeriod;
-	private readonly StrategyParam<int> _slowEmaPeriod;
+	private readonly StrategyParam<int> _lowestPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<DateTimeOffset> _startTime;
+	private readonly StrategyParam<DateTimeOffset> _endTime;
+	private readonly Queue<decimal> _lows = new();
+	private decimal? _previousHigh;
 
-	private decimal _prevFastEma;
-	private decimal _prevSlowEma;
-
-	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
-	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	public int LowestPeriod { get => _lowestPeriod.Value; set => _lowestPeriod.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public DateTimeOffset StartTime { get => _startTime.Value; set => _startTime.Value = value; }
+	public DateTimeOffset EndTime { get => _endTime.Value; set => _endTime.Value = value; }
 
 	public BuyOn5DayLowStrategy()
 	{
-		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+		_lowestPeriod = Param(nameof(LowestPeriod), 5)
 			.SetGreaterThanZero()
-			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
-
-		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
-			.SetGreaterThanZero()
-			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Lowest Period", "Number of previous candles in the low window", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
+		_startTime = Param(nameof(StartTime), new DateTimeOffset(2014, 1, 1, 0, 0, 0, TimeSpan.Zero))
+			.SetDisplay("Start Time", "Beginning of the trading window", "General");
+		_endTime = Param(nameof(EndTime), new DateTimeOffset(2099, 1, 1, 0, 0, 0, TimeSpan.Zero))
+			.SetDisplay("End Time", "End of the trading window", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevFastEma = 0m;
-		_prevSlowEma = 0m;
+		_lows.Clear();
+		_previousHigh = null;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
-		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
-
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(fastEma, slowEma, ProcessCandle)
-			.Start();
-
+		subscription.Bind(ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, fastEma);
-			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_prevFastEma == 0m || _prevSlowEma == 0m)
+		// Evaluate before adding this candle: its own low cannot be the entry threshold.
+		if (_lows.Count == LowestPeriod && IsFormedAndOnlineAndAllowTrading()
+			&& candle.OpenTime >= StartTime.UtcDateTime && candle.OpenTime <= EndTime.UtcDateTime)
 		{
-			_prevFastEma = fastEmaValue;
-			_prevSlowEma = slowEmaValue;
-			return;
+			if (Position == 0 && candle.ClosePrice < _lows.Min())
+				BuyMarket();
+			else if (Position > 0 && candle.ClosePrice > _previousHigh)
+				SellMarket(Position);
 		}
 
-		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
-		{
-			BuyMarket();
-		}
-		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
-		{
-			SellMarket();
-		}
-
-		_prevFastEma = fastEmaValue;
-		_prevSlowEma = slowEmaValue;
+		_lows.Enqueue(candle.LowPrice);
+		while (_lows.Count > LowestPeriod)
+			_lows.Dequeue();
+		_previousHigh = candle.HighPrice;
 	}
 }

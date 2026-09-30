@@ -12,19 +12,20 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Strategy based on price momentum percentage change.
-/// Uses Momentum indicator with SMA trend filter.
-/// Buys when momentum crosses above zero and price is above SMA.
-/// Sells when momentum crosses below zero and price is below SMA.
+/// Uses percentage RateOfChange with an SMA trend filter and actual-fill percent protection.
+/// Trades signed percentage threshold crossings, completely reversing on a counter signal.
 /// </summary>
 public class MomentumPercentageStrategy : Strategy
 {
 	private readonly StrategyParam<int> _momentumPeriod;
 	private readonly StrategyParam<int> _smaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<decimal> _thresholdPercent;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 
 	private decimal _prevMom;
 	private bool _hasPrevValues;
-	private int _cooldown;
+	private Order _pendingOrder;
 
 	/// <summary>
 	/// Momentum period.
@@ -53,6 +54,9 @@ public class MomentumPercentageStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
+	public decimal ThresholdPercent { get => _thresholdPercent.Value; set => _thresholdPercent.Value = value; }
+	public decimal StopLossPercent { get => _stopLossPercent.Value; set => _stopLossPercent.Value = value; }
+
 	/// <summary>
 	/// Initializes a new instance of the <see cref="MomentumPercentageStrategy"/>.
 	/// </summary>
@@ -68,12 +72,17 @@ public class MomentumPercentageStrategy : Strategy
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
+		_thresholdPercent = Param(nameof(ThresholdPercent), 5m).SetGreaterThanZero()
+			.SetDisplay("Threshold (%)", "Symmetric percentage return breakout level.", "Signal");
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m).SetNotNegative()
+			.SetDisplay("Stop Loss (%)", "Actual-fill percent stop; zero disables it.", "Protection");
+		OrderRegistering += order => _pendingOrder = order;
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return [(Security, CandleType)];
+		return [(Security, CandleType), (Security, DataType.Level1)];
 	}
 
 	/// <inheritdoc />
@@ -82,7 +91,7 @@ public class MomentumPercentageStrategy : Strategy
 		base.OnReseted();
 		_prevMom = default;
 		_hasPrevValues = default;
-		_cooldown = default;
+		_pendingOrder = null;
 	}
 
 	/// <inheritdoc />
@@ -90,8 +99,15 @@ public class MomentumPercentageStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var momentum = new Momentum { Length = MomentumPeriod };
+		var momentum = new RateOfChange { Length = MomentumPeriod };
 		var sma = new SimpleMovingAverage { Length = SmaPeriod };
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -106,6 +122,11 @@ public class MomentumPercentageStrategy : Strategy
 			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
 		}
+	}
+
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// The high-level handler activates native protection before the callback, including between bars.
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal momValue, decimal smaValue)
@@ -126,28 +147,25 @@ public class MomentumPercentageStrategy : Strategy
 			return;
 		}
 
-		if (_cooldown > 0)
+		if (_pendingOrder is not null && _pendingOrder.State is not (OrderStates.Done or OrderStates.Failed))
 		{
-			_cooldown--;
 			_prevMom = momValue;
 			return;
 		}
 
 		var price = candle.ClosePrice;
 
-		// Momentum crosses above zero + price above SMA = buy
-		if (_prevMom <= 0 && momValue > 0 && price > smaValue && Position <= 0)
+		// Cross the configured positive percent return with an SMA confirmation.
+		if (_prevMom <= ThresholdPercent && momValue > ThresholdPercent && price > smaValue && Position <= 0)
 		{
 			var volume = Volume + Math.Abs(Position);
 			BuyMarket(volume);
-			_cooldown = 30;
 		}
-		// Momentum crosses below zero + price below SMA = sell
-		else if (_prevMom >= 0 && momValue < 0 && price < smaValue && Position >= 0)
+		// A confirmed opposite threshold reverses the complete position, not just its default volume.
+		else if (_prevMom >= -ThresholdPercent && momValue < -ThresholdPercent && price < smaValue && Position >= 0)
 		{
 			var volume = Volume + Math.Abs(Position);
 			SellMarket(volume);
-			_cooldown = 30;
 		}
 
 		_prevMom = momValue;

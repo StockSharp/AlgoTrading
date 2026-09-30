@@ -2,96 +2,67 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
-clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan
+from System import DateTimeOffset, TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 
+
 class buy_on_5_day_low_strategy(Strategy):
-    """
-    Buy on 5 day low strategy using EMA crossover for trend timing.
-    Enters long on golden cross, short on death cross.
-    """
+    """Buys below the previous N-bar low and exits above the previous bar's high."""
 
     def __init__(self):
         super(buy_on_5_day_low_strategy, self).__init__()
-
-        self._fast_ema_period = self.Param("FastEmaPeriod", 120) \
-            .SetDisplay("Fast EMA", "Fast EMA period", "Indicators")
-        self._slow_ema_period = self.Param("SlowEmaPeriod", 450) \
-            .SetDisplay("Slow EMA", "Slow EMA period", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
+        self._lowest_period = self.Param("LowestPeriod", 5) \
+            .SetDisplay("Lowest Period", "Number of previous candles in the low window", "Indicators")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
-
-        self._prev_fast_ema = 0.0
-        self._prev_slow_ema = 0.0
-
-    @property
-    def fast_ema_period(self):
-        return self._fast_ema_period.Value
-
-    @fast_ema_period.setter
-    def fast_ema_period(self, value):
-        self._fast_ema_period.Value = value
-
-    @property
-    def slow_ema_period(self):
-        return self._slow_ema_period.Value
-
-    @slow_ema_period.setter
-    def slow_ema_period(self, value):
-        self._slow_ema_period.Value = value
+        self._start_time = self.Param("StartTime", DateTimeOffset(2014, 1, 1, 0, 0, 0, TimeSpan.Zero)) \
+            .SetDisplay("Start Time", "Beginning of the trading window", "General")
+        self._end_time = self.Param("EndTime", DateTimeOffset(2099, 1, 1, 0, 0, 0, TimeSpan.Zero)) \
+            .SetDisplay("End Time", "End of the trading window", "General")
+        self._lows = []
+        self._previous_high = None
 
     @property
     def candle_type(self):
         return self._candle_type.Value
 
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
+    def GetWorkingSecurities(self):
+        return [(self.Security, self.candle_type)]
 
     def OnReseted(self):
         super(buy_on_5_day_low_strategy, self).OnReseted()
-        self._prev_fast_ema = 0.0
-        self._prev_slow_ema = 0.0
+        self._lows = []
+        self._previous_high = None
 
     def OnStarted2(self, time):
         super(buy_on_5_day_low_strategy, self).OnStarted2(time)
-
-        fast_ema = ExponentialMovingAverage()
-        fast_ema.Length = self.fast_ema_period
-        slow_ema = ExponentialMovingAverage()
-        slow_ema.Length = self.slow_ema_period
-
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(fast_ema, slow_ema, self.on_process).Start()
-
+        subscription.Bind(self.process_candle).Start()
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, fast_ema)
-            self.DrawIndicator(area, slow_ema)
             self.DrawOwnTrades(area)
 
-    def on_process(self, candle, fast_ema_value, slow_ema_value):
+    def process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
+        period = int(self._lowest_period.Value)
 
-        if self._prev_fast_ema == 0.0 or self._prev_slow_ema == 0.0:
-            self._prev_fast_ema = fast_ema_value
-            self._prev_slow_ema = slow_ema_value
-            return
+        # Evaluate before adding this candle: its own low cannot be the entry threshold.
+        if (len(self._lows) == period and self.IsFormedAndOnlineAndAllowTrading()
+                and self._start_time.Value.UtcDateTime <= candle.OpenTime <= self._end_time.Value.UtcDateTime):
+            if self.Position == 0 and candle.ClosePrice < min(self._lows):
+                self.BuyMarket()
+            elif self.Position > 0 and candle.ClosePrice > self._previous_high:
+                self.SellMarket(self.Position)
 
-        if self._prev_fast_ema <= self._prev_slow_ema and fast_ema_value > slow_ema_value and self.Position <= 0:
-            self.BuyMarket()
-        elif self._prev_fast_ema >= self._prev_slow_ema and fast_ema_value < slow_ema_value and self.Position >= 0:
-            self.SellMarket()
-
-        self._prev_fast_ema = fast_ema_value
-        self._prev_slow_ema = slow_ema_value
+        self._lows.append(candle.LowPrice)
+        while len(self._lows) > period:
+            self._lows.pop(0)
+        self._previous_high = candle.HighPrice
 
     def CreateClone(self):
         return buy_on_5_day_low_strategy()

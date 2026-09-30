@@ -15,7 +15,7 @@
   - `SlowLength` = 26
   - `SignalLength` = 9
   - `CandleType` = tf(5)
-  - `HigherCandleType` = tf(1d)
+  - `HigherCandleType` = tf(1h)
   - `ShowCurrentTimeframe` = true
   - `ShowHigherTimeframe` = true
   - `Entry` = Crossover
@@ -27,7 +27,7 @@
   - インジケーター: MACD
   - ストップ: はい
   - 複雑さ: 中級
-  - 時間軸: マルチ時間軸 (5m/1d)
+  - 時間軸: マルチ時間軸 (5m/1h)
   - 季節性: いいえ
   - ニューラルネットワーク: いいえ
   - ダイバージェンス: いいえ

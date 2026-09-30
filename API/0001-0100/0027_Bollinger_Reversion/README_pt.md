@@ -12,7 +12,7 @@ As bandas de desvio padrão oferecem uma visão estatística da sobreextensão. 
 
 ## Detalhes
 
-- **Critérios de entrada**: Sinais baseados em RSI, ATR, Bollinger.
+- **Critérios de entrada**: Sinais baseados em ATR, Bollinger.
 - **Comprado/Vendido**: Ambos os direções.
 - **Critérios de saída**: Sinal oposto ou stop.
 - **Stops**: Sim.
@@ -24,7 +24,7 @@ As bandas de desvio padrão oferecem uma visão estatística da sobreextensão. 
 - **Filtros**:
   - Categoria: Reversão à média
   - Direção: Ambos
-  - Indicadores: RSI, ATR, Bollinger
+  - Indicadores: ATR, Bollinger
   - Stops: Sim
   - Complexidade: Básico
   - Período: Intradiário (5m)
