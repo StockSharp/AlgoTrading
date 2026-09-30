@@ -15,8 +15,8 @@
   - 相反的入场信号关闭现有仓位
 - **止损**: 无
 - **默认值**:
-  - `UpperLimit` = 48000
-  - `LowerLimit` = 45000
+  - `UpperLimit` = 74000
+  - `LowerLimit` = 60000
   - `GridCount` = 10
 - **过滤器**:
   - 类型: 区间交易

@@ -39,8 +39,6 @@ static class StrategyInventory
 		"0020_Momentum_Percentage",
 		// Published 5% SMA20 deviation is reachable on packaged TON, not packaged BTC.
 		"0029_MA_Deviation",
-		// The published 50% ATR/mean ratio never occurs in the packaged history; the override runs at 75%.
-		"0034_Low_Vol_Reversion",
 		// An explicit second stream is required; packaged TON tests mechanics, not actual VIX history.
 		"0037_VIX_Trigger",
 		// An explicit IV stream is required; packaged TON tests the mechanics at a reachable spike threshold, not actual IV history.
@@ -62,8 +60,6 @@ static class StrategyInventory
 		"0408_Volatility_Risk_Premium",
 		// Mechanics fixture: packaged TON stands in for the Brent leg against BTC, not crude oil history.
 		"0410_WTIBrent_Spread",
-		// Packaged BTC (about 59k-74k) never touches the published 45000-48000 grid; the tests trade a 60000-74000 fixture.
-		"0425_Grid_Bot",
 		"0498_Advanced_Adaptive_Grid",
 		"0503_Advanced_Position_Management",
 		"0526_Spot_Futures_Arbitrage",

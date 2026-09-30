@@ -15,8 +15,8 @@
   - 逆のエントリーシグナルが既存ポジションを決済する
 - **ストップ**: なし
 - **デフォルト値**:
-  - `UpperLimit` = 48000
-  - `LowerLimit` = 45000
+  - `UpperLimit` = 74000
+  - `LowerLimit` = 60000
   - `GridCount` = 10
 - **フィルター**:
   - カテゴリ: Range trading

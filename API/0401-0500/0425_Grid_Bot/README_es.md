@@ -15,8 +15,8 @@ No se asume ningún sesgo direccional; el bot simplemente reacciona a la proximi
   - La señal de entrada opuesta cierra la posición existente
 - **Stops**: Ninguno
 - **Valores predeterminados**:
-  - `UpperLimit` = 48000
-  - `LowerLimit` = 45000
+  - `UpperLimit` = 74000
+  - `LowerLimit` = 60000
   - `GridCount` = 10
 - **Filtros**:
   - Categoría: Range trading

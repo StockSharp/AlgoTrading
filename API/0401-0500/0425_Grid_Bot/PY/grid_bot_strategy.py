@@ -17,9 +17,9 @@ class grid_bot_strategy(Strategy):
 
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
             .SetDisplay("Candle type", "Candle type for strategy calculation.", "General")
-        self._upper_limit = self.Param("UpperLimit", 48000.0) \
+        self._upper_limit = self.Param("UpperLimit", 74000.0) \
             .SetDisplay("Upper Limit", "Top price of the grid range", "Grid Settings")
-        self._lower_limit = self.Param("LowerLimit", 45000.0) \
+        self._lower_limit = self.Param("LowerLimit", 60000.0) \
             .SetDisplay("Lower Limit", "Bottom price of the grid range", "Grid Settings")
         self._grid_count = self.Param("GridCount", 10) \
             .SetDisplay("Grid Count", "Number of equal levels the range is split into", "Grid Settings")

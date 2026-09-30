@@ -215,7 +215,7 @@ public partial class HistoryInventoryTests : BaseTestClass
 	[TestCategory("Shard02")]
 	public async Task S0034_ArchiveRollingAtrRatios()
 	{
-		var fixture = Convert.ToDecimal(StrategyTests.LowVolFixtureThreshold);
+		var threshold = Convert.ToDecimal(StrategyTests.LowVolThreshold);
 		using var registry = new StorageRegistry { DefaultDrive = new LocalMarketDataDrive(Paths.FileSystem, Paths.HistoryDataPath) };
 		foreach (var id in new[] { Paths.HistoryDefaultSecurity, Paths.HistoryDefaultSecurity2 })
 		{
@@ -235,8 +235,7 @@ public partial class HistoryInventoryTests : BaseTestClass
 			var count = 0;
 			var atr = 0m;
 			var minimumRatio = decimal.MaxValue;
-			var belowPublished = 0;
-			var belowFixture = 0;
+			var belowThreshold = 0;
 			decimal? previousClose = null;
 			foreach (var bar in bars.Values)
 			{
@@ -253,13 +252,11 @@ public partial class HistoryInventoryTests : BaseTestClass
 				if (atrWindow.Count < 20 || atrWindow.Average() == 0m) continue;
 				var ratio = 100m * atr / atrWindow.Average();
 				minimumRatio = Math.Min(minimumRatio, ratio);
-				if (ratio < 50m) belowPublished++;
-				if (ratio < fixture) belowFixture++;
+				if (ratio < threshold) belowThreshold++;
 			}
 			IsTrue(minimumRatio < decimal.MaxValue);
-			AreEqual(0, belowPublished, "Neither packaged instrument reaches the README's 50% ATR14/rolling-mean20 ratio on 5m candles.");
-			IsTrue(belowFixture > 0, "The fixture threshold of the S0034 replays must actually be reached on both packaged instruments.");
-			TestContext.WriteLine($"{id}: 5m bars={bars.Count}, minimum ATR14/rolling ATR mean20={minimumRatio:F8}%, below 50%={belowPublished}, below {StrategyTests.LowVolFixtureThreshold}%={belowFixture}.");
+			IsTrue(belowThreshold > 0, "The published threshold of the S0034 replays must actually be reached on both packaged instruments.");
+			TestContext.WriteLine($"{id}: 5m bars={bars.Count}, minimum ATR14/rolling ATR mean20={minimumRatio:F8}%, below {StrategyTests.LowVolThreshold}%={belowThreshold}.");
 		}
 	}
 
@@ -349,18 +346,18 @@ public partial class HistoryInventoryTests : BaseTestClass
 
 	[TestMethod]
 	[TestCategory("Shard01")]
-	public async Task S0425_PackagedBtcNeverTouchesThePublishedGrid()
+	public async Task S0425_PackagedBtcTouchesBothHalvesOfTheDefaultGrid()
 	{
-		// The README grid (45000-48000) and the fixture grid the S0425 runs trade instead, both split into ten levels.
-		const decimal publishedUpper = 48000m;
-		const decimal fixtureLower = 60000m;
-		const decimal fixtureUpper = 74000m;
+		// The default grid, split into ten levels, and the top of the 45000-48000 grid the out-of-range check starts on.
+		const decimal outOfRangeUpper = 48000m;
+		const decimal defaultLower = 60000m;
+		const decimal defaultUpper = 74000m;
 		const int count = 10;
 
 		using var registry = new StorageRegistry { DefaultDrive = new LocalMarketDataDrive(Paths.FileSystem, Paths.HistoryDataPath) };
 		var storage = registry.GetStorage(Paths.HistoryDefaultSecurity.ToSecurityId(), TimeSpan.FromMinutes(1).TimeFrame());
 		var dates = await storage.GetDatesAsync().ToArrayAsync(CancellationToken);
-		var step = (fixtureUpper - fixtureLower) / count;
+		var step = (defaultUpper - defaultLower) / count;
 		var candles = 0;
 		var low = decimal.MaxValue;
 		var high = decimal.MinValue;
@@ -378,7 +375,7 @@ public partial class HistoryInventoryTests : BaseTestClass
 
 				for (var index = 0; index <= count; index++)
 				{
-					var line = fixtureLower + index * step;
+					var line = defaultLower + index * step;
 
 					// The middle line is neutral, so only lines of either half count.
 					if (line < candle.LowPrice || line > candle.HighPrice || index * 2 == count)
@@ -394,10 +391,10 @@ public partial class HistoryInventoryTests : BaseTestClass
 
 		IsTrue(candles > 0, "The packaged BTC history must hold 1m candles.");
 
-		// A minute low above the top published line keeps every candle of any longer timeframe off the grid too.
-		IsTrue(low > publishedUpper, $"Packaged BTC fell to {low}, within reach of the published 45000-48000 grid.");
-		IsTrue(lowerHalfTouches > 0 && upperHalfTouches > 0, $"Packaged BTC ({low}..{high}) must touch lines in both halves of the 60000-74000 fixture grid.");
+		// A minute low above the top line of the lower grid keeps every candle of any longer timeframe off it too.
+		IsTrue(low > outOfRangeUpper, $"Packaged BTC fell to {low}, within reach of the 45000-48000 grid the out-of-range check starts on.");
+		IsTrue(lowerHalfTouches > 0 && upperHalfTouches > 0, $"Packaged BTC ({low}..{high}) must touch lines in both halves of the default 60000-74000 grid.");
 
-		TestContext.WriteLine($"{Paths.HistoryDefaultSecurity}: 1m candles={candles}, range={low}..{high}, fixture touches lower/upper half={lowerHalfTouches}/{upperHalfTouches}.");
+		TestContext.WriteLine($"{Paths.HistoryDefaultSecurity}: 1m candles={candles}, range={low}..{high}, default grid touches lower/upper half={lowerHalfTouches}/{upperHalfTouches}.");
 	}
 }

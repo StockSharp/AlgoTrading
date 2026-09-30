@@ -15,8 +15,8 @@ Nenhum viés direcional é assumido; o bot simplesmente reage à proximidade das
   - O sinal de entrada oposto fecha a posição existente
 - **Stops**: Nenhum
 - **Valores padrão**:
-  - `UpperLimit` = 48000
-  - `LowerLimit` = 45000
+  - `UpperLimit` = 74000
+  - `LowerLimit` = 60000
   - `GridCount` = 10
 - **Filtros**:
   - Categoria: Range trading

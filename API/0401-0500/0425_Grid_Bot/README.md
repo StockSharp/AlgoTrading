@@ -15,8 +15,8 @@ No directional bias is assumed; the bot simply reacts to proximity to grid lines
   - Opposite entry signal closes existing position
 - **Stops**: None
 - **Default Values**:
-  - `UpperLimit` = 48000
-  - `LowerLimit` = 45000
+  - `UpperLimit` = 74000
+  - `LowerLimit` = 60000
   - `GridCount` = 10
 - **Filters**:
   - Category: Range trading

@@ -15,8 +15,8 @@ Es wird keine Richtungsverzerrung angenommen; der Bot reagiert einfach auf die N
   - Entgegengesetztes Einstiegssignal schließt bestehende Position
 - **Stops**: Keine
 - **Standardwerte**:
-  - `UpperLimit` = 48000
-  - `LowerLimit` = 45000
+  - `UpperLimit` = 74000
+  - `LowerLimit` = 60000
   - `GridCount` = 10
 - **Filter**:
   - Kategorie: Range trading

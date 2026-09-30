@@ -99,7 +99,7 @@ public class LowVolReversionStrategy : Strategy
 			.SetDisplay("ATR Lookback", "Lookback period for ATR average calculation", "Indicators")
 			.SetOptimize(10, 50, 10);
 
-		_atrThresholdPercent = Param(nameof(AtrThresholdPercent), 50m).SetNotNegative()
+		_atrThresholdPercent = Param(nameof(AtrThresholdPercent), 75m).SetNotNegative()
 			.SetDisplay("ATR Threshold %", "ATR threshold as percentage of average ATR", "Entry")
 			.SetOptimize(30m, 90m, 10m);
 

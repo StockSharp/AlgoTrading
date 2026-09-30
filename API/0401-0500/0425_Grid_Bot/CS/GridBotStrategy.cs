@@ -34,11 +34,11 @@ public class GridBotStrategy : Strategy
 		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle type", "Candle type for strategy calculation.", "General");
 
-		_upperLimit = Param(nameof(UpperLimit), 48000m)
+		_upperLimit = Param(nameof(UpperLimit), 74000m)
 			.SetGreaterThanZero()
 			.SetDisplay("Upper Limit", "Top price of the grid range", "Grid Settings");
 
-		_lowerLimit = Param(nameof(LowerLimit), 45000m)
+		_lowerLimit = Param(nameof(LowerLimit), 60000m)
 			.SetGreaterThanZero()
 			.SetDisplay("Lower Limit", "Bottom price of the grid range", "Grid Settings");
 

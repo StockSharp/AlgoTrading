@@ -19,7 +19,7 @@ As posições fecham assim que o preço toca a média móvel ou o stop-loss base
   - `MAPeriod` = 20
   - `AtrPeriod` = 14
   - `AtrLookbackPeriod` = 20
-  - `AtrThresholdPercent` = 50m
+  - `AtrThresholdPercent` = 75m
   - `AtrMultiplier` = 2.0m
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **Filtros**:

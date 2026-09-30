@@ -23,7 +23,7 @@ class low_vol_reversion_strategy(Strategy):
         self._ma_period = self.Param("MAPeriod", 20).SetGreaterThanZero().SetDisplay("MA Period", "Period for Moving Average calculation", "Indicators")
         self._atr_period = self.Param("AtrPeriod", 14).SetGreaterThanZero().SetDisplay("ATR Period", "Period for ATR calculation", "Indicators")
         self._atr_lookback = self.Param("AtrLookbackPeriod", 20).SetGreaterThanZero().SetDisplay("ATR Lookback", "Lookback period for ATR average calculation", "Indicators")
-        self._atr_threshold = self.Param("AtrThresholdPercent", 50.0).SetNotNegative().SetDisplay("ATR Threshold %", "ATR threshold as percentage of average ATR", "Entry")
+        self._atr_threshold = self.Param("AtrThresholdPercent", 75.0).SetNotNegative().SetDisplay("ATR Threshold %", "ATR threshold as percentage of average ATR", "Entry")
         self._atr_multiplier = self.Param("AtrMultiplier", 2.0).SetNotNegative().SetDisplay("ATR Stop Multiplier", "Frozen entry ATR stop distance; zero disables it", "Protection")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles to use", "General")
 

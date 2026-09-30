@@ -64,12 +64,6 @@ public abstract partial class StrategyTests
 		=> Replay("0029_MA_Deviation", (strategy, secondary) => strategy.Security = secondary);
 
 	[TestMethod]
-	[TestCategory("Shard02")]
-	public Task S0034_LowVolReversion()
-		// The README's 50% ATR/mean ratio never occurs in the packaged history; both instruments reach 75%.
-		=> Replay("0034_Low_Vol_Reversion", (strategy, _) => SetParam(strategy, "AtrThresholdPercent", 75m));
-
-	[TestMethod]
 	[TestCategory("Shard05")]
 	public Task S0037_VixTrigger()
 		// Explicit two-stream mechanics fixture, not an assertion that TON is actual VIX history.
@@ -347,21 +341,14 @@ public abstract partial class StrategyTests
 	}
 
 	/// <summary>
-	/// The README declares a grid over a predefined price range (UpperLimit 48000, LowerLimit 45000,
+	/// The README declares a grid over a predefined price range (UpperLimit 74000, LowerLimit 60000,
 	/// GridCount 10). Such a grid is fixed, so this pins both halves of that contract: the declared
 	/// parameters themselves, and the fact that no moving-average or ATR setting may move the lines.
 	/// </summary>
 	[TestMethod]
 	[TestCategory("Shard01")]
-	public async Task S0425_GridBot()
+	public async Task S0425_PredefinedGridIgnoresMovingAverageAndAtrSettings()
 	{
-		// Packaged BTC (about 59k-74k) never touches the published 45000-48000 grid, so the runs trade a range it reaches.
-		static void UseFixtureRange(Strategy strategy)
-		{
-			SetParam(strategy, "LowerLimit", 60000m);
-			SetParam(strategy, "UpperLimit", 74000m);
-		}
-
 		// The inputs of a dynamic grid. A predefined range does not read them, so moving them must
 		// leave every line - and therefore every order - where the baseline run put it.
 		static void Retune(Strategy strategy)
@@ -381,16 +368,14 @@ public abstract partial class StrategyTests
 
 		await Replay("0425_Grid_Bot", (strategy, _) =>
 		{
-			AreEqual(48000m, strategy.Parameters["UpperLimit"].Value.To<decimal>(), "The declared grid range has UpperLimit 48000.");
-			AreEqual(45000m, strategy.Parameters["LowerLimit"].Value.To<decimal>(), "The declared grid range has LowerLimit 45000.");
+			AreEqual(74000m, strategy.Parameters["UpperLimit"].Value.To<decimal>(), "The declared grid range has UpperLimit 74000.");
+			AreEqual(60000m, strategy.Parameters["LowerLimit"].Value.To<decimal>(), "The declared grid range has LowerLimit 60000.");
 			AreEqual(10, strategy.Parameters["GridCount"].Value.To<int>(), "The declared grid splits the range into GridCount 10 levels.");
-			UseFixtureRange(strategy);
 			baseline.Attach(strategy);
 		});
 
 		await Replay("0425_Grid_Bot", (strategy, _) =>
 		{
-			UseFixtureRange(strategy);
 			Retune(strategy);
 			retuned.Attach(strategy);
 		});
@@ -2271,18 +2256,15 @@ public abstract partial class StrategyTests
 		=> CheckPercentStopBetweenBars(MacdZero);
 
 	private const string LowVol = "0034_Low_Vol_Reversion";
-	// The README's 50% never occurs in the packaged history; replays that have to trade use this level.
-	internal const double LowVolFixtureThreshold = 75.0;
+	// The quiet-market threshold the README publishes, in percent of the rolling ATR mean.
+	internal const double LowVolThreshold = 75.0;
 
 	[TestMethod]
 	[TestCategory("Shard02")]
-	[DataRow(20, 14, 20, LowVolFixtureThreshold)]
+	[DataRow(20, 14, 20, LowVolThreshold)]
 	[DataRow(10, 7, 10, 80.0)]
-	[DataRow(20, 14, 20, 50.0)]
 	public async Task S0034_IndependentRollingAtrWindowAndUnconditionalMeanExits(int maPeriod, int atrPeriod, int lookback, double threshold)
 	{
-		var published = threshold == 50.0;
-		var fixture = Convert.ToDecimal(LowVolFixtureThreshold);
 		var closes = new Queue<decimal>();
 		var atrWindow = new Queue<decimal>();
 		var bars = 0;
@@ -2302,9 +2284,6 @@ public abstract partial class StrategyTests
 		var differentFilters = 0;
 		var scalarChecks = 0;
 		var formedWindows = 0;
-		var publishedBars = 0;
-		var publishedRejections = 0;
-		var publishedEntries = 0;
 		var violations = new List<string>();
 		await Replay(LowVol, (strategy, _) =>
 		{
@@ -2314,7 +2293,8 @@ public abstract partial class StrategyTests
 			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
 			IsTrue(strategy.Parameters.TryGetValue("AtrMultiplier", out var stop));
 			AreEqual(2m, Convert.ToDecimal(stop.Value));
-			ReplacePublishedLowVolThreshold(strategy, threshold);
+			AssertPublishedLowVolThreshold(strategy);
+			SetParam(strategy, "AtrThresholdPercent", Convert.ToDecimal(threshold));
 			SetParam(strategy, "MAPeriod", maPeriod);
 			SetParam(strategy, "AtrPeriod", atrPeriod);
 			SetParam(strategy, "AtrLookbackPeriod", lookback);
@@ -2356,21 +2336,9 @@ public abstract partial class StrategyTests
 				formedWindows++;
 				if (closes.Count < maPeriod) return;
 				var mean = closes.Average();
-				// The published 50% enters nowhere on this history, so its rows run the fixture on days 16-29 once 50% has
-				// stayed flat on a bar the fixture enters on; the harness then sees trades and the clone check sees 50%.
-				var fixtureWindow = published && candle.OpenTime.Day is >= 16 and < 30 && publishedRejections > 0;
-				var effective = fixtureWindow ? LowVolFixtureThreshold : threshold;
-				if (published)
-					SetParam(strategy, "AtrThresholdPercent", Convert.ToDecimal(effective));
-				var level = Convert.ToDecimal(effective);
+				var level = Convert.ToDecimal(threshold);
 				var lowVol = atr < expectedAtrMean * level / 100m;
 				var smoothedLowVol = atr < smoothedAtr * level / 100m;
-				if (published && !fixtureWindow)
-				{
-					publishedBars++;
-					if (strategy.Position == 0m && !lowVol && close != mean && atr > 0m && atr < expectedAtrMean * fixture / 100m)
-						publishedRejections++;
-				}
 				if (strategy.Position == 0m && lowVol != smoothedLowVol && close != mean) differentFilters++;
 				if (strategy.Position > 0m && close >= mean || strategy.Position < 0m && close <= mean)
 				{
@@ -2384,7 +2352,6 @@ public abstract partial class StrategyTests
 					expectedSide = close < mean ? Sides.Buy : Sides.Sell;
 					expectedVolume = strategy.Volume;
 					if (expectedSide == Sides.Buy) buys++; else sells++;
-					if (published && !fixtureWindow) publishedEntries++;
 				}
 				if (expectedSide is not null) expectedOrders++;
 			};
@@ -2400,12 +2367,6 @@ public abstract partial class StrategyTests
 		AreEqual(formedWindows, scalarChecks);
 		IsTrue(buys > 0 && sells > 0 && meanExits > 0 && exitsOutsideQuietMarket > 0 && differentFilters > 0 && scalarChecks > 100,
 			"The replay must enter quiet markets in both directions, exit at the mean outside quiet conditions and hit bars where the rolling window differs from infinite-memory smoothing.");
-		if (published)
-		{
-			IsTrue(publishedBars > 1000, "The published 50% must run over a substantial part of the replay, not a few bars.");
-			IsTrue(publishedRejections > 0, "The published 50% must stay flat on a bar the fixture threshold enters on.");
-			AreEqual(0, publishedEntries, "The published 50% must not be bypassed to create orders.");
-		}
 		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
 	}
 
@@ -2413,14 +2374,10 @@ public abstract partial class StrategyTests
 	[TestCategory("Shard02")]
 	public Task S0034_AtrDistancesAndRiskParameterChangeRealExecutions()
 		=> CheckAtrDistancesAndRiskParameterChangeRealExecutions(LowVol, "Low volatility entry",
-			signalSetup: strategy => ReplacePublishedLowVolThreshold(strategy, LowVolFixtureThreshold));
+			signalSetup: AssertPublishedLowVolThreshold);
 
-	// Every replay starts from the README's 50% default and then runs at the given threshold.
-	private static void ReplacePublishedLowVolThreshold(Strategy strategy, double threshold)
-	{
-		AreEqual(50m, Convert.ToDecimal(strategy.Parameters["AtrThresholdPercent"].Value), "The README publishes a 50% quiet-market threshold.");
-		SetParam(strategy, "AtrThresholdPercent", Convert.ToDecimal(threshold));
-	}
+	private static void AssertPublishedLowVolThreshold(Strategy strategy)
+		=> AreEqual(Convert.ToDecimal(LowVolThreshold), Convert.ToDecimal(strategy.Parameters["AtrThresholdPercent"].Value), "The README publishes a 75% quiet-market threshold.");
 
 	private const string PercentB = "0035_Bollinger_B_Reversion";
 
@@ -11351,15 +11308,14 @@ public abstract partial class StrategyTests
 	{
 		var candles = new List<(DateTime Time, decimal Close, decimal High, decimal Low)>();
 		var orders = new Dictionary<long, (DateTime Time, Sides Side, decimal Volume)>();
-		// Packaged BTC (about 59k-74k) never touches the published 45000-48000 grid, so the fixture is a range it reaches.
 		const decimal lower = 60000m;
 		const decimal upper = 74000m;
 		const int count = 10;
 		await Replay(GridBot,
 			(strategy, _) =>
 			{
-				SetParam(strategy, "LowerLimit", lower);
-				SetParam(strategy, "UpperLimit", upper);
+				AreEqual(lower, Convert.ToDecimal(strategy.Parameters["LowerLimit"].Value));
+				AreEqual(upper, Convert.ToDecimal(strategy.Parameters["UpperLimit"].Value));
 				strategy.CandleReceived += (_, candle) =>
 				{
 					if (candle.State == CandleStates.Finished)
@@ -11476,12 +11432,14 @@ public abstract partial class StrategyTests
 		await Replay(GridBot,
 			(strategy, _) =>
 			{
-				AreEqual(48000m, Convert.ToDecimal(strategy.Parameters["UpperLimit"].Value));
-				AreEqual(45000m, Convert.ToDecimal(strategy.Parameters["LowerLimit"].Value));
+				AreEqual(74000m, Convert.ToDecimal(strategy.Parameters["UpperLimit"].Value));
+				AreEqual(60000m, Convert.ToDecimal(strategy.Parameters["LowerLimit"].Value));
 				AreEqual(10, strategy.Parameters["GridCount"].Value);
+				// Packaged BTC (about 59k-74k) never reaches a 45000-48000 grid; after the first hour the default range takes over.
+				SetParam(strategy, "UpperLimit", 48000m);
+				SetParam(strategy, "LowerLimit", 45000m);
 				strategy.CandleReceived += (_, candle) =>
 				{
-					// Packaged BTC (about 59k-74k) never touches the published grid; after the first hour a range it reaches takes over.
 					if (candle.State == CandleStates.Finished && strategy.CurrentTime >= switchTime)
 					{
 						SetParam(strategy, "UpperLimit", 74000m);
