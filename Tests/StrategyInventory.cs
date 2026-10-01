@@ -78,7 +78,7 @@ static class StrategyInventory
 		"2705_Spreader_2",
 		"2776_CH2010_Structure",
 		"2798_Improve_MA_RSI_Hedge",
-		// The replay holds no account basket and reports no per-security floating profit; a fixture supplies both.
+		// The replay holds no account basket; a fixture opens one with orders of its own.
 		"2808_Multi_Pair_Closer",
 		"2907_CCFp_Currency_Strength",
 		// Manual UI examples require explicit arming or a supplied calendar, not permissive defaults.

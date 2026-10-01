@@ -9682,34 +9682,72 @@ public abstract partial class StrategyTests
 	[TestCategory("Shard00")]
 	public async Task S2808_MultiPairCloserClosesBasketAtProfitTarget()
 	{
-		var fixture = MultiPairCloserFixture.ProfitTarget(CancellationToken);
+		// The target is set to the highest result the basket reaches, so it closes where it first gets there.
+		var known = await ProbeMultiPairCloserBasket();
+		var peak = known.Max(evaluation => evaluation.Basket.Value);
 
-		// The replay has neither the published FX basket nor per-security floating profit, so the fixture supplies both on the packaged pair.
-		await Replay("2808_Multi_Pair_Closer", (strategy, secondary) =>
-		{
-			MultiPairCloserFixture.WatchBothLegs(strategy, secondary);
-			fixture.Attach(strategy, secondary);
-		}, MultiPairCloserFixture.ReplayDuration);
+		IsTrue(peak > 0m, $"The replayed hour must lift the basket above zero, or no profit target can be reached; it peaked at {peak}.");
 
-		fixture.AssertFollowsReadme();
-		fixture.AssertSingleClosing(30, MultiPairCloserFixture.ProfitTargetReason, 2);
+		var run = await ReplayMultiPairCloserBasket(peak, MultiPairCloserUnreachable, MultiPairCloserPublishedMinAge);
+
+		run.AssertSingleClosing(known.First(evaluation => evaluation.Basket == peak).At, MultiPairCloserFixture.ProfitTargetReason, 2);
 	}
 
 	[TestMethod]
 	[TestCategory("Shard00")]
 	public async Task S2808_MultiPairCloserClosesBasketBelowMaxLoss()
 	{
-		var fixture = MultiPairCloserFixture.MaxLoss(CancellationToken);
+		// The limit is set at the first low of the basket below zero, which is not below the limit, so the basket
+		// closes at the next, lower low, the first result that is.
+		var known = await ProbeMultiPairCloserBasket();
+		var lows = new List<int>();
 
-		// The replay has neither the published FX basket nor per-security floating profit, so the fixture supplies both on the packaged pair.
-		await Replay("2808_Multi_Pair_Closer", (strategy, secondary) =>
+		for (var index = 0; index < known.Length; index++)
+		{
+			if (known[index].Basket < 0m && (lows.Count == 0 || known[index].Basket < known[lows[^1]].Basket))
+				lows.Add(index);
+		}
+
+		IsTrue(lows.Count >= 2, $"The replayed hour must take the basket below zero twice, each time lower; it did {lows.Count} time(s).");
+
+		var run = await ReplayMultiPairCloserBasket(MultiPairCloserUnreachable, -known[lows[0]].Basket.Value, MultiPairCloserPublishedMinAge);
+
+		run.AssertSingleClosing(known[lows[1]].At, MultiPairCloserFixture.MaxLossReason, 2);
+	}
+
+	// Neither limit can be reached with it: a basket of a few coins never moves a million.
+	private const decimal MultiPairCloserUnreachable = 1000000m;
+
+	private const int MultiPairCloserPublishedMinAge = 60;
+
+	// The basket of the long and the short leg as the replay moves it, from the minute the legs may be closed until
+	// the probe closes them: both limits at zero make every result act, and MinAgeSeconds holds the legs until minute 50,
+	// early enough for the replay to run on past the closing.
+	private async Task<(TimeSpan At, decimal? Basket, decimal?[] Reported)[]> ProbeMultiPairCloserBasket()
+	{
+		var probe = await ReplayMultiPairCloserBasket(0m, 0m, 2400);
+
+		probe.AssertSingleClosing(50, null, 2);
+
+		return [.. probe.Baskets.Where(evaluation => evaluation.At >= TimeSpan.FromMinutes(11) && evaluation.At < TimeSpan.FromMinutes(50) && evaluation.Basket is not null)];
+	}
+
+	// A long leg 0 and a short leg 1 opened at minute 10, both watched.
+	private async Task<MultiPairCloserFixture> ReplayMultiPairCloserBasket(decimal profitTarget, decimal maxLoss, int minAgeSeconds)
+	{
+		var fixture = MultiPairCloserFixture.LongShortBasket();
+
+		await Replay(MultiPairCloser, (strategy, secondary) =>
 		{
 			MultiPairCloserFixture.WatchBothLegs(strategy, secondary);
+			SetParam(strategy, "ProfitTarget", profitTarget);
+			SetParam(strategy, "MaxLoss", maxLoss);
+			SetParam(strategy, "MinAgeSeconds", minAgeSeconds);
 			fixture.Attach(strategy, secondary);
 		}, MultiPairCloserFixture.ReplayDuration);
 
 		fixture.AssertFollowsReadme();
-		fixture.AssertSingleClosing(30, MultiPairCloserFixture.MaxLossReason, 2);
+		return fixture;
 	}
 
 	[TestMethod]
@@ -12940,20 +12978,20 @@ public abstract partial class StrategyTests
 	[TestCategory("Shard00")]
 	public async Task S2808_ClosesOnlyPositionsOlderThanMinAge()
 	{
-		// Leg 0 has aged ten minutes when the basket reaches the target, leg 1 is opened on that very candle.
-		var fixture = new MultiPairCloserFixture(CancellationToken)
+		// Both limits at zero put every known basket beyond one of them, so only the age of each leg decides. Leg 1
+		// is opened when leg 0 has aged the ten minutes MinAgeSeconds asks for.
+		var fixture = new MultiPairCloserFixture()
 			.Open(10, 0, Sides.Buy, 0.002m)
-			.Report(10, 0, 10m)
-			.Open(20, 1, Sides.Sell, 20m)
-			.Report(20, 0, 70m)
-			.Report(20, 1, 0m)
-			.Report(40, 1, 60m);
+			.Open(20, 1, Sides.Sell, 20m);
 		string[] ids = null;
 
 		await Replay(MultiPairCloser, (strategy, secondary) =>
 		{
 			AssertMultiPairCloserDefaults(strategy);
 			MultiPairCloserFixture.WatchBothLegs(strategy, secondary);
+			SetParam(strategy, "ProfitTarget", 0m);
+			SetParam(strategy, "MaxLoss", 0m);
+			SetParam(strategy, "MinAgeSeconds", 600);
 			fixture.Attach(strategy, secondary);
 			ids = [strategy.Security.Id, secondary.Id];
 		}, MultiPairCloserFixture.ReplayDuration);
@@ -12966,7 +13004,7 @@ public abstract partial class StrategyTests
 		AreEqual(TimeSpan.FromMinutes(20), closings[0].At);
 		AreEqual(new MultiPairCloserFixture.ExitOrder(ids[0], Sides.Sell, 0.002m, OrderTypes.Market), closings[0].Orders.Single(),
 			"README: only positions older than MinAgeSeconds are flattened.");
-		AreEqual(TimeSpan.FromMinutes(40), closings[1].At);
+		AreEqual(TimeSpan.FromMinutes(30), closings[1].At);
 		AreEqual(new MultiPairCloserFixture.ExitOrder(ids[1], Sides.Buy, 20m, OrderTypes.Market), closings[1].Orders.Single());
 	}
 
@@ -12975,17 +13013,17 @@ public abstract partial class StrategyTests
 	public async Task S2808_MinAgeCountsFromWhenThePositionOpened()
 	{
 		// Five-minute candles are evaluated every five minutes and the leg is bought between two evaluations, twice:
-		// once at the start and once after it was flattened, each time with the basket beyond the target.
-		var fixture = new MultiPairCloserFixture(CancellationToken)
+		// once at the start and once after it was flattened. Both limits at zero put every known basket beyond one.
+		var fixture = new MultiPairCloserFixture()
 			.OpenOnClock(13, 0, Sides.Buy, 0.002m)
-			.ReportOnClock(13, 0, 70m)
-			.OpenOnClock(23, 0, Sides.Buy, 0.002m)
-			.ReportOnClock(23, 0, 65m);
+			.OpenOnClock(23, 0, Sides.Buy, 0.002m);
 		string id = null;
 
 		await Replay(MultiPairCloser, (strategy, secondary) =>
 		{
 			SetParam(strategy, "WatchedSymbols", strategy.Security.Id);
+			SetParam(strategy, "ProfitTarget", 0m);
+			SetParam(strategy, "MaxLoss", 0m);
 			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
 			SetParam(strategy, "MinAgeSeconds", 360);
 			fixture.Attach(strategy, secondary);
@@ -13008,65 +13046,46 @@ public abstract partial class StrategyTests
 
 	[TestMethod]
 	[TestCategory("Shard00")]
-	public async Task S2808_UnreportedFloatingProfitLeavesTheBasketOpen()
-	{
-		// Leg 0 alone is far beyond the target, but leg 1 reports no floating profit until minute 30.
-		var fixture = new MultiPairCloserFixture(CancellationToken)
-			.Open(10, 0, Sides.Buy, 0.002m)
-			.Open(10, 1, Sides.Sell, 20m)
-			.Report(10, 0, 100m)
-			.Report(30, 1, 0m);
-
-		await Replay(MultiPairCloser, (strategy, secondary) =>
-		{
-			MultiPairCloserFixture.WatchBothLegs(strategy, secondary);
-			fixture.Attach(strategy, secondary);
-		}, MultiPairCloserFixture.ReplayDuration);
-
-		fixture.AssertFollowsReadme();
-		fixture.AssertSingleClosing(30, MultiPairCloserFixture.ProfitTargetReason, 2);
-	}
-
-	[TestMethod]
-	[TestCategory("Shard00")]
 	public async Task S2808_PositionsOutsideTheWatchListStayOutOfTheBasket()
 	{
-		// Summed with the unwatched leg 1, the basket would reach the target at minute 10 and the loss limit at minute 20.
-		var fixture = new MultiPairCloserFixture(CancellationToken)
+		// Only leg 0 is watched and both limits at zero put every known basket beyond one of them, so leg 0 goes as
+		// soon as it is a minute old, while leg 1 is neither summed into the basket nor closed.
+		var fixture = new MultiPairCloserFixture()
 			.Open(10, 0, Sides.Buy, 0.002m)
-			.Open(10, 1, Sides.Sell, 20m)
-			.Report(10, 0, 30m)
-			.Report(10, 1, 50m)
-			.Report(20, 1, -100m)
-			.Report(30, 0, 60m);
+			.Open(10, 1, Sides.Sell, 20m);
 		string id = null;
 
 		await Replay(MultiPairCloser, (strategy, secondary) =>
 		{
 			SetParam(strategy, "WatchedSymbols", strategy.Security.Id);
+			SetParam(strategy, "ProfitTarget", 0m);
+			SetParam(strategy, "MaxLoss", 0m);
 			fixture.Attach(strategy, secondary);
 			id = strategy.Security.Id;
 		}, MultiPairCloserFixture.ReplayDuration);
 
 		fixture.AssertFollowsReadme();
-		fixture.AssertSingleClosing(30, MultiPairCloserFixture.ProfitTargetReason, 1);
+		fixture.AssertSingleClosing(11, null, 1);
 		AreEqual(new MultiPairCloserFixture.ExitOrder(id, Sides.Sell, 0.002m, OrderTypes.Market), fixture.Closings[0].Orders[0],
 			"README: the basket is the watched symbols, so a position outside them is neither counted nor closed.");
+		IsTrue(fixture.Baskets.Single(evaluation => evaluation.At == TimeSpan.FromMinutes(11)).Reported[1] is decimal unwatched && unwatched != 0m,
+			"Leg 1 must carry a floating profit of its own when leg 0 is closed, or leaving it out of the basket proves nothing.");
 	}
 
 	[TestMethod]
 	[TestCategory("Shard00")]
 	public async Task S2808_EmptyWatchListSupervisesTheAssignedSecurity()
 	{
-		var fixture = new MultiPairCloserFixture(CancellationToken)
-			.Open(10, 0, Sides.Buy, 0.002m)
-			.Report(10, 0, 30m)
-			.Report(20, 0, 60m);
+		// Both limits at zero put every known basket beyond one of them, so leg 0 goes as soon as it is a minute old.
+		var fixture = new MultiPairCloserFixture()
+			.Open(10, 0, Sides.Buy, 0.002m);
 		string id = null;
 
 		await Replay(MultiPairCloser, (strategy, secondary) =>
 		{
 			SetParam(strategy, "WatchedSymbols", string.Empty);
+			SetParam(strategy, "ProfitTarget", 0m);
+			SetParam(strategy, "MaxLoss", 0m);
 			// Not the default, so the slippage in the closing line has to come from the parameter.
 			SetParam(strategy, "Slippage", 7);
 			fixture.Attach(strategy, secondary);
@@ -13074,7 +13093,7 @@ public abstract partial class StrategyTests
 		}, MultiPairCloserFixture.ReplayDuration);
 
 		fixture.AssertFollowsReadme();
-		fixture.AssertSingleClosing(20, MultiPairCloserFixture.ProfitTargetReason, 1);
+		fixture.AssertSingleClosing(11, null, 1);
 		AreEqual(new MultiPairCloserFixture.ExitOrder(id, Sides.Sell, 0.002m, OrderTypes.Market), fixture.Closings[0].Orders[0]);
 	}
 
@@ -17306,9 +17325,9 @@ public abstract partial class StrategyTests
 
 /// <summary>
 /// The account a 2808 Multi Pair Closer run supervises. Its positions are opened by market orders sent to the
-/// connector outside the strategy, and their floating profit is reported to the connector the way an adapter
-/// reports it, because the backtest emulator reports no floating profit per security. Every evaluation of the
-/// strategy is checked against the README rules applied to what the fixture itself opened and reported.
+/// connector outside the strategy, and their floating profit is what the platform reports for each of them, which
+/// is what the README has the strategy read. Every evaluation of the strategy is checked against the README rules
+/// applied to what the fixture opened and to the profit the platform reported for it.
 /// </summary>
 /// <remarks>
 /// Leg 0 is the strategy's own security, leg 1 the second packaged instrument. Minutes are counted from
@@ -17343,7 +17362,6 @@ sealed class MultiPairCloserFixture
 		@"^Closing (?<id>\S+): basket (?<total>\S+) (?<reason>reached the profit target|fell below the loss limit), (?<side>sell|buy) (?<volume>\S+) at market \(slippage (?<slippage>\d+)\)\.$",
 		RegexOptions.CultureInvariant);
 
-	private readonly CancellationToken _cancellationToken;
 	private readonly List<(TimeSpan At, Action Act)> _steps = [];
 	private readonly List<(TimeSpan At, Action Act)> _clockSteps = [];
 	private readonly List<DateTime> _clockStepTimes = [];
@@ -17354,7 +17372,6 @@ sealed class MultiPairCloserFixture
 	private readonly Security[] _legs = new Security[2];
 	private readonly decimal[] _volumes = new decimal[2];
 	private readonly DateTime?[] _openedAt = new DateTime?[2];
-	private readonly decimal?[] _reported = new decimal?[2];
 
 	private Strategy _strategy;
 	private Connector _connector;
@@ -17368,15 +17385,6 @@ sealed class MultiPairCloserFixture
 	private Evaluation _current;
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="MultiPairCloserFixture"/>.
-	/// </summary>
-	/// <param name="cancellationToken">Token of the test the fixture runs in.</param>
-	public MultiPairCloserFixture(CancellationToken cancellationToken)
-	{
-		_cancellationToken = cancellationToken;
-	}
-
-	/// <summary>
 	/// Every evaluation at which the README rules close something: when (the open time of the evaluated candle,
 	/// counted from <see cref="Origin"/>), why and what.
 	/// </summary>
@@ -17386,32 +17394,19 @@ sealed class MultiPairCloserFixture
 			.Select(evaluation => (evaluation.CandleOpen - Origin, evaluation.Reason, evaluation.Closes.ToArray()))];
 
 	/// <summary>
-	/// A basket of a long leg 0 and a short leg 1 whose reported profit first stays a cent below the published 60
-	/// target and then reaches it exactly.
+	/// The basket result of every evaluation and the floating profit reported for each leg at it: when (the open time
+	/// of the evaluated candle, counted from <see cref="Origin"/>) and how much.
 	/// </summary>
-	public static MultiPairCloserFixture ProfitTarget(CancellationToken cancellationToken)
-		=> new MultiPairCloserFixture(cancellationToken)
-			.Open(10, 0, Sides.Buy, 0.002m)
-			.Open(10, 1, Sides.Sell, 20m)
-			.Report(10, 0, 20m)
-			.Report(10, 1, 10m)
-			.Report(20, 0, 40m)
-			.Report(20, 1, 19.99m)
-			.Report(30, 1, 20m);
+	public IReadOnlyList<(TimeSpan At, decimal? Basket, decimal?[] Reported)> Baskets
+		=> [.. _evaluations.Select(evaluation => (evaluation.CandleOpen - Origin, evaluation.Basket, evaluation.Reported))];
 
 	/// <summary>
-	/// A basket of a long leg 0 and a short leg 1 whose reported loss first equals the published 60 limit, which is
-	/// still acceptable, and then exceeds it by a cent.
+	/// A basket of a long leg 0 and a short leg 1, both opened at minute 10.
 	/// </summary>
-	public static MultiPairCloserFixture MaxLoss(CancellationToken cancellationToken)
-		=> new MultiPairCloserFixture(cancellationToken)
+	public static MultiPairCloserFixture LongShortBasket()
+		=> new MultiPairCloserFixture()
 			.Open(10, 0, Sides.Buy, 0.002m)
-			.Open(10, 1, Sides.Sell, 20m)
-			.Report(10, 0, -20m)
-			.Report(10, 1, -10m)
-			.Report(20, 0, -40m)
-			.Report(20, 1, -20m)
-			.Report(30, 1, -20.01m);
+			.Open(10, 1, Sides.Sell, 20m);
 
 	/// <summary>
 	/// Makes the strategy watch both packaged instruments.
@@ -17430,13 +17425,6 @@ sealed class MultiPairCloserFixture
 	}
 
 	/// <summary>
-	/// Reports the floating profit of a leg's account position to the connector, as an adapter does, right before
-	/// the strategy evaluates the candle of that minute.
-	/// </summary>
-	public MultiPairCloserFixture Report(int minute, int leg, decimal floatingProfit)
-		=> AddStep(_steps, minute, () => ReportLeg(leg, floatingProfit));
-
-	/// <summary>
 	/// Opens a position on a leg with a market order sent to the connector once the market clock reaches the minute,
 	/// between two evaluations of the strategy.
 	/// </summary>
@@ -17445,13 +17433,6 @@ sealed class MultiPairCloserFixture
 		_openedLegs.Add(leg);
 		return AddStep(_clockSteps, minute, () => OpenLeg(leg, side, volume));
 	}
-
-	/// <summary>
-	/// Reports the floating profit of a leg's account position once the market clock reaches the minute, between two
-	/// evaluations of the strategy.
-	/// </summary>
-	public MultiPairCloserFixture ReportOnClock(int minute, int leg, decimal floatingProfit)
-		=> AddStep(_clockSteps, minute, () => ReportLeg(leg, floatingProfit));
 
 	/// <summary>
 	/// Joins the run. Call it from the setup callback.
@@ -17530,13 +17511,24 @@ sealed class MultiPairCloserFixture
 	/// reason, with the given number of exit orders.
 	/// </summary>
 	public void AssertSingleClosing(int minute, string reason, int orders)
+		=> AssertSingleClosing(TimeSpan.FromMinutes(minute), reason, orders);
+
+	/// <summary>
+	/// The README rules closed positions exactly once: on the candle opened at the given offset from
+	/// <see cref="Origin"/>, for the given reason or for either one when it is <see langword="null"/>, with the given
+	/// number of exit orders.
+	/// </summary>
+	public void AssertSingleClosing(TimeSpan at, string reason, int orders)
 	{
 		var closings = Closings;
 		var trace = string.Join("; ", closings.Select(closing => $"{closing.At} {closing.Reason}: {string.Join(", ", closing.Orders.Select(Format))}"));
 
 		Assert.AreEqual(1, closings.Count, $"Closings: {trace}.");
-		Assert.AreEqual(TimeSpan.FromMinutes(minute), closings[0].At, $"Closings: {trace}.");
-		Assert.AreEqual(reason, closings[0].Reason, $"Closings: {trace}.");
+		Assert.AreEqual(at, closings[0].At, $"Closings: {trace}.");
+
+		if (reason is not null)
+			Assert.AreEqual(reason, closings[0].Reason, $"Closings: {trace}.");
+
 		Assert.AreEqual(orders, closings[0].Orders.Length, $"Closings: {trace}.");
 	}
 
@@ -17682,7 +17674,8 @@ sealed class MultiPairCloserFixture
 	private Evaluation Evaluate(DateTime candleOpen)
 	{
 		var now = _strategy.CurrentTime;
-		var evaluation = new Evaluation(now, candleOpen, [.. _volumes], [.. _reported], [.. _openedAt]);
+		var reported = Enumerable.Range(0, _legs.Length).Select(ReadReportedProfit).ToArray();
+		var evaluation = new Evaluation(now, candleOpen, [.. _volumes], reported, [.. _openedAt]);
 		decimal? basket = 0m;
 		var anyOpen = false;
 
@@ -17695,8 +17688,8 @@ sealed class MultiPairCloserFixture
 			}
 
 			anyOpen = true;
-			evaluation.Profits.Add(_reported[leg]);
-			basket += _reported[leg];
+			evaluation.Profits.Add(reported[leg]);
+			basket += reported[leg];
 		}
 
 		evaluation.Basket = basket;
@@ -17747,21 +17740,22 @@ sealed class MultiPairCloserFixture
 		Apply(leg, side == Sides.Buy ? volume : -volume);
 	}
 
-	private void ReportLeg(int leg, decimal floatingProfit)
+	// The floating profit the platform reports for the account's open position on a leg, summed as the README has the
+	// strategy read it; one missing value leaves the sum unknown.
+	private decimal? ReadReportedProfit(int leg)
 	{
-		_reported[leg] = floatingProfit;
+		decimal? profit = 0m;
 
-		var now = _strategy.CurrentTime;
-		var message = new PositionChangeMessage
+		foreach (var position in _connector.Positions)
 		{
-			SecurityId = _legs[leg].ToSecurityId(),
-			PortfolioName = _strategy.Portfolio.Name,
-			ServerTime = now,
-			LocalTime = now,
-		}
-		.Add(PositionChangeTypes.UnrealizedPnL, floatingProfit);
+			if (!position.StrategyId.IsEmpty() || !position.PortfolioName.EqualsIgnoreCase(_strategy.Portfolio.Name)
+				|| position.Security?.Id.EqualsIgnoreCase(_legs[leg].Id) != true || position.CurrentValue is not decimal value || value == 0m)
+				continue;
 
-		AsyncHelper.Run(() => _connector.SendOutMessageAsync(message, _cancellationToken));
+			profit += position.UnrealizedPnL;
+		}
+
+		return profit;
 	}
 
 	private void OnOwnTrade(Subscription subscription, MyTrade trade)
