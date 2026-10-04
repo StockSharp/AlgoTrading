@@ -1042,6 +1042,74 @@ public abstract partial class StrategyTests
 		IsTrue(stopExits > 0 && trailedStops > 0, "The fixture must trail the stop and stop out.");
 	}
 
+	private const string MacdTrend = "0009_MACD_Trend";
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(12, 26, 9, false)]
+	[DataRow(6, 13, 5, true)]
+	public async Task S0009_ReversesOnEveryMacdSignalCross(int fastPeriod, int slowPeriod, int signalPeriod, bool secondary)
+	{
+		var macd = new MovingAverageConvergenceDivergenceSignal
+		{
+			Macd = { ShortMa = { Length = fastPeriod }, LongMa = { Length = slowPeriod } },
+			SignalMa = { Length = signalPeriod },
+		};
+		bool? previousAbove = null;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var reversals = 0;
+		var violations = new List<string>();
+		await Replay(MacdTrend, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(12, strategy.Parameters["FastEmaPeriod"].Value);
+			AreEqual(26, strategy.Parameters["SlowEmaPeriod"].Value);
+			AreEqual(9, strategy.Parameters["SignalPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "FastEmaPeriod", fastPeriod);
+			SetParam(strategy, "SlowEmaPeriod", slowPeriod);
+			SetParam(strategy, "SignalPeriod", signalPeriod);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var value = (MovingAverageConvergenceDivergenceSignalValue)macd.Process(candle);
+				if (!value.IsFormed || value.Macd is not decimal line || value.Signal is not decimal signal) return;
+				var above = line > signal;
+				var crossed = previousAbove is bool before && before != above;
+				previousAbove = above;
+				if (!crossed) return;
+				var position = strategy.Position;
+				if (above && position <= 0m) expectedSide = Sides.Buy;
+				else if (!above && position >= 0m) expectedSide = Sides.Sell;
+				else return;
+				expectedVolume = strategy.Volume + Math.Abs(position);
+				if (position != 0m) reversals++;
+				expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must reverse to the side of a fresh MACD/signal cross.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(reversals > 10, "The fixture must reverse repeatedly.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0009_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars(MacdTrend, TimeSpan.FromDays(31));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";
