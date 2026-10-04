@@ -41,6 +41,24 @@ STALE_PYTHON_CLAIM = re.compile(
     re.IGNORECASE,
 )
 
+# Types the StockSharp.BusinessEntities assembly declares in the
+# StockSharp.Algo.Indicators namespace. Importing them works without a reference
+# only while another example has already loaded the assembly.
+BUSINESS_ENTITIES_INDICATOR_TYPES = frozenset(
+    {"CandleIndicatorValue", "IIndicator", "IndicatorHelper"}
+)
+BUSINESS_ENTITIES_REFERENCE = re.compile(
+    r"""^\s*clr\.AddReference\(\s*["']StockSharp\.BusinessEntities["']\s*\)""",
+    re.MULTILINE,
+)
+PYTHON_FROM_IMPORT = re.compile(
+    r"^\s*from\s+(StockSharp\.[\w.]+)\s+import\s+(\([^)]*\)|(?:\\\n|[^\n])*)",
+    re.MULTILINE,
+)
+PYTHON_PLAIN_IMPORT = re.compile(
+    r"^\s*import\s+StockSharp\.BusinessEntities\b", re.MULTILINE
+)
+
 CACHE_VERSION = 2
 CACHE_SIGNATURE = (
     f"{CACHE_VERSION}:{STALE_PYTHON_CLAIM.flags}:{STALE_PYTHON_CLAIM.pattern}"
@@ -102,6 +120,35 @@ def find_stale_python_claims(text: str) -> list[tuple[int, str]]:
                 claims.append((line_number, sentence.strip()))
 
     return claims
+
+
+def find_unreferenced_business_entities_imports(text: str) -> list[str]:
+    """Names a Python example imports from StockSharp.BusinessEntities without referencing it."""
+    if BUSINESS_ENTITIES_REFERENCE.search(text):
+        return []
+
+    found: set[str] = set()
+
+    if PYTHON_PLAIN_IMPORT.search(text):
+        found.add("StockSharp.BusinessEntities")
+
+    for match in PYTHON_FROM_IMPORT.finditer(text):
+        module, names = match.group(1), match.group(2)
+
+        if module == "StockSharp.BusinessEntities":
+            found.add(module)
+            continue
+
+        if module != "StockSharp.Algo.Indicators":
+            continue
+
+        for name in re.split(r"[\s,()\\]+", names):
+            if name == "*":
+                found.add("StockSharp.Algo.Indicators.*")
+            elif name in BUSINESS_ENTITIES_INDICATOR_TYPES:
+                found.add(name)
+
+    return sorted(found)
 
 
 def find_language_bar_issues(readme_relative: str, text: str) -> list[str]:
@@ -499,6 +546,23 @@ def main() -> int:
                 f"{strategy}: expected exactly one Python implementation, found "
                 f"{len(python_files[strategy])}: {', '.join(sorted(python_files[strategy]))}"
             )
+        else:
+            python_relative = python_files[strategy][0]
+
+            try:
+                python_text = (api_root / Path(python_relative)).read_text(
+                    encoding="utf-8-sig"
+                )
+            except UnicodeDecodeError as error:
+                issues.append(f"{python_relative}: invalid UTF-8 at byte {error.start}")
+            else:
+                unreferenced = find_unreferenced_business_entities_imports(python_text)
+
+                if unreferenced:
+                    issues.append(
+                        f"{python_relative}: imports {', '.join(unreferenced)} from the "
+                        'StockSharp.BusinessEntities assembly without clr.AddReference("StockSharp.BusinessEntities")'
+                    )
 
         if (
             strategy in english_claims

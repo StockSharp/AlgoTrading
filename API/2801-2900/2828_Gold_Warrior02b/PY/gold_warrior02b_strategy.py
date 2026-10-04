@@ -4,6 +4,7 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
+clr.AddReference("StockSharp.BusinessEntities")
 
 from StockSharp.Algo.Indicators import CommodityChannelIndex, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy

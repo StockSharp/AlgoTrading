@@ -32,7 +32,7 @@ jobs:
         run: python Tools/validate_api_structure.py
 
       - name: Test README audit tooling
-        run: python -m unittest Tools.test_audit_readme_contracts
+        run: python -m unittest Tools.test_audit_readme_contracts Tools.test_validate_api_structure
 
   build:
     needs: validate
