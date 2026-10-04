@@ -548,6 +548,98 @@ public abstract partial class StrategyTests
 	public Task S0002_PercentStopWorksBetweenFinishedBars()
 		=> CheckPercentStopBetweenBars(NDayBreakout, TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromHours(1));
 
+	private const string AdxTrend = "0003_ADX_Trend";
+
+	[TestMethod]
+	[TestCategory("Shard01")]
+	[DataRow(14, 50, 2.0, 20, false)]
+	[DataRow(7, 20, 0.5, 22, false)]
+	[DataRow(10, 30, 1.0, 18, true)]
+	public async Task S0003_TrendSideByAdxWithAdxFadeAndFrozenAtrStopExits(int adxPeriod, int maPeriod, double multiplier, int exitThreshold, bool secondary)
+	{
+		var adx = new AverageDirectionalIndex { Length = adxPeriod };
+		var atr = new AverageTrueRange { Length = adxPeriod };
+		var sma = new SimpleMovingAverage { Length = maPeriod };
+		var k = (decimal)multiplier;
+		var stop = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var reversals = 0;
+		var fadeExits = 0;
+		var stopExits = 0;
+		var violations = new List<string>();
+		await Replay(AdxTrend, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(14, strategy.Parameters["AdxPeriod"].Value);
+			AreEqual(50, strategy.Parameters["MaPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["AtrMultiplier"].Value));
+			AreEqual(20, strategy.Parameters["AdxExitThreshold"].Value);
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "AdxPeriod", adxPeriod);
+			SetParam(strategy, "MaPeriod", maPeriod);
+			SetParam(strategy, "AtrMultiplier", multiplier);
+			SetParam(strategy, "AdxExitThreshold", exitThreshold);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var adxValue = (AverageDirectionalIndexValue)adx.Process(candle);
+				var atrValue = atr.Process(candle);
+				var maValue = sma.Process(candle);
+				if (!adxValue.IsFormed || !atrValue.IsFormed || !maValue.IsFormed || adxValue.MovingAverage is not decimal strength) return;
+				var close = candle.ClosePrice;
+				var ma = maValue.GetValue<decimal>();
+				var offset = k * atrValue.GetValue<decimal>();
+				var longSetup = strength > 25m && close > ma;
+				var shortSetup = strength > 25m && close < ma;
+				var position = strategy.Position;
+				void Enter(Sides side, decimal volume)
+				{
+					expectedSide = side;
+					expectedVolume = volume;
+					stop = side == Sides.Buy ? close - offset : close + offset;
+					entries[side]++;
+				}
+				void Exit(Sides side, decimal volume)
+				{
+					expectedSide = side;
+					expectedVolume = volume;
+					if (strength < exitThreshold) fadeExits++; else stopExits++;
+				}
+				if (position > 0m)
+				{
+					if (shortSetup) { Enter(Sides.Sell, strategy.Volume + position); reversals++; }
+					else if (strength < exitThreshold || close <= stop) Exit(Sides.Sell, position);
+				}
+				else if (position < 0m)
+				{
+					if (longSetup) { Enter(Sides.Buy, strategy.Volume - position); reversals++; }
+					else if (strength < exitThreshold || close >= stop) Exit(Sides.Buy, -position);
+				}
+				else if (longSetup) Enter(Sides.Buy, strategy.Volume);
+				else if (shortSetup) Enter(Sides.Sell, strategy.Volume);
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow the side of the moving average while ADX is above 25, or close the position when ADX fades or the close crosses the ATR stop fixed at entry.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "The fixture must enter on both sides.");
+		IsTrue(fadeExits > 0, "The fixture must close a position because ADX faded.");
+		if (multiplier < 1.5) IsTrue(stopExits > 0, "A tight multiplier must exercise the ATR stop.");
+		if (!secondary) IsTrue(reversals > 0, "The fixture must reverse on the opposite setup.");
+	}
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";
