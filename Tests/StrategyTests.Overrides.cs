@@ -1110,6 +1110,75 @@ public abstract partial class StrategyTests
 	public Task S0009_PercentStopWorksBetweenFinishedBars()
 		=> CheckPercentStopBetweenBars(MacdTrend, TimeSpan.FromDays(31));
 
+	private const string Supertrend = "0010_Super_Trend";
+
+	[TestMethod]
+	[TestCategory("Shard00")]
+	[DataRow(10, 3.0, false)]
+	[DataRow(7, 2.0, true)]
+	public async Task S0010_ReversesOnEveryFlipOfTheStandardSupertrend(int period, double multiplier, bool secondary)
+	{
+		var atr = new AverageTrueRange { Length = period };
+		var k = (decimal)multiplier;
+		decimal? upperBand = null;
+		decimal? lowerBand = null;
+		decimal? previousClose = null;
+		bool? upTrend = null;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var reversals = 0;
+		var violations = new List<string>();
+		await Replay(Supertrend, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(10, strategy.Parameters["Period"].Value);
+			AreEqual(3m, Convert.ToDecimal(strategy.Parameters["Multiplier"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "Period", period);
+			SetParam(strategy, "Multiplier", multiplier);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var a = atr.Process(candle);
+				if (!a.IsFormed) return;
+				// Standard Supertrend: final bands only tighten until the close crosses them.
+				var close = candle.ClosePrice;
+				var median = (candle.HighPrice + candle.LowPrice) / 2m;
+				var basicUpper = median + k * a.GetValue<decimal>();
+				var basicLower = median - k * a.GetValue<decimal>();
+				var finalUpper = upperBand is not decimal pu || basicUpper < pu || previousClose > pu ? basicUpper : pu;
+				var finalLower = lowerBand is not decimal pl || basicLower > pl || previousClose < pl ? basicLower : pl;
+				var before = upTrend;
+				var now = before is not bool wasUp ? close >= median : wasUp ? close > finalLower : close >= finalUpper;
+				upperBand = finalUpper;
+				lowerBand = finalLower;
+				previousClose = close;
+				upTrend = now;
+				if (before is not bool previous || previous == now) return;
+				var position = strategy.Position;
+				if (now && position <= 0m) expectedSide = Sides.Buy;
+				else if (!now && position >= 0m) expectedSide = Sides.Sell;
+				else return;
+				expectedVolume = strategy.Volume + Math.Abs(position);
+				if (position != 0m) reversals++;
+				expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must reverse on a flip of the standard Supertrend.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(reversals > 5, "The fixture must reverse repeatedly.");
+	}
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";
