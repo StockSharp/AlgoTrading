@@ -640,6 +640,63 @@ public abstract partial class StrategyTests
 		if (!secondary) IsTrue(reversals > 0, "The fixture must reverse on the opposite setup.");
 	}
 
+	private const string SarTrend = "0004_Parabolic_SAR_Trend";
+
+	[TestMethod]
+	[TestCategory("Shard02")]
+	[DataRow(0.02, 0.2, false)]
+	[DataRow(0.01, 0.1, true)]
+	public async Task S0004_ReversesOnEveryCloseFlipAcrossTheSar(double acceleration, double maximum, bool secondary)
+	{
+		var sar = new ParabolicSar { Acceleration = (decimal)acceleration, AccelerationMax = (decimal)maximum };
+		bool? previousAbove = null;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var reversals = 0;
+		var violations = new List<string>();
+		await Replay(SarTrend, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(0.02m, Convert.ToDecimal(strategy.Parameters["AccelerationFactor"].Value));
+			AreEqual(0.2m, Convert.ToDecimal(strategy.Parameters["MaxAccelerationFactor"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "AccelerationFactor", acceleration);
+			SetParam(strategy, "MaxAccelerationFactor", maximum);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var value = sar.Process(candle);
+				if (value.IsEmpty) return;
+				var level = value.GetValue<decimal>();
+				if (level <= 0m) return;
+				var above = candle.ClosePrice > level;
+				var flipped = previousAbove is bool before && before != above;
+				previousAbove = above;
+				if (!flipped) return;
+				var position = strategy.Position;
+				if (above && position <= 0m) expectedSide = Sides.Buy;
+				else if (!above && position >= 0m) expectedSide = Sides.Sell;
+				else return;
+				expectedVolume = strategy.Volume + Math.Abs(position);
+				if (position != 0m) reversals++;
+				expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must reverse to the side of the SAR the close has just flipped to.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(reversals > 10, "The fixture must reverse repeatedly.");
+	}
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

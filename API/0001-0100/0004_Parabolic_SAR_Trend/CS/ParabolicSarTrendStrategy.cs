@@ -59,12 +59,14 @@ public class ParabolicSarTrendStrategy : Strategy
 	/// </summary>
 	public ParabolicSarTrendStrategy()
 	{
-		_accelerationFactor = Param(nameof(AccelerationFactor), 0.003m)
+		_accelerationFactor = Param(nameof(AccelerationFactor), 0.02m)
+			.SetGreaterThanZero()
 			.SetDisplay("Acceleration Factor", "Initial acceleration factor for SAR calculation", "Indicators")
 
 			.SetOptimize(0.01m, 0.05m, 0.01m);
 
-		_maxAccelerationFactor = Param(nameof(MaxAccelerationFactor), 0.03m)
+		_maxAccelerationFactor = Param(nameof(MaxAccelerationFactor), 0.2m)
+			.SetGreaterThanZero()
 			.SetDisplay("Max Acceleration Factor", "Maximum acceleration factor for SAR calculation", "Indicators")
 
 			.SetOptimize(0.1m, 0.5m, 0.1m);
@@ -118,43 +120,31 @@ public class ParabolicSarTrendStrategy : Strategy
 
 	private void ProcessCandle(ICandleMessage candle, decimal sarValue)
 	{
-		// Skip unfinished candles
-		if (candle.State != CandleStates.Finished)
+		if (candle.State != CandleStates.Finished || sarValue <= 0)
 			return;
 
-		// Check if strategy is ready to trade
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (sarValue <= 0)
-			return;
-
-		// Check the price position relative to SAR
 		var isPriceAboveSar = candle.ClosePrice > sarValue;
 
-		// Detect signal - crossing of price and SAR
-		var isEntrySignal = _prevSarValue > 0 && isPriceAboveSar != _prevIsPriceAboveSar;
-		
-		if (isEntrySignal)
-		{
-			var volume = Volume + Math.Abs(Position);
+		// A flip is a change of side between two consecutive finished candles.
+		var flipped = _prevSarValue > 0 && isPriceAboveSar != _prevIsPriceAboveSar;
 
-			// Long entry - price crosses above SAR
-			if (isPriceAboveSar && Position <= 0)
-			{
-				BuyMarket(volume);
-				LogInfo($"Buy signal: Price {candle.ClosePrice} crossed above SAR {sarValue}");
-			}
-			// Short entry - price crosses below SAR
-			else if (!isPriceAboveSar && Position >= 0)
-			{
-				SellMarket(volume);
-				LogInfo($"Sell signal: Price {candle.ClosePrice} crossed below SAR {sarValue}");
-			}
-		}
-
-		// Update previous values
 		_prevSarValue = sarValue;
 		_prevIsPriceAboveSar = isPriceAboveSar;
+
+		if (!flipped || !IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		var volume = Volume + Math.Abs(Position);
+
+		if (isPriceAboveSar && Position <= 0)
+		{
+			BuyMarket(volume);
+			LogInfo($"Buy signal: Price {candle.ClosePrice} crossed above SAR {sarValue}");
+		}
+		else if (!isPriceAboveSar && Position >= 0)
+		{
+			SellMarket(volume);
+			LogInfo($"Sell signal: Price {candle.ClosePrice} crossed below SAR {sarValue}");
+		}
 	}
 }
