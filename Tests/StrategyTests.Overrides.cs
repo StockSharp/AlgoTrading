@@ -1584,6 +1584,86 @@ public abstract partial class StrategyTests
 	public Task S0075_PercentStopWorksBetweenFinishedBars()
 		=> CheckPercentStopBetweenBars(ObvDivergence, TimeSpan.FromDays(31));
 
+	private const string FibonacciReversal = "0076_Fibonacci_Retracement_Reversal";
+
+	[TestMethod]
+	[TestCategory("Shard06")]
+	[DataRow(20, 0.5, false)]
+	[DataRow(12, 0.3, true)]
+	public async Task S0076_DeepRetracementsInTheSwingDirectionWithMidpointTargets(int period, double bufferPercent, bool secondary)
+	{
+		var candles = new List<(decimal High, decimal Low)>();
+		var target = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var targetExits = 0;
+		var violations = new List<string>();
+		await Replay(FibonacciReversal, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["SwingLookbackPeriod"].Value);
+			AreEqual(0.5m, Convert.ToDecimal(strategy.Parameters["FibLevelBuffer"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "SwingLookbackPeriod", period);
+			SetParam(strategy, "FibLevelBuffer", bufferPercent);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var swing = candles.ToArray();
+				candles.Add((candle.HighPrice, candle.LowPrice));
+				if (candles.Count > period) candles.RemoveAt(0);
+				if (swing.Length < period) return;
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (position > 0m && close >= target) { expectedSide = Sides.Sell; expectedVolume = position; targetExits++; }
+				else if (position < 0m && close <= target) { expectedSide = Sides.Buy; expectedVolume = -position; targetExits++; }
+				else if (position == 0m)
+				{
+					var high = swing.Max(c => c.High);
+					var low = swing.Min(c => c.Low);
+					var highIndex = Array.FindIndex(swing, c => c.High == high);
+					var lowIndex = Array.FindIndex(swing, c => c.Low == low);
+					var range = high - low;
+					var middle = low + range / 2m;
+					bool Near(decimal level) => Math.Abs(close - level) <= level * (decimal)bufferPercent / 100m;
+					if (range > 0m && lowIndex < highIndex && close > candle.OpenPrice && close < middle && (Near(high - range * 0.618m) || Near(high - range * 0.786m)))
+						expectedSide = Sides.Buy;
+					else if (range > 0m && highIndex < lowIndex && close < candle.OpenPrice && close > middle && (Near(low + range * 0.618m) || Near(low + range * 0.786m)))
+						expectedSide = Sides.Sell;
+					if (expectedSide is Sides side)
+					{
+						expectedVolume = strategy.Volume;
+						target = middle;
+						entries[side]++;
+					}
+				}
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must trade a confirming candle at the 61.8% or 78.6% retracement in the swing's direction, or close at the swing's 50% level.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "The fixture must trade retracements of rising and falling swings.");
+		IsTrue(targetExits > 0, "The fixture must reach the 50% target.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard06")]
+	public Task S0076_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars(FibonacciReversal, TimeSpan.FromDays(31));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

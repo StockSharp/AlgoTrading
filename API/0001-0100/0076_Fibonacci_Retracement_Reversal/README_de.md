@@ -18,6 +18,7 @@ Indem der Fokus auf tiefen Pullbacks innerhalb eines bestehenden Trends liegt, z
 - **Standardwerte**:
   - `SwingLookbackPeriod` = 20
   - `FibLevelBuffer` = 0.5
+    Ein Schlusskurs höchstens so viele Prozent von einem Retracement-Niveau entfernt gilt als Test dieses Niveaus.
   - `CandleType` = 5 minute
   - `StopLossPercent` = 2
 - **Filter**:

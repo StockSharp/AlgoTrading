@@ -18,6 +18,7 @@ By focusing on deep pullbacks within an existing trend, the method aims to captu
 - **Default Values**:
   - `SwingLookbackPeriod` = 20
   - `FibLevelBuffer` = 0.5
+    A close within this many percent of a retracement level counts as a test of it.
   - `CandleType` = 5 minute
   - `StopLossPercent` = 2
 - **Filters**:

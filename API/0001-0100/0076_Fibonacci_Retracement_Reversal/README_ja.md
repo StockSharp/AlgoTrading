@@ -18,6 +18,7 @@
 - **デフォルト値**:
   - `SwingLookbackPeriod` = 20
   - `FibLevelBuffer` = 0.5
+    終値がリトレースメント水準からこの割合（％）以内にあれば、その水準のテストとみなします。
   - `CandleType` = 5 minute
   - `StopLossPercent` = 2
 - **フィルター**:

@@ -18,6 +18,7 @@ Ao focar em retrações profundas dentro de uma tendência existente, o método 
 - **Valores padrão**:
   - `SwingLookbackPeriod` = 20
   - `FibLevelBuffer` = 0.5
+    Um fechamento a no máximo essa porcentagem de um nível de retração conta como teste do nível.
   - `CandleType` = 5 minute
   - `StopLossPercent` = 2
 - **Filtros**:

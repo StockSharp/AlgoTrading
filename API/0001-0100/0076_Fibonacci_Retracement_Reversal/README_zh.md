@@ -18,6 +18,7 @@
 - **默认值**：
   - `SwingLookbackPeriod` = 20
   - `FibLevelBuffer` = 0.5
+    收盘价与回撤水平的距离不超过该百分比即视为测试该水平。
   - `CandleType` = 5 分钟
   - `StopLossPercent` = 2
 - **过滤条件**：

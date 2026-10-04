@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using Ecng.Common;
 
@@ -12,38 +13,45 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Fibonacci Retracement Reversal strategy.
-/// Identifies swing high/low over a lookback window and enters at key Fibonacci retracement levels.
-/// Bullish reversal at 61.8% retracement from swing low.
-/// Bearish reversal at 61.8% retracement from swing high.
-/// Uses SMA for exit signals.
+/// The swing is the highest high and lowest low of the previous SwingLookbackPeriod candles; it rose when the low came first.
+/// In a rising swing a bullish candle closing within FibLevelBuffer percent of the 61.8% or 78.6% retracement buys,
+/// in a falling swing a bearish candle near those levels sells. The target is the swing's 50% level, and a percent stop protects the trade.
 /// </summary>
 public class FibonacciRetracementReversalStrategy : Strategy
 {
-	private readonly StrategyParam<int> _swingLookback;
-	private readonly StrategyParam<int> _maPeriod;
+	private readonly StrategyParam<int> _swingLookbackPeriod;
+	private readonly StrategyParam<decimal> _fibLevelBuffer;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
 
-	private readonly List<decimal> _highs = new();
-	private readonly List<decimal> _lows = new();
-	private int _cooldown;
+	private readonly List<(decimal High, decimal Low)> _candles = [];
+	private decimal _target;
 
 	/// <summary>
-	/// Swing lookback period.
+	/// Number of previous candles that form the swing.
 	/// </summary>
-	public int SwingLookback
+	public int SwingLookbackPeriod
 	{
-		get => _swingLookback.Value;
-		set => _swingLookback.Value = value;
+		get => _swingLookbackPeriod.Value;
+		set => _swingLookbackPeriod.Value = value;
 	}
 
 	/// <summary>
-	/// MA Period.
+	/// How close to a retracement level the close must be, in percent of the level.
 	/// </summary>
-	public int MAPeriod
+	public decimal FibLevelBuffer
 	{
-		get => _maPeriod.Value;
-		set => _maPeriod.Value = value;
+		get => _fibLevelBuffer.Value;
+		set => _fibLevelBuffer.Value = value;
+	}
+
+	/// <summary>
+	/// Stop-loss percentage.
+	/// </summary>
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
 	}
 
 	/// <summary>
@@ -56,33 +64,24 @@ public class FibonacciRetracementReversalStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Cooldown bars.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
 	/// Constructor.
 	/// </summary>
 	public FibonacciRetracementReversalStrategy()
 	{
-		_swingLookback = Param(nameof(SwingLookback), 20)
+		_swingLookbackPeriod = Param(nameof(SwingLookbackPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Swing Lookback", "Lookback for swing high/low", "Indicators");
+			.SetDisplay("Swing Lookback", "Previous candles that form the swing", "Indicators");
 
-		_maPeriod = Param(nameof(MAPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("MA Period", "Period for SMA", "Indicators");
+		_fibLevelBuffer = Param(nameof(FibLevelBuffer), 0.5m)
+			.SetNotNegative()
+			.SetDisplay("Level Buffer %", "Distance from a retracement level that counts as a test, in percent", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_cooldownBars = Param(nameof(CooldownBars), 500)
-			.SetRange(1, 1000)
-			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -95,9 +94,8 @@ public class FibonacciRetracementReversalStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_highs.Clear();
-		_lows.Clear();
-		_cooldown = default;
+		_candles.Clear();
+		_target = 0;
 	}
 
 	/// <inheritdoc />
@@ -105,98 +103,101 @@ public class FibonacciRetracementReversalStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_highs.Clear();
-		_lows.Clear();
-		_cooldown = 0;
-
-		var sma = new SimpleMovingAverage { Length = MAPeriod };
+		_candles.Clear();
+		_target = 0;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(sma, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
+
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// The high-level handler activates native protection before this callback, also between signal bars.
+	}
+
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Track highs and lows
-		_highs.Add(candle.HighPrice);
-		_lows.Add(candle.LowPrice);
+		// The swing is formed by the candles before this one.
+		var swing = _candles.ToArray();
 
-		if (_highs.Count > SwingLookback)
-		{
-			_highs.RemoveAt(0);
-			_lows.RemoveAt(0);
-		}
+		_candles.Add((candle.HighPrice, candle.LowPrice));
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (_candles.Count > SwingLookbackPeriod)
+			_candles.RemoveAt(0);
+
+		if (swing.Length < SwingLookbackPeriod || !IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (_highs.Count < SwingLookback)
-			return;
+		var close = candle.ClosePrice;
 
-		if (_cooldown > 0)
+		if (Position > 0)
 		{
-			_cooldown--;
+			if (close >= _target)
+				SellMarket(Position);
+
 			return;
 		}
 
-		// Find swing high and swing low from lookback
-		decimal swingHigh = decimal.MinValue;
-		decimal swingLow = decimal.MaxValue;
-
-		for (int i = 0; i < _highs.Count; i++)
+		if (Position < 0)
 		{
-			if (_highs[i] > swingHigh) swingHigh = _highs[i];
-			if (_lows[i] < swingLow) swingLow = _lows[i];
+			if (close <= _target)
+				BuyMarket(-Position);
+
+			return;
 		}
 
-		var range = swingHigh - swingLow;
+		var highIndex = Array.FindIndex(swing, c => c.High == swing.Max(x => x.High));
+		var lowIndex = Array.FindIndex(swing, c => c.Low == swing.Min(x => x.Low));
+		var high = swing[highIndex].High;
+		var low = swing[lowIndex].Low;
+		var range = high - low;
+
 		if (range <= 0)
 			return;
 
-		// Fibonacci 61.8% retracement levels
-		var fib618FromHigh = swingHigh - range * 0.618m;
-		var fib618FromLow = swingLow + range * 0.618m;
-		var buffer = range * 0.02m; // 2% buffer
+		var middle = low + range / 2m;
 
-		var isBullish = candle.ClosePrice > candle.OpenPrice;
-		var isBearish = candle.ClosePrice < candle.OpenPrice;
+		bool Near(decimal level) => Math.Abs(close - level) <= level * FibLevelBuffer / 100m;
 
-		// Buy at 61.8% retracement from high (near swing low area) with bullish candle
-		if (Position == 0 && Math.Abs(candle.ClosePrice - fib618FromHigh) < buffer && isBullish)
+		if (lowIndex < highIndex)
 		{
-			BuyMarket();
-			_cooldown = CooldownBars;
+			// Rising swing: buy a bullish candle at a deep pullback.
+			if (close > candle.OpenPrice && close < middle && (Near(high - range * 0.618m) || Near(high - range * 0.786m)))
+			{
+				BuyMarket(Volume);
+				_target = middle;
+			}
 		}
-		// Sell at 61.8% retracement from low (near swing high area) with bearish candle
-		else if (Position == 0 && Math.Abs(candle.ClosePrice - fib618FromLow) < buffer && isBearish)
+		else if (highIndex < lowIndex)
 		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		// Exit long above SMA
-		else if (Position > 0 && candle.ClosePrice < smaValue)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		// Exit short below SMA
-		else if (Position < 0 && candle.ClosePrice > smaValue)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
+			// Falling swing: sell a bearish candle at a deep rebound.
+			if (close < candle.OpenPrice && close > middle && (Near(low + range * 0.618m) || Near(low + range * 0.786m)))
+			{
+				SellMarket(Volume);
+				_target = middle;
+			}
 		}
 	}
 }

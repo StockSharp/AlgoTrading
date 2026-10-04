@@ -18,6 +18,7 @@ Al centrarse en retrocesos profundos dentro de una tendencia existente, el méto
 - **Valores predeterminados**:
   - `SwingLookbackPeriod` = 20
   - `FibLevelBuffer` = 0.5
+    Un cierre a menos de este porcentaje de un nivel de retroceso cuenta como prueba del nivel.
   - `CandleType` = 5 minute
   - `StopLossPercent` = 2
 - **Filtros**:
