@@ -1432,6 +1432,75 @@ public abstract partial class StrategyTests
 		IsTrue(swingExits + entries.Values.Sum() > 4, "The fixture must trade repeatedly.");
 	}
 
+	private const string Hammer = "0059_Hammer_Candle";
+
+	[TestMethod]
+	[TestCategory("Shard04")]
+	[DataRow(2.0, false)]
+	[DataRow(1.0, true)]
+	public async Task S0059_LongOnlyHammersWithStopAtTheLowAndRewardRiskTarget(double ratio, bool secondary)
+	{
+		var stop = 0m;
+		var target = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = 0;
+		var stopExits = 0;
+		var targetExits = 0;
+		var violations = new List<string>();
+		await Replay(Hammer, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["RewardRiskRatio"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "RewardRiskRatio", ratio);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (position > 0m)
+				{
+					if (close <= stop || close >= target)
+					{
+						expectedSide = Sides.Sell;
+						expectedVolume = position;
+						if (close <= stop) stopExits++; else targetExits++;
+					}
+				}
+				else if (position == 0m)
+				{
+					var body = Math.Abs(candle.OpenPrice - close);
+					var lower = Math.Min(candle.OpenPrice, close) - candle.LowPrice;
+					var upper = candle.HighPrice - Math.Max(candle.OpenPrice, close);
+					if (body > 0m && lower >= 2m * body && upper < body / 2m && close > candle.LowPrice)
+					{
+						expectedSide = Sides.Buy;
+						expectedVolume = strategy.Volume;
+						stop = candle.LowPrice;
+						target = close + (decimal)ratio * (close - candle.LowPrice);
+						entries++;
+					}
+				}
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must buy a hammer while flat, or close the long at the hammer's low or at the reward/risk target.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries > 3, "The fixture must buy several hammers.");
+		IsTrue(stopExits > 0 && targetExits > 0, "The fixture must exercise both the stop and the target.");
+	}
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

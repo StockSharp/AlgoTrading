@@ -15,6 +15,8 @@ O sistema requer uma sombra inferior de pelo menos o dobro do corpo e pouca somb
 - **Stops**: Sim.
 - **Valores padrão**:
   - `CandleType` = TimeSpan.FromMinutes(5)
+  - `RewardRiskRatio` = 2m
+    O stop é a mínima do martelo e o alvo fica RewardRiskRatio vezes essa distância acima da entrada; ambos são verificados no fechamento das velas.
 - **Filtros**:
   - Categoria: Padrão
   - Direção: Somente comprado

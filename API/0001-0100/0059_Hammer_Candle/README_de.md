@@ -15,6 +15,8 @@ Das System erfordert einen unteren Docht von mindestens der doppelten Kerzenlän
 - **Stops**: Ja.
 - **Standardwerte**:
   - `CandleType` = TimeSpan.FromMinutes(5)
+  - `RewardRiskRatio` = 2m
+    Der Stop liegt am Tief des Hammers, das Ziel RewardRiskRatio-mal diesen Abstand über dem Einstieg; beide werden bei Kerzenschluss geprüft.
 - **Filter**:
   - Kategorie: Muster
   - Richtung: Nur Long

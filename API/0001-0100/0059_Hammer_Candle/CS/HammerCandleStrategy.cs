@@ -12,25 +12,24 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Hammer Candle strategy.
-/// Enters long on hammer pattern (long lower shadow, small upper shadow).
-/// Enters short on inverted hammer (long upper shadow, small lower shadow).
-/// Exits via SMA crossover.
+/// Buys after a hammer: a candle whose lower shadow is at least twice its body and whose upper shadow is under half of it.
+/// The stop is the hammer's low and the target lies RewardRiskRatio times that risk above the entry close.
 /// </summary>
 public class HammerCandleStrategy : Strategy
 {
-	private readonly StrategyParam<int> _maPeriod;
+	private readonly StrategyParam<decimal> _rewardRiskRatio;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
 
-	private int _cooldown;
+	private decimal _stopPrice;
+	private decimal _targetPrice;
 
 	/// <summary>
-	/// MA Period for exit.
+	/// Distance of the target in multiples of the distance to the stop.
 	/// </summary>
-	public int MAPeriod
+	public decimal RewardRiskRatio
 	{
-		get => _maPeriod.Value;
-		set => _maPeriod.Value = value;
+		get => _rewardRiskRatio.Value;
+		set => _rewardRiskRatio.Value = value;
 	}
 
 	/// <summary>
@@ -43,29 +42,16 @@ public class HammerCandleStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Cooldown bars between trades.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
 	/// Constructor.
 	/// </summary>
 	public HammerCandleStrategy()
 	{
-		_maPeriod = Param(nameof(MAPeriod), 20)
+		_rewardRiskRatio = Param(nameof(RewardRiskRatio), 2m)
 			.SetGreaterThanZero()
-			.SetDisplay("MA Period", "Period for SMA", "Indicators");
+			.SetDisplay("Reward/Risk", "Target distance in multiples of the stop distance", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_cooldownBars = Param(nameof(CooldownBars), 500)
-			.SetRange(1, 1000)
-			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -78,7 +64,8 @@ public class HammerCandleStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_cooldown = default;
+		_stopPrice = default;
+		_targetPrice = default;
 	}
 
 	/// <inheritdoc />
@@ -86,25 +73,20 @@ public class HammerCandleStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_cooldown = 0;
-
-		var sma = new SimpleMovingAverage { Length = MAPeriod };
-
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(sma, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
@@ -112,38 +94,30 @@ public class HammerCandleStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (_cooldown > 0)
+		var close = candle.ClosePrice;
+
+		if (Position > 0)
 		{
-			_cooldown--;
+			if (close <= _stopPrice || close >= _targetPrice)
+				SellMarket(Position);
+
 			return;
 		}
 
-		var bodySize = Math.Abs(candle.OpenPrice - candle.ClosePrice);
-		var lowerShadow = Math.Min(candle.OpenPrice, candle.ClosePrice) - candle.LowPrice;
-		var upperShadow = candle.HighPrice - Math.Max(candle.OpenPrice, candle.ClosePrice);
+		if (Position != 0)
+			return;
 
-		var isHammer = bodySize > 0 && lowerShadow > bodySize * 2m && upperShadow < bodySize * 0.5m;
-		var isInvertedHammer = bodySize > 0 && upperShadow > bodySize * 2m && lowerShadow < bodySize * 0.5m;
+		var body = Math.Abs(candle.OpenPrice - close);
+		var lowerShadow = Math.Min(candle.OpenPrice, close) - candle.LowPrice;
+		var upperShadow = candle.HighPrice - Math.Max(candle.OpenPrice, close);
 
-		if (Position == 0 && isHammer && candle.ClosePrice < smaValue)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position == 0 && isInvertedHammer && candle.ClosePrice > smaValue)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position > 0 && candle.ClosePrice < smaValue)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position < 0 && candle.ClosePrice > smaValue)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
+		var isHammer = body > 0 && lowerShadow >= body * 2m && upperShadow < body * 0.5m;
+
+		if (!isHammer || close <= candle.LowPrice)
+			return;
+
+		BuyMarket(Volume);
+		_stopPrice = candle.LowPrice;
+		_targetPrice = close + RewardRiskRatio * (close - candle.LowPrice);
 	}
 }
