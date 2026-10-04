@@ -12,7 +12,8 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Strategy based on Ichimoku Kumo (cloud) breakout.
-/// Trades on Tenkan/Kijun crosses with cloud confirmation.
+/// Buys when the close is above the cloud with Tenkan-sen above Kijun-sen, sells when it is below the cloud with Tenkan-sen
+/// below Kijun-sen, acting when the last of the two conditions appears. A position is held until the close goes through the cloud.
 /// </summary>
 public class IchimokuKumoBreakoutStrategy : Strategy
 {
@@ -21,9 +22,8 @@ public class IchimokuKumoBreakoutStrategy : Strategy
 	private readonly StrategyParam<int> _senkouSpanPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private bool _prevTenkanAboveKijun;
-	private bool _hasPrevValues;
-	private int _candlesSinceLastTrade;
+	private bool? _prevLongSetup;
+	private bool? _prevShortSetup;
 
 	/// <summary>
 	/// Period for Tenkan-sen line.
@@ -67,18 +67,21 @@ public class IchimokuKumoBreakoutStrategy : Strategy
 	public IchimokuKumoBreakoutStrategy()
 	{
 		_tenkanPeriod = Param(nameof(TenkanPeriod), 9)
+			.SetGreaterThanZero()
 			.SetDisplay("Tenkan-sen Period", "Period for Tenkan-sen line", "Indicators")
 			.SetOptimize(7, 13, 2);
 
 		_kijunPeriod = Param(nameof(KijunPeriod), 26)
+			.SetGreaterThanZero()
 			.SetDisplay("Kijun-sen Period", "Period for Kijun-sen line", "Indicators")
 			.SetOptimize(20, 30, 2);
 
 		_senkouSpanPeriod = Param(nameof(SenkouSpanPeriod), 52)
+			.SetGreaterThanZero()
 			.SetDisplay("Senkou Span B Period", "Period for Senkou Span B", "Indicators")
 			.SetOptimize(40, 60, 4);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -92,9 +95,8 @@ public class IchimokuKumoBreakoutStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevTenkanAboveKijun = default;
-		_hasPrevValues = default;
-		_candlesSinceLastTrade = default;
+		_prevLongSetup = null;
+		_prevShortSetup = null;
 	}
 
 	/// <inheritdoc />
@@ -102,66 +104,69 @@ public class IchimokuKumoBreakoutStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var tenkan = new Highest { Length = TenkanPeriod };
-		var tenkanLow = new Lowest { Length = TenkanPeriod };
-		var kijun = new Highest { Length = KijunPeriod };
-		var kijunLow = new Lowest { Length = KijunPeriod };
+		var ichimoku = new Ichimoku
+		{
+			Tenkan = { Length = TenkanPeriod },
+			Kijun = { Length = KijunPeriod },
+			SenkouB = { Length = SenkouSpanPeriod },
+		};
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(tenkan, tenkanLow, kijun, kijunLow, ProcessCandle)
+			.BindEx(ichimoku, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, ichimoku);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal tenkanHigh, decimal tenkanLow, decimal kijunHigh, decimal kijunLow)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue value)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var tenkan = (tenkanHigh + tenkanLow) / 2m;
-		var kijun = (kijunHigh + kijunLow) / 2m;
-
-		if (tenkan == 0 || kijun == 0)
+		// The cloud is plotted ahead, so the spans of this candle were set Kijun periods ago.
+		if (value is not IIchimokuValue { Tenkan: decimal tenkan, Kijun: decimal kijun, SenkouA: decimal spanA, SenkouB: decimal spanB })
 			return;
 
-		var tenkanAboveKijun = tenkan > kijun;
+		var close = candle.ClosePrice;
+		var cloudTop = Math.Max(spanA, spanB);
+		var cloudBottom = Math.Min(spanA, spanB);
 
-		_candlesSinceLastTrade++;
+		var longSetup = close > cloudTop && tenkan > kijun;
+		var shortSetup = close < cloudBottom && tenkan < kijun;
 
-		if (!_hasPrevValues)
+		var wasLongSetup = _prevLongSetup;
+		var wasShortSetup = _prevShortSetup;
+		_prevLongSetup = longSetup;
+		_prevShortSetup = shortSetup;
+
+		if (wasLongSetup is not bool wasLong || wasShortSetup is not bool wasShort)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (longSetup && !wasLong && Position <= 0)
 		{
-			_hasPrevValues = true;
-			_prevTenkanAboveKijun = tenkanAboveKijun;
-			return;
+			BuyMarket(Volume + Math.Abs(Position));
 		}
-
-		// Detect cross
-		var isCross = tenkanAboveKijun != _prevTenkanAboveKijun;
-		_prevTenkanAboveKijun = tenkanAboveKijun;
-
-		if (!isCross)
-			return;
-
-		// Cooldown to avoid too many trades
-		if (_candlesSinceLastTrade < 4)
-			return;
-
-		if (tenkanAboveKijun && Position <= 0)
+		else if (shortSetup && !wasShort && Position >= 0)
 		{
-			BuyMarket();
-			_candlesSinceLastTrade = 0;
+			SellMarket(Volume + Math.Abs(Position));
 		}
-		else if (!tenkanAboveKijun && Position >= 0)
+		else if (Position > 0 && close < cloudBottom)
 		{
-			SellMarket();
-			_candlesSinceLastTrade = 0;
+			SellMarket(Position);
+		}
+		else if (Position < 0 && close > cloudTop)
+		{
+			BuyMarket(-Position);
 		}
 	}
 }
