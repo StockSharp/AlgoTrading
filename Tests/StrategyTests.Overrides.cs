@@ -1268,6 +1268,85 @@ public abstract partial class StrategyTests
 		IsTrue(cloudExits > 0, "The fixture must close a position through the cloud.");
 	}
 
+	private const string HeikinRun = "0012_Heikin_Ashi_Consecutive";
+
+	[TestMethod]
+	[TestCategory("Shard02")]
+	[DataRow(3, false)]
+	[DataRow(5, true)]
+	public async Task S0012_HeikinAshiRunsWithFirstOppositeCandleExits(int required, bool secondary)
+	{
+		decimal? haOpen = null;
+		var haClose = 0m;
+		var bullish = 0;
+		var bearish = 0;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var oppositeExits = 0;
+		var violations = new List<string>();
+		await Replay(HeikinRun, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(3, strategy.Parameters["ConsecutiveCandles"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "ConsecutiveCandles", required);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var close = (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m;
+				var open = haOpen is decimal previousOpen ? (previousOpen + haClose) / 2m : (candle.OpenPrice + candle.ClosePrice) / 2m;
+				haOpen = open;
+				haClose = close;
+				var up = close > open;
+				var down = close < open;
+				bullish = up ? bullish + 1 : 0;
+				bearish = down ? bearish + 1 : 0;
+				var position = strategy.Position;
+				if (position > 0m && down)
+				{
+					expectedSide = Sides.Sell;
+					expectedVolume = bearish >= required ? strategy.Volume + position : position;
+					oppositeExits++;
+				}
+				else if (position < 0m && up)
+				{
+					expectedSide = Sides.Buy;
+					expectedVolume = bullish >= required ? strategy.Volume - position : -position;
+					oppositeExits++;
+				}
+				else if (position == 0m && (bullish >= required || bearish >= required))
+				{
+					expectedSide = bullish >= required ? Sides.Buy : Sides.Sell;
+					expectedVolume = strategy.Volume;
+					entries[expectedSide.Value]++;
+				}
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a run of same-colored Heikin Ashi candles, or close the position on the first opposite one.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "The fixture must enter on both sides.");
+		IsTrue(oppositeExits > 0, "The fixture must exit on the first opposite candle.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard02")]
+	public Task S0012_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars(HeikinRun, TimeSpan.FromDays(31));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

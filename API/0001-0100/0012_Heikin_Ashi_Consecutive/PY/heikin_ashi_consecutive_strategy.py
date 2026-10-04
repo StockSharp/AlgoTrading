@@ -4,129 +4,105 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from System import TimeSpan, Math, Decimal
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, Level1Fields
+from StockSharp.BusinessEntities import Subscription
 from StockSharp.Algo.Strategies import Strategy
 
 
 class heikin_ashi_consecutive_strategy(Strategy):
+    """
+    Strategy based on consecutive Heikin Ashi candles.
+    It enters long position after a sequence of bullish Heikin Ashi candles and
+    short position after a sequence of bearish Heikin Ashi candles,
+    and exits on the first opposite candle or at the percent stop.
+    """
 
     def __init__(self):
         super(heikin_ashi_consecutive_strategy, self).__init__()
 
-        self._consecutive_candles = self.Param("ConsecutiveCandles", 7) \
+        self._consecutive_candles = self.Param("ConsecutiveCandles", 3) \
+            .SetGreaterThanZero() \
             .SetDisplay("Consecutive Candles", "Number of consecutive candles required for signal", "Trading parameters")
         self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
+            .SetNotNegative() \
             .SetDisplay("Stop Loss (%)", "Stop loss as a percentage of entry price", "Risk parameters")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._bullish_count = 0
         self._bearish_count = 0
-        self._prev_ha_open = 0.0
-        self._prev_ha_close = 0.0
-        self._prev_ha_high = 0.0
-        self._prev_ha_low = 0.0
-
-    @property
-    def ConsecutiveCandles(self):
-        return self._consecutive_candles.Value
-
-    @ConsecutiveCandles.setter
-    def ConsecutiveCandles(self, value):
-        self._consecutive_candles.Value = value
-
-    @property
-    def StopLossPercent(self):
-        return self._stop_loss_percent.Value
-
-    @StopLossPercent.setter
-    def StopLossPercent(self, value):
-        self._stop_loss_percent.Value = value
-
-    @property
-    def CandleType(self):
-        return self._candle_type.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candle_type.Value = value
+        self._prev_ha_open = None
+        self._prev_ha_close = Decimal(0)
 
     def OnStarted2(self, time):
         super(heikin_ashi_consecutive_strategy, self).OnStarted2(time)
 
-        self._bullish_count = 0
-        self._bearish_count = 0
-        self._prev_ha_open = 0.0
-        self._prev_ha_close = 0.0
-        self._prev_ha_high = 0.0
-        self._prev_ha_low = 0.0
+        subscription = self.SubscribeCandles(self._candle_type.Value)
+        subscription.Bind(self._process_candle).Start()
 
-        self.SubscribeCandles(self.CandleType) \
-            .Bind(self.ProcessCandle) \
-            .Start()
+        area = self.CreateChartArea()
+        if area is not None:
+            self.DrawCandles(area, subscription)
+            self.DrawOwnTrades(area)
 
-        self.StartProtection(
-            takeProfit=None,
-            stopLoss=Unit(float(self.StopLossPercent), UnitTypes.Percent)
-        )
+        self.StartProtection(Unit(), Unit(Decimal(self._stop_loss_percent.Value), UnitTypes.Percent), useMarketOrders=True, isLocalStop=True)
 
-    def ProcessCandle(self, candle):
+        # The stop has to see prices between candles, not only at their close.
+        for field in (Level1Fields.BestBidPrice, Level1Fields.BestAskPrice):
+            quotes = Subscription(DataType.Level1, self.Security)
+            quotes.MarketData.BuildField = field
+            self.SubscribeLevel1(quotes).Bind(self._observe_protection_quote).Start()
+
+    def _observe_protection_quote(self, quote):
+        # The high-level handler activates native protection before the callback, including between bars.
+        pass
+
+    def _process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
 
-        o = float(candle.OpenPrice)
-        c = float(candle.ClosePrice)
-        h = float(candle.HighPrice)
-        l = float(candle.LowPrice)
-
-        if self._prev_ha_open == 0:
-            ha_open = (o + c) / 2.0
-            ha_close = (o + c + h + l) / 4.0
-            ha_high = h
-            ha_low = l
+        ha_close = (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / Decimal(4)
+        if self._prev_ha_open is None:
+            ha_open = (candle.OpenPrice + candle.ClosePrice) / Decimal(2)
         else:
-            ha_open = (self._prev_ha_open + self._prev_ha_close) / 2.0
-            ha_close = (o + c + h + l) / 4.0
-            ha_high = max(max(h, ha_open), ha_close)
-            ha_low = min(min(l, ha_open), ha_close)
+            ha_open = (self._prev_ha_open + self._prev_ha_close) / Decimal(2)
+
+        self._prev_ha_open = ha_open
+        self._prev_ha_close = ha_close
 
         is_bullish = ha_close > ha_open
         is_bearish = ha_close < ha_open
 
-        if is_bullish:
-            self._bullish_count += 1
-            self._bearish_count = 0
-        elif is_bearish:
-            self._bearish_count += 1
-            self._bullish_count = 0
-        else:
-            self._bullish_count = 0
-            self._bearish_count = 0
+        self._bullish_count = self._bullish_count + 1 if is_bullish else 0
+        self._bearish_count = self._bearish_count + 1 if is_bearish else 0
 
-        consec = int(self.ConsecutiveCandles)
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
-        if self._bullish_count >= consec and self.Position <= 0:
-            volume = self.Volume + Math.Abs(self.Position)
-            self.BuyMarket(volume)
-        elif self._bearish_count >= consec and self.Position >= 0:
-            volume = self.Volume + Math.Abs(self.Position)
-            self.SellMarket(volume)
+        required = self._consecutive_candles.Value
+        position = self.Position
 
-        self._prev_ha_open = ha_open
-        self._prev_ha_close = ha_close
-        self._prev_ha_high = ha_high
-        self._prev_ha_low = ha_low
+        if position > 0:
+            # The first bearish candle ends a long position.
+            if is_bearish:
+                self.SellMarket(self.Volume + position if self._bearish_count >= required else position)
+        elif position < 0:
+            if is_bullish:
+                self.BuyMarket(self.Volume - position if self._bullish_count >= required else -position)
+        elif self._bullish_count >= required:
+            self.BuyMarket(self.Volume)
+        elif self._bearish_count >= required:
+            self.SellMarket(self.Volume)
 
     def OnReseted(self):
         super(heikin_ashi_consecutive_strategy, self).OnReseted()
         self._bullish_count = 0
         self._bearish_count = 0
-        self._prev_ha_open = 0.0
-        self._prev_ha_close = 0.0
-        self._prev_ha_high = 0.0
-        self._prev_ha_low = 0.0
+        self._prev_ha_open = None
+        self._prev_ha_close = Decimal(0)
 
     def CreateClone(self):
         return heikin_ashi_consecutive_strategy()

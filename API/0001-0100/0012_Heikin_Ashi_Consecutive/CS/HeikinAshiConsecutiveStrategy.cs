@@ -15,8 +15,9 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Strategy based on consecutive Heikin Ashi candles.
-/// It enters long position after a sequence of bullish Heikin Ashi candles and 
-/// short position after a sequence of bearish Heikin Ashi candles.
+/// It enters long position after a sequence of bullish Heikin Ashi candles and
+/// short position after a sequence of bearish Heikin Ashi candles,
+/// and exits on the first opposite candle or at the percent stop.
 /// </summary>
 public class HeikinAshiConsecutiveStrategy : Strategy
 {
@@ -27,10 +28,8 @@ public class HeikinAshiConsecutiveStrategy : Strategy
 	// State tracking
 	private int _bullishCount;
 	private int _bearishCount;
-	private decimal _prevHaOpen;
+	private decimal? _prevHaOpen;
 	private decimal _prevHaClose;
-	private decimal _prevHaHigh;
-	private decimal _prevHaLow;
 
 	/// <summary>
 	/// Number of consecutive candles required for signal.
@@ -64,17 +63,19 @@ public class HeikinAshiConsecutiveStrategy : Strategy
 	/// </summary>
 	public HeikinAshiConsecutiveStrategy()
 	{
-		_consecutiveCandles = Param(nameof(ConsecutiveCandles), 7)
+		_consecutiveCandles = Param(nameof(ConsecutiveCandles), 3)
+			.SetGreaterThanZero()
 			.SetDisplay("Consecutive Candles", "Number of consecutive candles required for signal", "Trading parameters")
 
 			.SetOptimize(5, 10, 1);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (%)", "Stop loss as a percentage of entry price", "Risk parameters")
 			
 			.SetOptimize(1, 3, 0.5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -90,10 +91,8 @@ public class HeikinAshiConsecutiveStrategy : Strategy
 		base.OnReseted();
 		_bullishCount = default;
 		_bearishCount = default;
-		_prevHaOpen = default;
+		_prevHaOpen = null;
 		_prevHaClose = default;
-		_prevHaHigh = default;
-		_prevHaLow = default;
 
 	}
 
@@ -119,82 +118,62 @@ public class HeikinAshiConsecutiveStrategy : Strategy
 		}
 
 		// Start protection with stop loss
-		StartProtection(
-			takeProfit: null,
-			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent)
-		);
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
+	}
+
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// The high-level handler activates native protection before this callback, also between signal bars.
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		var haClose = (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4;
+		var haOpen = _prevHaOpen is decimal prevOpen
+			? (prevOpen + _prevHaClose) / 2
+			: (candle.OpenPrice + candle.ClosePrice) / 2;
 
-		// Calculate Heikin-Ashi values
-		decimal haOpen, haClose, haHigh, haLow;
+		_prevHaOpen = haOpen;
+		_prevHaClose = haClose;
 
-		if (_prevHaOpen == 0)
-		{
-			// First candle - initialize Heikin-Ashi values
-			haOpen = (candle.OpenPrice + candle.ClosePrice) / 2;
-			haClose = (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4;
-			haHigh = candle.HighPrice;
-			haLow = candle.LowPrice;
-		}
-		else
-		{
-			// Calculate Heikin-Ashi values based on previous HA candle
-			haOpen = (_prevHaOpen + _prevHaClose) / 2;
-			haClose = (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4;
-			haHigh = Math.Max(Math.Max(candle.HighPrice, haOpen), haClose);
-			haLow = Math.Min(Math.Min(candle.LowPrice, haOpen), haClose);
-		}
-
-		// Determine if Heikin-Ashi candle is bullish or bearish
 		var isBullish = haClose > haOpen;
 		var isBearish = haClose < haOpen;
 
-		// Update consecutive counts
-		if (isBullish)
-		{
-			_bullishCount++;
-			_bearishCount = 0;
-		}
-		else if (isBearish)
-		{
-			_bearishCount++;
-			_bullishCount = 0;
-		}
-		else
-		{
-			// Neutral candle (rare case) - reset both counts
-			_bullishCount = 0;
-			_bearishCount = 0;
-		}
+		_bullishCount = isBullish ? _bullishCount + 1 : 0;
+		_bearishCount = isBearish ? _bearishCount + 1 : 0;
 
-		// Trading logic - enter/reverse on consecutive candles
-		if (_bullishCount >= ConsecutiveCandles && Position <= 0)
-		{
-			// Enough consecutive bullish candles - Buy signal
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-		}
-		else if (_bearishCount >= ConsecutiveCandles && Position >= 0)
-		{
-			// Enough consecutive bearish candles - Sell signal
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
-		}
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
 
-		// Store current Heikin-Ashi values for next candle
-		_prevHaOpen = haOpen;
-		_prevHaClose = haClose;
-		_prevHaHigh = haHigh;
-		_prevHaLow = haLow;
+		if (Position > 0)
+		{
+			// The first bearish candle ends a long position.
+			if (isBearish)
+				SellMarket(_bearishCount >= ConsecutiveCandles ? Volume + Position : Position);
+		}
+		else if (Position < 0)
+		{
+			if (isBullish)
+				BuyMarket(_bullishCount >= ConsecutiveCandles ? Volume - Position : -Position);
+		}
+		else if (_bullishCount >= ConsecutiveCandles)
+		{
+			BuyMarket(Volume);
+		}
+		else if (_bearishCount >= ConsecutiveCandles)
+		{
+			SellMarket(Volume);
+		}
 	}
 }

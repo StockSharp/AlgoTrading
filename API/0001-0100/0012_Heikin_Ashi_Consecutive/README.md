@@ -5,9 +5,9 @@ Strategy based on consecutive Heikin Ashi candles
 
 Testing indicates an average annual return of about 73%. It performs best in the crypto market.
 
-Heikin Ashi Consecutive waits for several same-color Heikin Ashi candles to confirm momentum. After a run of bullish or bearish bars the strategy joins the move and exits on the first opposite candle or an ATR stop.
+Heikin Ashi Consecutive waits for several same-color Heikin Ashi candles to confirm momentum. After a run of bullish or bearish bars the strategy joins the move and exits on the first opposite candle or a percent stop.
 
-Because Heikin Ashi charts smooth price data, a series of like-colored candles highlights a strong directional move. The trailing ATR stop attempts to lock in gains if the sequence abruptly reverses.
+Because Heikin Ashi charts smooth price data, a series of like-colored candles highlights a strong directional move. The percent stop limits the loss if the sequence abruptly reverses.
 
 
 ## Details
