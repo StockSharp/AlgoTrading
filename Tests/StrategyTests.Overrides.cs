@@ -697,6 +697,88 @@ public abstract partial class StrategyTests
 		IsTrue(reversals > 10, "The fixture must reverse repeatedly.");
 	}
 
+	private const string Donchian = "0005_Donchian_Channel";
+
+	[TestMethod]
+	[TestCategory("Shard03")]
+	[DataRow(20, false)]
+	[DataRow(8, true)]
+	public async Task S0005_ClosesBeyondThePriorChannelWithMidpointExits(int period, bool secondary)
+	{
+		var highs = new Queue<decimal>();
+		var lows = new Queue<decimal>();
+		(decimal Upper, decimal Lower, decimal Middle)? channel = null;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var longEntries = 0;
+		var shortEntries = 0;
+		var midpointExits = 0;
+		var violations = new List<string>();
+		await Replay(Donchian, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["ChannelPeriod"].Value);
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "ChannelPeriod", period);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var prior = channel;
+				highs.Enqueue(candle.HighPrice);
+				lows.Enqueue(candle.LowPrice);
+				if (highs.Count > period) { highs.Dequeue(); lows.Dequeue(); }
+				if (highs.Count == period)
+				{
+					var upper = highs.Max();
+					var lower = lows.Min();
+					channel = (upper, lower, (upper + lower) / 2m);
+				}
+				if (prior is not { } band) return;
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (close > band.Upper && position <= 0m)
+				{
+					expectedSide = Sides.Buy;
+					expectedVolume = strategy.Volume + Math.Abs(position);
+					longEntries++;
+				}
+				else if (close < band.Lower && position >= 0m)
+				{
+					expectedSide = Sides.Sell;
+					expectedVolume = strategy.Volume + Math.Abs(position);
+					shortEntries++;
+				}
+				else if (position > 0m && close <= band.Middle)
+				{
+					expectedSide = Sides.Sell;
+					expectedVolume = position;
+					midpointExits++;
+				}
+				else if (position < 0m && close >= band.Middle)
+				{
+					expectedSide = Sides.Buy;
+					expectedVolume = -position;
+					midpointExits++;
+				}
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a close beyond the channel of the previous candles, or close the position when the close returns to its midpoint.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(longEntries > 0 && shortEntries > 0, "The fixture must break out on both sides.");
+		IsTrue(midpointExits > 0, "The fixture must exercise the midpoint exit.");
+	}
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

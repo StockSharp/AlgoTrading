@@ -15,7 +15,8 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Strategy based on Donchian Channel.
-/// It enters long position when price breaks through the upper band and short position when price breaks through the lower band.
+/// It enters long when the close breaks above the upper band of the previous candles and short below the lower band,
+/// and exits when the close returns to the channel midpoint.
 /// </summary>
 public class DonchianChannelStrategy : Strategy
 {
@@ -23,9 +24,10 @@ public class DonchianChannelStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	// Current state
-	private decimal _prevClosePrice;
-	private decimal _prevUpperBand;
-	private decimal _prevLowerBand;
+	// Channel of the candles before the current one.
+	private decimal? _prevUpperBand;
+	private decimal? _prevLowerBand;
+	private decimal? _prevMiddle;
 
 	/// <summary>
 	/// Period for Donchian Channel.
@@ -50,12 +52,13 @@ public class DonchianChannelStrategy : Strategy
 	/// </summary>
 	public DonchianChannelStrategy()
 	{
-		_channelPeriod = Param(nameof(ChannelPeriod), 1000)
+		_channelPeriod = Param(nameof(ChannelPeriod), 20)
+			.SetGreaterThanZero()
 			.SetDisplay("Channel Period", "Period for Donchian Channel calculation", "Indicators")
 			
 			.SetOptimize(10, 50, 5);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -69,9 +72,9 @@ public class DonchianChannelStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevClosePrice = default;
-		_prevUpperBand = default;
-		_prevLowerBand = default;
+		_prevUpperBand = null;
+		_prevLowerBand = null;
+		_prevMiddle = null;
 
 	}
 
@@ -101,16 +104,11 @@ public class DonchianChannelStrategy : Strategy
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue donchianValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		var donchianTyped = (DonchianChannelsValue)donchianValue;
-		
+
 		if (donchianTyped.UpperBand is not decimal upperValue ||
 			donchianTyped.LowerBand is not decimal lowerValue ||
 			donchianTyped.Middle is not decimal midValue)
@@ -118,32 +116,38 @@ public class DonchianChannelStrategy : Strategy
 			return;
 		}
 
-		// Skip the first received value for proper comparison
-		if (_prevUpperBand == 0)
-		{
-			_prevClosePrice = candle.ClosePrice;
-			_prevUpperBand = upperValue;
-			_prevLowerBand = lowerValue;
+		// A close can only break out of the channel the candles before it formed.
+		var upper = _prevUpperBand;
+		var lower = _prevLowerBand;
+		var middle = _prevMiddle;
+
+		_prevUpperBand = upperValue;
+		_prevLowerBand = lowerValue;
+		_prevMiddle = midValue;
+
+		if (upper is not decimal up || lower is not decimal down || middle is not decimal mid)
 			return;
-		}
 
-		// Check for breakouts
-		var isUpperBreakout = candle.ClosePrice > _prevUpperBand && _prevClosePrice <= _prevUpperBand;
-		var isLowerBreakout = candle.ClosePrice < _prevLowerBand && _prevClosePrice >= _prevLowerBand;
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
 
-		// Entry logic - breakout reversal
-		if (isUpperBreakout && Position <= 0)
+		var close = candle.ClosePrice;
+
+		if (close > up && Position <= 0)
 		{
 			BuyMarket(Volume + Math.Abs(Position));
 		}
-		else if (isLowerBreakout && Position >= 0)
+		else if (close < down && Position >= 0)
 		{
 			SellMarket(Volume + Math.Abs(Position));
 		}
-
-		// Update previous values
-		_prevClosePrice = candle.ClosePrice;
-		_prevUpperBand = upperValue;
-		_prevLowerBand = lowerValue;
+		else if (Position > 0 && close <= mid)
+		{
+			SellMarket(Position);
+		}
+		else if (Position < 0 && close >= mid)
+		{
+			BuyMarket(-Position);
+		}
 	}
 }
