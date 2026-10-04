@@ -863,6 +863,99 @@ public abstract partial class StrategyTests
 	public Task S0006_PercentStopWorksBetweenFinishedBars()
 		=> CheckPercentStopBetweenBars(TripleMa, TimeSpan.FromDays(31));
 
+	private const string KeltnerBreakout = "0007_Keltner_Channel_Breakout";
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	[DataRow(20, 14, 2.0, false)]
+	[DataRow(10, 7, 1.0, true)]
+	public async Task S0007_FreshBandBreakoutsWithCenterAndFrozenAtrStopExits(int emaPeriod, int atrPeriod, double multiplier, bool secondary)
+	{
+		var ema = new ExponentialMovingAverage { Length = emaPeriod };
+		var atr = new AverageTrueRange { Length = atrPeriod };
+		var k = (decimal)multiplier;
+		decimal? prevClose = null;
+		var prevUpper = 0m;
+		var prevLower = 0m;
+		var stop = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var centerExits = 0;
+		var stopExits = 0;
+		var violations = new List<string>();
+		await Replay(KeltnerBreakout, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["EmaPeriod"].Value);
+			AreEqual(14, strategy.Parameters["AtrPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["AtrMultiplier"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "EmaPeriod", emaPeriod);
+			SetParam(strategy, "AtrPeriod", atrPeriod);
+			SetParam(strategy, "AtrMultiplier", multiplier);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var e = ema.Process(candle);
+				var a = atr.Process(candle);
+				if (!e.IsFormed || !a.IsFormed) return;
+				var center = e.GetValue<decimal>();
+				var offset = k * a.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var last = prevClose;
+				var upper = prevUpper;
+				var lower = prevLower;
+				prevClose = close;
+				prevUpper = center + offset;
+				prevLower = center - offset;
+				if (last is not decimal lastClose) return;
+				var position = strategy.Position;
+				if (close > upper && lastClose <= upper && position <= 0m)
+				{
+					expectedSide = Sides.Buy;
+					expectedVolume = strategy.Volume + Math.Abs(position);
+					stop = close - offset;
+					entries[Sides.Buy]++;
+				}
+				else if (close < lower && lastClose >= lower && position >= 0m)
+				{
+					expectedSide = Sides.Sell;
+					expectedVolume = strategy.Volume + Math.Abs(position);
+					stop = close + offset;
+					entries[Sides.Sell]++;
+				}
+				else if (position > 0m && (close < center || close <= stop))
+				{
+					expectedSide = Sides.Sell;
+					expectedVolume = position;
+					if (close <= stop) stopExits++; else centerExits++;
+				}
+				else if (position < 0m && (close > center || close >= stop))
+				{
+					expectedSide = Sides.Buy;
+					expectedVolume = -position;
+					if (close >= stop) stopExits++; else centerExits++;
+				}
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a fresh close beyond the previous EMA ± ATR band, or close the position back through the EMA or at the ATR stop fixed at entry.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "The fixture must break out on both sides.");
+		IsTrue(centerExits > 0 && stopExits > 0, "The fixture must exercise both the center exit and the stop.");
+	}
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

@@ -15,7 +15,9 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Strategy based on Keltner Channel breakout.
-/// It enters long position when price breaks through the upper band and short position when price breaks through the lower band.
+/// The channel is an EMA with bands AtrMultiplier ATRs away. A close that breaks above the upper band opens a long position,
+/// one that breaks below the lower band a short one. The position closes when the close crosses back through the EMA
+/// or reaches the stop set AtrMultiplier ATRs from the entry close.
 /// </summary>
 public class KeltnerChannelBreakoutStrategy : Strategy
 {
@@ -24,14 +26,14 @@ public class KeltnerChannelBreakoutStrategy : Strategy
 	private readonly StrategyParam<decimal> _atrMultiplier;
 	private readonly StrategyParam<DataType> _candleType;
 
-	// Current state
-	private decimal _prevClosePrice;
-	private decimal _prevUpperBand;
-	private decimal _prevLowerBand;
-	private decimal _prevEma;
+	// Close and bands of the previous candle.
+	private decimal? _prevClose;
+	private decimal _prevUpper;
+	private decimal _prevLower;
+	private decimal _stopPrice;
 
 	/// <summary>
-	/// Period for EMA calculation.
+	/// EMA period of the channel center.
 	/// </summary>
 	public int EmaPeriod
 	{
@@ -40,7 +42,7 @@ public class KeltnerChannelBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Period for ATR calculation.
+	/// ATR period of the channel width.
 	/// </summary>
 	public int AtrPeriod
 	{
@@ -49,7 +51,7 @@ public class KeltnerChannelBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Multiplier for ATR to determine channel width.
+	/// Band and stop distance in ATR multiples.
 	/// </summary>
 	public decimal AtrMultiplier
 	{
@@ -67,26 +69,26 @@ public class KeltnerChannelBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initialize the Keltner Channel Breakout strategy.
+	/// Initializes a new instance of the <see cref="KeltnerChannelBreakoutStrategy"/>.
 	/// </summary>
 	public KeltnerChannelBreakoutStrategy()
 	{
-		_emaPeriod = Param(nameof(EmaPeriod), 500)
+		_emaPeriod = Param(nameof(EmaPeriod), 20)
+			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "Period for Exponential Moving Average", "Indicators")
-
 			.SetOptimize(10, 50, 5);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
+			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "Period for Average True Range", "Indicators")
-
 			.SetOptimize(10, 30, 2);
 
-		_atrMultiplier = Param(nameof(AtrMultiplier), 10m)
-			.SetDisplay("ATR Multiplier", "Multiplier for ATR to determine channel width", "Indicators")
-
+		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
+			.SetGreaterThanZero()
+			.SetDisplay("ATR Multiplier", "Band and stop distance in ATR multiples", "Indicators")
 			.SetOptimize(1, 3, 0.5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -100,11 +102,10 @@ public class KeltnerChannelBreakoutStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevClosePrice = default;
-		_prevUpperBand = default;
-		_prevLowerBand = default;
-		_prevEma = default;
-
+		_prevClose = null;
+		_prevUpper = default;
+		_prevLower = default;
+		_stopPrice = default;
 	}
 
 	/// <inheritdoc />
@@ -112,78 +113,64 @@ public class KeltnerChannelBreakoutStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
-		var keltnerChannel = new KeltnerChannels
-		{
-			Length = EmaPeriod,
-			Multiplier = AtrMultiplier
-		};
+		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
+		var atr = new AverageTrueRange { Length = AtrPeriod };
 
-		// Create subscription and bind indicators
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(keltnerChannel, ProcessCandle)
+			.BindEx(ema, atr, ProcessCandle)
 			.Start();
 
-		// Setup chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, keltnerChannel);
+			DrawIndicator(area, ema);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue keltnerValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue emaValue, IIndicatorValue atrValue)
 	{
-		// Skip unfinished candles
-		if (candle.State != CandleStates.Finished)
+		if (candle.State != CandleStates.Finished || !emaValue.IsFormed || !atrValue.IsFormed)
 			return;
 
-		// Check if strategy is ready to trade
-		if (!IsFormedAndOnlineAndAllowTrading())
+		var center = emaValue.GetValue<decimal>();
+		var atr = atrValue.GetValue<decimal>();
+		var close = candle.ClosePrice;
+
+		var prevClose = _prevClose;
+		var prevUpper = _prevUpper;
+		var prevLower = _prevLower;
+
+		_prevClose = close;
+		_prevUpper = center + AtrMultiplier * atr;
+		_prevLower = center - AtrMultiplier * atr;
+
+		if (prevClose is not decimal lastClose || !IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var keltnerTyped = (KeltnerChannelsValue)keltnerValue;
+		// A breakout is the first close beyond the band of the previous candle.
+		var upperBreakout = close > prevUpper && lastClose <= prevUpper;
+		var lowerBreakout = close < prevLower && lastClose >= prevLower;
 
-		if (keltnerTyped.Upper is not decimal upperValue)
-			return;
-
-		if (keltnerTyped.Lower is not decimal lowerValue)
-			return;
-
-		if (keltnerTyped.Middle is not decimal middleValue)
-			return;
-
-		// Skip the first received value for proper comparison
-		if (_prevUpperBand == 0)
-		{
-			_prevClosePrice = candle.ClosePrice;
-			_prevUpperBand = upperValue;
-			_prevLowerBand = lowerValue;
-			_prevEma = middleValue;
-			return;
-		}
-
-		// Check for breakouts
-		var isUpperBreakout = candle.ClosePrice > _prevUpperBand && _prevClosePrice <= _prevUpperBand;
-		var isLowerBreakout = candle.ClosePrice < _prevLowerBand && _prevClosePrice >= _prevLowerBand;
-
-		// Entry logic - breakout reversal only
-		if (isUpperBreakout && Position <= 0)
+		if (upperBreakout && Position <= 0)
 		{
 			BuyMarket(Volume + Math.Abs(Position));
+			_stopPrice = close - AtrMultiplier * atr;
 		}
-		else if (isLowerBreakout && Position >= 0)
+		else if (lowerBreakout && Position >= 0)
 		{
 			SellMarket(Volume + Math.Abs(Position));
+			_stopPrice = close + AtrMultiplier * atr;
 		}
-
-		// Update previous values
-		_prevClosePrice = candle.ClosePrice;
-		_prevUpperBand = upperValue;
-		_prevLowerBand = lowerValue;
-		_prevEma = middleValue;
+		else if (Position > 0 && (close < center || close <= _stopPrice))
+		{
+			SellMarket(Position);
+		}
+		else if (Position < 0 && (close > center || close >= _stopPrice))
+		{
+			BuyMarket(-Position);
+		}
 	}
 }
