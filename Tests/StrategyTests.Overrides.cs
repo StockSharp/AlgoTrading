@@ -779,6 +779,90 @@ public abstract partial class StrategyTests
 		IsTrue(midpointExits > 0, "The fixture must exercise the midpoint exit.");
 	}
 
+	private const string TripleMa = "0006_Tripple_MA";
+
+	[TestMethod]
+	[TestCategory("Shard04")]
+	[DataRow(5, 20, 50, false)]
+	[DataRow(3, 10, 30, true)]
+	public async Task S0006_ShortAverageAboveOrBelowBothWithShortMiddleCrossExits(int shortPeriod, int middlePeriod, int longPeriod, bool secondary)
+	{
+		var fast = new ExponentialMovingAverage { Length = shortPeriod };
+		var middle = new ExponentialMovingAverage { Length = middlePeriod };
+		var slow = new ExponentialMovingAverage { Length = longPeriod };
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var crossExits = 0;
+		var reversals = 0;
+		var violations = new List<string>();
+		await Replay(TripleMa, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(5, strategy.Parameters["ShortMaPeriod"].Value);
+			AreEqual(20, strategy.Parameters["MiddleMaPeriod"].Value);
+			AreEqual(50, strategy.Parameters["LongMaPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "ShortMaPeriod", shortPeriod);
+			SetParam(strategy, "MiddleMaPeriod", middlePeriod);
+			SetParam(strategy, "LongMaPeriod", longPeriod);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var f = fast.Process(candle);
+				var m = middle.Process(candle);
+				var l = slow.Process(candle);
+				if (!f.IsFormed || !m.IsFormed || !l.IsFormed) return;
+				var s = f.GetValue<decimal>();
+				var mid = m.GetValue<decimal>();
+				var lng = l.GetValue<decimal>();
+				var longSetup = s > mid && s > lng;
+				var shortSetup = s < mid && s < lng;
+				var position = strategy.Position;
+				if (position > 0m && s < mid)
+				{
+					expectedSide = Sides.Sell;
+					expectedVolume = shortSetup ? strategy.Volume + position : position;
+					if (shortSetup) { reversals++; entries[Sides.Sell]++; } else crossExits++;
+				}
+				else if (position < 0m && s > mid)
+				{
+					expectedSide = Sides.Buy;
+					expectedVolume = longSetup ? strategy.Volume - position : -position;
+					if (longSetup) { reversals++; entries[Sides.Buy]++; } else crossExits++;
+				}
+				else if (position == 0m && (longSetup || shortSetup))
+				{
+					expectedSide = longSetup ? Sides.Buy : Sides.Sell;
+					expectedVolume = strategy.Volume;
+					entries[expectedSide.Value]++;
+				}
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must open on the short average being above or below both others, or close when it crosses the middle one.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "The fixture must enter on both sides.");
+		IsTrue(crossExits > 0, "The fixture must close a position on a short/middle cross alone.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard04")]
+	public Task S0006_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars(TripleMa, TimeSpan.FromDays(31));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

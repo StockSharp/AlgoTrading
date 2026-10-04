@@ -15,7 +15,8 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Strategy based on Triple Moving Average crossover.
-/// It enters long position when short MA > middle MA > long MA and short position when short MA < middle MA < long MA.
+/// It enters long when the short MA is above both the middle and the long MA, and short when it is below both.
+/// A cross of the short and the middle MA closes the position, and a percent stop protects it.
 /// </summary>
 public class TripleMAStrategy : Strategy
 {
@@ -26,9 +27,6 @@ public class TripleMAStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	// Current state
-	private bool _prevIsShortAboveMiddle;
-	private bool _prevIsBullish;
-	private bool _prevIsBearish;
 
 	/// <summary>
 	/// Period for short moving average.
@@ -80,27 +78,31 @@ public class TripleMAStrategy : Strategy
 	/// </summary>
 	public TripleMAStrategy()
 	{
-		_shortMaPeriod = Param(nameof(ShortMaPeriod), 100)
+		_shortMaPeriod = Param(nameof(ShortMaPeriod), 5)
+			.SetGreaterThanZero()
 			.SetDisplay("Short MA Period", "Period for short moving average", "Indicators")
 
 			.SetOptimize(3, 10, 1);
 
-		_middleMaPeriod = Param(nameof(MiddleMaPeriod), 250)
+		_middleMaPeriod = Param(nameof(MiddleMaPeriod), 20)
+			.SetGreaterThanZero()
 			.SetDisplay("Middle MA Period", "Period for middle moving average", "Indicators")
 
 			.SetOptimize(15, 30, 5);
 
-		_longMaPeriod = Param(nameof(LongMaPeriod), 500)
+		_longMaPeriod = Param(nameof(LongMaPeriod), 50)
+			.SetGreaterThanZero()
 			.SetDisplay("Long MA Period", "Period for long moving average", "Indicators")
 
 			.SetOptimize(40, 100, 10);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (%)", "Stop loss as a percentage of entry price", "Risk parameters")
 			
 			.SetOptimize(1, 3, 0.5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -114,9 +116,6 @@ public class TripleMAStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevIsShortAboveMiddle = default;
-		_prevIsBullish = default;
-		_prevIsBearish = default;
 
 	}
 
@@ -136,6 +135,16 @@ public class TripleMAStrategy : Strategy
 			.Bind(shortMa, middleMa, longMa, ProcessCandle)
 			.Start();
 
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
+
 		// Setup chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
@@ -149,40 +158,40 @@ public class TripleMAStrategy : Strategy
 
 	}
 
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// The high-level handler activates native protection before this callback, also between signal bars.
+	}
+
 	private void ProcessCandle(ICandleMessage candle, decimal shortMaValue, decimal middleMaValue, decimal longMaValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Check the MA alignments
-		var isShortAboveMiddle = shortMaValue > middleMaValue;
-		var isMiddleAboveLong = middleMaValue > longMaValue;
+		var longSetup = shortMaValue > middleMaValue && shortMaValue > longMaValue;
+		var shortSetup = shortMaValue < middleMaValue && shortMaValue < longMaValue;
 
-		// Check for MA crossover
-		var isShortCrossedMiddle = isShortAboveMiddle != _prevIsShortAboveMiddle;
-
-		// Check for alignment conditions
-		var isBullishAlignment = isShortAboveMiddle && isMiddleAboveLong;
-		var isBearishAlignment = !isShortAboveMiddle && !isMiddleAboveLong;
-
-		// Entry logic based on three MA alignment change
-		if (isBullishAlignment && !_prevIsBullish && Position <= 0)
+		if (Position > 0)
 		{
-			BuyMarket(Volume + Math.Abs(Position));
+			// The short MA has crossed below the middle one.
+			if (shortMaValue < middleMaValue)
+				SellMarket(shortSetup ? Volume + Position : Position);
 		}
-		else if (isBearishAlignment && !_prevIsBearish && Position >= 0)
+		else if (Position < 0)
 		{
-			SellMarket(Volume + Math.Abs(Position));
+			if (shortMaValue > middleMaValue)
+				BuyMarket(longSetup ? Volume - Position : -Position);
 		}
-
-		// Update previous state
-		_prevIsShortAboveMiddle = isShortAboveMiddle;
-		_prevIsBullish = isBullishAlignment;
-		_prevIsBearish = isBearishAlignment;
+		else if (longSetup)
+		{
+			BuyMarket(Volume);
+		}
+		else if (shortSetup)
+		{
+			SellMarket(Volume);
+		}
 	}
 }
