@@ -956,6 +956,92 @@ public abstract partial class StrategyTests
 		IsTrue(centerExits > 0 && stopExits > 0, "The fixture must exercise both the center exit and the stop.");
 	}
 
+	private const string HullTrend = "0008_Hull_MA_Trend";
+
+	[TestMethod]
+	[TestCategory("Shard06")]
+	[DataRow(9, 14, 2.0, false)]
+	[DataRow(16, 7, 1.0, true)]
+	public async Task S0008_SlopeTurnsWithAtrTrailingStop(int hmaPeriod, int atrPeriod, double multiplier, bool secondary)
+	{
+		var hma = new HullMovingAverage { Length = hmaPeriod };
+		var atr = new AverageTrueRange { Length = atrPeriod };
+		var k = (decimal)multiplier;
+		decimal? previousHma = null;
+		var lastSlope = 0;
+		var stop = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var turns = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var stopExits = 0;
+		var trailedStops = 0;
+		var violations = new List<string>();
+		await Replay(HullTrend, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(9, strategy.Parameters["HmaPeriod"].Value);
+			AreEqual(14, strategy.Parameters["AtrPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["AtrMultiplier"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "HmaPeriod", hmaPeriod);
+			SetParam(strategy, "AtrPeriod", atrPeriod);
+			SetParam(strategy, "AtrMultiplier", multiplier);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var h = hma.Process(candle);
+				var a = atr.Process(candle);
+				if (!h.IsFormed || !a.IsFormed) return;
+				var value = h.GetValue<decimal>();
+				var previous = previousHma;
+				previousHma = value;
+				if (previous is not decimal prior) return;
+				var close = candle.ClosePrice;
+				var distance = k * a.GetValue<decimal>();
+				var slope = value > prior ? 1 : value < prior ? -1 : 0;
+				var position = strategy.Position;
+				if (slope != 0 && slope != lastSlope)
+				{
+					lastSlope = slope;
+					if ((slope > 0 && position <= 0m) || (slope < 0 && position >= 0m))
+					{
+						expectedSide = slope > 0 ? Sides.Buy : Sides.Sell;
+						expectedVolume = strategy.Volume + Math.Abs(position);
+						stop = slope > 0 ? close - distance : close + distance;
+						turns[expectedSide.Value]++;
+						expectedOrders++;
+						return;
+					}
+				}
+				if (position > 0m)
+				{
+					if (close <= stop) { expectedSide = Sides.Sell; expectedVolume = position; stopExits++; }
+					else if (close - distance > stop) { stop = close - distance; trailedStops++; }
+				}
+				else if (position < 0m)
+				{
+					if (close >= stop) { expectedSide = Sides.Buy; expectedVolume = -position; stopExits++; }
+					else if (close + distance < stop) { stop = close + distance; trailedStops++; }
+				}
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a turn of the Hull MA slope, or close the position at the stop trailing the close by the ATR distance.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(turns[Sides.Buy] > 0 && turns[Sides.Sell] > 0, "The fixture must turn both ways.");
+		IsTrue(stopExits > 0 && trailedStops > 0, "The fixture must trail the stop and stop out.");
+	}
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";
