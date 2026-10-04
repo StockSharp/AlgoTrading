@@ -4,33 +4,32 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
+from System import TimeSpan, Decimal
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, Level1Fields
+from StockSharp.BusinessEntities import Subscription
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 
 class obv_divergence_strategy(Strategy):
     """
     OBV (On-Balance Volume) Divergence strategy.
-    Tracks OBV direction vs price direction over a lookback window.
-    Bullish divergence: price trending down but OBV trending up.
-    Bearish divergence: price trending up but OBV trending down.
-    Uses SMA for exit signals.
+    Bullish divergence: the low falls below the lows of the previous DivergencePeriod candles while OBV stays above its value
+    at the earlier low. Bearish divergence: the high rises above their highs while OBV stays below its value at the earlier high.
+    A divergence opens a position while flat; it closes when the close crosses back over the moving average or at the percent stop.
     """
 
     def __init__(self):
         super(obv_divergence_strategy, self).__init__()
-        self._ma_period = self.Param("MAPeriod", 20).SetDisplay("MA Period", "Period for SMA exit signal", "Indicators")
-        self._lookback = self.Param("Lookback", 10).SetDisplay("Lookback", "Lookback period for divergence detection", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Type of candles to use", "General")
-        self._cooldown_bars = self.Param("CooldownBars", 500).SetDisplay("Cooldown Bars", "Bars to wait between trades", "General")
+        self._divergence_period = self.Param("DivergencePeriod", 5).SetGreaterThanZero().SetDisplay("Divergence Period", "Previous candles the new extreme is compared with", "Indicators")
+        self._ma_period = self.Param("MAPeriod", 20).SetGreaterThanZero().SetDisplay("MA Period", "Period for SMA exit signal", "Indicators")
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0).SetNotNegative().SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles to use", "General")
 
-        self._cumulative_obv = 0.0
-        self._prev_close = 0.0
-        self._price_history = []
-        self._obv_history = []
-        self._cooldown = 0
+        self._history = []
+        self._obv = Decimal(0)
+        self._prev_close = None
 
     @property
     def candle_type(self):
@@ -38,26 +37,30 @@ class obv_divergence_strategy(Strategy):
 
     def OnReseted(self):
         super(obv_divergence_strategy, self).OnReseted()
-        self._cumulative_obv = 0.0
-        self._prev_close = 0.0
-        self._price_history = []
-        self._obv_history = []
-        self._cooldown = 0
+        self._history = []
+        self._obv = Decimal(0)
+        self._prev_close = None
 
     def OnStarted2(self, time):
         super(obv_divergence_strategy, self).OnStarted2(time)
 
-        self._cumulative_obv = 0.0
-        self._prev_close = 0.0
-        self._price_history = []
-        self._obv_history = []
-        self._cooldown = 0
+        self._history = []
+        self._obv = Decimal(0)
+        self._prev_close = None
 
         sma = SimpleMovingAverage()
         sma.Length = self._ma_period.Value
 
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(sma, self._process_candle).Start()
+        subscription.BindEx(sma, self._process_candle).Start()
+
+        self.StartProtection(Unit(), Unit(Decimal(self._stop_loss_percent.Value), UnitTypes.Percent), useMarketOrders=True, isLocalStop=True)
+
+        # The stop has to see prices between candles, not only at their close.
+        for field in (Level1Fields.BestBidPrice, Level1Fields.BestAskPrice):
+            quotes = Subscription(DataType.Level1, self.Security)
+            quotes.MarketData.BuildField = field
+            self.SubscribeLevel1(quotes).Bind(self._observe_protection_quote).Start()
 
         area = self.CreateChartArea()
         if area is not None:
@@ -65,63 +68,56 @@ class obv_divergence_strategy(Strategy):
             self.DrawIndicator(area, sma)
             self.DrawOwnTrades(area)
 
-    def _process_candle(self, candle, sma_val):
+    def _observe_protection_quote(self, quote):
+        # The high-level handler activates native protection before the callback, including between bars.
+        pass
+
+    def _process_candle(self, candle, sma_value):
         if candle.State != CandleStates.Finished:
             return
 
-        close = float(candle.ClosePrice)
-        vol = float(candle.TotalVolume)
-
-        # Calculate OBV manually
-        if self._prev_close > 0:
+        close = candle.ClosePrice
+        if self._prev_close is not None:
             if close > self._prev_close:
-                self._cumulative_obv += vol
+                self._obv += candle.TotalVolume
             elif close < self._prev_close:
-                self._cumulative_obv -= vol
+                self._obv -= candle.TotalVolume
         self._prev_close = close
 
-        # Store history
-        self._price_history.append(close)
-        self._obv_history.append(self._cumulative_obv)
+        # Compare this candle with the DivergencePeriod candles before it.
+        period = self._divergence_period.Value
+        previous = list(self._history)
+        self._history.append((candle.HighPrice, candle.LowPrice, self._obv))
+        if len(self._history) > period:
+            self._history.pop(0)
 
-        lb = self._lookback.Value
-
-        # Keep only what we need
-        if len(self._price_history) > lb + 1:
-            self._price_history.pop(0)
-            self._obv_history.pop(0)
-
-        if len(self._price_history) <= lb:
+        if len(previous) < period or not sma_value.IsFormed:
+            return
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        if self._cooldown > 0:
-            self._cooldown -= 1
+        ma = sma_value.GetValue[Decimal](None)
+
+        if self.Position > 0:
+            if close > ma:
+                self.SellMarket(self.Position)
             return
 
-        # Compare current values to lookback-period-ago values
-        price_change = self._price_history[-1] - self._price_history[0]
-        obv_change = self._obv_history[-1] - self._obv_history[0]
+        if self.Position < 0:
+            if close < ma:
+                self.BuyMarket(-self.Position)
+            return
 
-        # Bullish divergence: price down but OBV up
-        bullish_div = price_change < 0 and obv_change > 0
-        # Bearish divergence: price up but OBV down
-        bearish_div = price_change > 0 and obv_change < 0
+        lowest = min(previous, key=lambda c: c[1])
+        highest = max(previous, key=lambda c: c[0])
 
-        sv = float(sma_val)
-        cd = self._cooldown_bars.Value
+        bullish = candle.LowPrice < lowest[1] and self._obv > lowest[2]
+        bearish = candle.HighPrice > highest[0] and self._obv < highest[2]
 
-        if self.Position == 0 and bullish_div:
-            self.BuyMarket()
-            self._cooldown = cd
-        elif self.Position == 0 and bearish_div:
-            self.SellMarket()
-            self._cooldown = cd
-        elif self.Position > 0 and close < sv:
-            self.SellMarket()
-            self._cooldown = cd
-        elif self.Position < 0 and close > sv:
-            self.BuyMarket()
-            self._cooldown = cd
+        if bullish and not bearish:
+            self.BuyMarket(self.Volume)
+        elif bearish and not bullish:
+            self.SellMarket(self.Volume)
 
     def CreateClone(self):
         return obv_divergence_strategy()

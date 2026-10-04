@@ -1501,6 +1501,89 @@ public abstract partial class StrategyTests
 		IsTrue(stopExits > 0 && targetExits > 0, "The fixture must exercise both the stop and the target.");
 	}
 
+	private const string ObvDivergence = "0075_OBV_Divergence";
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	[DataRow(5, 20, false)]
+	[DataRow(3, 10, true)]
+	public async Task S0075_NewExtremesUnconfirmedByObvWithMeanReversionExits(int period, int maPeriod, bool secondary)
+	{
+		var sma = new SimpleMovingAverage { Length = maPeriod };
+		var history = new List<(decimal High, decimal Low, decimal Obv)>();
+		var obv = 0m;
+		decimal? previousClose = null;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var averageExits = 0;
+		var unconfirmedExtremes = 0;
+		var violations = new List<string>();
+		await Replay(ObvDivergence, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(5, strategy.Parameters["DivergencePeriod"].Value);
+			AreEqual(20, strategy.Parameters["MAPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "DivergencePeriod", period);
+			SetParam(strategy, "MAPeriod", maPeriod);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var close = candle.ClosePrice;
+				if (previousClose is decimal last)
+					obv += close > last ? candle.TotalVolume : close < last ? -candle.TotalVolume : 0m;
+				previousClose = close;
+				var previous = history.ToArray();
+				history.Add((candle.HighPrice, candle.LowPrice, obv));
+				if (history.Count > period) history.RemoveAt(0);
+				var m = sma.Process(candle);
+				if (previous.Length < period || !m.IsFormed) return;
+				var ma = m.GetValue<decimal>();
+				var position = strategy.Position;
+				if (position > 0m && close > ma) { expectedSide = Sides.Sell; expectedVolume = position; averageExits++; }
+				else if (position < 0m && close < ma) { expectedSide = Sides.Buy; expectedVolume = -position; averageExits++; }
+				else if (position == 0m)
+				{
+					var lowest = previous.MinBy(c => c.Low);
+					var highest = previous.MaxBy(c => c.High);
+					var bullish = candle.LowPrice < lowest.Low && obv > lowest.Obv;
+					var bearish = candle.HighPrice > highest.High && obv < highest.Obv;
+					if ((candle.LowPrice < lowest.Low && !bullish) || (candle.HighPrice > highest.High && !bearish)) unconfirmedExtremes++;
+					if (bullish != bearish)
+					{
+						expectedSide = bullish ? Sides.Buy : Sides.Sell;
+						expectedVolume = strategy.Volume;
+						entries[expectedSide.Value]++;
+					}
+				}
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must fade a new extreme OBV does not confirm while flat, or close the position when the close crosses back over the average.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "The fixture must find divergences on both sides.");
+		IsTrue(averageExits > 0, "The fixture must exit at the average.");
+		IsTrue(unconfirmedExtremes > 0, "The fixture must contain new extremes that OBV confirms and that are not traded.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public Task S0075_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars(ObvDivergence, TimeSpan.FromDays(31));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";
