@@ -160,7 +160,7 @@ public static class AsmInit
 		extra?.Invoke(strategy, security2);
 		var cancelOrdersWhenStopping = strategy.CancelOrdersWhenStopping;
 
-		var clone = strategy.TypedClone();
+		var clone = (T)await strategy.CloneAsync(cancellationToken);
 
 		var sync = new object();
 		Exception error = null;
@@ -875,13 +875,13 @@ public static class AsmInit
 			else if (fv is IIndicator i)
 			{
 				if (fv2 is not null)
-					validateSettingsStorage(i.Save(), ((IIndicator)fv2).Save(), field.Name);
+					validateSettingsStorage(await i.SaveAsync(cancellationToken), await ((IIndicator)fv2).SaveAsync(cancellationToken), field.Name);
 			}
 			// Anything else that persists itself -- a diagram composition, for one -- is an object graph
 			// the strategy worked through during the replay while the clone sat untouched, so the two
 			// legitimately differ by now. What has to match after the round-trip is the parameters, and
 			// those are compared above.
-			else if (fv is IPersistable && fv2 is IPersistable)
+			else if ((fv is IPersistable or IAsyncPersistable) && (fv2 is IPersistable or IAsyncPersistable))
 			{
 			}
 			else

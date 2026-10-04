@@ -160,7 +160,7 @@ public static class SchemaLoader
 		var value = await ReadValueAsync(fileName, cancellationToken);
 		var registry = await GetRegistryAsync(cancellationToken);
 		var composition = registry.CreateComposition();
-		registry.Deserialize(composition, value, ICompositionRegistryExtensions.NotSupported);
+		await registry.DeserializeAsync(composition, value, ICompositionRegistryExtensions.NotSupported, cancellationToken);
 
 		return composition;
 	}
