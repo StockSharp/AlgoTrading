@@ -1347,6 +1347,91 @@ public abstract partial class StrategyTests
 	public Task S0012_PercentStopWorksBetweenFinishedBars()
 		=> CheckPercentStopBetweenBars(HeikinRun, TimeSpan.FromDays(31));
 
+	private const string GannSwing = "0015_Gann_Swing_Breakout";
+
+	[TestMethod]
+	[TestCategory("Shard03")]
+	[DataRow(5, 20, false)]
+	[DataRow(3, 10, true)]
+	public async Task S0015_BreaksOfConfirmedSwingsFilteredByTheAverageAndHeldUntilTheOpposingSwing(int lookback, int maPeriod, bool secondary)
+	{
+		var sma = new SimpleMovingAverage { Length = maPeriod };
+		var window = new List<(decimal High, decimal Low)>();
+		decimal? swingHigh = null;
+		decimal? swingLow = null;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var swingExits = 0;
+		var violations = new List<string>();
+		await Replay(GannSwing, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(5, strategy.Parameters["SwingLookback"].Value);
+			AreEqual(20, strategy.Parameters["MaPeriod"].Value);
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "SwingLookback", lookback);
+			SetParam(strategy, "MaPeriod", maPeriod);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				window.Add((candle.HighPrice, candle.LowPrice));
+				if (window.Count > 2 * lookback + 1) window.RemoveAt(0);
+				if (window.Count == 2 * lookback + 1)
+				{
+					var pivot = window[lookback];
+					var others = window.Where((_, index) => index != lookback).ToArray();
+					if (others.All(c => pivot.High > c.High)) swingHigh = pivot.High;
+					if (others.All(c => pivot.Low < c.Low)) swingLow = pivot.Low;
+				}
+				var m = sma.Process(candle);
+				if (!m.IsFormed || swingHigh is not decimal high || swingLow is not decimal low) return;
+				var ma = m.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (close > high && close > ma && position <= 0m)
+				{
+					expectedSide = Sides.Buy;
+					expectedVolume = strategy.Volume + Math.Abs(position);
+					entries[Sides.Buy]++;
+				}
+				else if (close < low && close < ma && position >= 0m)
+				{
+					expectedSide = Sides.Sell;
+					expectedVolume = strategy.Volume + Math.Abs(position);
+					entries[Sides.Sell]++;
+				}
+				else if (position > 0m && close < low)
+				{
+					expectedSide = Sides.Sell;
+					expectedVolume = position;
+					swingExits++;
+				}
+				else if (position < 0m && close > high)
+				{
+					expectedSide = Sides.Buy;
+					expectedVolume = -position;
+					swingExits++;
+				}
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a close beyond the latest confirmed swing on the side of the average, or close the position when the opposing swing is breached.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "The fixture must break swings on both sides.");
+		IsTrue(swingExits + entries.Values.Sum() > 4, "The fixture must trade repeatedly.");
+	}
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";
