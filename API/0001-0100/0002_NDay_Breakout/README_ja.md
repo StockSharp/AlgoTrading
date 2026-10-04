@@ -18,7 +18,8 @@ NデイのN日高値/安値ブレイクアウト戦略。Nデイ・ブレイク�
   - `LookbackPeriod` = 20
   - `MaPeriod` = 20
   - `StopLossPercent` = 2.0m
-  - `CandleType` = TimeSpan.FromDays(1)
+  - `CandleType` = TimeSpan.FromHours(1)
+    付属の履歴データは1か月分のため、20本のウォームアップ後に残る日足は約10本で、日足では2024年3月のBTCで注文が1件も発生しません。そのため既定値は同じ期間の1時間足を使い、日足は設定で指定できます。
 - **フィルター**:
   - カテゴリ: ブレイクアウト
   - 方向: 両方

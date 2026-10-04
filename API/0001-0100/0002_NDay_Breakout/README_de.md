@@ -18,7 +18,8 @@ Indem auf den Bruch des vorherigen Extremwerts gewartet wird, versucht das Syste
   - `LookbackPeriod` = 20
   - `MaPeriod` = 20
   - `StopLossPercent` = 2.0m
-  - `CandleType` = TimeSpan.FromDays(1)
+  - `CandleType` = TimeSpan.FromHours(1)
+    Die mitgelieferte Historie umfasst einen Monat: Nach dem Vorlauf von 20 Kerzen bleiben etwa zehn Tageskerzen, und mit Tageskerzen platziert die Strategie im März 2024 auf BTC keine einzige Order. Deshalb nutzt die Voreinstellung Stundenkerzen mit denselben Perioden; Tageskerzen bleiben einstellbar.
 - **Filter**:
   - Kategorie: Ausbruch
   - Richtung: Beide

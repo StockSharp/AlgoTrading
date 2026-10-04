@@ -15,9 +15,9 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// N-day high/low breakout strategy.
-/// Enters long when price breaks above the N-day high.
-/// Enters short when price breaks below the N-day low.
-/// Exits when price crosses the moving average.
+/// Enters long when price pierces the high of the previous N candles while closing above the moving average,
+/// and short when it pierces their low while closing below it.
+/// Exits when the close crosses back through the moving average, on the opposite signal, or at the percent stop.
 /// </summary>
 public class NdayBreakoutStrategy : Strategy
 {
@@ -26,18 +26,16 @@ public class NdayBreakoutStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
 
-	// Indicators for entry conditions
 	private Highest _highest;
 	private Lowest _lowest;
 	private SMA _ma;
 
-	// Values for tracking breakouts
-	private decimal _nDayHigh;
-	private decimal _nDayLow;
-	private bool _isFormed;
+	// Channel of the candles before the current one; a candle never breaks out of a range it is part of.
+	private decimal? _channelHigh;
+	private decimal? _channelLow;
 
 	/// <summary>
-	/// Period for looking back to determine the highest/lowest value.
+	/// Number of candles that form the high/low range.
 	/// </summary>
 	public int LookbackPeriod
 	{
@@ -46,7 +44,7 @@ public class NdayBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Period for the moving average used for exit signals.
+	/// Period of the moving average that filters entries and triggers exits.
 	/// </summary>
 	public int MaPeriod
 	{
@@ -77,25 +75,22 @@ public class NdayBreakoutStrategy : Strategy
 	/// </summary>
 	public NdayBreakoutStrategy()
 	{
-		_lookbackPeriod = Param(nameof(LookbackPeriod), 1500)
+		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Lookback Period", "Number of bars to determine the high/low range", "Strategy Parameters")
-
+			.SetDisplay("Lookback Period", "Number of candles that form the high/low range", "Strategy Parameters")
 			.SetOptimize(10, 30, 5);
 
-		_maPeriod = Param(nameof(MaPeriod), 300)
+		_maPeriod = Param(nameof(MaPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("MA Period", "Period for the moving average used as exit signal", "Strategy Parameters")
-
+			.SetDisplay("MA Period", "Moving average that filters entries and triggers exits", "Strategy Parameters")
 			.SetOptimize(10, 30, 5);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
-			.SetGreaterThanZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
-			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "Strategy Parameters");
 	}
 
@@ -109,11 +104,12 @@ public class NdayBreakoutStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		// Initialize tracking variables
-		_nDayHigh = 0;
-		_nDayLow = decimal.MaxValue;
-		_isFormed = false;
 
+		_highest = null;
+		_lowest = null;
+		_ma = null;
+		_channelHigh = null;
+		_channelLow = null;
 	}
 
 	/// <inheritdoc />
@@ -121,20 +117,27 @@ public class NdayBreakoutStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
 		_highest = new Highest { Length = LookbackPeriod };
 		_lowest = new Lowest { Length = LookbackPeriod };
 		_ma = new SMA { Length = MaPeriod };
+		_channelHigh = null;
+		_channelLow = null;
 
-		// Create and setup subscription for candles
 		var subscription = SubscribeCandles(CandleType);
-		
-		// Bind indicators to candles
 		subscription
-			.Bind(_highest, _lowest, _ma, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
 
-		// Setup chart visualization if available
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles; an hourly candle alone would let it act once an hour.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -146,47 +149,55 @@ public class NdayBreakoutStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal highestValue, decimal lowestValue, decimal maValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
 	{
-		// Skip unfinished candles
+		// The high-level handler activates native protection before this callback, also between signal bars.
+	}
+
+	private void ProcessCandle(ICandleMessage candle)
+	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Wait until indicators are formed
-		if (!_isFormed)
+		var maValue = _ma.Process(candle.ClosePrice, candle.OpenTime, true);
+
+		// The breakout compares the candle with the range of the candles before it.
+		var channelHigh = _channelHigh;
+		var channelLow = _channelLow;
+
+		var highValue = _highest.Process(candle.HighPrice, candle.OpenTime, true);
+		var lowValue = _lowest.Process(candle.LowPrice, candle.OpenTime, true);
+
+		if (_highest.IsFormed && _lowest.IsFormed)
 		{
-			// Check if highest and lowest indicators are now formed
-			if (_highest.IsFormed && _lowest.IsFormed)
-			{
-				_nDayHigh = highestValue;
-				_nDayLow = lowestValue;
-				_isFormed = true;
-				LogInfo($"Indicators formed. Initial N-day high: {_nDayHigh}, N-day low: {_nDayLow}");
-			}
-			return;
+			_channelHigh = highValue.GetValue<decimal>();
+			_channelLow = lowValue.GetValue<decimal>();
 		}
 
-		// Check if strategy is ready to trade
+		if (channelHigh is not decimal high || channelLow is not decimal low || !_ma.IsFormed)
+			return;
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		LogInfo($"Processing candle: High={candle.HighPrice}, Low={candle.LowPrice}, Close={candle.ClosePrice}");
-		LogInfo($"Current N-day high: {_nDayHigh}, N-day low: {_nDayLow}, MA: {maValue}");
+		var ma = maValue.GetValue<decimal>();
+		var close = candle.ClosePrice;
 
-		// Entry logic - only trigger on breakouts (reversal style)
-		if (candle.HighPrice > _nDayHigh && Position <= 0)
+		if (candle.HighPrice > high && close > ma && Position <= 0)
 		{
-			// Long entry - price breaks above the N-day high
 			BuyMarket(Volume + Math.Abs(Position));
 		}
-		else if (candle.LowPrice < _nDayLow && Position >= 0)
+		else if (candle.LowPrice < low && close < ma && Position >= 0)
 		{
-			// Short entry - price breaks below the N-day low
 			SellMarket(Volume + Math.Abs(Position));
 		}
-
-		// Update N-day high and low values for next candle
-		_nDayHigh = highestValue;
-		_nDayLow = lowestValue;
+		else if (Position > 0 && close < ma)
+		{
+			SellMarket(Position);
+		}
+		else if (Position < 0 && close > ma)
+		{
+			BuyMarket(-Position);
+		}
 	}
 }

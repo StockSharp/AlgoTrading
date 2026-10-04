@@ -450,6 +450,104 @@ public abstract partial class StrategyTests
 		recorder.AssertFirstSide(Sides.Buy);
 	}
 
+	private const string NDayBreakout = "0002_NDay_Breakout";
+
+	[TestMethod]
+	[TestCategory("Shard00")]
+	[DataRow(20, 20, false)]
+	[DataRow(10, 30, false)]
+	[DataRow(5, 8, true)]
+	public async Task S0002_PriorRangeBreakoutsFilteredAndClosedByTheMovingAverage(int lookback, int maPeriod, bool secondary)
+	{
+		var highs = new Queue<decimal>();
+		var lows = new Queue<decimal>();
+		var closes = new Queue<decimal>();
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var longEntries = 0;
+		var shortEntries = 0;
+		var maExits = 0;
+		var filteredBreakouts = 0;
+		var violations = new List<string>();
+		await Replay(NDayBreakout, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["LookbackPeriod"].Value);
+			AreEqual(20, strategy.Parameters["MaPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromHours(1).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "LookbackPeriod", lookback);
+			SetParam(strategy, "MaPeriod", maPeriod);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var close = candle.ClosePrice;
+				closes.Enqueue(close);
+				if (closes.Count > maPeriod) closes.Dequeue();
+				// The range is that of the candles before this one.
+				var ready = highs.Count == lookback && closes.Count == maPeriod;
+				var rangeHigh = ready ? highs.Max() : 0m;
+				var rangeLow = ready ? lows.Min() : 0m;
+				highs.Enqueue(candle.HighPrice);
+				lows.Enqueue(candle.LowPrice);
+				if (highs.Count > lookback) { highs.Dequeue(); lows.Dequeue(); }
+				if (!ready) return;
+				var ma = closes.Average();
+				var position = strategy.Position;
+				var breaksUp = candle.HighPrice > rangeHigh;
+				var breaksDown = candle.LowPrice < rangeLow;
+				if (breaksUp && close > ma && position <= 0m)
+				{
+					expectedSide = Sides.Buy;
+					expectedVolume = strategy.Volume + Math.Abs(position);
+					longEntries++;
+				}
+				else if (breaksDown && close < ma && position >= 0m)
+				{
+					expectedSide = Sides.Sell;
+					expectedVolume = strategy.Volume + Math.Abs(position);
+					shortEntries++;
+				}
+				else if (position > 0m && close < ma)
+				{
+					expectedSide = Sides.Sell;
+					expectedVolume = position;
+					maExits++;
+				}
+				else if (position < 0m && close > ma)
+				{
+					expectedSide = Sides.Buy;
+					expectedVolume = -position;
+					maExits++;
+				}
+				else if ((breaksUp && close <= ma) || (breaksDown && close >= ma))
+					filteredBreakouts++;
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a break of the previous candles' range on the side of the moving average, or close the position when the close crosses back through it.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(longEntries > 0 && shortEntries > 0, "The fixture must break out on both sides.");
+		IsTrue(maExits > 0, "The fixture must exercise the moving-average exit.");
+		IsTrue(filteredBreakouts > 0, "The fixture must contain breakouts the moving average filters out.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard00")]
+	public Task S0002_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars(NDayBreakout, TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromHours(1));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

@@ -18,7 +18,8 @@ Ao aguardar que o extremo anterior seja rompido, o sistema tenta capturar o iní
   - `LookbackPeriod` = 20
   - `MaPeriod` = 20
   - `StopLossPercent` = 2.0m
-  - `CandleType` = TimeSpan.FromDays(1)
+  - `CandleType` = TimeSpan.FromHours(1)
+    O histórico de exemplo cobre um mês: após o aquecimento de 20 velas restam cerca de dez velas diárias, e com velas diárias a estratégia não envia nenhuma ordem em BTC em março de 2024. Por isso o padrão usa velas de uma hora com os mesmos períodos; velas diárias continuam configuráveis.
 - **Filtros**:
   - Categoria: Rompimento
   - Direção: Ambos
