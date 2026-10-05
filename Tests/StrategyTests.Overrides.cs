@@ -5170,6 +5170,75 @@ public abstract partial class StrategyTests
 	public Task S0150_PercentStopWorksBetweenFinishedBars()
 		=> CheckPercentStopBetweenBars("0150_VWAP_Stochastic", TimeSpan.FromDays(31));
 
+	[TestMethod]
+	[TestCategory("Shard04")]
+	[DataRow(9, 26, 52, 20, false)]
+	[DataRow(7, 22, 44, 10, true)]
+	public async Task S0151_CloudAndTenkanTrendsOnVolumeUntilAnOppositeCloudBreak(int tenkanPeriod, int kijunPeriod, int senkouPeriod, int volumePeriod, bool secondary)
+	{
+		var ichimoku = new Ichimoku { Tenkan = { Length = tenkanPeriod }, Kijun = { Length = kijunPeriod }, SenkouB = { Length = senkouPeriod } };
+		var volumes = new List<decimal>();
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var cloudExits = 0;
+		var violations = new List<string>();
+		await Replay("0151_Ichimoku_Volume", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(9, strategy.Parameters["TenkanPeriod"].Value);
+			AreEqual(26, strategy.Parameters["KijunPeriod"].Value);
+			AreEqual(52, strategy.Parameters["SenkouSpanPeriod"].Value);
+			AreEqual(20, strategy.Parameters["VolumeAvgPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "TenkanPeriod", tenkanPeriod);
+			SetParam(strategy, "KijunPeriod", kijunPeriod);
+			SetParam(strategy, "SenkouSpanPeriod", senkouPeriod);
+			SetParam(strategy, "VolumeAvgPeriod", volumePeriod);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var value = ichimoku.Process(candle);
+				// The strategy only sees candles once the bound indicator returns a value.
+				if (value.IsEmpty) return;
+				decimal? average = volumes.Count == volumePeriod ? volumes.Average() : null;
+				volumes.Add(candle.TotalVolume);
+				if (volumes.Count > volumePeriod) volumes.RemoveAt(0);
+				if (value is not IIchimokuValue { Tenkan: decimal tenkan, Kijun: decimal kijun, SenkouA: decimal a, SenkouB: decimal b } || average is not decimal avg) return;
+				var close = candle.ClosePrice;
+				var top = Math.Max(a, b);
+				var bottom = Math.Min(a, b);
+				var surge = candle.TotalVolume > avg;
+				var position = strategy.Position;
+				if (close > top && tenkan > kijun && surge && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (close < bottom && tenkan < kijun && surge && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && close < bottom) { expectedSide = Sides.Sell; expectedVolume = position; cloudExits++; }
+				else if (position < 0m && close > top) { expectedSide = Sides.Buy; expectedVolume = -position; cloudExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow price beyond the cloud with Tenkan/Kijun agreement on above-average volume, or close on an opposite cloud break.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && cloudExits > 0, "The fixture must trade both sides and exit on an opposite cloud break.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard04")]
+	public Task S0151_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0151_Ichimoku_Volume", TimeSpan.FromDays(31));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";
