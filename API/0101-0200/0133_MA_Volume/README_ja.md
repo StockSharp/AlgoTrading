@@ -18,7 +18,11 @@ MA Volume は、移動平均のトレンドフィルターと出来高の急増�
 - **ストップ**: はい、パーセントベース
 - **デフォルト値**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `MaPeriod` = 20
+  - `VolumePeriod` = 20
+  - `VolumeThreshold` = 1.2
+    足の出来高が直前VolumePeriod本の平均のVolumeThreshold倍を超えると出来高拡大とみなします。ノーポジション時、拡大した足が上昇中のSMAより上で引ければ買い、下降中のSMAより下で引ければ売ります。出来高が平均を下回るか、SMAが逆方向に転じたら決済します。
 - **フィルター**:
   - カテゴリ: トレンドフォロー
   - 方向: 両方

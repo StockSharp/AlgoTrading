@@ -18,7 +18,11 @@ Ein prozentualer Stop schützt vor plötzlichen Trendwenden.
 - **Stops**: Ja, prozentbasiert
 - **Standardwerte**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `MaPeriod` = 20
+  - `VolumePeriod` = 20
+  - `VolumeThreshold` = 1.2
+    Volumen dehnt sich aus, wenn das Volumen einer Kerze VolumeThreshold mal den Durchschnitt der vorherigen VolumePeriod Kerzen übersteigt. Ohne Position eröffnet eine solche Kerze mit Schluss über einem steigenden SMA einen Long, mit Schluss unter einem fallenden SMA einen Short. Die Position schließt, wenn das Volumen unter seinen Durchschnitt fällt oder der SMA gegen sie dreht.
 - **Filter**:
   - Kategorie: Trendfolge
   - Richtung: Beide

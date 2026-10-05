@@ -18,7 +18,11 @@ Un stop porcentual protege contra cambios repentinos en la tendencia.
 - **Stops**: Sí, basado en porcentaje
 - **Valores predeterminados**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `MaPeriod` = 20
+  - `VolumePeriod` = 20
+  - `VolumeThreshold` = 1.2
+    El volumen se expande cuando el volumen de una vela supera VolumeThreshold veces la media de las VolumePeriod velas anteriores. Sin posición, una vela con expansión que cierra por encima de una SMA ascendente abre un largo y una que cierra por debajo de una SMA descendente abre un corto. La posición se cierra cuando el volumen cae por debajo de su media o la SMA gira en su contra.
 - **Filtros**:
   - Categoría: Seguimiento de tendencia
   - Dirección: Ambos

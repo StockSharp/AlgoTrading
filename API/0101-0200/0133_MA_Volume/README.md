@@ -18,7 +18,11 @@ A percent stop protects against sudden shifts in trend.
 - **Stops**: Yes, percent based
 - **Default Values**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `MaPeriod` = 20
+  - `VolumePeriod` = 20
+  - `VolumeThreshold` = 1.2
+    Volume expands when a candle's volume exceeds VolumeThreshold times the average of the previous VolumePeriod candles. While flat, an expanding candle closing above a rising SMA goes long and one closing below a falling SMA goes short. The position closes when volume falls below its average or the SMA turns against it.
 - **Filters**:
   - Category: Trend following
   - Direction: Both

@@ -3901,6 +3901,89 @@ public abstract partial class StrategyTests
 	public Task S0132_PercentStopWorksBetweenFinishedBars()
 		=> CheckPercentStopBetweenBars("0132_Bollinger_Stochastic", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
 
+	[TestMethod]
+	[TestCategory("Shard02")]
+	[DataRow(20, 20, 1.2, false)]
+	[DataRow(30, 10, 1.5, true)]
+	public async Task S0133_ExpandingVolumeWithTheSmaUntilVolumeDriesUpOrTheSmaTurns(int maPeriod, int volumePeriod, double threshold, bool secondary)
+	{
+		var sma = new SimpleMovingAverage { Length = maPeriod };
+		var volumes = new List<decimal>();
+		decimal? previousMa = null;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var dryExits = 0;
+		var turnExits = 0;
+		var violations = new List<string>();
+		await Replay("0133_MA_Volume", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["MaPeriod"].Value);
+			AreEqual(20, strategy.Parameters["VolumePeriod"].Value);
+			AreEqual(1.2m, Convert.ToDecimal(strategy.Parameters["VolumeThreshold"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "MaPeriod", maPeriod);
+			SetParam(strategy, "VolumePeriod", volumePeriod);
+			SetParam(strategy, "VolumeThreshold", threshold);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				decimal? average = volumes.Count == volumePeriod ? volumes.Average() : null;
+				volumes.Add(candle.TotalVolume);
+				if (volumes.Count > volumePeriod) volumes.RemoveAt(0);
+				var m = sma.Process(candle);
+				if (!m.IsFormed) return;
+				var ma = m.GetValue<decimal>();
+				var last = previousMa;
+				previousMa = ma;
+				if (average is not decimal avg || last is not decimal lastMa) return;
+				var close = candle.ClosePrice;
+				var volume = candle.TotalVolume;
+				var position = strategy.Position;
+				if (position != 0m)
+				{
+					var dry = volume < avg;
+					var turned = position > 0m ? ma < lastMa : ma > lastMa;
+					if (!dry && !turned) return;
+					if (dry) dryExits++; else turnExits++;
+					expectedSide = position > 0m ? Sides.Sell : Sides.Buy;
+					expectedVolume = Math.Abs(position);
+				}
+				else if (volume > avg * (decimal)threshold)
+				{
+					if (close > ma && ma > lastMa) expectedSide = Sides.Buy;
+					else if (close < ma && ma < lastMa) expectedSide = Sides.Sell;
+					if (expectedSide is not Sides s) return;
+					expectedVolume = strategy.Volume;
+					entries[s]++;
+				}
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow expanding volume with the SMA while flat, or close the position when volume dries up or the SMA turns.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "The fixture must trade both sides.");
+		IsTrue(dryExits > 0 && turnExits > 0, "The fixture must exit both on drying volume and on a turning SMA.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard02")]
+	public Task S0133_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0133_MA_Volume", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";
