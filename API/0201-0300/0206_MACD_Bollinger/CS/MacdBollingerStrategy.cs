@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,7 +11,10 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on MACD and Bollinger Bands indicators
+/// MACD Bollinger strategy.
+/// MACD above its signal line with a close below the lower Bollinger band goes long and MACD below the signal line with a close above
+/// the upper band goes short, reversing an opposite position. A position closes once price returns to the middle band. The stop lies
+/// AtrMultiplier ATR from the entry close and is checked on candle closes.
 /// </summary>
 public class MacdBollingerStrategy : Strategy
 {
@@ -25,12 +25,12 @@ public class MacdBollingerStrategy : Strategy
 	private readonly StrategyParam<decimal> _bollingerDeviation;
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<decimal> _atrMultiplier;
-	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
-	private int _cooldown;
+
+	private decimal _stopPrice;
 
 	/// <summary>
-	/// MACD fast EMA period
+	/// Fast EMA period of MACD.
 	/// </summary>
 	public int MacdFast
 	{
@@ -39,7 +39,7 @@ public class MacdBollingerStrategy : Strategy
 	}
 
 	/// <summary>
-	/// MACD slow EMA period
+	/// Slow EMA period of MACD.
 	/// </summary>
 	public int MacdSlow
 	{
@@ -48,7 +48,7 @@ public class MacdBollingerStrategy : Strategy
 	}
 
 	/// <summary>
-	/// MACD signal line period
+	/// Signal line period of MACD.
 	/// </summary>
 	public int MacdSignal
 	{
@@ -57,7 +57,7 @@ public class MacdBollingerStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Bollinger Bands period
+	/// Period of the Bollinger Bands.
 	/// </summary>
 	public int BollingerPeriod
 	{
@@ -66,7 +66,7 @@ public class MacdBollingerStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Bollinger Bands standard deviation multiplier
+	/// Standard deviation multiplier of the bands.
 	/// </summary>
 	public decimal BollingerDeviation
 	{
@@ -75,7 +75,7 @@ public class MacdBollingerStrategy : Strategy
 	}
 
 	/// <summary>
-	/// ATR period for stop-loss
+	/// Period of the stop ATR.
 	/// </summary>
 	public int AtrPeriod
 	{
@@ -84,7 +84,7 @@ public class MacdBollingerStrategy : Strategy
 	}
 
 	/// <summary>
-	/// ATR multiplier for stop-loss
+	/// Stop distance from the entry in ATRs.
 	/// </summary>
 	public decimal AtrMultiplier
 	{
@@ -93,16 +93,7 @@ public class MacdBollingerStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Bars to wait between trades.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for strategy
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -111,152 +102,134 @@ public class MacdBollingerStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Constructor
+	/// Constructor.
 	/// </summary>
 	public MacdBollingerStrategy()
 	{
 		_macdFast = Param(nameof(MacdFast), 12)
-			.SetRange(5, 20)
-			.SetDisplay("MACD Fast", "MACD fast EMA period", "MACD")
-			;
+			.SetGreaterThanZero()
+			.SetDisplay("MACD Fast", "Fast EMA period of MACD", "MACD");
 
 		_macdSlow = Param(nameof(MacdSlow), 26)
-			.SetRange(15, 40)
-			.SetDisplay("MACD Slow", "MACD slow EMA period", "MACD")
-			;
+			.SetGreaterThanZero()
+			.SetDisplay("MACD Slow", "Slow EMA period of MACD", "MACD");
 
 		_macdSignal = Param(nameof(MacdSignal), 9)
-			.SetRange(5, 15)
-			.SetDisplay("MACD Signal", "MACD signal line period", "MACD")
-			;
+			.SetGreaterThanZero()
+			.SetDisplay("MACD Signal", "Signal line period of MACD", "MACD");
 
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
-			.SetRange(10, 50)
-			.SetDisplay("Bollinger Period", "Bollinger Bands period", "Bollinger")
-			;
+			.SetGreaterThanZero()
+			.SetDisplay("BB Period", "Period of the Bollinger Bands", "Bollinger");
 
-		_bollingerDeviation = Param(nameof(BollingerDeviation), 2.0m)
-			.SetRange(1.0m, 3.0m)
-			.SetDisplay("Bollinger Deviation", "Bollinger Bands standard deviation multiplier", "Bollinger")
-			;
+		_bollingerDeviation = Param(nameof(BollingerDeviation), 2m)
+			.SetGreaterThanZero()
+			.SetDisplay("BB Deviation", "Standard deviation multiplier of the bands", "Bollinger");
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
-			.SetRange(7, 28)
-			.SetDisplay("ATR Period", "ATR period for stop-loss calculation", "Risk Management")
-			;
+			.SetGreaterThanZero()
+			.SetDisplay("ATR Period", "Period of the stop ATR", "Risk");
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
-			.SetRange(1m, 4m)
-			.SetDisplay("ATR Multiplier", "Multiplier for ATR-based stop-loss", "Risk Management")
-			;
-
-		_cooldownBars = Param(nameof(CooldownBars), 100)
-			.SetRange(1, 200)
-			.SetDisplay("Cooldown Bars", "Bars between entries", "General");
+			.SetNotNegative()
+			.SetDisplay("ATR Multiplier", "Stop distance from the entry in ATRs", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
-		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		{
-				return [(Security, CandleType)];
-		}
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_cooldown = 0;
+		_stopPrice = default;
 	}
 
 	/// <inheritdoc />
-		protected override void OnStarted2(DateTime time)
-		{
-				base.OnStarted2(time);
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
-		// Initialize indicators
+		_stopPrice = default;
+
 		var macd = new MovingAverageConvergenceDivergenceSignal
 		{
 			Macd =
 			{
-				LongMa = { Length = MacdSlow },
 				ShortMa = { Length = MacdFast },
+				LongMa = { Length = MacdSlow },
 			},
 			SignalMa = { Length = MacdSignal }
 		};
-
-		var bollinger = new BollingerBands
-		{
-			Length = BollingerPeriod,
-			Width = BollingerDeviation
-		};
-
+		var bollinger = new BollingerBands { Length = BollingerPeriod, Width = BollingerDeviation };
 		var atr = new AverageTrueRange { Length = AtrPeriod };
 
-		// Create subscription and bind indicators
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(bollinger, macd, atr, ProcessIndicators)
+			.BindEx(macd, bollinger, atr, ProcessCandle)
 			.Start();
-		
-		// Setup chart visualization if available
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, bollinger);
-			DrawIndicator(area, macd);
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, macd);
+			}
 		}
 	}
 
-	private void ProcessIndicators(ICandleMessage candle, IIndicatorValue bollingerValue, IIndicatorValue macdValue, IIndicatorValue atrValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue, IIndicatorValue bollingerValue, IIndicatorValue atrValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var bollingerTyped = (BollingerBandsValue)bollingerValue;
-		var upperBand = bollingerTyped.UpBand;
-		var lowerBand = bollingerTyped.LowBand;
-		var middleBand = bollingerTyped.MovingAverage;
+		if (!macdValue.IsFormed || !bollingerValue.IsFormed || !atrValue.IsFormed)
+			return;
 
 		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
-		var macd = macdTyped.Macd ?? 0m;
-		var signal = macdTyped.Signal ?? 0m;
+		var bands = (BollingerBandsValue)bollingerValue;
 
-		var price = candle.ClosePrice;
+		if (macdTyped.Macd is not decimal macd || macdTyped.Signal is not decimal signal)
+			return;
 
-		// Trading logic:
-		// Long: MACD > Signal && Price < BB_lower (trend up with oversold conditions)
-		// Short: MACD < Signal && Price > BB_upper (trend down with overbought conditions)
-		
-		var macdCrossOver = macd > signal;
-		if (_cooldown > 0)
-			_cooldown--;
+		if (bands.UpBand is not decimal upper || bands.LowBand is not decimal lower || bands.MovingAverage is not decimal middle)
+			return;
 
-		if (_cooldown == 0 && macdCrossOver && price < middleBand * 0.999m && Position <= 0)
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		var atr = atrValue.GetValue<decimal>();
+		var close = candle.ClosePrice;
+
+		if (macd > signal && close < lower && Position <= 0)
 		{
-			BuyMarket();
-			_cooldown = CooldownBars;
+			BuyMarket(Volume + Math.Abs(Position));
+			_stopPrice = close - AtrMultiplier * atr;
 		}
-		else if (_cooldown == 0 && !macdCrossOver && price > middleBand * 1.001m && Position >= 0)
+		else if (macd < signal && close > upper && Position >= 0)
 		{
-			SellMarket();
-			_cooldown = CooldownBars;
+			SellMarket(Volume + Math.Abs(Position));
+			_stopPrice = close + AtrMultiplier * atr;
 		}
-		// Exit conditions
-		else if (Position > 0 && !macdCrossOver)
+		else if (Position > 0 && (close >= middle || (AtrMultiplier > 0 && close <= _stopPrice)))
 		{
-			SellMarket();
-			_cooldown = CooldownBars;
+			SellMarket(Position);
 		}
-		else if (Position < 0 && macdCrossOver)
+		else if (Position < 0 && (close <= middle || (AtrMultiplier > 0 && close >= _stopPrice)))
 		{
-			BuyMarket();
-			_cooldown = CooldownBars;
+			BuyMarket(-Position);
 		}
 	}
 }

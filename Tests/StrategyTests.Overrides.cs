@@ -7726,6 +7726,74 @@ public abstract partial class StrategyTests
 		if (stopAtr < 1) IsTrue(stopExits > 0, "A tight ATR stop must be hit.");
 	}
 
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(12, 26, 9, 20, 2.0, 14, 2.0, false)]
+	[DataRow(8, 21, 5, 14, 1.5, 10, 0.3, true)]
+	public async Task S0206_BandExtremesAgainstMacdUntilTheMiddleBandOrAnAtrStop(int fast, int slow, int signalPeriod, int period, double width, int atrPeriod, double stopAtr, bool secondary)
+	{
+		var macd = new MovingAverageConvergenceDivergenceSignal { Macd = { ShortMa = { Length = fast }, LongMa = { Length = slow } }, SignalMa = { Length = signalPeriod } };
+		var bollinger = new BollingerBands { Length = period, Width = (decimal)width };
+		var atr = new AverageTrueRange { Length = atrPeriod };
+		var stopPrice = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var middleExits = 0;
+		var stopExits = 0;
+		var violations = new List<string>();
+		await Replay("0206_MACD_Bollinger", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(12, strategy.Parameters["MacdFast"].Value);
+			AreEqual(26, strategy.Parameters["MacdSlow"].Value);
+			AreEqual(9, strategy.Parameters["MacdSignal"].Value);
+			AreEqual(20, strategy.Parameters["BollingerPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["BollingerDeviation"].Value));
+			AreEqual(14, strategy.Parameters["AtrPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["AtrMultiplier"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "MacdFast", fast);
+			SetParam(strategy, "MacdSlow", slow);
+			SetParam(strategy, "MacdSignal", signalPeriod);
+			SetParam(strategy, "BollingerPeriod", period);
+			SetParam(strategy, "BollingerDeviation", width);
+			SetParam(strategy, "AtrPeriod", atrPeriod);
+			SetParam(strategy, "AtrMultiplier", stopAtr);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var m = (MovingAverageConvergenceDivergenceSignalValue)macd.Process(candle);
+				var b = (BollingerBandsValue)bollinger.Process(candle);
+				var a = atr.Process(candle);
+				if (!m.IsFormed || !b.IsFormed || !a.IsFormed || m.Macd is not decimal line || m.Signal is not decimal sig) return;
+				if (b.UpBand is not decimal upper || b.LowBand is not decimal lower || b.MovingAverage is not decimal middle) return;
+				var range = a.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (line > sig && close < lower && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; stopPrice = close - (decimal)stopAtr * range; }
+				else if (line < sig && close > upper && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; stopPrice = close + (decimal)stopAtr * range; }
+				else if (position > 0m && (close >= middle || close <= stopPrice)) { expectedSide = Sides.Sell; expectedVolume = position; if (close >= middle) middleExits++; else stopExits++; }
+				else if (position < 0m && (close <= middle || close >= stopPrice)) { expectedSide = Sides.Buy; expectedVolume = -position; if (close <= middle) middleExits++; else stopExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a close beyond a Bollinger band against MACD, or close at the middle band or the ATR stop.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && middleExits > 0, "The fixture must trade both sides and exit at the middle band.");
+		if (stopAtr < 1) IsTrue(stopExits > 0, "A tight ATR stop must be hit.");
+	}
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

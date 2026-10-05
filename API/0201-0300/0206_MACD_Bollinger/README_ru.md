@@ -21,9 +21,10 @@
   - `MacdSlow` = 26
   - `MacdSignal` = 9
   - `BollingerPeriod` = 20
-  - `BollingerDeviation` = 2.0m
+  - `BollingerDeviation` = 2
   - `AtrPeriod` = 14
-  - `AtrMultiplier` = 2m
+  - `AtrMultiplier` = 2
+    Позиция закрывается, как только свеча закрывается на средней полосе или за ней. Стоп ставится на расстоянии AtrMultiplier ATR за AtrPeriod от цены закрытия входа и проверяется по закрытию свечей; 0 отключает его. Сигнал на вход против открытой позиции разворачивает её.
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **Фильтры**:
   - Категория: Смешанная

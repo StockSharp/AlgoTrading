@@ -21,9 +21,10 @@ Las pruebas indican un rendimiento anual promedio de aproximadamente 55%. Funcio
   - `MacdSlow` = 26
   - `MacdSignal` = 9
   - `BollingerPeriod` = 20
-  - `BollingerDeviation` = 2.0m
+  - `BollingerDeviation` = 2
   - `AtrPeriod` = 14
-  - `AtrMultiplier` = 2m
+  - `AtrMultiplier` = 2
+    Una posición se cierra en cuanto la vela cierra de vuelta en la banda media. El stop se sitúa a AtrMultiplier veces el ATR de AtrPeriod del cierre de entrada y se comprueba al cierre de las velas; 0 lo desactiva. Una señal de entrada contra una posición abierta la invierte.
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **Filtros**:
   - Categoría: Mixto
