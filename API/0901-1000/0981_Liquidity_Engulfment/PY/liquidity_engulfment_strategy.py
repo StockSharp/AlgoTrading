@@ -14,10 +14,10 @@ from StockSharp.Algo.Strategies import Strategy
 class liquidity_engulfment_strategy(Strategy):
     def __init__(self):
         super(liquidity_engulfment_strategy, self).__init__()
-        self._upper_lookback = self.Param("UpperLookback", 14) \
+        self._upper_lookback = self.Param("UpperLookback", 10) \
             .SetGreaterThanZero() \
             .SetDisplay("Upper Lookback", "Upper liquidity", "Indicators")
-        self._lower_lookback = self.Param("LowerLookback", 14) \
+        self._lower_lookback = self.Param("LowerLookback", 10) \
             .SetGreaterThanZero() \
             .SetDisplay("Lower Lookback", "Lower liquidity", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \

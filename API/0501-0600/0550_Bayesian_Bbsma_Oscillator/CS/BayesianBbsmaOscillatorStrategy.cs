@@ -140,11 +140,11 @@ _smaPeriod = Param(nameof(SmaPeriod), 20)
 .SetGreaterThanZero()
 .SetDisplay("SMA Period", "Simple moving average period", "General");
 
-_bayesPeriod = Param(nameof(BayesPeriod), 10)
+_bayesPeriod = Param(nameof(BayesPeriod), 20)
 .SetGreaterThanZero()
 .SetDisplay("Bayes Period", "Lookback period for probability calculation", "Bayesian");
 
-_lowerThreshold = Param(nameof(LowerThreshold), 30m)
+_lowerThreshold = Param(nameof(LowerThreshold), 15m)
 .SetDisplay("Lower Threshold", "Probability threshold (%)", "Bayesian");
 
 _useBwConfirmation = Param(nameof(UseBwConfirmation), false)

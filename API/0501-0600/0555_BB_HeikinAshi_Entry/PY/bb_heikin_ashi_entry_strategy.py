@@ -14,7 +14,7 @@ from StockSharp.Algo.Strategies import Strategy
 class bb_heikin_ashi_entry_strategy(Strategy):
     def __init__(self):
         super(bb_heikin_ashi_entry_strategy, self).__init__()
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
         self._bb_length = self.Param("BollingerLength", 20) \
             .SetDisplay("Bollinger Length", "Period of Bollinger Bands", "Bollinger")

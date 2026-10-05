@@ -23,7 +23,7 @@ class aggressive_high_iv_strategy(Strategy):
         self._atr_length = self.Param("AtrLength", 14) \
             .SetGreaterThanZero() \
             .SetDisplay("ATR Length", "ATR calculation period", "Parameters")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
         self._cooldown_bars = self.Param("CooldownBars", 10) \
             .SetDisplay("Cooldown Bars", "Bars between trades", "Risk")

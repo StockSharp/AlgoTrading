@@ -121,7 +121,7 @@ public class AlmaUtBotConfluenceStrategy : Strategy
 	/// </summary>
 	public AlmaUtBotConfluenceStrategy()
 	{
-		_emaLength = Param(nameof(EmaLength), 50)
+		_emaLength = Param(nameof(EmaLength), 72)
 			.SetDisplay("EMA Length", "Length for long-term EMA", "Main");
 
 		_atrLength = Param(nameof(AtrLength), 14)
@@ -139,7 +139,7 @@ public class AlmaUtBotConfluenceStrategy : Strategy
 		_utAtrPeriod = Param(nameof(UtAtrPeriod), 10)
 			.SetDisplay("UT ATR Period", "ATR period for UT Bot", "UT Bot");
 
-		_baseCooldownBars = Param(nameof(BaseCooldownBars), 30)
+		_baseCooldownBars = Param(nameof(BaseCooldownBars), 7)
 			.SetDisplay("Base Cooldown", "Cooldown in bars between trades", "Filters");
 
 		_useUtExit = Param(nameof(UseUtExit), true)

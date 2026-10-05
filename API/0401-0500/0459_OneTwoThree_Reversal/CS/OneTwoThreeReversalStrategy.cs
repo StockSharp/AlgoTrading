@@ -63,7 +63,7 @@ public class OneTwoThreeReversalStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Hold Bars", "Bars to hold position", "Trading");
 
-		_maLength = Param(nameof(MaLength), 50)
+		_maLength = Param(nameof(MaLength), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Length", "Moving average period", "Indicators");
 

@@ -70,7 +70,7 @@ public class AveragingDown2Strategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_rsiLength = Param(nameof(RsiLength), 14)
+		_rsiLength = Param(nameof(RsiLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "RSI calculation length", "Indicators");
 

@@ -49,7 +49,7 @@ public class GoldRsiDivergenceStrategy : Strategy
 
 	public GoldRsiDivergenceStrategy()
 	{
-		_rsiLength = Param(nameof(RsiLength), 14)
+		_rsiLength = Param(nameof(RsiLength), 60)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "RSI calculation length", "RSI");
 

@@ -41,7 +41,7 @@ public class AdvancedSupertrendStrategy : Strategy
 
 	public AdvancedSupertrendStrategy()
 	{
-		_atrLength = Param(nameof(AtrLength), 10)
+		_atrLength = Param(nameof(AtrLength), 6)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Length", "ATR period for SuperTrend", "SuperTrend");
 
@@ -56,10 +56,10 @@ public class AdvancedSupertrendStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Stop Length", "ATR period for stops", "Risk");
 
-		_slMultiplier = Param(nameof(SlMultiplier), 2m)
+		_slMultiplier = Param(nameof(SlMultiplier), 3m)
 			.SetDisplay("SL Multiplier", "Stop loss ATR multiplier", "Risk");
 
-		_tpMultiplier = Param(nameof(TpMultiplier), 4m)
+		_tpMultiplier = Param(nameof(TpMultiplier), 9m)
 			.SetDisplay("TP Multiplier", "Take profit ATR multiplier", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())

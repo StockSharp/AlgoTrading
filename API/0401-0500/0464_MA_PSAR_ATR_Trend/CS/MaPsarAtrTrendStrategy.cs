@@ -71,14 +71,14 @@ public class MaPsarAtrTrendStrategy : Strategy
 
 	public MaPsarAtrTrendStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_fastMaPeriod = Param(nameof(FastMaPeriod), 20)
+		_fastMaPeriod = Param(nameof(FastMaPeriod), 40)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MA Period", "Fast EMA period", "MA");
 
-		_slowMaPeriod = Param(nameof(SlowMaPeriod), 50)
+		_slowMaPeriod = Param(nameof(SlowMaPeriod), 160)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA Period", "Slow EMA period", "MA");
 

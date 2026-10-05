@@ -22,7 +22,7 @@ class grover_llorens_activator_strategy(Strategy):
             .SetDisplay("Fast Period", "Fast EMA period", "General")
         self._slow_period = self.Param("SlowPeriod", 450) \
             .SetDisplay("Slow Period", "Slow EMA period", "General")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Candle timeframe", "General")
 
         self._prev_fast = 0.0

@@ -67,7 +67,7 @@ public class BabySharkVwapStrategy : Strategy
 	/// </summary>
 	public BabySharkVwapStrategy()
 	{
-		_rsiLength = Param(nameof(RsiLength), 14)
+		_rsiLength = Param(nameof(RsiLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "RSI period", "Indicators");
 

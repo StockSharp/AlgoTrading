@@ -25,8 +25,8 @@ public class LiquidityEngulfmentStrategy : Strategy
 
 	public LiquidityEngulfmentStrategy()
 	{
-		_upperLookback = Param(nameof(UpperLookback), 14).SetGreaterThanZero().SetDisplay("Upper Lookback", "Upper liquidity", "Indicators");
-		_lowerLookback = Param(nameof(LowerLookback), 14).SetGreaterThanZero().SetDisplay("Lower Lookback", "Lower liquidity", "Indicators");
+		_upperLookback = Param(nameof(UpperLookback), 10).SetGreaterThanZero().SetDisplay("Upper Lookback", "Upper liquidity", "Indicators");
+		_lowerLookback = Param(nameof(LowerLookback), 10).SetGreaterThanZero().SetDisplay("Lower Lookback", "Lower liquidity", "Indicators");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Type of candles", "General");
 	}
 

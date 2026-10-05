@@ -20,13 +20,13 @@ from indicator_extensions import *
 class linear_on_macd_strategy(Strategy):
     def __init__(self):
         super(linear_on_macd_strategy, self).__init__()
-        self._fast_length = self.Param("FastLength", 70) \
+        self._fast_length = self.Param("FastLength", 12) \
             .SetDisplay("Fast Length", "MACD fast period", "General")
-        self._slow_length = self.Param("SlowLength", 200) \
+        self._slow_length = self.Param("SlowLength", 26) \
             .SetDisplay("Slow Length", "MACD slow period", "General")
-        self._signal_length = self.Param("SignalLength", 50) \
+        self._signal_length = self.Param("SignalLength", 9) \
             .SetDisplay("Signal Length", "MACD signal period", "General")
-        self._lookback = self.Param("Lookback", 140) \
+        self._lookback = self.Param("Lookback", 21) \
             .SetDisplay("Lookback", "Linear regression lookback", "General")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles", "General")

@@ -67,11 +67,11 @@ public class BacktestingModuleStrategy : Strategy
 	/// </summary>
 	public BacktestingModuleStrategy()
 	{
-		_fastLength = Param(nameof(FastLength), 20)
+		_fastLength = Param(nameof(FastLength), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast SMA", "Period for fast SMA", "Indicators");
 
-		_slowLength = Param(nameof(SlowLength), 50)
+		_slowLength = Param(nameof(SlowLength), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow SMA", "Period for slow SMA", "Indicators");
 

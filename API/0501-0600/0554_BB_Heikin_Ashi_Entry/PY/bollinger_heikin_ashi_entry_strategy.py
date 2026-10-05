@@ -16,7 +16,7 @@ class bollinger_heikin_ashi_entry_strategy(Strategy):
         super(bollinger_heikin_ashi_entry_strategy, self).__init__()
         self._bollinger_period = self.Param("BollingerPeriod", 20) \
             .SetDisplay("Bollinger Period", "Bollinger Bands length", "Indicators")
-        self._bollinger_deviation = self.Param("BollingerDeviation", 1.5) \
+        self._bollinger_deviation = self.Param("BollingerDeviation", 2.0) \
             .SetDisplay("Bollinger Deviation", "Bollinger Bands standard deviation", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")

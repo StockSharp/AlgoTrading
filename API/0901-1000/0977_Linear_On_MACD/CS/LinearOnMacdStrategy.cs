@@ -34,10 +34,10 @@ public class LinearOnMacdStrategy : Strategy
 
 	public LinearOnMacdStrategy()
 	{
-		_fastLength = Param(nameof(FastLength), 70);
-		_slowLength = Param(nameof(SlowLength), 200);
-		_signalLength = Param(nameof(SignalLength), 50);
-		_lookback = Param(nameof(Lookback), 140);
+		_fastLength = Param(nameof(FastLength), 12);
+		_slowLength = Param(nameof(SlowLength), 26);
+		_signalLength = Param(nameof(SignalLength), 9);
+		_lookback = Param(nameof(Lookback), 21);
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
 	}
 

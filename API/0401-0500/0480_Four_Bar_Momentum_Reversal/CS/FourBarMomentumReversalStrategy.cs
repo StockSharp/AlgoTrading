@@ -41,7 +41,7 @@ public class FourBarMomentumReversalStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_buyThreshold = Param(nameof(BuyThreshold), 3)
+		_buyThreshold = Param(nameof(BuyThreshold), 4)
 			.SetGreaterThanZero()
 			.SetDisplay("Buy Threshold", "Consecutive closes below reference to trigger buy", "Strategy");
 

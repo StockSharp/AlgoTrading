@@ -40,11 +40,11 @@ public class ThreeCommasBotStrategy : Strategy
 
 	public ThreeCommasBotStrategy()
 	{
-		_maLength1 = Param(nameof(MaLength1), 50)
+		_maLength1 = Param(nameof(MaLength1), 21)
 			.SetDisplay("MA Length #1", "Fast moving average length", "MA Settings")
 			.SetGreaterThanZero();
 
-		_maLength2 = Param(nameof(MaLength2), 100)
+		_maLength2 = Param(nameof(MaLength2), 50)
 			.SetDisplay("MA Length #2", "Slow moving average length", "MA Settings")
 			.SetGreaterThanZero();
 
@@ -52,7 +52,7 @@ public class ThreeCommasBotStrategy : Strategy
 			.SetDisplay("ATR length", "ATR calculation period", "Risk Management")
 			.SetGreaterThanZero();
 
-		_riskM = Param(nameof(RiskM), 3m)
+		_riskM = Param(nameof(RiskM), 1m)
 			.SetDisplay("Risk Adjustment", "ATR multiplier for stop", "Risk Management")
 			.SetGreaterThanZero();
 

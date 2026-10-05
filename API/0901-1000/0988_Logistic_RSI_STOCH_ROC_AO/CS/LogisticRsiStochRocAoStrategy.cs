@@ -35,7 +35,7 @@ public class LogisticRsiStochRocAoStrategy : Strategy
 			.SetDisplay("RSI Length", "RSI period", "General");
 		_rocLength = Param(nameof(RocLength), 9)
 			.SetDisplay("ROC Length", "ROC period", "General");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candles", "General");
 		_cooldownBars = Param(nameof(CooldownBars), 20)
 			.SetDisplay("Cooldown Bars", "Min bars between signals", "General");

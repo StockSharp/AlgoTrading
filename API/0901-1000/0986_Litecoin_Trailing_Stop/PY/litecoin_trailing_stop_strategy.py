@@ -14,13 +14,13 @@ from StockSharp.Algo.Strategies import Strategy
 class litecoin_trailing_stop_strategy(Strategy):
     def __init__(self):
         super(litecoin_trailing_stop_strategy, self).__init__()
-        self._kama_length = self.Param("KamaLength", 20) \
+        self._kama_length = self.Param("KamaLength", 50) \
             .SetGreaterThanZero() \
             .SetDisplay("KAMA Length", "Period for KAMA indicator", "General")
-        self._bars_between_entries = self.Param("BarsBetweenEntries", 200) \
+        self._bars_between_entries = self.Param("BarsBetweenEntries", 30) \
             .SetGreaterThanZero() \
             .SetDisplay("Bars Between Entries", "Minimum bars between new positions", "General")
-        self._trailing_stop_percent = self.Param("TrailingStopPercent", 15.0) \
+        self._trailing_stop_percent = self.Param("TrailingStopPercent", 12.0) \
             .SetGreaterThanZero() \
             .SetDisplay("Trailing Stop %", "Percent for trailing stop", "Risk")
         self._delay_bars = self.Param("DelayBars", 50) \

@@ -23,7 +23,7 @@ class improved_ema_cdc_trailing_stop_strategy(Strategy):
         self._atr_period = self.Param("AtrPeriod", 24) \
             .SetGreaterThanZero() \
             .SetDisplay("ATR Period", "Period for ATR calculation", "Parameters")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(60))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
     @property

@@ -24,13 +24,13 @@ public class EmaTrendHeikinAshiEntryStrategy : Strategy
 
 	public EmaTrendHeikinAshiEntryStrategy()
 	{
-		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
-		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 21)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 

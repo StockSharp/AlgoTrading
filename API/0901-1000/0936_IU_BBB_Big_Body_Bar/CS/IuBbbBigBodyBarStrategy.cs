@@ -53,7 +53,7 @@ public class IuBbbBigBodyBarStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use.", "General");
 
-		_bigBodyThreshold = Param(nameof(BigBodyThreshold), 1.5m)
+		_bigBodyThreshold = Param(nameof(BigBodyThreshold), 4m)
 			.SetDisplay("Big Body Threshold", "Multiplier of average body.", "Parameters");
 
 		_atrLength = Param(nameof(AtrLength), 14)

@@ -20,13 +20,13 @@ class long_short_exit_risk_management_strategy(Strategy):
         self._slow_period = self.Param("SlowPeriod", 25) \
             .SetGreaterThanZero() \
             .SetDisplay("Slow SMA", "Slow SMA period", "Indicators")
-        self._stop_loss_percent = self.Param("StopLossPercent", 3.0) \
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
             .SetGreaterThanZero() \
             .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk")
-        self._take_profit_percent = self.Param("TakeProfitPercent", 5.0) \
+        self._take_profit_percent = self.Param("TakeProfitPercent", 3.0) \
             .SetGreaterThanZero() \
             .SetDisplay("Take Profit %", "Take profit percentage", "Risk")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
         self._cooldown_bars = self.Param("CooldownBars", 5) \
             .SetDisplay("Cooldown Bars", "Min bars between signals", "General")

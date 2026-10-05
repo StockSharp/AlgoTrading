@@ -23,7 +23,7 @@ class auto_fib_breakout_strategy(Strategy):
 
         self._candle_type = self.Param("CandleType", tf(1)) \
             .SetDisplay("Candle Type", "Type of candles", "General")
-        self._ema_length = self.Param("EmaLength", 50) \
+        self._ema_length = self.Param("EmaLength", 200) \
             .SetGreaterThanZero() \
             .SetDisplay("EMA Length", "EMA trend filter period", "Indicators")
         self._channel_length = self.Param("ChannelLength", 20) \

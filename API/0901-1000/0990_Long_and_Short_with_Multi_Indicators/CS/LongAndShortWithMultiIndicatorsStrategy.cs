@@ -36,21 +36,21 @@ public class LongAndShortWithMultiIndicatorsStrategy : Strategy
 
 	public LongAndShortWithMultiIndicatorsStrategy()
 	{
-		_rsiLength = Param(nameof(RsiLength), 14)
+		_rsiLength = Param(nameof(RsiLength), 5)
 			.SetDisplay("RSI Length", "Length of RSI", "Indicators")
 			.SetGreaterThanZero();
 
 		_rsiOverbought = Param(nameof(RsiOverbought), 70)
 			.SetDisplay("RSI Overbought", "RSI overbought level", "Indicators");
 
-		_rsiOversold = Param(nameof(RsiOversold), 30)
+		_rsiOversold = Param(nameof(RsiOversold), 44)
 			.SetDisplay("RSI Oversold", "RSI oversold level", "Indicators");
 
-		_rocLength = Param(nameof(RocLength), 10)
+		_rocLength = Param(nameof(RocLength), 4)
 			.SetDisplay("ROC Length", "Length of ROC", "Indicators")
 			.SetGreaterThanZero();
 
-		_maLength = Param(nameof(MaLength), 20)
+		_maLength = Param(nameof(MaLength), 24)
 			.SetDisplay("MA Length", "Length of moving average", "Indicators")
 			.SetGreaterThanZero();
 

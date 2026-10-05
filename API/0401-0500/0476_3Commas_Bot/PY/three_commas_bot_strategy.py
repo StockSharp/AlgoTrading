@@ -17,13 +17,13 @@ class three_commas_bot_strategy(Strategy):
     def __init__(self):
         super(three_commas_bot_strategy, self).__init__()
 
-        self._ma_length1 = self.Param("MaLength1", 50) \
+        self._ma_length1 = self.Param("MaLength1", 21) \
             .SetDisplay("MA Length #1", "Fast moving average length", "MA Settings")
-        self._ma_length2 = self.Param("MaLength2", 100) \
+        self._ma_length2 = self.Param("MaLength2", 50) \
             .SetDisplay("MA Length #2", "Slow moving average length", "MA Settings")
         self._atr_length = self.Param("AtrLength", 14) \
             .SetDisplay("ATR length", "ATR calculation period", "Risk Management")
-        self._risk_m = self.Param("RiskM", 3.0) \
+        self._risk_m = self.Param("RiskM", 1.0) \
             .SetDisplay("Risk Adjustment", "ATR multiplier for stop", "Risk Management")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")

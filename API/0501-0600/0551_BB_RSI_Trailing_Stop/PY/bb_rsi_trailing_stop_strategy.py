@@ -14,21 +14,21 @@ from StockSharp.Algo.Strategies import Strategy
 class bb_rsi_trailing_stop_strategy(Strategy):
     def __init__(self):
         super(bb_rsi_trailing_stop_strategy, self).__init__()
-        self._bollinger_period = self.Param("BollingerPeriod", 40) \
+        self._bollinger_period = self.Param("BollingerPeriod", 25) \
             .SetDisplay("Bollinger Period", "Period for Bollinger Bands", "Indicators")
-        self._bollinger_deviation = self.Param("BollingerDeviation", 2.5) \
+        self._bollinger_deviation = self.Param("BollingerDeviation", 2.0) \
             .SetDisplay("Bollinger Deviation", "Deviation multiplier", "Indicators")
         self._rsi_period = self.Param("RsiPeriod", 14) \
             .SetDisplay("RSI Period", "RSI calculation period", "Indicators")
-        self._rsi_overbought = self.Param("RsiOverbought", 70.0) \
+        self._rsi_overbought = self.Param("RsiOverbought", 60.0) \
             .SetDisplay("RSI Overbought", "Overbought level", "Indicators")
-        self._rsi_oversold = self.Param("RsiOversold", 30.0) \
+        self._rsi_oversold = self.Param("RsiOversold", 33.0) \
             .SetDisplay("RSI Oversold", "Oversold level", "Indicators")
-        self._stop_loss_points = self.Param("StopLossPoints", 3000.0) \
+        self._stop_loss_points = self.Param("StopLossPoints", 50.0) \
             .SetDisplay("Stop Loss Points", "Initial stop loss in points", "Risk Management")
-        self._trail_offset_points = self.Param("TrailOffsetPoints", 2000.0) \
+        self._trail_offset_points = self.Param("TrailOffsetPoints", 99.0) \
             .SetDisplay("Trail Offset Points", "Profit to activate trailing stop", "Risk Management")
-        self._trail_stop_points = self.Param("TrailStopPoints", 1500.0) \
+        self._trail_stop_points = self.Param("TrailStopPoints", 40.0) \
             .SetDisplay("Trail Stop Points", "Trailing stop distance", "Risk Management")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")

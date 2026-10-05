@@ -47,15 +47,15 @@ public class BreaksAndRetestsStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback Period", "Number of bars for support/resistance", "Levels");
 
-		_stopLossPercent = Param(nameof(StopLossPercent), 1.5m)
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Initial stop loss", "Risk");
 
-		_profitThresholdPercent = Param(nameof(ProfitThresholdPercent), 2m)
+		_profitThresholdPercent = Param(nameof(ProfitThresholdPercent), 5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Profit Threshold %", "Activate trailing after profit", "Risk");
 
-		_trailingStopGapPercent = Param(nameof(TrailingStopGapPercent), 0.8m)
+		_trailingStopGapPercent = Param(nameof(TrailingStopGapPercent), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trailing Gap %", "Gap for trailing stop", "Risk");
 
@@ -67,7 +67,7 @@ public class BreaksAndRetestsStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Cooldown Bars", "Bars to wait after exit", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candles for calculations", "General");
 	}
 

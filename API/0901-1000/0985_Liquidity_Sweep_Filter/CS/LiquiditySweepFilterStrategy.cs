@@ -52,7 +52,7 @@ public class LiquiditySweepFilterStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
-		_length = Param(nameof(Length), 20)
+		_length = Param(nameof(Length), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Length", "Base period", "Trend");
 

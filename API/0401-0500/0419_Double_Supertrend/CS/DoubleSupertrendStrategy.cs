@@ -41,14 +41,14 @@ public class DoubleSupertrendStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("ST1 Period", "First SuperTrend ATR period", "SuperTrend 1");
 
-		_factor1 = Param(nameof(Factor1), 2.0m)
+		_factor1 = Param(nameof(Factor1), 3m)
 			.SetDisplay("ST1 Factor", "First SuperTrend multiplier", "SuperTrend 1");
 
 		_atrPeriod2 = Param(nameof(ATRPeriod2), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("ST2 Period", "Second SuperTrend ATR period", "SuperTrend 2");
 
-		_factor2 = Param(nameof(Factor2), 4.0m)
+		_factor2 = Param(nameof(Factor2), 5m)
 			.SetDisplay("ST2 Factor", "Second SuperTrend multiplier", "SuperTrend 2");
 
 		_cooldownBars = Param(nameof(CooldownBars), 10)

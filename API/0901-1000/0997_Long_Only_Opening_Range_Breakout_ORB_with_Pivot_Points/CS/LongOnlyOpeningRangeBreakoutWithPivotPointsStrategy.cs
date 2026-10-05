@@ -65,7 +65,7 @@ public class LongOnlyOpeningRangeBreakoutWithPivotPointsStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Range Bars", "Lookback bars for channel", "General");
 
-		_stopLossPercent = Param(nameof(StopLossPercent), 5m)
+		_stopLossPercent = Param(nameof(StopLossPercent), 3m)
 			.SetDisplay("Stop Loss %", "Initial stop loss percent", "Risk");
 
 		_initialSlType = Param(nameof(InitialSlType), SlTypes.Percentage)

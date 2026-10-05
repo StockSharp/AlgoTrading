@@ -31,11 +31,11 @@ public class FullCandleStrategy : Strategy
 		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle type", "Candle type for strategy calculation.", "General");
 
-		_emaLength = Param(nameof(EmaLength), 20)
+		_emaLength = Param(nameof(EmaLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Length", "EMA period", "Moving Averages");
 
-		_shadowPercent = Param(nameof(ShadowPercent), 10m)
+		_shadowPercent = Param(nameof(ShadowPercent), 5m)
 			.SetDisplay("Shadow Percent", "Maximum shadow percentage of candle range", "Strategy");
 
 		_cooldownBars = Param(nameof(CooldownBars), 15)

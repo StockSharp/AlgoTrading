@@ -92,7 +92,7 @@ public class IUOpeningRangeBreakoutStrategy : Strategy
 			
 			.SetOptimize(1m, 3m, 0.5m);
 
-		_maxTrades = Param(nameof(MaxTrades), 3)
+		_maxTrades = Param(nameof(MaxTrades), 2)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Trades", "Maximum trades per day", "General");
 

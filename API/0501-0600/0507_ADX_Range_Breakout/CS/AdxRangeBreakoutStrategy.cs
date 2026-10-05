@@ -33,7 +33,7 @@ public class AdxRangeBreakoutStrategy : Strategy
 
 	public AdxRangeBreakoutStrategy()
 	{
-		_highestPeriod = Param(nameof(HighestPeriod), 20)
+		_highestPeriod = Param(nameof(HighestPeriod), 34)
 			.SetGreaterThanZero()
 			.SetDisplay("Highest Lookback", "Bars for highest close", "Indicators");
 
@@ -41,7 +41,7 @@ public class AdxRangeBreakoutStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("ADX Period", "Period for ADX", "Indicators");
 
-		_adxThreshold = Param(nameof(AdxThreshold), 25m)
+		_adxThreshold = Param(nameof(AdxThreshold), 17.5m)
 			.SetDisplay("ADX Threshold", "Upper ADX limit for range", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())

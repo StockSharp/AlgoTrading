@@ -25,7 +25,7 @@ class dmi_winner_strategy(Strategy):
             .SetDisplay("DI Length", "Directional Indicator period", "DMI")
         self._adx_smoothing = self.Param("ADXSmoothing", 13) \
             .SetDisplay("ADX Smoothing", "ADX smoothing period", "DMI")
-        self._key_level = self.Param("KeyLevel", 20.0) \
+        self._key_level = self.Param("KeyLevel", 23.0) \
             .SetDisplay("Key Level", "ADX key level threshold", "DMI")
         self._ma_length = self.Param("MALength", 50) \
             .SetDisplay("MA Length", "Moving average period", "Moving Average")

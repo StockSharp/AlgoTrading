@@ -71,7 +71,7 @@ public class BollingerHeikinAshiEntryStrategy : Strategy
 			
 			.SetOptimize(10, 50, 5);
 
-		_bollingerDeviation = Param(nameof(BollingerDeviation), 1.5m)
+		_bollingerDeviation = Param(nameof(BollingerDeviation), 2m)
 			.SetDisplay("Bollinger Deviation", "Bollinger Bands standard deviation", "Indicators")
 			
 			.SetOptimize(1m, 3m, 0.5m);

@@ -14,10 +14,10 @@ from StockSharp.Algo.Strategies import Strategy
 class btcusd_adjustable_sltp_strategy(Strategy):
     def __init__(self):
         super(btcusd_adjustable_sltp_strategy, self).__init__()
-        self._fast_sma_length = self.Param("FastSmaLength", 120) \
+        self._fast_sma_length = self.Param("FastSmaLength", 10) \
             .SetGreaterThanZero() \
             .SetDisplay("Fast SMA", "Length of fast SMA", "Indicators")
-        self._slow_sma_length = self.Param("SlowSmaLength", 450) \
+        self._slow_sma_length = self.Param("SlowSmaLength", 25) \
             .SetGreaterThanZero() \
             .SetDisplay("Slow SMA", "Length of slow SMA", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \

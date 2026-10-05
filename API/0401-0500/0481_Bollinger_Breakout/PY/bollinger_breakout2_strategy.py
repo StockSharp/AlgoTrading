@@ -24,7 +24,7 @@ class bollinger_breakout2_strategy(Strategy):
             .SetDisplay("Bollinger Length", "Bollinger Bands period", "Bollinger Bands")
         self._bollinger_multiplier = self.Param("BollingerMultiplier", 1.8) \
             .SetDisplay("StdDev Multiplier", "Standard deviation multiplier", "Bollinger Bands")
-        self._trend_length = self.Param("TrendLength", 50) \
+        self._trend_length = self.Param("TrendLength", 80) \
             .SetDisplay("Trend MA Length", "Length for trend moving average", "Filters")
         self._rsi_length = self.Param("RsiLength", 14) \
             .SetDisplay("RSI Length", "RSI calculation length", "Filters")

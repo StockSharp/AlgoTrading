@@ -14,13 +14,13 @@ from StockSharp.Algo.Strategies import Strategy
 class breakouts_with_time_filter_strategy(Strategy):
     def __init__(self):
         super(breakouts_with_time_filter_strategy, self).__init__()
-        self._length = self.Param("Length", 20) \
+        self._length = self.Param("Length", 5) \
             .SetDisplay("Length", "Lookback period for breakout levels", "General")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
-        self._atr_multiplier = self.Param("AtrMultiplier", 1.5) \
+        self._atr_multiplier = self.Param("AtrMultiplier", 0.5) \
             .SetDisplay("ATR Multiplier", "Multiplier for ATR stop", "Risk Management")
-        self._risk_reward = self.Param("RiskReward", 2.0) \
+        self._risk_reward = self.Param("RiskReward", 3.0) \
             .SetDisplay("Risk Reward", "Risk to reward ratio", "Risk Management")
         self._stop_level = 0.0
         self._target_level = 0.0

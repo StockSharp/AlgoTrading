@@ -17,10 +17,10 @@ class adx_volume_multiplier_strategy(Strategy):
         super(adx_volume_multiplier_strategy, self).__init__()
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
-        self._adx_period = self.Param("AdxPeriod", 14) \
+        self._adx_period = self.Param("AdxPeriod", 21) \
             .SetGreaterThanZero() \
             .SetDisplay("ADX Period", "Period for ADX", "ADX")
-        self._adx_threshold = self.Param("AdxThreshold", 20.0) \
+        self._adx_threshold = self.Param("AdxThreshold", 26.0) \
             .SetDisplay("ADX Threshold", "Trend strength threshold", "ADX")
         self._volume_period = self.Param("VolumePeriod", 20) \
             .SetGreaterThanZero() \

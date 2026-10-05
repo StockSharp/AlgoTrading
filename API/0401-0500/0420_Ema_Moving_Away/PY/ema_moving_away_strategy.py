@@ -21,7 +21,7 @@ class ema_moving_away_strategy(Strategy):
             .SetDisplay("Candle type", "Candle type for strategy calculation.", "General")
         self._ema_length = self.Param("EmaLength", 55) \
             .SetDisplay("EMA Length", "EMA period", "Moving Average")
-        self._moving_away_pct = self.Param("MovingAwayPercent", 1.5) \
+        self._moving_away_pct = self.Param("MovingAwayPercent", 2.0) \
             .SetDisplay("Moving away (%)", "Required percentage that price moves away from EMA", "Strategy")
         self._cooldown_bars = self.Param("CooldownBars", 10) \
             .SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk")

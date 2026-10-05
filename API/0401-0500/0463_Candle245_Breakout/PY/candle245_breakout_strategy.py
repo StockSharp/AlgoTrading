@@ -21,7 +21,7 @@ class candle245_breakout_strategy(Strategy):
             .SetDisplay("Candle Type", "Type of candles to use", "General")
         self._ref_period = self.Param("RefPeriod", 10) \
             .SetDisplay("Ref Period", "Every N bars capture reference candle", "Trading")
-        self._look_forward_bars = self.Param("LookForwardBars", 3) \
+        self._look_forward_bars = self.Param("LookForwardBars", 2) \
             .SetDisplay("Look Forward Bars", "Bars to watch for breakout", "Trading")
         self._ema_length = self.Param("EmaLength", 20) \
             .SetDisplay("EMA Length", "EMA period for trend filter", "Indicators")

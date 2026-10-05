@@ -14,7 +14,7 @@ from StockSharp.Algo.Strategies import Strategy
 class baby_shark_vwap_strategy(Strategy):
     def __init__(self):
         super(baby_shark_vwap_strategy, self).__init__()
-        self._rsi_length = self.Param("RsiLength", 14) \
+        self._rsi_length = self.Param("RsiLength", 5) \
             .SetDisplay("RSI Length", "RSI period", "Indicators")
         self._ema_length = self.Param("EmaLength", 50) \
             .SetDisplay("EMA Length", "EMA trend filter period", "Indicators")

@@ -36,17 +36,17 @@ public class BreakoutsWithTimeFilterStrategy : Strategy
 
 	public BreakoutsWithTimeFilterStrategy()
 	{
-		_length = Param(nameof(Length), 20)
+		_length = Param(nameof(Length), 5)
 			.SetDisplay("Length", "Lookback period for breakout levels", "General")
 			.SetOptimize(5, 50, 5);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
-		_atrMultiplier = Param(nameof(AtrMultiplier), 1.5m)
+		_atrMultiplier = Param(nameof(AtrMultiplier), 0.5m)
 			.SetDisplay("ATR Multiplier", "Multiplier for ATR stop", "Risk Management");
 
-		_riskReward = Param(nameof(RiskReward), 2m)
+		_riskReward = Param(nameof(RiskReward), 3m)
 			.SetDisplay("Risk Reward", "Risk to reward ratio", "Risk Management");
 	}
 

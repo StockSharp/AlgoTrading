@@ -38,7 +38,7 @@ public class AdaptiveHmaPlusStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("HMA Length", "Hull Moving Average period", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		_cooldownBars = Param(nameof(CooldownBars), 10)

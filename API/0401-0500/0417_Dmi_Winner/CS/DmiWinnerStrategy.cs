@@ -44,7 +44,7 @@ public class DmiWinnerStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("ADX Smoothing", "ADX smoothing period", "DMI");
 
-		_keyLevel = Param(nameof(KeyLevel), 20m)
+		_keyLevel = Param(nameof(KeyLevel), 23m)
 			.SetDisplay("Key Level", "ADX key level threshold", "DMI");
 
 		_maLength = Param(nameof(MALength), 50)

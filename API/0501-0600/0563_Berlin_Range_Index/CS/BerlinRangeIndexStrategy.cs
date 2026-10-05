@@ -33,7 +33,7 @@ public class BerlinRangeIndexStrategy : Strategy
 
 	public BerlinRangeIndexStrategy()
 	{
-		_length = Param(nameof(Length), 7)
+		_length = Param(nameof(Length), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Length", "Choppiness index period", "General")
 			.SetOptimize(5, 30, 5);

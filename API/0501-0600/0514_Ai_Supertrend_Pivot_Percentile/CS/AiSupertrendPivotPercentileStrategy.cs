@@ -64,7 +64,7 @@ public class AiSupertrendPivotPercentileStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("ADX Length", "ADX calculation period", "Filter");
 
-		_adxThreshold = Param(nameof(AdxThreshold), 15m)
+		_adxThreshold = Param(nameof(AdxThreshold), 20m)
 			.SetDisplay("ADX Threshold", "Minimum ADX for trading", "Filter");
 
 		_pivotLength = Param(nameof(PivotLength), 14)

@@ -37,7 +37,7 @@ public class ExceededCandleStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("BB Period", "Bollinger Bands period", "Bollinger Bands");
 
-		_bbMultiplier = Param(nameof(BBMultiplier), 1.5m)
+		_bbMultiplier = Param(nameof(BBMultiplier), 2m)
 			.SetDisplay("BB StdDev", "Bollinger Bands standard deviation multiplier", "Bollinger Bands");
 
 		_cooldownBars = Param(nameof(CooldownBars), 10)

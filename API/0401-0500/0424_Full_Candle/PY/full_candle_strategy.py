@@ -19,9 +19,9 @@ class full_candle_strategy(Strategy):
 
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
             .SetDisplay("Candle type", "Candle type for strategy calculation.", "General")
-        self._ema_length = self.Param("EmaLength", 20) \
+        self._ema_length = self.Param("EmaLength", 10) \
             .SetDisplay("EMA Length", "EMA period", "Moving Averages")
-        self._shadow_percent = self.Param("ShadowPercent", 10.0) \
+        self._shadow_percent = self.Param("ShadowPercent", 5.0) \
             .SetDisplay("Shadow Percent", "Maximum shadow percentage of candle range", "Strategy")
         self._cooldown_bars = self.Param("CooldownBars", 15) \
             .SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk")

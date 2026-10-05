@@ -15,13 +15,13 @@ from StockSharp.Algo.Strategies import Strategy
 class adx_range_breakout_strategy(Strategy):
     def __init__(self):
         super(adx_range_breakout_strategy, self).__init__()
-        self._highest_period = self.Param("HighestPeriod", 20) \
+        self._highest_period = self.Param("HighestPeriod", 34) \
             .SetGreaterThanZero() \
             .SetDisplay("Highest Lookback", "Bars for highest close", "Indicators")
         self._adx_period = self.Param("AdxPeriod", 14) \
             .SetGreaterThanZero() \
             .SetDisplay("ADX Period", "Period for ADX", "Indicators")
-        self._adx_threshold = self.Param("AdxThreshold", 25.0) \
+        self._adx_threshold = self.Param("AdxThreshold", 17.5) \
             .SetDisplay("ADX Threshold", "Upper ADX limit for range", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")

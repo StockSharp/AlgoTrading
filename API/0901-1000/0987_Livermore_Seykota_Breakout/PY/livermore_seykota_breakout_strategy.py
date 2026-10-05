@@ -16,11 +16,11 @@ class livermore_seykota_breakout_strategy(Strategy):
         super(livermore_seykota_breakout_strategy, self).__init__()
         self._ema_length = self.Param("EmaLength", 50) \
             .SetDisplay("EMA Length", "EMA trend period", "Indicators")
-        self._pivot_length = self.Param("PivotLength", 30) \
+        self._pivot_length = self.Param("PivotLength", 3) \
             .SetDisplay("Pivot Length", "Bars for pivot high/low", "General")
         self._atr_length = self.Param("AtrLength", 14) \
             .SetDisplay("ATR Length", "ATR period", "Indicators")
-        self._trail_atr_mult = self.Param("TrailAtrMultiplier", 10.0) \
+        self._trail_atr_mult = self.Param("TrailAtrMultiplier", 2.0) \
             .SetDisplay("Trail ATR Mult", "ATR trailing mult", "Risk")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
             .SetDisplay("Candle Type", "Candles", "General")

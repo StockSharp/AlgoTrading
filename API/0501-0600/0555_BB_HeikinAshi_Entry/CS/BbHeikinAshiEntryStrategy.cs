@@ -39,7 +39,7 @@ private decimal _prevRawHigh;
 /// </summary>
 public BbHeikinAshiEntryStrategy()
 {
-_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 .SetDisplay("Candle Type", "Type of candles to use", "General");
 
 _bollingerLength = Param(nameof(BollingerLength), 20)

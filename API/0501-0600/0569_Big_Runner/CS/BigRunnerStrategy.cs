@@ -33,11 +33,11 @@ public class BigRunnerStrategy : Strategy
 
 	public BigRunnerStrategy()
 	{
-		_fastLength = Param(nameof(FastLength), 120)
+		_fastLength = Param(nameof(FastLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast Length", "Fast SMA period", "SMA");
 
-		_slowLength = Param(nameof(SlowLength), 450)
+		_slowLength = Param(nameof(SlowLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Length", "Slow SMA period", "SMA");
 

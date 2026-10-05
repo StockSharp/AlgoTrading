@@ -71,7 +71,7 @@ public class AutoFibBreakoutStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
-		_emaLength = Param(nameof(EmaLength), 50)
+		_emaLength = Param(nameof(EmaLength), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Length", "EMA trend filter period", "Indicators");
 

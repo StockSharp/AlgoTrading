@@ -14,9 +14,9 @@ from StockSharp.Algo.Strategies import Strategy
 class big_runner_strategy(Strategy):
     def __init__(self):
         super(big_runner_strategy, self).__init__()
-        self._fast_length = self.Param("FastLength", 120) \
+        self._fast_length = self.Param("FastLength", 5) \
             .SetDisplay("Fast Length", "Fast SMA period", "SMA")
-        self._slow_length = self.Param("SlowLength", 450) \
+        self._slow_length = self.Param("SlowLength", 20) \
             .SetDisplay("Slow Length", "Slow SMA period", "SMA")
         self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
             .SetDisplay("Stop Loss %", "Stop loss percent from entry", "Risk")

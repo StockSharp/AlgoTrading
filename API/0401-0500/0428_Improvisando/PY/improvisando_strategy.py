@@ -19,7 +19,7 @@ class improvisando_strategy(Strategy):
 
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
             .SetDisplay("Candle type", "Candle type for strategy calculation.", "General")
-        self._ema_length = self.Param("EmaLength", 20) \
+        self._ema_length = self.Param("EmaLength", 10) \
             .SetDisplay("EMA Length", "EMA period", "Moving Averages")
         self._rsi_length = self.Param("RsiLength", 14) \
             .SetDisplay("RSI Length", "RSI period", "RSI")

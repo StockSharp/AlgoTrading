@@ -14,7 +14,7 @@ from StockSharp.Algo.Strategies import Strategy
 class gold_rsi_divergence_strategy(Strategy):
     def __init__(self):
         super(gold_rsi_divergence_strategy, self).__init__()
-        self._rsi_length = self.Param("RsiLength", 14) \
+        self._rsi_length = self.Param("RsiLength", 60) \
             .SetGreaterThanZero() \
             .SetDisplay("RSI Length", "RSI calculation length", "RSI")
         self._lookback_left = self.Param("LookbackLeft", 5) \

@@ -83,17 +83,17 @@ public class LitecoinTrailingStopStrategy : Strategy
 	/// </summary>
 	public LitecoinTrailingStopStrategy()
 	{
-		_kamaLength = Param(nameof(KamaLength), 20)
+		_kamaLength = Param(nameof(KamaLength), 50)
 		.SetGreaterThanZero()
 		.SetDisplay("KAMA Length", "Period for KAMA indicator", "General")
 		.SetOptimize(20, 100, 5);
 
-		_barsBetweenEntries = Param(nameof(BarsBetweenEntries), 200)
+		_barsBetweenEntries = Param(nameof(BarsBetweenEntries), 30)
 		.SetGreaterThanZero()
 		.SetDisplay("Bars Between Entries", "Minimum bars between new positions", "General")
 		.SetOptimize(10, 60, 5);
 
-		_trailingStopPercent = Param(nameof(TrailingStopPercent), 15m)
+		_trailingStopPercent = Param(nameof(TrailingStopPercent), 12m)
 		.SetGreaterThanZero()
 		.SetDisplay("Trailing Stop %", "Percent for trailing stop", "Risk")
 		.SetOptimize(5m, 20m, 1m);

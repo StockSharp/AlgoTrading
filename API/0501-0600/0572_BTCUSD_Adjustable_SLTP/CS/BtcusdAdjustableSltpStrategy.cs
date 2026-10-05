@@ -29,11 +29,11 @@ public class BtcusdAdjustableSltpStrategy : Strategy
 
 	public BtcusdAdjustableSltpStrategy()
 	{
-		_fastSmaLength = Param(nameof(FastSmaLength), 120)
+		_fastSmaLength = Param(nameof(FastSmaLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast SMA", "Length of fast SMA", "Indicators");
 
-		_slowSmaLength = Param(nameof(SlowSmaLength), 450)
+		_slowSmaLength = Param(nameof(SlowSmaLength), 25)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow SMA", "Length of slow SMA", "Indicators");
 

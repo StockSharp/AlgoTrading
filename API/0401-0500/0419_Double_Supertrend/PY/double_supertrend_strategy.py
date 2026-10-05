@@ -23,11 +23,11 @@ class double_supertrend_strategy(Strategy):
             .SetDisplay("Candle type", "Candle type for strategy calculation.", "General")
         self._atr_period1 = self.Param("ATRPeriod1", 10) \
             .SetDisplay("ST1 Period", "First SuperTrend ATR period", "SuperTrend 1")
-        self._factor1 = self.Param("Factor1", 2.0) \
+        self._factor1 = self.Param("Factor1", 3.0) \
             .SetDisplay("ST1 Factor", "First SuperTrend multiplier", "SuperTrend 1")
         self._atr_period2 = self.Param("ATRPeriod2", 20) \
             .SetDisplay("ST2 Period", "Second SuperTrend ATR period", "SuperTrend 2")
-        self._factor2 = self.Param("Factor2", 4.0) \
+        self._factor2 = self.Param("Factor2", 5.0) \
             .SetDisplay("ST2 Factor", "Second SuperTrend multiplier", "SuperTrend 2")
         self._cooldown_bars = self.Param("CooldownBars", 10) \
             .SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk")

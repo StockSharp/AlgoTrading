@@ -35,7 +35,7 @@ public class BiasRatioStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Moving average period", "Indicators");
 
-		_biasThreshold = Param(nameof(BiasThreshold), 0.015m)
+		_biasThreshold = Param(nameof(BiasThreshold), 0.025m)
 			.SetDisplay("Bias Threshold", "Price deviation ratio from MA", "Trading");
 	}
 

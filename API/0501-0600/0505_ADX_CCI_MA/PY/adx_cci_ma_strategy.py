@@ -23,10 +23,10 @@ class adx_cci_ma_strategy(Strategy):
             .SetDisplay("ADX Length", "Length for ADX", "Indicators")
         self._adx_threshold = self.Param("AdxThreshold", 20.0) \
             .SetDisplay("ADX Threshold", "ADX level to confirm trend", "Indicators")
-        self._ma_length = self.Param("MaLength", 50) \
+        self._ma_length = self.Param("MaLength", 200) \
             .SetGreaterThanZero() \
             .SetDisplay("MA Length", "Length of moving average", "MA Trend")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Timeframe for candles", "General")
         self._cooldown_bars = self.Param("CooldownBars", 10) \
             .SetDisplay("Cooldown Bars", "Bars between trades", "Risk")

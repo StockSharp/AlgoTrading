@@ -18,15 +18,15 @@ class long_and_short_with_multi_indicators_strategy(Strategy):
 
     def __init__(self):
         super(long_and_short_with_multi_indicators_strategy, self).__init__()
-        self._rsi_length = self.Param("RsiLength", 14) \
+        self._rsi_length = self.Param("RsiLength", 5) \
             .SetDisplay("RSI Length", "Length of RSI", "Indicators")
         self._rsi_overbought = self.Param("RsiOverbought", 70) \
             .SetDisplay("RSI Overbought", "Overbought level", "Indicators")
-        self._rsi_oversold = self.Param("RsiOversold", 30) \
+        self._rsi_oversold = self.Param("RsiOversold", 44) \
             .SetDisplay("RSI Oversold", "Oversold level", "Indicators")
-        self._roc_length = self.Param("RocLength", 10) \
+        self._roc_length = self.Param("RocLength", 4) \
             .SetDisplay("ROC Length", "Length of ROC", "Indicators")
-        self._ma_length = self.Param("MaLength", 20) \
+        self._ma_length = self.Param("MaLength", 24) \
             .SetDisplay("MA Length", "Length of MA", "Indicators")
         self._cooldown_bars = self.Param("CooldownBars", 60) \
             .SetDisplay("Cooldown Bars", "Min bars between signals", "General")

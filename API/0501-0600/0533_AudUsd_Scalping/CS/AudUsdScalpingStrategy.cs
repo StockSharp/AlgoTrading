@@ -89,7 +89,7 @@ public class AudUsdScalpingStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Long EMA", "Slow EMA period", "Indicators");
 
-		_rsiPeriod = Param(nameof(RsiPeriod), 14)
+		_rsiPeriod = Param(nameof(RsiPeriod), 4)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "RSI calculation period", "Indicators");
 

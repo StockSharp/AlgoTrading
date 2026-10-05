@@ -14,9 +14,9 @@ from StockSharp.Algo.Strategies import Strategy
 class backtesting_module_strategy(Strategy):
     def __init__(self):
         super(backtesting_module_strategy, self).__init__()
-        self._fast_length = self.Param("FastLength", 20) \
+        self._fast_length = self.Param("FastLength", 50) \
             .SetDisplay("Fast SMA", "Period for fast SMA", "Indicators")
-        self._slow_length = self.Param("SlowLength", 50) \
+        self._slow_length = self.Param("SlowLength", 200) \
             .SetDisplay("Slow SMA", "Period for slow SMA", "Indicators")
         self._cooldown_bars = self.Param("CooldownBars", 350) \
             .SetDisplay("Cooldown Bars", "Bars between trades", "Trading")

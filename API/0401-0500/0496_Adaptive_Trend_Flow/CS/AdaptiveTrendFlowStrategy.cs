@@ -51,7 +51,7 @@ public class AdaptiveTrendFlowStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Length", "ATR period for volatility", "Trend");
 
-		_sensitivity = Param(nameof(Sensitivity), 1.5m)
+		_sensitivity = Param(nameof(Sensitivity), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Sensitivity", "ATR multiplier for channel", "Trend");
 

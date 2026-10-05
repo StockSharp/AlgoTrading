@@ -89,13 +89,13 @@ public class BollingerWinnerLiteStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("BB Period", "Bollinger Bands period", "Bollinger Bands");
 
-		_bbMultiplier = Param(nameof(BBMultiplier), 1.5m)
+		_bbMultiplier = Param(nameof(BBMultiplier), 2m)
 			.SetDisplay("BB StdDev", "Bollinger Bands standard deviation multiplier", "Bollinger Bands");
 
 		_candlePercent = Param(nameof(CandlePercent), 30m)
 			.SetDisplay("Candle %", "Candle percentage below/above the BB", "Strategy");
 
-		_showShort = Param(nameof(ShowShort), true)
+		_showShort = Param(nameof(ShowShort), false)
 			.SetDisplay("Short entries", "Enable short entries", "Strategy");
 
 		_cooldownBars = Param(nameof(CooldownBars), 10)

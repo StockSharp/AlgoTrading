@@ -18,7 +18,7 @@ class logistic_rsi_stoch_roc_ao_strategy(Strategy):
             .SetDisplay("RSI Length", "RSI period", "General")
         self._roc_length = self.Param("RocLength", 9) \
             .SetDisplay("ROC Length", "ROC period", "General")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
             .SetDisplay("Candle Type", "Candles", "General")
         self._cooldown_bars = self.Param("CooldownBars", 20) \
             .SetDisplay("Cooldown Bars", "Min bars between signals", "General")

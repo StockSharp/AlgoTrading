@@ -19,7 +19,7 @@ class four_bar_momentum_reversal_strategy(Strategy):
 
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
-        self._buy_threshold = self.Param("BuyThreshold", 3) \
+        self._buy_threshold = self.Param("BuyThreshold", 4) \
             .SetDisplay("Buy Threshold", "Consecutive closes below reference to trigger buy", "Strategy")
         self._lookback = self.Param("Lookback", 4) \
             .SetDisplay("Lookback", "Number of bars to compare", "Strategy")

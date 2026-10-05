@@ -20,7 +20,7 @@ class iu_bigger_than_range_strategy(Strategy):
             .SetDisplay("Risk To Reward", "Risk to reward ratio", "Parameters")
         self._atr_factor = self.Param("AtrFactor", 2.0) \
             .SetDisplay("ATR Factor", "ATR multiplier", "Risk Management")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(120))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
         self._prev_range_size = 0.0
         self._prev_candle_high = 0.0

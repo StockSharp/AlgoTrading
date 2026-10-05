@@ -82,10 +82,10 @@ public class BotForSpotMarketCustomGridStrategy : Strategy
 		_rounding = Param(nameof(Rounding), 5)
 			.SetDisplay("Rounding", "Decimal places for rounding", "Parameters");
 
-		_nextEntryPercent = Param(nameof(NextEntryPercent), 10m)
+		_nextEntryPercent = Param(nameof(NextEntryPercent), 0.5m)
 			.SetDisplay("Next Entry Less Than (%)", "Price drop from last entry to add new order", "Parameters");
 
-		_profitPercent = Param(nameof(ProfitPercent), 15m)
+		_profitPercent = Param(nameof(ProfitPercent), 2m)
 			.SetDisplay("Profit (%)", "Profit target from average price", "Parameters");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())

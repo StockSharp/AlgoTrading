@@ -19,7 +19,7 @@ class iu_opening_range_breakout_strategy(Strategy):
         super(iu_opening_range_breakout_strategy, self).__init__()
         self._risk_reward = self.Param("RiskReward", 2.0) \
             .SetDisplay("Risk/Reward", "Risk to reward ratio", "General")
-        self._max_trades = self.Param("MaxTrades", 3) \
+        self._max_trades = self.Param("MaxTrades", 2) \
             .SetDisplay("Max Trades", "Maximum trades per day", "General")
         self._cooldown_days = self.Param("CooldownDays", 3) \
             .SetDisplay("Cooldown Days", "Minimum days between entries", "General")

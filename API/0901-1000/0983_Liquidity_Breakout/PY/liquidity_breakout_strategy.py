@@ -14,7 +14,7 @@ from StockSharp.Algo.Strategies import Strategy
 class liquidity_breakout_strategy(Strategy):
     def __init__(self):
         super(liquidity_breakout_strategy, self).__init__()
-        self._pivot_length = self.Param("PivotLength", 20) \
+        self._pivot_length = self.Param("PivotLength", 12) \
             .SetGreaterThanZero() \
             .SetDisplay("Lookback", "Bars for range", "General")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \

@@ -68,7 +68,7 @@ public class LinearCorrelationOscillatorStrategy : Strategy
 
 	public LinearCorrelationOscillatorStrategy()
 	{
-		_length = Param(nameof(Length), 20)
+		_length = Param(nameof(Length), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Length", "Lookback length", "General")
 			

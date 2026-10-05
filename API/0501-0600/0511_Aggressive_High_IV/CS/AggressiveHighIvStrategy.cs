@@ -47,7 +47,7 @@ public class AggressiveHighIvStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Length", "ATR calculation period", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
 		_cooldownBars = Param(nameof(CooldownBars), 10)

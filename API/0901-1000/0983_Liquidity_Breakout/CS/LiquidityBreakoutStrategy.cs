@@ -24,7 +24,7 @@ public class LiquidityBreakoutStrategy : Strategy
 
 	public LiquidityBreakoutStrategy()
 	{
-		_pivotLength = Param(nameof(PivotLength), 20).SetGreaterThanZero().SetDisplay("Lookback", "Bars for range", "General");
+		_pivotLength = Param(nameof(PivotLength), 12).SetGreaterThanZero().SetDisplay("Lookback", "Bars for range", "General");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General");
 	}
 

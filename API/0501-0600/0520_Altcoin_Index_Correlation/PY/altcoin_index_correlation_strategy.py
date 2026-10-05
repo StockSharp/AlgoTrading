@@ -22,9 +22,9 @@ class altcoin_index_correlation_strategy(Strategy):
     def __init__(self):
         super(altcoin_index_correlation_strategy, self).__init__()
 
-        self._fast_ema_len = self.Param("FastEmaLength", 7) \
+        self._fast_ema_len = self.Param("FastEmaLength", 47) \
             .SetDisplay("Fast EMA", "Fast EMA length", "EMA Settings")
-        self._slow_ema_len = self.Param("SlowEmaLength", 18) \
+        self._slow_ema_len = self.Param("SlowEmaLength", 50) \
             .SetDisplay("Slow EMA", "Slow EMA length", "EMA Settings")
         self._index_fast_ema_len = self.Param("IndexFastEmaLength", 47) \
             .SetDisplay("Index Fast EMA", "Fast EMA length for index", "Index Reference")

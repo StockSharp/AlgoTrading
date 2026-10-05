@@ -17,11 +17,11 @@ class ma_psar_atr_trend_strategy(Strategy):
     def __init__(self):
         super(ma_psar_atr_trend_strategy, self).__init__()
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
-        self._fast_ma_period = self.Param("FastMaPeriod", 20) \
+        self._fast_ma_period = self.Param("FastMaPeriod", 40) \
             .SetDisplay("Fast MA Period", "Fast EMA period", "MA")
-        self._slow_ma_period = self.Param("SlowMaPeriod", 50) \
+        self._slow_ma_period = self.Param("SlowMaPeriod", 160) \
             .SetDisplay("Slow MA Period", "Slow EMA period", "MA")
         self._atr_period = self.Param("AtrPeriod", 14) \
             .SetDisplay("ATR Period", "ATR period", "ATR")

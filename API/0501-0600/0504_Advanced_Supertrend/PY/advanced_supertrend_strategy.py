@@ -15,7 +15,7 @@ from StockSharp.Algo.Strategies import Strategy
 class advanced_supertrend_strategy(Strategy):
     def __init__(self):
         super(advanced_supertrend_strategy, self).__init__()
-        self._atr_length = self.Param("AtrLength", 10) \
+        self._atr_length = self.Param("AtrLength", 6) \
             .SetGreaterThanZero() \
             .SetDisplay("ATR Length", "ATR period for SuperTrend", "SuperTrend")
         self._multiplier = self.Param("Multiplier", 3.0) \
@@ -26,9 +26,9 @@ class advanced_supertrend_strategy(Strategy):
         self._atr_stop_length = self.Param("AtrStopLength", 14) \
             .SetGreaterThanZero() \
             .SetDisplay("ATR Stop Length", "ATR period for stops", "Risk")
-        self._sl_multiplier = self.Param("SlMultiplier", 2.0) \
+        self._sl_multiplier = self.Param("SlMultiplier", 3.0) \
             .SetDisplay("SL Multiplier", "Stop loss ATR multiplier", "Risk")
-        self._tp_multiplier = self.Param("TpMultiplier", 4.0) \
+        self._tp_multiplier = self.Param("TpMultiplier", 9.0) \
             .SetDisplay("TP Multiplier", "Take profit ATR multiplier", "Risk")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
             .SetDisplay("Candle Type", "Type of candles", "General")

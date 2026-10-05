@@ -18,13 +18,13 @@ class linear_mean_reversion_strategy(Strategy):
 
     def __init__(self):
         super(linear_mean_reversion_strategy, self).__init__()
-        self._half_life = self.Param("HalfLife", 30) \
+        self._half_life = self.Param("HalfLife", 14) \
             .SetDisplay("Half-Life", "Lookback window", "General")
         self._scale = self.Param("Scale", 1.0) \
             .SetDisplay("Scale", "Position scaling factor", "General")
-        self._entry_threshold = self.Param("EntryThreshold", 2.2) \
+        self._entry_threshold = self.Param("EntryThreshold", 2.0) \
             .SetDisplay("Entry Threshold", "Z-score entry threshold", "Parameters")
-        self._exit_threshold = self.Param("ExitThreshold", 0.5) \
+        self._exit_threshold = self.Param("ExitThreshold", 0.2) \
             .SetDisplay("Exit Threshold", "Z-score exit threshold", "Parameters")
         self._stop_loss_points = self.Param("StopLossPoints", 50.0) \
             .SetDisplay("Stop Loss Points", "Fixed stop loss in price points", "Risk Management")

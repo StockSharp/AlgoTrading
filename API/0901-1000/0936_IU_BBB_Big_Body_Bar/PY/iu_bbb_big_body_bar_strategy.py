@@ -16,7 +16,7 @@ class iu_bbb_big_body_bar_strategy(Strategy):
         super(iu_bbb_big_body_bar_strategy, self).__init__()
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(240))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
-        self._big_body_threshold = self.Param("BigBodyThreshold", 1.5) \
+        self._big_body_threshold = self.Param("BigBodyThreshold", 4.0) \
             .SetDisplay("Big Body Threshold", "Multiplier of average body", "Parameters")
         self._atr_length = self.Param("AtrLength", 14) \
             .SetDisplay("ATR Period", "ATR indicator period", "Indicators")

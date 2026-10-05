@@ -29,7 +29,7 @@ public class CrunchstersTurtleAndTrendSystemStrategy : Strategy
 
 	public CrunchstersTurtleAndTrendSystemStrategy()
 	{
-		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 

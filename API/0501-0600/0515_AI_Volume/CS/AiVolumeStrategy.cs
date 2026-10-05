@@ -36,7 +36,7 @@ public class AiVolumeStrategy : Strategy
 
 	public AiVolumeStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		_priceEmaLength = Param(nameof(PriceEmaLength), 20)
@@ -47,10 +47,10 @@ public class AiVolumeStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Volume EMA Length", "Length for volume EMA", "Parameters");
 
-		_volumeMultiplier = Param(nameof(VolumeMultiplier), 1.0m)
+		_volumeMultiplier = Param(nameof(VolumeMultiplier), 2m)
 			.SetDisplay("Volume Multiplier", "Multiplier for volume spike detection", "Parameters");
 
-		_exitBars = Param(nameof(ExitBars), 20)
+		_exitBars = Param(nameof(ExitBars), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Exit Bars", "Exit position after this many bars", "Risk");
 

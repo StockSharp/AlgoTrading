@@ -43,15 +43,15 @@ public class LongShortExitRiskManagementStrategy : Strategy
 			.SetDisplay("Slow SMA", "Slow SMA period", "Indicators")
 			.SetGreaterThanZero();
 
-		_stopLossPercent = Param(nameof(StopLossPercent), 3m)
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk")
 			.SetGreaterThanZero();
 
-		_takeProfitPercent = Param(nameof(TakeProfitPercent), 5m)
+		_takeProfitPercent = Param(nameof(TakeProfitPercent), 3m)
 			.SetDisplay("Take Profit %", "Take profit percentage", "Risk")
 			.SetGreaterThanZero();
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
 		_cooldownBars = Param(nameof(CooldownBars), 5)

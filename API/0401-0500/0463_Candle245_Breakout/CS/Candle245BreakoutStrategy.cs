@@ -70,7 +70,7 @@ public class Candle245BreakoutStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Ref Period", "Every N bars capture reference candle", "Trading");
 
-		_lookForwardBars = Param(nameof(LookForwardBars), 3)
+		_lookForwardBars = Param(nameof(LookForwardBars), 2)
 			.SetGreaterThanZero()
 			.SetDisplay("Look Forward Bars", "Bars to watch for breakout", "Trading");
 

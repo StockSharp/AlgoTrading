@@ -76,7 +76,7 @@ public class AtrGodStrategy : Strategy
 		_cooldownBars = Param(nameof(CooldownBars), 350)
 			.SetDisplay("Cooldown Bars", "Bars between trades", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 

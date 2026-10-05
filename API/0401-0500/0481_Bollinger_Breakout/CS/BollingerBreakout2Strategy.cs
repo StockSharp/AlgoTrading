@@ -50,7 +50,7 @@ public class BollingerBreakout2Strategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("StdDev Multiplier", "Standard deviation multiplier", "Bollinger Bands");
 
-		_trendLength = Param(nameof(TrendLength), 50)
+		_trendLength = Param(nameof(TrendLength), 80)
 			.SetGreaterThanZero()
 			.SetDisplay("Trend MA Length", "Length for trend moving average", "Filters");
 

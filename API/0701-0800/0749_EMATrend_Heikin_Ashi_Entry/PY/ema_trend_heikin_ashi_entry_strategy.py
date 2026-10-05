@@ -18,11 +18,11 @@ class ema_trend_heikin_ashi_entry_strategy(Strategy):
 
     def __init__(self):
         super(ema_trend_heikin_ashi_entry_strategy, self).__init__()
-        self._fast_ema_period = self.Param("FastEmaPeriod", 120) \
+        self._fast_ema_period = self.Param("FastEmaPeriod", 9) \
             .SetDisplay("Fast EMA", "Fast EMA period", "Indicators")
-        self._slow_ema_period = self.Param("SlowEmaPeriod", 450) \
+        self._slow_ema_period = self.Param("SlowEmaPeriod", 21) \
             .SetDisplay("Slow EMA", "Slow EMA period", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Candle type for strategy", "General")
 
         self._prev_fast_ema = 0.0

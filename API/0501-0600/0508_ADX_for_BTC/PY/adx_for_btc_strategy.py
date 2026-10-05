@@ -18,13 +18,13 @@ class adx_for_btc_strategy(Strategy):
         self._entry_level = self.Param("EntryLevel", 14.0) \
             .SetGreaterThanZero() \
             .SetDisplay("Entry Level", "ADX threshold for entry", "Strategy")
-        self._exit_level = self.Param("ExitLevel", 40.0) \
+        self._exit_level = self.Param("ExitLevel", 45.0) \
             .SetGreaterThanZero() \
             .SetDisplay("Exit Level", "ADX threshold for exit", "Strategy")
-        self._sma_length = self.Param("SmaLength", 50) \
+        self._sma_length = self.Param("SmaLength", 200) \
             .SetGreaterThanZero() \
             .SetDisplay("SMA Length", "Length for trend SMA", "Strategy")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
         self._cooldown_bars = self.Param("CooldownBars", 10) \
             .SetDisplay("Cooldown Bars", "Bars between trades", "Risk")

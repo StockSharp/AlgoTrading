@@ -32,7 +32,7 @@ class ai_supertrend_pivot_percentile_strategy(Strategy):
         self._adx_length = self.Param("AdxLength", 14) \
             .SetGreaterThanZero() \
             .SetDisplay("ADX Length", "ADX calculation period", "Filter")
-        self._adx_threshold = self.Param("AdxThreshold", 15.0) \
+        self._adx_threshold = self.Param("AdxThreshold", 20.0) \
             .SetDisplay("ADX Threshold", "Minimum ADX for trading", "Filter")
         self._pivot_length = self.Param("PivotLength", 14) \
             .SetGreaterThanZero() \

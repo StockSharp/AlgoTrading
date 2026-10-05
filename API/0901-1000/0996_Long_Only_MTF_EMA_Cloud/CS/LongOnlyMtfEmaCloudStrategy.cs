@@ -38,19 +38,19 @@ public class LongOnlyMtfEmaCloudStrategy : Strategy
 
 	public LongOnlyMtfEmaCloudStrategy()
 	{
-		_shortLength = Param(nameof(ShortLength), 25)
+		_shortLength = Param(nameof(ShortLength), 21)
 			.SetGreaterThanZero()
 			.SetDisplay("Short EMA", "Short EMA period", "Indicators");
-		_longLength = Param(nameof(LongLength), 65)
+		_longLength = Param(nameof(LongLength), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Long EMA", "Long EMA period", "Indicators");
-		_stopLossPercent = Param(nameof(StopLossPercent), 7m)
+		_stopLossPercent = Param(nameof(StopLossPercent), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop loss percent", "Risk");
-		_takeProfitPercent = Param(nameof(TakeProfitPercent), 12m)
+		_takeProfitPercent = Param(nameof(TakeProfitPercent), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit %", "Take profit percent", "Risk");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(10).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candles", "General");
 	}
 

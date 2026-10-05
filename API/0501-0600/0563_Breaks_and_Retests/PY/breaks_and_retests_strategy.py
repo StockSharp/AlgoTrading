@@ -16,13 +16,13 @@ class breaks_and_retests_strategy(Strategy):
         self._lookback_period = self.Param("LookbackPeriod", 20) \
             .SetGreaterThanZero() \
             .SetDisplay("Lookback Period", "Number of bars for support/resistance", "Levels")
-        self._stop_loss_percent = self.Param("StopLossPercent", 1.5) \
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
             .SetGreaterThanZero() \
             .SetDisplay("Stop Loss %", "Initial stop loss", "Risk")
-        self._profit_threshold_percent = self.Param("ProfitThresholdPercent", 2.0) \
+        self._profit_threshold_percent = self.Param("ProfitThresholdPercent", 5.0) \
             .SetGreaterThanZero() \
             .SetDisplay("Profit Threshold %", "Activate trailing after profit", "Risk")
-        self._trailing_stop_gap_percent = self.Param("TrailingStopGapPercent", 0.8) \
+        self._trailing_stop_gap_percent = self.Param("TrailingStopGapPercent", 1.0) \
             .SetGreaterThanZero() \
             .SetDisplay("Trailing Gap %", "Gap for trailing stop", "Risk")
         self._max_hold_bars = self.Param("MaxHoldBars", 25) \
@@ -31,7 +31,7 @@ class breaks_and_retests_strategy(Strategy):
         self._cooldown_bars = self.Param("CooldownBars", 3) \
             .SetGreaterThanZero() \
             .SetDisplay("Cooldown Bars", "Bars to wait after exit", "Risk")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Candles for calculations", "General")
         self._highs = []
         self._lows = []

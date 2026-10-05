@@ -29,7 +29,7 @@ class aud_usd_scalping_strategy(Strategy):
         self._ema_long = self.Param("EmaLong", 26) \
             .SetGreaterThanZero() \
             .SetDisplay("Long EMA", "Slow EMA period", "Indicators")
-        self._rsi_period = self.Param("RsiPeriod", 14) \
+        self._rsi_period = self.Param("RsiPeriod", 4) \
             .SetGreaterThanZero() \
             .SetDisplay("RSI Period", "RSI calculation period", "Indicators")
         self._cooldown_bars = self.Param("CooldownBars", 350) \

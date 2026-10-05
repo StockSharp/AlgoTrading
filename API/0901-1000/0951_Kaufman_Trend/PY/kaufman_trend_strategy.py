@@ -14,9 +14,9 @@ from StockSharp.Algo.Strategies import Strategy
 class kaufman_trend_strategy(Strategy):
     def __init__(self):
         super(kaufman_trend_strategy, self).__init__()
-        self._trend_strength_entry = self.Param("TrendStrengthEntry", 80) \
+        self._trend_strength_entry = self.Param("TrendStrengthEntry", 60) \
             .SetDisplay("Trend Strength Entry", "Entry threshold", "Trend")
-        self._trend_strength_exit = self.Param("TrendStrengthExit", 20) \
+        self._trend_strength_exit = self.Param("TrendStrengthExit", 40) \
             .SetDisplay("Trend Strength Exit", "Exit threshold", "Trend")
         self._process_noise = self.Param("ProcessNoise", 0.01) \
             .SetDisplay("Process Noise", "Kalman process noise", "Kalman")
@@ -28,7 +28,7 @@ class kaufman_trend_strategy(Strategy):
             .SetDisplay("Max Entries", "Maximum entries per run", "Risk")
         self._cooldown_bars = self.Param("CooldownBars", 300) \
             .SetDisplay("Cooldown Bars", "Minimum bars between entries", "Risk")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
         self._filtered_src = 0.0
         self._oscillator = 0.0

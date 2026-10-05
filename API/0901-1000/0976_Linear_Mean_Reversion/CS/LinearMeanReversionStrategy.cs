@@ -68,7 +68,7 @@ public class LinearMeanReversionStrategy : Strategy
 	/// </summary>
 	public LinearMeanReversionStrategy()
 	{
-		_halfLife = Param(nameof(HalfLife), 30)
+		_halfLife = Param(nameof(HalfLife), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Half-Life", "Lookback window for mean and deviation", "General")
 			
@@ -80,13 +80,13 @@ public class LinearMeanReversionStrategy : Strategy
 			
 			.SetOptimize(1m, 3m, 1m);
 
-		_entryThreshold = Param(nameof(EntryThreshold), 2.2m)
+		_entryThreshold = Param(nameof(EntryThreshold), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Entry Threshold", "Z-score entry threshold", "Parameters")
 			
 			.SetOptimize(1.5m, 3.5m, 0.2m);
 
-		_exitThreshold = Param(nameof(ExitThreshold), 0.5m)
+		_exitThreshold = Param(nameof(ExitThreshold), 0.2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Exit Threshold", "Z-score exit threshold", "Parameters")
 			

@@ -82,10 +82,10 @@ public class AdaptiveFibonacciPullbackStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "RSI period", "RSI");
 
-		_rsiBuy = Param(nameof(RsiBuy), 50m)
+		_rsiBuy = Param(nameof(RsiBuy), 70m)
 			.SetDisplay("RSI Buy Threshold", "RSI must be above for long", "RSI");
 
-		_rsiSell = Param(nameof(RsiSell), 50m)
+		_rsiSell = Param(nameof(RsiSell), 30m)
 			.SetDisplay("RSI Sell Threshold", "RSI must be below for short", "RSI");
 
 		_cooldownBars = Param(nameof(CooldownBars), 10)

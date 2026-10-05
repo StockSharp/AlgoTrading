@@ -25,7 +25,7 @@ class adaptive_trend_flow_strategy(Strategy):
         self._atr_length = self.Param("AtrLength", 14) \
             .SetGreaterThanZero() \
             .SetDisplay("ATR Length", "ATR period for volatility", "Trend")
-        self._sensitivity = self.Param("Sensitivity", 1.5) \
+        self._sensitivity = self.Param("Sensitivity", 2.0) \
             .SetGreaterThanZero() \
             .SetDisplay("Sensitivity", "ATR multiplier for channel", "Trend")
         self._cooldown_bars = self.Param("CooldownBars", 10) \

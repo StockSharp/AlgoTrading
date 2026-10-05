@@ -14,7 +14,7 @@ from StockSharp.Algo.Strategies import Strategy
 class berlin_range_index_strategy(Strategy):
     def __init__(self):
         super(berlin_range_index_strategy, self).__init__()
-        self._length = self.Param("Length", 7) \
+        self._length = self.Param("Length", 9) \
             .SetGreaterThanZero() \
             .SetDisplay("Length", "Choppiness index period", "General")
         self._chop_threshold = self.Param("ChopThreshold", 55.0) \

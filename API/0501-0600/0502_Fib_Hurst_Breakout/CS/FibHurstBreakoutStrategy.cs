@@ -35,7 +35,7 @@ public class FibHurstBreakoutStrategy : Strategy
 
 	public FibHurstBreakoutStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for strategy", "Parameters");
 
 		_hurstPeriod = Param(nameof(HurstPeriod), 50)

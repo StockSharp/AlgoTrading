@@ -19,7 +19,7 @@ class bias_ratio_strategy(Strategy):
         self._ma_period = self.Param("MaPeriod", 200) \
             .SetGreaterThanZero() \
             .SetDisplay("MA Period", "Moving average period", "Indicators")
-        self._bias_threshold = self.Param("BiasThreshold", 0.015) \
+        self._bias_threshold = self.Param("BiasThreshold", 0.025) \
             .SetDisplay("Bias Threshold", "Price deviation ratio from MA", "Trading")
         self._prev_bias_ema = 0.0
         self._prev_bias_sma = 0.0

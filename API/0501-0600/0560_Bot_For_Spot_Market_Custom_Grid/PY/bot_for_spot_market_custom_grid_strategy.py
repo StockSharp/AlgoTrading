@@ -13,9 +13,9 @@ from StockSharp.Algo.Strategies import Strategy
 class bot_for_spot_market_custom_grid_strategy(Strategy):
     def __init__(self):
         super(bot_for_spot_market_custom_grid_strategy, self).__init__()
-        self._next_entry_percent = self.Param("NextEntryPercent", 10.0) \
+        self._next_entry_percent = self.Param("NextEntryPercent", 0.5) \
             .SetDisplay("Next Entry Less Than (%)", "Price drop from last entry to add new order", "Parameters")
-        self._profit_percent = self.Param("ProfitPercent", 15.0) \
+        self._profit_percent = self.Param("ProfitPercent", 2.0) \
             .SetDisplay("Profit (%)", "Profit target from average price", "Parameters")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(60))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")

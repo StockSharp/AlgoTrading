@@ -16,7 +16,7 @@ class bedo_osaimi_istr_strategy(Strategy):
         super(bedo_osaimi_istr_strategy, self).__init__()
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
-        self._ma_length = self.Param("MaLength", 10) \
+        self._ma_length = self.Param("MaLength", 20) \
             .SetGreaterThanZero() \
             .SetDisplay("MA Length", "Moving average length", "Parameters")
         self._prev_close = None

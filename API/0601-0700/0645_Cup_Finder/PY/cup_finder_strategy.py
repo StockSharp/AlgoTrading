@@ -19,7 +19,7 @@ class cup_finder_strategy(Strategy):
         super(cup_finder_strategy, self).__init__()
         self._fast_ema_period = self.Param("FastEmaPeriod", 120)             .SetDisplay("Fast EMA", "Fast EMA period", "Indicators")
         self._slow_ema_period = self.Param("SlowEmaPeriod", 450)             .SetDisplay("Slow EMA", "Slow EMA period", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1)))             .SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15)))             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._prev_fast_ema = 0.0
         self._prev_slow_ema = 0.0

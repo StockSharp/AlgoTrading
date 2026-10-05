@@ -19,7 +19,7 @@ class adaptive_hma_plus_strategy(Strategy):
 
         self._hma_length = self.Param("HmaLength", 20) \
             .SetDisplay("HMA Length", "Hull Moving Average period", "General")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
         self._cooldown_bars = self.Param("CooldownBars", 10) \
             .SetDisplay("Cooldown Bars", "Bars between trades", "Risk")

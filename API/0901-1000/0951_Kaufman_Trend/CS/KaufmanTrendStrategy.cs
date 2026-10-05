@@ -84,10 +84,10 @@ public class KaufmanTrendStrategy : Strategy
 
 	public KaufmanTrendStrategy()
 	{
-		_trendStrengthEntry = Param(nameof(TrendStrengthEntry), 80)
+		_trendStrengthEntry = Param(nameof(TrendStrengthEntry), 60)
 			.SetDisplay("Trend Strength Entry", "Entry threshold.", "Trend");
 
-		_trendStrengthExit = Param(nameof(TrendStrengthExit), 20)
+		_trendStrengthExit = Param(nameof(TrendStrengthExit), 40)
 			.SetDisplay("Trend Strength Exit", "Exit threshold.", "Trend");
 
 		_processNoise = Param(nameof(ProcessNoise), 0.01m)
@@ -105,7 +105,7 @@ public class KaufmanTrendStrategy : Strategy
 		_cooldownBars = Param(nameof(CooldownBars), 300)
 			.SetDisplay("Cooldown Bars", "Minimum bars between entries.", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles.", "General");
 	}
 

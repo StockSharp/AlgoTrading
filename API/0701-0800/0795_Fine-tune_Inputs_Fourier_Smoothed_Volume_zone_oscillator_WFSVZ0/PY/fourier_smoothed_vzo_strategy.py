@@ -20,7 +20,7 @@ class fourier_smoothed_vzo_strategy(Strategy):
         super(fourier_smoothed_vzo_strategy, self).__init__()
         self._fast_period = self.Param("FastPeriod", 120)             .SetDisplay("Fast EMA", "Fast EMA period", "Indicator")
         self._slow_period = self.Param("SlowPeriod", 450)             .SetDisplay("Slow EMA", "Slow EMA period", "Indicator")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1)))             .SetDisplay("Candle Type", "Time frame for candles", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5)))             .SetDisplay("Candle Type", "Time frame for candles", "General")
 
         self._prev_fast = 0.0
         self._prev_slow = 0.0

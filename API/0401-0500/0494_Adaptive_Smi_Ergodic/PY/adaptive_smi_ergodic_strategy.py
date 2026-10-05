@@ -22,12 +22,12 @@ class adaptive_smi_ergodic_strategy(Strategy):
         self._second_length = self.Param("SecondLength", 13) \
             .SetGreaterThanZero() \
             .SetDisplay("Second Length", "Second smoothing length for TSI", "TSI")
-        self._signal_length = self.Param("SignalLength", 7) \
+        self._signal_length = self.Param("SignalLength", 5) \
             .SetGreaterThanZero() \
             .SetDisplay("Signal Length", "Signal EMA length", "TSI")
-        self._oversold_threshold = self.Param("OversoldThreshold", -10.0) \
+        self._oversold_threshold = self.Param("OversoldThreshold", -0.4) \
             .SetDisplay("Oversold Threshold", "Oversold level for TSI", "TSI")
-        self._overbought_threshold = self.Param("OverboughtThreshold", 10.0) \
+        self._overbought_threshold = self.Param("OverboughtThreshold", 0.4) \
             .SetDisplay("Overbought Threshold", "Overbought level for TSI", "TSI")
         self._cooldown_bars = self.Param("CooldownBars", 10) \
             .SetDisplay("Cooldown Bars", "Bars between trades", "Risk")

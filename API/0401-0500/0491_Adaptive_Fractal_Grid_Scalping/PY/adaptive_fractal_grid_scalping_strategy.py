@@ -23,7 +23,7 @@ class adaptive_fractal_grid_scalping_strategy(Strategy):
             .SetDisplay("SMA Length", "SMA period", "Parameters")
         self._stop_multiplier = self.Param("StopMultiplier", 2.0) \
             .SetDisplay("Stop Multiplier", "ATR multiplier for stop/TP", "Risk")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles", "Data")
         self._cooldown_bars = self.Param("CooldownBars", 10) \
             .SetDisplay("Cooldown Bars", "Bars between trades", "Risk")

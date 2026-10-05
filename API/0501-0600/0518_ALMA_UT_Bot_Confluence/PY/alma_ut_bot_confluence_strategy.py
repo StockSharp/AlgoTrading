@@ -22,7 +22,7 @@ class alma_ut_bot_confluence_strategy(Strategy):
     def __init__(self):
         super(alma_ut_bot_confluence_strategy, self).__init__()
 
-        self._ema_length = self.Param("EmaLength", 50) \
+        self._ema_length = self.Param("EmaLength", 72) \
             .SetDisplay("EMA Length", "Length for long-term EMA", "Main")
 
         self._atr_length = self.Param("AtrLength", 14) \
@@ -40,7 +40,7 @@ class alma_ut_bot_confluence_strategy(Strategy):
         self._ut_atr_period = self.Param("UtAtrPeriod", 10) \
             .SetDisplay("UT ATR Period", "ATR period for UT Bot", "UT Bot")
 
-        self._base_cooldown_bars = self.Param("BaseCooldownBars", 30) \
+        self._base_cooldown_bars = self.Param("BaseCooldownBars", 7) \
             .SetDisplay("Base Cooldown", "Cooldown in bars between trades", "Filters")
 
         self._use_ut_exit = self.Param("UseUtExit", True) \

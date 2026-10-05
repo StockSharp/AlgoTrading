@@ -49,15 +49,15 @@ public class AdaptiveSmiErgodicStrategy : Strategy
 			.SetDisplay("Second Length", "Second smoothing length for TSI", "TSI")
 			.SetOptimize(5, 20, 3);
 
-		_signalLength = Param(nameof(SignalLength), 7)
+		_signalLength = Param(nameof(SignalLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Length", "Signal EMA length", "TSI")
 			.SetOptimize(3, 15, 2);
 
-		_oversoldThreshold = Param(nameof(OversoldThreshold), -10m)
+		_oversoldThreshold = Param(nameof(OversoldThreshold), -0.4m)
 			.SetDisplay("Oversold Threshold", "Oversold level for TSI", "TSI");
 
-		_overboughtThreshold = Param(nameof(OverboughtThreshold), 10m)
+		_overboughtThreshold = Param(nameof(OverboughtThreshold), 0.4m)
 			.SetDisplay("Overbought Threshold", "Overbought level for TSI", "TSI");
 
 		_cooldownBars = Param(nameof(CooldownBars), 10)

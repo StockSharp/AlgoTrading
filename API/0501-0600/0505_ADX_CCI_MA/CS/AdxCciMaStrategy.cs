@@ -47,11 +47,11 @@ public class AdxCciMaStrategy : Strategy
 		_adxThreshold = Param(nameof(AdxThreshold), 20m)
 			.SetDisplay("ADX Threshold", "ADX level to confirm trend", "Indicators");
 
-		_maLength = Param(nameof(MaLength), 50)
+		_maLength = Param(nameof(MaLength), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Length", "Length of moving average", "MA Trend");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candles", "General");
 
 		_cooldownBars = Param(nameof(CooldownBars), 10)

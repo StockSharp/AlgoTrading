@@ -49,7 +49,7 @@ public class AdaptiveFractalGridScalpingStrategy : Strategy
 		_stopMultiplier = Param(nameof(StopMultiplier), 2m)
 			.SetDisplay("Stop Multiplier", "ATR multiplier for stop/TP", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "Data");
 
 		_cooldownBars = Param(nameof(CooldownBars), 10)

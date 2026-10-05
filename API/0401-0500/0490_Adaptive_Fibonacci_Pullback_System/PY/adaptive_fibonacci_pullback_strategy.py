@@ -36,9 +36,9 @@ class adaptive_fibonacci_pullback_strategy(Strategy):
             .SetDisplay("AMA Length", "Length for AMA midline", "AMA")
         self._rsi_length = self.Param("RsiLength", 7) \
             .SetDisplay("RSI Length", "RSI period", "RSI")
-        self._rsi_buy = self.Param("RsiBuy", 50.0) \
+        self._rsi_buy = self.Param("RsiBuy", 70.0) \
             .SetDisplay("RSI Buy Threshold", "RSI must be above for long", "RSI")
-        self._rsi_sell = self.Param("RsiSell", 50.0) \
+        self._rsi_sell = self.Param("RsiSell", 30.0) \
             .SetDisplay("RSI Sell Threshold", "RSI must be below for short", "RSI")
         self._cooldown_bars = self.Param("CooldownBars", 10) \
             .SetDisplay("Cooldown Bars", "Bars between trades", "Risk")

@@ -36,14 +36,14 @@ public class AdxVolumeMultiplierStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_adxPeriod = Param(nameof(AdxPeriod), 14)
+		_adxPeriod = Param(nameof(AdxPeriod), 21)
 			.SetGreaterThanZero()
 			.SetDisplay("ADX Period", "Period for ADX", "ADX");
 
-		_adxThreshold = Param(nameof(AdxThreshold), 20m)
+		_adxThreshold = Param(nameof(AdxThreshold), 26m)
 			.SetDisplay("ADX Threshold", "Trend strength threshold", "ADX");
 
-		_volumeMultiplier = Param(nameof(VolumeMultiplier), 0.8m)
+		_volumeMultiplier = Param(nameof(VolumeMultiplier), 1.8m)
 			.SetDisplay("Volume Multiplier", "Multiplier for average volume", "Volume");
 
 		_volumePeriod = Param(nameof(VolumePeriod), 20)

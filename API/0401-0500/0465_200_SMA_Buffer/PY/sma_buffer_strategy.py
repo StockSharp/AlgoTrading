@@ -19,11 +19,11 @@ class sma_buffer_strategy(Strategy):
 
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
-        self._sma_length = self.Param("SmaLength", 100) \
+        self._sma_length = self.Param("SmaLength", 200) \
             .SetDisplay("SMA Length", "Period of the moving average", "Parameters")
-        self._entry_percent = self.Param("EntryPercent", 2.0) \
+        self._entry_percent = self.Param("EntryPercent", 5.0) \
             .SetDisplay("Entry %", "Percent above/below SMA to enter", "Parameters")
-        self._exit_percent = self.Param("ExitPercent", 1.0) \
+        self._exit_percent = self.Param("ExitPercent", 3.0) \
             .SetDisplay("Exit %", "Percent toward SMA to exit", "Parameters")
         self._cooldown_bars = self.Param("CooldownBars", 10) \
             .SetDisplay("Cooldown Bars", "Bars between trades", "Risk")

@@ -121,7 +121,7 @@ public class LarryConnorsPercentBStrategy : Strategy
 	/// </summary>
 	public LarryConnorsPercentBStrategy()
 	{
-		_smaPeriod = Param(nameof(SmaPeriod), 50)
+		_smaPeriod = Param(nameof(SmaPeriod), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("SMA Period", "Period for long-term trend filter", "General")
 			
@@ -139,7 +139,7 @@ public class LarryConnorsPercentBStrategy : Strategy
 			
 			.SetOptimize(1.0m, 3.0m, 0.5m);
 
-		_lowPercentB = Param(nameof(LowPercentB), 0.35m)
+		_lowPercentB = Param(nameof(LowPercentB), 0.2m)
 			.SetDisplay("Low %B", "Lower threshold for %B", "Signals")
 			
 			.SetOptimize(0.1m, 0.3m, 0.05m);
@@ -163,7 +163,7 @@ public class LarryConnorsPercentBStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Cooldown Bars", "Minimum bars between entries", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 

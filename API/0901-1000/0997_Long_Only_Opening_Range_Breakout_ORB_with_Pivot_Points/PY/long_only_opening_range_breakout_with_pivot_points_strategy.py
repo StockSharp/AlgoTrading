@@ -19,7 +19,7 @@ class long_only_opening_range_breakout_with_pivot_points_strategy(Strategy):
         self._range_bars = self.Param("RangeBars", 20) \
             .SetGreaterThanZero() \
             .SetDisplay("Range Bars", "Lookback bars for channel", "General")
-        self._stop_loss_percent = self.Param("StopLossPercent", 5.0) \
+        self._stop_loss_percent = self.Param("StopLossPercent", 3.0) \
             .SetDisplay("Stop Loss %", "Initial stop loss percent", "Risk")
         self._pivot_length = self.Param("PivotLength", 20) \
             .SetGreaterThanZero() \

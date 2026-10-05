@@ -22,7 +22,7 @@ class one_two_three_reversal_strategy(Strategy):
             .SetDisplay("Candle Type", "Type of candles to use", "General")
         self._hold_bars = self.Param("HoldBars", 15) \
             .SetDisplay("Hold Bars", "Bars to hold position", "Trading")
-        self._ma_length = self.Param("MaLength", 50) \
+        self._ma_length = self.Param("MaLength", 200) \
             .SetDisplay("MA Length", "Moving average period", "Indicators")
         self._cooldown_bars = self.Param("CooldownBars", 10) \
             .SetDisplay("Cooldown Bars", "Bars between trades", "Risk")

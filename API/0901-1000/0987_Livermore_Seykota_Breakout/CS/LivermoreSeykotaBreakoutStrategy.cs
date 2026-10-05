@@ -37,11 +37,11 @@ public class LivermoreSeykotaBreakoutStrategy : Strategy
 	{
 		_emaLength = Param(nameof(EmaLength), 50)
 			.SetDisplay("EMA Length", "EMA trend period", "Indicators");
-		_pivotLength = Param(nameof(PivotLength), 30)
+		_pivotLength = Param(nameof(PivotLength), 3)
 			.SetDisplay("Pivot Length", "Bars for pivot high/low", "General");
 		_atrLength = Param(nameof(AtrLength), 14)
 			.SetDisplay("ATR Length", "ATR period", "Indicators");
-		_trailAtrMultiplier = Param(nameof(TrailAtrMultiplier), 10m)
+		_trailAtrMultiplier = Param(nameof(TrailAtrMultiplier), 2m)
 			.SetDisplay("Trail ATR Mult", "ATR trailing mult", "Risk");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Candles", "General");

@@ -37,15 +37,15 @@ public class AdxForBtcStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Entry Level", "ADX threshold for entry", "Strategy");
 
-		_exitLevel = Param(nameof(ExitLevel), 40m)
+		_exitLevel = Param(nameof(ExitLevel), 45m)
 			.SetGreaterThanZero()
 			.SetDisplay("Exit Level", "ADX threshold for exit", "Strategy");
 
-		_smaLength = Param(nameof(SmaLength), 50)
+		_smaLength = Param(nameof(SmaLength), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("SMA Length", "Length for trend SMA", "Strategy");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
 		_cooldownBars = Param(nameof(CooldownBars), 10)

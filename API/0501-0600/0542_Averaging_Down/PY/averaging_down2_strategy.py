@@ -16,7 +16,7 @@ class averaging_down2_strategy(Strategy):
         super(averaging_down2_strategy, self).__init__()
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
-        self._rsi_length = self.Param("RsiLength", 14) \
+        self._rsi_length = self.Param("RsiLength", 10) \
             .SetGreaterThanZero() \
             .SetDisplay("RSI Length", "RSI calculation length", "Indicators")
         self._ema_length = self.Param("EmaLength", 40) \

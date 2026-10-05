@@ -35,7 +35,7 @@ public class EmaMovingAwayStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Length", "EMA period", "Moving Average");
 
-		_movingAwayPercent = Param(nameof(MovingAwayPercent), 1.5m)
+		_movingAwayPercent = Param(nameof(MovingAwayPercent), 2m)
 			.SetDisplay("Moving away (%)", "Required percentage that price moves away from EMA", "Strategy");
 
 		_cooldownBars = Param(nameof(CooldownBars), 10)
