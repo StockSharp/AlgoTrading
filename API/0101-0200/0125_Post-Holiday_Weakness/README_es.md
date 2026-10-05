@@ -18,7 +18,9 @@ Se usa un stop pequeño para evitar pérdidas excesivas durante la negociación 
 - **Stops**: Sí, basado en porcentaje
 - **Valores predeterminados**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `Holidays` = 2024 NYSE holidays
+  - `StopLossPercent` = 2
+    Los días son días UTC, ya que el mercado opera las 24 horas; las entradas ocurren al cierre de la primera vela del día. Holidays es una lista de fechas yyyy-MM-dd separadas por comas, por defecto los festivos de la NYSE de 2024 (Viernes Santo es 2024-03-29). El mercado opera todos los días, así que la venta en corto se abre el día natural posterior a un festivo y se cubre en la última vela de ese día.
 - **Filtros**:
   - Categoría: Estacionalidad
   - Dirección: Ambos

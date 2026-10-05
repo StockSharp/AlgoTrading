@@ -18,7 +18,8 @@ Um stop moderado protege contra anomalias, encerrando a posição antecipadament
 - **Stops**: Sim, baseado em percentual
 - **Valores padrão**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+    Os dias são dias UTC, pois o mercado negocia 24 horas; as entradas ocorrem no fechamento da primeira vela do dia. De terça a quinta compra e às segundas e sextas vende a descoberto; a posição fecha na última vela do dia e não se opera nos fins de semana.
 - **Filtros**:
   - Categoria: Sazonalidade
   - Direção: Ambos

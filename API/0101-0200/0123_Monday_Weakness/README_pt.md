@@ -18,7 +18,8 @@ Os stops são mantidos estreitos para evitar perdas caso o mercado contrarie a t
 - **Stops**: Sim, baseado em percentual
 - **Valores padrão**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+    Os dias são dias UTC, pois o mercado negocia 24 horas; as entradas ocorrem no fechamento da primeira vela do dia. A venda a descoberto abre na primeira vela de segunda e é coberta na última vela de segunda.
 - **Filtros**:
   - Categoria: Sazonalidade
   - Direção: Ambos

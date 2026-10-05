@@ -18,7 +18,8 @@ Los stops se mantienen ajustados para evitar pérdidas si el mercado rompe la te
 - **Stops**: Sí, basado en porcentaje
 - **Valores predeterminados**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+    Los días son días UTC, ya que el mercado opera las 24 horas; las entradas ocurren al cierre de la primera vela del día. La venta en corto se abre en la primera vela del lunes y se cubre en la última vela del lunes.
 - **Filtros**:
   - Categoría: Estacionalidad
   - Dirección: Ambos

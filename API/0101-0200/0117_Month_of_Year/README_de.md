@@ -18,7 +18,8 @@ Stops werden eingesetzt, um das Kapital zu schützen, falls das übliche saisona
 - **Stops**: Ja, prozentbasiert
 - **Standardwerte**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+    Tage sind UTC-Tage, da der Markt rund um die Uhr handelt; Einstiege erfolgen zum Schluss der ersten Kerze des Tages. November bis April wird gekauft, Mai bis Oktober leerverkauft – die klassische saisonale Teilung mit starken Wintermonaten und schwachem September; die Position öffnet mit der ersten Kerze des Monats und schließt mit der letzten.
 - **Filter**:
   - Kategorie: Saisonalität
   - Richtung: Beide

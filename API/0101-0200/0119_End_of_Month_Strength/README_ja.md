@@ -18,7 +18,9 @@
 - **ストップ**: はい、パーセントベース
 - **デフォルト値**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `DaysBeforeMonthEnd` = 3
+  - `StopLossPercent` = 2
+    市場は24時間取引のため日付はUTCで数え、エントリーはその日の最初の足の終値で行います。 ポジションがなければ月末の最後 DaysBeforeMonthEnd 日の各日に買い、新しい月の最初の足で閉じます。
 - **フィルター**:
   - カテゴリ: 季節性
   - 方向: 両方

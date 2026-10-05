@@ -18,7 +18,8 @@ Un pequeño stop protege contra sorpresas bajistas si la fortaleza esperada no s
 - **Stops**: Sí, basado en porcentaje
 - **Valores predeterminados**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+    Los días son días UTC, ya que el mercado opera las 24 horas; las entradas ocurren al cierre de la primera vela del día. La compra se abre en la primera vela del mes y se cierra en la última vela de ese primer día.
 - **Filtros**:
   - Categoría: Estacionalidad
   - Dirección: Ambos

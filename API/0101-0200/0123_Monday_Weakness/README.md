@@ -18,7 +18,8 @@ Stops are kept narrow to avoid losses if the market bucks the tendency and ralli
 - **Stops**: Yes, percent based
 - **Default Values**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+    Days are UTC days, since the market trades around the clock; entries happen at the close of the day's first candle. The short opens on Monday's first candle and is covered at Monday's last candle.
 - **Filters**:
   - Category: Seasonality
   - Direction: Both

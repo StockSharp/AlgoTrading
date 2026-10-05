@@ -18,7 +18,9 @@ Ein fester Stop hält das Risiko im Rahmen, falls die Volatilität zu extrem aus
 - **Stops**: Ja, prozentbasiert
 - **Standardwerte**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `MaPeriod` = 20
+  - `StopLossPercent` = 2
+    Tage sind UTC-Tage, da der Markt rund um die Uhr handelt; Einstiege erfolgen zum Schluss der ersten Kerze des Tages. Der Quartalsverfall ist der dritte Freitag im März, Juni, September und Dezember. Am Montag dieser Woche handelt die Strategie mit dem Trend (Kauf über dem SMA mit Periode MaPeriod, Verkauf darunter) und schließt mit der letzten Donnerstagskerze, vor der Abrechnung.
 - **Filter**:
   - Kategorie: Saisonalität
   - Richtung: Beide

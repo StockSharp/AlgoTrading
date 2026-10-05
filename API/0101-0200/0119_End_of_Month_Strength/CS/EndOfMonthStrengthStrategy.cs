@@ -11,33 +11,39 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Implementation of End of Month Strength trading strategy.
-/// Buys on the last week of the month, exits on the first week of the next month.
-/// Also sells short in mid-month if price below MA.
+/// End of Month Strength strategy.
+/// Days are UTC days of a market that trades around the clock.
+/// It buys at the close of the first candle of each of the month's last DaysBeforeMonthEnd days while flat and sells
+/// at the close of the first candle of the new month; a percent stop limits the loss.
 /// </summary>
 public class EndOfMonthStrengthStrategy : Strategy
 {
-	private readonly StrategyParam<int> _maPeriod;
+	private readonly StrategyParam<int> _daysBeforeMonthEnd;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
 
-	private SimpleMovingAverage _ma;
-
-	private int _cooldown;
-	private int _prevDayOfMonth;
-	private int _prevMonth;
+	private DateTime? _day;
 
 	/// <summary>
-	/// Moving average period.
+	/// How many final days of the month to hold.
 	/// </summary>
-	public int MaPeriod
+	public int DaysBeforeMonthEnd
 	{
-		get => _maPeriod.Value;
-		set => _maPeriod.Value = value;
+		get => _daysBeforeMonthEnd.Value;
+		set => _daysBeforeMonthEnd.Value = value;
 	}
 
 	/// <summary>
-	/// Candle type for strategy.
+	/// Stop-loss percentage.
+	/// </summary>
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -46,29 +52,20 @@ public class EndOfMonthStrengthStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Cooldown bars between trades.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="EndOfMonthStrengthStrategy"/>.
+	/// Constructor.
 	/// </summary>
 	public EndOfMonthStrengthStrategy()
 	{
-		_maPeriod = Param(nameof(MaPeriod), 20)
+		_daysBeforeMonthEnd = Param(nameof(DaysBeforeMonthEnd), 3)
 			.SetGreaterThanZero()
-			.SetDisplay("MA Period", "Moving average period for trend confirmation", "Strategy");
+			.SetDisplay("Days Before Month End", "How many final days of the month to hold", "Calendar");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles for strategy", "Strategy");
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
 
-		_cooldownBars = Param(nameof(CooldownBars), 50)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "General")
-			.SetRange(5, 500);
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -81,10 +78,7 @@ public class EndOfMonthStrengthStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_ma = default;
-		_cooldown = 0;
-		_prevDayOfMonth = 0;
-		_prevMonth = 0;
+		_day = null;
 	}
 
 	/// <inheritdoc />
@@ -92,78 +86,74 @@ public class EndOfMonthStrengthStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_ma = new SimpleMovingAverage { Length = MaPeriod };
-
+		_day = null;
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_ma, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
+
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _ma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal maValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// The high-level handler activates native protection before this callback, also between signal bars.
+	}
+
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		var day = candle.OpenTime.Date;
+		var firstOfDay = _day != day;
+
+		if (firstOfDay)
+		{
+			_day = day;
+		}
+
+		// The candle is the day's last when the next one would open on another day.
+		var frame = CandleType.Arg is TimeSpan tf ? tf : TimeSpan.Zero;
+		var lastOfDay = (candle.OpenTime + frame).Date != day;
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var close = candle.ClosePrice;
-		var dayOfMonth = candle.OpenTime.Day;
-		var month = candle.OpenTime.Month;
-
-		// Detect new day transition
-		var isNewDay = dayOfMonth != _prevDayOfMonth;
-
-		if (_cooldown > 0)
+		if (Position != 0)
 		{
-			_cooldown--;
-			_prevDayOfMonth = dayOfMonth;
-			_prevMonth = month;
+			if (firstOfDay && day.Day == 1)
+			{
+				if (Position > 0)
+					SellMarket(Position);
+				else
+					BuyMarket(-Position);
+			}
+
 			return;
 		}
 
-		// End-of-month zone: day >= 24
-		var isEndOfMonth = dayOfMonth >= 24;
-		// Beginning-of-month zone: day <= 5
-		var isBeginOfMonth = dayOfMonth <= 5;
-		// Mid-month zone: day between 10 and 20
-		var isMidMonth = dayOfMonth >= 10 && dayOfMonth <= 20;
+		if (!(firstOfDay && day.Day > DateTime.DaysInMonth(day.Year, day.Month) - DaysBeforeMonthEnd))
+			return;
 
-		// Entry: buy at end of month if flat
-		if (isEndOfMonth && isNewDay && Position == 0)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-		// Exit: sell at beginning of next month
-		else if (isBeginOfMonth && isNewDay && Position > 0)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		// Short in mid-month if below MA
-		else if (isMidMonth && isNewDay && Position == 0 && close < maValue)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		// Cover short at end of month
-		else if (isEndOfMonth && isNewDay && Position < 0)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-
-		_prevDayOfMonth = dayOfMonth;
-		_prevMonth = month;
+		if ((1) > 0)
+			BuyMarket(Volume);
+		else
+			SellMarket(Volume);
 	}
 }

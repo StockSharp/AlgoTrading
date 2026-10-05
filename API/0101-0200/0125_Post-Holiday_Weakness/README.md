@@ -18,7 +18,9 @@ A small stop is used to avoid excessive losses during low-liquidity trading.
 - **Stops**: Yes, percent based
 - **Default Values**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `Holidays` = 2024 NYSE holidays
+  - `StopLossPercent` = 2
+    Days are UTC days, since the market trades around the clock; entries happen at the close of the day's first candle. Holidays is a comma-separated list of yyyy-MM-dd dates, by default the 2024 NYSE holidays (Good Friday is 2024-03-29). The market trades every day, so the short opens on the calendar day after a holiday and is covered at that day's last candle.
 - **Filters**:
   - Category: Seasonality
   - Direction: Both

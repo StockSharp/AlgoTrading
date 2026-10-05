@@ -18,7 +18,9 @@ Um stop pequeno é usado para evitar perdas excessivas durante a negociação co
 - **Stops**: Sim, baseado em percentual
 - **Valores padrão**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `Holidays` = 2024 NYSE holidays
+  - `StopLossPercent` = 2
+    Os dias são dias UTC, pois o mercado negocia 24 horas; as entradas ocorrem no fechamento da primeira vela do dia. Holidays é uma lista de datas yyyy-MM-dd separadas por vírgula, por padrão os feriados da NYSE de 2024 (a Sexta-feira Santa é 2024-03-29). O mercado negocia todos os dias, então a venda a descoberto abre no dia corrido seguinte a um feriado e é coberta na última vela desse dia.
 - **Filtros**:
   - Categoria: Sazonalidade
   - Direção: Ambos

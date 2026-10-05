@@ -11,23 +11,27 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Month of Year seasonal trading strategy.
-/// Enters long in historically strong months (Nov-Jan) and short in weak months (Feb, May, Sep).
-/// Uses MA trend filter and cooldown between trades.
+/// Month of Year strategy.
+/// Days are UTC days of a market that trades around the clock.
+/// On the first candle of each month it buys from November through April and sells short from May through October,
+/// the classic seasonal split with strong winter months and a weak September; the position closes at the month's last candle,
+/// and a percent stop limits the loss.
 /// </summary>
 public class MonthOfYearStrategy : Strategy
 {
+	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _maPeriod;
-	private readonly StrategyParam<int> _cooldownBars;
 
-	private SimpleMovingAverage _ma;
+	private DateTime? _day;
 
-	private decimal _prevMa;
-	private decimal _prevClose;
-	private int _lastTradeMonth;
-	private int _lastTradeHalf;
-	private int _cooldown;
+	/// <summary>
+	/// Stop-loss percentage.
+	/// </summary>
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
+	}
 
 	/// <summary>
 	/// Candle type.
@@ -39,38 +43,16 @@ public class MonthOfYearStrategy : Strategy
 	}
 
 	/// <summary>
-	/// MA period.
-	/// </summary>
-	public int MaPeriod
-	{
-		get => _maPeriod.Value;
-		set => _maPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Cooldown bars.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
 	/// Constructor.
 	/// </summary>
 	public MonthOfYearStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Candle timeframe", "General");
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
 
-		_maPeriod = Param(nameof(MaPeriod), 20)
-			.SetDisplay("MA Period", "SMA period", "Indicators")
-			.SetRange(10, 50);
-
-		_cooldownBars = Param(nameof(CooldownBars), 100)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "General")
-			.SetRange(10, 2000);
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -83,12 +65,7 @@ public class MonthOfYearStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_ma = default;
-		_prevMa = 0;
-		_prevClose = 0;
-		_lastTradeMonth = 0;
-		_lastTradeHalf = 0;
-		_cooldown = 0;
+		_day = null;
 	}
 
 	/// <inheritdoc />
@@ -96,80 +73,74 @@ public class MonthOfYearStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_ma = new SimpleMovingAverage { Length = MaPeriod };
-
+		_day = null;
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_ma, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
+
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _ma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal ma)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// The high-level handler activates native protection before this callback, also between signal bars.
+	}
+
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		var day = candle.OpenTime.Date;
+		var firstOfDay = _day != day;
+
+		if (firstOfDay)
+		{
+			_day = day;
+		}
+
+		// The candle is the day's last when the next one would open on another day.
+		var frame = CandleType.Arg is TimeSpan tf ? tf : TimeSpan.Zero;
+		var lastOfDay = (candle.OpenTime + frame).Date != day;
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var close = candle.ClosePrice;
-		var month = candle.OpenTime.Month;
-		var half = candle.OpenTime.Day <= 15 ? 1 : 2;
-
-		if (_cooldown > 0)
+		if (Position != 0)
 		{
-			_cooldown--;
-			_prevMa = ma;
-			_prevClose = close;
+			if (lastOfDay && (candle.OpenTime + frame).Month != day.Month)
+			{
+				if (Position > 0)
+					SellMarket(Position);
+				else
+					BuyMarket(-Position);
+			}
+
 			return;
 		}
 
-		// Exit logic: MA cross
-		if (Position > 0 && close < ma && _prevMa > 0 && _prevClose >= _prevMa)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-			_lastTradeMonth = month;
-			_lastTradeHalf = half;
-		}
-		else if (Position < 0 && close > ma && _prevMa > 0 && _prevClose <= _prevMa)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-			_lastTradeMonth = month;
-			_lastTradeHalf = half;
-		}
+		if (!(firstOfDay && day.Day == 1))
+			return;
 
-		// Entry logic: seasonal month-half based
-		if (Position == 0 && (month != _lastTradeMonth || half != _lastTradeHalf))
-		{
-			// First half of month: buy if above MA
-			if (half == 1 && close > ma)
-			{
-				BuyMarket();
-				_cooldown = CooldownBars;
-				_lastTradeMonth = month;
-				_lastTradeHalf = half;
-			}
-			// Second half of month: sell if below MA
-			else if (half == 2 && close < ma)
-			{
-				SellMarket();
-				_cooldown = CooldownBars;
-				_lastTradeMonth = month;
-				_lastTradeHalf = half;
-			}
-		}
-
-		_prevMa = ma;
-		_prevClose = close;
+		if ((day.Month is >= 5 and <= 10 ? -1 : 1) > 0)
+			BuyMarket(Volume);
+		else
+			SellMarket(Volume);
 	}
 }

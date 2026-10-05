@@ -3364,6 +3364,187 @@ public abstract partial class StrategyTests
 	public Task S0115_PercentStopWorksBetweenFinishedBars()
 		=> CheckPercentStopBetweenBars(VolumeClimax, TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15), setup: (s, _) => SetParam(s, "VolumeMultiplier", 1.2m));
 
+	private sealed class CalendarDay
+	{
+		public DateTime Day;
+		public bool First;
+		public bool Last;
+		public DateTime? PreviousDay;
+		public decimal PreviousOpen;
+		public decimal PreviousClose;
+		public decimal EntryPrice;
+		public DateTime ExitDay;
+	}
+
+	private static DateTime ThirdFriday(DateTime day)
+	{
+		var first = new DateTime(day.Year, day.Month, 1, 0, 0, 0, day.Kind);
+		while (first.DayOfWeek != DayOfWeek.Friday) first = first.AddDays(1);
+		return first.AddDays(14);
+	}
+
+	private async Task CheckCalendarStrategy(string key, bool secondary, Action<Strategy> setup, Func<ICandleMessage, CalendarDay, decimal?, int> entrySide, Func<ICandleMessage, CalendarDay, bool> exit,
+		int maPeriod = 0, int minimumEntries = 1)
+	{
+		var sma = maPeriod > 0 ? new SimpleMovingAverage { Length = maPeriod } : null;
+		var state = new CalendarDay();
+		DateTime? currentDay = null;
+		var dayOpen = 0m;
+		var dayClose = 0m;
+		Sides? expectedSide = null;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = 0;
+		var violations = new List<string>();
+		await Replay(key, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			setup?.Invoke(strategy);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var day = candle.OpenTime.Date;
+				state.First = currentDay != day;
+				if (state.First)
+				{
+					if (currentDay is DateTime previous) { state.PreviousDay = previous; state.PreviousOpen = dayOpen; state.PreviousClose = dayClose; }
+					currentDay = day;
+					dayOpen = candle.OpenPrice;
+				}
+				dayClose = candle.ClosePrice;
+				state.Day = day;
+				state.Last = (candle.OpenTime + TimeSpan.FromMinutes(15)).Date != day;
+				decimal? ma = null;
+				if (sma != null) { var m = sma.Process(candle); if (m.IsFormed) ma = m.GetValue<decimal>(); }
+				var position = strategy.Position;
+				if (position != 0m)
+				{
+					if (exit(candle, state)) expectedSide = position > 0m ? Sides.Sell : Sides.Buy;
+				}
+				else if (entrySide(candle, state, ma) is var side and not 0)
+				{
+					expectedSide = side > 0 ? Sides.Buy : Sides.Sell;
+					state.EntryPrice = candle.ClosePrice;
+					entries++;
+				}
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side}, expected {expectedSide}. Every order must open or close on the documented calendar day.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries >= minimumEntries, $"The fixture must enter at least {minimumEntries} time(s), entered {entries}.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard03")]
+	[DataRow(false)]
+	[DataRow(true)]
+	public Task S0116_MidweekLongsAndMondayFridayShortsHeldForTheDay(bool secondary)
+		=> CheckCalendarStrategy("0116_Day_of_Week", secondary, null,
+			(c, d, _) => !d.First || d.Day.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday ? 0 : d.Day.DayOfWeek is DayOfWeek.Monday or DayOfWeek.Friday ? -1 : 1,
+			(c, d) => d.Last, minimumEntries: 15);
+
+	[TestMethod]
+	[TestCategory("Shard04")]
+	[DataRow(false)]
+	[DataRow(true)]
+	public Task S0117_SeasonalMonthDirectionFromTheFirstCandle(bool secondary)
+		=> CheckCalendarStrategy("0117_Month_of_Year", secondary, null,
+			(c, d, _) => d.First && d.Day.Day == 1 ? (d.Day.Month is >= 5 and <= 10 ? -1 : 1) : 0,
+			(c, d) => d.Last && (c.OpenTime + TimeSpan.FromMinutes(15)).Month != d.Day.Month);
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	[DataRow(1.0, false)]
+	[DataRow(0.3, true)]
+	public Task S0118_TuesdayLongsAfterADownMondayWithTargetOrDayEnd(double target, bool secondary)
+		=> CheckCalendarStrategy("0118_Turnaround_Tuesday", secondary, s =>
+			{
+				AreEqual(1m, Convert.ToDecimal(s.Parameters["ProfitTargetPercent"].Value));
+				SetParam(s, "ProfitTargetPercent", target);
+			},
+			(c, d, _) => d.First && d.Day.DayOfWeek == DayOfWeek.Tuesday && d.PreviousDay == d.Day.AddDays(-1) && d.PreviousClose < d.PreviousOpen ? 1 : 0,
+			(c, d) => d.Last || c.ClosePrice >= d.EntryPrice * (1 + (decimal)target / 100m));
+
+	[TestMethod]
+	[TestCategory("Shard06")]
+	[DataRow(3, false)]
+	[DataRow(10, true)]
+	public Task S0119_LongsOverTheLastDaysOfTheMonth(int days, bool secondary)
+		=> CheckCalendarStrategy("0119_End_of_Month_Strength", secondary, s =>
+			{
+				AreEqual(3, s.Parameters["DaysBeforeMonthEnd"].Value);
+				SetParam(s, "DaysBeforeMonthEnd", days);
+			},
+			(c, d, _) => d.First && d.Day.Day > DateTime.DaysInMonth(d.Day.Year, d.Day.Month) - days ? 1 : 0,
+			(c, d) => d.First && d.Day.Day == 1);
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(false)]
+	[DataRow(true)]
+	public Task S0120_LongForTheFirstDayOfTheMonth(bool secondary)
+		=> CheckCalendarStrategy("0120_First_Day_of_Month", secondary, null,
+			(c, d, _) => d.First && d.Day.Day == 1 ? 1 : 0, (c, d) => d.Last);
+
+	[TestMethod]
+	[TestCategory("Shard00")]
+	[DataRow(false)]
+	[DataRow(true)]
+	public Task S0123_ShortForEveryMonday(bool secondary)
+		=> CheckCalendarStrategy("0123_Monday_Weakness", secondary, null,
+			(c, d, _) => d.First && d.Day.DayOfWeek == DayOfWeek.Monday ? -1 : 0, (c, d) => d.Last, minimumEntries: 4);
+
+	[TestMethod]
+	[TestCategory("Shard01")]
+	[DataRow(false)]
+	[DataRow(true)]
+	public Task S0124_LongTheDayBeforeAHoliday(bool secondary)
+		=> CheckCalendarStrategy("0124_Pre-Holiday_Strength", secondary, s =>
+			{
+				StringAssert.Contains((string)s.Parameters["Holidays"].Value, "2024-03-29");
+				SetParam(s, "Holidays", "2024-03-08, 2024-03-29");
+			},
+			(c, d, _) => d.First && (d.Day.AddDays(1) == new DateTime(2024, 3, 8) || d.Day.AddDays(1) == new DateTime(2024, 3, 29)) ? 1 : 0,
+			(c, d) => d.Last, minimumEntries: 2);
+
+	[TestMethod]
+	[TestCategory("Shard02")]
+	[DataRow(false)]
+	[DataRow(true)]
+	public Task S0125_ShortTheDayAfterAHoliday(bool secondary)
+		=> CheckCalendarStrategy("0125_Post-Holiday_Weakness", secondary, s =>
+			{
+				StringAssert.Contains((string)s.Parameters["Holidays"].Value, "2024-03-29");
+				SetParam(s, "Holidays", "2024-03-08,2024-03-29");
+			},
+			(c, d, _) => d.First && (d.Day.AddDays(-1) == new DateTime(2024, 3, 8) || d.Day.AddDays(-1) == new DateTime(2024, 3, 29)) ? -1 : 0,
+			(c, d) => d.Last, minimumEntries: 2);
+
+	[TestMethod]
+	[TestCategory("Shard03")]
+	[DataRow(20, false)]
+	[DataRow(50, true)]
+	public Task S0126_TrendTradeThroughQuarterlyExpiryWeekUntilThursday(int maPeriod, bool secondary)
+		=> CheckCalendarStrategy("0126_Quarterly_Expiry", secondary, s =>
+			{
+				AreEqual(20, s.Parameters["MaPeriod"].Value);
+				SetParam(s, "MaPeriod", maPeriod);
+			},
+			(c, d, ma) => d.First && ma is decimal trend && c.ClosePrice != trend && d.Day.Month % 3 == 0 && d.Day == ThirdFriday(d.Day).AddDays(-4) ? (c.ClosePrice > trend ? 1 : -1) : 0,
+			(c, d) => d.Last && d.Day == ThirdFriday(d.Day).AddDays(-1), maPeriod);
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

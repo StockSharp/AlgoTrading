@@ -18,7 +18,8 @@ Stops são usados para proteger o capital caso o comportamento sazonal habitual 
 - **Stops**: Sim, baseado em percentual
 - **Valores padrão**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+    Os dias são dias UTC, pois o mercado negocia 24 horas; as entradas ocorrem no fechamento da primeira vela do dia. De novembro a abril compra e de maio a outubro vende a descoberto, a divisão sazonal clássica com meses de inverno fortes e um setembro fraco; a posição abre na primeira vela do mês e fecha na última.
 - **Filtros**:
   - Categoria: Sazonalidade
   - Direção: Ambos

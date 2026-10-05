@@ -18,7 +18,9 @@ A fixed stop keeps risk in line if volatility proves too extreme.
 - **Stops**: Yes, percent based
 - **Default Values**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `MaPeriod` = 20
+  - `StopLossPercent` = 2
+    Days are UTC days, since the market trades around the clock; entries happen at the close of the day's first candle. Quarterly expiry is the third Friday of March, June, September and December. On the Monday of that week the strategy trades with the trend (long above the MaPeriod SMA, short below) and closes at Thursday's last candle, before settlement.
 - **Filters**:
   - Category: Seasonality
   - Direction: Both

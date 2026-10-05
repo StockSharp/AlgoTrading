@@ -18,7 +18,8 @@ Stops werden eng gehalten, um Verluste zu vermeiden, falls der Markt die Tendenz
 - **Stops**: Ja, prozentbasiert
 - **Standardwerte**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+    Tage sind UTC-Tage, da der Markt rund um die Uhr handelt; Einstiege erfolgen zum Schluss der ersten Kerze des Tages. Der Leerverkauf öffnet mit der ersten Montagskerze und wird mit der letzten Montagskerze gedeckt.
 - **Filter**:
   - Kategorie: Saisonalität
   - Richtung: Beide
