@@ -34,7 +34,7 @@ class hull_kmeans_cluster_strategy(Strategy):
             .SetGreaterThanZero() \
             .SetDisplay("RSI Period", "Period for RSI calculation as a clustering feature", "Indicator Settings")
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._price_change_data = []

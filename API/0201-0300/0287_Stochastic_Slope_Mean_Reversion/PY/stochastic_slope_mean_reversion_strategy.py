@@ -19,7 +19,7 @@ class stochastic_slope_mean_reversion_strategy(Strategy):
     def __init__(self):
         super(stochastic_slope_mean_reversion_strategy, self).__init__()
 
-        self._stoch_k_period = self.Param("StochKPeriod", 14) \
+        self._stoch_k_period = self.Param("StochKPeriod", 3) \
             .SetGreaterThanZero() \
             .SetDisplay("Stoch %K Period", "Stochastic lookback period", "Stochastic")
 
@@ -31,7 +31,7 @@ class stochastic_slope_mean_reversion_strategy(Strategy):
             .SetGreaterThanZero() \
             .SetDisplay("Slope Lookback", "Period for slope statistics", "Slope")
 
-        self._threshold_multiplier = self.Param("ThresholdMultiplier", 1.5) \
+        self._threshold_multiplier = self.Param("ThresholdMultiplier", 2.0) \
             .SetGreaterThanZero() \
             .SetDisplay("Threshold Multiplier", "Std dev multiplier for entry", "Slope")
 

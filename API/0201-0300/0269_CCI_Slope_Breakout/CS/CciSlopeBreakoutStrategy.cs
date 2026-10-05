@@ -113,7 +113,7 @@ public class CciSlopeBreakoutStrategy : Strategy
 			.SetDisplay("Slope Period", "Period for slope statistics calculation", "Strategy Parameters")
 			.SetOptimize(10, 50, 5);
 
-		_breakoutMultiplier = Param(nameof(BreakoutMultiplier), 2.5m)
+		_breakoutMultiplier = Param(nameof(BreakoutMultiplier), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Breakout Multiplier", "Standard deviation multiplier for breakout detection", "Strategy Parameters")
 			.SetOptimize(1.5m, 4m, 0.5m);

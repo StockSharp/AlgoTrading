@@ -20,7 +20,7 @@ class hurst_volatility_filter_strategy(Strategy):
     def __init__(self):
         super(hurst_volatility_filter_strategy, self).__init__()
 
-        self._hurst_period = self.Param("HurstPeriod", 80) \
+        self._hurst_period = self.Param("HurstPeriod", 100) \
             .SetDisplay("Hurst Period", "Period for the Hurst exponent", "Indicators")
 
         self._ma_period = self.Param("MAPeriod", 20) \

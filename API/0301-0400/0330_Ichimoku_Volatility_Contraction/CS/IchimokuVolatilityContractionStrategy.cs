@@ -120,7 +120,7 @@ public class IchimokuVolatilityContractionStrategy : Strategy
 			
 			.SetOptimize(1.5m, 3.0m, 0.5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 

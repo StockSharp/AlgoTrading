@@ -81,7 +81,7 @@ public class SeasonalityAdjustedMomentumStrategy : Strategy
 			.SetRange(3, 100)
 			.SetDisplay("Momentum Period", "Period for the momentum indicator", "Indicators");
 
-		_seasonalityThreshold = Param(nameof(SeasonalityThreshold), 0.2m)
+		_seasonalityThreshold = Param(nameof(SeasonalityThreshold), 0.5m)
 			.SetRange(0m, 1m)
 			.SetDisplay("Seasonality Threshold", "Minimum absolute seasonality strength required for entries", "Signals");
 

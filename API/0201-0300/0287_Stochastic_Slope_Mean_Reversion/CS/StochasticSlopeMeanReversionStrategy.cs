@@ -95,7 +95,7 @@ public class StochasticSlopeMeanReversionStrategy : Strategy
 
 	public StochasticSlopeMeanReversionStrategy()
 	{
-		_stochKPeriod = Param(nameof(StochKPeriod), 14)
+		_stochKPeriod = Param(nameof(StochKPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Stoch %K Period", "Stochastic lookback period", "Stochastic");
 
@@ -107,7 +107,7 @@ public class StochasticSlopeMeanReversionStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Slope Lookback", "Period for slope statistics", "Slope");
 
-		_thresholdMultiplier = Param(nameof(ThresholdMultiplier), 1.5m)
+		_thresholdMultiplier = Param(nameof(ThresholdMultiplier), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Threshold Multiplier", "Std dev multiplier for entry", "Slope");
 

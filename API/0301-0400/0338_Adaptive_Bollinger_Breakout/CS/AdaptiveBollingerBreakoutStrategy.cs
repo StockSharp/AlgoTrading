@@ -125,7 +125,7 @@ public class AdaptiveBollingerBreakoutStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Cooldown Bars", "Closed candles to wait before another breakout entry", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 

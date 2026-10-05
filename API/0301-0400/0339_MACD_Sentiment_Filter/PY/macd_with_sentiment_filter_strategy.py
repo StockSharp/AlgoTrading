@@ -35,7 +35,7 @@ class macd_with_sentiment_filter_strategy(Strategy):
             .SetGreaterThanZero() \
             .SetDisplay("MACD Signal", "Signal line period for MACD", "MACD Settings")
 
-        self._threshold = self.Param("Threshold", 0.1) \
+        self._threshold = self.Param("Threshold", 0.5) \
             .SetGreaterThanZero() \
             .SetDisplay("Sentiment Threshold", "Threshold for sentiment filter", "Sentiment Settings")
 
@@ -47,7 +47,7 @@ class macd_with_sentiment_filter_strategy(Strategy):
             .SetGreaterThanZero() \
             .SetDisplay("Stop Loss (%)", "Stop Loss percentage from entry price", "Risk Management")
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._sentiment_score = 0.0

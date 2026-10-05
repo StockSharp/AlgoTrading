@@ -27,7 +27,7 @@ class keltner_rsi_divergence_strategy(Strategy):
             .SetRange(2, 100) \
             .SetDisplay("ATR Period", "Period for ATR calculation", "Indicators")
 
-        self._atr_multiplier = self.Param("AtrMultiplier", 1.15) \
+        self._atr_multiplier = self.Param("AtrMultiplier", 2.0) \
             .SetRange(0.1, 10.0) \
             .SetDisplay("ATR Multiplier", "Multiplier for the Keltner band width", "Indicators")
 

@@ -25,7 +25,7 @@ class obv_slope_breakout_strategy(Strategy):
             .SetDisplay("Lookback Period", "Period for calculating average and standard deviation of OBV slope", "Strategy Parameters") \
             .SetOptimize(10, 50, 5)
 
-        self._multiplier = self.Param("Multiplier", 1.5) \
+        self._multiplier = self.Param("Multiplier", 2.0) \
             .SetGreaterThanZero() \
             .SetDisplay("Std Dev Multiplier", "Multiplier for standard deviation to determine breakout threshold", "Strategy Parameters") \
             .SetOptimize(1.0, 3.0, 0.5)

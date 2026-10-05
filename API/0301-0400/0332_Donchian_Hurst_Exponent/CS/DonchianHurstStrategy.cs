@@ -88,7 +88,7 @@ public class DonchianHurstStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Hurst Period", "Period for Hurst Exponent calculation", "Indicator Settings");
 
-		_hurstThreshold = Param(nameof(HurstThreshold), 0.45m)
+		_hurstThreshold = Param(nameof(HurstThreshold), 0.5m)
 			.SetRange(0, 1)
 			.SetDisplay("Hurst Threshold", "Minimum Hurst Exponent value for trend persistence (>0.5 is trending)", "Indicator Settings");
 
@@ -96,7 +96,7 @@ public class DonchianHurstStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Stop Loss percentage from entry price", "Risk Management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(2).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 

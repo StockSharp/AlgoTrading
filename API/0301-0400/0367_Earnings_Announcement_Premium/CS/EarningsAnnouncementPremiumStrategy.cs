@@ -96,7 +96,7 @@ public class EarningsAnnouncementPremiumStrategy : Strategy
 	/// </summary>
 	public EarningsAnnouncementPremiumStrategy()
 	{
-		_daysBefore = Param(nameof(DaysBefore), 3)
+		_daysBefore = Param(nameof(DaysBefore), 5)
 			.SetRange(1, 10)
 			.SetDisplay("Days Before", "Bars before the synthetic earnings event to enter", "General");
 
@@ -120,7 +120,7 @@ public class EarningsAnnouncementPremiumStrategy : Strategy
 			.SetRange(0.5m, 10m)
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to process", "General");
 	}
 

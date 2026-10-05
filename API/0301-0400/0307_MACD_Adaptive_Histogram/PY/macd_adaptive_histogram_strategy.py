@@ -31,7 +31,7 @@ class macd_adaptive_histogram_strategy(Strategy):
         self._histogram_avg_period = self.Param("HistogramAvgPeriod", 20) \
             .SetDisplay("Histogram Avg Period", "Lookback period for histogram statistics", "Signals")
 
-        self._std_dev_multiplier = self.Param("StdDevMultiplier", 1.2) \
+        self._std_dev_multiplier = self.Param("StdDevMultiplier", 2.0) \
             .SetDisplay("StdDev Multiplier", "Standard deviation multiplier for adaptive thresholds", "Signals")
 
         self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \

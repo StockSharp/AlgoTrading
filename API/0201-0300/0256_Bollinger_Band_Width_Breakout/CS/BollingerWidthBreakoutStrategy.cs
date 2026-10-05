@@ -108,7 +108,7 @@ public class BollingerWidthBreakoutStrategy : Strategy
 			
 			.SetOptimize(10, 50, 5);
 		
-		_multiplier = Param(nameof(Multiplier), 1.5m)
+		_multiplier = Param(nameof(Multiplier), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Multiplier", "Standard deviation multiplier for breakout detection", "Indicators")
 

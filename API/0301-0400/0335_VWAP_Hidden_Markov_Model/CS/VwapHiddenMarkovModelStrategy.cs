@@ -83,7 +83,7 @@ public class VwapHiddenMarkovModelStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Stop Loss %", "Stop Loss percentage from entry price", "Risk Management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 

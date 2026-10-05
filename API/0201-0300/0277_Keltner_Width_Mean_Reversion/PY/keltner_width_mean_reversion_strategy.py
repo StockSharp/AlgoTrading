@@ -32,7 +32,7 @@ class keltner_width_mean_reversion_strategy(Strategy):
             .SetGreaterThanZero() \
             .SetDisplay("Keltner Multiplier", "Multiplier for Keltner Channel bands", "Indicators")
 
-        self._width_dev_mult = self.Param("WidthDeviationMultiplier", 1.0) \
+        self._width_dev_mult = self.Param("WidthDeviationMultiplier", 2.0) \
             .SetGreaterThanZero() \
             .SetDisplay("Width Dev Multiplier", "Multiplier for width deviation threshold", "Strategy Parameters")
 

@@ -40,7 +40,7 @@ class ichimoku_implied_volatility_strategy(Strategy):
             .SetNotNegative() \
             .SetDisplay("Cooldown Bars", "Closed candles to wait before another position change", "General")
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._iv_history = []

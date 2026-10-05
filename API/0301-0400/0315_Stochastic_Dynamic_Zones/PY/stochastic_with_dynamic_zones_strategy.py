@@ -21,13 +21,13 @@ class stochastic_with_dynamic_zones_strategy(Strategy):
     def __init__(self):
         super(stochastic_with_dynamic_zones_strategy, self).__init__()
 
-        self._stoch_k_period = self.Param("StochKPeriod", 14) \
+        self._stoch_k_period = self.Param("StochKPeriod", 3) \
             .SetDisplay("Stoch %K Period", "Smoothing period for %K", "Indicators")
 
         self._stoch_d_period = self.Param("StochDPeriod", 3) \
             .SetDisplay("Stoch %D Period", "Smoothing period for %D", "Indicators")
 
-        self._lookback_period = self.Param("LookbackPeriod", 40) \
+        self._lookback_period = self.Param("LookbackPeriod", 20) \
             .SetDisplay("Lookback Period", "Period for dynamic zones", "Indicators")
 
         self._std_dev_factor = self.Param("StdDevFactor", 3.0) \
@@ -37,7 +37,7 @@ class stochastic_with_dynamic_zones_strategy(Strategy):
             .SetDisplay("Signal Cooldown", "Bars to wait between signals", "Trading") \
             .SetGreaterThanZero()
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._prev_stoch_k = 50.0

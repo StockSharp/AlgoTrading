@@ -35,7 +35,7 @@ class ichimoku_hurst_exponent_strategy(Strategy):
         self._hurst_threshold = self.Param("HurstThreshold", 0.5) \
             .SetDisplay("Hurst Threshold", "Hurst exponent threshold for trend strength", "Hurst Exponent")
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._signal_cooldown_bars = self.Param("SignalCooldownBars", 6) \

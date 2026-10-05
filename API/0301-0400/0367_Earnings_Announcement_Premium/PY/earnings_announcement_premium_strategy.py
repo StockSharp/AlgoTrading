@@ -19,7 +19,7 @@ class earnings_announcement_premium_strategy(Strategy):
     def __init__(self):
         super(earnings_announcement_premium_strategy, self).__init__()
 
-        self._days_before = self.Param("DaysBefore", 3) \
+        self._days_before = self.Param("DaysBefore", 5) \
             .SetRange(1, 10) \
             .SetDisplay("Days Before", "Bars before the synthetic earnings event to enter", "General")
 
@@ -43,7 +43,7 @@ class earnings_announcement_premium_strategy(Strategy):
             .SetRange(0.5, 10.0) \
             .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk")
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to process", "General")
 
         self._trend = None

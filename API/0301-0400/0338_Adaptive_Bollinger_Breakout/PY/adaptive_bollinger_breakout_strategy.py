@@ -44,7 +44,7 @@ class adaptive_bollinger_breakout_strategy(Strategy):
             .SetNotNegative() \
             .SetDisplay("Cooldown Bars", "Closed candles to wait before another breakout entry", "Trading")
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._fast_sma = None

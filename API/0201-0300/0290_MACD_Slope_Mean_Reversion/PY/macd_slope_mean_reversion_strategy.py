@@ -35,7 +35,7 @@ class macd_slope_mean_reversion_strategy(Strategy):
             .SetGreaterThanZero() \
             .SetDisplay("Lookback Period", "Period for slope statistics", "Strategy Parameters")
 
-        self._deviation_multiplier = self.Param("DeviationMultiplier", 1.5) \
+        self._deviation_multiplier = self.Param("DeviationMultiplier", 2.0) \
             .SetGreaterThanZero() \
             .SetDisplay("Deviation Multiplier", "Multiplier for standard deviation to determine entry threshold", "Strategy Parameters")
 

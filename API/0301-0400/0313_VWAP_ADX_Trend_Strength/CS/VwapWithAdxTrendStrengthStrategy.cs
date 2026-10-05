@@ -80,7 +80,7 @@ public class VwapWithAdxTrendStrengthStrategy : Strategy
 			.SetRange(2, 100)
 			.SetDisplay("ADX Period", "Period for ADX calculation", "Indicators");
 
-		_adxThreshold = Param(nameof(AdxThreshold), 23m)
+		_adxThreshold = Param(nameof(AdxThreshold), 25m)
 			.SetRange(1m, 100m)
 			.SetDisplay("ADX Threshold", "Threshold for strong trend identification", "Signals");
 

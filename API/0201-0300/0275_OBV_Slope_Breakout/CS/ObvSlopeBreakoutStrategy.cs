@@ -99,7 +99,7 @@ public class ObvSlopeBreakoutStrategy : Strategy
 			.SetDisplay("Lookback Period", "Period for calculating average and standard deviation of OBV slope", "Strategy Parameters")
 			.SetOptimize(10, 50, 5);
 
-		_multiplier = Param(nameof(Multiplier), 1.5m)
+		_multiplier = Param(nameof(Multiplier), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Std Dev Multiplier", "Multiplier for standard deviation to determine breakout threshold", "Strategy Parameters")
 			.SetOptimize(1m, 3m, 0.5m);

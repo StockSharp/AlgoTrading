@@ -123,7 +123,7 @@ public class MacdAdaptiveHistogramStrategy : Strategy
 			.SetRange(5, 100)
 			.SetDisplay("Histogram Avg Period", "Lookback period for histogram statistics", "Signals");
 
-		_stdDevMultiplier = Param(nameof(StdDevMultiplier), 1.2m)
+		_stdDevMultiplier = Param(nameof(StdDevMultiplier), 2m)
 			.SetRange(0.1m, 5m)
 			.SetDisplay("StdDev Multiplier", "Standard deviation multiplier for adaptive thresholds", "Signals");
 

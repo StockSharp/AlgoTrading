@@ -19,7 +19,7 @@ class donchian_seasonal_filter_strategy(Strategy):
     def __init__(self):
         super(donchian_seasonal_filter_strategy, self).__init__()
 
-        self._donchian_period = self.Param("DonchianPeriod", 40) \
+        self._donchian_period = self.Param("DonchianPeriod", 20) \
             .SetDisplay("Donchian Period", "Donchian Channel period", "Donchian") \
             .SetCanOptimize(True) \
             .SetOptimize(10, 50, 5)
@@ -38,7 +38,7 @@ class donchian_seasonal_filter_strategy(Strategy):
         self._signal_cooldown_bars = self.Param("SignalCooldownBars", 12) \
             .SetDisplay("Signal Cooldown Bars", "Closed candles to wait before a new breakout entry", "General")
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._donchian = None

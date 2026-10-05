@@ -24,7 +24,7 @@ class vwap_adx_trend_strength_strategy(Strategy):
             .SetRange(2, 100) \
             .SetDisplay("ADX Period", "Period for ADX calculation", "Indicators")
 
-        self._adx_threshold = self.Param("AdxThreshold", 23.0) \
+        self._adx_threshold = self.Param("AdxThreshold", 25.0) \
             .SetRange(1.0, 100.0) \
             .SetDisplay("ADX Threshold", "Threshold for strong trend identification", "Signals")
 

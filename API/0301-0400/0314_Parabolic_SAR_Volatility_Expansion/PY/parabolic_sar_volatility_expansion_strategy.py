@@ -32,7 +32,7 @@ class parabolic_sar_volatility_expansion_strategy(Strategy):
             .SetRange(2, 100) \
             .SetDisplay("ATR Period", "Period for ATR calculation", "Indicators")
 
-        self._volatility_expansion_factor = self.Param("VolatilityExpansionFactor", 1.6) \
+        self._volatility_expansion_factor = self.Param("VolatilityExpansionFactor", 2.0) \
             .SetRange(0.1, 10.0) \
             .SetDisplay("Volatility Expansion Factor", "Factor for volatility expansion detection", "Signals")
 

@@ -103,7 +103,7 @@ public class DonchianWithVolatilityContractionStrategy : Strategy
 			.SetRange(2, 100)
 			.SetDisplay("ATR Period", "Period for the ATR", "Indicators");
 
-		_volatilityFactor = Param(nameof(VolatilityFactor), 0.8m)
+		_volatilityFactor = Param(nameof(VolatilityFactor), 2m)
 			.SetRange(0.1m, 5m)
 			.SetDisplay("Volatility Factor", "Standard deviation multiplier for contraction detection", "Signals");
 

@@ -40,7 +40,7 @@ class bollinger_band_width_breakout_strategy(Strategy):
             .SetCanOptimize(True) \
             .SetOptimize(10, 50, 5)
 
-        self._multiplier = self.Param("Multiplier", 1.5) \
+        self._multiplier = self.Param("Multiplier", 2.0) \
             .SetGreaterThanZero() \
             .SetDisplay("Multiplier", "Standard deviation multiplier for breakout detection", "Indicators") \
             .SetCanOptimize(True) \

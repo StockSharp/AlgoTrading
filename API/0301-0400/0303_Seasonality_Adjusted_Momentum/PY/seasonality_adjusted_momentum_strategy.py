@@ -23,7 +23,7 @@ class seasonality_adjusted_momentum_strategy(Strategy):
         self._momentum_period = self.Param("MomentumPeriod", 14) \
             .SetDisplay("Momentum Period", "Period for the momentum indicator", "Indicators")
 
-        self._seasonality_threshold = self.Param("SeasonalityThreshold", 0.2) \
+        self._seasonality_threshold = self.Param("SeasonalityThreshold", 0.5) \
             .SetDisplay("Seasonality Threshold", "Minimum absolute seasonality strength required for entries", "Signals")
 
         self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \

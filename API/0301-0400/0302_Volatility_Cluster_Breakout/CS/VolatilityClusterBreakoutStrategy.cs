@@ -98,11 +98,11 @@ public class VolatilityClusterBreakoutStrategy : Strategy
 			.SetRange(5, 50)
 			.SetDisplay("ATR Period", "Period for ATR calculation", "Indicators");
 
-		_stdDevMultiplier = Param(nameof(StdDevMultiplier), 1.3m)
+		_stdDevMultiplier = Param(nameof(StdDevMultiplier), 2m)
 			.SetRange(0.25m, 5m)
 			.SetDisplay("StdDev Multiplier", "Multiplier for breakout levels", "Signals");
 
-		_stopMultiplier = Param(nameof(StopMultiplier), 1.8m)
+		_stopMultiplier = Param(nameof(StopMultiplier), 2m)
 			.SetRange(0.5m, 10m)
 			.SetDisplay("Stop ATR Multiplier", "ATR multiplier used for stop distance", "Risk");
 

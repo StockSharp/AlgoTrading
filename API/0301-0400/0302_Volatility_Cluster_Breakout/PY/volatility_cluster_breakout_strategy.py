@@ -25,10 +25,10 @@ class volatility_cluster_breakout_strategy(Strategy):
         self._atr_period = self.Param("AtrPeriod", 14) \
             .SetDisplay("ATR Period", "Period for ATR calculation", "Indicators")
 
-        self._std_dev_multiplier = self.Param("StdDevMultiplier", 1.3) \
+        self._std_dev_multiplier = self.Param("StdDevMultiplier", 2.0) \
             .SetDisplay("StdDev Multiplier", "Multiplier for breakout levels", "Signals")
 
-        self._stop_multiplier = self.Param("StopMultiplier", 1.8) \
+        self._stop_multiplier = self.Param("StopMultiplier", 2.0) \
             .SetDisplay("Stop ATR Multiplier", "ATR multiplier used for stop distance", "Risk")
 
         self._cooldown_bars = self.Param("CooldownBars", 60) \

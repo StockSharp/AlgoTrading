@@ -134,11 +134,11 @@ public class BetaAdjustedPairsStrategy : Strategy
 			.SetRange(0.1m, 5m)
 			.SetDisplay("Secondary Beta", "Beta coefficient of the secondary security", "Spread");
 
-		_lookbackPeriod = Param(nameof(LookbackPeriod), 30)
+		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
 			.SetRange(10, 150)
 			.SetDisplay("Lookback Period", "Lookback period for spread statistics", "Indicators");
 
-		_entryThreshold = Param(nameof(EntryThreshold), 1.1m)
+		_entryThreshold = Param(nameof(EntryThreshold), 2m)
 			.SetRange(0.25m, 5m)
 			.SetDisplay("Entry Threshold", "Entry threshold in spread standard deviations", "Signals");
 

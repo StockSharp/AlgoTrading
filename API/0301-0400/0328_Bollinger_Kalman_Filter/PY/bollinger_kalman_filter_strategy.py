@@ -45,7 +45,7 @@ class bollinger_kalman_filter_strategy(Strategy):
             .SetCanOptimize(True) \
             .SetOptimize(0.01, 1.0, 0.1)
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(2))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._signal_cooldown_bars = self.Param("SignalCooldownBars", 3) \

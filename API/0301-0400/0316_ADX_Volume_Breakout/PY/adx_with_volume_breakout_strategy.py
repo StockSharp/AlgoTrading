@@ -19,7 +19,7 @@ class adx_with_volume_breakout_strategy(Strategy):
     def __init__(self):
         super(adx_with_volume_breakout_strategy, self).__init__()
 
-        self._adx_period = self.Param("AdxPeriod", 10) \
+        self._adx_period = self.Param("AdxPeriod", 14) \
             .SetGreaterThanZero() \
             .SetDisplay("ADX Period", "Period for ADX calculation", "Indicators")
 
@@ -27,7 +27,7 @@ class adx_with_volume_breakout_strategy(Strategy):
             .SetGreaterThanZero() \
             .SetDisplay("ADX Threshold", "Threshold for strong trend identification", "Indicators")
 
-        self._volume_avg_period = self.Param("VolumeAvgPeriod", 10) \
+        self._volume_avg_period = self.Param("VolumeAvgPeriod", 20) \
             .SetGreaterThanZero() \
             .SetDisplay("Volume Avg Period", "Period for volume moving average", "Indicators")
 

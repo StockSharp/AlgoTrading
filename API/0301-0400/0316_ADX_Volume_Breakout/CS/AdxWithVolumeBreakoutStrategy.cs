@@ -54,7 +54,7 @@ public class AdxWithVolumeBreakoutStrategy : Strategy
 
 	public AdxWithVolumeBreakoutStrategy()
 	{
-		_adxPeriod = Param(nameof(AdxPeriod), 10)
+		_adxPeriod = Param(nameof(AdxPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ADX Period", "Period for ADX calculation", "Indicators");
 
@@ -62,7 +62,7 @@ public class AdxWithVolumeBreakoutStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("ADX Threshold", "Threshold for strong trend identification", "Indicators");
 
-		_volumeAvgPeriod = Param(nameof(VolumeAvgPeriod), 10)
+		_volumeAvgPeriod = Param(nameof(VolumeAvgPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume Avg Period", "Period for volume moving average", "Indicators");
 

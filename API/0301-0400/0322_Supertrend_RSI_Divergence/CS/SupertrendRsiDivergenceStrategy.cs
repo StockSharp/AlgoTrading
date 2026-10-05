@@ -90,7 +90,7 @@ public class SupertrendRsiDivergenceStrategy : Strategy
 		
 		.SetOptimize(8, 20, 2);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 

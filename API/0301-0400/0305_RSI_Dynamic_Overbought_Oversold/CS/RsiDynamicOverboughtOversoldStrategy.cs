@@ -92,11 +92,11 @@ public class RsiDynamicOverboughtOversoldStrategy : Strategy
 			.SetRange(2, 100)
 			.SetDisplay("RSI Period", "Period for RSI calculation", "Indicators");
 
-		_movingAvgPeriod = Param(nameof(MovingAvgPeriod), 34)
+		_movingAvgPeriod = Param(nameof(MovingAvgPeriod), 50)
 			.SetRange(5, 200)
 			.SetDisplay("Average Period", "Period for moving averages and RSI volatility", "Indicators");
 
-		_stdDevMultiplier = Param(nameof(StdDevMultiplier), 1.3m)
+		_stdDevMultiplier = Param(nameof(StdDevMultiplier), 2m)
 			.SetRange(0.1m, 5m)
 			.SetDisplay("StdDev Multiplier", "Multiplier for the dynamic RSI bands", "Signals");
 

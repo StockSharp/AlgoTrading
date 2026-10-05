@@ -19,7 +19,7 @@ class earnings_announcement_reversal_strategy(Strategy):
     def __init__(self):
         super(earnings_announcement_reversal_strategy, self).__init__()
 
-        self._lookback_days = self.Param("LookbackDays", 6) \
+        self._lookback_days = self.Param("LookbackDays", 5) \
             .SetRange(2, 30) \
             .SetDisplay("Lookback Days", "Number of bars used to calculate recent return", "Parameters")
 
@@ -43,7 +43,7 @@ class earnings_announcement_reversal_strategy(Strategy):
             .SetRange(0.5, 10.0) \
             .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk")
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._momentum = None

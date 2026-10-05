@@ -131,7 +131,7 @@ public class IchimokuWithImpliedVolatilityStrategy : Strategy
 		.SetNotNegative()
 		.SetDisplay("Cooldown Bars", "Closed candles to wait before another position change", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 

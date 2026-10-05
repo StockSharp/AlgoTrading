@@ -34,7 +34,7 @@ class vwap_adx_trend_strategy(Strategy):
             .SetCanOptimize(True) \
             .SetOptimize(10.0, 25.0, 5.0)
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._signal_cooldown_bars = self.Param("SignalCooldownBars", 4) \

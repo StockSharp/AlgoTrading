@@ -27,7 +27,7 @@ class hull_ma_volume_spike_strategy(Strategy):
             .SetRange(2, 100) \
             .SetDisplay("Volume Avg Period", "Period for volume statistics", "Indicators")
 
-        self._volume_threshold_factor = self.Param("VolumeThresholdFactor", 1.8) \
+        self._volume_threshold_factor = self.Param("VolumeThresholdFactor", 2.0) \
             .SetRange(0.1, 10.0) \
             .SetDisplay("Volume Threshold Factor", "Multiplier for volume spike detection", "Signals")
 

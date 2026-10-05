@@ -31,10 +31,10 @@ class beta_adjusted_pairs_strategy(Strategy):
         self._beta_asset2 = self.Param("BetaAsset2", 1.0) \
             .SetDisplay("Secondary Beta", "Beta coefficient of the secondary security", "Spread")
 
-        self._lookback_period = self.Param("LookbackPeriod", 30) \
+        self._lookback_period = self.Param("LookbackPeriod", 20) \
             .SetDisplay("Lookback Period", "Lookback period for spread statistics", "Indicators")
 
-        self._entry_threshold = self.Param("EntryThreshold", 1.1) \
+        self._entry_threshold = self.Param("EntryThreshold", 2.0) \
             .SetDisplay("Entry Threshold", "Entry threshold in spread standard deviations", "Signals")
 
         self._exit_threshold = self.Param("ExitThreshold", 0.15) \

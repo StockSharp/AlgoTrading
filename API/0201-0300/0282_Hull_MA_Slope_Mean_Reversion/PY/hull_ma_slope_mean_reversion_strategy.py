@@ -28,7 +28,7 @@ class hull_ma_slope_mean_reversion_strategy(Strategy):
             .SetGreaterThanZero() \
             .SetDisplay("Lookback Period", "Lookback period for slope statistics", "Strategy Parameters")
 
-        self._deviation_multiplier = self.Param("DeviationMultiplier", 1.5) \
+        self._deviation_multiplier = self.Param("DeviationMultiplier", 2.0) \
             .SetGreaterThanZero() \
             .SetDisplay("Deviation Multiplier", "Deviation multiplier for mean reversion detection", "Strategy Parameters")
 

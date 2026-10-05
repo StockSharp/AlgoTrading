@@ -108,7 +108,7 @@ public class HurstVolatilityFilterStrategy : Strategy
 	/// </summary>
 	public HurstVolatilityFilterStrategy()
 	{
-		_hurstPeriod = Param(nameof(HurstPeriod), 80)
+		_hurstPeriod = Param(nameof(HurstPeriod), 100)
 			.SetRange(20, 200)
 			.SetDisplay("Hurst Period", "Period for the Hurst exponent", "Indicators");
 

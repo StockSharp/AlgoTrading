@@ -113,7 +113,7 @@ public class BollingerWidthMeanReversionStrategy : Strategy
 			.SetDisplay("Width Lookback", "Lookback for width mean", "Strategy Parameters")
 			.SetOptimize(10, 50, 5);
 
-		_widthDeviationMultiplier = Param(nameof(WidthDeviationMultiplier), 1m)
+		_widthDeviationMultiplier = Param(nameof(WidthDeviationMultiplier), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Width Dev Mult", "Multiplier for width standard deviation threshold", "Strategy Parameters")
 			.SetOptimize(0.5m, 3m, 0.5m);

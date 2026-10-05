@@ -121,7 +121,7 @@ public class KeltnerWidthMeanReversionStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Keltner Multiplier", "Multiplier for Keltner Channel bands", "Indicators");
 
-		_widthDeviationMultiplier = Param(nameof(WidthDeviationMultiplier), 1m)
+		_widthDeviationMultiplier = Param(nameof(WidthDeviationMultiplier), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Width Dev Multiplier", "Multiplier for width deviation threshold", "Strategy Parameters");
 

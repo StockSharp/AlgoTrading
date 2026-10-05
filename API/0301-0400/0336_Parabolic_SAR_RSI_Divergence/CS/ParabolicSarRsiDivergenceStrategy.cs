@@ -119,7 +119,7 @@ public class ParabolicSarRsiDivergenceStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Cooldown Bars", "Closed candles to wait before another position change", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(2).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 

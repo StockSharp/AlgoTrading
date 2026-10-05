@@ -67,13 +67,13 @@ public class StochasticWithDynamicZonesStrategy : Strategy
 
 	public StochasticWithDynamicZonesStrategy()
 	{
-		_stochKPeriod = Param(nameof(StochKPeriod), 14)
+		_stochKPeriod = Param(nameof(StochKPeriod), 3)
 			.SetDisplay("Stoch %K Period", "Smoothing period for %K", "Indicators");
 
 		_stochDPeriod = Param(nameof(StochDPeriod), 3)
 			.SetDisplay("Stoch %D Period", "Smoothing period for %D", "Indicators");
 
-		_lookbackPeriod = Param(nameof(LookbackPeriod), 40)
+		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
 			.SetDisplay("Lookback Period", "Period for dynamic zones", "Indicators");
 
 		_stdDevFactor = Param(nameof(StdDevFactor), 3.0m)
@@ -83,7 +83,7 @@ public class StochasticWithDynamicZonesStrategy : Strategy
 			.SetDisplay("Signal Cooldown", "Bars to wait between signals", "Trading")
 			.SetGreaterThanZero();
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 

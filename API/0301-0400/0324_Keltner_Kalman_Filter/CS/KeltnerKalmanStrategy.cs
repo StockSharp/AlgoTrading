@@ -123,7 +123,7 @@ public class KeltnerKalmanStrategy : Strategy
 		
 		.SetOptimize(0.01m, 1.0m, 0.05m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 

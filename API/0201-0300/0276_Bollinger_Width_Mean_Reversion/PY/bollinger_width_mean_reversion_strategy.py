@@ -35,7 +35,7 @@ class bollinger_width_mean_reversion_strategy(Strategy):
             .SetDisplay("Width Lookback", "Lookback for width mean", "Strategy Parameters") \
             .SetOptimize(10, 50, 5)
 
-        self._width_dev_mult = self.Param("WidthDeviationMultiplier", 1.0) \
+        self._width_dev_mult = self.Param("WidthDeviationMultiplier", 2.0) \
             .SetGreaterThanZero() \
             .SetDisplay("Width Dev Mult", "Multiplier for width standard deviation threshold", "Strategy Parameters") \
             .SetOptimize(0.5, 3.0, 0.5)
