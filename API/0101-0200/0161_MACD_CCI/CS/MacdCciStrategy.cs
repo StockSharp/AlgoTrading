@@ -1,25 +1,20 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Implementation of strategy - MACD + CCI.
-/// Buy when MACD is above Signal line and CCI is below -100 (oversold).
-/// Sell when MACD is below Signal line and CCI is above 100 (overbought).
+/// MACD CCI strategy.
+/// MACD above its signal line with CCI below CciOversold goes long and MACD below the signal line with CCI above CciOverbought goes short,
+/// reversing an opposite position. A long closes when MACD crosses below the signal line and a short when it crosses above it,
+/// and a percent stop limits the loss.
 /// </summary>
 public class MacdCciStrategy : Strategy
 {
@@ -29,16 +24,11 @@ public class MacdCciStrategy : Strategy
 	private readonly StrategyParam<int> _cciPeriod;
 	private readonly StrategyParam<decimal> _cciOversold;
 	private readonly StrategyParam<decimal> _cciOverbought;
-	private readonly StrategyParam<int> _cooldownBars;
-	private readonly StrategyParam<Unit> _stopLoss;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private int _cooldown;
-	private bool _hasPrevMacdState;
-	private bool _prevMacdAboveSignal;
-
 	/// <summary>
-	/// MACD fast period.
+	/// Fast EMA period of MACD.
 	/// </summary>
 	public int FastPeriod
 	{
@@ -47,7 +37,7 @@ public class MacdCciStrategy : Strategy
 	}
 
 	/// <summary>
-	/// MACD slow period.
+	/// Slow EMA period of MACD.
 	/// </summary>
 	public int SlowPeriod
 	{
@@ -56,7 +46,7 @@ public class MacdCciStrategy : Strategy
 	}
 
 	/// <summary>
-	/// MACD signal period.
+	/// Signal line period of MACD.
 	/// </summary>
 	public int SignalPeriod
 	{
@@ -65,7 +55,7 @@ public class MacdCciStrategy : Strategy
 	}
 
 	/// <summary>
-	/// CCI period.
+	/// Period of CCI.
 	/// </summary>
 	public int CciPeriod
 	{
@@ -74,7 +64,7 @@ public class MacdCciStrategy : Strategy
 	}
 
 	/// <summary>
-	/// CCI oversold level.
+	/// CCI level for longs.
 	/// </summary>
 	public decimal CciOversold
 	{
@@ -83,7 +73,7 @@ public class MacdCciStrategy : Strategy
 	}
 
 	/// <summary>
-	/// CCI overbought level.
+	/// CCI level for shorts.
 	/// </summary>
 	public decimal CciOverbought
 	{
@@ -92,25 +82,16 @@ public class MacdCciStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Bars to wait between trades.
+	/// Stop loss percentage from entry price.
 	/// </summary>
-	public int CooldownBars
+	public decimal StopLossPercent
 	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
 	}
 
 	/// <summary>
-	/// Stop-loss value.
-	/// </summary>
-	public Unit StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used for strategy.
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -119,65 +100,50 @@ public class MacdCciStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initialize <see cref="MacdCciStrategy"/>.
+	/// Constructor.
 	/// </summary>
 	public MacdCciStrategy()
 	{
 		_fastPeriod = Param(nameof(FastPeriod), 12)
 			.SetGreaterThanZero()
-			.SetDisplay("Fast Period", "Fast EMA period for MACD", "MACD Parameters");
+			.SetDisplay("Fast Period", "Fast EMA period of MACD", "MACD");
 
 		_slowPeriod = Param(nameof(SlowPeriod), 26)
 			.SetGreaterThanZero()
-			.SetDisplay("Slow Period", "Slow EMA period for MACD", "MACD Parameters");
+			.SetDisplay("Slow Period", "Slow EMA period of MACD", "MACD");
 
 		_signalPeriod = Param(nameof(SignalPeriod), 9)
 			.SetGreaterThanZero()
-			.SetDisplay("Signal Period", "Signal line period for MACD", "MACD Parameters");
+			.SetDisplay("Signal Period", "Signal line period of MACD", "MACD");
 
 		_cciPeriod = Param(nameof(CciPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("CCI Period", "Period for Commodity Channel Index", "CCI Parameters");
+			.SetDisplay("CCI Period", "Period of CCI", "CCI");
 
 		_cciOversold = Param(nameof(CciOversold), -100m)
-			.SetDisplay("CCI Oversold", "CCI level to consider market oversold", "CCI Parameters");
+			.SetDisplay("CCI Oversold", "CCI level for longs", "CCI");
 
 		_cciOverbought = Param(nameof(CciOverbought), 100m)
-			.SetDisplay("CCI Overbought", "CCI level to consider market overbought", "CCI Parameters");
+			.SetDisplay("CCI Overbought", "CCI level for shorts", "CCI");
 
-		_cooldownBars = Param(nameof(CooldownBars), 320)
-			.SetRange(5, 1000)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "General");
-
-		_stopLoss = Param(nameof(StopLoss), new Unit(2, UnitTypes.Percent))
-			.SetDisplay("Stop Loss", "Stop loss percent or value", "Risk Management");
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Candle type for strategy", "General");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
-public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-{
-	return [(Security, CandleType)];
-}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		base.OnReseted();
-
-		_cooldown = 0;
-		_hasPrevMacdState = false;
-		_prevMacdAboveSignal = false;
+		return [(Security, CandleType)];
 	}
 
-/// <inheritdoc />
-protected override void OnStarted2(DateTime time)
-{
-	base.OnStarted2(time);
-
-		// Create indicators
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
 		var macd = new MovingAverageConvergenceDivergenceSignal
 		{
@@ -190,31 +156,39 @@ protected override void OnStarted2(DateTime time)
 		};
 		var cci = new CommodityChannelIndex { Length = CciPeriod };
 
-		// Setup candle subscription
 		var subscription = SubscribeCandles(CandleType);
-		
-		// Bind indicators to candles
 		subscription
 			.BindEx(macd, cci, ProcessCandle)
 			.Start();
 
-		// Setup chart visualization if available
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, macd);
-			
-			// Create separate area for CCI
-			var cciArea = CreateChartArea();
-			if (cciArea != null)
-			{
-				DrawIndicator(cciArea, cci);
-			}
-			
 			DrawOwnTrades(area);
-		}
 
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, macd);
+				DrawIndicator(oscillators, cci);
+			}
+		}
+	}
+
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// The high-level handler activates native protection before this callback, also between signal bars.
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue, IIndicatorValue cciValue)
@@ -222,79 +196,26 @@ protected override void OnStarted2(DateTime time)
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
 		if (!macdValue.IsFormed || !cciValue.IsFormed)
 			return;
 
-		// Note: In this implementation, the MACD and signal values are obtained separately.
-		// We need to extract both MACD and signal values to determine crossovers.
-		// For demonstration, we'll access these values through a direct call to the indicator.
-		// In a proper implementation, we should find a way to get these values through Bind parameter values.
-		
-		// Get MACD line and Signal line values
-		// This approach is not ideal - in a proper implementation, these values should come from the Bind parameters
 		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
-		var macdLine = macdTyped.Macd; // The main MACD line
-		var signalLine = macdTyped.Signal; // Signal line
-		
-		// Determine if MACD is above or below signal line
-		var isMacdAboveSignal = macdLine > signalLine;
-		var cciDec = cciValue.ToDecimal();
 
-		if (!_hasPrevMacdState)
-		{
-			_hasPrevMacdState = true;
-			_prevMacdAboveSignal = isMacdAboveSignal;
+		if (macdTyped.Macd is not decimal macd || macdTyped.Signal is not decimal signal)
 			return;
-		}
 
-		LogInfo($"Candle: {candle.OpenTime}, Close: {candle.ClosePrice}, " +
-			$"MACD: {macdLine}, Signal: {signalLine}, " +
-			$"MACD > Signal: {isMacdAboveSignal}, CCI: {cciDec}");
-
-		if (_cooldown > 0)
-		{
-			_cooldown--;
-			_prevMacdAboveSignal = isMacdAboveSignal;
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
-		}
 
-		var crossedUp = !_prevMacdAboveSignal && isMacdAboveSignal;
-		var crossedDown = _prevMacdAboveSignal && !isMacdAboveSignal;
+		var cci = cciValue.GetValue<decimal>();
 
-		// Trading rules
-		if (crossedUp && cciDec < CciOversold && Position == 0)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-			
-			LogInfo($"Buy signal: MACD crossed above Signal and CCI oversold ({cciDec} < {CciOversold}).");
-		}
-		else if (crossedDown && cciDec > CciOverbought && Position == 0)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-			
-			LogInfo($"Sell signal: MACD crossed below Signal and CCI overbought ({cciDec} > {CciOverbought}).");
-		}
-		// Exit conditions based on MACD crossovers
-		else if (crossedDown && Position > 0)
-		{
-			// Exit long position when MACD crosses below signal
-			SellMarket();
-			_cooldown = CooldownBars;
-			LogInfo($"Exit long: MACD crossed below Signal. Position: {Position}");
-		}
-		else if (crossedUp && Position < 0)
-		{
-			// Exit short position when MACD crosses above signal
-			BuyMarket();
-			_cooldown = CooldownBars;
-			LogInfo($"Exit short: MACD crossed above Signal. Position: {Position}");
-		}
-
-		_prevMacdAboveSignal = isMacdAboveSignal;
+		if (macd > signal && cci < CciOversold && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (macd < signal && cci > CciOverbought && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
+		else if (Position > 0 && macd < signal)
+			SellMarket(Position);
+		else if (Position < 0 && macd > signal)
+			BuyMarket(-Position);
 	}
 }

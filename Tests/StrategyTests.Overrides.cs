@@ -5843,6 +5843,72 @@ public abstract partial class StrategyTests
 		if (secondary) IsTrue(stopExits > 0, "TON must close a position at the ATR stop.");
 	}
 
+	[TestMethod]
+	[TestCategory("Shard06")]
+	[DataRow(12, 26, 9, 20, -100.0, 100.0, false)]
+	[DataRow(8, 21, 5, 14, -80.0, 80.0, true)]
+	public async Task S0161_CciExtremesOnTheMacdSideUntilMacdCrossesBack(int fast, int slow, int signalPeriod, int cciPeriod, double oversold, double overbought, bool secondary)
+	{
+		var macd = new MovingAverageConvergenceDivergenceSignal { Macd = { ShortMa = { Length = fast }, LongMa = { Length = slow } }, SignalMa = { Length = signalPeriod } };
+		var cci = new CommodityChannelIndex { Length = cciPeriod };
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var crossExits = 0;
+		var violations = new List<string>();
+		await Replay("0161_MACD_CCI", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(12, strategy.Parameters["FastPeriod"].Value);
+			AreEqual(26, strategy.Parameters["SlowPeriod"].Value);
+			AreEqual(9, strategy.Parameters["SignalPeriod"].Value);
+			AreEqual(20, strategy.Parameters["CciPeriod"].Value);
+			AreEqual(-100m, Convert.ToDecimal(strategy.Parameters["CciOversold"].Value));
+			AreEqual(100m, Convert.ToDecimal(strategy.Parameters["CciOverbought"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "FastPeriod", fast);
+			SetParam(strategy, "SlowPeriod", slow);
+			SetParam(strategy, "SignalPeriod", signalPeriod);
+			SetParam(strategy, "CciPeriod", cciPeriod);
+			SetParam(strategy, "CciOversold", oversold);
+			SetParam(strategy, "CciOverbought", overbought);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var m = (MovingAverageConvergenceDivergenceSignalValue)macd.Process(candle);
+				var c = cci.Process(candle);
+				if (!m.IsFormed || !c.IsFormed || m.Macd is not decimal line || m.Signal is not decimal sig) return;
+				var value = c.GetValue<decimal>();
+				var position = strategy.Position;
+				if (line > sig && value < (decimal)oversold && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (line < sig && value > (decimal)overbought && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && line < sig) { expectedSide = Sides.Sell; expectedVolume = position; crossExits++; }
+				else if (position < 0m && line > sig) { expectedSide = Sides.Buy; expectedVolume = -position; crossExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a CCI extreme on the MACD side, or close when MACD crosses back.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && crossExits > 0, "The fixture must trade both sides and exit on the MACD cross.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard06")]
+	public Task S0161_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0161_MACD_CCI", TimeSpan.FromDays(31));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

@@ -7,7 +7,7 @@ MACD + CCI 戦略の実装。MACD がシグナルラインより上にあり CCI
 
 MACD のスイングはモメンタムの転換を示し、CCI はその方向への押し目エントリーのタイミングを助けます。ロングとショートの両方のトレードが可能です。
 
-モメンタムとオシレーターを組み合わせるトレーダーに適した手法です。リスク管理には ATR ストップを使用します。
+モメンタムとオシレーターを組み合わせるトレーダーに適した手法です。リスク管理にはパーセントストップを使用します。
 
 ## 詳細
 
@@ -16,7 +16,7 @@ MACD のスイングはモメンタムの転換を示し、CCI はその方向�
   - ショート: `MACD < Signal && CCI > CciOverbought`
 - **ロング/ショート**: 両方
 - **エグジット条件**: MACD が反対方向にクロス
-- **ストップ**: `StopLoss` を使用したパーセントベース
+- **ストップ**: `StopLossPercent` を使用したパーセントベース
 - **デフォルト値**:
   - `FastPeriod` = 12
   - `SlowPeriod` = 26
@@ -24,8 +24,9 @@ MACD のスイングはモメンタムの転換を示し、CCI はその方向�
   - `CciPeriod` = 20
   - `CciOversold` = -100m
   - `CciOverbought` = 100m
-  - `StopLoss` = new Unit(2, UnitTypes.Percent)
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    保有ポジションと逆方向のエントリーシグナルはドテンになります。
 - **フィルター**:
   - カテゴリ: 平均回帰
   - 方向: 両方
