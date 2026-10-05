@@ -11,84 +11,130 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Directional Movement Index Winner Strategy.
-/// Uses DMI crossover with ADX confirmation and EMA trend filter.
+/// DMI Winner strategy.
+/// Goes long when +DI crosses above -DI and short when -DI crosses above +DI, both only while ADX is above KeyLevel
+/// and, when UseMA is set, price is on the trade side of the moving average. The opposite DI cross closes the position
+/// (and reverses it when it is a valid entry), and an optional percent stop-loss caps the risk.
 /// </summary>
 public class DmiWinnerStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleTypeParam;
 	private readonly StrategyParam<int> _diLength;
 	private readonly StrategyParam<int> _adxSmoothing;
 	private readonly StrategyParam<decimal> _keyLevel;
+	private readonly StrategyParam<bool> _useMa;
 	private readonly StrategyParam<int> _maLength;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<bool> _useSl;
+	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private DirectionalIndex _dmi;
-	private AverageDirectionalIndex _adx;
-	private ExponentialMovingAverage _ma;
+	private SmoothedMovingAverage _adx;
+	private decimal? _prevDiPlus;
+	private decimal? _prevDiMinus;
 
-	private decimal _prevDiPlus;
-	private decimal _prevDiMinus;
-	private int _cooldownRemaining;
-
-	public DmiWinnerStrategy()
-	{
-		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
-			.SetDisplay("Candle type", "Candle type for strategy calculation.", "General");
-
-		_diLength = Param(nameof(DILength), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("DI Length", "Directional Indicator period", "DMI");
-
-		_adxSmoothing = Param(nameof(ADXSmoothing), 13)
-			.SetGreaterThanZero()
-			.SetDisplay("ADX Smoothing", "ADX smoothing period", "DMI");
-
-		_keyLevel = Param(nameof(KeyLevel), 23m)
-			.SetDisplay("Key Level", "ADX key level threshold", "DMI");
-
-		_maLength = Param(nameof(MALength), 50)
-			.SetGreaterThanZero()
-			.SetDisplay("MA Length", "Moving average period", "Moving Average");
-
-		_cooldownBars = Param(nameof(CooldownBars), 10)
-			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk");
-	}
-
-	public DataType CandleType
-	{
-		get => _candleTypeParam.Value;
-		set => _candleTypeParam.Value = value;
-	}
-
+	/// <summary>
+	/// Directional indicator period.
+	/// </summary>
 	public int DILength
 	{
 		get => _diLength.Value;
 		set => _diLength.Value = value;
 	}
 
+	/// <summary>
+	/// ADX smoothing period.
+	/// </summary>
 	public int ADXSmoothing
 	{
 		get => _adxSmoothing.Value;
 		set => _adxSmoothing.Value = value;
 	}
 
+	/// <summary>
+	/// ADX level a crossover needs to be traded.
+	/// </summary>
 	public decimal KeyLevel
 	{
 		get => _keyLevel.Value;
 		set => _keyLevel.Value = value;
 	}
 
+	/// <summary>
+	/// Enable the moving average trend filter.
+	/// </summary>
+	public bool UseMA
+	{
+		get => _useMa.Value;
+		set => _useMa.Value = value;
+	}
+
+	/// <summary>
+	/// Moving average period.
+	/// </summary>
 	public int MALength
 	{
 		get => _maLength.Value;
 		set => _maLength.Value = value;
 	}
 
-	public int CooldownBars
+	/// <summary>
+	/// Enable the stop-loss.
+	/// </summary>
+	public bool UseSL
 	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
+		get => _useSl.Value;
+		set => _useSl.Value = value;
+	}
+
+	/// <summary>
+	/// Stop-loss percentage from the entry price.
+	/// </summary>
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type for strategy calculation.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
+	/// </summary>
+	public DmiWinnerStrategy()
+	{
+		_diLength = Param(nameof(DILength), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("DI Length", "Directional indicator period", "DMI");
+
+		_adxSmoothing = Param(nameof(ADXSmoothing), 13)
+			.SetGreaterThanZero()
+			.SetDisplay("ADX Smoothing", "ADX smoothing period", "DMI");
+
+		_keyLevel = Param(nameof(KeyLevel), 23m)
+			.SetDisplay("Key Level", "ADX level a crossover needs to be traded", "DMI");
+
+		_useMa = Param(nameof(UseMA), true)
+			.SetDisplay("Use MA", "Trade only on the trend side of the moving average", "Moving Average");
+
+		_maLength = Param(nameof(MALength), 50)
+			.SetGreaterThanZero()
+			.SetDisplay("MA Length", "Moving average period", "Moving Average");
+
+		_useSl = Param(nameof(UseSL), false)
+			.SetDisplay("Use Stop Loss", "Enable the percent stop-loss", "Risk");
+
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetGreaterThanZero()
+			.SetDisplay("Stop Loss %", "Stop-loss percentage from the entry price", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+			.SetDisplay("Candle type", "Candle type for strategy calculation", "General");
 	}
 
 	/// <inheritdoc />
@@ -100,12 +146,9 @@ public class DmiWinnerStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_dmi = null;
 		_adx = null;
-		_ma = null;
-		_prevDiPlus = 0;
-		_prevDiMinus = 0;
-		_cooldownRemaining = 0;
+		_prevDiPlus = null;
+		_prevDiMinus = null;
 	}
 
 	/// <inheritdoc />
@@ -113,93 +156,78 @@ public class DmiWinnerStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_dmi = new DirectionalIndex { Length = DILength };
-		_adx = new AverageDirectionalIndex { Length = ADXSmoothing };
-		_ma = new ExponentialMovingAverage { Length = MALength };
+		_prevDiPlus = null;
+		_prevDiMinus = null;
+
+		var dmi = new DirectionalIndex { Length = DILength };
+		// ADX is the DX of the DILength directional lines smoothed over ADXSmoothing bars.
+		_adx = new SmoothedMovingAverage { Length = ADXSmoothing };
+		var ma = new ExponentialMovingAverage { Length = MALength };
 
 		var subscription = SubscribeCandles(CandleType);
-
 		subscription
-			.BindEx(_dmi, _adx, _ma, OnProcess)
+			.BindEx(dmi, ma, ProcessCandle)
 			.Start();
+
+		if (UseSL)
+			StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true);
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _ma);
+			DrawIndicator(area, ma);
 			DrawOwnTrades(area);
+
+			var dmiArea = CreateChartArea();
+			if (dmiArea != null)
+				DrawIndicator(dmiArea, dmi);
 		}
 	}
 
-	private void OnProcess(ICandleMessage candle, IIndicatorValue dmiValue, IIndicatorValue adxValue, IIndicatorValue maValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue dmiValue, IIndicatorValue maValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_dmi.IsFormed || !_adx.IsFormed || !_ma.IsFormed)
+		if (!dmiValue.IsFormed)
 			return;
 
-		var dmiTyped = (DirectionalIndexValue)dmiValue;
-		if (dmiTyped.Plus is not decimal diPlus || dmiTyped.Minus is not decimal diMinus)
+		var dmi = (DirectionalIndexValue)dmiValue;
+		if (dmi.Plus is not decimal diPlus || dmi.Minus is not decimal diMinus)
 			return;
 
-		var adxTyped = (AverageDirectionalIndexValue)adxValue;
-		if (adxTyped.MovingAverage is not decimal adxVal)
-			return;
+		var diSum = diPlus + diMinus;
+		var dx = diSum == 0 ? 0m : 100m * Math.Abs(diPlus - diMinus) / diSum;
+		var adx = _adx.Process(dx, candle.ServerTime, true).ToDecimal();
 
-		if (maValue.IsEmpty)
-			return;
+		var prevPlus = _prevDiPlus;
+		var prevMinus = _prevDiMinus;
+		_prevDiPlus = diPlus;
+		_prevDiMinus = diMinus;
 
-		var maVal = maValue.ToDecimal();
+		if (!_adx.IsFormed || !maValue.IsFormed || prevPlus is not decimal lastPlus || prevMinus is not decimal lastMinus)
+			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (_cooldownRemaining > 0)
-		{
-			_cooldownRemaining--;
-			_prevDiPlus = diPlus;
-			_prevDiMinus = diMinus;
-			return;
-		}
-
+		var ma = maValue.ToDecimal();
 		var close = candle.ClosePrice;
 
-		// DI crossover detection
-		var diPlusCrossUp = diPlus > diMinus && _prevDiPlus <= _prevDiMinus && _prevDiPlus > 0;
-		var diPlusCrossDown = diPlus < diMinus && _prevDiPlus >= _prevDiMinus && _prevDiPlus > 0;
+		var crossUp = lastPlus <= lastMinus && diPlus > diMinus;
+		var crossDown = lastPlus >= lastMinus && diPlus < diMinus;
 
-		// Buy: DI+ crosses above DI-, ADX above key level, price above MA
-		if (diPlusCrossUp && adxVal > KeyLevel && close > maVal && Position <= 0)
-		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-			BuyMarket(Volume);
-			_cooldownRemaining = CooldownBars;
-		}
-		// Sell: DI- crosses above DI+, ADX above key level, price below MA
-		else if (diPlusCrossDown && adxVal > KeyLevel && close < maVal && Position >= 0)
-		{
-			if (Position > 0)
-				SellMarket(Math.Abs(Position));
-			SellMarket(Volume);
-			_cooldownRemaining = CooldownBars;
-		}
-		// Exit long if DI+ crosses below DI-
-		else if (Position > 0 && diPlusCrossDown)
-		{
-			SellMarket(Math.Abs(Position));
-			_cooldownRemaining = CooldownBars;
-		}
-		// Exit short if DI+ crosses above DI-
-		else if (Position < 0 && diPlusCrossUp)
-		{
-			BuyMarket(Math.Abs(Position));
-			_cooldownRemaining = CooldownBars;
-		}
+		var longSignal = crossUp && adx > KeyLevel && (!UseMA || close > ma);
+		var shortSignal = crossDown && adx > KeyLevel && (!UseMA || close < ma);
 
-		_prevDiPlus = diPlus;
-		_prevDiMinus = diMinus;
+		if (longSignal && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (shortSignal && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
+		else if (Position > 0 && crossDown)
+			SellMarket(Position);
+		else if (Position < 0 && crossUp)
+			BuyMarket(-Position);
 	}
 }
