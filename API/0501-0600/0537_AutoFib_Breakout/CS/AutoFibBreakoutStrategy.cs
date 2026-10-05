@@ -12,20 +12,61 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// AutoFib breakout strategy.
-/// Uses Highest/Lowest channel with EMA trend filter.
-/// Buys on breakout above channel high in uptrend, sells on break below in downtrend.
+/// The swing low and high of the previous PivotPeriod candles span a Fibonacci extension at low + (high - low) * FibLevel. A
+/// close above that level while the close is above the EMA opens a long. Each entry fixes a 1.5 ATR stop-loss and a 3 ATR
+/// take-profit from the entry close. Long only.
 /// </summary>
 public class AutoFibBreakoutStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _emaLength;
-	private readonly StrategyParam<int> _channelLength;
-	private readonly StrategyParam<int> _cooldownBars;
+	private const decimal _stopAtrMultiple = 1.5m;
+	private const decimal _takeAtrMultiple = 3m;
 
-	private decimal _prevHighest;
-	private decimal _prevLowest;
-	private int _barIndex;
-	private int _lastTradeBar;
+	private readonly StrategyParam<int> _emaLength;
+	private readonly StrategyParam<int> _atrLength;
+	private readonly StrategyParam<decimal> _fibLevel;
+	private readonly StrategyParam<int> _pivotPeriod;
+	private readonly StrategyParam<DataType> _candleType;
+
+	private decimal? _prevHigh;
+	private decimal? _prevLow;
+	private decimal _stopPrice;
+	private decimal _takePrice;
+
+	/// <summary>
+	/// Trend EMA period.
+	/// </summary>
+	public int EmaLength
+	{
+		get => _emaLength.Value;
+		set => _emaLength.Value = value;
+	}
+
+	/// <summary>
+	/// ATR period of the stop-loss and take-profit.
+	/// </summary>
+	public int AtrLength
+	{
+		get => _atrLength.Value;
+		set => _atrLength.Value = value;
+	}
+
+	/// <summary>
+	/// Fibonacci extension level of the breakout.
+	/// </summary>
+	public decimal FibLevel
+	{
+		get => _fibLevel.Value;
+		set => _fibLevel.Value = value;
+	}
+
+	/// <summary>
+	/// Candles that define the swing high and low.
+	/// </summary>
+	public int PivotPeriod
+	{
+		get => _pivotPeriod.Value;
+		set => _pivotPeriod.Value = value;
+	}
 
 	/// <summary>
 	/// Candle type.
@@ -37,50 +78,28 @@ public class AutoFibBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// EMA period.
-	/// </summary>
-	public int EmaLength
-	{
-		get => _emaLength.Value;
-		set => _emaLength.Value = value;
-	}
-
-	/// <summary>
-	/// Channel lookback period.
-	/// </summary>
-	public int ChannelLength
-	{
-		get => _channelLength.Value;
-		set => _channelLength.Value = value;
-	}
-
-	/// <summary>
-	/// Cooldown bars between trades.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
 	/// Constructor.
 	/// </summary>
 	public AutoFibBreakoutStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
-
 		_emaLength = Param(nameof(EmaLength), 200)
 			.SetGreaterThanZero()
-			.SetDisplay("EMA Length", "EMA trend filter period", "Indicators");
+			.SetDisplay("EMA Length", "Trend EMA period", "Trend");
 
-		_channelLength = Param(nameof(ChannelLength), 20)
+		_atrLength = Param(nameof(AtrLength), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("Channel Length", "Highest/Lowest lookback", "Indicators");
+			.SetDisplay("ATR Length", "ATR period of the stop-loss and take-profit", "Risk");
 
-		_cooldownBars = Param(nameof(CooldownBars), 350)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "Trading");
+		_fibLevel = Param(nameof(FibLevel), 1.618m)
+			.SetGreaterThanZero()
+			.SetDisplay("Fib Level", "Fibonacci extension level of the breakout", "Fibonacci");
+
+		_pivotPeriod = Param(nameof(PivotPeriod), 10)
+			.SetGreaterThanZero()
+			.SetDisplay("Pivot Period", "Candles that define the swing high and low", "Fibonacci");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -93,10 +112,15 @@ public class AutoFibBreakoutStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevHighest = 0;
-		_prevLowest = 0;
-		_barIndex = 0;
-		_lastTradeBar = 0;
+		ResetState();
+	}
+
+	private void ResetState()
+	{
+		_prevHigh = null;
+		_prevLow = null;
+		_stopPrice = 0m;
+		_takePrice = 0m;
 	}
 
 	/// <inheritdoc />
@@ -104,13 +128,16 @@ public class AutoFibBreakoutStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
+		ResetState();
+
 		var ema = new ExponentialMovingAverage { Length = EmaLength };
-		var highest = new Highest { Length = ChannelLength };
-		var lowest = new Lowest { Length = ChannelLength };
+		var atr = new AverageTrueRange { Length = AtrLength };
+		var highest = new Highest { Length = PivotPeriod };
+		var lowest = new Lowest { Length = PivotPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ema, highest, lowest, ProcessCandle)
+			.Bind(ema, atr, highest, lowest, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -122,32 +149,40 @@ public class AutoFibBreakoutStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal emaValue, decimal highestValue, decimal lowestValue)
+	private void ProcessCandle(ICandleMessage candle, decimal ema, decimal atr, decimal highest, decimal lowest)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		_barIndex++;
+		// The swing range comes from the candles before this one.
+		var prevHigh = _prevHigh;
+		var prevLow = _prevLow;
+		_prevHigh = highest;
+		_prevLow = lowest;
 
-		var cooldownOk = _barIndex - _lastTradeBar > CooldownBars;
+		if (prevHigh is not decimal swingHigh || prevLow is not decimal swingLow)
+			return;
 
-		// Breakout above previous highest with uptrend confirmation
-		var breakUp = _prevHighest > 0 && candle.ClosePrice > _prevHighest && candle.ClosePrice > emaValue;
-		// Breakdown below previous lowest with downtrend confirmation
-		var breakDown = _prevLowest > 0 && candle.ClosePrice < _prevLowest && candle.ClosePrice < emaValue;
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
 
-		if (breakUp && Position <= 0 && cooldownOk)
+		var close = candle.ClosePrice;
+
+		if (Position > 0)
 		{
-			BuyMarket();
-			_lastTradeBar = _barIndex;
-		}
-		else if (breakDown && Position >= 0 && cooldownOk)
-		{
-			SellMarket();
-			_lastTradeBar = _barIndex;
+			if (candle.LowPrice <= _stopPrice || candle.HighPrice >= _takePrice)
+				SellMarket(Position);
+
+			return;
 		}
 
-		_prevHighest = highestValue;
-		_prevLowest = lowestValue;
+		var extension = swingLow + (swingHigh - swingLow) * FibLevel;
+
+		if (Position == 0 && close > extension && close > ema)
+		{
+			BuyMarket(Volume);
+			_stopPrice = close - _stopAtrMultiple * atr;
+			_takePrice = close + _takeAtrMultiple * atr;
+		}
 	}
 }
