@@ -4510,6 +4510,94 @@ public abstract partial class StrategyTests
 	public Task S0141_PercentStopWorksBetweenFinishedBars()
 		=> CheckPercentStopBetweenBars("0141_Donchian_Volume", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
 
+	[TestMethod]
+	[TestCategory("Shard03")]
+	[DataRow(20, 14, 2.0, 14, 3, 20.0, 80.0, 2.0, false)]
+	[DataRow(14, 10, 1.5, 9, 3, 25.0, 75.0, 0.5, true)]
+	public async Task S0142_KeltnerTouchesWithStochasticExtremesUntilTheEmaOrAnAtrStop(int emaPeriod, int atrPeriod, double multiplier, int stochPeriod, int stochK, double oversold, double overbought, double stopAtr, bool secondary)
+	{
+		var ema = new ExponentialMovingAverage { Length = emaPeriod };
+		var atr = new AverageTrueRange { Length = atrPeriod };
+		var stochastic = new StochasticOscillator { K = { Length = stochPeriod }, D = { Length = stochK } };
+		var stopPrice = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var emaExits = 0;
+		var stopExits = 0;
+		var violations = new List<string>();
+		await Replay("0142_Keltner_Stochastic", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["EmaPeriod"].Value);
+			AreEqual(14, strategy.Parameters["AtrPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["KeltnerMultiplier"].Value));
+			AreEqual(14, strategy.Parameters["StochPeriod"].Value);
+			AreEqual(3, strategy.Parameters["StochK"].Value);
+			AreEqual(20m, Convert.ToDecimal(strategy.Parameters["StochOversold"].Value));
+			AreEqual(80m, Convert.ToDecimal(strategy.Parameters["StochOverbought"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossAtr"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "EmaPeriod", emaPeriod);
+			SetParam(strategy, "AtrPeriod", atrPeriod);
+			SetParam(strategy, "KeltnerMultiplier", multiplier);
+			SetParam(strategy, "StochPeriod", stochPeriod);
+			SetParam(strategy, "StochK", stochK);
+			SetParam(strategy, "StochOversold", oversold);
+			SetParam(strategy, "StochOverbought", overbought);
+			SetParam(strategy, "StopLossAtr", stopAtr);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var e = ema.Process(candle);
+				var a = atr.Process(candle);
+				var st = stochastic.Process(candle);
+				if (!e.IsFormed || !a.IsFormed || st is not IStochasticOscillatorValue { IsFormed: true, D: decimal k }) return;
+				var middle = e.GetValue<decimal>();
+				var range = a.GetValue<decimal>();
+				var upper = middle + (decimal)multiplier * range;
+				var lower = middle - (decimal)multiplier * range;
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (close < lower && k < (decimal)oversold && position <= 0m)
+				{
+					expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++;
+					stopPrice = close - (decimal)stopAtr * range;
+				}
+				else if (close > upper && k > (decimal)overbought && position >= 0m)
+				{
+					expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++;
+					stopPrice = close + (decimal)stopAtr * range;
+				}
+				else if (position > 0m && (close > middle || close <= stopPrice))
+				{
+					expectedSide = Sides.Sell; expectedVolume = position;
+					if (close > middle) emaExits++; else stopExits++;
+				}
+				else if (position < 0m && (close < middle || close >= stopPrice))
+				{
+					expectedSide = Sides.Buy; expectedVolume = -position;
+					if (close < middle) emaExits++; else stopExits++;
+				}
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must fade a Keltner band with a stochastic extreme, or close at the EMA or the ATR stop.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && emaExits > 0, "The fixture must trade both sides and exit at the EMA.");
+		if (secondary) IsTrue(stopExits > 0, "TON must close a position at the ATR stop.");
+	}
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

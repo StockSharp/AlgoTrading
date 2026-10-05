@@ -26,11 +26,11 @@ Kurzfristige Trader, die schnelle Umkehrungen suchen, können es nützlich finde
   - `KeltnerMultiplier` = 2.0m
   - `StochPeriod` = 14
   - `StochK` = 3
-  - `StochD` = 3
   - `StochOversold` = 20m
   - `StochOverbought` = 80m
   - `StopLossAtr` = 2.0m
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    Der Kanal ist der EMA plus und minus KeltnerMultiplier ATR. StochK in den Regeln ist %K: die Stochastik über StochPeriod Kerzen, geglättet über StochK Kerzen; %D spielt keine Rolle und hat daher keine Einstellung. Ein Einstieg gegen eine offene Position dreht sie. Der Stop wird auf Kerzenschlüssen geprüft.
 - **Filter**:
   - Kategorie: Mean Reversion
   - Richtung: Beide

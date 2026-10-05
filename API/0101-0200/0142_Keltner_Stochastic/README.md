@@ -26,11 +26,11 @@ Short-term traders seeking quick reversals may find it useful. Risk is contained
   - `KeltnerMultiplier` = 2.0m
   - `StochPeriod` = 14
   - `StochK` = 3
-  - `StochD` = 3
   - `StochOversold` = 20m
   - `StochOverbought` = 80m
   - `StopLossAtr` = 2.0m
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    The channel is the EMA plus and minus KeltnerMultiplier ATRs. StochK in the rules is %K: the stochastic over StochPeriod candles smoothed over StochK candles; %D plays no part, so it has no setting. An entry against an open position reverses it. The stop is checked on candle closes.
 - **Filters**:
   - Category: Mean reversion
   - Direction: Both

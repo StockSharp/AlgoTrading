@@ -25,11 +25,11 @@
   - `KeltnerMultiplier` = 2.0m
   - `StochPeriod` = 14
   - `StochK` = 3
-  - `StochD` = 3
   - `StochOversold` = 20m
   - `StochOverbought` = 80m
   - `StopLossAtr` = 2.0m
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    Канал — EMA плюс и минус KeltnerMultiplier ATR. StochK в правилах — это %K: стохастик за StochPeriod свечей, сглаженный за StochK свечей; линия %D в правилах не участвует, поэтому отдельного параметра у неё нет. Вход против открытой позиции разворачивает её. Стоп проверяется по закрытиям свечей.
 - **Фильтры**:
   - Категория: Средняя обратная
   - Направление: Оба
