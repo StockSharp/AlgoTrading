@@ -16,7 +16,14 @@
 - **止损**：是，按百分比
 - **默认值**:
   - `CandleType` = 15分钟
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `BollingerPeriod` = 20
+  - `BollingerDeviation` = 2
+  - `StochPeriod` = 14
+  - `StochDPeriod` = 3
+  - `StochOversold` = 20
+  - `StochOverbought` = 80
+    K线最低价触及下轨且随机指标%K低于StochOversold时做多；最高价触及上轨且%K高于StochOverbought时做空。相反信号反转持仓。
 - **过滤器**:
   - 类别：均值回归
   - 方向：双向

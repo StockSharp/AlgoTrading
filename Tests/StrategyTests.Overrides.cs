@@ -3816,6 +3816,91 @@ public abstract partial class StrategyTests
 	public Task S0131_PercentStopWorksBetweenFinishedBars()
 		=> CheckPercentStopBetweenBars("0131_MACD_RSI", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
 
+	// The oracle returns +1 for a long signal, -1 for a short one and 0 otherwise; a signal opens a position or reverses
+	// the opposite one and is ignored while the position already points its way. The percent stop is switched off.
+	private async Task CheckReversingSignals(string key, bool secondary, Action<Strategy> setup, Func<ICandleMessage, int> signal, string rule,
+		TimeSpan? frame = null, bool requireReversal = true)
+	{
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var reversals = 0;
+		var violations = new List<string>();
+		await Replay(key, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual((frame ?? TimeSpan.FromMinutes(15)).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			setup?.Invoke(strategy);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var side = signal(candle);
+				var position = strategy.Position;
+				if (side > 0 && position <= 0m) expectedSide = Sides.Buy;
+				else if (side < 0 && position >= 0m) expectedSide = Sides.Sell;
+				if (expectedSide is not Sides s) return;
+				expectedVolume = strategy.Volume + Math.Abs(position);
+				expectedOrders++;
+				entries[s]++;
+				if (position != 0m) reversals++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. {rule}");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "The fixture must trade both sides.");
+		if (requireReversal) IsTrue(reversals > 0, "The fixture must reverse a position on an opposite signal.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard01")]
+	[DataRow(20, 2.0, 14, 20.0, 80.0, false)]
+	[DataRow(14, 1.5, 9, 25.0, 75.0, true)]
+	public Task S0132_BandTouchesWithStochasticExtremesAreFaded(int period, double width, int stochPeriod, double oversold, double overbought, bool secondary)
+	{
+		var bollinger = new BollingerBands { Length = period, Width = (decimal)width };
+		var stochastic = new StochasticOscillator { K = { Length = stochPeriod }, D = { Length = 3 } };
+		return CheckReversingSignals("0132_Bollinger_Stochastic", secondary, s =>
+			{
+				AreEqual(20, s.Parameters["BollingerPeriod"].Value);
+				AreEqual(2m, Convert.ToDecimal(s.Parameters["BollingerDeviation"].Value));
+				AreEqual(14, s.Parameters["StochPeriod"].Value);
+				AreEqual(3, s.Parameters["StochDPeriod"].Value);
+				AreEqual(20m, Convert.ToDecimal(s.Parameters["StochOversold"].Value));
+				AreEqual(80m, Convert.ToDecimal(s.Parameters["StochOverbought"].Value));
+				SetParam(s, "BollingerPeriod", period);
+				SetParam(s, "BollingerDeviation", width);
+				SetParam(s, "StochPeriod", stochPeriod);
+				SetParam(s, "StochOversold", oversold);
+				SetParam(s, "StochOverbought", overbought);
+			},
+			candle =>
+			{
+				var b = (BollingerBandsValue)bollinger.Process(candle);
+				var k = stochastic.Process(candle) is IStochasticOscillatorValue { IsFormed: true, K: decimal kv } ? kv : (decimal?)null;
+				if (!b.IsFormed || b.UpBand is not decimal upper || b.LowBand is not decimal lower || k is not decimal value) return 0;
+				if (candle.LowPrice <= lower && value < (decimal)oversold) return 1;
+				if (candle.HighPrice >= upper && value > (decimal)overbought) return -1;
+				return 0;
+			}, "Every order must fade a band touch confirmed by a stochastic extreme.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard01")]
+	public Task S0132_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0132_Bollinger_Stochastic", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

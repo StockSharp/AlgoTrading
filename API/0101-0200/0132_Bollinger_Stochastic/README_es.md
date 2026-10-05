@@ -18,7 +18,14 @@ Un stop basado en porcentaje limita el riesgo si la reversión a la media no ocu
 - **Stops**: Sí, basado en porcentaje
 - **Valores predeterminados**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `BollingerPeriod` = 20
+  - `BollingerDeviation` = 2
+  - `StochPeriod` = 14
+  - `StochDPeriod` = 3
+  - `StochOversold` = 20
+  - `StochOverbought` = 80
+    Una vela cuyo mínimo toca la banda inferior con el %K estocástico por debajo de StochOversold abre un largo; una vela cuyo máximo toca la banda superior con %K por encima de StochOverbought abre un corto. Una señal opuesta invierte la posición.
 - **Filtros**:
   - Categoría: Reversión a la media
   - Dirección: Ambos

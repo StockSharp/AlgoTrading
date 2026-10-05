@@ -18,7 +18,14 @@ Um stop baseado em percentual limita o risco caso a reversão à média não oco
 - **Stops**: Sim, baseado em percentual
 - **Valores padrão**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `BollingerPeriod` = 20
+  - `BollingerDeviation` = 2
+  - `StochPeriod` = 14
+  - `StochDPeriod` = 3
+  - `StochOversold` = 20
+  - `StochOverbought` = 80
+    Um candle cuja mínima toca a banda inferior com o %K estocástico abaixo de StochOversold abre uma compra; um candle cuja máxima toca a banda superior com %K acima de StochOverbought abre uma venda. Um sinal oposto inverte a posição.
 - **Filtros**:
   - Categoria: Reversão à média
   - Direção: Ambos
