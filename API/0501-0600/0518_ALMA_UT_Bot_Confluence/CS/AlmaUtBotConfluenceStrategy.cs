@@ -11,32 +11,58 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that combines ALMA filter with UT Bot trailing stop.
-/// Enters long when UT Bot gives a buy signal above EMA.
-/// Short entries occur on UT Bot sell signals below EMA.
-/// Exits are handled by UT Bot trailing stop or ATR-based stop/target.
+/// ALMA and UT Bot confluence strategy.
+/// A long opens on a UT Bot buy signal when the close is above the long EMA and ALMA, volume is above its average, RSI is above
+/// 30, ADX is above 30, the close is below the upper Bollinger Band and ATR is at least MinAtr. A short opens when the close
+/// crosses below the fast EMA while the UT Bot is bearish under the mirrored filters. Entries are spaced by BaseCooldownBars.
+/// A position closes when the UT Bot trailing stop flips against it or when price reaches the ATR stop-loss or take-profit
+/// fixed at entry.
 /// </summary>
 public class AlmaUtBotConfluenceStrategy : Strategy
 {
+	private const int _almaLength = 9;
+	private const decimal _almaOffset = 0.85m;
+	private const int _almaSigma = 6;
+	private const int _bbLength = 20;
+	private const decimal _rsiLongLevel = 30m;
+	private const decimal _rsiShortLevel = 70m;
+	private const decimal _adxLevel = 30m;
+
+	private readonly StrategyParam<int> _fastEmaLength;
 	private readonly StrategyParam<int> _emaLength;
 	private readonly StrategyParam<int> _atrLength;
+	private readonly StrategyParam<int> _adxLength;
+	private readonly StrategyParam<int> _rsiLength;
+	private readonly StrategyParam<decimal> _bbMultiplier;
 	private readonly StrategyParam<decimal> _stopLossAtrMultiplier;
 	private readonly StrategyParam<decimal> _takeProfitAtrMultiplier;
-	private readonly StrategyParam<int> _utKeyValue;
 	private readonly StrategyParam<int> _utAtrPeriod;
+	private readonly StrategyParam<decimal> _utKeyValue;
+	private readonly StrategyParam<int> _volumeMaLength;
 	private readonly StrategyParam<int> _baseCooldownBars;
-	private readonly StrategyParam<bool> _useUtExit;
+	private readonly StrategyParam<decimal> _minAtr;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _xAtrTrailingStop;
-	private decimal _prevSrc;
-	private decimal _prevStop;
+	private SimpleMovingAverage _volumeMa;
+	private decimal? _utStop;
+	private decimal _prevClose;
+	private decimal? _prevFastEma;
 	private int _barIndex;
-	private int? _lastTradeIndex;
-	private decimal _entryPrice;
+	private int? _lastEntryBar;
+	private decimal _stopPrice;
+	private decimal _takePrice;
 
 	/// <summary>
-	/// Length for long-term EMA (default: 72).
+	/// Fast EMA period.
+	/// </summary>
+	public int FastEmaLength
+	{
+		get => _fastEmaLength.Value;
+		set => _fastEmaLength.Value = value;
+	}
+
+	/// <summary>
+	/// Long-term EMA period.
 	/// </summary>
 	public int EmaLength
 	{
@@ -45,7 +71,7 @@ public class AlmaUtBotConfluenceStrategy : Strategy
 	}
 
 	/// <summary>
-	/// ATR length (default: 14).
+	/// ATR period of the stop-loss and take-profit.
 	/// </summary>
 	public int AtrLength
 	{
@@ -54,7 +80,34 @@ public class AlmaUtBotConfluenceStrategy : Strategy
 	}
 
 	/// <summary>
-	/// ATR multiplier for stop loss (default: 5.0).
+	/// ADX period.
+	/// </summary>
+	public int AdxLength
+	{
+		get => _adxLength.Value;
+		set => _adxLength.Value = value;
+	}
+
+	/// <summary>
+	/// RSI period.
+	/// </summary>
+	public int RsiLength
+	{
+		get => _rsiLength.Value;
+		set => _rsiLength.Value = value;
+	}
+
+	/// <summary>
+	/// Bollinger Bands width multiplier.
+	/// </summary>
+	public decimal BbMultiplier
+	{
+		get => _bbMultiplier.Value;
+		set => _bbMultiplier.Value = value;
+	}
+
+	/// <summary>
+	/// Stop-loss distance in ATR multiples.
 	/// </summary>
 	public decimal StopLossAtrMultiplier
 	{
@@ -63,7 +116,7 @@ public class AlmaUtBotConfluenceStrategy : Strategy
 	}
 
 	/// <summary>
-	/// ATR multiplier for take profit (default: 4.0).
+	/// Take-profit distance in ATR multiples.
 	/// </summary>
 	public decimal TakeProfitAtrMultiplier
 	{
@@ -72,16 +125,7 @@ public class AlmaUtBotConfluenceStrategy : Strategy
 	}
 
 	/// <summary>
-	/// UT Bot key value (default: 2).
-	/// </summary>
-	public int UtKeyValue
-	{
-		get => _utKeyValue.Value;
-		set => _utKeyValue.Value = value;
-	}
-
-	/// <summary>
-	/// ATR period for UT Bot (default: 10).
+	/// ATR period of the UT Bot.
 	/// </summary>
 	public int UtAtrPeriod
 	{
@@ -90,7 +134,25 @@ public class AlmaUtBotConfluenceStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Cooldown in bars between trades (default: 15).
+	/// UT Bot key value (ATR multiplier of the trailing stop).
+	/// </summary>
+	public decimal UtKeyValue
+	{
+		get => _utKeyValue.Value;
+		set => _utKeyValue.Value = value;
+	}
+
+	/// <summary>
+	/// Period of the volume average.
+	/// </summary>
+	public int VolumeMaLength
+	{
+		get => _volumeMaLength.Value;
+		set => _volumeMaLength.Value = value;
+	}
+
+	/// <summary>
+	/// Minimum bars between entries.
 	/// </summary>
 	public int BaseCooldownBars
 	{
@@ -99,16 +161,16 @@ public class AlmaUtBotConfluenceStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Use UT Bot trailing stop for exits (default: true).
+	/// Minimum ATR required for entries.
 	/// </summary>
-	public bool UseUtExit
+	public decimal MinAtr
 	{
-		get => _useUtExit.Value;
-		set => _useUtExit.Value = value;
+		get => _minAtr.Value;
+		set => _minAtr.Value = value;
 	}
 
 	/// <summary>
-	/// Candle type used for calculations.
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -117,48 +179,64 @@ public class AlmaUtBotConfluenceStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initializes parameters.
+	/// Constructor.
 	/// </summary>
 	public AlmaUtBotConfluenceStrategy()
 	{
+		_fastEmaLength = Param(nameof(FastEmaLength), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA Length", "Fast EMA period", "Trend");
+
 		_emaLength = Param(nameof(EmaLength), 72)
-			.SetDisplay("EMA Length", "Length for long-term EMA", "Main");
+			.SetGreaterThanZero()
+			.SetDisplay("EMA Length", "Long-term EMA period", "Trend");
 
 		_atrLength = Param(nameof(AtrLength), 14)
-			.SetDisplay("ATR Length", "ATR period", "Main");
+			.SetGreaterThanZero()
+			.SetDisplay("ATR Length", "ATR period of the stop-loss and take-profit", "Risk");
 
-		_stopLossAtrMultiplier = Param(nameof(StopLossAtrMultiplier), 5m)
-			.SetDisplay("Stop Loss ATR Mult", "ATR multiplier for stop loss", "Risk");
+		_adxLength = Param(nameof(AdxLength), 10)
+			.SetGreaterThanZero()
+			.SetDisplay("ADX Length", "ADX period", "Filters");
 
-		_takeProfitAtrMultiplier = Param(nameof(TakeProfitAtrMultiplier), 4m)
-			.SetDisplay("Take Profit ATR Mult", "ATR multiplier for take profit", "Risk");
+		_rsiLength = Param(nameof(RsiLength), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("RSI Length", "RSI period", "Filters");
 
-		_utKeyValue = Param(nameof(UtKeyValue), 1)
-			.SetDisplay("UT Key", "UT Bot key value", "UT Bot");
+		_bbMultiplier = Param(nameof(BbMultiplier), 3.0m)
+			.SetGreaterThanZero()
+			.SetDisplay("BB Multiplier", "Bollinger Bands width multiplier", "Filters");
+
+		_stopLossAtrMultiplier = Param(nameof(StopLossAtrMultiplier), 5.0m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss ATR", "Stop-loss distance in ATR multiples", "Risk");
+
+		_takeProfitAtrMultiplier = Param(nameof(TakeProfitAtrMultiplier), 4.0m)
+			.SetNotNegative()
+			.SetDisplay("Take Profit ATR", "Take-profit distance in ATR multiples", "Risk");
 
 		_utAtrPeriod = Param(nameof(UtAtrPeriod), 10)
-			.SetDisplay("UT ATR Period", "ATR period for UT Bot", "UT Bot");
+			.SetGreaterThanZero()
+			.SetDisplay("UT ATR Period", "ATR period of the UT Bot", "UT Bot");
+
+		_utKeyValue = Param(nameof(UtKeyValue), 1m)
+			.SetGreaterThanZero()
+			.SetDisplay("UT Key Value", "ATR multiplier of the UT Bot trailing stop", "UT Bot");
+
+		_volumeMaLength = Param(nameof(VolumeMaLength), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("Volume MA Length", "Period of the volume average", "Filters");
 
 		_baseCooldownBars = Param(nameof(BaseCooldownBars), 7)
-			.SetDisplay("Base Cooldown", "Cooldown in bars between trades", "Filters");
+			.SetNotNegative()
+			.SetDisplay("Cooldown Bars", "Minimum bars between entries", "Filters");
 
-		_useUtExit = Param(nameof(UseUtExit), true)
-			.SetDisplay("Use UT Exit", "Use UT Bot trailing stop for exits", "Exit");
+		_minAtr = Param(nameof(MinAtr), 0.005m)
+			.SetNotNegative()
+			.SetDisplay("Min ATR", "Minimum ATR required for entries", "Filters");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "Main");
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_xAtrTrailingStop = default;
-		_prevSrc = default;
-		_prevStop = default;
-		_barIndex = default;
-		_lastTradeIndex = default;
-		_entryPrice = default;
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -168,17 +246,44 @@ public class AlmaUtBotConfluenceStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_volumeMa = null;
+		ResetState();
+	}
+
+	private void ResetState()
+	{
+		_utStop = null;
+		_prevClose = 0m;
+		_prevFastEma = null;
+		_barIndex = 0;
+		_lastEntryBar = null;
+		_stopPrice = 0m;
+		_takePrice = 0m;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
+		ResetState();
+
 		var ema = new ExponentialMovingAverage { Length = EmaLength };
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaLength };
+		var alma = new ArnaudLegouxMovingAverage { Length = _almaLength, Offset = _almaOffset, Sigma = _almaSigma };
 		var atr = new AverageTrueRange { Length = AtrLength };
-		var atrUt = new AverageTrueRange { Length = UtAtrPeriod };
+		var utAtr = new AverageTrueRange { Length = UtAtrPeriod };
+		var rsi = new RelativeStrengthIndex { Length = RsiLength };
+		var adx = new AverageDirectionalIndex { Length = AdxLength };
+		var bollinger = new BollingerBands { Length = _bbLength, Width = BbMultiplier };
+		_volumeMa = new SimpleMovingAverage { Length = VolumeMaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(new IIndicator[] { ema, atr, atrUt }, ProcessCandle)
+			.BindEx(new IIndicator[] { ema, fastEma, alma, atr, utAtr, rsi, adx, bollinger }, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -186,98 +291,114 @@ public class AlmaUtBotConfluenceStrategy : Strategy
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, ema);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, alma);
+			DrawIndicator(area, bollinger);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal[] values)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue[] values)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var emaValue = values[0];
-		var atrValue = values[1];
-		var atrUtValue = values[2];
+		var volumeMa = _volumeMa.Process(candle.TotalVolume, candle.ServerTime, true).ToDecimal();
+		var close = candle.ClosePrice;
+		var utAtrValue = values[4];
 
-		var src = candle.ClosePrice;
-		var nLoss = UtKeyValue * atrUtValue;
+		if (!utAtrValue.IsFormed)
+		{
+			_prevClose = close;
+			return;
+		}
 
-		if (_barIndex == 0)
-			_xAtrTrailingStop = src + nLoss;
+		// UT Bot: an ATR trailing stop that ratchets with price and flips when price closes through it.
+		var nLoss = UtKeyValue * utAtrValue.ToDecimal();
+		var prevStop = _utStop ?? close - nLoss;
+		var prevClose = _prevClose;
+		decimal utStop;
 
-		if (src > _prevStop && _prevSrc > _prevStop)
-			_xAtrTrailingStop = Math.Max(_prevStop, src - nLoss);
-		else if (src < _prevStop && _prevSrc < _prevStop)
-			_xAtrTrailingStop = Math.Min(_prevStop, src + nLoss);
+		if (close > prevStop && prevClose > prevStop)
+			utStop = Math.Max(prevStop, close - nLoss);
+		else if (close < prevStop && prevClose < prevStop)
+			utStop = Math.Min(prevStop, close + nLoss);
 		else
-			_xAtrTrailingStop = src > _prevStop ? src - nLoss : src + nLoss;
+			utStop = close > prevStop ? close - nLoss : close + nLoss;
 
-		var buyUt = src > _xAtrTrailingStop && _prevSrc <= _prevStop;
-		var sellUt = src < _xAtrTrailingStop && _prevSrc >= _prevStop;
+		var utBuy = _utStop is not null && prevClose <= prevStop && close > utStop;
+		var utSell = _utStop is not null && prevClose >= prevStop && close < utStop;
+		var utBearish = close < utStop;
 
-		var cooldownOk = _lastTradeIndex is null || _barIndex - _lastTradeIndex >= BaseCooldownBars;
-
-		var buyCondition = buyUt && src > emaValue && cooldownOk;
-		var sellCondition = sellUt && src < emaValue && cooldownOk;
-
-		if (buyCondition && Position <= 0)
-		{
-			BuyMarket();
-			_lastTradeIndex = _barIndex;
-			_entryPrice = src;
-		}
-		else if (sellCondition && Position >= 0)
-		{
-			SellMarket();
-			_lastTradeIndex = _barIndex;
-			_entryPrice = src;
-		}
-		else
-		{
-			ManageExit(candle, atrValue, src);
-		}
-
-		_prevSrc = src;
-		_prevStop = _xAtrTrailingStop;
+		_utStop = utStop;
+		_prevClose = close;
 		_barIndex++;
-	}
 
-	private void ManageExit(ICandleMessage candle, decimal atr, decimal src)
-	{
-		if (UseUtExit)
+		var fastEmaValue = values[1];
+		var prevFastEma = _prevFastEma;
+		if (fastEmaValue.IsFormed)
+			_prevFastEma = fastEmaValue.ToDecimal();
+
+		foreach (var value in values)
 		{
-			if (Position > 0 && src < _xAtrTrailingStop && _prevSrc >= _prevStop)
-			{
-				SellMarket();
-				_lastTradeIndex = _barIndex;
-			}
-			else if (Position < 0 && src > _xAtrTrailingStop && _prevSrc <= _prevStop)
-			{
-				BuyMarket();
-				_lastTradeIndex = _barIndex;
-			}
+			if (!value.IsFormed)
+				return;
 		}
-		else if (Position != 0)
-		{
-			var stopLoss = atr * StopLossAtrMultiplier;
-			var takeProfit = atr * TakeProfitAtrMultiplier;
 
-			if (Position > 0)
-			{
-				if (candle.ClosePrice <= _entryPrice - stopLoss || candle.ClosePrice >= _entryPrice + takeProfit)
-				{
-					SellMarket();
-					_lastTradeIndex = _barIndex;
-				}
-			}
-			else
-			{
-				if (candle.ClosePrice >= _entryPrice + stopLoss || candle.ClosePrice <= _entryPrice - takeProfit)
-				{
-					BuyMarket();
-					_lastTradeIndex = _barIndex;
-				}
-			}
+		if (!_volumeMa.IsFormed || prevFastEma is not decimal prevFast)
+			return;
+
+		if (values[6] is not IAverageDirectionalIndexValue { MovingAverage: decimal adx })
+			return;
+
+		if (values[7] is not BollingerBandsValue { UpBand: decimal upperBand, LowBand: decimal lowerBand })
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		var ema = values[0].ToDecimal();
+		var fastEma = values[1].ToDecimal();
+		var alma = values[2].ToDecimal();
+		var atr = values[3].ToDecimal();
+		var rsi = values[5].ToDecimal();
+
+		var cooldownOk = _lastEntryBar is not int last || _barIndex - last >= BaseCooldownBars;
+		var commonFilters = cooldownOk && candle.TotalVolume > volumeMa && adx > _adxLevel && atr >= MinAtr;
+
+		var longSignal = commonFilters && utBuy && close > ema && close > alma && rsi > _rsiLongLevel && close < upperBand;
+		var crossBelowFast = prevClose >= prevFast && close < fastEma;
+		var shortSignal = commonFilters && utBearish && crossBelowFast && close < ema && close < alma && rsi < _rsiShortLevel && close > lowerBand;
+
+		if (longSignal && Position <= 0)
+		{
+			BuyMarket(Volume + Math.Abs(Position));
+			_lastEntryBar = _barIndex;
+			_stopPrice = close - StopLossAtrMultiplier * atr;
+			_takePrice = close + TakeProfitAtrMultiplier * atr;
+		}
+		else if (shortSignal && Position >= 0)
+		{
+			SellMarket(Volume + Math.Abs(Position));
+			_lastEntryBar = _barIndex;
+			_stopPrice = close + StopLossAtrMultiplier * atr;
+			_takePrice = close - TakeProfitAtrMultiplier * atr;
+		}
+		else if (Position > 0)
+		{
+			var hitStop = StopLossAtrMultiplier > 0m && candle.LowPrice <= _stopPrice;
+			var hitTake = TakeProfitAtrMultiplier > 0m && candle.HighPrice >= _takePrice;
+
+			if (utSell || hitStop || hitTake)
+				SellMarket(Position);
+		}
+		else if (Position < 0)
+		{
+			var hitStop = StopLossAtrMultiplier > 0m && candle.HighPrice >= _stopPrice;
+			var hitTake = TakeProfitAtrMultiplier > 0m && candle.LowPrice <= _takePrice;
+
+			if (utBuy || hitStop || hitTake)
+				BuyMarket(-Position);
 		}
 	}
 }

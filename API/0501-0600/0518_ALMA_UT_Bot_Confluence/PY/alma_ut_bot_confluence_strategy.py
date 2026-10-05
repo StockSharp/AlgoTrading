@@ -4,184 +4,234 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, AverageTrueRange
+from System import TimeSpan, Decimal, Array
+from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import IIndicator, ExponentialMovingAverage, ArnaudLegouxMovingAverage, AverageTrueRange, RelativeStrengthIndex, AverageDirectionalIndex, BollingerBands, SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
+from indicator_extensions import *
+
+ALMA_LENGTH = 9
+ALMA_OFFSET = 0.85
+ALMA_SIGMA = 6
+BB_LENGTH = 20
+RSI_LONG_LEVEL = 30.0
+RSI_SHORT_LEVEL = 70.0
+ADX_LEVEL = 30.0
+
 
 class alma_ut_bot_confluence_strategy(Strategy):
     """
-    Strategy that combines ALMA filter with UT Bot trailing stop.
-    Enters long when UT Bot gives a buy signal above EMA.
-    Short entries occur on UT Bot sell signals below EMA.
-    Exits are handled by UT Bot trailing stop or ATR-based stop/target.
+    ALMA and UT Bot confluence strategy.
+    A long opens on a UT Bot buy signal when the close is above the long EMA and ALMA, volume is above its average, RSI is above
+    30, ADX is above 30, the close is below the upper Bollinger Band and ATR is at least MinAtr. A short opens when the close
+    crosses below the fast EMA while the UT Bot is bearish under the mirrored filters. Entries are spaced by BaseCooldownBars.
+    A position closes when the UT Bot trailing stop flips against it or when price reaches the ATR stop-loss or take-profit
+    fixed at entry.
     """
 
     def __init__(self):
         super(alma_ut_bot_confluence_strategy, self).__init__()
-
+        self._fast_ema_length = self.Param("FastEmaLength", 20) \
+            .SetGreaterThanZero() \
+            .SetDisplay("Fast EMA Length", "Fast EMA period", "Trend")
         self._ema_length = self.Param("EmaLength", 72) \
-            .SetDisplay("EMA Length", "Length for long-term EMA", "Main")
-
+            .SetGreaterThanZero() \
+            .SetDisplay("EMA Length", "Long-term EMA period", "Trend")
         self._atr_length = self.Param("AtrLength", 14) \
-            .SetDisplay("ATR Length", "ATR period", "Main")
-
-        self._stop_loss_atr_mult = self.Param("StopLossAtrMultiplier", 5.0) \
-            .SetDisplay("Stop Loss ATR Mult", "ATR multiplier for stop loss", "Risk")
-
-        self._take_profit_atr_mult = self.Param("TakeProfitAtrMultiplier", 4.0) \
-            .SetDisplay("Take Profit ATR Mult", "ATR multiplier for take profit", "Risk")
-
-        self._ut_key_value = self.Param("UtKeyValue", 1) \
-            .SetDisplay("UT Key", "UT Bot key value", "UT Bot")
-
+            .SetGreaterThanZero() \
+            .SetDisplay("ATR Length", "ATR period of the stop-loss and take-profit", "Risk")
+        self._adx_length = self.Param("AdxLength", 10) \
+            .SetGreaterThanZero() \
+            .SetDisplay("ADX Length", "ADX period", "Filters")
+        self._rsi_length = self.Param("RsiLength", 14) \
+            .SetGreaterThanZero() \
+            .SetDisplay("RSI Length", "RSI period", "Filters")
+        self._bb_multiplier = self.Param("BbMultiplier", 3.0) \
+            .SetGreaterThanZero() \
+            .SetDisplay("BB Multiplier", "Bollinger Bands width multiplier", "Filters")
+        self._stop_loss_atr_multiplier = self.Param("StopLossAtrMultiplier", 5.0) \
+            .SetNotNegative() \
+            .SetDisplay("Stop Loss ATR", "Stop-loss distance in ATR multiples", "Risk")
+        self._take_profit_atr_multiplier = self.Param("TakeProfitAtrMultiplier", 4.0) \
+            .SetNotNegative() \
+            .SetDisplay("Take Profit ATR", "Take-profit distance in ATR multiples", "Risk")
         self._ut_atr_period = self.Param("UtAtrPeriod", 10) \
-            .SetDisplay("UT ATR Period", "ATR period for UT Bot", "UT Bot")
-
+            .SetGreaterThanZero() \
+            .SetDisplay("UT ATR Period", "ATR period of the UT Bot", "UT Bot")
+        self._ut_key_value = self.Param("UtKeyValue", 1.0) \
+            .SetGreaterThanZero() \
+            .SetDisplay("UT Key Value", "ATR multiplier of the UT Bot trailing stop", "UT Bot")
+        self._volume_ma_length = self.Param("VolumeMaLength", 20) \
+            .SetGreaterThanZero() \
+            .SetDisplay("Volume MA Length", "Period of the volume average", "Filters")
         self._base_cooldown_bars = self.Param("BaseCooldownBars", 7) \
-            .SetDisplay("Base Cooldown", "Cooldown in bars between trades", "Filters")
+            .SetNotNegative() \
+            .SetDisplay("Cooldown Bars", "Minimum bars between entries", "Filters")
+        self._min_atr = self.Param("MinAtr", 0.005) \
+            .SetNotNegative() \
+            .SetDisplay("Min ATR", "Minimum ATR required for entries", "Filters")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+            .SetDisplay("Candle Type", "Type of candles to use", "General")
 
-        self._use_ut_exit = self.Param("UseUtExit", True) \
-            .SetDisplay("Use UT Exit", "Use UT Bot trailing stop for exits", "Exit")
+        self._volume_ma = None
+        self._reset_state()
 
-        self._candle_type = self.Param("CandleType", tf(5)) \
-            .SetDisplay("Candle Type", "Type of candles", "Main")
+    @property
+    def CandleType(self):
+        return self._candle_type.Value
 
-        self._x_atr_trailing_stop = 0.0
-        self._prev_src = 0.0
-        self._prev_stop = 0.0
+    def GetWorkingSecurities(self):
+        return [(self.Security, self.CandleType)]
+
+    def _reset_state(self):
+        self._ut_stop = None
+        self._prev_close = 0.0
+        self._prev_fast_ema = None
         self._bar_index = 0
-        self._last_trade_index = None
-        self._entry_price = 0.0
-
-    @property
-    def EmaLength(self): return self._ema_length.Value
-    @EmaLength.setter
-    def EmaLength(self, v): self._ema_length.Value = v
-    @property
-    def AtrLength(self): return self._atr_length.Value
-    @AtrLength.setter
-    def AtrLength(self, v): self._atr_length.Value = v
-    @property
-    def StopLossAtrMultiplier(self): return self._stop_loss_atr_mult.Value
-    @StopLossAtrMultiplier.setter
-    def StopLossAtrMultiplier(self, v): self._stop_loss_atr_mult.Value = v
-    @property
-    def TakeProfitAtrMultiplier(self): return self._take_profit_atr_mult.Value
-    @TakeProfitAtrMultiplier.setter
-    def TakeProfitAtrMultiplier(self, v): self._take_profit_atr_mult.Value = v
-    @property
-    def UtKeyValue(self): return self._ut_key_value.Value
-    @UtKeyValue.setter
-    def UtKeyValue(self, v): self._ut_key_value.Value = v
-    @property
-    def UtAtrPeriod(self): return self._ut_atr_period.Value
-    @UtAtrPeriod.setter
-    def UtAtrPeriod(self, v): self._ut_atr_period.Value = v
-    @property
-    def BaseCooldownBars(self): return self._base_cooldown_bars.Value
-    @BaseCooldownBars.setter
-    def BaseCooldownBars(self, v): self._base_cooldown_bars.Value = v
-    @property
-    def UseUtExit(self): return self._use_ut_exit.Value
-    @UseUtExit.setter
-    def UseUtExit(self, v): self._use_ut_exit.Value = v
-    @property
-    def CandleType(self): return self._candle_type.Value
-    @CandleType.setter
-    def CandleType(self, v): self._candle_type.Value = v
+        self._last_entry_bar = None
+        self._stop_price = 0.0
+        self._take_price = 0.0
 
     def OnReseted(self):
         super(alma_ut_bot_confluence_strategy, self).OnReseted()
-        self._x_atr_trailing_stop = 0.0
-        self._prev_src = 0.0
-        self._prev_stop = 0.0
-        self._bar_index = 0
-        self._last_trade_index = None
-        self._entry_price = 0.0
+        self._volume_ma = None
+        self._reset_state()
 
     def OnStarted2(self, time):
         super(alma_ut_bot_confluence_strategy, self).OnStarted2(time)
 
-        ema = ExponentialMovingAverage()
-        ema.Length = self.EmaLength
-        atr = AverageTrueRange()
-        atr.Length = self.AtrLength
-        atr_ut = AverageTrueRange()
-        atr_ut.Length = self.UtAtrPeriod
+        self._reset_state()
 
+        ema = ExponentialMovingAverage()
+        ema.Length = self._ema_length.Value
+        fast_ema = ExponentialMovingAverage()
+        fast_ema.Length = self._fast_ema_length.Value
+        alma = ArnaudLegouxMovingAverage()
+        alma.Length = ALMA_LENGTH
+        alma.Offset = Decimal(ALMA_OFFSET)
+        alma.Sigma = ALMA_SIGMA
+        atr = AverageTrueRange()
+        atr.Length = self._atr_length.Value
+        ut_atr = AverageTrueRange()
+        ut_atr.Length = self._ut_atr_period.Value
+        rsi = RelativeStrengthIndex()
+        rsi.Length = self._rsi_length.Value
+        adx = AverageDirectionalIndex()
+        adx.Length = self._adx_length.Value
+        bollinger = BollingerBands()
+        bollinger.Length = BB_LENGTH
+        bollinger.Width = Decimal(self._bb_multiplier.Value)
+        self._volume_ma = SimpleMovingAverage()
+        self._volume_ma.Length = self._volume_ma_length.Value
+
+        indicators = Array[IIndicator]([ema, fast_ema, alma, atr, ut_atr, rsi, adx, bollinger])
         subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(ema, atr, atr_ut, self.ProcessCandle).Start()
+        subscription.BindEx(indicators, self._process_candle).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
             self.DrawIndicator(area, ema)
+            self.DrawIndicator(area, fast_ema)
+            self.DrawIndicator(area, alma)
+            self.DrawIndicator(area, bollinger)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle, ema_value, atr_value, atr_ut_value):
+    def _process_candle(self, candle, values):
         if candle.State != CandleStates.Finished:
             return
 
-        src = float(candle.ClosePrice)
-        n_loss = self.UtKeyValue * atr_ut_value
+        volume_ma = float(to_decimal(process_float(self._volume_ma, candle.TotalVolume, candle.ServerTime, True)))
+        close = float(candle.ClosePrice)
+        ut_atr_value = values[4]
 
-        if self._bar_index == 0:
-            self._x_atr_trailing_stop = src + n_loss
+        if not ut_atr_value.IsFormed:
+            self._prev_close = close
+            return
 
-        if src > self._prev_stop and self._prev_src > self._prev_stop:
-            self._x_atr_trailing_stop = max(self._prev_stop, src - n_loss)
-        elif src < self._prev_stop and self._prev_src < self._prev_stop:
-            self._x_atr_trailing_stop = min(self._prev_stop, src + n_loss)
+        # UT Bot: an ATR trailing stop that ratchets with price and flips when price closes through it.
+        n_loss = float(self._ut_key_value.Value) * float(to_decimal(ut_atr_value))
+        prev_stop = self._ut_stop if self._ut_stop is not None else close - n_loss
+        prev_close = self._prev_close
+
+        if close > prev_stop and prev_close > prev_stop:
+            ut_stop = max(prev_stop, close - n_loss)
+        elif close < prev_stop and prev_close < prev_stop:
+            ut_stop = min(prev_stop, close + n_loss)
         else:
-            self._x_atr_trailing_stop = src - n_loss if src > self._prev_stop else src + n_loss
+            ut_stop = close - n_loss if close > prev_stop else close + n_loss
 
-        buy_ut = src > self._x_atr_trailing_stop and self._prev_src <= self._prev_stop
-        sell_ut = src < self._x_atr_trailing_stop and self._prev_src >= self._prev_stop
+        ut_buy = self._ut_stop is not None and prev_close <= prev_stop and close > ut_stop
+        ut_sell = self._ut_stop is not None and prev_close >= prev_stop and close < ut_stop
+        ut_bearish = close < ut_stop
 
-        cooldown_ok = self._last_trade_index is None or self._bar_index - self._last_trade_index >= self.BaseCooldownBars
-
-        buy_condition = buy_ut and src > ema_value and cooldown_ok
-        sell_condition = sell_ut and src < ema_value and cooldown_ok
-
-        if buy_condition and self.Position <= 0:
-            self.BuyMarket()
-            self._last_trade_index = self._bar_index
-            self._entry_price = src
-        elif sell_condition and self.Position >= 0:
-            self.SellMarket()
-            self._last_trade_index = self._bar_index
-            self._entry_price = src
-        else:
-            self._manage_exit(candle, atr_value, src)
-
-        self._prev_src = src
-        self._prev_stop = self._x_atr_trailing_stop
+        self._ut_stop = ut_stop
+        self._prev_close = close
         self._bar_index += 1
 
-    def _manage_exit(self, candle, atr, src):
-        if self.UseUtExit:
-            if self.Position > 0 and src < self._x_atr_trailing_stop and self._prev_src >= self._prev_stop:
-                self.SellMarket()
-                self._last_trade_index = self._bar_index
-            elif self.Position < 0 and src > self._x_atr_trailing_stop and self._prev_src <= self._prev_stop:
-                self.BuyMarket()
-                self._last_trade_index = self._bar_index
-        elif self.Position != 0:
-            stop_loss = atr * self.StopLossAtrMultiplier
-            take_profit = atr * self.TakeProfitAtrMultiplier
-            close = float(candle.ClosePrice)
-            if self.Position > 0:
-                if close <= self._entry_price - stop_loss or close >= self._entry_price + take_profit:
-                    self.SellMarket()
-                    self._last_trade_index = self._bar_index
-            else:
-                if close >= self._entry_price + stop_loss or close <= self._entry_price - take_profit:
-                    self.BuyMarket()
-                    self._last_trade_index = self._bar_index
+        fast_ema_value = values[1]
+        prev_fast = self._prev_fast_ema
+        if fast_ema_value.IsFormed:
+            self._prev_fast_ema = float(to_decimal(fast_ema_value))
+
+        for value in values:
+            if not value.IsFormed:
+                return
+
+        if not self._volume_ma.IsFormed or prev_fast is None:
+            return
+
+        adx_value = values[6].MovingAverage
+        upper_band = values[7].UpBand
+        lower_band = values[7].LowBand
+        if adx_value is None or upper_band is None or lower_band is None:
+            return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
+        adx = float(adx_value)
+        upper_band = float(upper_band)
+        lower_band = float(lower_band)
+        ema = float(to_decimal(values[0]))
+        fast_ema = float(to_decimal(values[1]))
+        alma = float(to_decimal(values[2]))
+        atr = float(to_decimal(values[3]))
+        rsi = float(to_decimal(values[5]))
+
+        cooldown_ok = self._last_entry_bar is None or self._bar_index - self._last_entry_bar >= self._base_cooldown_bars.Value
+        common_filters = cooldown_ok and float(candle.TotalVolume) > volume_ma and adx > ADX_LEVEL and atr >= float(self._min_atr.Value)
+
+        long_signal = common_filters and ut_buy and close > ema and close > alma and rsi > RSI_LONG_LEVEL and close < upper_band
+        cross_below_fast = prev_close >= prev_fast and close < fast_ema
+        short_signal = common_filters and ut_bearish and cross_below_fast and close < ema and close < alma \
+            and rsi < RSI_SHORT_LEVEL and close > lower_band
+
+        sl_mult = float(self._stop_loss_atr_multiplier.Value)
+        tp_mult = float(self._take_profit_atr_multiplier.Value)
+
+        if long_signal and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+            self._last_entry_bar = self._bar_index
+            self._stop_price = close - sl_mult * atr
+            self._take_price = close + tp_mult * atr
+        elif short_signal and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
+            self._last_entry_bar = self._bar_index
+            self._stop_price = close + sl_mult * atr
+            self._take_price = close - tp_mult * atr
+        elif self.Position > 0:
+            hit_stop = sl_mult > 0 and float(candle.LowPrice) <= self._stop_price
+            hit_take = tp_mult > 0 and float(candle.HighPrice) >= self._take_price
+            if ut_sell or hit_stop or hit_take:
+                self.SellMarket(self.Position)
+        elif self.Position < 0:
+            hit_stop = sl_mult > 0 and float(candle.HighPrice) >= self._stop_price
+            hit_take = tp_mult > 0 and float(candle.LowPrice) <= self._take_price
+            if ut_buy or hit_stop or hit_take:
+                self.BuyMarket(-self.Position)
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return alma_ut_bot_confluence_strategy()
