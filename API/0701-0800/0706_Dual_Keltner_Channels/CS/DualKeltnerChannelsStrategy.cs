@@ -11,31 +11,105 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// DualKeltnerChannelsStrategy using EMA crossover for trend timing.
-/// Enters long on golden cross, short on death cross.
+/// Dual Keltner Channels strategy.
+/// Both channels are EMA(EmaPeriod) plus and minus a multiple of ATR(EmaPeriod): InnerMultiplier for the inner channel and
+/// OuterMultiplier for the outer one. A low below the lower outer band arms a long, which is taken when the close then crosses back
+/// above the lower inner band; a high above the upper outer band arms a short, taken when the close crosses back below the upper inner
+/// band. An opposite signal reverses the position. The stop is MaxStopPercent from the entry and the take profit SlTpRatio times that.
 /// </summary>
 public class DualKeltnerChannelsStrategy : Strategy
 {
-	private readonly StrategyParam<int> _fastEmaPeriod;
-	private readonly StrategyParam<int> _slowEmaPeriod;
+	private readonly StrategyParam<int> _emaPeriod;
+	private readonly StrategyParam<decimal> _innerMultiplier;
+	private readonly StrategyParam<decimal> _outerMultiplier;
+	private readonly StrategyParam<decimal> _maxStopPercent;
+	private readonly StrategyParam<decimal> _slTpRatio;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevFastEma;
-	private decimal _prevSlowEma;
+	private decimal? _prevClose;
+	private decimal? _prevInnerUpper;
+	private decimal? _prevInnerLower;
+	private bool _longArmed;
+	private bool _shortArmed;
 
-	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
-	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	/// <summary>
+	/// EMA and ATR period of the channels.
+	/// </summary>
+	public int EmaPeriod
+	{
+		get => _emaPeriod.Value;
+		set => _emaPeriod.Value = value;
+	}
 
+	/// <summary>
+	/// ATR multiplier of the inner channel.
+	/// </summary>
+	public decimal InnerMultiplier
+	{
+		get => _innerMultiplier.Value;
+		set => _innerMultiplier.Value = value;
+	}
+
+	/// <summary>
+	/// ATR multiplier of the outer channel.
+	/// </summary>
+	public decimal OuterMultiplier
+	{
+		get => _outerMultiplier.Value;
+		set => _outerMultiplier.Value = value;
+	}
+
+	/// <summary>
+	/// Stop loss percentage from entry price.
+	/// </summary>
+	public decimal MaxStopPercent
+	{
+		get => _maxStopPercent.Value;
+		set => _maxStopPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Take profit as a multiple of the stop distance.
+	/// </summary>
+	public decimal SlTpRatio
+	{
+		get => _slTpRatio.Value;
+		set => _slTpRatio.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
+	/// </summary>
 	public DualKeltnerChannelsStrategy()
 	{
-		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+		_emaPeriod = Param(nameof(EmaPeriod), 50)
 			.SetGreaterThanZero()
-			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+			.SetDisplay("EMA Period", "EMA and ATR period of the channels", "Indicators");
 
-		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+		_innerMultiplier = Param(nameof(InnerMultiplier), 2.75m)
 			.SetGreaterThanZero()
-			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+			.SetDisplay("Inner Multiplier", "ATR multiplier of the inner channel", "Indicators");
+
+		_outerMultiplier = Param(nameof(OuterMultiplier), 3.75m)
+			.SetGreaterThanZero()
+			.SetDisplay("Outer Multiplier", "ATR multiplier of the outer channel", "Indicators");
+
+		_maxStopPercent = Param(nameof(MaxStopPercent), 10m)
+			.SetNotNegative()
+			.SetDisplay("Max Stop %", "Stop loss percentage from entry price", "Risk");
+
+		_slTpRatio = Param(nameof(SlTpRatio), 1m)
+			.SetNotNegative()
+			.SetDisplay("SL/TP Ratio", "Take profit as a multiple of the stop distance", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -51,8 +125,16 @@ public class DualKeltnerChannelsStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevFastEma = 0m;
-		_prevSlowEma = 0m;
+		ResetState();
+	}
+
+	private void ResetState()
+	{
+		_prevClose = null;
+		_prevInnerUpper = null;
+		_prevInnerLower = null;
+		_longArmed = false;
+		_shortArmed = false;
 	}
 
 	/// <inheritdoc />
@@ -60,46 +142,83 @@ public class DualKeltnerChannelsStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
-		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
+		ResetState();
+
+		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
+		var atr = new AverageTrueRange { Length = EmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(fastEma, slowEma, ProcessCandle)
+			.BindEx(ema, atr, ProcessCandle)
 			.Start();
+
+		var stop = MaxStopPercent > 0 ? new Unit(MaxStopPercent, UnitTypes.Percent) : new Unit();
+		var takePercent = MaxStopPercent * SlTpRatio;
+		var take = takePercent > 0 ? new Unit(takePercent, UnitTypes.Percent) : new Unit();
+		StartProtection(take, stop, useMarketOrders: true);
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, fastEma);
-			DrawIndicator(area, slowEma);
+			DrawIndicator(area, ema);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue emaValue, IIndicatorValue atrValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_prevFastEma == 0m || _prevSlowEma == 0m)
-		{
-			_prevFastEma = fastEmaValue;
-			_prevSlowEma = slowEmaValue;
+		if (!emaValue.IsFormed || !atrValue.IsFormed)
 			return;
-		}
 
-		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
-		{
-			BuyMarket();
-		}
-		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
-		{
-			SellMarket();
-		}
+		var ema = emaValue.GetValue<decimal>();
+		var atr = atrValue.GetValue<decimal>();
+		var close = candle.ClosePrice;
 
-		_prevFastEma = fastEmaValue;
-		_prevSlowEma = slowEmaValue;
+		var innerUpper = ema + atr * InnerMultiplier;
+		var innerLower = ema - atr * InnerMultiplier;
+		var outerUpper = ema + atr * OuterMultiplier;
+		var outerLower = ema - atr * OuterMultiplier;
+
+		if (candle.LowPrice < outerLower)
+			_longArmed = true;
+
+		if (candle.HighPrice > outerUpper)
+			_shortArmed = true;
+
+		var prevClose = _prevClose;
+		var prevInnerUpper = _prevInnerUpper;
+		var prevInnerLower = _prevInnerLower;
+
+		_prevClose = close;
+		_prevInnerUpper = innerUpper;
+		_prevInnerLower = innerLower;
+
+		if (prevClose is not decimal pc || prevInnerUpper is not decimal piu || prevInnerLower is not decimal pil)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		var longSignal = _longArmed && pc <= pil && close > innerLower;
+		var shortSignal = _shortArmed && pc >= piu && close < innerUpper;
+
+		if (longSignal)
+		{
+			_longArmed = false;
+
+			if (Position <= 0)
+				BuyMarket(Volume + Math.Abs(Position));
+		}
+		else if (shortSignal)
+		{
+			_shortArmed = false;
+
+			if (Position >= 0)
+				SellMarket(Volume + Math.Abs(Position));
+		}
 	}
 }
