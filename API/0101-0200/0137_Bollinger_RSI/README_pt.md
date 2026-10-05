@@ -18,7 +18,11 @@ Um stop percentual apertado limita a exposição caso a volatilidade se expanda 
 - **Stops**: Sim, baseado em percentual
 - **Valores padrão**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `BollingerPeriod` = 20
+  - `BollingerDeviation` = 2
+  - `RsiPeriod` = 14
+    Um fechamento acima da banda superior mais alto que o fechamento anterior acima dela, com o RSI mais baixo que naquele momento, é uma divergência de baixa e abre uma venda; o caso espelhado abaixo da banda inferior abre uma compra e inverte uma posição oposta. A posição é encerrada quando o preço volta a fechar dentro das bandas ou o RSI cruza de volta o 50.
 - **Filtros**:
   - Categoria: Reversão à média
   - Direção: Ambos

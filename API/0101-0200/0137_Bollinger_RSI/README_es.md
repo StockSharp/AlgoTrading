@@ -18,7 +18,11 @@ Un stop porcentual ajustado limita la exposición en caso de que la volatilidad 
 - **Stops**: Sí, basado en porcentaje
 - **Valores predeterminados**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `BollingerPeriod` = 20
+  - `BollingerDeviation` = 2
+  - `RsiPeriod` = 14
+    Un cierre por encima de la banda superior más alto que el cierre anterior por encima de ella, con el RSI más bajo que entonces, es una divergencia bajista y abre un corto; el caso simétrico bajo la banda inferior abre un largo e invierte una posición opuesta. La posición se cierra cuando el precio vuelve a cerrar dentro de las bandas o el RSI cruza de nuevo el 50.
 - **Filtros**:
   - Categoría: Reversión a la media
   - Dirección: Ambos
