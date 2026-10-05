@@ -11,26 +11,22 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// ADX slope mean reversion strategy.
-/// Trades reversion of extreme ADX slope moves once the recent slope distribution is formed.
+/// ADX slope mean reversion.
+/// Buys when the ADX slope is far below its average and starts turning up, sells when it is far above
+/// and starts turning down. Exits when the slope returns to its average.
 /// </summary>
 public class AdxSlopeMeanReversionStrategy : Strategy
 {
 	private readonly StrategyParam<int> _adxPeriod;
-	private readonly StrategyParam<int> _slopeLookback;
-	private readonly StrategyParam<decimal> _thresholdMultiplier;
+	private readonly StrategyParam<int> _lookbackPeriod;
+	private readonly StrategyParam<decimal> _deviationMultiplier;
 	private readonly StrategyParam<decimal> _stopLossPercent;
-	private readonly StrategyParam<int> _cooldownBars;
-	private readonly StrategyParam<decimal> _minAdx;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private AverageDirectionalIndex _adx;
-	private decimal _previousAdxValue;
-	private decimal[] _slopeHistory;
-	private int _currentIndex;
-	private int _filledCount;
-	private int _cooldown;
-	private bool _isInitialized;
+	private SimpleMovingAverage _slopeAverage;
+	private StandardDeviation _slopeStdDev;
+	private decimal? _prevAdx;
+	private decimal? _prevSlope;
 
 	/// <summary>
 	/// ADX period.
@@ -42,48 +38,30 @@ public class AdxSlopeMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Lookback used to estimate slope mean and standard deviation.
+	/// Lookback period for slope statistics.
 	/// </summary>
-	public int SlopeLookback
+	public int LookbackPeriod
 	{
-		get => _slopeLookback.Value;
-		set => _slopeLookback.Value = value;
+		get => _lookbackPeriod.Value;
+		set => _lookbackPeriod.Value = value;
 	}
 
 	/// <summary>
-	/// Standard deviation multiplier for entry threshold.
+	/// Standard deviation multiplier for extreme slope.
 	/// </summary>
-	public decimal ThresholdMultiplier
+	public decimal DeviationMultiplier
 	{
-		get => _thresholdMultiplier.Value;
-		set => _thresholdMultiplier.Value = value;
+		get => _deviationMultiplier.Value;
+		set => _deviationMultiplier.Value = value;
 	}
 
 	/// <summary>
-	/// Stop loss percentage.
+	/// Stop-loss percentage.
 	/// </summary>
 	public decimal StopLossPercent
 	{
 		get => _stopLossPercent.Value;
 		set => _stopLossPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Bars to wait between orders.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
-	/// Minimum ADX level required for entries.
-	/// </summary>
-	public decimal MinAdx
-	{
-		get => _minAdx.Value;
-		set => _minAdx.Value = value;
 	}
 
 	/// <summary>
@@ -96,36 +74,25 @@ public class AdxSlopeMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initializes a new instance of <see cref="AdxSlopeMeanReversionStrategy"/>.
+	/// Initialize <see cref="AdxSlopeMeanReversionStrategy"/>.
 	/// </summary>
 	public AdxSlopeMeanReversionStrategy()
 	{
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("ADX Period", "Period for ADX calculation", "Indicator Parameters")
-			.SetOptimize(10, 20, 2);
+			.SetDisplay("ADX Period", "Period of ADX", "Indicators");
 
-		_slopeLookback = Param(nameof(SlopeLookback), 20)
+		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Slope Lookback", "Period for slope statistics", "Strategy Parameters")
-			.SetOptimize(10, 50, 5);
+			.SetDisplay("Lookback Period", "Period for slope statistics", "Strategy");
 
-		_thresholdMultiplier = Param(nameof(ThresholdMultiplier), 1.5m)
+		_deviationMultiplier = Param(nameof(DeviationMultiplier), 1.0m)
 			.SetGreaterThanZero()
-			.SetDisplay("Threshold Multiplier", "Standard deviation multiplier for entries", "Strategy Parameters")
-			.SetOptimize(1m, 3m, 0.5m);
+			.SetDisplay("Deviation Multiplier", "Standard deviation multiplier for extreme slope", "Strategy");
 
-		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management");
-
-		_cooldownBars = Param(nameof(CooldownBars), 1200)
-			.SetRange(1, 5000)
-			.SetDisplay("Cooldown Bars", "Bars to wait between orders", "Risk Management");
-
-		_minAdx = Param(nameof(MinAdx), 18m)
-			.SetGreaterThanZero()
-			.SetDisplay("Min ADX", "Minimum ADX level required for entries", "Signal Filters");
+		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop-loss percentage", "Risk Management");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -141,14 +108,10 @@ public class AdxSlopeMeanReversionStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_adx = null;
-		_previousAdxValue = default;
-		_slopeHistory = new decimal[SlopeLookback];
-		_currentIndex = default;
-		_filledCount = default;
-		_cooldown = default;
-		_isInitialized = default;
+		_slopeAverage = null;
+		_slopeStdDev = null;
+		_prevAdx = null;
+		_prevSlope = null;
 	}
 
 	/// <inheritdoc />
@@ -156,25 +119,29 @@ public class AdxSlopeMeanReversionStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_adx = new AverageDirectionalIndex { Length = AdxPeriod };
-		_slopeHistory = new decimal[SlopeLookback];
-		_currentIndex = 0;
-		_filledCount = 0;
-		_cooldown = 0;
+		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
+		_slopeAverage = new SimpleMovingAverage { Length = LookbackPeriod };
+		_slopeStdDev = new StandardDeviation { Length = LookbackPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_adx, ProcessCandle)
+			.BindEx(adx, ProcessCandle)
 			.Start();
 
-		StartProtection(new(), new Unit(StopLossPercent, UnitTypes.Percent));
+		StartProtection(
+			takeProfit: null,
+			stopLoss: StopLossPercent > 0 ? new Unit(StopLossPercent, UnitTypes.Percent) : null
+		);
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _adx);
 			DrawOwnTrades(area);
+
+			var adxArea = CreateChartArea();
+			if (adxArea != null)
+				DrawIndicator(adxArea, adx);
 		}
 	}
 
@@ -183,104 +150,49 @@ public class AdxSlopeMeanReversionStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_adx.IsFormed)
+		if (!adxValue.IsFormed)
 			return;
 
-		var typedValue = (AverageDirectionalIndexValue)adxValue;
-
-		if (typedValue.MovingAverage is not decimal adx)
+		if (((AverageDirectionalIndexValue)adxValue).MovingAverage is not decimal adx)
 			return;
 
-		var dx = typedValue.Dx;
-
-		if (dx.Plus is not decimal diPlus || dx.Minus is not decimal diMinus)
-			return;
-
-		if (!_isInitialized)
+		if (_prevAdx is not decimal prevAdx)
 		{
-			_previousAdxValue = adx;
-			_isInitialized = true;
+			_prevAdx = adx;
 			return;
 		}
 
-		var slope = adx - _previousAdxValue;
-		_previousAdxValue = adx;
+		_prevAdx = adx;
 
-		_slopeHistory[_currentIndex] = slope;
-		_currentIndex = (_currentIndex + 1) % SlopeLookback;
+		var slope = adx - prevAdx;
+		var avgSlope = _slopeAverage.Process(slope, candle.ServerTime, true).ToDecimal();
+		var stdSlope = _slopeStdDev.Process(slope, candle.ServerTime, true).ToDecimal();
 
-		if (_filledCount < SlopeLookback)
-			_filledCount++;
+		var prevSlope = _prevSlope;
+		_prevSlope = slope;
 
-		if (_filledCount < SlopeLookback)
+		if (!_slopeAverage.IsFormed || !_slopeStdDev.IsFormed || prevSlope is not decimal prev)
 			return;
-
-		CalculateStatistics(out var averageSlope, out var slopeStdDev);
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (slopeStdDev <= 0)
-			return;
-
-		if (_cooldown > 0)
+		// Extreme reading that has started to turn back toward the average.
+		if (slope < avgSlope - DeviationMultiplier * stdSlope && slope > prev && Position <= 0)
 		{
-			_cooldown--;
-			return;
+			BuyMarket(Volume + Math.Abs(Position));
 		}
-
-		var lowerThreshold = averageSlope - ThresholdMultiplier * slopeStdDev;
-		var upperThreshold = averageSlope + ThresholdMultiplier * slopeStdDev;
-		var isBullish = diPlus >= diMinus;
-		var isBearish = diMinus > diPlus;
-
-		if (Position == 0)
+		else if (slope > avgSlope + DeviationMultiplier * stdSlope && slope < prev && Position >= 0)
 		{
-			if (adx >= MinAdx && slope <= lowerThreshold && isBullish)
-			{
-				BuyMarket();
-				_cooldown = CooldownBars;
-			}
-			else if (adx >= MinAdx && slope >= upperThreshold && isBearish)
-			{
-				SellMarket();
-				_cooldown = CooldownBars;
-			}
+			SellMarket(Volume + Math.Abs(Position));
 		}
-		else if (Position > 0)
+		else if (Position > 0 && slope >= avgSlope)
 		{
-			if (slope >= averageSlope || !isBullish)
-			{
-				SellMarket(Math.Abs(Position));
-				_cooldown = CooldownBars;
-			}
+			SellMarket(Position);
 		}
-		else if (Position < 0)
+		else if (Position < 0 && slope <= avgSlope)
 		{
-			if (slope <= averageSlope || !isBearish)
-			{
-				BuyMarket(Math.Abs(Position));
-				_cooldown = CooldownBars;
-			}
+			BuyMarket(-Position);
 		}
-	}
-
-	private void CalculateStatistics(out decimal averageSlope, out decimal slopeStdDev)
-	{
-		averageSlope = 0m;
-		var sumSquaredDiffs = 0m;
-
-		for (var i = 0; i < SlopeLookback; i++)
-			averageSlope += _slopeHistory[i];
-
-		averageSlope /= SlopeLookback;
-
-		for (var i = 0; i < SlopeLookback; i++)
-		{
-			var diff = _slopeHistory[i] - averageSlope;
-			sumSquaredDiffs += diff * diff;
-		}
-
-		slopeStdDev = (decimal)Math.Sqrt((double)(sumSquaredDiffs / SlopeLookback));
 	}
 }
