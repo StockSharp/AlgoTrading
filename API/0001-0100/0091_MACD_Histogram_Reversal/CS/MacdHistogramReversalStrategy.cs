@@ -12,9 +12,8 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// MACD Histogram Reversal strategy.
-/// Enters long when MACD histogram (MACD - Signal) crosses above zero.
-/// Enters short when MACD histogram crosses below zero.
-/// Uses cooldown to control trade frequency.
+/// The position turns long when the MACD histogram (MACD - Signal) turns positive and short when it turns negative;
+/// a zero histogram keeps its previous sign. A percent stop limits the loss.
 /// </summary>
 public class MacdHistogramReversalStrategy : Strategy
 {
@@ -22,10 +21,9 @@ public class MacdHistogramReversalStrategy : Strategy
 	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<int> _signalPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 
-	private decimal? _prevHistogram;
-	private int _cooldown;
+	private bool? _prevPositive;
 
 	/// <summary>
 	/// Fast EMA period.
@@ -64,12 +62,12 @@ public class MacdHistogramReversalStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Cooldown bars.
+	/// Stop-loss percentage.
 	/// </summary>
-	public int CooldownBars
+	public decimal StopLossPercent
 	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
 	}
 
 	/// <summary>
@@ -89,12 +87,12 @@ public class MacdHistogramReversalStrategy : Strategy
 			.SetRange(7, 13)
 			.SetDisplay("Signal Period", "Signal line period", "MACD");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_cooldownBars = Param(nameof(CooldownBars), 500)
-			.SetRange(1, 1000)
-			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
 	}
 
 	/// <inheritdoc />
@@ -107,8 +105,7 @@ public class MacdHistogramReversalStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevHistogram = null;
-		_cooldown = default;
+		_prevPositive = null;
 	}
 
 	/// <inheritdoc />
@@ -116,8 +113,7 @@ public class MacdHistogramReversalStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_prevHistogram = null;
-		_cooldown = 0;
+		_prevPositive = null;
 
 		var macdHist = new MovingAverageConvergenceDivergenceHistogram
 		{
@@ -134,6 +130,16 @@ public class MacdHistogramReversalStrategy : Strategy
 			.BindEx(macdHist, ProcessCandle)
 			.Start();
 
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -143,12 +149,14 @@ public class MacdHistogramReversalStrategy : Strategy
 		}
 	}
 
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// The high-level handler activates native protection before this callback, also between signal bars.
+	}
+
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdIv)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!macdIv.IsFormed)
+		if (candle.State != CandleStates.Finished || !macdIv.IsFormed)
 			return;
 
 		var mv = (IMacdHistogramValue)macdIv;
@@ -158,43 +166,19 @@ public class MacdHistogramReversalStrategy : Strategy
 
 		var histogram = macdVal - signalVal;
 
-		if (_prevHistogram == null)
-		{
-			_prevHistogram = histogram;
+		if (histogram == 0)
 			return;
-		}
 
-		if (_cooldown > 0)
-		{
-			_cooldown--;
-			_prevHistogram = histogram;
+		var positive = histogram > 0;
+		var wasPositive = _prevPositive;
+		_prevPositive = positive;
+
+		if (wasPositive is not bool previous || previous == positive || !IsFormedAndOnlineAndAllowTrading())
 			return;
-		}
 
-		var crossedAboveZero = _prevHistogram < 0 && histogram >= 0;
-		var crossedBelowZero = _prevHistogram > 0 && histogram <= 0;
-
-		if (Position == 0 && crossedAboveZero)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position == 0 && crossedBelowZero)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position > 0 && crossedBelowZero)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position < 0 && crossedAboveZero)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-
-		_prevHistogram = histogram;
+		if (positive && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (!positive && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
 	}
 }

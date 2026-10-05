@@ -2578,6 +2578,73 @@ public abstract partial class StrategyTests
 	public Task S0090_PercentStopWorksBetweenFinishedBars()
 		=> CheckPercentStopBetweenBars(DonchianReversal, TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
 
+	private const string MacdHistogram = "0091_MACD_Histogram_Reversal";
+
+	[TestMethod]
+	[TestCategory("Shard04")]
+	[DataRow(12, 26, 9, false)]
+	[DataRow(10, 22, 7, true)]
+	public async Task S0091_ReversesOnEverySignChangeOfTheHistogram(int fast, int slow, int signal, bool secondary)
+	{
+		var macd = new MovingAverageConvergenceDivergenceSignal
+		{
+			Macd = { ShortMa = { Length = fast }, LongMa = { Length = slow } },
+			SignalMa = { Length = signal },
+		};
+		bool? positive = null;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var reversals = 0;
+		var violations = new List<string>();
+		await Replay(MacdHistogram, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(12, strategy.Parameters["FastPeriod"].Value);
+			AreEqual(26, strategy.Parameters["SlowPeriod"].Value);
+			AreEqual(9, strategy.Parameters["SignalPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "FastPeriod", fast);
+			SetParam(strategy, "SlowPeriod", slow);
+			SetParam(strategy, "SignalPeriod", signal);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var value = (MovingAverageConvergenceDivergenceSignalValue)macd.Process(candle);
+				if (!value.IsFormed || value.Macd is not decimal line || value.Signal is not decimal sig || line == sig) return;
+				var before = positive;
+				positive = line > sig;
+				if (before is not bool was || was == positive) return;
+				var position = strategy.Position;
+				if (positive == true && position <= 0m) expectedSide = Sides.Buy;
+				else if (positive == false && position >= 0m) expectedSide = Sides.Sell;
+				else return;
+				expectedVolume = strategy.Volume + Math.Abs(position);
+				if (position != 0m) reversals++;
+				expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must reverse when the MACD histogram changes sign.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(reversals > 10, "The fixture must reverse repeatedly.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard04")]
+	public Task S0091_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars(MacdHistogram, TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";
