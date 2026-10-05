@@ -20,6 +20,7 @@
   - `VolumeMultiplier` = 2.0
   - `MAPeriod` = 20
   - `AtrMultiplier` = 2 ATR
+    トレンドは前の足に対する移動平均の向きです。ストップはエントリー時の終値から AtrMultiplier 倍の ATR（期間14）に置かれ、その後は各終値からその距離で追従し、終値で判定します。
   - `CandleType` = 5 minute
 - **フィルター**:
   - カテゴリ: リバーサル

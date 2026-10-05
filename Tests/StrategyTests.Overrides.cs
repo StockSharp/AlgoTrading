@@ -2026,6 +2026,90 @@ public abstract partial class StrategyTests
 	public Task S0081_PercentStopWorksBetweenFinishedBars()
 		=> CheckPercentStopBetweenBars(VwapBounce, TimeSpan.FromDays(31));
 
+	private const string VolumeExhaustion = "0082_Volume_Exhaustion";
+
+	[TestMethod]
+	[TestCategory("Shard04")]
+	[DataRow(20, 2.0, 20, 2.0, false)]
+	[DataRow(10, 1.5, 10, 1.0, true)]
+	public async Task S0082_VolumeSpikesAgainstTheTrendWithAtrTrailingStop(int volumePeriod, double volumeMultiplier, int maPeriod, double atrMultiplier, bool secondary)
+	{
+		var sma = new SimpleMovingAverage { Length = maPeriod };
+		var atr = new AverageTrueRange { Length = 14 };
+		var volumes = new List<decimal>();
+		decimal? previousMa = null;
+		var stop = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var stopExits = 0;
+		var trendSpikes = 0;
+		var violations = new List<string>();
+		await Replay(VolumeExhaustion, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["VolumePeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["VolumeMultiplier"].Value));
+			AreEqual(20, strategy.Parameters["MAPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["AtrMultiplier"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "VolumePeriod", volumePeriod);
+			SetParam(strategy, "VolumeMultiplier", volumeMultiplier);
+			SetParam(strategy, "MAPeriod", maPeriod);
+			SetParam(strategy, "AtrMultiplier", atrMultiplier);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				decimal? average = volumes.Count == volumePeriod ? volumes.Average() : null;
+				volumes.Add(candle.TotalVolume);
+				if (volumes.Count > volumePeriod) volumes.RemoveAt(0);
+				var m = sma.Process(candle);
+				var a = atr.Process(candle);
+				if (!m.IsFormed || !a.IsFormed) return;
+				var ma = m.GetValue<decimal>();
+				var last = previousMa;
+				previousMa = ma;
+				if (average is not decimal avg || last is not decimal lastMa) return;
+				var close = candle.ClosePrice;
+				var distance = (decimal)atrMultiplier * a.GetValue<decimal>();
+				var position = strategy.Position;
+				if (position > 0m)
+				{
+					if (close <= stop) { expectedSide = Sides.Sell; expectedVolume = position; stopExits++; }
+					else stop = Math.Max(stop, close - distance);
+				}
+				else if (position < 0m)
+				{
+					if (close >= stop) { expectedSide = Sides.Buy; expectedVolume = -position; stopExits++; }
+					else stop = Math.Min(stop, close + distance);
+				}
+				else if (candle.TotalVolume > avg * (decimal)volumeMultiplier)
+				{
+					if (close > candle.OpenPrice && ma < lastMa) { expectedSide = Sides.Buy; stop = close - distance; }
+					else if (close < candle.OpenPrice && ma > lastMa) { expectedSide = Sides.Sell; stop = close + distance; }
+					else if (close != candle.OpenPrice) trendSpikes++;
+					if (expectedSide is Sides side) { expectedVolume = strategy.Volume; entries[side]++; }
+				}
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must fade a volume spike against the moving-average trend while flat, or close the position at the ATR trailing stop.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "The fixture must fade spikes on both sides.");
+		IsTrue(stopExits > 0, "The fixture must exit at the trailing stop.");
+		IsTrue(trendSpikes > 0, "The fixture must contain spikes in the direction of the trend that are not traded.");
+	}
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";
