@@ -6920,6 +6920,74 @@ public abstract partial class StrategyTests
 		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && flipExits > 0, "The fixture must trade both sides and exit on a Supertrend flip.");
 	}
 
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(20, 12, 26, 9, false)]
+	[DataRow(30, 8, 21, 5, true)]
+	public async Task S0187_ChannelBreakoutsConfirmedByMacdUntilMacdCrossesBack(int period, int fast, int slow, int signalPeriod, bool secondary)
+	{
+		var donchian = new DonchianChannels { Length = period };
+		var macd = new MovingAverageConvergenceDivergenceSignal { Macd = { ShortMa = { Length = fast }, LongMa = { Length = slow } }, SignalMa = { Length = signalPeriod } };
+		decimal? previousUpper = null, previousLower = null;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var crossExits = 0;
+		var violations = new List<string>();
+		await Replay("0187_Donchian_MACD", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["DonchianPeriod"].Value);
+			AreEqual(12, strategy.Parameters["MacdFast"].Value);
+			AreEqual(26, strategy.Parameters["MacdSlow"].Value);
+			AreEqual(9, strategy.Parameters["MacdSignal"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "DonchianPeriod", period);
+			SetParam(strategy, "MacdFast", fast);
+			SetParam(strategy, "MacdSlow", slow);
+			SetParam(strategy, "MacdSignal", signalPeriod);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var d = donchian.Process(candle);
+				var m = (MovingAverageConvergenceDivergenceSignalValue)macd.Process(candle);
+				// The strategy only sees candles once no bound indicator returns an empty value.
+				if (d.IsEmpty || m.IsEmpty) return;
+				var upper = previousUpper;
+				var lower = previousLower;
+				if (d.IsFormed && d is IDonchianChannelsValue { UpperBand: decimal u, LowerBand: decimal l }) { previousUpper = u; previousLower = l; }
+				if (!m.IsFormed || upper is not decimal high || lower is not decimal low || m.Macd is not decimal line || m.Signal is not decimal sig) return;
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (close > high && line > sig && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (close < low && line < sig && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && line < sig) { expectedSide = Sides.Sell; expectedVolume = position; crossExits++; }
+				else if (position < 0m && line > sig) { expectedSide = Sides.Buy; expectedVolume = -position; crossExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a channel breakout confirmed by MACD, or close when MACD crosses back.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && crossExits > 0, "The fixture must trade both sides and exit on the MACD cross.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0187_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0187_Donchian_MACD", TimeSpan.FromDays(31));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

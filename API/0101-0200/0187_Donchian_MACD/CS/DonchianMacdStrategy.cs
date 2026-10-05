@@ -1,22 +1,20 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy combining Donchian Channel breakout with MACD trend confirmation.
+/// Donchian MACD strategy.
+/// The channel spans the highest high and lowest low of the previous DonchianPeriod candles. A close above it with MACD above its signal
+/// line goes long and a close below it with MACD below the signal line goes short, reversing an opposite position. A long closes when MACD
+/// crosses below the signal line and a short when it crosses above it, and a percent stop limits the loss.
 /// </summary>
 public class DonchianMacdStrategy : Strategy
 {
@@ -24,22 +22,14 @@ public class DonchianMacdStrategy : Strategy
 	private readonly StrategyParam<int> _macdFast;
 	private readonly StrategyParam<int> _macdSlow;
 	private readonly StrategyParam<int> _macdSignal;
-	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private DonchianChannels _donchian;
-	private MovingAverageConvergenceDivergenceSignal _macd;
-	
-	private decimal? _previousHighest;
-	private decimal? _previousLowest;
-	private decimal? _previousMacd;
-	private decimal? _previousSignal;
-	private decimal? _entryPrice;
-	private int _cooldown;
+	private decimal? _prevUpper;
+	private decimal? _prevLower;
 
 	/// <summary>
-	/// Donchian channel period.
+	/// Previous candles the channel spans.
 	/// </summary>
 	public int DonchianPeriod
 	{
@@ -48,7 +38,7 @@ public class DonchianMacdStrategy : Strategy
 	}
 
 	/// <summary>
-	/// MACD fast period.
+	/// Fast EMA period of MACD.
 	/// </summary>
 	public int MacdFast
 	{
@@ -57,7 +47,7 @@ public class DonchianMacdStrategy : Strategy
 	}
 
 	/// <summary>
-	/// MACD slow period.
+	/// Slow EMA period of MACD.
 	/// </summary>
 	public int MacdSlow
 	{
@@ -66,7 +56,7 @@ public class DonchianMacdStrategy : Strategy
 	}
 
 	/// <summary>
-	/// MACD signal period.
+	/// Signal line period of MACD.
 	/// </summary>
 	public int MacdSignal
 	{
@@ -75,16 +65,7 @@ public class DonchianMacdStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Bars to wait between trades.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss percentage.
+	/// Stop loss percentage from entry price.
 	/// </summary>
 	public decimal StopLossPercent
 	{
@@ -93,7 +74,7 @@ public class DonchianMacdStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Candle type for strategy.
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -102,40 +83,31 @@ public class DonchianMacdStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="DonchianMacdStrategy"/>.
+	/// Constructor.
 	/// </summary>
 	public DonchianMacdStrategy()
 	{
 		_donchianPeriod = Param(nameof(DonchianPeriod), 20)
-			.SetRange(5, 50)
-			
-			.SetDisplay("Donchian Period", "Channel lookback period", "Indicators");
+			.SetGreaterThanZero()
+			.SetDisplay("Donchian Period", "Previous candles the channel spans", "Indicators");
 
 		_macdFast = Param(nameof(MacdFast), 12)
-			.SetRange(8, 20)
-			
-			.SetDisplay("MACD Fast Period", "Fast EMA period for MACD", "Indicators");
+			.SetGreaterThanZero()
+			.SetDisplay("MACD Fast", "Fast EMA period of MACD", "MACD");
 
 		_macdSlow = Param(nameof(MacdSlow), 26)
-			.SetRange(20, 40)
-			
-			.SetDisplay("MACD Slow Period", "Slow EMA period for MACD", "Indicators");
+			.SetGreaterThanZero()
+			.SetDisplay("MACD Slow", "Slow EMA period of MACD", "MACD");
 
 		_macdSignal = Param(nameof(MacdSignal), 9)
-			.SetRange(5, 15)
-			
-			.SetDisplay("MACD Signal Period", "Signal line period for MACD", "Indicators");
-
-		_cooldownBars = Param(nameof(CooldownBars), 50)
-			.SetRange(1, 200)
-			.SetDisplay("Cooldown Bars", "Bars between entries", "General");
+			.SetGreaterThanZero()
+			.SetDisplay("MACD Signal", "Signal line period of MACD", "MACD");
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-			.SetRange(1m, 5m)
-			
-			.SetDisplay("Stop-Loss %", "Stop-loss percentage from entry price", "Risk Management");
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -144,18 +116,13 @@ public class DonchianMacdStrategy : Strategy
 	{
 		return [(Security, CandleType)];
 	}
+
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_previousHighest = 0;
-		_previousLowest = decimal.MaxValue;
-		_previousMacd = 0;
-		_previousSignal = 0;
-		_entryPrice = null;
-		_cooldown = 0;
-		_donchian = null;
-		_macd = null;
+		_prevUpper = null;
+		_prevLower = null;
 	}
 
 	/// <inheritdoc />
@@ -163,13 +130,11 @@ public class DonchianMacdStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Initialize indicators
-		_donchian = new DonchianChannels
-		{
-			Length = DonchianPeriod
-		};
+		_prevUpper = null;
+		_prevLower = null;
 
-		_macd = new MovingAverageConvergenceDivergenceSignal
+		var donchian = new DonchianChannels { Length = DonchianPeriod };
+		var macd = new MovingAverageConvergenceDivergenceSignal
 		{
 			Macd =
 			{
@@ -179,81 +144,76 @@ public class DonchianMacdStrategy : Strategy
 			SignalMa = { Length = MacdSignal }
 		};
 
-		// Create subscription and bind indicators
 		var subscription = SubscribeCandles(CandleType);
-		
 		subscription
-			.BindEx(_donchian, _macd, ProcessCandle)
+			.BindEx(donchian, macd, ProcessCandle)
 			.Start();
 
-		// Setup chart visualization if available
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _donchian);
-			DrawIndicator(area, _macd);
+			DrawIndicator(area, donchian);
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, macd);
+			}
 		}
+	}
+
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// The high-level handler activates native protection before this callback, also between signal bars.
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue donchianValue, IIndicatorValue macdValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Wait until strategy and indicators are ready
-		if (!IsFormedAndOnlineAndAllowTrading())
+		// The channel is measured on the candles before this one.
+		var upper = _prevUpper;
+		var lower = _prevLower;
+
+		if (donchianValue.IsFormed && donchianValue is IDonchianChannelsValue { UpperBand: decimal currentUpper, LowerBand: decimal currentLower })
+		{
+			_prevUpper = currentUpper;
+			_prevLower = currentLower;
+		}
+
+		if (!macdValue.IsFormed || upper is not decimal channelHigh || lower is not decimal channelLow)
 			return;
 
 		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
-		var signalValue = macdTyped.Signal;
-		var macdDec = macdTyped.Macd;
-		var isBullishCross = _previousMacd <= _previousSignal && macdDec > signalValue;
-		var isBearishCross = _previousMacd >= _previousSignal && macdDec < signalValue;
 
-		if (_cooldown > 0)
-		{
-			_cooldown--;
-		}
+		if (macdTyped.Macd is not decimal macd || macdTyped.Signal is not decimal signal)
+			return;
 
-		// Check for breakouts with MACD trend confirmation
-		// Long entry: Price breaks above Donchian high and MACD > Signal
-		if (_cooldown == 0 && candle.ClosePrice > _previousHighest * 1.001m && Position <= 0 && isBullishCross)
-		{
-			CancelActiveOrders();
-			
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-			_entryPrice = candle.ClosePrice;
-			_cooldown = CooldownBars;
-		}
-		// Short entry: Price breaks below Donchian low and MACD < Signal
-		else if (_cooldown == 0 && candle.ClosePrice < _previousLowest * 0.999m && Position >= 0 && isBearishCross)
-		{
-			CancelActiveOrders();
-			
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
-			_entryPrice = candle.ClosePrice;
-			_cooldown = CooldownBars;
-		}
-		// MACD trend reversal exit
-		else if ((Position > 0 && isBearishCross) ||
-				 (Position < 0 && isBullishCross))
-		{
-			ClosePosition();
-			_entryPrice = null;
-			_cooldown = CooldownBars;
-		}
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
 
-		var donchianTyped = (DonchianChannelsValue)donchianValue;
+		var close = candle.ClosePrice;
 
-		// Update previous values for next candle
-		_previousHighest = donchianTyped.UpperBand;
-		_previousLowest = donchianTyped.LowerBand;
-		_previousMacd = macdDec;
-		_previousSignal = signalValue;
+		if (close > channelHigh && macd > signal && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (close < channelLow && macd < signal && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
+		else if (Position > 0 && macd < signal)
+			SellMarket(Position);
+		else if (Position < 0 && macd > signal)
+			BuyMarket(-Position);
 	}
 }
