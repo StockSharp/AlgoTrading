@@ -11,30 +11,23 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on ATR slope breakout with EMA direction filter.
-/// Opens positions when ATR slope deviates from its recent average and price confirms the direction relative to EMA.
+/// ATR slope breakout.
+/// Enters when the ATR slope exceeds its average by a standard deviation multiplier,
+/// in the direction of the breakout candle. Exits when the slope returns to its average
+/// or the ATR-based stop is hit.
 /// </summary>
 public class AtrSlopeBreakoutStrategy : Strategy
 {
 	private readonly StrategyParam<int> _atrPeriod;
-	private readonly StrategyParam<int> _emaPeriod;
 	private readonly StrategyParam<int> _slopePeriod;
 	private readonly StrategyParam<decimal> _breakoutMultiplier;
-	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<decimal> _stopLossAtrMultiplier;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
 
-	private AverageTrueRange _atr;
-	private ExponentialMovingAverage _ema;
-	private decimal _prevAtrValue;
-	private decimal _currentSlope;
-	private decimal _avgSlope;
-	private decimal _stdDevSlope;
-	private decimal[] _slopes;
-	private int _currentIndex;
-	private int _filledCount;
-	private int _cooldown;
-	private bool _isInitialized;
+	private SimpleMovingAverage _slopeAverage;
+	private StandardDeviation _slopeStdDev;
+	private decimal? _prevAtr;
+	private decimal _stopPrice;
 
 	/// <summary>
 	/// ATR period.
@@ -46,16 +39,7 @@ public class AtrSlopeBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// EMA period.
-	/// </summary>
-	public int EmaPeriod
-	{
-		get => _emaPeriod.Value;
-		set => _emaPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Lookback period for slope statistics calculation.
+	/// Period for slope statistics.
 	/// </summary>
 	public int SlopePeriod
 	{
@@ -73,12 +57,12 @@ public class AtrSlopeBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop loss percentage.
+	/// Stop-loss distance in ATR multiples.
 	/// </summary>
-	public decimal StopLossPercent
+	public decimal StopLossAtrMultiplier
 	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
+		get => _stopLossAtrMultiplier.Value;
+		set => _stopLossAtrMultiplier.Value = value;
 	}
 
 	/// <summary>
@@ -91,42 +75,25 @@ public class AtrSlopeBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Cooldown bars between orders.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="AtrSlopeBreakoutStrategy"/>.
+	/// Initialize <see cref="AtrSlopeBreakoutStrategy"/>.
 	/// </summary>
 	public AtrSlopeBreakoutStrategy()
 	{
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("ATR Period", "Period for ATR calculation", "Indicator Parameters");
-
-		_emaPeriod = Param(nameof(EmaPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("EMA Period", "Period for EMA direction filter", "Indicator Parameters");
+			.SetDisplay("ATR Period", "Period for ATR", "Indicators");
 
 		_slopePeriod = Param(nameof(SlopePeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Slope Period", "Period for slope statistics calculation", "Strategy Parameters");
+			.SetDisplay("Slope Period", "Period for slope statistics", "Strategy");
 
-		_breakoutMultiplier = Param(nameof(BreakoutMultiplier), 2m)
+		_breakoutMultiplier = Param(nameof(BreakoutMultiplier), 2.0m)
 			.SetGreaterThanZero()
-			.SetDisplay("Breakout Multiplier", "Standard deviation multiplier for breakout detection", "Strategy Parameters");
+			.SetDisplay("Breakout Multiplier", "Standard deviation multiplier for breakout", "Strategy");
 
-		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management");
-
-		_cooldownBars = Param(nameof(CooldownBars), 1200)
-			.SetRange(1, 5000)
-			.SetDisplay("Cooldown Bars", "Bars to wait between orders", "Risk Management");
+		_stopLossAtrMultiplier = Param(nameof(StopLossAtrMultiplier), 2.0m)
+			.SetNotNegative()
+			.SetDisplay("Stop ATR Multiplier", "Stop-loss distance in ATR multiples", "Risk Management");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -142,17 +109,10 @@ public class AtrSlopeBreakoutStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_atr = null;
-		_ema = null;
-		_prevAtrValue = default;
-		_currentSlope = default;
-		_avgSlope = default;
-		_stdDevSlope = default;
-		_currentIndex = default;
-		_filledCount = default;
-		_cooldown = default;
-		_isInitialized = default;
-		_slopes = new decimal[SlopePeriod];
+		_slopeAverage = null;
+		_slopeStdDev = null;
+		_prevAtr = null;
+		_stopPrice = 0m;
 	}
 
 	/// <inheritdoc />
@@ -160,121 +120,96 @@ public class AtrSlopeBreakoutStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_atr = new AverageTrueRange { Length = AtrPeriod };
-		_ema = new ExponentialMovingAverage { Length = EmaPeriod };
-		_slopes = new decimal[SlopePeriod];
-		_cooldown = 0;
+		var atr = new AverageTrueRange { Length = AtrPeriod };
+		_slopeAverage = new SimpleMovingAverage { Length = SlopePeriod };
+		_slopeStdDev = new StandardDeviation { Length = SlopePeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_atr, _ema, ProcessCandle)
+			.Bind(atr, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _ema);
-			DrawIndicator(area, _atr);
+			DrawIndicator(area, atr);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection(new(), new Unit(StopLossPercent, UnitTypes.Percent));
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal atrValue, decimal emaValue)
+	private void ProcessCandle(ICandleMessage candle, decimal atrValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_atr.IsFormed || !_ema.IsFormed)
-			return;
-
-		if (!_isInitialized)
+		if (_prevAtr is not decimal prev)
 		{
-			_prevAtrValue = atrValue;
-			_isInitialized = true;
+			_prevAtr = atrValue;
 			return;
 		}
 
-		_currentSlope = atrValue - _prevAtrValue;
-		_prevAtrValue = atrValue;
+		_prevAtr = atrValue;
 
-		_slopes[_currentIndex] = _currentSlope;
-		_currentIndex = (_currentIndex + 1) % SlopePeriod;
+		var slope = atrValue - prev;
+		var avgSlope = _slopeAverage.Process(slope, candle.ServerTime, true).ToDecimal();
+		var stdSlope = _slopeStdDev.Process(slope, candle.ServerTime, true).ToDecimal();
 
-		if (_filledCount < SlopePeriod)
-			_filledCount++;
-
-		if (_filledCount < SlopePeriod)
+		if (!_slopeAverage.IsFormed || !_slopeStdDev.IsFormed)
 			return;
-
-		CalculateStatistics();
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (_stdDevSlope <= 0)
+		if (CheckStop(candle))
 			return;
 
-		if (_cooldown > 0)
+		var close = candle.ClosePrice;
+		var stopDistance = StopLossAtrMultiplier * atrValue;
+
+		// ATR has no direction, so the breakout candle decides the side.
+		if (slope > avgSlope + BreakoutMultiplier * stdSlope)
 		{
-			_cooldown--;
-			return;
+			if (close > candle.OpenPrice && Position <= 0)
+			{
+				BuyMarket(Volume + Math.Abs(Position));
+				_stopPrice = stopDistance > 0 ? close - stopDistance : 0m;
+				return;
+			}
+
+			if (close < candle.OpenPrice && Position >= 0)
+			{
+				SellMarket(Volume + Math.Abs(Position));
+				_stopPrice = stopDistance > 0 ? close + stopDistance : 0m;
+				return;
+			}
 		}
 
-		var upperThreshold = _avgSlope + BreakoutMultiplier * _stdDevSlope;
-		var closePrice = candle.ClosePrice;
-		var priceAboveEma = closePrice > emaValue;
-		var priceBelowEma = closePrice < emaValue;
-
-		if (Position == 0)
-		{
-			if (_currentSlope > upperThreshold && priceAboveEma)
-			{
-				BuyMarket();
-				_cooldown = CooldownBars;
-			}
-			else if (_currentSlope > upperThreshold && priceBelowEma)
-			{
-				SellMarket();
-				_cooldown = CooldownBars;
-			}
-		}
-		else if (Position > 0)
-		{
-			if (_currentSlope <= _avgSlope || priceBelowEma)
-			{
-				SellMarket(Math.Abs(Position));
-				_cooldown = CooldownBars;
-			}
-		}
-		else if (Position < 0)
-		{
-			if (_currentSlope <= _avgSlope || priceAboveEma)
-			{
-				BuyMarket(Math.Abs(Position));
-				_cooldown = CooldownBars;
-			}
-		}
+		if (Position != 0 && slope < avgSlope)
+			ExitPosition();
 	}
 
-	private void CalculateStatistics()
+	private bool CheckStop(ICandleMessage candle)
 	{
-		_avgSlope = 0;
-		var sumSquaredDiffs = 0m;
+		if (_stopPrice == 0m)
+			return false;
 
-		for (var i = 0; i < SlopePeriod; i++)
-			_avgSlope += _slopes[i];
-
-		_avgSlope /= SlopePeriod;
-
-		for (var i = 0; i < SlopePeriod; i++)
+		if ((Position > 0 && candle.LowPrice <= _stopPrice) || (Position < 0 && candle.HighPrice >= _stopPrice))
 		{
-			var diff = _slopes[i] - _avgSlope;
-			sumSquaredDiffs += diff * diff;
+			ExitPosition();
+			return true;
 		}
 
-		_stdDevSlope = (decimal)Math.Sqrt((double)(sumSquaredDiffs / SlopePeriod));
+		return false;
+	}
+
+	private void ExitPosition()
+	{
+		if (Position > 0)
+			SellMarket(Position);
+		else if (Position < 0)
+			BuyMarket(-Position);
+
+		_stopPrice = 0m;
 	}
 }
