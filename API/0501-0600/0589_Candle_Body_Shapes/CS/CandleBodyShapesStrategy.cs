@@ -3,7 +3,6 @@ using System.Collections.Generic;
 
 using Ecng.Common;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -11,31 +10,41 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Candle body shapes strategy using EMA crossover for trend timing.
-/// Enters long on golden cross, short on death cross.
+/// Candle Body Shapes strategy.
+/// "Near" means within BodyThreshold of the candle range. A candle that opens near its low and closes near its high goes long,
+/// one that opens near its high and closes near its low goes short; the opposite signal reverses the position.
 /// </summary>
 public class CandleBodyShapesStrategy : Strategy
 {
-	private readonly StrategyParam<int> _fastEmaPeriod;
-	private readonly StrategyParam<int> _slowEmaPeriod;
+	private readonly StrategyParam<decimal> _bodyThreshold;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevFastEma;
-	private decimal _prevSlowEma;
+	/// <summary>
+	/// Fraction of the candle range that counts as near its high or low.
+	/// </summary>
+	public decimal BodyThreshold
+	{
+		get => _bodyThreshold.Value;
+		set => _bodyThreshold.Value = value;
+	}
 
-	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
-	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
 
+	/// <summary>
+	/// Constructor.
+	/// </summary>
 	public CandleBodyShapesStrategy()
 	{
-		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
-			.SetGreaterThanZero()
-			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
-
-		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
-			.SetGreaterThanZero()
-			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+		_bodyThreshold = Param(nameof(BodyThreshold), 0.2m)
+			.SetRange(0m, 1m)
+			.SetDisplay("Body Threshold", "Fraction of the candle range that counts as near its high or low", "Pattern");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -48,58 +57,45 @@ public class CandleBodyShapesStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_prevFastEma = 0m;
-		_prevSlowEma = 0m;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
-		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
-
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(fastEma, slowEma, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, fastEma);
-			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_prevFastEma == 0m || _prevSlowEma == 0m)
-		{
-			_prevFastEma = fastEmaValue;
-			_prevSlowEma = slowEmaValue;
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
-		}
 
-		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
-		{
-			BuyMarket();
-		}
-		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
-		{
-			SellMarket();
-		}
+		var range = candle.HighPrice - candle.LowPrice;
 
-		_prevFastEma = fastEmaValue;
-		_prevSlowEma = slowEmaValue;
+		if (range <= 0)
+			return;
+
+		var near = BodyThreshold * range;
+		var openNearLow = candle.OpenPrice - candle.LowPrice <= near;
+		var openNearHigh = candle.HighPrice - candle.OpenPrice <= near;
+		var closeNearLow = candle.ClosePrice - candle.LowPrice <= near;
+		var closeNearHigh = candle.HighPrice - candle.ClosePrice <= near;
+
+		if (openNearLow && closeNearHigh && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (openNearHigh && closeNearLow && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
 	}
 }
