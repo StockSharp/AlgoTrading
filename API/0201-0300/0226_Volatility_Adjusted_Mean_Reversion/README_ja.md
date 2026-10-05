@@ -20,7 +20,8 @@
 - **ストップ**: あり、ATRに基づく動的ストップ。
 - **デフォルト値**:
   - `Period` = 20
-  - `Multiplier` = 2.0m
+  - `Multiplier` = 2
+    MA、ATR、StdDev（終値の標準偏差）はすべてPeriod本で計算し、閾値はMultiplier × StdDevに簡約されます。ストップはエントリー時の終値からATRのMultiplier倍（既定では2 ATR）離れた位置に置かれ、ローソク足の終値で確認されます。 保有ポジションと逆方向のエントリーシグナルはドテンになります。
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **フィルター**:
   - カテゴリ: 平均回帰

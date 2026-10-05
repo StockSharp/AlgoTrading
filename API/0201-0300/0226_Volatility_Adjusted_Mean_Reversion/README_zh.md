@@ -20,7 +20,8 @@
 - **止损**: 基于ATR动态设置
 - **默认值**:
   - `Period` = 20
-  - `Multiplier` = 2.0m
+  - `Multiplier` = 2
+    MA、ATR和StdDev（收盘价标准差）均基于Period根K线；阈值可化简为Multiplier倍StdDev。止损距入场收盘价Multiplier倍ATR，默认两倍ATR，按K线收盘检查。与持仓方向相反的入场信号会反转持仓。
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **过滤器**:
   - 类别: Mean Reversion

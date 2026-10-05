@@ -20,7 +20,8 @@ Die adaptive Schwelle macht diese Strategie geeignet für Märkte mit wechselnde
 - **Stops**: Ja, dynamisch basierend auf ATR.
 - **Standardwerte**:
   - `Period` = 20
-  - `Multiplier` = 2.0m
+  - `Multiplier` = 2
+    MA, ATR und StdDev (die Standardabweichung der Schlusskurse) umfassen Period Kerzen; die Schwelle vereinfacht sich zu Multiplier mal StdDev. Der Stop liegt Multiplier mal die ATR vom Einstiegsschluss entfernt, standardmäßig zwei ATR, und wird bei Kerzenschluss geprüft. Ein Einstiegssignal gegen eine offene Position dreht sie.
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **Filter**:
   - Kategorie: Mean Reversion
