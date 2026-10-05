@@ -1963,6 +1963,69 @@ public abstract partial class StrategyTests
 	public Task S0080_PercentStopWorksBetweenFinishedBars()
 		=> CheckPercentStopBetweenBars(PivotReversal, TimeSpan.FromDays(31));
 
+	private const string VwapBounce = "0081_VWAP_Bounce";
+
+	[TestMethod]
+	[TestCategory("Shard03")]
+	[DataRow(false)]
+	[DataRow(true)]
+	public async Task S0081_CandlesClosingAgainstTheDailyVwapReverseThePosition(bool secondary)
+	{
+		var day = DateTime.MinValue;
+		var priceVolume = 0m;
+		var volume = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var reversals = 0;
+		var violations = new List<string>();
+		await Replay(VwapBounce, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				if (candle.OpenTime.Date != day) { day = candle.OpenTime.Date; priceVolume = 0m; volume = 0m; }
+				priceVolume += (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m * candle.TotalVolume;
+				volume += candle.TotalVolume;
+				if (volume <= 0m) return;
+				var vwap = priceVolume / volume;
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (close > candle.OpenPrice && close < vwap && position <= 0m) expectedSide = Sides.Buy;
+				else if (close < candle.OpenPrice && close > vwap && position >= 0m) expectedSide = Sides.Sell;
+				if (expectedSide is Sides side)
+				{
+					expectedVolume = strategy.Volume + Math.Abs(position);
+					entries[side]++;
+					if (position != 0m) reversals++;
+					expectedOrders++;
+				}
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a bullish close below or a bearish close above the daily VWAP, reversing an opposite position.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && reversals > 5, "The fixture must reverse repeatedly on both sides.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard03")]
+	public Task S0081_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars(VwapBounce, TimeSpan.FromDays(31));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

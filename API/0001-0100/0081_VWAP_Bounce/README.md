@@ -17,7 +17,8 @@ Because it fades intraday extremes, the method works best in range‑bound marke
 - **Stops**: Yes, percentage based.
 - **Default Values**:
   - `CandleType` = 5 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+    The VWAP restarts at the beginning of every UTC day and weights each candle's typical price by its volume.
 - **Filters**:
   - Category: Mean Reversion
   - Direction: Both
