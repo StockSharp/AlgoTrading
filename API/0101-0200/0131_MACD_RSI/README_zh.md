@@ -16,7 +16,14 @@ MACD上穿且RSI自超卖区回升时做多；MACD下穿并且RSI从超买区回
 - **止损**：是，按百分比
 - **默认值**:
   - `CandleType` = 15分钟
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `MacdFast` = 12
+  - `MacdSlow` = 26
+  - `MacdSignal` = 9
+  - `RsiPeriod` = 14
+  - `RsiOversold` = 30
+  - `RsiOverbought` = 70
+    RSI低于RsiOversold时预备做多，高于RsiOverbought时预备做空，以最近一次极值为准。之后同方向的MACD交叉确认信号并入场，同时反转相反持仓；每个极值只确认一次交叉。
 - **过滤器**:
   - 类别：趋势跟随
   - 方向：双向

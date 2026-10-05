@@ -3732,6 +3732,90 @@ public abstract partial class StrategyTests
 	public Task S0130_PercentStopWorksBetweenFinishedBars()
 		=> CheckPercentStopBetweenBars("0130_Lunch_Break_Fade", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
 
+	[TestMethod]
+	[TestCategory("Shard00")]
+	[DataRow(12, 26, 9, 14, 30.0, 70.0, false)]
+	[DataRow(8, 21, 5, 10, 35.0, 65.0, true)]
+	public async Task S0131_MacdCrossesConfirmRsiExtremesAndReverse(int fast, int slow, int signalPeriod, int rsiPeriod, double oversold, double overbought, bool secondary)
+	{
+		var macd = new MovingAverageConvergenceDivergenceSignal { Macd = { ShortMa = { Length = fast }, LongMa = { Length = slow } }, SignalMa = { Length = signalPeriod } };
+		var rsi = new RelativeStrengthIndex { Length = rsiPeriod };
+		bool? previousAbove = null;
+		var zone = 0;
+		var crossesWithoutExtreme = 0;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var reversals = 0;
+		var violations = new List<string>();
+		await Replay("0131_MACD_RSI", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(12, strategy.Parameters["MacdFast"].Value);
+			AreEqual(26, strategy.Parameters["MacdSlow"].Value);
+			AreEqual(9, strategy.Parameters["MacdSignal"].Value);
+			AreEqual(14, strategy.Parameters["RsiPeriod"].Value);
+			AreEqual(30m, Convert.ToDecimal(strategy.Parameters["RsiOversold"].Value));
+			AreEqual(70m, Convert.ToDecimal(strategy.Parameters["RsiOverbought"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "MacdFast", fast);
+			SetParam(strategy, "MacdSlow", slow);
+			SetParam(strategy, "MacdSignal", signalPeriod);
+			SetParam(strategy, "RsiPeriod", rsiPeriod);
+			SetParam(strategy, "RsiOversold", oversold);
+			SetParam(strategy, "RsiOverbought", overbought);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var r = rsi.Process(candle);
+				var m = (MovingAverageConvergenceDivergenceSignalValue)macd.Process(candle);
+				if (r.IsFormed)
+				{
+					var value = r.GetValue<decimal>();
+					if (value < (decimal)oversold) zone = 1;
+					else if (value > (decimal)overbought) zone = -1;
+				}
+				if (!m.IsFormed || m.Macd is not decimal line || m.Signal is not decimal sig) return;
+				var above = line > sig;
+				var was = previousAbove;
+				previousAbove = above;
+				if (was is not bool wasAbove || wasAbove == above) return;
+				var side = above ? 1 : -1;
+				if (zone != side) { crossesWithoutExtreme++; return; }
+				zone = 0;
+				var position = strategy.Position;
+				if (side > 0 && position <= 0m) expectedSide = Sides.Buy;
+				else if (side < 0 && position >= 0m) expectedSide = Sides.Sell;
+				if (expectedSide is not Sides s) return;
+				expectedVolume = strategy.Volume + Math.Abs(position);
+				expectedOrders++;
+				entries[s]++;
+				if (position != 0m) reversals++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a MACD cross that confirms the latest RSI extreme.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && reversals > 0, "The fixture must trade both sides and reverse.");
+		IsTrue(crossesWithoutExtreme > 0, "The fixture must contain MACD crosses without an RSI extreme that are not traded.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard00")]
+	public Task S0131_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0131_MACD_RSI", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

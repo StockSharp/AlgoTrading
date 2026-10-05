@@ -18,7 +18,14 @@ Stops based on a percentage of price help contain losses if the indicators diver
 - **Stops**: Yes, percent based
 - **Default Values**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `MacdFast` = 12
+  - `MacdSlow` = 26
+  - `MacdSignal` = 9
+  - `RsiPeriod` = 14
+  - `RsiOversold` = 30
+  - `RsiOverbought` = 70
+    RSI below RsiOversold arms a long and above RsiOverbought arms a short; the latest extreme wins. The next MACD cross in the armed direction confirms it and enters, reversing an opposite position; each extreme confirms one cross.
 - **Filters**:
   - Category: Trend following
   - Direction: Both

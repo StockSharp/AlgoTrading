@@ -18,7 +18,14 @@ MACD RSIは、MACDのモメンタムとRSIの買われすぎ・売られすぎ�
 - **ストップ**: はい、パーセントベース
 - **デフォルト値**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `MacdFast` = 12
+  - `MacdSlow` = 26
+  - `MacdSignal` = 9
+  - `RsiPeriod` = 14
+  - `RsiOversold` = 30
+  - `RsiOverbought` = 70
+    RSIがRsiOversoldを下回ると買い、RsiOverboughtを上回ると売りの準備をし、最新の極値が優先されます。その方向への次のMACDクロスで確認してエントリーし、反対ポジションはドテンします。1つの極値が確認するクロスは1回だけです。
 - **フィルター**:
   - カテゴリ: トレンドフォロー
   - 方向: 両方

@@ -18,7 +18,14 @@ Stops auf Basis eines Kursanteils helfen, Verluste zu begrenzen, falls die Indik
 - **Stops**: Ja, prozentbasiert
 - **Standardwerte**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `MacdFast` = 12
+  - `MacdSlow` = 26
+  - `MacdSignal` = 9
+  - `RsiPeriod` = 14
+  - `RsiOversold` = 30
+  - `RsiOverbought` = 70
+    RSI unter RsiOversold bereitet einen Long vor, über RsiOverbought einen Short; das jüngste Extrem gilt. Das nächste MACD-Kreuzen in diese Richtung bestätigt es und steigt ein, wobei eine Gegenposition gedreht wird; jedes Extrem bestätigt nur ein Kreuzen.
 - **Filter**:
   - Kategorie: Trendfolge
   - Richtung: Beide
