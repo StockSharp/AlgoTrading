@@ -12,71 +12,125 @@ using StockSharp.Messages;
 
 /// <summary>
 /// Williams VIX Fix Strategy.
-/// Uses Bollinger Bands width as volatility proxy.
-/// Buys when price touches lower BB during high volatility (wide bands).
-/// Sells when price touches upper BB during high volatility.
+/// VIX Fix = (highest close of WvfPeriod - low) / highest close * 100; the inverted VIX Fix uses (high - lowest close) / lowest close.
+/// Each value is extreme when it reaches its own Bollinger upper band (BbLength, BbMultiplier) or the highest value of the last
+/// WvfLookback bars times its percentile (HighestPercentile for the VIX Fix, LowestPercentile for the inverted one).
+/// A long opens on an extreme VIX Fix with the close below the lower price Bollinger Band and closes on an extreme inverted
+/// VIX Fix with the close above the upper band.
 /// </summary>
 public class WilliamsVixFixStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _bbLength;
 	private readonly StrategyParam<decimal> _bbMultiplier;
-	private readonly StrategyParam<int> _rsiLength;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<int> _wvfPeriod;
+	private readonly StrategyParam<int> _wvfLookback;
+	private readonly StrategyParam<decimal> _highestPercentile;
+	private readonly StrategyParam<decimal> _lowestPercentile;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private BollingerBands _bb;
-	private RelativeStrengthIndex _rsi;
+	private Highest _highestClose;
+	private Lowest _lowestClose;
+	private SimpleMovingAverage _wvfMean;
+	private StandardDeviation _wvfDeviation;
+	private Highest _wvfRange;
+	private SimpleMovingAverage _invMean;
+	private StandardDeviation _invDeviation;
+	private Highest _invRange;
 
-	private int _cooldownRemaining;
-
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
+	/// <summary>
+	/// Bollinger Bands period.
+	/// </summary>
 	public int BbLength
 	{
 		get => _bbLength.Value;
 		set => _bbLength.Value = value;
 	}
 
+	/// <summary>
+	/// Bollinger Bands standard deviation multiplier.
+	/// </summary>
 	public decimal BbMultiplier
 	{
 		get => _bbMultiplier.Value;
 		set => _bbMultiplier.Value = value;
 	}
 
-	public int RsiLength
+	/// <summary>
+	/// Lookback of the highest and lowest close in the VIX Fix.
+	/// </summary>
+	public int WvfPeriod
 	{
-		get => _rsiLength.Value;
-		set => _rsiLength.Value = value;
+		get => _wvfPeriod.Value;
+		set => _wvfPeriod.Value = value;
 	}
 
-	public int CooldownBars
+	/// <summary>
+	/// Lookback of the percentile thresholds.
+	/// </summary>
+	public int WvfLookback
 	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
+		get => _wvfLookback.Value;
+		set => _wvfLookback.Value = value;
 	}
 
+	/// <summary>
+	/// Percentile of the highest VIX Fix value that marks fear.
+	/// </summary>
+	public decimal HighestPercentile
+	{
+		get => _highestPercentile.Value;
+		set => _highestPercentile.Value = value;
+	}
+
+	/// <summary>
+	/// Percentile of the highest inverted VIX Fix value that marks complacency.
+	/// </summary>
+	public decimal LowestPercentile
+	{
+		get => _lowestPercentile.Value;
+		set => _lowestPercentile.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
+	/// </summary>
 	public WilliamsVixFixStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
 		_bbLength = Param(nameof(BbLength), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("BB Length", "Bollinger Bands period", "Bollinger Bands");
+			.SetDisplay("BB Length", "Bollinger Bands period", "Bollinger");
 
 		_bbMultiplier = Param(nameof(BbMultiplier), 2.0m)
-			.SetDisplay("BB Multiplier", "BB standard deviation multiplier", "Bollinger Bands");
-
-		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("RSI Length", "RSI period", "RSI");
+			.SetDisplay("BB Multiplier", "Bollinger Bands standard deviation multiplier", "Bollinger");
 
-		_cooldownBars = Param(nameof(CooldownBars), 10)
-			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk");
+		_wvfPeriod = Param(nameof(WvfPeriod), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("WVF Period", "Lookback of the highest and lowest close", "VIX Fix");
+
+		_wvfLookback = Param(nameof(WvfLookback), 50)
+			.SetGreaterThanZero()
+			.SetDisplay("WVF Lookback", "Lookback of the percentile thresholds", "VIX Fix");
+
+		_highestPercentile = Param(nameof(HighestPercentile), 0.85m)
+			.SetGreaterThanZero()
+			.SetDisplay("Highest Percentile", "Percentile of the highest VIX Fix value", "VIX Fix");
+
+		_lowestPercentile = Param(nameof(LowestPercentile), 0.99m)
+			.SetGreaterThanZero()
+			.SetDisplay("Lowest Percentile", "Percentile of the highest inverted VIX Fix value", "VIX Fix");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -84,90 +138,80 @@ public class WilliamsVixFixStrategy : Strategy
 		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_bb = null;
-		_rsi = null;
-		_cooldownRemaining = 0;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_bb = new BollingerBands { Length = BbLength, Width = BbMultiplier };
-		_rsi = new RelativeStrengthIndex { Length = RsiLength };
+		var bollinger = new BollingerBands { Length = BbLength, Width = BbMultiplier };
+
+		_highestClose = new Highest { Length = WvfPeriod };
+		_lowestClose = new Lowest { Length = WvfPeriod };
+		_wvfMean = new SimpleMovingAverage { Length = BbLength };
+		_wvfDeviation = new StandardDeviation { Length = BbLength };
+		_wvfRange = new Highest { Length = WvfLookback };
+		_invMean = new SimpleMovingAverage { Length = BbLength };
+		_invDeviation = new StandardDeviation { Length = BbLength };
+		_invRange = new Highest { Length = WvfLookback };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_bb, _rsi, OnProcess)
+			.BindEx(bollinger, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _bb);
+			DrawIndicator(area, bollinger);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void OnProcess(ICandleMessage candle, IIndicatorValue bbValue, IIndicatorValue rsiValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_bb.IsFormed || !_rsi.IsFormed)
+		var time = candle.OpenTime;
+		var highestClose = _highestClose.Process(candle.ClosePrice, time, true).ToDecimal();
+		var lowestClose = _lowestClose.Process(candle.ClosePrice, time, true).ToDecimal();
+
+		if (!_highestClose.IsFormed || !_lowestClose.IsFormed || highestClose <= 0m || lowestClose <= 0m)
 			return;
 
-		if (bbValue.IsEmpty || rsiValue.IsEmpty)
+		var wvf = (highestClose - candle.LowPrice) / highestClose * 100m;
+		var inv = (candle.HighPrice - lowestClose) / lowestClose * 100m;
+
+		var fear = IsExtreme(wvf, time, _wvfMean, _wvfDeviation, _wvfRange, HighestPercentile);
+		var complacency = IsExtreme(inv, time, _invMean, _invDeviation, _invRange, LowestPercentile);
+
+		if (fear is null || complacency is null)
 			return;
 
-		var bb = (BollingerBandsValue)bbValue;
-		if (bb.UpBand is not decimal upper || bb.LowBand is not decimal lower || bb.MovingAverage is not decimal mid)
+		if (bollingerValue is not IBollingerBandsValue { UpBand: decimal upper, LowBand: decimal lower })
 			return;
-
-		var rsiVal = rsiValue.ToDecimal();
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (_cooldownRemaining > 0)
-		{
-			_cooldownRemaining--;
-			return;
-		}
+		var close = candle.ClosePrice;
 
-		// Buy: price at or below lower BB + RSI oversold
-		if (candle.ClosePrice <= lower && rsiVal < 35 && Position <= 0)
-		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-			BuyMarket(Volume);
-			_cooldownRemaining = CooldownBars;
-		}
-		// Sell: price at or above upper BB + RSI overbought
-		else if (candle.ClosePrice >= upper && rsiVal > 65 && Position >= 0)
-		{
-			if (Position > 0)
-				SellMarket(Math.Abs(Position));
-			SellMarket(Volume);
-			_cooldownRemaining = CooldownBars;
-		}
-		// Exit long: price reaches middle BB or RSI > 70
-		else if (Position > 0 && (candle.ClosePrice >= mid || rsiVal > 70))
-		{
-			SellMarket(Math.Abs(Position));
-			_cooldownRemaining = CooldownBars;
-		}
-		// Exit short: price reaches middle BB or RSI < 30
-		else if (Position < 0 && (candle.ClosePrice <= mid || rsiVal < 30))
-		{
-			BuyMarket(Math.Abs(Position));
-			_cooldownRemaining = CooldownBars;
-		}
+		if (fear == true && close < lower && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (complacency == true && close > upper && Position > 0)
+			SellMarket(Position);
+	}
+
+	private bool? IsExtreme(decimal value, DateTime time, SimpleMovingAverage mean, StandardDeviation deviation, Highest range, decimal percentile)
+	{
+		var middle = mean.Process(value, time, true).ToDecimal();
+		var spread = deviation.Process(value, time, true).ToDecimal();
+		var highest = range.Process(value, time, true).ToDecimal();
+
+		if (!mean.IsFormed || !deviation.IsFormed || !range.IsFormed)
+			return null;
+
+		var upperBand = middle + BbMultiplier * spread;
+		return value >= upperBand || value >= highest * percentile;
 	}
 }
