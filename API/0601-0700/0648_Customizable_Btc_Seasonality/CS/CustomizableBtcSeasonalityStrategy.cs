@@ -3,7 +3,6 @@ using System.Collections.Generic;
 
 using Ecng.Common;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -11,34 +10,57 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// CustomizableBtcSeasonalityStrategy using EMA crossover for trend timing.
-/// Enters long on golden cross, short on death cross.
+/// Customizable BTC seasonality strategy.
+/// Opens a long during the EntryHour UTC hour and closes it during the ExitHour UTC hour.
 /// </summary>
 public class CustomizableBtcSeasonalityStrategy : Strategy
 {
-	private readonly StrategyParam<int> _fastEmaPeriod;
-	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _entryHour;
+	private readonly StrategyParam<int> _exitHour;
 
-	private decimal _prevFastEma;
-	private decimal _prevSlowEma;
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
 
-	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
-	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	/// <summary>
+	/// UTC hour when the long is opened.
+	/// </summary>
+	public int EntryHour
+	{
+		get => _entryHour.Value;
+		set => _entryHour.Value = value;
+	}
 
+	/// <summary>
+	/// UTC hour when the long is closed.
+	/// </summary>
+	public int ExitHour
+	{
+		get => _exitHour.Value;
+		set => _exitHour.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
+	/// </summary>
 	public CustomizableBtcSeasonalityStrategy()
 	{
-		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
-			.SetGreaterThanZero()
-			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
-
-		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
-			.SetGreaterThanZero()
-			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
-
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_entryHour = Param(nameof(EntryHour), 21)
+			.SetRange(0, 23)
+			.SetDisplay("Entry Hour", "UTC hour when the long is opened", "Time");
+
+		_exitHour = Param(nameof(ExitHour), 23)
+			.SetRange(0, 23)
+			.SetDisplay("Exit Hour", "UTC hour when the long is closed", "Time");
 	}
 
 	/// <inheritdoc />
@@ -48,58 +70,36 @@ public class CustomizableBtcSeasonalityStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_prevFastEma = 0m;
-		_prevSlowEma = 0m;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
-		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
-
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(fastEma, slowEma, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, fastEma);
-			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_prevFastEma == 0m || _prevSlowEma == 0m)
-		{
-			_prevFastEma = fastEmaValue;
-			_prevSlowEma = slowEmaValue;
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
-		}
 
-		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
-		{
+		var hour = candle.OpenTime.ToUniversalTime().Hour;
+
+		if (hour == ExitHour && Position > 0)
+			SellMarket(Position);
+		else if (hour == EntryHour && Position == 0)
 			BuyMarket();
-		}
-		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
-		{
-			SellMarket();
-		}
-
-		_prevFastEma = fastEmaValue;
-		_prevSlowEma = slowEmaValue;
 	}
 }
