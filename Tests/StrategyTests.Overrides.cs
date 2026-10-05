@@ -4112,6 +4112,84 @@ public abstract partial class StrategyTests
 	public Task S0135_PercentStopWorksBetweenFinishedBars()
 		=> CheckPercentStopBetweenBars("0135_Ichimoku_RSI", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
 
+	[TestMethod]
+	[TestCategory("Shard05")]
+	[DataRow(10, 3.0, 20, false)]
+	[DataRow(7, 2.0, 10, true)]
+	public async Task S0136_SupertrendFlipsWithVolumeReverseAndUnconfirmedFlipsClose(int period, double multiplier, int volumePeriod, bool secondary)
+	{
+		var supertrend = new SuperTrend { Length = period, Multiplier = (decimal)multiplier };
+		var volumes = new List<decimal>();
+		bool? previousUp = null;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var reversals = 0;
+		var plainExits = 0;
+		var violations = new List<string>();
+		await Replay("0136_Supertrend_Volume", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(10, strategy.Parameters["SupertrendPeriod"].Value);
+			AreEqual(3m, Convert.ToDecimal(strategy.Parameters["SupertrendMultiplier"].Value));
+			AreEqual(20, strategy.Parameters["VolumePeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "SupertrendPeriod", period);
+			SetParam(strategy, "SupertrendMultiplier", multiplier);
+			SetParam(strategy, "VolumePeriod", volumePeriod);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				decimal? average = volumes.Count == volumePeriod ? volumes.Average() : null;
+				volumes.Add(candle.TotalVolume);
+				if (volumes.Count > volumePeriod) volumes.RemoveAt(0);
+				if (supertrend.Process(candle) is not SuperTrendIndicatorValue { IsFormed: true } value) return;
+				var up = value.IsUpTrend;
+				var was = previousUp;
+				previousUp = up;
+				if (was is not bool wasUp || wasUp == up) return;
+				var confirmed = average is decimal avg && candle.TotalVolume > avg;
+				var position = strategy.Position;
+				var direction = up ? 1m : -1m;
+				if (confirmed && position * direction <= 0m)
+				{
+					expectedVolume = strategy.Volume + Math.Abs(position);
+					entries[up ? Sides.Buy : Sides.Sell]++;
+					if (position != 0m) reversals++;
+				}
+				else if (position * direction < 0m)
+				{
+					expectedVolume = Math.Abs(position);
+					plainExits++;
+				}
+				else return;
+				expectedSide = up ? Sides.Buy : Sides.Sell;
+				expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a Supertrend flip: entering or reversing with above-average volume, closing without it.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "The fixture must trade both sides.");
+		IsTrue(reversals > 0 && plainExits > 0, "The fixture must both reverse on confirmed flips and close on unconfirmed ones.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public Task S0136_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0136_Supertrend_Volume", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

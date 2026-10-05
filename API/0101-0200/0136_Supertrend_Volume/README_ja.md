@@ -18,7 +18,11 @@ Supertrend の転換時に出来高が増加していると、新たなインパ
 - **ストップ**: はい、パーセントベース
 - **デフォルト値**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `SupertrendPeriod` = 10
+  - `SupertrendMultiplier` = 3
+  - `VolumePeriod` = 20
+    Supertrendの転換（線の反対側での終値）で逆方向のポジションを決済します。転換方向への新規ポジションは、その足の出来高が直前VolumePeriod本の平均を上回る場合だけ持つため、確認された転換ではドテンになります。
 - **フィルター**:
   - カテゴリ: トレンドフォロー
   - 方向: 両方
