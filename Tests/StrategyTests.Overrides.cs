@@ -7445,6 +7445,79 @@ public abstract partial class StrategyTests
 		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && cloudExits > 0, "The fixture must trade both sides and exit on an opposite cloud break.");
 	}
 
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(20, 20, 100.0, -100.0, false)]
+	[DataRow(30, 14, 80.0, -80.0, true)]
+	public async Task S0202_ChannelBreakoutsWithCciMomentumUntilTheMiddleOfTheChannel(int period, int cciPeriod, double overbought, double oversold, bool secondary)
+	{
+		var cci = new CommodityChannelIndex { Length = cciPeriod };
+		var highs = new List<decimal>();
+		var lows = new List<decimal>();
+		var seen = false;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var middleExits = 0;
+		var violations = new List<string>();
+		await Replay("0202_Donchian_CCI", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["DonchianPeriod"].Value);
+			AreEqual(20, strategy.Parameters["CciPeriod"].Value);
+			AreEqual(100m, Convert.ToDecimal(strategy.Parameters["CciOverbought"].Value));
+			AreEqual(-100m, Convert.ToDecimal(strategy.Parameters["CciOversold"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "DonchianPeriod", period);
+			SetParam(strategy, "CciPeriod", cciPeriod);
+			SetParam(strategy, "CciOverbought", overbought);
+			SetParam(strategy, "CciOversold", oversold);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var c = cci.Process(candle);
+				decimal? upper = highs.Count == period ? highs.Max() : null;
+				decimal? lower = lows.Count == period ? lows.Min() : null;
+				highs.Add(candle.HighPrice);
+				lows.Add(candle.LowPrice);
+				if (highs.Count > period) { highs.RemoveAt(0); lows.RemoveAt(0); }
+				// The channel keeps measuring while the CCI is empty, but the strategy only sees bands it was handed.
+				if (c.IsEmpty) { seen = false; return; }
+				if (!seen) { seen = true; upper = lower = null; }
+				if (!c.IsFormed || upper is not decimal high || lower is not decimal low) return;
+				var value = c.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var middle = (high + low) / 2;
+				var position = strategy.Position;
+				if (close > high && value > (decimal)overbought && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (close < low && value < (decimal)oversold && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && close < middle) { expectedSide = Sides.Sell; expectedVolume = position; middleExits++; }
+				else if (position < 0m && close > middle) { expectedSide = Sides.Buy; expectedVolume = -position; middleExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a close beyond the previous channel with CCI momentum, or close at the middle of the channel.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && middleExits > 0, "The fixture must trade both sides and exit at the middle of the channel.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0202_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0202_Donchian_CCI", TimeSpan.FromDays(31));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";
