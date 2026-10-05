@@ -21,8 +21,10 @@ Os traders que gostam de movimentos rápidos podem apreciar as regras claras par
 - **Valores padrão**:
   - `MomentumPeriod` = 14
   - `AveragePeriod` = 20
-  - `Multiplier` = 2.0m
+  - `Multiplier` = 2
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
+    Avg e StdDev são a média e o desvio padrão dos últimos AveragePeriod valores de momentum, incluindo o atual. O stop é um StopLossPercent fixo do preço de entrada, vigiado também entre os candles; 0 o desativa. Um sinal de entrada contra uma posição aberta a inverte.
 - **Filtros**:
   - Categoria: Rompimento
   - Direção: Ambos

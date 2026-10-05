@@ -1,10 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,27 +12,23 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Momentum Breakout Strategy (245).
-/// Enter when momentum breaks out above/below its average by a certain multiple of standard deviation.
-/// Exit when momentum returns to its average.
+/// Momentum Breakout strategy.
+/// The bands lie Multiplier standard deviations around the average of the last AveragePeriod momentum values, the current one included.
+/// momentum above the upper band goes long and momentum below the lower band goes short,
+/// reversing an opposite position. A long closes once momentum is back below its average and a short once it is back above it, and a percent stop limits the loss.
 /// </summary>
 public class MomentumBreakoutStrategy : Strategy
 {
 	private readonly StrategyParam<int> _momentumPeriod;
 	private readonly StrategyParam<int> _averagePeriod;
 	private readonly StrategyParam<decimal> _multiplier;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private Momentum _momentum;
-	private SimpleMovingAverage _momentumAverage;
-	private StandardDeviation _momentumStdDev;
-	
-	private decimal? _currentMomentum;
-	private decimal? _momentumAvgValue;
-	private decimal? _momentumStdDevValue;
+	private readonly Queue<decimal> _values = [];
 
 	/// <summary>
-	/// Momentum period.
+	/// Period of momentum.
 	/// </summary>
 	public int MomentumPeriod
 	{
@@ -43,7 +37,7 @@ public class MomentumBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Period for momentum average calculation.
+	/// Values of momentum the average and the standard deviation span.
 	/// </summary>
 	public int AveragePeriod
 	{
@@ -52,7 +46,7 @@ public class MomentumBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Standard deviation multiplier for entry.
+	/// Standard deviations between the average and a band.
 	/// </summary>
 	public decimal Multiplier
 	{
@@ -61,7 +55,16 @@ public class MomentumBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Type of candles to use.
+	/// Stop loss percentage from entry price.
+	/// </summary>
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -70,30 +73,28 @@ public class MomentumBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="MomentumBreakoutStrategy"/>.
+	/// Constructor.
 	/// </summary>
 	public MomentumBreakoutStrategy()
 	{
 		_momentumPeriod = Param(nameof(MomentumPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("Momentum Period", "Period for momentum calculation", "Strategy Parameters")
-			
-			.SetOptimize(10, 20, 2);
+			.SetDisplay("Momentum Period", "Period of momentum", "Indicators");
 
 		_averagePeriod = Param(nameof(AveragePeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Average Period", "Period for momentum average calculation", "Strategy Parameters")
-			
-			.SetOptimize(10, 30, 5);
+			.SetDisplay("Average Period", "Values of momentum the average and the standard deviation span", "Indicators");
 
-		_multiplier = Param(nameof(Multiplier), 2.0m)
+		_multiplier = Param(nameof(Multiplier), 2m)
 			.SetGreaterThanZero()
-			.SetDisplay("StdDev Multiplier", "Standard deviation multiplier for entry", "Strategy Parameters")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
+			.SetDisplay("Multiplier", "Standard deviations between the average and a band", "Indicators");
+
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "Strategy Parameters");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -101,92 +102,90 @@ public class MomentumBreakoutStrategy : Strategy
 	{
 		return [(Security, CandleType)];
 	}
+
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_currentMomentum = default;
-		_momentumAvgValue = default;
-		_momentumStdDevValue = default;
+		_values.Clear();
 	}
-
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
-		_momentum = new Momentum { Length = MomentumPeriod };
-		_momentumAverage = new SMA { Length = AveragePeriod };
-		_momentumStdDev = new StandardDeviation { Length = AveragePeriod };
+		_values.Clear();
 
-		// Create candle subscription
+		var momentum = new Momentum { Length = MomentumPeriod };
+
 		var subscription = SubscribeCandles(CandleType);
-
-		// Create processing chain
 		subscription
-			.Bind(_momentum, ProcessMomentum)
+			.BindEx(momentum, ProcessCandle)
 			.Start();
 
-		// Setup chart visualization if available
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _momentum);
 			DrawOwnTrades(area);
-		}
 
-		// Enable position protection
-		StartProtection(
-			takeProfit: new Unit(5, UnitTypes.Percent),
-			stopLoss: new Unit(2, UnitTypes.Percent)
-		);
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, momentum);
+			}
+		}
 	}
 
-	private void ProcessMomentum(ICandleMessage candle, decimal momentumValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// The high-level handler activates native protection before this callback, also between signal bars.
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue momentumValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Store the current momentum value
-		_currentMomentum = momentumValue;
-
-		// Process momentum through average and standard deviation indicators
-		var avgIndicatorValue = _momentumAverage.Process(new DecimalIndicatorValue(_momentumAverage, momentumValue, candle.ServerTime) { IsFinal = true });
-		var stdDevIndicatorValue = _momentumStdDev.Process(new DecimalIndicatorValue(_momentumStdDev, momentumValue, candle.ServerTime) { IsFinal = true });
-		
-		_momentumAvgValue = avgIndicatorValue.ToDecimal();
-		_momentumStdDevValue = stdDevIndicatorValue.ToDecimal();
-		
-		if (!_momentumAverage.IsFormed || !_momentumStdDev.IsFormed)
+		if (!momentumValue.IsFormed)
 			return;
 
-		// Ensure we have all needed values
-		if (!_currentMomentum.HasValue || !_momentumAvgValue.HasValue || !_momentumStdDevValue.HasValue)
+		var value = momentumValue.GetValue<decimal>();
+
+		_values.Enqueue(value);
+
+		if (_values.Count > AveragePeriod)
+			_values.Dequeue();
+
+		if (_values.Count < AveragePeriod)
 			return;
 
-		// Calculate bands
-		var upperBand = _momentumAvgValue.Value + Multiplier * _momentumStdDevValue.Value;
-		var lowerBand = _momentumAvgValue.Value - Multiplier * _momentumStdDevValue.Value;
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
 
-		LogInfo($"Momentum: {_currentMomentum}, Avg: {_momentumAvgValue}, Upper: {upperBand}, Lower: {lowerBand}");
+		var mean = _values.Average();
+		var deviation = (decimal)Math.Sqrt((double)_values.Average(v => (v - mean) * (v - mean)));
+		var upper = mean + Multiplier * deviation;
+		var lower = mean - Multiplier * deviation;
 
-		// Entry logic - BREAKOUT (not mean reversion)
-		if (Position == 0)
-		{
-			// Long Entry: Momentum breaks above upper band (strong upward momentum)
-			if (_currentMomentum.Value > upperBand)
-			{
-				BuyMarket();
-			}
-			// Short Entry: Momentum breaks below lower band (strong downward momentum)
-			else if (_currentMomentum.Value < lowerBand)
-			{
-				SellMarket();
-			}
-		}
+		if (value > upper && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (value < lower && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
+		else if (Position > 0 && value < mean)
+			SellMarket(Position);
+		else if (Position < 0 && value > mean)
+			BuyMarket(-Position);
 	}
 }
