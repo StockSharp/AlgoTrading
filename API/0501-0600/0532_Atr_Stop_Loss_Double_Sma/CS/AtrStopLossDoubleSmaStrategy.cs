@@ -11,20 +11,21 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Double SMA crossover strategy.
-/// Buys on fast SMA crossing above slow SMA, sells on crossing below.
+/// ATR stop-loss double SMA strategy.
+/// A fast SMA crossing above the slow SMA goes long and a cross below goes short, reversing an opposite position. Each entry
+/// fixes a stop-loss AtrMultiplier ATRs from the entry close; an AtrMultiplier of 0 disables it.
 /// </summary>
 public class AtrStopLossDoubleSmaStrategy : Strategy
 {
 	private readonly StrategyParam<int> _fastLength;
 	private readonly StrategyParam<int> _slowLength;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<int> _atrLength;
+	private readonly StrategyParam<decimal> _atrMultiplier;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevFast;
-	private decimal _prevSlow;
-	private int _barIndex;
-	private int _lastTradeBar;
+	private decimal? _prevFast;
+	private decimal? _prevSlow;
+	private decimal _stopPrice;
 
 	/// <summary>
 	/// Fast SMA period.
@@ -45,12 +46,21 @@ public class AtrStopLossDoubleSmaStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Cooldown bars between trades.
+	/// ATR period.
 	/// </summary>
-	public int CooldownBars
+	public int AtrLength
 	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
+		get => _atrLength.Value;
+		set => _atrLength.Value = value;
+	}
+
+	/// <summary>
+	/// Stop-loss distance in ATR multiples.
+	/// </summary>
+	public decimal AtrMultiplier
+	{
+		get => _atrMultiplier.Value;
+		set => _atrMultiplier.Value = value;
 	}
 
 	/// <summary>
@@ -69,14 +79,19 @@ public class AtrStopLossDoubleSmaStrategy : Strategy
 	{
 		_fastLength = Param(nameof(FastLength), 15)
 			.SetGreaterThanZero()
-			.SetDisplay("Fast SMA", "Period of the fast SMA", "Moving Average");
+			.SetDisplay("Fast Length", "Fast SMA period", "Indicators");
 
 		_slowLength = Param(nameof(SlowLength), 45)
 			.SetGreaterThanZero()
-			.SetDisplay("Slow SMA", "Period of the slow SMA", "Moving Average");
+			.SetDisplay("Slow Length", "Slow SMA period", "Indicators");
 
-		_cooldownBars = Param(nameof(CooldownBars), 350)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "Trading");
+		_atrLength = Param(nameof(AtrLength), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("ATR Length", "ATR period", "Risk");
+
+		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
+			.SetNotNegative()
+			.SetDisplay("ATR Multiplier", "Stop-loss distance in ATR multiples, 0 disables it", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -92,10 +107,14 @@ public class AtrStopLossDoubleSmaStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevFast = 0;
-		_prevSlow = 0;
-		_barIndex = 0;
-		_lastTradeBar = 0;
+		ResetState();
+	}
+
+	private void ResetState()
+	{
+		_prevFast = null;
+		_prevSlow = null;
+		_stopPrice = 0m;
 	}
 
 	/// <inheritdoc />
@@ -103,49 +122,62 @@ public class AtrStopLossDoubleSmaStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var fastSma = new SimpleMovingAverage { Length = FastLength };
-		var slowSma = new SimpleMovingAverage { Length = SlowLength };
+		ResetState();
+
+		var fast = new SimpleMovingAverage { Length = FastLength };
+		var slow = new SimpleMovingAverage { Length = SlowLength };
+		var atr = new AverageTrueRange { Length = AtrLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(fastSma, slowSma, ProcessCandle)
+			.Bind(fast, slow, atr, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, fastSma);
-			DrawIndicator(area, slowSma);
+			DrawIndicator(area, fast);
+			DrawIndicator(area, slow);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue)
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow, decimal atr)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		_barIndex++;
+		var prevFast = _prevFast;
+		var prevSlow = _prevSlow;
+		_prevFast = fast;
+		_prevSlow = slow;
 
-		var cooldownOk = _barIndex - _lastTradeBar > CooldownBars;
+		if (prevFast is not decimal pf || prevSlow is not decimal ps)
+			return;
 
-		// SMA crossover
-		var crossUp = _prevFast > 0 && _prevFast <= _prevSlow && fastValue > slowValue;
-		var crossDown = _prevFast > 0 && _prevFast >= _prevSlow && fastValue < slowValue;
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
 
-		if (crossUp && Position <= 0 && cooldownOk)
+		var close = candle.ClosePrice;
+		var distance = AtrMultiplier * atr;
+
+		if (pf <= ps && fast > slow && Position <= 0)
 		{
-			BuyMarket();
-			_lastTradeBar = _barIndex;
+			BuyMarket(Volume + Math.Abs(Position));
+			_stopPrice = close - distance;
 		}
-		else if (crossDown && Position >= 0 && cooldownOk)
+		else if (pf >= ps && fast < slow && Position >= 0)
 		{
-			SellMarket();
-			_lastTradeBar = _barIndex;
+			SellMarket(Volume + Math.Abs(Position));
+			_stopPrice = close + distance;
 		}
-
-		_prevFast = fastValue;
-		_prevSlow = slowValue;
+		else if (AtrMultiplier > 0m)
+		{
+			if (Position > 0 && candle.LowPrice <= _stopPrice)
+				SellMarket(Position);
+			else if (Position < 0 && candle.HighPrice >= _stopPrice)
+				BuyMarket(-Position);
+		}
 	}
 }
