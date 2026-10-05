@@ -5,68 +5,64 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
+from System import TimeSpan, Decimal
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 
+
 class crypto_susdt_10_min_strategy(Strategy):
     """
-    EMA crossover strategy. Enters long on golden cross, short on death cross.
+    Crypto SUSDT 10 min strategy.
+    A candle that opens below the EMA and closes above it buys, one that opens above the EMA and closes below it sells short,
+    reversing an opposite position. Every trade is closed by a TakeProfitPercent target or a StopLossPercent stop.
     """
 
     def __init__(self):
         super(crypto_susdt_10_min_strategy, self).__init__()
-        self._fast_ema_period = self.Param("FastEmaPeriod", 120)             .SetDisplay("Fast EMA", "Fast EMA period", "Indicators")
-        self._slow_ema_period = self.Param("SlowEmaPeriod", 450)             .SetDisplay("Slow EMA", "Slow EMA period", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1)))             .SetDisplay("Candle Type", "Type of candles to use", "General")
-
-        self._prev_fast_ema = 0.0
-        self._prev_slow_ema = 0.0
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(10))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._ema_length = self.Param("EmaLength", 24).SetGreaterThanZero().SetDisplay("EMA Length", "EMA length", "Indicators")
+        self._take_profit_percent = self.Param("TakeProfitPercent", 4.0).SetNotNegative().SetDisplay("Take Profit %", "Take profit percentage from entry price", "Risk")
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0).SetNotNegative().SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk")
+        self._order_percent = self.Param("OrderPercent", 30.0).SetGreaterThanZero().SetDisplay("Order %", "Percent of equity per order", "Risk")
 
     @property
     def candle_type(self):
         return self._candle_type.Value
 
-    def OnReseted(self):
-        super(crypto_susdt_10_min_strategy, self).OnReseted()
-        self._prev_fast_ema = 0.0
-        self._prev_slow_ema = 0.0
-
     def OnStarted2(self, time):
         super(crypto_susdt_10_min_strategy, self).OnStarted2(time)
 
-        fast_ema = ExponentialMovingAverage()
-        fast_ema.Length = self._fast_ema_period.Value
-        slow_ema = ExponentialMovingAverage()
-        slow_ema.Length = self._slow_ema_period.Value
+        ema = ExponentialMovingAverage()
+        ema.Length = self._ema_length.Value
 
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(fast_ema, slow_ema, self.on_process).Start()
+        subscription.Bind(ema, self._process_candle).Start()
+
+        take = float(self._take_profit_percent.Value)
+        stop = float(self._stop_loss_percent.Value)
+        self.StartProtection(
+            Unit(Decimal(take), UnitTypes.Percent) if take > 0 else Unit(),
+            Unit(Decimal(stop), UnitTypes.Percent) if stop > 0 else Unit(),
+            useMarketOrders=True)
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, fast_ema)
-            self.DrawIndicator(area, slow_ema)
+            self.DrawIndicator(area, ema)
             self.DrawOwnTrades(area)
 
-    def on_process(self, candle, fast_val, slow_val):
+    def _process_candle(self, candle, ema):
         if candle.State != CandleStates.Finished:
             return
 
-        if self._prev_fast_ema == 0.0 or self._prev_slow_ema == 0.0:
-            self._prev_fast_ema = fast_val
-            self._prev_slow_ema = slow_val
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        if self._prev_fast_ema <= self._prev_slow_ema and fast_val > slow_val and self.Position <= 0:
-            self.BuyMarket()
-        elif self._prev_fast_ema >= self._prev_slow_ema and fast_val < slow_val and self.Position >= 0:
-            self.SellMarket()
-
-        self._prev_fast_ema = fast_val
-        self._prev_slow_ema = slow_val
+        if candle.ClosePrice > ema and candle.OpenPrice < ema and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+        elif candle.ClosePrice < ema and candle.OpenPrice > ema and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
 
     def CreateClone(self):
         return crypto_susdt_10_min_strategy()
