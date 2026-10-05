@@ -18,7 +18,13 @@ Feste prozentuale Stops helfen, große Verluste bei plötzlicher Trendumkehr zu 
 - **Stops**: Ja, prozentbasiert
 - **Standardwerte**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `MaPeriod` = 50
+  - `StochPeriod` = 14
+  - `StochDPeriod` = 3
+  - `StochOversold` = 20
+  - `StochOverbought` = 80
+    Kurs über dem SMA ist ein Aufwärtstrend, darunter ein Abwärtstrend. %K unter StochOversold im Aufwärtstrend bereitet einen Long vor, der beim nächsten Anstieg von %K gekauft wird, solange der Kurs über dem SMA bleibt; %K über StochOverbought im Abwärtstrend bereitet einen Short vor, der beim nächsten Rückgang von %K verkauft wird. Das Verlassen des Trends hebt die Vorbereitung auf, ein Gegensignal dreht die Position.
 - **Filter**:
   - Kategorie: Trendfolge
   - Richtung: Beide

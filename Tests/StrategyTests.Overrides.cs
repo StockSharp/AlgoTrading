@@ -4269,6 +4269,57 @@ public abstract partial class StrategyTests
 	public Task S0137_PercentStopWorksBetweenFinishedBars()
 		=> CheckPercentStopBetweenBars("0137_Bollinger_RSI", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
 
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(50, 14, 20.0, 80.0, false)]
+	[DataRow(30, 10, 25.0, 75.0, true)]
+	public Task S0138_StochasticPullbacksBoughtOnTheUpturnWithTheSma(int maPeriod, int stochPeriod, double oversold, double overbought, bool secondary)
+	{
+		var sma = new SimpleMovingAverage { Length = maPeriod };
+		var stochastic = new StochasticOscillator { K = { Length = stochPeriod }, D = { Length = 3 } };
+		decimal? previousK = null;
+		var setup = 0;
+		return CheckReversingSignals("0138_MA_Stochastic", secondary, s =>
+			{
+				AreEqual(50, s.Parameters["MaPeriod"].Value);
+				AreEqual(14, s.Parameters["StochPeriod"].Value);
+				AreEqual(3, s.Parameters["StochDPeriod"].Value);
+				AreEqual(20m, Convert.ToDecimal(s.Parameters["StochOversold"].Value));
+				AreEqual(80m, Convert.ToDecimal(s.Parameters["StochOverbought"].Value));
+				SetParam(s, "MaPeriod", maPeriod);
+				SetParam(s, "StochPeriod", stochPeriod);
+				SetParam(s, "StochOversold", oversold);
+				SetParam(s, "StochOverbought", overbought);
+			},
+			candle =>
+			{
+				var m = sma.Process(candle);
+				var st = stochastic.Process(candle);
+				if (!m.IsFormed || st is not IStochasticOscillatorValue { IsFormed: true, K: decimal k }) return 0;
+				var ma = m.GetValue<decimal>();
+				var last = previousK;
+				previousK = k;
+				var up = candle.ClosePrice > ma;
+				var down = candle.ClosePrice < ma;
+				var signal = 0;
+				if (last is decimal lastK)
+				{
+					if (setup == 1 && up && k > lastK) signal = 1;
+					else if (setup == -1 && down && k < lastK) signal = -1;
+				}
+				if (signal != 0) setup = 0;
+				if (up && k < (decimal)oversold) setup = 1;
+				else if (down && k > (decimal)overbought) setup = -1;
+				else if ((setup == 1 && !up) || (setup == -1 && !down)) setup = 0;
+				return signal;
+			}, "Every order must follow the first stochastic turn after an extreme on the side of the SMA.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0138_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0138_MA_Stochastic", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

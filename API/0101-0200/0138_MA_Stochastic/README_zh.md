@@ -15,7 +15,13 @@
 - **止损**：是，按百分比
 - **默认值**:
   - `CandleType` = 15分钟
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `MaPeriod` = 50
+  - `StochPeriod` = 14
+  - `StochDPeriod` = 3
+  - `StochOversold` = 20
+  - `StochOverbought` = 80
+    价格高于SMA为上升趋势，低于为下降趋势。上升趋势中%K低于StochOversold即准备做多，在价格仍高于SMA时于%K下一次上升时买入；下降趋势中%K高于StochOverbought即准备做空，于%K下一次下降时卖出。脱离趋势会取消准备，相反信号反转持仓。
 - **过滤器**:
   - 类别：趋势跟随
   - 方向：双向

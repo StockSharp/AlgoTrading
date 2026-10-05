@@ -18,7 +18,13 @@ Fixed percent stops help avoid large losses if the trend suddenly reverses.
 - **Stops**: Yes, percent based
 - **Default Values**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `MaPeriod` = 50
+  - `StochPeriod` = 14
+  - `StochDPeriod` = 3
+  - `StochOversold` = 20
+  - `StochOverbought` = 80
+    Price above the SMA is an uptrend, below it a downtrend. %K below StochOversold in an uptrend prepares a long, bought on the next rise of %K while price stays above the SMA; %K above StochOverbought in a downtrend prepares a short, sold on the next fall of %K. Leaving the trend cancels the setup, and an opposite signal reverses the position.
 - **Filters**:
   - Category: Trend following
   - Direction: Both

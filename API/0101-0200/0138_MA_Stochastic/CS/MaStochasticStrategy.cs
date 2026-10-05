@@ -11,35 +11,28 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that combines Moving Average and manual Stochastic %K calculation.
-/// Enters when price is above MA and Stochastic oversold (longs)
-/// or below MA and Stochastic overbought (shorts).
+/// MA Stochastic strategy.
+/// Price above the MaPeriod SMA is an uptrend, below it a downtrend. Stochastic %K dipping below StochOversold in an uptrend
+/// prepares a long that is bought on the next upturn of %K while price stays above the SMA; %K reaching StochOverbought in a downtrend
+/// prepares a short sold on the next downturn. Leaving the trend cancels the setup. An opposite signal reverses the position,
+/// and a percent stop limits the loss.
 /// </summary>
 public class MaStochasticStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _stochPeriod;
+	private readonly StrategyParam<int> _stochDPeriod;
 	private readonly StrategyParam<decimal> _stochOversold;
 	private readonly StrategyParam<decimal> _stochOverbought;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private int _cooldown;
-	private readonly List<decimal> _highs = new();
-	private readonly List<decimal> _lows = new();
-	private readonly List<decimal> _closes = new();
-
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	private decimal? _prevK;
+	// The prepared side: 1 long, -1 short, 0 none.
+	private int _setup;
 
 	/// <summary>
-	/// Moving Average period.
+	/// Period of the trend SMA.
 	/// </summary>
 	public int MaPeriod
 	{
@@ -48,7 +41,7 @@ public class MaStochasticStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stochastic period for %K calculation.
+	/// Lookback period of stochastic %K.
 	/// </summary>
 	public int StochPeriod
 	{
@@ -57,7 +50,16 @@ public class MaStochasticStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stochastic oversold level.
+	/// Smoothing period of stochastic %D.
+	/// </summary>
+	public int StochDPeriod
+	{
+		get => _stochDPeriod.Value;
+		set => _stochDPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Level that prepares a long.
 	/// </summary>
 	public decimal StochOversold
 	{
@@ -66,7 +68,7 @@ public class MaStochasticStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stochastic overbought level.
+	/// Level that prepares a short.
 	/// </summary>
 	public decimal StochOverbought
 	{
@@ -75,39 +77,52 @@ public class MaStochasticStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Cooldown bars between trades.
+	/// Stop loss percentage from entry price.
 	/// </summary>
-	public int CooldownBars
+	public decimal StopLossPercent
 	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
 	}
 
 	/// <summary>
-	/// Strategy constructor.
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
 	/// </summary>
 	public MaStochasticStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_maPeriod = Param(nameof(MaPeriod), 20)
-			.SetRange(10, 50)
-			.SetDisplay("MA Period", "Period of the Moving Average", "Indicators");
+		_maPeriod = Param(nameof(MaPeriod), 50)
+			.SetGreaterThanZero()
+			.SetDisplay("MA Period", "Period of the trend SMA", "Indicators");
 
 		_stochPeriod = Param(nameof(StochPeriod), 14)
-			.SetRange(5, 30)
-			.SetDisplay("Stochastic Period", "Period for %K calculation", "Indicators");
+			.SetGreaterThanZero()
+			.SetDisplay("Stochastic Period", "Lookback period of stochastic %K", "Indicators");
+
+		_stochDPeriod = Param(nameof(StochDPeriod), 3)
+			.SetGreaterThanZero()
+			.SetDisplay("Stochastic %D", "Smoothing period of stochastic %D", "Indicators");
 
 		_stochOversold = Param(nameof(StochOversold), 20m)
-			.SetDisplay("Stochastic Oversold", "Level considered oversold", "Indicators");
+			.SetDisplay("Stochastic Oversold", "Level that prepares a long", "Indicators");
 
 		_stochOverbought = Param(nameof(StochOverbought), 80m)
-			.SetDisplay("Stochastic Overbought", "Level considered overbought", "Indicators");
+			.SetDisplay("Stochastic Overbought", "Level that prepares a short", "Indicators");
 
-		_cooldownBars = Param(nameof(CooldownBars), 100)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "General")
-			.SetRange(5, 500);
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -120,10 +135,8 @@ public class MaStochasticStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_cooldown = 0;
-		_highs.Clear();
-		_lows.Clear();
-		_closes.Clear();
+		_prevK = null;
+		_setup = 0;
 	}
 
 	/// <inheritdoc />
@@ -131,95 +144,95 @@ public class MaStochasticStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var ma = new SimpleMovingAverage { Length = MaPeriod };
+		_prevK = null;
+		_setup = 0;
+
+		var sma = new SimpleMovingAverage { Length = MaPeriod };
+		var stochastic = new StochasticOscillator
+		{
+			K = { Length = StochPeriod },
+			D = { Length = StochDPeriod },
+		};
 
 		var subscription = SubscribeCandles(CandleType);
-
 		subscription
-			.Bind(ma, ProcessCandle)
+			.BindEx(sma, stochastic, ProcessCandle)
 			.Start();
+
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, ma);
+			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, stochastic);
+			}
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal maValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// The high-level handler activates native protection before this callback, also between signal bars.
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue smaValue, IIndicatorValue stochasticValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!smaValue.IsFormed || !stochasticValue.IsFormed)
 			return;
 
-		// Track highs, lows, closes for manual stochastic
-		_highs.Add(candle.HighPrice);
-		_lows.Add(candle.LowPrice);
-		_closes.Add(candle.ClosePrice);
-
-		// Keep buffers manageable
-		var maxBuf = StochPeriod * 2;
-		if (_highs.Count > maxBuf)
-		{
-			_highs.RemoveRange(0, _highs.Count - maxBuf);
-			_lows.RemoveRange(0, _lows.Count - maxBuf);
-			_closes.RemoveRange(0, _closes.Count - maxBuf);
-		}
-
-		if (_highs.Count < StochPeriod)
+		if (stochasticValue is not IStochasticOscillatorValue { K: decimal k })
 			return;
 
-		// Calculate %K manually
-		var start = _highs.Count - StochPeriod;
-		var highestHigh = decimal.MinValue;
-		var lowestLow = decimal.MaxValue;
-		for (var i = start; i < _highs.Count; i++)
-		{
-			if (_highs[i] > highestHigh) highestHigh = _highs[i];
-			if (_lows[i] < lowestLow) lowestLow = _lows[i];
-		}
-
-		var diff = highestHigh - lowestLow;
-		if (diff == 0)
-			return;
-
-		var stochK = 100m * (candle.ClosePrice - lowestLow) / diff;
+		var ma = smaValue.GetValue<decimal>();
 		var close = candle.ClosePrice;
+		var prevK = _prevK;
+		_prevK = k;
 
-		if (_cooldown > 0)
+		var uptrend = close > ma;
+		var downtrend = close < ma;
+		var signal = 0;
+
+		if (prevK is decimal lastK)
 		{
-			_cooldown--;
+			if (_setup == 1 && uptrend && k > lastK)
+				signal = 1;
+			else if (_setup == -1 && downtrend && k < lastK)
+				signal = -1;
+		}
+
+		if (signal != 0)
+			_setup = 0;
+
+		if (uptrend && k < StochOversold)
+			_setup = 1;
+		else if (downtrend && k > StochOverbought)
+			_setup = -1;
+		else if ((_setup == 1 && !uptrend) || (_setup == -1 && !downtrend))
+			_setup = 0;
+
+		if (signal == 0 || !IsFormedAndOnlineAndAllowTrading())
 			return;
-		}
 
-		// Long: price above MA + Stochastic oversold
-		if (close > maValue && stochK < StochOversold && Position == 0)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-		// Short: price below MA + Stochastic overbought
-		else if (close < maValue && stochK > StochOverbought && Position == 0)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-
-		// Exit long: price below MA
-		if (Position > 0 && close < maValue)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		// Exit short: price above MA
-		else if (Position < 0 && close > maValue)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
+		if (signal > 0 && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (signal < 0 && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
 	}
 }
