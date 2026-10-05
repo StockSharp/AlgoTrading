@@ -12,6 +12,8 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Neon Momentum Waves strategy based on MACD histogram levels.
+/// The histogram (MACD line minus signal line) crossing above EntryLevel goes long and crossing below it goes short, reversing an
+/// opposite position. A long closes once the histogram reaches LongExitLevel and a short once it reaches ShortExitLevel.
 /// </summary>
 public class NeonMomentumWavesStrategy : Strategy
 {
@@ -24,7 +26,6 @@ public class NeonMomentumWavesStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal? _prevHist;
-	private DateTimeOffset _lastSignal = DateTimeOffset.MinValue;
 
 	/// <summary>
 	/// MACD fast EMA length.
@@ -95,16 +96,13 @@ public class NeonMomentumWavesStrategy : Strategy
 	public NeonMomentumWavesStrategy()
 	{
 		_fastLength = Param(nameof(FastLength), 12)
-			.SetDisplay("Fast Length", "MACD fast EMA length", "MACD")
-			;
+			.SetDisplay("Fast Length", "MACD fast EMA length", "MACD");
 
 		_slowLength = Param(nameof(SlowLength), 26)
-			.SetDisplay("Slow Length", "MACD slow EMA length", "MACD")
-			;
+			.SetDisplay("Slow Length", "MACD slow EMA length", "MACD");
 
 		_signalLength = Param(nameof(SignalLength), 20)
-			.SetDisplay("Signal Length", "MACD signal smoothing", "MACD")
-			;
+			.SetDisplay("Signal Length", "MACD signal smoothing", "MACD");
 
 		_entryLevel = Param(nameof(EntryLevel), 0m)
 			.SetDisplay("Entry Level", "Histogram entry threshold", "Parameters");
@@ -115,7 +113,7 @@ public class NeonMomentumWavesStrategy : Strategy
 		_shortExitLevel = Param(nameof(ShortExitLevel), -9m)
 			.SetDisplay("Short Exit Level", "Histogram level to exit shorts", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
@@ -130,13 +128,14 @@ public class NeonMomentumWavesStrategy : Strategy
 	{
 		base.OnReseted();
 		_prevHist = null;
-		_lastSignal = DateTimeOffset.MinValue;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+
+		_prevHist = null;
 
 		var macd = new MovingAverageConvergenceDivergenceSignal
 		{
@@ -167,7 +166,7 @@ public class NeonMomentumWavesStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!macdValue.IsFormed)
 			return;
 
 		var typed = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
@@ -175,30 +174,22 @@ public class NeonMomentumWavesStrategy : Strategy
 			return;
 
 		var hist = macdLine - signal;
-
-		if (_prevHist is null)
-		{
-			_prevHist = hist;
-			return;
-		}
-
-		var prev = _prevHist.Value;
-		var cooldown = TimeSpan.FromMinutes(360);
-
-		if (candle.OpenTime - _lastSignal >= cooldown)
-		{
-			if (prev <= EntryLevel && hist > EntryLevel && Position <= 0)
-			{
-				BuyMarket();
-				_lastSignal = candle.OpenTime;
-			}
-			else if (prev >= EntryLevel && hist < EntryLevel && Position > 0)
-			{
-				SellMarket();
-				_lastSignal = candle.OpenTime;
-			}
-		}
-
+		var prevHist = _prevHist;
 		_prevHist = hist;
+
+		if (prevHist is not decimal prev)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (prev <= EntryLevel && hist > EntryLevel && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (prev >= EntryLevel && hist < EntryLevel && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
+		else if (Position > 0 && hist >= LongExitLevel)
+			SellMarket(Position);
+		else if (Position < 0 && hist <= ShortExitLevel)
+			BuyMarket(-Position);
 	}
 }
