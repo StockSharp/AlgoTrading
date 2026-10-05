@@ -11,37 +11,38 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on OBV slope breakout with EMA direction filter.
-/// Opens positions when OBV slope deviates from its recent average and price confirms the direction relative to EMA.
+/// On-Balance Volume slope breakout.
+/// The slope is the OBV change over <see cref="SlopeLength"/> bars. Enters in the direction of the slope
+/// when it exceeds its average by a standard deviation multiplier and exits when it returns to the average.
 /// </summary>
 public class ObvSlopeBreakoutStrategy : Strategy
 {
 	private readonly StrategyParam<int> _lookbackPeriod;
+	private readonly StrategyParam<int> _slopeLength;
 	private readonly StrategyParam<decimal> _multiplier;
 	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _emaPeriod;
-	private readonly StrategyParam<int> _cooldownBars;
 
-	private OnBalanceVolume _obv;
-	private ExponentialMovingAverage _ema;
-	private decimal _prevObvValue;
-	private decimal _currentSlope;
-	private decimal _avgSlope;
-	private decimal _stdDevSlope;
-	private decimal[] _slopes;
-	private int _currentIndex;
-	private int _filledCount;
-	private int _cooldown;
-	private bool _isInitialized;
+	private readonly Queue<decimal> _obvHistory = new();
+	private SimpleMovingAverage _slopeAverage;
+	private StandardDeviation _slopeStdDev;
 
 	/// <summary>
-	/// Lookback period for slope statistics calculation.
+	/// Lookback period for slope statistics.
 	/// </summary>
 	public int LookbackPeriod
 	{
 		get => _lookbackPeriod.Value;
 		set => _lookbackPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Number of bars used to measure the OBV slope.
+	/// </summary>
+	public int SlopeLength
+	{
+		get => _slopeLength.Value;
+		set => _slopeLength.Value = value;
 	}
 
 	/// <summary>
@@ -54,7 +55,7 @@ public class ObvSlopeBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop-loss as a percentage of entry price.
+	/// Stop-loss percentage.
 	/// </summary>
 	public decimal StopLoss
 	{
@@ -63,7 +64,7 @@ public class ObvSlopeBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Type of candles to use in the strategy.
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -72,52 +73,28 @@ public class ObvSlopeBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// EMA period for trend confirmation.
-	/// </summary>
-	public int EmaPeriod
-	{
-		get => _emaPeriod.Value;
-		set => _emaPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Cooldown bars between orders.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="ObvSlopeBreakoutStrategy"/>.
+	/// Initialize <see cref="ObvSlopeBreakoutStrategy"/>.
 	/// </summary>
 	public ObvSlopeBreakoutStrategy()
 	{
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Lookback Period", "Period for calculating average and standard deviation of OBV slope", "Strategy Parameters")
-			.SetOptimize(10, 50, 5);
+			.SetDisplay("Lookback Period", "Period for slope statistics", "Strategy");
+
+		_slopeLength = Param(nameof(SlopeLength), 5)
+			.SetGreaterThanZero()
+			.SetDisplay("Slope Length", "Bars used to measure the OBV slope", "Indicators");
 
 		_multiplier = Param(nameof(Multiplier), 2m)
 			.SetGreaterThanZero()
-			.SetDisplay("Std Dev Multiplier", "Multiplier for standard deviation to determine breakout threshold", "Strategy Parameters")
-			.SetOptimize(1m, 3m, 0.5m);
+			.SetDisplay("Multiplier", "Standard deviation multiplier for breakout", "Strategy");
 
 		_stopLoss = Param(nameof(StopLoss), 2m)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss %", "Stop-loss as a percentage of entry price", "Risk Management");
-
-		_emaPeriod = Param(nameof(EmaPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("EMA Period", "Period for EMA trend confirmation", "Indicator Parameters");
-
-		_cooldownBars = Param(nameof(CooldownBars), 1200)
-			.SetRange(1, 5000)
-			.SetDisplay("Cooldown Bars", "Bars to wait between orders", "Risk Management");
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop-loss percentage", "Risk Management");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use in the strategy", "General");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -130,17 +107,9 @@ public class ObvSlopeBreakoutStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_obv = null;
-		_ema = null;
-		_prevObvValue = default;
-		_currentSlope = default;
-		_avgSlope = default;
-		_stdDevSlope = default;
-		_currentIndex = default;
-		_filledCount = default;
-		_cooldown = default;
-		_isInitialized = default;
-		_slopes = new decimal[LookbackPeriod];
+		_obvHistory.Clear();
+		_slopeAverage = null;
+		_slopeStdDev = null;
 	}
 
 	/// <inheritdoc />
@@ -148,122 +117,67 @@ public class ObvSlopeBreakoutStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_obv = new OnBalanceVolume();
-		_ema = new ExponentialMovingAverage { Length = EmaPeriod };
-		_slopes = new decimal[LookbackPeriod];
-		_cooldown = 0;
+		var obv = new OnBalanceVolume();
+		_slopeAverage = new SimpleMovingAverage { Length = LookbackPeriod };
+		_slopeStdDev = new StandardDeviation { Length = LookbackPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_obv, _ema, ProcessObv)
+			.Bind(obv, ProcessCandle)
 			.Start();
 
-		StartProtection(new(), new Unit(StopLoss, UnitTypes.Percent));
+		StartProtection(
+			takeProfit: null,
+			stopLoss: StopLoss > 0 ? new Unit(StopLoss, UnitTypes.Percent) : null
+		);
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _ema);
-			DrawIndicator(area, _obv);
 			DrawOwnTrades(area);
+
+			var obvArea = CreateChartArea();
+			if (obvArea != null)
+				DrawIndicator(obvArea, obv);
 		}
 	}
 
-	private void ProcessObv(ICandleMessage candle, decimal obvValue, decimal emaValue)
+	private void ProcessCandle(ICandleMessage candle, decimal obvValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_obv.IsFormed || !_ema.IsFormed)
+		_obvHistory.Enqueue(obvValue);
+
+		if (_obvHistory.Count <= SlopeLength)
 			return;
 
-		if (!_isInitialized)
-		{
-			_prevObvValue = obvValue;
-			_isInitialized = true;
+		var slope = obvValue - _obvHistory.Dequeue();
+		var avgSlope = _slopeAverage.Process(slope, candle.ServerTime, true).ToDecimal();
+		var stdSlope = _slopeStdDev.Process(slope, candle.ServerTime, true).ToDecimal();
+
+		if (!_slopeAverage.IsFormed || !_slopeStdDev.IsFormed)
 			return;
-		}
-
-		_currentSlope = obvValue - _prevObvValue;
-		_prevObvValue = obvValue;
-
-		_slopes[_currentIndex] = _currentSlope;
-		_currentIndex = (_currentIndex + 1) % LookbackPeriod;
-
-		if (_filledCount < LookbackPeriod)
-			_filledCount++;
-
-		if (_filledCount < LookbackPeriod)
-			return;
-
-		CalculateStatistics();
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (_stdDevSlope <= 0)
-			return;
-
-		if (_cooldown > 0)
+		if (slope > avgSlope + Multiplier * stdSlope && Position <= 0)
 		{
-			_cooldown--;
-			return;
+			BuyMarket(Volume + Math.Abs(Position));
 		}
-
-		var upperThreshold = _avgSlope + Multiplier * _stdDevSlope;
-		var lowerThreshold = _avgSlope - Multiplier * _stdDevSlope;
-		var closePrice = candle.ClosePrice;
-		var priceAboveEma = closePrice > emaValue;
-		var priceBelowEma = closePrice < emaValue;
-
-		if (Position == 0)
+		else if (slope < avgSlope - Multiplier * stdSlope && Position >= 0)
 		{
-			if (_currentSlope > upperThreshold && priceAboveEma)
-			{
-				BuyMarket();
-				_cooldown = CooldownBars;
-			}
-			else if (_currentSlope < lowerThreshold && priceBelowEma)
-			{
-				SellMarket();
-				_cooldown = CooldownBars;
-			}
+			SellMarket(Volume + Math.Abs(Position));
 		}
-		else if (Position > 0)
+		else if (Position > 0 && slope < avgSlope)
 		{
-			if (_currentSlope <= _avgSlope || priceBelowEma)
-			{
-				SellMarket(Math.Abs(Position));
-				_cooldown = CooldownBars;
-			}
+			SellMarket(Position);
 		}
-		else if (Position < 0)
+		else if (Position < 0 && slope > avgSlope)
 		{
-			if (_currentSlope >= _avgSlope || priceAboveEma)
-			{
-				BuyMarket(Math.Abs(Position));
-				_cooldown = CooldownBars;
-			}
+			BuyMarket(-Position);
 		}
-	}
-
-	private void CalculateStatistics()
-	{
-		_avgSlope = 0;
-		var sumSquaredDiffs = 0m;
-
-		for (var i = 0; i < LookbackPeriod; i++)
-			_avgSlope += _slopes[i];
-
-		_avgSlope /= LookbackPeriod;
-
-		for (var i = 0; i < LookbackPeriod; i++)
-		{
-			var diff = _slopes[i] - _avgSlope;
-			sumSquaredDiffs += diff * diff;
-		}
-
-		_stdDevSlope = (decimal)Math.Sqrt((double)(sumSquaredDiffs / LookbackPeriod));
 	}
 }
