@@ -2,75 +2,78 @@ namespace StockSharp.Samples.Strategies;
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using Ecng.Common;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 /// <summary>
 /// Liquidity Swings Strategy.
-/// Uses recent pivot highs/lows as resistance/support levels.
-/// Enters on bounce from support/resistance with risk-reward.
+/// The latest pivot high (Lookback bars on each side) is resistance and the latest pivot low is support. A long opens when
+/// the low crosses above support with the close below resistance; a short opens when the high crosses below resistance with
+/// the close above support. The stop sits StopLossBuffer beyond the level and the target is twice the risk from the entry.
 /// </summary>
 public class LiquiditySwingsStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
+	private const decimal RewardMultiplier = 2m;
+
 	private readonly StrategyParam<int> _lookback;
-	private readonly StrategyParam<int> _emaLength;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLossBuffer;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private ExponentialMovingAverage _ema;
+	private readonly List<ICandleMessage> _window = [];
+	private decimal? _support;
+	private decimal? _resistance;
+	private decimal? _prevLow;
+	private decimal? _prevHigh;
+	private decimal? _stopPrice;
+	private decimal? _targetPrice;
 
-	private readonly List<decimal> _highBuffer = new();
-	private readonly List<decimal> _lowBuffer = new();
-
-	private decimal _resistance;
-	private decimal _support;
-	private decimal _entryPrice;
-	private int _cooldownRemaining;
-
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
+	/// <summary>
+	/// Bars on each side of a pivot.
+	/// </summary>
 	public int Lookback
 	{
 		get => _lookback.Value;
 		set => _lookback.Value = value;
 	}
 
-	public int EmaLength
+	/// <summary>
+	/// Price distance of the stop beyond the level.
+	/// </summary>
+	public decimal StopLossBuffer
 	{
-		get => _emaLength.Value;
-		set => _emaLength.Value = value;
+		get => _stopLossBuffer.Value;
+		set => _stopLossBuffer.Value = value;
 	}
 
-	public int CooldownBars
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
 	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
+	/// <summary>
+	/// Constructor.
+	/// </summary>
 	public LiquiditySwingsStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
 		_lookback = Param(nameof(Lookback), 5)
 			.SetGreaterThanZero()
-			.SetDisplay("Pivot Lookback", "Pivot detection lookback", "Parameters");
+			.SetDisplay("Lookback", "Bars on each side of a pivot", "Pivots");
 
-		_emaLength = Param(nameof(EmaLength), 50)
-			.SetGreaterThanZero()
-			.SetDisplay("EMA Length", "EMA trend filter period", "Indicators");
+		_stopLossBuffer = Param(nameof(StopLossBuffer), 0.5m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss Buffer", "Price distance of the stop beyond the level", "Risk");
 
-		_cooldownBars = Param(nameof(CooldownBars), 10)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "Risk");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -81,14 +84,18 @@ public class LiquiditySwingsStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		ResetState();
+	}
 
-		_ema = null;
-		_highBuffer.Clear();
-		_lowBuffer.Clear();
-		_resistance = 0;
-		_support = 0;
-		_entryPrice = 0;
-		_cooldownRemaining = 0;
+	private void ResetState()
+	{
+		_window.Clear();
+		_support = null;
+		_resistance = null;
+		_prevLow = null;
+		_prevHigh = null;
+		_stopPrice = null;
+		_targetPrice = null;
 	}
 
 	/// <inheritdoc />
@@ -96,147 +103,100 @@ public class LiquiditySwingsStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_ema = new ExponentialMovingAverage { Length = EmaLength };
+		ResetState();
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_ema, OnProcess)
+			.Bind(ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _ema);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void OnProcess(ICandleMessage candle, decimal emaVal)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_ema.IsFormed)
-			return;
+		UpdatePivots(candle);
 
-		UpdatePivotLevels(candle);
+		var prevLow = _prevLow;
+		var prevHigh = _prevHigh;
+		_prevLow = candle.LowPrice;
+		_prevHigh = candle.HighPrice;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (_cooldownRemaining > 0)
+		if (Position > 0)
 		{
-			_cooldownRemaining--;
+			if ((_stopPrice is decimal stop && candle.LowPrice <= stop) || (_targetPrice is decimal target && candle.HighPrice >= target))
+				SellMarket(Position);
+
 			return;
 		}
 
-		if (_resistance == 0 || _support == 0)
+		if (Position < 0)
+		{
+			if ((_stopPrice is decimal stop && candle.HighPrice >= stop) || (_targetPrice is decimal target && candle.LowPrice <= target))
+				BuyMarket(-Position);
+
+			return;
+		}
+
+		if (_support is not decimal support || _resistance is not decimal resistance || prevLow is not decimal lastLow || prevHigh is not decimal lastHigh)
 			return;
 
-		var price = candle.ClosePrice;
+		var close = candle.ClosePrice;
 
-		// Buy: price near support, bounce up, trend filter (price > ema)
-		if (price > _support && price < (_support + (_resistance - _support) * 0.3m) && price > emaVal && Position <= 0)
+		if (lastLow <= support && candle.LowPrice > support && close < resistance)
 		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
+			var stop = support - StopLossBuffer;
+			var risk = close - stop;
+			if (risk <= 0m)
+				return;
+
 			BuyMarket(Volume);
-			_entryPrice = price;
-			_cooldownRemaining = CooldownBars;
+			_stopPrice = stop;
+			_targetPrice = close + RewardMultiplier * risk;
 		}
-		// Sell: price near resistance, drop, trend filter (price < ema)
-		else if (price < _resistance && price > (_resistance - (_resistance - _support) * 0.3m) && price < emaVal && Position >= 0)
+		else if (lastHigh >= resistance && candle.HighPrice < resistance && close > support)
 		{
-			if (Position > 0)
-				SellMarket(Math.Abs(Position));
+			var stop = resistance + StopLossBuffer;
+			var risk = stop - close;
+			if (risk <= 0m)
+				return;
+
 			SellMarket(Volume);
-			_entryPrice = price;
-			_cooldownRemaining = CooldownBars;
-		}
-		// Exit long at resistance
-		else if (Position > 0 && price >= _resistance)
-		{
-			SellMarket(Math.Abs(Position));
-			_entryPrice = 0;
-			_cooldownRemaining = CooldownBars;
-		}
-		// Exit short at support
-		else if (Position < 0 && price <= _support)
-		{
-			BuyMarket(Math.Abs(Position));
-			_entryPrice = 0;
-			_cooldownRemaining = CooldownBars;
-		}
-		// Stop loss long: price breaks below support
-		else if (Position > 0 && price < _support)
-		{
-			SellMarket(Math.Abs(Position));
-			_entryPrice = 0;
-			_cooldownRemaining = CooldownBars;
-		}
-		// Stop loss short: price breaks above resistance
-		else if (Position < 0 && price > _resistance)
-		{
-			BuyMarket(Math.Abs(Position));
-			_entryPrice = 0;
-			_cooldownRemaining = CooldownBars;
+			_stopPrice = stop;
+			_targetPrice = close - RewardMultiplier * risk;
 		}
 	}
 
-	private void UpdatePivotLevels(ICandleMessage candle)
+	private void UpdatePivots(ICandleMessage candle)
 	{
+		_window.Add(candle);
+
 		var size = Lookback * 2 + 1;
+		if (_window.Count > size)
+			_window.RemoveAt(0);
 
-		_highBuffer.Add(candle.HighPrice);
-		_lowBuffer.Add(candle.LowPrice);
+		if (_window.Count < size)
+			return;
 
-		if (_highBuffer.Count > size)
-			_highBuffer.RemoveAt(0);
+		// The middle candle is a pivot once Lookback candles on each side confirm it.
+		var center = _window[Lookback];
+		var others = _window.Where((_, i) => i != Lookback).ToArray();
 
-		if (_lowBuffer.Count > size)
-			_lowBuffer.RemoveAt(0);
+		if (others.All(c => c.HighPrice < center.HighPrice))
+			_resistance = center.HighPrice;
 
-		if (_highBuffer.Count == size)
-		{
-			var center = Lookback;
-			var candidate = _highBuffer[center];
-			var isPivot = true;
-
-			for (var i = 0; i < size; i++)
-			{
-				if (i == center)
-					continue;
-				if (_highBuffer[i] >= candidate)
-				{
-					isPivot = false;
-					break;
-				}
-			}
-
-			if (isPivot)
-				_resistance = candidate;
-		}
-
-		if (_lowBuffer.Count == size)
-		{
-			var center = Lookback;
-			var candidate = _lowBuffer[center];
-			var isPivot = true;
-
-			for (var i = 0; i < size; i++)
-			{
-				if (i == center)
-					continue;
-				if (_lowBuffer[i] <= candidate)
-				{
-					isPivot = false;
-					break;
-				}
-			}
-
-			if (isPivot)
-				_support = candidate;
-		}
+		if (others.All(c => c.LowPrice > center.LowPrice))
+			_support = center.LowPrice;
 	}
 }
