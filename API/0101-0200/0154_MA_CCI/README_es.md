@@ -7,7 +7,7 @@ Las pruebas indican un retorno anual promedio de aproximadamente el 49%. Funcion
 
 Una media móvil guía la tendencia mientras el CCI busca desviaciones de ese promedio. Las entradas ocurren en los extremos del CCI en la dirección de la MA.
 
-Ideal para traders de swing que entran en retrocesos. Los stops basados en ATR protegen contra movimientos bruscos.
+Ideal para traders de swing que entran en retrocesos. Un stop porcentual protege contra movimientos bruscos.
 
 ## Detalles
 
@@ -19,12 +19,13 @@ Ideal para traders de swing que entran en retrocesos. Los stops basados en ATR p
   - CCI regresa a la línea cero
 - **Stops**: Basados en porcentaje usando `StopLossPercent`
 - **Valores predeterminados**:
-  - `MaPeriod` = 20
+  - `MaPeriod` = 50
   - `CciPeriod` = 20
   - `OverboughtLevel` = 100m
   - `OversoldLevel` = -100m
   - `StopLossPercent` = 2.0m
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    Una SMA de 20 velas se mueve junto con el CCI de las mismas 20 velas, así que el precio casi nunca se mantiene por encima de ella con el CCI por debajo de -100: el archivo de marzo de 2024 tiene como mucho una vela así por instrumento. Por eso la SMA de tendencia usa 50 velas por defecto. Una señal de entrada contra una posición abierta la invierte.
 - **Filtros**:
   - Categoría: Reversión a la media
   - Dirección: Ambos

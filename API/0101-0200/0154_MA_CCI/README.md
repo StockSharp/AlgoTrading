@@ -7,7 +7,7 @@ Testing indicates an average annual return of about 49%. It performs best in the
 
 A moving average guides the trend while CCI looks for deviations from that average. Entries happen on CCI extremes in the direction of the MA.
 
-Ideal for swing traders entering on pullbacks. ATR stops guard against sudden whipsaws.
+Ideal for swing traders entering on pullbacks. A percent stop guards against sudden whipsaws.
 
 ## Details
 
@@ -19,12 +19,13 @@ Ideal for swing traders entering on pullbacks. ATR stops guard against sudden wh
   - CCI returns to zero line
 - **Stops**: Percent-based using `StopLossPercent`
 - **Default Values**:
-  - `MaPeriod` = 20
+  - `MaPeriod` = 50
   - `CciPeriod` = 20
   - `OverboughtLevel` = 100m
   - `OversoldLevel` = -100m
   - `StopLossPercent` = 2.0m
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    A 20-candle SMA moves with CCI over the same 20 candles, so price almost never stays above it while CCI is below -100: the March 2024 archive has at most one such candle per instrument. The trend SMA therefore defaults to 50 candles. An entry signal against an open position reverses it.
 - **Filters**:
   - Category: Mean reversion
   - Direction: Both
