@@ -20,8 +20,10 @@
 - **默认值**:
   - `CciPeriod` = 20
   - `AveragePeriod` = 20
-  - `DeviationMultiplier` = 2m
+  - `DeviationMultiplier` = 2
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
+    Avg和StdDev为最近AveragePeriod个CCI值（含当前值）的平均值和标准差。止损为入场价的固定StopLossPercent百分比，在K线之间同样监控；设为0则关闭。与持仓方向相反的入场信号会反转持仓。
 - **筛选条件**:
   - 类别: 均值回归
   - 方向: 双向
