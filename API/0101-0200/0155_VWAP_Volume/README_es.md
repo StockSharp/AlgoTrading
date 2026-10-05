@@ -7,7 +7,7 @@ Las pruebas indican un retorno anual promedio de aproximadamente el 52%. Funcion
 
 Esta estrategia utiliza el VWAP para evaluar el valor y requiere confirmación de volumen antes de las operaciones. La idea es unirse a movimientos respaldados por una fuerte participación.
 
-Los traders intradía enfocados en métricas de volumen pueden emplear este método. Las pérdidas se recortan mediante un stop basado en ATR.
+Los traders intradía enfocados en métricas de volumen pueden emplear este método. Las pérdidas se recortan mediante un stop porcentual.
 
 ## Detalles
 
@@ -23,6 +23,7 @@ Los traders intradía enfocados en métricas de volumen pueden emplear este mét
   - `VolumeThreshold` = 1.5m
   - `StopLossPercent` = 2.0m
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    El mercado opera las 24 horas, por lo que el VWAP de la sesión se reinicia cada día UTC y pondera el precio típico de cada vela por su volumen. AvgVolume es el volumen medio de las VolumePeriod velas anteriores. Una señal de entrada contra una posición abierta la invierte.
 - **Filtros**:
   - Categoría: Reversión a la media
   - Dirección: Ambos

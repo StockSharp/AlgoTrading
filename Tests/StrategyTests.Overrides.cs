@@ -5428,6 +5428,71 @@ public abstract partial class StrategyTests
 	public Task S0154_PercentStopWorksBetweenFinishedBars()
 		=> CheckPercentStopBetweenBars("0154_MA_CCI", TimeSpan.FromDays(31));
 
+	[TestMethod]
+	[TestCategory("Shard00")]
+	[DataRow(20, 1.5, false)]
+	[DataRow(10, 1.2, true)]
+	public async Task S0155_VolumeSurgesAwayFromTheDailyVwapUntilPriceCrossesIt(int volumePeriod, double threshold, bool secondary)
+	{
+		var volumes = new List<decimal>();
+		DateTime? day = null;
+		decimal priceVolume = 0m, volume = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var vwapExits = 0;
+		var violations = new List<string>();
+		await Replay("0155_VWAP_Volume", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["VolumePeriod"].Value);
+			AreEqual(1.5m, Convert.ToDecimal(strategy.Parameters["VolumeThreshold"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "VolumePeriod", volumePeriod);
+			SetParam(strategy, "VolumeThreshold", threshold);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				decimal? average = volumes.Count == volumePeriod ? volumes.Average() : null;
+				volumes.Add(candle.TotalVolume);
+				if (volumes.Count > volumePeriod) volumes.RemoveAt(0);
+				if (day != candle.OpenTime.Date) { day = candle.OpenTime.Date; priceVolume = 0m; volume = 0m; }
+				priceVolume += (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3 * candle.TotalVolume;
+				volume += candle.TotalVolume;
+				if (average is not decimal avg || volume <= 0m) return;
+				var vwap = priceVolume / volume;
+				var close = candle.ClosePrice;
+				var surge = candle.TotalVolume > avg * (decimal)threshold;
+				var position = strategy.Position;
+				if (close < vwap && surge && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (close > vwap && surge && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && close > vwap) { expectedSide = Sides.Sell; expectedVolume = position; vwapExits++; }
+				else if (position < 0m && close < vwap) { expectedSide = Sides.Buy; expectedVolume = -position; vwapExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a volume surge away from the UTC-day VWAP, or close when price crosses back through VWAP.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && vwapExits > 0, "The fixture must trade both sides and exit at VWAP.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard00")]
+	public Task S0155_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0155_VWAP_Volume", TimeSpan.FromDays(31));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";
