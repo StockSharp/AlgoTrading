@@ -11,58 +11,100 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on ADX with volume multiplier filter.
+/// ADX Volume Multiplier strategy.
+/// When ADX is above AdxThreshold and the candle volume exceeds VolumeMultiplier times its SMA, the strategy goes long if DI+ is above
+/// DI- and short if DI- is above DI+; the opposite signal reverses the position.
 /// </summary>
 public class AdxVolumeMultiplierStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _adxPeriod;
 	private readonly StrategyParam<decimal> _adxThreshold;
 	private readonly StrategyParam<decimal> _volumeMultiplier;
 	private readonly StrategyParam<int> _volumePeriod;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private int _cooldownRemaining;
+	private SimpleMovingAverage _volumeSma;
 
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-	public int AdxPeriod { get => _adxPeriod.Value; set => _adxPeriod.Value = value; }
-	public decimal AdxThreshold { get => _adxThreshold.Value; set => _adxThreshold.Value = value; }
-	public decimal VolumeMultiplier { get => _volumeMultiplier.Value; set => _volumeMultiplier.Value = value; }
-	public int VolumePeriod { get => _volumePeriod.Value; set => _volumePeriod.Value = value; }
-	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
+	/// <summary>
+	/// ADX period.
+	/// </summary>
+	public int AdxPeriod
+	{
+		get => _adxPeriod.Value;
+		set => _adxPeriod.Value = value;
+	}
 
+	/// <summary>
+	/// ADX level a trend must exceed.
+	/// </summary>
+	public decimal AdxThreshold
+	{
+		get => _adxThreshold.Value;
+		set => _adxThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Multiple of the average volume the candle volume must exceed.
+	/// </summary>
+	public decimal VolumeMultiplier
+	{
+		get => _volumeMultiplier.Value;
+		set => _volumeMultiplier.Value = value;
+	}
+
+	/// <summary>
+	/// Period of the volume SMA.
+	/// </summary>
+	public int VolumePeriod
+	{
+		get => _volumePeriod.Value;
+		set => _volumePeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
+	/// </summary>
 	public AdxVolumeMultiplierStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
 		_adxPeriod = Param(nameof(AdxPeriod), 21)
 			.SetGreaterThanZero()
-			.SetDisplay("ADX Period", "Period for ADX", "ADX");
+			.SetDisplay("ADX Period", "ADX period", "ADX");
 
 		_adxThreshold = Param(nameof(AdxThreshold), 26m)
-			.SetDisplay("ADX Threshold", "Trend strength threshold", "ADX");
+			.SetDisplay("ADX Threshold", "ADX level a trend must exceed", "ADX");
 
 		_volumeMultiplier = Param(nameof(VolumeMultiplier), 1.8m)
-			.SetDisplay("Volume Multiplier", "Multiplier for average volume", "Volume");
+			.SetGreaterThanZero()
+			.SetDisplay("Volume Multiplier", "Multiple of the average volume the candle volume must exceed", "Volume");
 
 		_volumePeriod = Param(nameof(VolumePeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Volume Period", "Period for volume SMA", "Volume");
+			.SetDisplay("Volume Period", "Period of the volume SMA", "Volume");
 
-		_cooldownBars = Param(nameof(CooldownBars), 15)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "Risk");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> [(Security, CandleType)];
+	{
+		return [(Security, CandleType)];
+	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_cooldownRemaining = 0;
+		_volumeSma = null;
 	}
 
 	/// <inheritdoc />
@@ -71,64 +113,48 @@ public class AdxVolumeMultiplierStrategy : Strategy
 		base.OnStarted2(time);
 
 		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
-		var ema = new ExponentialMovingAverage { Length = VolumePeriod };
+		_volumeSma = new SimpleMovingAverage { Length = VolumePeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(adx, ema, ProcessCandle)
+			.BindEx(adx, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, ema);
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+				DrawIndicator(oscillators, adx);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue adxValue, IIndicatorValue emaValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue adxValue)
 	{
 		if (candle.State != CandleStates.Finished)
+			return;
+
+		var volumeAverage = _volumeSma.Process(candle.TotalVolume, candle.ServerTime, true).ToDecimal();
+
+		if (!adxValue.IsFormed || !_volumeSma.IsFormed)
+			return;
+
+		var adxTyped = (IAverageDirectionalIndexValue)adxValue;
+		if (adxTyped.MovingAverage is not decimal adx || adxTyped.Dx.Plus is not decimal diPlus || adxTyped.Dx.Minus is not decimal diMinus)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var adxTyped = (IAverageDirectionalIndexValue)adxValue;
-		if (adxTyped.MovingAverage is not decimal adx ||
-			adxTyped.Dx.Plus is not decimal diPlus ||
-			adxTyped.Dx.Minus is not decimal diMinus)
-			return;
+		var volumeSurge = candle.TotalVolume > volumeAverage * VolumeMultiplier;
+		var strong = adx > AdxThreshold;
 
-		var ema = emaValue.ToDecimal();
-
-		if (_cooldownRemaining > 0)
-		{
-			_cooldownRemaining--;
-			return;
-		}
-
-		// Use EMA as trend confirmation instead of volume multiplier
-		var aboveEma = candle.ClosePrice > ema;
-		var belowEma = candle.ClosePrice < ema;
-
-		var longCondition = adx > AdxThreshold && diPlus > diMinus && aboveEma;
-		var shortCondition = adx > AdxThreshold && diMinus > diPlus && belowEma;
-
-		if (longCondition && Position <= 0)
-		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-			BuyMarket(Volume);
-			_cooldownRemaining = CooldownBars;
-		}
-		else if (shortCondition && Position >= 0)
-		{
-			if (Position > 0)
-				SellMarket(Math.Abs(Position));
-			SellMarket(Volume);
-			_cooldownRemaining = CooldownBars;
-		}
+		if (strong && volumeSurge && diPlus > diMinus && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (strong && volumeSurge && diMinus > diPlus && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
 	}
 }
