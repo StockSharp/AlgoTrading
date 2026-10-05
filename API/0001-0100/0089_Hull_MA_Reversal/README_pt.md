@@ -18,6 +18,7 @@ As saídas dependem desse stop de proteção, capturando uma porção do movimen
 - **Valores padrão**:
   - `HmaPeriod` = 9
   - `AtrMultiplier` = 2 ATR
+    O stop fica esse número de ATR (período 14) além da mínima da vela de entrada numa compra ou da sua máxima numa venda, e é verificado no fechamento das velas; uma virada no sentido oposto inverte a posição.
   - `CandleType` = 15 minute
 - **Filtros**:
   - Categoria: Seguidor de tendência

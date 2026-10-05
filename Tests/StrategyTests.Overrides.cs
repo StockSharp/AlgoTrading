@@ -2455,6 +2455,71 @@ public abstract partial class StrategyTests
 		IsTrue(reversals > 10, "The fixture must reverse repeatedly.");
 	}
 
+	private const string HullReversal = "0089_Hull_MA_Reversal";
+
+	[TestMethod]
+	[TestCategory("Shard02")]
+	[DataRow(9, 2.0, false)]
+	[DataRow(16, 0.5, true)]
+	public async Task S0089_HullTurnsWithAtrStopBeyondTheEntryCandle(int hmaPeriod, double multiplier, bool secondary)
+	{
+		var hma = new HullMovingAverage { Length = hmaPeriod };
+		var atr = new AverageTrueRange { Length = 14 };
+		decimal? previousHma = null;
+		var lastSlope = 0;
+		var stop = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var turns = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var stopExits = 0;
+		var violations = new List<string>();
+		await Replay(HullReversal, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(9, strategy.Parameters["HmaPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["AtrMultiplier"].Value));
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "HmaPeriod", hmaPeriod);
+			SetParam(strategy, "AtrMultiplier", multiplier);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var h = hma.Process(candle);
+				var a = atr.Process(candle);
+				if (!h.IsFormed || !a.IsFormed) return;
+				var value = h.GetValue<decimal>();
+				var last = previousHma;
+				previousHma = value;
+				if (last is not decimal prior) return;
+				var before = lastSlope;
+				var slope = value > prior ? 1 : value < prior ? -1 : 0;
+				if (slope != 0) lastSlope = slope;
+				var distance = (decimal)multiplier * a.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (before == -1 && slope == 1 && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); stop = candle.LowPrice - distance; turns[Sides.Buy]++; }
+				else if (before == 1 && slope == -1 && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); stop = candle.HighPrice + distance; turns[Sides.Sell]++; }
+				else if (position > 0m && close <= stop) { expectedSide = Sides.Sell; expectedVolume = position; stopExits++; }
+				else if (position < 0m && close >= stop) { expectedSide = Sides.Buy; expectedVolume = -position; stopExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must reverse on a turn of the Hull MA, or close the position at the ATR stop beyond the entry candle.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(turns[Sides.Buy] > 0 && turns[Sides.Sell] > 0, "The fixture must turn both ways.");
+		if (multiplier < 1.0) IsTrue(stopExits > 0, "A tight stop must be reached.");
+	}
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

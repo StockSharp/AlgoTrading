@@ -12,27 +12,41 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Hull MA Reversal strategy.
-/// Enters long when Hull MA changes direction from down to up.
-/// Enters short when Hull MA changes direction from up to down.
-/// Uses cooldown to control trade frequency.
+/// When the Hull MA turns from falling to rising the position turns long, and when it turns from rising to falling it turns short.
+/// The stop lies AtrMultiplier ATRs beyond the entry candle's low (for a long) or high (for a short).
 /// </summary>
 public class HullMaReversalStrategy : Strategy
 {
-	private readonly StrategyParam<int> _hmaPeriod;
-	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
+	/// <summary>
+	/// Period of the ATR that sizes the stop.
+	/// </summary>
+	public const int AtrPeriod = 14;
 
-	private decimal _prevHma;
-	private decimal _prevPrevHma;
-	private int _cooldown;
+	private readonly StrategyParam<int> _hmaPeriod;
+	private readonly StrategyParam<decimal> _atrMultiplier;
+	private readonly StrategyParam<DataType> _candleType;
+
+	private decimal? _prevHma;
+	// Direction of the latest move of the Hull MA: 1 rising, -1 falling, 0 none yet.
+	private int _slope;
+	private decimal _stopPrice;
 
 	/// <summary>
-	/// HMA period.
+	/// Hull MA period.
 	/// </summary>
 	public int HmaPeriod
 	{
 		get => _hmaPeriod.Value;
 		set => _hmaPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Distance of the stop beyond the entry candle in ATR multiples.
+	/// </summary>
+	public decimal AtrMultiplier
+	{
+		get => _atrMultiplier.Value;
+		set => _atrMultiplier.Value = value;
 	}
 
 	/// <summary>
@@ -45,29 +59,20 @@ public class HullMaReversalStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Cooldown bars.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
 	/// Constructor.
 	/// </summary>
 	public HullMaReversalStrategy()
 	{
 		_hmaPeriod = Param(nameof(HmaPeriod), 9)
-			.SetRange(5, 20)
+			.SetGreaterThanZero()
 			.SetDisplay("HMA Period", "Period for Hull Moving Average", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
+		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
+			.SetGreaterThanZero()
+			.SetDisplay("ATR Multiplier", "Distance of the stop beyond the entry candle in ATR multiples", "Risk");
 
-		_cooldownBars = Param(nameof(CooldownBars), 500)
-			.SetRange(1, 1000)
-			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -80,9 +85,9 @@ public class HullMaReversalStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevHma = default;
-		_prevPrevHma = default;
-		_cooldown = default;
+		_prevHma = null;
+		_slope = 0;
+		_stopPrice = default;
 	}
 
 	/// <inheritdoc />
@@ -90,15 +95,16 @@ public class HullMaReversalStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_prevHma = 0;
-		_prevPrevHma = 0;
-		_cooldown = 0;
+		_prevHma = null;
+		_slope = 0;
+		_stopPrice = default;
 
 		var hma = new HullMovingAverage { Length = HmaPeriod };
+		var atr = new AverageTrueRange { Length = AtrPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(hma, ProcessCandle)
+			.BindEx(hma, atr, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -110,61 +116,47 @@ public class HullMaReversalStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal hmaValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue hmaValue, IIndicatorValue atrValue)
 	{
-		if (candle.State != CandleStates.Finished)
+		if (candle.State != CandleStates.Finished || !hmaValue.IsFormed || !atrValue.IsFormed)
 			return;
+
+		var hma = hmaValue.GetValue<decimal>();
+		var prevHma = _prevHma;
+		_prevHma = hma;
+
+		if (prevHma is not decimal lastHma)
+			return;
+
+		var previousSlope = _slope;
+		var slope = hma > lastHma ? 1 : hma < lastHma ? -1 : 0;
+
+		if (slope != 0)
+			_slope = slope;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (_prevHma == 0)
-		{
-			_prevHma = hmaValue;
-			return;
-		}
+		var close = candle.ClosePrice;
+		var distance = AtrMultiplier * atrValue.GetValue<decimal>();
 
-		if (_prevPrevHma == 0)
+		if (previousSlope == -1 && slope == 1 && Position <= 0)
 		{
-			_prevPrevHma = _prevHma;
-			_prevHma = hmaValue;
-			return;
+			BuyMarket(Volume + Math.Abs(Position));
+			_stopPrice = candle.LowPrice - distance;
 		}
-
-		if (_cooldown > 0)
+		else if (previousSlope == 1 && slope == -1 && Position >= 0)
 		{
-			_cooldown--;
-			_prevPrevHma = _prevHma;
-			_prevHma = hmaValue;
-			return;
+			SellMarket(Volume + Math.Abs(Position));
+			_stopPrice = candle.HighPrice + distance;
 		}
-
-		// Direction change detection
-		var dirChangedUp = _prevHma < _prevPrevHma && hmaValue > _prevHma;
-		var dirChangedDown = _prevHma > _prevPrevHma && hmaValue < _prevHma;
-
-		if (Position == 0 && dirChangedUp)
+		else if (Position > 0 && close <= _stopPrice)
 		{
-			BuyMarket();
-			_cooldown = CooldownBars;
+			SellMarket(Position);
 		}
-		else if (Position == 0 && dirChangedDown)
+		else if (Position < 0 && close >= _stopPrice)
 		{
-			SellMarket();
-			_cooldown = CooldownBars;
+			BuyMarket(-Position);
 		}
-		else if (Position > 0 && dirChangedDown)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position < 0 && dirChangedUp)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-
-		_prevPrevHma = _prevHma;
-		_prevHma = hmaValue;
 	}
 }
