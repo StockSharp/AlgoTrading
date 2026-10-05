@@ -1,7 +1,7 @@
 # Keltner Volume 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
-Keltner Channels + Volume 戦略の実装。平均を超える出来高で上部 Keltner Channel を上抜けたときに買い。平均を超える出来高で下部 Keltner Channel を下抜けたときに売り。
+Keltner Channels + Volume 戦略の実装。平均を超える出来高で下部 Keltner Channel より下で引けたときに買い。平均を超える出来高で上部 Keltner Channel より上で引けたときに売り。
 
 テストでは年平均リターン約 58% を示しています。株式市場で最も優れたパフォーマンスを発揮します。
 
@@ -17,14 +17,15 @@ Keltner Channel の境界は潜在的な反転点を示し、出来高の増加�
 - **ロング/ショート**: 両方
 - **エグジット条件**:
   - 価格が EMA を突き抜ける
-- **ストップ**: `StopLoss` を使用した ATR ベース
+- **ストップ**: `StopLossAtr` を使用した ATR ベース
 - **デフォルト値**:
   - `EmaPeriod` = 20
   - `AtrPeriod` = 14
   - `Multiplier` = 2.0m
   - `VolumeAvgPeriod` = 20
-  - `StopLoss` = new Unit(2, UnitTypes.Absolute)
+  - `StopLossAtr` = 2
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    チャネルはEMAの上下にMultiplier倍のATRを加えたもので、AvgVolumeは直前VolumeAvgPeriod本の平均出来高です。ストップはエントリー時の終値からStopLossAtr倍のATRの位置にあり、足の終値で判定します。 保有ポジションと逆方向のエントリーシグナルはドテンになります。
 - **フィルター**:
   - カテゴリ: 平均回帰
   - 方向: 両方
