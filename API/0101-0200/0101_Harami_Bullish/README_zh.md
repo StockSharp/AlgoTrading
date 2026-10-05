@@ -16,7 +16,8 @@
 - **止损**：是，按百分比
 - **默认值**:
   - `CandleType` = 15分钟
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+    该策略只做多。止损设在形态最低点下方 StopLossPercent 处，K线收盘跌破该价位时平仓。
 - **过滤器**:
   - 类别：形态
   - 方向：双向

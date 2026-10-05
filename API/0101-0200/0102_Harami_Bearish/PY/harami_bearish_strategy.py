@@ -5,27 +5,24 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan
+from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 
 class harami_bearish_strategy(Strategy):
     """
-    Harami Bearish strategy.
-    Enters short on bearish harami (bullish candle followed by smaller bearish candle inside it).
-    Enters long on bullish harami (bearish candle followed by smaller bullish candle inside it).
-    Uses SMA for exit confirmation.
+    Bearish Harami strategy.
+    While flat it sells after a bullish candle followed by a candle whose smaller body lies within the first candle's range.
+    The stop lies StopLossPercent above the pattern's highest high, and a close beyond it closes the position.
     """
 
     def __init__(self):
         super(harami_bearish_strategy, self).__init__()
-        self._ma_length = self.Param("MaLength", 20).SetDisplay("MA Length", "Period of SMA for exit", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Type of candles to use", "General")
-        self._cooldown_bars = self.Param("CooldownBars", 500).SetDisplay("Cooldown Bars", "Bars to wait between trades", "General")
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0).SetNotNegative().SetDisplay("Stop Loss %", "Distance of the stop beyond the pattern, in percent", "Risk")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))).SetDisplay("Candle Type", "Type of candles to use", "General")
 
-        self._prev_candle = None
-        self._cooldown = 0
+        self._candles = []
+        self._stop_price = Decimal(0)
 
     @property
     def candle_type(self):
@@ -33,73 +30,49 @@ class harami_bearish_strategy(Strategy):
 
     def OnReseted(self):
         super(harami_bearish_strategy, self).OnReseted()
-        self._prev_candle = None
-        self._cooldown = 0
+        self._candles = []
+        self._stop_price = Decimal(0)
 
     def OnStarted2(self, time):
         super(harami_bearish_strategy, self).OnStarted2(time)
 
-        self._prev_candle = None
-        self._cooldown = 0
-
-        sma = SimpleMovingAverage()
-        sma.Length = self._ma_length.Value
+        self._candles = []
+        self._stop_price = Decimal(0)
 
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(sma, self._process_candle).Start()
+        subscription.Bind(self._process_candle).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, sma)
             self.DrawOwnTrades(area)
 
-    def _process_candle(self, candle, sma_val):
+    def _process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
 
-        if self._prev_candle is None:
-            self._prev_candle = candle
+        self._candles.append(candle)
+        if len(self._candles) > 2:
+            self._candles.pop(0)
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        if self._cooldown > 0:
-            self._cooldown -= 1
-            self._prev_candle = candle
+        if self.Position < 0:
+            if candle.ClosePrice >= self._stop_price:
+                self.BuyMarket(-self.Position)
             return
 
-        cd = self._cooldown_bars.Value
-        sv = float(sma_val)
+        if self.Position != 0 or len(self._candles) < 2:
+            return
 
-        # Bearish Harami: prev bullish, current bearish, current inside prev
-        bearish_harami = (
-            self._prev_candle.ClosePrice > self._prev_candle.OpenPrice and
-            candle.ClosePrice < candle.OpenPrice and
-            candle.HighPrice < self._prev_candle.HighPrice and
-            candle.LowPrice > self._prev_candle.LowPrice
-        )
+        c0, c1 = self._candles
 
-        # Bullish Harami: prev bearish, current bullish, current inside prev
-        bullish_harami = (
-            self._prev_candle.ClosePrice < self._prev_candle.OpenPrice and
-            candle.ClosePrice > candle.OpenPrice and
-            candle.HighPrice < self._prev_candle.HighPrice and
-            candle.LowPrice > self._prev_candle.LowPrice
-        )
+        if not (c0.ClosePrice > c0.OpenPrice and Math.Abs(c1.ClosePrice - c1.OpenPrice) < c0.ClosePrice - c0.OpenPrice and Math.Min(c1.OpenPrice, c1.ClosePrice) >= c0.LowPrice and Math.Max(c1.OpenPrice, c1.ClosePrice) <= c0.HighPrice):
+            return
 
-        if self.Position == 0 and bearish_harami:
-            self.SellMarket()
-            self._cooldown = cd
-        elif self.Position == 0 and bullish_harami:
-            self.BuyMarket()
-            self._cooldown = cd
-        elif self.Position < 0 and float(candle.ClosePrice) > sv:
-            self.BuyMarket()
-            self._cooldown = cd
-        elif self.Position > 0 and float(candle.ClosePrice) < sv:
-            self.SellMarket()
-            self._cooldown = cd
-
-        self._prev_candle = candle
+        self.SellMarket(self.Volume)
+        self._stop_price = max(c0.HighPrice, c1.HighPrice) * (Decimal(1) + Decimal(self._stop_loss_percent.Value) / Decimal(100))
 
     def CreateClone(self):
         return harami_bearish_strategy()

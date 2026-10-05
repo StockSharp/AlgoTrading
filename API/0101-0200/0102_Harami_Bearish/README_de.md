@@ -18,7 +18,8 @@ Ein prozentualer Stop über dem Muster-Hoch begrenzt das Risiko, und der Trade w
 - **Stops**: Ja, prozentbasiert
 - **Standardwerte**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+    Die Strategie verkauft nur. Der Stop liegt StopLossPercent über dem höchsten Hoch des Musters, und die Position schließt, wenn eine Kerze darüber schließt.
 - **Filter**:
   - Kategorie: Muster
   - Richtung: Beide

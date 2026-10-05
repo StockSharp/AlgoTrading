@@ -2918,6 +2918,24 @@ public abstract partial class StrategyTests
 	public Task S0098_PercentStopWorksBetweenFinishedBars()
 		=> CheckPercentStopBetweenBars(GapFill, TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
 
+	[TestMethod]
+	[TestCategory("Shard06")]
+	[DataRow(0.1, false)]
+	[DataRow(0.05, true)]
+	public Task S0101_LongOnlyBullishHaramiWithStopBelowThePattern(double stopPercent, bool secondary)
+		=> CheckOneSidedPatternWithStopBeyond("0101_Harami_Bullish", 2, true,
+			c => c[0].ClosePrice < c[0].OpenPrice && Math.Abs(c[1].ClosePrice - c[1].OpenPrice) < c[0].OpenPrice - c[0].ClosePrice
+				&& Math.Min(c[1].OpenPrice, c[1].ClosePrice) >= c[0].LowPrice && Math.Max(c[1].OpenPrice, c[1].ClosePrice) <= c[0].HighPrice, stopPercent, secondary);
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(0.1, false)]
+	[DataRow(0.05, true)]
+	public Task S0102_ShortOnlyBearishHaramiWithStopAboveThePattern(double stopPercent, bool secondary)
+		=> CheckOneSidedPatternWithStopBeyond("0102_Harami_Bearish", 2, false,
+			c => c[0].ClosePrice > c[0].OpenPrice && Math.Abs(c[1].ClosePrice - c[1].OpenPrice) < c[0].ClosePrice - c[0].OpenPrice
+				&& Math.Min(c[1].OpenPrice, c[1].ClosePrice) >= c[0].LowPrice && Math.Max(c[1].OpenPrice, c[1].ClosePrice) <= c[0].HighPrice, stopPercent, secondary);
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";
