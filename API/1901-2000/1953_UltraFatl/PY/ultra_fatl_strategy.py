@@ -18,7 +18,7 @@ class ultra_fatl_strategy(Strategy):
 
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
-        self._length = self.Param("Length", 8) \
+        self._length = self.Param("Length", 3) \
             .SetDisplay("Length", "Smoothing period", "UltraFATL")
         self._signal_bar = self.Param("SignalBar", 1) \
             .SetDisplay("Signal Bar", "Bar index for signal calculation", "UltraFATL")

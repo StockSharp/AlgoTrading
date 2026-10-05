@@ -19,12 +19,12 @@ class renko_live_charts_pimped_strategy(Strategy):
             .SetDisplay("Box Size", "Renko brick size", "Renko")
         self._calculate_best_box_size = self.Param("CalculateBestBoxSize", False) \
             .SetDisplay("Use ATR Box", "Calculate brick size from ATR", "Renko")
-        self._atr_period = self.Param("AtrPeriod", 14) \
+        self._atr_period = self.Param("AtrPeriod", 24) \
             .SetGreaterThanZero() \
             .SetDisplay("ATR Period", "ATR calculation period", "Renko")
         self._use_atr_ma = self.Param("UseAtrMa", False) \
             .SetDisplay("Smooth ATR", "Apply moving average on ATR", "Renko")
-        self._atr_ma_period = self.Param("AtrMaPeriod", 10) \
+        self._atr_ma_period = self.Param("AtrMaPeriod", 120) \
             .SetGreaterThanZero() \
             .SetDisplay("ATR MA Period", "Moving average length for ATR", "Renko")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \

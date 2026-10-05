@@ -34,10 +34,10 @@ public class F2aAoStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 
-		_fastPeriod = Param(nameof(FastPeriod), 5)
+		_fastPeriod = Param(nameof(FastPeriod), 13)
 			.SetDisplay("AO Fast", "Fast period for Awesome Oscillator", "Awesome Oscillator");
 
-		_slowPeriod = Param(nameof(SlowPeriod), 34)
+		_slowPeriod = Param(nameof(SlowPeriod), 144)
 			.SetDisplay("AO Slow", "Slow period for Awesome Oscillator", "Awesome Oscillator");
 
 		_filterLength = Param(nameof(FilterLength), 3)

@@ -18,7 +18,7 @@ class sar_trailing_system_strategy(Strategy):
             .SetDisplay("SAR Step", "Parabolic SAR acceleration step", "Indicators")
         self._acceleration_max = self.Param("AccelerationMax", 0.2) \
             .SetDisplay("SAR Max", "Parabolic SAR maximum acceleration", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
     @property

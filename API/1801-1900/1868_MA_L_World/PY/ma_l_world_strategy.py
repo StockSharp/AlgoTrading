@@ -24,7 +24,7 @@ class ma_l_world_strategy(Strategy):
             .SetDisplay("Stop Loss", "Fixed stop loss distance", "Risk")
         self._take_profit = self.Param("TakeProfit", 670.0) \
             .SetDisplay("Take Profit", "Fixed take profit distance", "Risk")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
         self._min_spread_percent = self.Param("MinSpreadPercent", 0.0008) \
             .SetDisplay("Minimum Spread %", "Minimum normalized spread between fast and slow MA", "Filters")

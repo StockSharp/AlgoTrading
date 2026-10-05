@@ -13,9 +13,9 @@ from StockSharp.Algo.Strategies import Strategy
 class channel_trailing_stop_strategy(Strategy):
     def __init__(self):
         super(channel_trailing_stop_strategy, self).__init__()
-        self._trail_period = self.Param("TrailPeriod", 10) \
+        self._trail_period = self.Param("TrailPeriod", 5) \
             .SetDisplay("Channel Period", "Lookback for channel calculation", "Parameters")
-        self._trail_stop = self.Param("TrailStop", 100.0) \
+        self._trail_stop = self.Param("TrailStop", 50.0) \
             .SetDisplay("Trail Stop", "Offset from channel boundaries", "Parameters")
         self._use_noose_trailing = self.Param("UseNooseTrailing", True) \
             .SetDisplay("Use Noose Trailing", "Mirror stop relative to take profit", "Parameters")
@@ -23,7 +23,7 @@ class channel_trailing_stop_strategy(Strategy):
             .SetDisplay("Use Channel Trailing", "Adjust stop to channel levels", "Parameters")
         self._delete_pending_orders = self.Param("DeletePendingOrders", True) \
             .SetDisplay("Delete Pending Orders", "Cancel pending orders after fill", "Parameters")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Time frame for candles", "General")
         self._cooldown_bars = self.Param("CooldownBars", 4) \
             .SetDisplay("Cooldown Bars", "Completed candles to wait after a position change", "Trading")

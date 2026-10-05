@@ -28,10 +28,10 @@ public class ColorSchaffJjrsxTrendCycleStrategy : Strategy
 
 	public ColorSchaffJjrsxTrendCycleStrategy()
 	{
-		_highLevel = Param(nameof(HighLevel), 75m)
+		_highLevel = Param(nameof(HighLevel), 60m)
 			.SetDisplay("High Level", "Upper threshold for signals", "Levels");
 
-		_lowLevel = Param(nameof(LowLevel), 25m)
+		_lowLevel = Param(nameof(LowLevel), -60m)
 			.SetDisplay("Low Level", "Lower threshold for signals", "Levels");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())

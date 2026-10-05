@@ -58,10 +58,10 @@ public class ExpMultitrendSignalKvnStrategy : Strategy
 
 	public ExpMultitrendSignalKvnStrategy()
 	{
-		_k = Param(nameof(K), 10m)
+		_k = Param(nameof(K), 48m)
 			.SetDisplay("K", "Percent of swing used for channel width", "Indicator");
 
-		_kPeriod = Param(nameof(KPeriod), 20)
+		_kPeriod = Param(nameof(KPeriod), 150)
 			.SetDisplay("K Period", "Base period for swing calculation", "Indicator")
 			.SetGreaterThanZero();
 

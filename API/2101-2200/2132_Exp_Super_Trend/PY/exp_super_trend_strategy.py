@@ -18,7 +18,7 @@ class exp_super_trend_strategy(Strategy):
             .SetDisplay("ATR Period", "ATR period for SuperTrend", "SuperTrend")
         self._multiplier = self.Param("Multiplier", 3.0) \
             .SetDisplay("Multiplier", "ATR multiplier for SuperTrend", "SuperTrend")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
             .SetDisplay("Candle Type", "Timeframe for indicator calculation", "General")
         self._super_trend = None
 

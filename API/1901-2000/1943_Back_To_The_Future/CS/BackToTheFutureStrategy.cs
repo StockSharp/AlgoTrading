@@ -88,22 +88,22 @@ public class BackToTheFutureStrategy : Strategy
 	/// </summary>
 	public BackToTheFutureStrategy()
 	{
-		_barSize = Param(nameof(BarSize), 1500m)
+		_barSize = Param(nameof(BarSize), 0.25m)
 			.SetGreaterThanZero()
 			.SetDisplay("Price Difference", "Threshold to trigger trades", "General")
 			;
 
-		_historyMinutes = Param(nameof(HistoryMinutes), 240)
+		_historyMinutes = Param(nameof(HistoryMinutes), 60)
 			.SetGreaterThanZero()
 			.SetDisplay("History Minutes", "Minutes back for price comparison", "General")
 			;
 
-		_takeProfit = Param(nameof(TakeProfit), 1500m)
+		_takeProfit = Param(nameof(TakeProfit), 10m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Distance from entry", "Risk")
 			;
 
-		_stopLoss = Param(nameof(StopLoss), 2000m)
+		_stopLoss = Param(nameof(StopLoss), 5000m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss", "Distance from entry", "Risk")
 			;

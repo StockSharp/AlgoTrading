@@ -14,7 +14,7 @@ from StockSharp.Algo.Strategies import Strategy
 class terminator_v2z0_strategy(Strategy):
     def __init__(self):
         super(terminator_v2z0_strategy, self).__init__()
-        self._fast_period = self.Param("FastPeriod", 12)             .SetDisplay("Fast Period", "Fast EMA period", "Indicators")
+        self._fast_period = self.Param("FastPeriod", 14)             .SetDisplay("Fast Period", "Fast EMA period", "Indicators")
         self._slow_period = self.Param("SlowPeriod", 26)             .SetDisplay("Slow Period", "Slow EMA period", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4)))             .SetDisplay("Candle Type", "Candle type", "General")
         self._prev_fast = 0.0

@@ -35,15 +35,15 @@ public class SuperTakeStrategy : Strategy
 
 	public SuperTakeStrategy()
 	{
-		_takeProfit = Param(nameof(TakeProfit), 3000m)
+		_takeProfit = Param(nameof(TakeProfit), 10m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Base take profit distance", "Risk");
 
-		_stopLoss = Param(nameof(StopLoss), 5000m)
+		_stopLoss = Param(nameof(StopLoss), 15m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss", "Stop loss distance", "Risk");
 
-		_martinFactor = Param(nameof(MartinFactor), 1.5m)
+		_martinFactor = Param(nameof(MartinFactor), 1.8m)
 			.SetGreaterThanZero()
 			.SetDisplay("Martingale Factor", "Multiplier after losing trade", "Risk");
 

@@ -16,7 +16,7 @@ class rock_trader_neuro_strategy(Strategy):
         super(rock_trader_neuro_strategy, self).__init__()
         self._sl = self.Param("StopLoss", 30.0).SetDisplay("Stop Loss", "SL in price units", "Risk")
         self._tp = self.Param("TakeProfit", 100.0).SetDisplay("Take Profit", "TP in price units", "Risk")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))).SetDisplay("Candle Type", "Candle type", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Candle type", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

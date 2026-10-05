@@ -81,7 +81,7 @@ public class NrtrTrailingStopStrategy : Strategy
 	/// </summary>
 	public NrtrTrailingStopStrategy()
 	{
-		_length = Param(nameof(Length), 20)
+		_length = Param(nameof(Length), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("NRTR Length", "Number of bars for average range", "Indicator")
 			

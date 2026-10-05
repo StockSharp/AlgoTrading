@@ -34,7 +34,7 @@ public class PsarTraderTicksStrategy : Strategy
 			.SetDisplay("SAR Step", "Acceleration factor step", "Indicators");
 		_maximum = Param(nameof(Maximum), 0.2m)
 			.SetDisplay("SAR Maximum", "Maximum acceleration factor", "Indicators");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 

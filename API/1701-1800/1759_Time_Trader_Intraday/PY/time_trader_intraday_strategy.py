@@ -18,7 +18,7 @@ class time_trader_intraday_strategy(Strategy):
             .SetDisplay("Fast Period", "Fast EMA period", "Indicators")
         self._slow_period = self.Param("SlowPeriod", 21) \
             .SetDisplay("Slow Period", "Slow EMA period", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
         self._prev_fast = 0.0
         self._prev_slow = 0.0

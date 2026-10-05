@@ -26,7 +26,7 @@ class breakeven_trailing_stop_strategy(Strategy):
             .SetDisplay("Fast EMA", "Fast EMA period", "Indicators")
         self._slow_ema_period = self.Param("SlowEmaPeriod", 21) \
             .SetDisplay("Slow EMA", "Slow EMA period", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
             .SetDisplay("Candle Type", "Timeframe for updates", "General")
         self._entry_price = 0.0
         self._stop_price = 0.0

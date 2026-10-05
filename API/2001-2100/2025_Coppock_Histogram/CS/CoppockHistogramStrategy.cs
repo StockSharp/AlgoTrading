@@ -97,7 +97,7 @@ public class CoppockHistogramStrategy : Strategy
 			;
 
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "Parameters");
 
 		_signalCooldownBars = Param(nameof(SignalCooldownBars), 2)

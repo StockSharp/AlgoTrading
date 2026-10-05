@@ -15,8 +15,8 @@ class times_direction_strategy(Strategy):
         super(times_direction_strategy, self).__init__()
         self._open_hour = self.Param("OpenHour", 2)
         self._close_hour = self.Param("CloseHour", 14)
-        self._stop_loss = self.Param("StopLoss", 500.0)
-        self._take_profit = self.Param("TakeProfit", 1000.0)
+        self._stop_loss = self.Param("StopLoss", 1000.0)
+        self._take_profit = self.Param("TakeProfit", 2000.0)
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5)))
         self._entry_price = 0.0
 

@@ -16,7 +16,7 @@ class exp_x2_ma_strategy(Strategy):
         super(exp_x2_ma_strategy, self).__init__()
         self._first_ma_length = self.Param("FirstMaLength", 12) \
             .SetDisplay("First MA Length", "Period for first smoothing", "Indicators")
-        self._second_ma_length = self.Param("SecondMaLength", 10) \
+        self._second_ma_length = self.Param("SecondMaLength", 5) \
             .SetDisplay("Second MA Length", "Period for second smoothing", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")

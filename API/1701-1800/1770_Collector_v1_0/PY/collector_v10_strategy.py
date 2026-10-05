@@ -16,7 +16,7 @@ class collector_v10_strategy(Strategy):
         super(collector_v10_strategy, self).__init__()
         self._lookback = self.Param("Lookback", 20) \
             .SetDisplay("Lookback", "Channel lookback period", "General")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
             .SetDisplay("Candle Type", "Candle type", "General")
         self._prev_high = 0.0
         self._prev_low = 0.0

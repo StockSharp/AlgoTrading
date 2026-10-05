@@ -35,7 +35,7 @@ public class MaChannelStrategy : Strategy
 			.SetDisplay("Length", "Moving average period", "Parameters")
 			.SetOptimize(5, 20, 1);
 
-		_offset = Param(nameof(Offset), 100m)
+		_offset = Param(nameof(Offset), 10m)
 			.SetDisplay("Offset", "Price offset from the average", "Parameters")
 			.SetOptimize(50m, 500m, 50m);
 

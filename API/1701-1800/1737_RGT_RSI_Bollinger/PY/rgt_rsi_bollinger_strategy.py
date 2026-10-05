@@ -18,9 +18,9 @@ class rgt_rsi_bollinger_strategy(Strategy):
         super(rgt_rsi_bollinger_strategy, self).__init__()
         self._rsi_period = self.Param("RsiPeriod", 8) \
             .SetDisplay("RSI Period", "RSI calculation period", "Indicator")
-        self._rsi_high = self.Param("RsiHigh", 55) \
+        self._rsi_high = self.Param("RsiHigh", 90) \
             .SetDisplay("RSI High", "Overbought RSI level", "Indicator")
-        self._rsi_low = self.Param("RsiLow", 45) \
+        self._rsi_low = self.Param("RsiLow", 10) \
             .SetDisplay("RSI Low", "Oversold RSI level", "Indicator")
         self._stop_loss = self.Param("StopLoss", 500.0) \
             .SetDisplay("Stop Loss", "Stop loss in price units", "Risk")
@@ -28,7 +28,7 @@ class rgt_rsi_bollinger_strategy(Strategy):
             .SetDisplay("Trailing Stop", "Trailing stop distance", "Risk")
         self._min_profit = self.Param("MinProfit", 200.0) \
             .SetDisplay("Min Profit", "Minimum profit before trailing", "Risk")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
         self._entry_price = 0.0
         self._stop_price = 0.0

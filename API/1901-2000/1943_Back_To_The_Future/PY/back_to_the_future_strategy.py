@@ -16,13 +16,13 @@ class back_to_the_future_strategy(Strategy):
     def __init__(self):
         super(back_to_the_future_strategy, self).__init__()
 
-        self._bar_size = self.Param("BarSize", 1500.0) \
+        self._bar_size = self.Param("BarSize", 0.25) \
             .SetDisplay("Price Difference", "Threshold to trigger trades", "General")
-        self._history_minutes = self.Param("HistoryMinutes", 240) \
+        self._history_minutes = self.Param("HistoryMinutes", 60) \
             .SetDisplay("History Minutes", "Minutes back for price comparison", "General")
-        self._take_profit = self.Param("TakeProfit", 1500.0) \
+        self._take_profit = self.Param("TakeProfit", 10.0) \
             .SetDisplay("Take Profit", "Distance from entry", "Risk")
-        self._stop_loss = self.Param("StopLoss", 2000.0) \
+        self._stop_loss = self.Param("StopLoss", 5000.0) \
             .SetDisplay("Stop Loss", "Distance from entry", "Risk")
         self._cooldown_bars = self.Param("CooldownBars", 2) \
             .SetDisplay("Cooldown Bars", "Bars to wait after a completed trade", "Risk")

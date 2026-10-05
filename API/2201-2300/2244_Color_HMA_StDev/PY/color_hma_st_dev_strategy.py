@@ -18,7 +18,7 @@ class color_hma_st_dev_strategy(Strategy):
             .SetDisplay("HMA Period", "Hull Moving Average period", "Indicators")
         self._std_period = self.Param("StdPeriod", 9) \
             .SetDisplay("StdDev Period", "Standard deviation period", "Indicators")
-        self._k1 = self.Param("K1", 0.5) \
+        self._k1 = self.Param("K1", 1.5) \
             .SetDisplay("Entry Multiplier", "Deviation multiplier for entry", "Parameters")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles to subscribe", "Common")

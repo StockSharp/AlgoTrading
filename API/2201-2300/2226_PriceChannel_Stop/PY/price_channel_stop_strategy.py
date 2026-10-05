@@ -18,7 +18,7 @@ class price_channel_stop_strategy(Strategy):
             .SetDisplay("Channel Period", "Period for Price Channel calculation", "Indicators")
         self._risk = self.Param("Risk", 0.10) \
             .SetDisplay("Risk", "Risk factor for stop levels", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
         self._buy_pos_open = self.Param("BuyPosOpen", True) \
             .SetDisplay("Buy Position Open", "Allow opening long positions", "Trading")

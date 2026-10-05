@@ -16,13 +16,13 @@ class forex_fraus4_for_m1s_strategy(Strategy):
     def __init__(self):
         super(forex_fraus4_for_m1s_strategy, self).__init__()
 
-        self._wpr_period = self.Param("WprPeriod", 100) \
+        self._wpr_period = self.Param("WprPeriod", 360) \
             .SetDisplay("Williams %R Period", "Period for Williams %R", "Indicators")
-        self._buy_threshold = self.Param("BuyThreshold", -90.0) \
+        self._buy_threshold = self.Param("BuyThreshold", -99.9) \
             .SetDisplay("Buy Threshold", "Level crossing up triggers buy", "Trading")
-        self._sell_threshold = self.Param("SellThreshold", -10.0) \
+        self._sell_threshold = self.Param("SellThreshold", -0.1) \
             .SetDisplay("Sell Threshold", "Level crossing down triggers sell", "Trading")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
 
         self._was_oversold = False

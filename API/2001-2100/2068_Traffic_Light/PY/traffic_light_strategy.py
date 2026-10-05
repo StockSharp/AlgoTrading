@@ -16,13 +16,13 @@ class traffic_light_strategy(Strategy):
     def __init__(self):
         super(traffic_light_strategy, self).__init__()
 
-        self._red_ma_period = self.Param("RedMaPeriod", 50) \
+        self._red_ma_period = self.Param("RedMaPeriod", 120) \
             .SetDisplay("Red MA", "EMA period representing the slow trend", "Parameters")
-        self._yellow_ma_period = self.Param("YellowMaPeriod", 25) \
+        self._yellow_ma_period = self.Param("YellowMaPeriod", 55) \
             .SetDisplay("Yellow MA", "EMA period representing the medium trend", "Parameters")
         self._green_ma_period = self.Param("GreenMaPeriod", 5) \
             .SetDisplay("Green MA", "EMA period representing the fast trend", "Parameters")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Timeframe for calculations", "General")
 
     @property

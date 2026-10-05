@@ -32,11 +32,11 @@ public class UniversalTrailingStopHedgeStrategy : Strategy
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetDisplay("ATR Period", "ATR calculation period", "Indicators");
 
-		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
+		_atrMultiplier = Param(nameof(AtrMultiplier), 1m)
 			.SetDisplay("ATR Multiplier", "ATR multiplier for stop distance", "Indicators")
 			.SetGreaterThanZero();
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for calculations", "General");
 	}
 

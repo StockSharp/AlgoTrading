@@ -24,7 +24,7 @@ class afl_winner_sign_strategy(Strategy):
             .SetDisplay("%K Period", "Smoothing period for %K line", "AFL WinnerSign")
         self._d_period = self.Param("DPeriod", 5) \
             .SetDisplay("%D Period", "Smoothing period for %D line", "AFL WinnerSign")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._fast = None

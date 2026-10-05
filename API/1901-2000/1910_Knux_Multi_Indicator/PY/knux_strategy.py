@@ -23,9 +23,9 @@ class knux_strategy(Strategy):
             .SetDisplay("Fast MA Length", "Period of fast MA", "General")
         self._slow_ma_length = self.Param("SlowMaLength", 20) \
             .SetDisplay("Slow MA Length", "Period of slow MA", "General")
-        self._cci_period = self.Param("CciPeriod", 20) \
+        self._cci_period = self.Param("CciPeriod", 40) \
             .SetDisplay("CCI Period", "CCI calculation period", "General")
-        self._wpr_period = self.Param("WprPeriod", 14) \
+        self._wpr_period = self.Param("WprPeriod", 60) \
             .SetDisplay("WPR Period", "Williams %R period", "General")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles", "General")

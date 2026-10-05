@@ -70,7 +70,7 @@ public class RockTraderNeuroStrategy : Strategy
 		_lot = Param(nameof(Lot), 1m)
 			.SetDisplay("Lot", "Lots to trade", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 

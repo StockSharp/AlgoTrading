@@ -18,7 +18,7 @@ class psar_trader_strategy(Strategy):
             .SetDisplay("SAR Step", "Acceleration factor for Parabolic SAR", "Parabolic SAR")
         self._sar_max_step = self.Param("SarMaxStep", 0.2) \
             .SetDisplay("SAR Max Step", "Maximum acceleration factor", "Parabolic SAR")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
         self._prev_price_above_sar = False
         self._has_prev = False

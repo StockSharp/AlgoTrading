@@ -23,7 +23,7 @@ class kolier_super_trend_strategy(Strategy):
             .SetDisplay("ATR Period", "ATR period for SuperTrend", "Indicators")
         self._multiplier = self.Param("Multiplier", 3.0) \
             .SetDisplay("ATR Multiplier", "ATR multiplier for SuperTrend", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
 
         self._atr = None

@@ -35,11 +35,11 @@ public class HeikenAshiSimplifiedEaStrategy : Strategy
 	/// </summary>
 	public HeikenAshiSimplifiedEaStrategy()
 	{
-		_maxPositions = Param(nameof(MaxPositions), 1)
+		_maxPositions = Param(nameof(MaxPositions), 3)
 			.SetDisplay("Max Positions", "Maximum number of positions in direction", "General")
 			.SetOptimize(1, 5, 1);
 
-		_distancePoints = Param(nameof(DistancePoints), 400)
+		_distancePoints = Param(nameof(DistancePoints), 300)
 			.SetDisplay("Distance Points", "Minimum distance in price steps from last HA open", "General")
 			.SetOptimize(50, 500, 50);
 

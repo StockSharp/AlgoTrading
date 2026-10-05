@@ -32,7 +32,7 @@ public class ETurboFxStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "EMA trend filter period", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 

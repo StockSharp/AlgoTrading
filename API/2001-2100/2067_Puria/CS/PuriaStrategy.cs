@@ -42,11 +42,11 @@ public class PuriaStrategy : Strategy
 
 	public PuriaStrategy()
 	{
-		_ma1Period = Param(nameof(Ma1Period), 30)
+		_ma1Period = Param(nameof(Ma1Period), 75)
 			.SetGreaterThanZero()
 			.SetDisplay("MA1 Period", "Slow EMA period", "Moving Averages");
 
-		_ma2Period = Param(nameof(Ma2Period), 40)
+		_ma2Period = Param(nameof(Ma2Period), 85)
 			.SetGreaterThanZero()
 			.SetDisplay("MA2 Period", "Second slow EMA period", "Moving Averages");
 

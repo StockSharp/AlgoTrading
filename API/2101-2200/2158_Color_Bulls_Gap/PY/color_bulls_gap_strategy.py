@@ -19,7 +19,7 @@ class color_bulls_gap_strategy(Strategy):
             .SetDisplay("First Length", "Length for initial smoothing", "Indicator")
         self._length2 = self.Param("Length2", 5) \
             .SetDisplay("Second Length", "Length for secondary smoothing", "Indicator")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(8))) \
             .SetDisplay("Candle Type", "Timeframe for indicator", "General")
         self._sma_close = None
         self._sma_open = None

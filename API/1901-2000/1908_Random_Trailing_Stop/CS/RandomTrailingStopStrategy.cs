@@ -36,11 +36,11 @@ public class RandomTrailingStopStrategy : Strategy
 
 	public RandomTrailingStopStrategy()
 	{
-		_minStopLevel = Param(nameof(MinStopLevel), 0.5m)
+		_minStopLevel = Param(nameof(MinStopLevel), 0.00036m)
 			.SetGreaterThanZero()
 			.SetDisplay("Min Stop %", "Minimal stop distance percent", "Trading");
 
-		_trailingStep = Param(nameof(TrailingStep), 0.1m)
+		_trailingStep = Param(nameof(TrailingStep), 1e-05m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trailing Step %", "Trailing stop adjustment step percent", "Trading");
 
@@ -48,7 +48,7 @@ public class RandomTrailingStopStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Sleep Bars", "Pause before next trade in bars", "General");
 
-		_smaPeriod = Param(nameof(SmaPeriod), 50)
+		_smaPeriod = Param(nameof(SmaPeriod), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("SMA Period", "Simple moving average period", "Indicators");
 

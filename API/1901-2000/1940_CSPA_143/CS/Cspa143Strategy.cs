@@ -69,7 +69,7 @@ public class Cspa143Strategy : Strategy
 		_strengthPeriod = Param(nameof(StrengthPeriod), 14)
 			.SetDisplay("Strength Period", "RSI period", "Parameters");
 
-		_threshold = Param(nameof(Threshold), 18m)
+		_threshold = Param(nameof(Threshold), 10m)
 			.SetDisplay("Threshold", "RSI distance from 50", "Parameters")
 			.SetGreaterThanZero();
 

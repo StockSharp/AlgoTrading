@@ -40,10 +40,10 @@ public class RgtRsiBollingerStrategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 8)
 			.SetDisplay("RSI Period", "RSI calculation period", "Indicator");
 
-		_rsiHigh = Param(nameof(RsiHigh), 55)
+		_rsiHigh = Param(nameof(RsiHigh), 90)
 			.SetDisplay("RSI High", "Overbought RSI level", "Indicator");
 
-		_rsiLow = Param(nameof(RsiLow), 45)
+		_rsiLow = Param(nameof(RsiLow), 10)
 			.SetDisplay("RSI Low", "Oversold RSI level", "Indicator");
 
 		_stopLoss = Param(nameof(StopLoss), 500m)
@@ -58,7 +58,7 @@ public class RgtRsiBollingerStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Min Profit", "Minimum profit before trailing", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 

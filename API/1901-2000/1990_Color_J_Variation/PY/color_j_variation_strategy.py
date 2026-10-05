@@ -22,7 +22,7 @@ class color_j_variation_strategy(Strategy):
             .SetDisplay("JMA Period", "JMA averaging period", "Indicator")
         self._jma_phase = self.Param("JmaPhase", 100) \
             .SetDisplay("JMA Phase", "Phase for JMA", "Indicator")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
             .SetDisplay("Candle Type", "Timeframe for analysis", "General")
 
         self._prev_jma = 0.0

@@ -16,7 +16,7 @@ class liquidex_keltner_strategy(Strategy):
         super(liquidex_keltner_strategy, self).__init__()
         self._ma_period = self.Param("MaPeriod", 7) \
             .SetDisplay("MA Period", "Moving average period", "General")
-        self._range_filter = self.Param("RangeFilter", 0.0) \
+        self._range_filter = self.Param("RangeFilter", 10.0) \
             .SetDisplay("Range Filter", "Minimum candle body", "General")
         self._stop_loss_param = self.Param("StopLoss", 1.0) \
             .SetDisplay("Stop Loss %", "Stop loss percent", "Risk Management")
@@ -38,7 +38,7 @@ class liquidex_keltner_strategy(Strategy):
             .SetDisplay("Entry To", "End hour", "Time")
         self._friday_end_hour = self.Param("FridayEndHour", 22) \
             .SetDisplay("Friday End", "Friday closing hour", "Time")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
 
         self._prev_price = 0.0

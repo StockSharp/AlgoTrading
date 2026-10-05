@@ -31,17 +31,17 @@ public class ForexFraus4ForM1sStrategy : Strategy
 
 	public ForexFraus4ForM1sStrategy()
 	{
-		_wprPeriod = Param(nameof(WprPeriod), 100)
+		_wprPeriod = Param(nameof(WprPeriod), 360)
 			.SetGreaterThanZero()
 			.SetDisplay("Williams %R Period", "Period for Williams %R", "Indicators");
 
-		_buyThreshold = Param(nameof(BuyThreshold), -90m)
+		_buyThreshold = Param(nameof(BuyThreshold), -99.9m)
 			.SetDisplay("Buy Threshold", "Level crossing up triggers buy", "Trading");
 
-		_sellThreshold = Param(nameof(SellThreshold), -10m)
+		_sellThreshold = Param(nameof(SellThreshold), -0.1m)
 			.SetDisplay("Sell Threshold", "Level crossing down triggers sell", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 

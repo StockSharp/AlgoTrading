@@ -97,11 +97,11 @@ public class ChannelTrailingStopStrategy : Strategy
 	/// </summary>
 	public ChannelTrailingStopStrategy()
 	{
-		_trailPeriod = Param(nameof(TrailPeriod), 10)
+		_trailPeriod = Param(nameof(TrailPeriod), 5)
 			.SetDisplay("Channel Period", "Lookback for channel calculation", "Parameters")
 			.SetOptimize(5, 50, 5);
 
-		_trailStop = Param(nameof(TrailStop), 100m)
+		_trailStop = Param(nameof(TrailStop), 50m)
 			.SetDisplay("Trail Stop", "Offset from channel boundaries", "Parameters");
 
 		_useNooseTrailing = Param(nameof(UseNooseTrailing), true)
@@ -113,7 +113,7 @@ public class ChannelTrailingStopStrategy : Strategy
 		_deletePendingOrders = Param(nameof(DeletePendingOrders), true)
 			.SetDisplay("Delete Pending Orders", "Cancel pending orders after fill", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for candles", "General");
 
 		_cooldownBars = Param(nameof(CooldownBars), 4)

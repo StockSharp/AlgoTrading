@@ -27,7 +27,7 @@ class parallel_strategies_strategy(Strategy):
             .SetDisplay("MACD Slow", "Slow EMA period", "Indicators")
         self._macd_signal = self.Param("MacdSignal", 9) \
             .SetDisplay("MACD Signal", "Signal line period", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Time frame for candles", "General")
 
         self._prev_upper = None

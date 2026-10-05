@@ -114,7 +114,7 @@ public class AnchoredMomentumStrategy : Strategy
 		_downLevel = Param(nameof(DownLevel), -0.025m)
 			.SetDisplay("Lower Level", "Lower threshold for momentum", "Indicator");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles used by the strategy", "General");
 
 		_buyEnabled = Param(nameof(BuyEnabled), true)

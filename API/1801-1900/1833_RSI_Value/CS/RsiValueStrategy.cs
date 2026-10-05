@@ -33,7 +33,7 @@ public class RsiValueStrategy : Strategy
 			.SetDisplay("RSI Period", "RSI period", "Indicators");
 		_rsiLevel = Param(nameof(RsiLevel), 50m)
 			.SetDisplay("RSI Level", "RSI crossing level", "Indicators");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 

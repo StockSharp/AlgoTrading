@@ -14,9 +14,9 @@ from StockSharp.Algo.Strategies import Strategy
 class color_schaff_jjrsx_trend_cycle_strategy(Strategy):
     def __init__(self):
         super(color_schaff_jjrsx_trend_cycle_strategy, self).__init__()
-        self._high_level = self.Param("HighLevel", 75.0) \
+        self._high_level = self.Param("HighLevel", 60.0) \
             .SetDisplay("High Level", "Upper threshold for signals", "Levels")
-        self._low_level = self.Param("LowLevel", 25.0) \
+        self._low_level = self.Param("LowLevel", -60.0) \
             .SetDisplay("Low Level", "Lower threshold for signals", "Levels")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Candle timeframe", "General")

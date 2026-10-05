@@ -102,11 +102,11 @@ public class SmaTrendFilterStrategy : Strategy
 	{
 		_cooldownBars = Param(nameof(CooldownBars), 200)
 			.SetDisplay("Cooldown Bars", "Minimum number of primary timeframe bars between orders", "Trading");
-		_candleType1 = Param(nameof(CandleType1), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType1 = Param(nameof(CandleType1), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type 1", "Primary timeframe", "General");
-		_candleType2 = Param(nameof(CandleType2), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType2 = Param(nameof(CandleType2), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type 2", "Secondary timeframe", "General");
-		_candleType3 = Param(nameof(CandleType3), TimeSpan.FromHours(1).TimeFrame())
+		_candleType3 = Param(nameof(CandleType3), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type 3", "Tertiary timeframe", "General");
 	}
 

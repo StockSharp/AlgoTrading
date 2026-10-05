@@ -13,7 +13,7 @@ class double_trading_strategy(Strategy):
     # TradeDirections: 0=Auto, 1=Buy, 2=Sell
     def __init__(self):
         super(double_trading_strategy, self).__init__()
-        self._profit_target = self.Param("ProfitTarget", 500.0) \
+        self._profit_target = self.Param("ProfitTarget", 20.0) \
             .SetDisplay("Profit Target", "Exit profit per round trip", "Risk")
         self._direction1 = self.Param("Direction1", 0) \
             .SetDisplay("Direction1", "Initial side", "Parameters")

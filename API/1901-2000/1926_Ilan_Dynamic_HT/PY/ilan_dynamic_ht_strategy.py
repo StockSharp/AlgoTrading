@@ -18,7 +18,7 @@ class ilan_dynamic_ht_strategy(Strategy):
 
         self._lot_exponent = self.Param("LotExponent", 1.4) \
             .SetDisplay("Lot Exponent", "Multiplier for next position volume", "General")
-        self._max_trades = self.Param("MaxTrades", 4) \
+        self._max_trades = self.Param("MaxTrades", 10) \
             .SetDisplay("Max Trades", "Maximum simultaneous trades", "General")
         self._dynamic_pips = self.Param("DynamicPips", True) \
             .SetDisplay("Dynamic Range", "Use dynamic price range", "General")
@@ -32,15 +32,15 @@ class ilan_dynamic_ht_strategy(Strategy):
             .SetDisplay("Base Volume", "Initial trade volume", "Trading")
         self._rsi_period = self.Param("RsiPeriod", 14) \
             .SetDisplay("RSI Period", "Period for RSI indicator", "Signals")
-        self._rsi_min = self.Param("RsiMinimum", 20.0) \
+        self._rsi_min = self.Param("RsiMinimum", 30.0) \
             .SetDisplay("RSI Minimum", "Lower RSI bound", "Signals")
-        self._rsi_max = self.Param("RsiMaximum", 80.0) \
+        self._rsi_max = self.Param("RsiMaximum", 70.0) \
             .SetDisplay("RSI Maximum", "Upper RSI bound", "Signals")
         self._take_profit = self.Param("TakeProfit", 100.0) \
             .SetDisplay("Take Profit", "Take profit in points", "Risk")
         self._stop_loss = self.Param("StopLoss", 500.0) \
             .SetDisplay("Stop Loss", "Stop loss in points", "Risk")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
             .SetDisplay("Candle Type", "Timeframe for processing", "General")
 
         self._avg_price = 0.0

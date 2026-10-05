@@ -16,9 +16,9 @@ class f2a_ao_strategy(Strategy):
         super(f2a_ao_strategy, self).__init__()
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Candle timeframe", "General")
-        self._fast_period = self.Param("FastPeriod", 5) \
+        self._fast_period = self.Param("FastPeriod", 13) \
             .SetDisplay("AO Fast", "Fast period for Awesome Oscillator", "Awesome Oscillator")
-        self._slow_period = self.Param("SlowPeriod", 34) \
+        self._slow_period = self.Param("SlowPeriod", 144) \
             .SetDisplay("AO Slow", "Slow period for Awesome Oscillator", "Awesome Oscillator")
         self._filter_length = self.Param("FilterLength", 3) \
             .SetDisplay("Filter", "SMA length for AO filter", "Awesome Oscillator")

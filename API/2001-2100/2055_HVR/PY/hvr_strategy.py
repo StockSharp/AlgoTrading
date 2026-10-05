@@ -23,7 +23,7 @@ class hvr_strategy(Strategy):
             .SetDisplay("Long HV Period", "Bars for long-term volatility", "Parameters")
         self._ratio_threshold = self.Param("RatioThreshold", 1.0) \
             .SetDisplay("Ratio Threshold", "HVR level for trade direction", "Trading")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
             .SetDisplay("Candle Type", "Timeframe used for calculation", "General")
 
         self._short_sd = None

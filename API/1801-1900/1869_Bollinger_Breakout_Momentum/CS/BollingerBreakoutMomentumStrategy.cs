@@ -44,10 +44,10 @@ public class BollingerBreakoutMomentumStrategy : Strategy
 		_bollingerDeviation = Param(nameof(BollingerDeviation), 2m)
 			.SetDisplay("BB Deviation", "Bollinger Bands deviation", "Parameters");
 
-		_takeProfitPips = Param(nameof(TakeProfitPips), 200)
+		_takeProfitPips = Param(nameof(TakeProfitPips), 100)
 			.SetDisplay("Take Profit (pips)", "Distance for profit target", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of working candles", "General");
 
 		_breakoutPercent = Param(nameof(BreakoutPercent), 0.002m)

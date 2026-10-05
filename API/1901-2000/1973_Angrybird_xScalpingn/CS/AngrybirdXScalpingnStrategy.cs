@@ -57,7 +57,7 @@ public class AngrybirdXScalpingnStrategy : Strategy
 		.SetDisplay("Lot Exponent", "Volume multiplier for additional trades", "General")
 		.SetGreaterThanZero();
 
-		_dynamicPips = Param(nameof(DynamicPips), false)
+		_dynamicPips = Param(nameof(DynamicPips), true)
 		.SetDisplay("Dynamic Pips", "Use dynamic grid step", "Parameters");
 
 		_defaultPips = Param(nameof(DefaultPips), 12)
@@ -92,11 +92,11 @@ public class AngrybirdXScalpingnStrategy : Strategy
 		.SetDisplay("RSI Maximum", "Maximum RSI to allow long", "Parameters")
 		.SetNotNegative();
 
-		_maxTrades = Param(nameof(MaxTrades), 2)
+		_maxTrades = Param(nameof(MaxTrades), 10)
 		.SetDisplay("Max Trades", "Maximum number of open trades", "Risk")
 		.SetGreaterThanZero();
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "Parameters");
 	}
 

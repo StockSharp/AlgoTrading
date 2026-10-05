@@ -27,10 +27,10 @@ public class RsiBollingerBandsStrategy : Strategy
 
 	public RsiBollingerBandsStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe", "General");
 
-		_rsiPeriod = Param(nameof(RsiPeriod), 14)
+		_rsiPeriod = Param(nameof(RsiPeriod), 20)
 			.SetDisplay("RSI Period", "RSI calculation length", "Indicators");
 
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
@@ -39,10 +39,10 @@ public class RsiBollingerBandsStrategy : Strategy
 		_bollingerWidth = Param(nameof(BollingerWidth), 2m)
 			.SetDisplay("Bollinger Width", "Band width multiplier", "Indicators");
 
-		_rsiOversold = Param(nameof(RsiOversold), 35m)
+		_rsiOversold = Param(nameof(RsiOversold), 30m)
 			.SetDisplay("RSI Oversold", "Buy threshold", "Indicators");
 
-		_rsiOverbought = Param(nameof(RsiOverbought), 65m)
+		_rsiOverbought = Param(nameof(RsiOverbought), 70m)
 			.SetDisplay("RSI Overbought", "Sell threshold", "Indicators");
 	}
 

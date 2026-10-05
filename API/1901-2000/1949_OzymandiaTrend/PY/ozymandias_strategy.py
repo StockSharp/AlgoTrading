@@ -16,7 +16,7 @@ class ozymandias_strategy(Strategy):
     def __init__(self):
         super(ozymandias_strategy, self).__init__()
 
-        self._length = self.Param("Length", 8) \
+        self._length = self.Param("Length", 2) \
             .SetDisplay("Length", "Lookback period", "Indicator")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Timeframe for candles", "General")

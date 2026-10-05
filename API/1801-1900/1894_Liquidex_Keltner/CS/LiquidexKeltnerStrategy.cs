@@ -111,7 +111,7 @@ public class LiquidexKeltnerStrategy : Strategy
 			.SetRange(1, 100)
 			.SetDisplay("MA Period", "Moving average period", "General");
 
-		_rangeFilter = Param(nameof(RangeFilter), 0m)
+		_rangeFilter = Param(nameof(RangeFilter), 10m)
 			.SetRange(0m, 100m)
 			.SetDisplay("Range Filter", "Minimum candle body", "General");
 
@@ -154,7 +154,7 @@ public class LiquidexKeltnerStrategy : Strategy
 			.SetRange(0, 24)
 			.SetDisplay("Friday End", "Friday closing hour", "Time");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 

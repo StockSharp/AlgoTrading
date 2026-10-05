@@ -102,7 +102,7 @@ public class MaLWorldStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Fixed take profit distance", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
 		_minSpreadPercent = Param(nameof(MinSpreadPercent), 0.0008m)

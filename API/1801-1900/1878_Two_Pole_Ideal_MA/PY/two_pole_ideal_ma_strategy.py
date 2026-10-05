@@ -18,7 +18,7 @@ class two_pole_ideal_ma_strategy(Strategy):
             .SetDisplay("Fast Period", "Fast MA length", "Indicators")
         self._slow_period = self.Param("SlowPeriod", 30) \
             .SetDisplay("Slow Period", "Slow MA length", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Candle timeframe", "General")
         self._min_spread_percent = self.Param("MinSpreadPercent", 0.001) \
             .SetDisplay("Minimum Spread %", "Minimum normalized spread between fast and slow averages", "Filters")

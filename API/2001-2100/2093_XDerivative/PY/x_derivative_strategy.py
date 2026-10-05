@@ -14,7 +14,7 @@ from indicator_extensions import *
 class x_derivative_strategy(Strategy):
     def __init__(self):
         super(x_derivative_strategy, self).__init__()
-        self._roc_period = self.Param("RocPeriod", 14) \
+        self._roc_period = self.Param("RocPeriod", 34) \
             .SetDisplay("ROC Period", "Period for rate of change", "Parameters")
         self._ma_length = self.Param("MaLength", 7) \
             .SetDisplay("JMA Length", "Period for Jurik MA smoothing", "Parameters")

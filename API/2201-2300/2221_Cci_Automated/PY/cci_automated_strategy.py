@@ -24,7 +24,7 @@ class cci_automated_strategy(Strategy):
             .SetDisplay("Take Profit", "Take profit in price units", "Risk")
         self._trailing_stop = self.Param("TrailingStop", 50.0) \
             .SetDisplay("Trailing Stop", "Trailing stop in price units", "Risk")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
         self._prev_cci = None
         self._trail_price = None

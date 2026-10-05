@@ -18,7 +18,7 @@ class news_trading_ea_strategy(Strategy):
             .SetDisplay("StdDev Period", "Volatility period", "Indicators")
         self._ema_period = self.Param("EmaPeriod", 20) \
             .SetDisplay("EMA Period", "EMA period", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
             .SetDisplay("Candle Type", "Candle type", "General")
         self._prev_fast = 0.0
         self._prev_slow = 0.0

@@ -51,7 +51,7 @@ public class CloseByEquityPercentStrategy : Strategy
 			
 			.SetOptimize(1.1m, 2m, 0.1m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for periodic checks", "General");
 	}
 

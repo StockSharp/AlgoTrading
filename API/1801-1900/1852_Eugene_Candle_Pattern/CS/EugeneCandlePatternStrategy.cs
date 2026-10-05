@@ -35,10 +35,10 @@ public class EugeneCandlePatternStrategy : Strategy
 
 	public EugeneCandlePatternStrategy()
 	{
-		_sl = Param(nameof(StopLossPoints), 500).SetDisplay("Stop Loss (points)", "Stop loss in price steps, 0 - disabled", "Risk");
-		_tp = Param(nameof(TakeProfitPoints), 800).SetDisplay("Take Profit (points)", "Take profit in price steps, 0 - disabled", "Risk");
+		_sl = Param(nameof(StopLossPoints), 0).SetDisplay("Stop Loss (points)", "Stop loss in price steps, 0 - disabled", "Risk");
+		_tp = Param(nameof(TakeProfitPoints), 0).SetDisplay("Take Profit (points)", "Take profit in price steps, 0 - disabled", "Risk");
 		_inv = Param(nameof(InvertSignals), false).SetDisplay("Invert Signals", "Swap buy and sell signals", "General");
-		_cType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame()).SetDisplay("Candle Type", "Type of candles", "General");
+		_cType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type", "Type of candles", "General");
 		_cooldownBars = Param(nameof(CooldownBars), 4).SetDisplay("Cooldown Bars", "Completed candles to wait after a position change", "Trading");
 		_minBodyPercent = Param(nameof(MinBodyPercent), 0.0015m).SetDisplay("Minimum Body %", "Minimum candle body size relative to close price", "Filters");
 	}

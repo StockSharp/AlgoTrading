@@ -14,16 +14,16 @@ from StockSharp.Algo.Strategies import Strategy
 class random_trailing_stop_strategy(Strategy):
     def __init__(self):
         super(random_trailing_stop_strategy, self).__init__()
-        self._min_stop_level = self.Param("MinStopLevel", 0.5) \
+        self._min_stop_level = self.Param("MinStopLevel", 0.00036) \
             .SetGreaterThanZero() \
             .SetDisplay("Min Stop %", "Minimal stop distance percent", "Trading")
-        self._trailing_step = self.Param("TrailingStep", 0.1) \
+        self._trailing_step = self.Param("TrailingStep", 1e-05) \
             .SetGreaterThanZero() \
             .SetDisplay("Trailing Step %", "Trailing stop adjustment step percent", "Trading")
         self._sleep_bars = self.Param("SleepBars", 20) \
             .SetGreaterThanZero() \
             .SetDisplay("Sleep Bars", "Pause before next trade in bars", "General")
-        self._sma_period = self.Param("SmaPeriod", 50) \
+        self._sma_period = self.Param("SmaPeriod", 100) \
             .SetGreaterThanZero() \
             .SetDisplay("SMA Period", "Simple moving average period", "Indicators")
         self._random_seed = self.Param("RandomSeed", 42) \

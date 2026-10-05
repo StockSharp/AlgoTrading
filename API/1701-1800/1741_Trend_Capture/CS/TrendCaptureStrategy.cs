@@ -32,7 +32,7 @@ public class TrendCaptureStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "EMA period for trend", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 

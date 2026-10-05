@@ -41,7 +41,7 @@ public class ColorBullsGapStrategy : Strategy
 		_length2 = Param(nameof(Length2), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Second Length", "Length for secondary smoothing", "Indicator");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for indicator", "General");
 	}
 

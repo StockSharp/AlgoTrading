@@ -31,7 +31,7 @@ public class OrderExampleStrategy : Strategy
 
 	public OrderExampleStrategy()
 	{
-		_lookback = Param(nameof(Lookback), 5)
+		_lookback = Param(nameof(Lookback), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback", "Candles to calculate highs and lows", "General");
 
@@ -39,7 +39,7 @@ public class OrderExampleStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("SMA Period", "Trend filter SMA period", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candles", "General");
 	}
 

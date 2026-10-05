@@ -14,13 +14,13 @@ from indicator_extensions import *
 class color_schaff_trend_cycle_strategy(Strategy):
     def __init__(self):
         super(color_schaff_trend_cycle_strategy, self).__init__()
-        self._fast_period = self.Param("FastPeriod", 12) \
+        self._fast_period = self.Param("FastPeriod", 23) \
             .SetDisplay("Fast EMA", "Fast EMA period", "Indicator")
-        self._slow_period = self.Param("SlowPeriod", 26) \
+        self._slow_period = self.Param("SlowPeriod", 50) \
             .SetDisplay("Slow EMA", "Slow EMA period", "Indicator")
         self._high_level = self.Param("HighLevel", 60.0) \
             .SetDisplay("High Level", "Overbought level", "Indicator")
-        self._low_level = self.Param("LowLevel", 40.0) \
+        self._low_level = self.Param("LowLevel", -60.0) \
             .SetDisplay("Low Level", "Oversold level", "Indicator")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Timeframe for analysis", "General")

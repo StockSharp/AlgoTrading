@@ -24,7 +24,7 @@ class coppock_histogram_strategy(Strategy):
             .SetDisplay("ROC2 Period", "Second ROC length", "Parameters")
         self._smooth_period = self.Param("SmoothPeriod", 3) \
             .SetDisplay("Smoothing", "Moving average length", "Parameters")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(8))) \
             .SetDisplay("Candle Type", "Type of candles", "Parameters")
         self._signal_cooldown_bars = self.Param("SignalCooldownBars", 2) \
             .SetDisplay("Signal Cooldown", "Closed candles to wait before the next trade", "Parameters")

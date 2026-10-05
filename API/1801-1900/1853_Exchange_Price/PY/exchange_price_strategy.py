@@ -13,9 +13,9 @@ from StockSharp.Algo.Strategies import Strategy
 class exchange_price_strategy(Strategy):
     def __init__(self):
         super(exchange_price_strategy, self).__init__()
-        self._short_period = self.Param("ShortPeriod", 12) \
+        self._short_period = self.Param("ShortPeriod", 96) \
             .SetDisplay("Short Period", "Bars for short lookback", "General")
-        self._long_period = self.Param("LongPeriod", 48) \
+        self._long_period = self.Param("LongPeriod", 288) \
             .SetDisplay("Long Period", "Bars for long lookback", "General")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
             .SetDisplay("Candle Type", "Type of candles", "General")

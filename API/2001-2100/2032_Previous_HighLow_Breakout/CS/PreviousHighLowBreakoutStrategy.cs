@@ -74,7 +74,7 @@ public class PreviousHighLowBreakoutStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Take profit in price points", "Risk Management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for candles", "General");
 
 		_cooldownCandles = Param(nameof(CooldownCandles), 300)

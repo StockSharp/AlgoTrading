@@ -40,7 +40,7 @@ public class DoubleTradingStrategy : Strategy
 
 	public DoubleTradingStrategy()
 	{
-		_profitTarget = Param(nameof(ProfitTarget), 500m)
+		_profitTarget = Param(nameof(ProfitTarget), 20m)
 			.SetDisplay("Profit Target", "Exit profit per round trip", "Risk");
 		_direction1 = Param(nameof(Direction1), TradeDirections.Auto)
 			.SetDisplay("Direction1", "Initial side", "Parameters");

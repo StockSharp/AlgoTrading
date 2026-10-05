@@ -18,15 +18,15 @@ class x2_ma_jjrsx_strategy(Strategy):
             .SetDisplay("Trend Candle Type", "Timeframe for trend moving averages", "General")
         self._signal_candle_type = self.Param("SignalCandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
             .SetDisplay("Signal Candle Type", "Timeframe for entry signals", "General")
-        self._fast_ma_period = self.Param("FastMaPeriod", 5) \
+        self._fast_ma_period = self.Param("FastMaPeriod", 12) \
             .SetDisplay("Fast MA Period", "Length of fast moving average", "Indicators")
-        self._slow_ma_period = self.Param("SlowMaPeriod", 20) \
+        self._slow_ma_period = self.Param("SlowMaPeriod", 5) \
             .SetDisplay("Slow MA Period", "Length of slow moving average", "Indicators")
-        self._rsi_period = self.Param("RsiPeriod", 14) \
+        self._rsi_period = self.Param("RsiPeriod", 8) \
             .SetDisplay("RSI Period", "Length of RSI filter", "Indicators")
-        self._overbought = self.Param("Overbought", 75.0) \
+        self._overbought = self.Param("Overbought", 70.0) \
             .SetDisplay("Overbought", "RSI overbought threshold", "Risk")
-        self._oversold = self.Param("Oversold", 25.0) \
+        self._oversold = self.Param("Oversold", 30.0) \
             .SetDisplay("Oversold", "RSI oversold threshold", "Risk")
         self._use_long = self.Param("UseLong", True) \
             .SetDisplay("Enable Long", "Allow long trades", "General")

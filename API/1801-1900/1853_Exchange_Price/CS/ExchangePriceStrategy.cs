@@ -33,11 +33,11 @@ public class ExchangePriceStrategy : Strategy
 
 	public ExchangePriceStrategy()
 	{
-		_shortPeriod = Param(nameof(ShortPeriod), 12)
+		_shortPeriod = Param(nameof(ShortPeriod), 96)
 			.SetGreaterThanZero()
 			.SetDisplay("Short Period", "Bars for short lookback", "General");
 
-		_longPeriod = Param(nameof(LongPeriod), 48)
+		_longPeriod = Param(nameof(LongPeriod), 288)
 			.SetGreaterThanZero()
 			.SetDisplay("Long Period", "Bars for long lookback", "General");
 

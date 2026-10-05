@@ -14,11 +14,11 @@ from StockSharp.Algo.Strategies import Strategy
 class break_the_range_bound_strategy(Strategy):
     def __init__(self):
         super(break_the_range_bound_strategy, self).__init__()
-        self._fast_sma = self.Param("FastSma", 10) \
+        self._fast_sma = self.Param("FastSma", 38) \
             .SetDisplay("Fast SMA", "Fast moving average period", "Parameters")
-        self._slow_sma = self.Param("SlowSma", 50) \
+        self._slow_sma = self.Param("SlowSma", 210) \
             .SetDisplay("Slow SMA", "Slow moving average period", "Parameters")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
         self._prev_fast = 0.0
         self._prev_slow = 0.0

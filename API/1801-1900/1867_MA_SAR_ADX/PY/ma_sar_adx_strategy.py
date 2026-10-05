@@ -25,7 +25,7 @@ class ma_sar_adx_strategy(Strategy):
         self._rsi_long = self.Param("RsiLongLevel", 52.0).SetDisplay("RSI Long", "Min RSI for long", "Filters")
         self._rsi_short = self.Param("RsiShortLevel", 48.0).SetDisplay("RSI Short", "Max RSI for short", "Filters")
         self._cooldown_bars = self.Param("CooldownBars", 3).SetDisplay("Cooldown", "Bars after position change", "Trading")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))).SetDisplay("Candle Type", "Timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Timeframe", "General")
         self._cooldown_remaining = 0
 
     @property

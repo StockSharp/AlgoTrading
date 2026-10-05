@@ -29,7 +29,7 @@ public class TerminatorV2z0Strategy : Strategy
 
 	public TerminatorV2z0Strategy()
 	{
-		_fastPeriod = Param(nameof(FastPeriod), 12)
+		_fastPeriod = Param(nameof(FastPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast Period", "Fast EMA period", "MACD");
 		_slowPeriod = Param(nameof(SlowPeriod), 26)

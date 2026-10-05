@@ -37,7 +37,7 @@ public class PsarTraderStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("SAR Max Step", "Maximum acceleration factor", "Parabolic SAR");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 

@@ -18,7 +18,7 @@ class bollinger_bands_automated_strategy(Strategy):
             .SetDisplay("BB Period", "Bollinger Bands period", "Indicators")
         self._bb_deviation = self.Param("BbDeviation", 2.0) \
             .SetDisplay("BB Deviation", "Bollinger Bands deviation", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
 
     @property

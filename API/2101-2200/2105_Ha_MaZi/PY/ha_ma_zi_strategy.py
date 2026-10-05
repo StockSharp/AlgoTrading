@@ -19,7 +19,7 @@ class ha_ma_zi_strategy(Strategy):
             .SetDisplay("MA Period", "EMA period", "General")
         self._zigzag_length = self.Param("ZigzagLength", 13) \
             .SetDisplay("ZigZag Length", "Lookback for pivot search", "ZigZag")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
         self._stop_loss_pct = self.Param("StopLossPct", 2.0) \
             .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk")

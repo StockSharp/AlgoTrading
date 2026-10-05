@@ -105,7 +105,7 @@ public class RsiAutomatedStrategy : Strategy
 		.SetNotNegative()
 		.SetDisplay("Trailing", "Trailing stop distance in points", "Risk");
 
-	_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+	_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 

@@ -58,7 +58,7 @@ public class XDerivativeStrategy : Strategy
 
 	public XDerivativeStrategy()
 	{
-		_rocPeriod = Param(nameof(RocPeriod), 14)
+		_rocPeriod = Param(nameof(RocPeriod), 34)
 			.SetGreaterThanZero()
 			.SetDisplay("ROC Period", "Period for rate of change", "Parameters");
 

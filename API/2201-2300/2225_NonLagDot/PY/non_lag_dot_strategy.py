@@ -16,7 +16,7 @@ class non_lag_dot_strategy(Strategy):
         super(non_lag_dot_strategy, self).__init__()
         self._length = self.Param("Length", 10) \
             .SetDisplay("Length", "Moving average period", "Indicator")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
             .SetDisplay("Candle Type", "Timeframe for calculations", "General")
         self._stop_loss_percent = self.Param("StopLossPercent", 1.0) \
             .SetDisplay("Stop Loss %", "Percent based stop-loss", "Risk")

@@ -16,9 +16,9 @@ class puria_strategy(Strategy):
     def __init__(self):
         super(puria_strategy, self).__init__()
 
-        self._ma1_period = self.Param("Ma1Period", 30) \
+        self._ma1_period = self.Param("Ma1Period", 75) \
             .SetDisplay("MA1 Period", "Slow EMA period", "Moving Averages")
-        self._ma2_period = self.Param("Ma2Period", 40) \
+        self._ma2_period = self.Param("Ma2Period", 85) \
             .SetDisplay("MA2 Period", "Second slow EMA period", "Moving Averages")
         self._ma3_period = self.Param("Ma3Period", 5) \
             .SetDisplay("MA3 Period", "Fast EMA period", "Moving Averages")

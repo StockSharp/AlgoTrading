@@ -117,12 +117,12 @@ public class UltraWprCrossStrategy : Strategy
 			.SetDisplay("Slow Length", "Slow smoothing length", "Indicators")
 			.SetOptimize(10, 100, 5);
 
-		_takeProfit = Param(nameof(TakeProfit), 900m)
+		_takeProfit = Param(nameof(TakeProfit), 0.2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Take profit in price", "Risk")
 			.SetOptimize(300m, 1500m, 100m);
 
-		_stopLoss = Param(nameof(StopLoss), 450m)
+		_stopLoss = Param(nameof(StopLoss), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss", "Stop loss in price", "Risk")
 			.SetOptimize(200m, 900m, 50m);

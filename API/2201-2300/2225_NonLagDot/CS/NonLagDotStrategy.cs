@@ -66,7 +66,7 @@ public class NonLagDotStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Length", "Moving average period", "Indicator");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for calculations", "General");
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 1m)

@@ -16,7 +16,7 @@ class trend_capture_strategy(Strategy):
         super(trend_capture_strategy, self).__init__()
         self._ema_period = self.Param("EmaPeriod", 20) \
             .SetDisplay("EMA Period", "EMA period for trend", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
         self._prev_close = 0.0
         self._prev_ema = 0.0
