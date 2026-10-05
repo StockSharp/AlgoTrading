@@ -19,8 +19,11 @@
   - **ショート**: 終値 > Kalman Filter の時に決済
 - **ストップ**: あり、ATRベースのストップロス。
 - **デフォルト値**:
-  - `ProcessNoise` = 0.01m
-  - `MeasurementNoise` = 0.1m
+  - `ProcessNoise` = 0.01
+  - `MeasurementNoise` = 0.1
+  - `AtrPeriod` = 14
+  - `AtrMultiplier` = 2
+    ラインの反対側でのエントリーはポジションをドテンします。ストップはエントリー時の終値からAtrPeriod本のATRのAtrMultiplier倍離れた位置に置かれ、ローソク足の終値で確認されます。ストップ後は次にラインを越えて引けた足で新しいポジションを開きます。0で無効になります。
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **フィルター**:
   - カテゴリ: トレンド

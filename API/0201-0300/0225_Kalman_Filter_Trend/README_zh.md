@@ -17,8 +17,11 @@
   - 空头: 收盘价升破卡尔曼滤波
 - **止损**: 基于ATR
 - **默认值**:
-  - `ProcessNoise` = 0.01m
-  - `MeasurementNoise` = 0.1m
+  - `ProcessNoise` = 0.01
+  - `MeasurementNoise` = 0.1
+  - `AtrPeriod` = 14
+  - `AtrMultiplier` = 2
+    价格收在线的另一侧会反转持仓。止损距入场收盘价AtrMultiplier倍AtrPeriod周期ATR，按K线收盘检查；止损后下一次收在线外侧会重新开仓。设为0则关闭。
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **过滤器**:
   - 类别: Trend

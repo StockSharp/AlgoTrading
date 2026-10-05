@@ -8973,6 +8973,65 @@ public abstract partial class StrategyTests
 		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && meanExits > 0 && stopExits > 0, "The fixture must trade both sides, exit at the average and hit the ATR stop.");
 	}
 
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(0.01, 0.1, 14, 2.0, false)]
+	[DataRow(0.05, 0.5, 10, 0.5, true)]
+	public async Task S0225_ClosesAcrossTheKalmanLineFlipThePositionOrHitAnAtrStop(double processNoise, double measurementNoise, int atrPeriod, double stopAtr, bool secondary)
+	{
+		var kalman = new KalmanFilter { ProcessNoise = (decimal)processNoise, MeasurementNoise = (decimal)measurementNoise };
+		var atr = new AverageTrueRange { Length = atrPeriod };
+		var stopPrice = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var stopExits = 0;
+		var violations = new List<string>();
+		await Replay("0225_Kalman_Filter_Trend", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(0.01m, Convert.ToDecimal(strategy.Parameters["ProcessNoise"].Value));
+			AreEqual(0.1m, Convert.ToDecimal(strategy.Parameters["MeasurementNoise"].Value));
+			AreEqual(14, strategy.Parameters["AtrPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["AtrMultiplier"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "ProcessNoise", processNoise);
+			SetParam(strategy, "MeasurementNoise", measurementNoise);
+			SetParam(strategy, "AtrPeriod", atrPeriod);
+			SetParam(strategy, "AtrMultiplier", stopAtr);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var k = kalman.Process(candle);
+				var a = atr.Process(candle);
+				if (!k.IsFormed || !a.IsFormed) return;
+				var line = k.GetValue<decimal>();
+				var range = a.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (close > line && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; stopPrice = close - (decimal)stopAtr * range; }
+				else if (close < line && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; stopPrice = close + (decimal)stopAtr * range; }
+				else if (position > 0m && close <= stopPrice) { expectedSide = Sides.Sell; expectedVolume = position; stopExits++; }
+				else if (position < 0m && close >= stopPrice) { expectedSide = Sides.Buy; expectedVolume = -position; stopExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow the close's side of the Kalman line, or close at the ATR stop.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "The fixture must trade both sides.");
+		if (stopAtr < 1) IsTrue(stopExits > 0, "A tight ATR stop must be hit.");
+	}
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,42 +12,62 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Kalman Filter Trend strategy.
-/// Uses a custom Kalman Filter indicator to track price trend.
+/// A close above the Kalman filter estimate goes long and a close below it goes short, reversing an opposite position, so the position flips
+/// whenever price crosses the line. The stop lies AtrMultiplier times the AtrPeriod ATR from the entry close and is checked on candle closes.
 /// </summary>
 public class KalmanFilterTrendStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _processNoiseParam;
-	private readonly StrategyParam<decimal> _measurementNoiseParam;
-	private readonly StrategyParam<DataType> _candleTypeParam;
+	private readonly StrategyParam<decimal> _processNoise;
+	private readonly StrategyParam<decimal> _measurementNoise;
+	private readonly StrategyParam<int> _atrPeriod;
+	private readonly StrategyParam<decimal> _atrMultiplier;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private KalmanFilter _kalmanFilter;
-	private AverageTrueRange _atr;
+	private decimal _stopPrice;
 
 	/// <summary>
-	/// Process noise coefficient for Kalman filter.
+	/// Process noise of the Kalman filter.
 	/// </summary>
 	public decimal ProcessNoise
 	{
-		get => _processNoiseParam.Value;
-		set => _processNoiseParam.Value = value;
+		get => _processNoise.Value;
+		set => _processNoise.Value = value;
 	}
 
 	/// <summary>
-	/// Measurement noise coefficient for Kalman filter.
+	/// Measurement noise of the Kalman filter.
 	/// </summary>
 	public decimal MeasurementNoise
 	{
-		get => _measurementNoiseParam.Value;
-		set => _measurementNoiseParam.Value = value;
+		get => _measurementNoise.Value;
+		set => _measurementNoise.Value = value;
 	}
 
 	/// <summary>
-	/// Candle type for strategy.
+	/// Period of the stop ATR.
+	/// </summary>
+	public int AtrPeriod
+	{
+		get => _atrPeriod.Value;
+		set => _atrPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Stop distance from the entry in ATRs.
+	/// </summary>
+	public decimal AtrMultiplier
+	{
+		get => _atrMultiplier.Value;
+		set => _atrMultiplier.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
-		get => _candleTypeParam.Value;
-		set => _candleTypeParam.Value = value;
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
 	/// <summary>
@@ -58,20 +75,24 @@ public class KalmanFilterTrendStrategy : Strategy
 	/// </summary>
 	public KalmanFilterTrendStrategy()
 	{
-		_processNoiseParam = Param(nameof(ProcessNoise), 0.01m)
-			.SetRange(0.0001m, 1)
-			.SetDisplay("Process Noise", "Process noise coefficient for Kalman filter", "Parameters")
-			
-			.SetOptimize(0.001m, 0.1m, 0.005m);
+		_processNoise = Param(nameof(ProcessNoise), 0.01m)
+			.SetGreaterThanZero()
+			.SetDisplay("Process Noise", "Process noise of the Kalman filter", "Kalman Filter");
 
-		_measurementNoiseParam = Param(nameof(MeasurementNoise), 0.1m)
-			.SetRange(0.0001m, 1)
-			.SetDisplay("Measurement Noise", "Measurement noise coefficient for Kalman filter", "Parameters")
-			
-			.SetOptimize(0.01m, 1.0m, 0.1m);
+		_measurementNoise = Param(nameof(MeasurementNoise), 0.1m)
+			.SetGreaterThanZero()
+			.SetDisplay("Measurement Noise", "Measurement noise of the Kalman filter", "Kalman Filter");
 
-		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Candle type for strategy", "Common");
+		_atrPeriod = Param(nameof(AtrPeriod), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("ATR Period", "Period of the stop ATR", "Risk");
+
+		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
+			.SetNotNegative()
+			.SetDisplay("ATR Multiplier", "Stop distance from the entry in ATRs", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -84,9 +105,7 @@ public class KalmanFilterTrendStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_kalmanFilter = null;
-		_atr = null;
+		_stopPrice = default;
 	}
 
 	/// <inheritdoc />
@@ -94,58 +113,67 @@ public class KalmanFilterTrendStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
-		_kalmanFilter = new KalmanFilter 
-		{ 
-			ProcessNoise = ProcessNoise,
-			MeasurementNoise = MeasurementNoise 
-		};
-		
-		_atr = new AverageTrueRange { Length = 14 };
+		_stopPrice = default;
 
-		// Create subscription and bind indicators
+		var kalman = new KalmanFilter
+		{
+			ProcessNoise = ProcessNoise,
+			MeasurementNoise = MeasurementNoise,
+		};
+		var atr = new AverageTrueRange { Length = AtrPeriod };
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_kalmanFilter, _atr, ProcessCandle)
+			.BindEx(kalman, atr, ProcessCandle)
 			.Start();
 
-		// Setup chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _kalmanFilter);
+			DrawIndicator(area, kalman);
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, atr);
+			}
 		}
-		
-		// Enable position protection
-		StartProtection(
-			takeProfit: new Unit(0, UnitTypes.Absolute), // No take profit
-			stopLoss: new Unit(2, UnitTypes.Absolute) // Stop loss at 2*ATR
-		);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal kalmanValue, decimal atrValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue kalmanValue, IIndicatorValue atrValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		if (!kalmanValue.IsFormed || !atrValue.IsFormed)
+			return;
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
-		
-		// Calculate trend direction
-		var trend = candle.ClosePrice > kalmanValue ? 1 : -1;
-		
-		// Trading logic based on price position relative to Kalman filter
-		if (trend > 0 && Position <= 0)
+
+		var line = kalmanValue.GetValue<decimal>();
+		var atr = atrValue.GetValue<decimal>();
+		var close = candle.ClosePrice;
+
+		if (close > line && Position <= 0)
 		{
-			// Buy when price is above Kalman filter (uptrend)
 			BuyMarket(Volume + Math.Abs(Position));
+			_stopPrice = close - AtrMultiplier * atr;
 		}
-		else if (trend < 0 && Position >= 0)
+		else if (close < line && Position >= 0)
 		{
-			// Sell when price is below Kalman filter (downtrend)
 			SellMarket(Volume + Math.Abs(Position));
+			_stopPrice = close + AtrMultiplier * atr;
+		}
+		else if (Position > 0 && AtrMultiplier > 0 && close <= _stopPrice)
+		{
+			SellMarket(Position);
+		}
+		else if (Position < 0 && AtrMultiplier > 0 && close >= _stopPrice)
+		{
+			BuyMarket(-Position);
 		}
 	}
 }
