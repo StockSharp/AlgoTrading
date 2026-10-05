@@ -42,10 +42,10 @@ public class MultiConditionsCurveFittingStrategy : Strategy
 		_fastEmaLength = Param(nameof(FastEmaLength), 10);
 		_slowEmaLength = Param(nameof(SlowEmaLength), 25);
 		_rsiLength = Param(nameof(RsiLength), 14);
-		_rsiOverbought = Param(nameof(RsiOverbought), 68m);
-		_rsiOversold = Param(nameof(RsiOversold), 32m);
+		_rsiOverbought = Param(nameof(RsiOverbought), 80m);
+		_rsiOversold = Param(nameof(RsiOversold), 20m);
 		_cooldownBars = Param(nameof(CooldownBars), 5).SetGreaterThanZero();
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame());
 	}
 
 	protected override void OnStarted2(DateTime time)

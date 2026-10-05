@@ -23,7 +23,7 @@ public class TmaStrategy : Strategy
 
 	public TmaStrategy()
 	{
-		_slowLength = Param(nameof(SlowLength), 40)
+		_slowLength = Param(nameof(SlowLength), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Length", "Slow EMA period", "General");
 

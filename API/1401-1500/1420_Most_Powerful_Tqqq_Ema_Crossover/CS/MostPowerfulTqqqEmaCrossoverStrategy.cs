@@ -23,7 +23,7 @@ public class MostPowerfulTqqqEmaCrossoverStrategy : Strategy
 
 	public MostPowerfulTqqqEmaCrossoverStrategy()
 	{
-		_slowLength = Param(nameof(SlowLength), 40)
+		_slowLength = Param(nameof(SlowLength), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Length", "Slow EMA period", "General");
 

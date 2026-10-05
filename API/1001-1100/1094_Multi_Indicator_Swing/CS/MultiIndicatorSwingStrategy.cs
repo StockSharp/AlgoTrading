@@ -39,7 +39,7 @@ public class MultiIndicatorSwingStrategy : Strategy
 
 	public MultiIndicatorSwingStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(2).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 		_smaLength = Param(nameof(SmaLength), 20)
 			.SetGreaterThanZero()

@@ -20,10 +20,10 @@ class ma_crossover_demand_supply_zones_sltp_strategy(Strategy):
         self._long_ma_length = self.Param("LongMaLength", 21) \
             .SetGreaterThanZero() \
             .SetDisplay("Long MA", "Long MA period", "Indicators")
-        self._stop_loss_percent = self.Param("StopLossPercent", 7.0) \
+        self._stop_loss_percent = self.Param("StopLossPercent", 1.0) \
             .SetGreaterThanZero() \
             .SetDisplay("SL %", "Stop loss percent", "Risk")
-        self._take_profit_percent = self.Param("TakeProfitPercent", 10.0) \
+        self._take_profit_percent = self.Param("TakeProfitPercent", 2.0) \
             .SetGreaterThanZero() \
             .SetDisplay("TP %", "Take profit percent", "Risk")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(20))) \

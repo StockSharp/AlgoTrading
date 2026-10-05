@@ -22,9 +22,9 @@ class zero_lag_macd_kijun_sen_eom_strategy(Strategy):
             .SetDisplay("Signal Length", "Signal smoothing", "Indicators")
         self._stop_pct = self.Param("StopPct", 1.5) \
             .SetDisplay("Stop %", "Stop loss percent", "Risk")
-        self._risk_reward = self.Param("RiskReward", 1.5) \
+        self._risk_reward = self.Param("RiskReward", 1.2) \
             .SetDisplay("Risk/Reward", "Take profit ratio", "Risk")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Candle timeframe", "General")
         self._prev_macd = 0.0
         self._prev_signal_ema = 0.0

@@ -66,7 +66,7 @@ public class MhHullMovingAverageBasedTradingStrategy : Strategy
 	/// </summary>
 	public MhHullMovingAverageBasedTradingStrategy()
 	{
-		_hullPeriod = Param(nameof(HullPeriod), 120)
+		_hullPeriod = Param(nameof(HullPeriod), 210)
 			.SetGreaterThanZero()
 			.SetDisplay("Hull Period", "Period for Hull Moving Average", "Indicators");
 
@@ -78,7 +78,7 @@ public class MhHullMovingAverageBasedTradingStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Cooldown Bars", "Minimum bars between entries", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 

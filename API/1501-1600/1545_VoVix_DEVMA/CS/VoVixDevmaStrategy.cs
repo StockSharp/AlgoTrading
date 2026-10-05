@@ -43,11 +43,11 @@ public class VoVixDevmaStrategy : Strategy
 
 	public VoVixDevmaStrategy()
 	{
-		_fastLength = Param(nameof(FastLength), 10)
+		_fastLength = Param(nameof(FastLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast Length", "Fast StdDev period", "DEVMA");
 
-		_slowLength = Param(nameof(SlowLength), 20)
+		_slowLength = Param(nameof(SlowLength), 60)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Length", "Slow StdDev period", "DEVMA");
 

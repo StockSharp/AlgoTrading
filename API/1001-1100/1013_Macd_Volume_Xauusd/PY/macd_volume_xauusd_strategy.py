@@ -19,9 +19,9 @@ class macd_volume_xauusd_strategy(Strategy):
     def __init__(self):
         super(macd_volume_xauusd_strategy, self).__init__()
         self._short_length = self.Param("ShortLength", 5)
-        self._long_length = self.Param("LongLength", 10)
+        self._long_length = self.Param("LongLength", 8)
         self._cooldown_bars = self.Param("CooldownBars", 2)
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5)))
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15)))
         self._prev_macd = 0.0
         self._prev_macd_set = False
         self._bars_from_signal = 0

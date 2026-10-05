@@ -33,7 +33,7 @@ public class TtpIntelligentAccumulatorStrategy : Strategy
 
 	public TtpIntelligentAccumulatorStrategy()
 	{
-		_rsiPeriod = Param(nameof(RsiPeriod), 14)
+		_rsiPeriod = Param(nameof(RsiPeriod), 7)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "RSI calculation length", "Indicators");
 
@@ -41,7 +41,7 @@ public class TtpIntelligentAccumulatorStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback", "Slow EMA period", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 

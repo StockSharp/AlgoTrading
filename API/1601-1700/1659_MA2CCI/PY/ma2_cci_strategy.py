@@ -16,11 +16,11 @@ class ma2_cci_strategy(Strategy):
         super(ma2_cci_strategy, self).__init__()
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
-        self._fast_ma_period = self.Param("FastMaPeriod", 10) \
+        self._fast_ma_period = self.Param("FastMaPeriod", 4) \
             .SetDisplay("Fast MA", "Fast moving average period", "Parameters")
-        self._slow_ma_period = self.Param("SlowMaPeriod", 20) \
+        self._slow_ma_period = self.Param("SlowMaPeriod", 8) \
             .SetDisplay("Slow MA", "Slow moving average period", "Parameters")
-        self._cci_period = self.Param("CciPeriod", 14) \
+        self._cci_period = self.Param("CciPeriod", 4) \
             .SetDisplay("CCI Period", "Commodity Channel Index period", "Parameters")
         self._prev_fast = 0.0
         self._prev_slow = 0.0

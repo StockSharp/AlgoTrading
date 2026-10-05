@@ -25,8 +25,8 @@ public class NyOpeningRangeBreakoutMaStopStrategy : Strategy
 
 	public NyOpeningRangeBreakoutMaStopStrategy()
 	{
-		_maLength = Param(nameof(MaLength), 50).SetGreaterThanZero();
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
+		_maLength = Param(nameof(MaLength), 100).SetGreaterThanZero();
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame());
 	}
 
 	/// <inheritdoc />

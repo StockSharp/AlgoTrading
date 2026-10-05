@@ -18,12 +18,12 @@ class mikuls_ichimoku_cloud_v2_strategy(Strategy):
     def __init__(self):
         super(mikuls_ichimoku_cloud_v2_strategy, self).__init__()
         self._atr_period = self.Param("AtrPeriod", 14).SetDisplay("ATR Period", "ATR period", "Indicators")
-        self._atr_mult = self.Param("AtrMultiplier", 1.5).SetDisplay("ATR Mult", "Trailing ATR mult", "Risk")
+        self._atr_mult = self.Param("AtrMultiplier", 1.0).SetDisplay("ATR Mult", "Trailing ATR mult", "Risk")
         self._tenkan_period = self.Param("TenkanPeriod", 9).SetDisplay("Tenkan", "Ichimoku Tenkan", "Indicators")
         self._kijun_period = self.Param("KijunPeriod", 26).SetDisplay("Kijun", "Ichimoku Kijun", "Indicators")
         self._senkou_b_period = self.Param("SenkouBPeriod", 52).SetDisplay("Senkou B", "Ichimoku SenkouB", "Indicators")
         self._cooldown_bars = self.Param("CooldownBars", 50).SetDisplay("Cooldown", "Min bars between entries", "Risk")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Candles", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))).SetDisplay("Candle Type", "Candles", "General")
 
         self._trail_price = None
         self._prev_tenkan = None

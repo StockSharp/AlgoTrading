@@ -18,13 +18,13 @@ class warrior_trading_momentum_strategy(Strategy):
             .SetDisplay("Min Red", "Red candles before reversal", "Momentum")
         self._risk_reward = self.Param("RiskReward", 2.0) \
             .SetDisplay("Risk Reward", "TP to SL ratio", "Risk")
-        self._max_daily_trades = self.Param("MaxDailyTrades", 1) \
+        self._max_daily_trades = self.Param("MaxDailyTrades", 2) \
             .SetDisplay("Max Trades", "Daily trade limit", "Risk")
         self._vol_avg_length = self.Param("VolAvgLength", 20) \
             .SetDisplay("Vol Avg Length", "Volume average period", "Parameters")
         self._vol_mult = self.Param("VolMult", 3.0) \
             .SetDisplay("Vol Mult", "Volume spike multiplier", "Parameters")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
         self._volumes = []
         self._stop_price = 0.0

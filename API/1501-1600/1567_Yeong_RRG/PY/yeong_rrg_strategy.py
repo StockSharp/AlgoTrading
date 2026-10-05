@@ -14,9 +14,9 @@ from StockSharp.Algo.Strategies import Strategy
 class yeong_rrg_strategy(Strategy):
     def __init__(self):
         super(yeong_rrg_strategy, self).__init__()
-        self._length = self.Param("Length", 20) \
+        self._length = self.Param("Length", 14) \
             .SetDisplay("Length", "Period for calculations", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
         self._rs_ratio_history = []
         self._rm_ratio_history = []

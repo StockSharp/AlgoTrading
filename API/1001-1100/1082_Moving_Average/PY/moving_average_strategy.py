@@ -17,8 +17,8 @@ class moving_average_strategy(Strategy):
 
     def __init__(self):
         super(moving_average_strategy, self).__init__()
-        self._short_length = self.Param("ShortLength", 6).SetDisplay("Fast", "Fast EMA", "Indicators")
-        self._long_length = self.Param("LongLength", 21).SetDisplay("Slow", "Slow EMA", "Indicators")
+        self._short_length = self.Param("ShortLength", 1).SetDisplay("Fast", "Fast EMA", "Indicators")
+        self._long_length = self.Param("LongLength", 20).SetDisplay("Slow", "Slow EMA", "Indicators")
         self._cooldown_bars = self.Param("CooldownBars", 50).SetDisplay("Cooldown", "Min bars between entries", "Risk")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Candles", "General")
 

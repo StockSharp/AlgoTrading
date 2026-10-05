@@ -23,7 +23,7 @@ public class MateosTimeOfDayAnalysisLeStrategy : Strategy
 
 	public MateosTimeOfDayAnalysisLeStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame());
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame());
 		_startHour = Param(nameof(StartHour), 9);
 		_endHour = Param(nameof(EndHour), 16);
 	}

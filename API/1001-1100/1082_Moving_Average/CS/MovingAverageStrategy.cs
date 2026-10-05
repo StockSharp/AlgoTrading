@@ -34,8 +34,8 @@ public class MovingAverageStrategy : Strategy
 
 	public MovingAverageStrategy()
 	{
-		_shortLength = Param(nameof(ShortLength), 6).SetGreaterThanZero();
-		_longLength = Param(nameof(LongLength), 21).SetGreaterThanZero();
+		_shortLength = Param(nameof(ShortLength), 1).SetGreaterThanZero();
+		_longLength = Param(nameof(LongLength), 20).SetGreaterThanZero();
 		_cooldownBars = Param(nameof(CooldownBars), 50).SetGreaterThanZero();
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
 	}

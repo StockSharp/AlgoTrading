@@ -14,7 +14,7 @@ from StockSharp.Algo.Strategies import Strategy
 class moving_average_crossover_strategy(Strategy):
     def __init__(self):
         super(moving_average_crossover_strategy, self).__init__()
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
         self._fast_length = self.Param("FastLength", 72) \
             .SetGreaterThanZero() \

@@ -17,7 +17,7 @@ class nadaraya_watson_envelope_strategy(Strategy):
 
     def __init__(self):
         super(nadaraya_watson_envelope_strategy, self).__init__()
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Candles", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Candles", "General")
 
         self._prev_fast = 0.0
         self._prev_slow = 0.0

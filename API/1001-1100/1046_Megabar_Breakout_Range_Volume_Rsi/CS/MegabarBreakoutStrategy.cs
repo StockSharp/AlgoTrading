@@ -44,7 +44,7 @@ public class MegabarBreakoutStrategy : Strategy
 		_signalCooldownBars = Param(nameof(SignalCooldownBars), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Cooldown Bars", "Minimum bars between entries", "General");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(10).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candles timeframe", "General");
 	}
 

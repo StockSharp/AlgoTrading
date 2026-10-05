@@ -50,7 +50,7 @@ public class MikulsIchimokuCloudV2Strategy : Strategy
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "ATR period", "General");
-		_atrMultiplier = Param(nameof(AtrMultiplier), 1.5m)
+		_atrMultiplier = Param(nameof(AtrMultiplier), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Multiplier", "Trailing ATR multiplier", "General");
 		_tenkanPeriod = Param(nameof(TenkanPeriod), 9)
@@ -65,7 +65,7 @@ public class MikulsIchimokuCloudV2Strategy : Strategy
 		_signalCooldownBars = Param(nameof(SignalCooldownBars), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Cooldown Bars", "Minimum bars between entries", "General");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candles timeframe", "General");
 	}
 

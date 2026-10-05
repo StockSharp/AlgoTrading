@@ -16,7 +16,7 @@ class my_line_order_strategy(Strategy):
         super(my_line_order_strategy, self).__init__()
         self._sma_length = self.Param("SmaLength", 14) \
             .SetDisplay("SMA", "SMA period", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
         self._prev_close = 0.0
         self._prev_sma = 0.0

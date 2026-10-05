@@ -44,7 +44,7 @@ public class ModifiedObvWithDivergenceDetectionStrategy : Strategy
 		_signalLength = Param(nameof(SignalLength), 10).SetGreaterThanZero();
 		_minCrossGapPercent = Param(nameof(MinCrossGapPercent), 0.2m).SetGreaterThanZero();
 		_signalCooldownBars = Param(nameof(SignalCooldownBars), 10).SetGreaterThanZero();
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame());
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
 	}
 
 	/// <inheritdoc />

@@ -20,7 +20,7 @@ class lux_clara_ema_vwap_strategy(Strategy):
         super(lux_clara_ema_vwap_strategy, self).__init__()
         self._fast_length = self.Param("FastEmaLength", 8) \
             .SetDisplay("Fast EMA", "Fast EMA length", "Indicators")
-        self._slow_length = self.Param("SlowEmaLength", 21) \
+        self._slow_length = self.Param("SlowEmaLength", 50) \
             .SetDisplay("Slow EMA", "Slow EMA length", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
             .SetDisplay("Candle Type", "Timeframe", "General")

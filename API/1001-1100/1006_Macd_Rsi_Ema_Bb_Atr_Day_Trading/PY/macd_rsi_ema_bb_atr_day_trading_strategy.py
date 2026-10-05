@@ -21,8 +21,8 @@ class macd_rsi_ema_bb_atr_day_trading_strategy(Strategy):
         self._ema_slow_len = self.Param("EmaSlowLen", 21).SetDisplay("Slow EMA", "Slow EMA", "Indicators")
         self._rsi_length = self.Param("RsiLength", 14).SetDisplay("RSI", "RSI period", "Indicators")
         self._atr_length = self.Param("AtrLength", 14).SetDisplay("ATR", "ATR period", "Indicators")
-        self._atr_multiplier = self.Param("AtrMultiplier", 3.0).SetDisplay("ATR Mult", "ATR stop mult", "Risk")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(25))).SetDisplay("Candle Type", "Candles", "General")
+        self._atr_multiplier = self.Param("AtrMultiplier", 2.0).SetDisplay("ATR Mult", "ATR stop mult", "Risk")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Candles", "General")
 
         self._prev_fast = 0.0
         self._prev_slow = 0.0

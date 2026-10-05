@@ -136,7 +136,7 @@ public class MomentumKeltnerStochasticComboStrategy : Strategy
 			
 			.SetOptimize(0.5m, 2m, 0.1m);
 
-		_threshold = Param(nameof(Threshold), 10m)
+		_threshold = Param(nameof(Threshold), 99m)
 			.SetRange(0m, 100m)
 			.SetDisplay("Stochastic Threshold", "Threshold for Keltner stochastic", "Indicators")
 			
@@ -154,7 +154,7 @@ public class MomentumKeltnerStochasticComboStrategy : Strategy
 			
 			.SetOptimize(500m, 2000m, 100m);
 
-		_enableScaling = Param(nameof(EnableScaling), false)
+		_enableScaling = Param(nameof(EnableScaling), true)
 			.SetDisplay("Enable Dynamic Contracts", "Use equity based position sizing", "Money Management");
 
 		_baseContracts = Param(nameof(BaseContracts), 1)
@@ -177,7 +177,7 @@ public class MomentumKeltnerStochasticComboStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Cooldown Bars", "Minimum bars between entries", "Risk Management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for calculations", "General");
 	}
 

@@ -66,7 +66,7 @@ public class TugaSupertrendStrategy : Strategy
 		_endDate = Param(nameof(EndDate), new DateTimeOffset(2069, 12, 31, 23, 59, 0, TimeSpan.Zero))
 			.SetDisplay("End Date", "End Date", "Date Window");
 
-		_atrPeriod = Param(nameof(AtrPeriod), 14)
+		_atrPeriod = Param(nameof(AtrPeriod), 10)
 			.SetDisplay("RSI Length", "RSI period", "Indicators");
 
 		_factor = Param(nameof(Factor), 3m)

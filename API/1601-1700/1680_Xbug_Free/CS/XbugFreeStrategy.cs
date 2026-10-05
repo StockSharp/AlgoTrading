@@ -23,7 +23,7 @@ public class XbugFreeStrategy : Strategy
 
 	public XbugFreeStrategy()
 	{
-		_maPeriod = Param(nameof(MaPeriod), 20)
+		_maPeriod = Param(nameof(MaPeriod), 19)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "SMA period", "Indicators");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())

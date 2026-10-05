@@ -39,10 +39,10 @@ public class ZeroLagTemaCrossesPakunStrategy : Strategy
 	public ZeroLagTemaCrossesPakunStrategy()
 	{
 		_lookback = Param(nameof(Lookback), 20).SetDisplay("Lookback", "Lookback period", "Indicators");
-		_fastPeriod = Param(nameof(FastPeriod), 20).SetDisplay("Fast Period", "Fast TEMA length", "Indicators");
-		_slowPeriod = Param(nameof(SlowPeriod), 50).SetDisplay("Slow Period", "Slow TEMA length", "Indicators");
+		_fastPeriod = Param(nameof(FastPeriod), 69).SetDisplay("Fast Period", "Fast TEMA length", "Indicators");
+		_slowPeriod = Param(nameof(SlowPeriod), 130).SetDisplay("Slow Period", "Slow TEMA length", "Indicators");
 		_riskReward = Param(nameof(RiskReward), 1.5m).SetDisplay("Risk/Reward", "Take profit ratio", "Risk");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()

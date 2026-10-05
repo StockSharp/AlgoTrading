@@ -18,7 +18,7 @@ class monte_carlo_simulation_random_walk_strategy(Strategy):
             .SetGreaterThanZero()
         self._simulations = self.Param("Simulations", 100) \
             .SetGreaterThanZero()
-        self._data_length = self.Param("DataLength", 100) \
+        self._data_length = self.Param("DataLength", 2000) \
             .SetGreaterThanZero()
         self._min_forecast_edge_percent = self.Param("MinForecastEdgePercent", 0.5) \
             .SetGreaterThanZero()

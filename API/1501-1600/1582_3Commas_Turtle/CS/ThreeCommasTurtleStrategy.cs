@@ -53,13 +53,13 @@ public class ThreeCommasTurtleStrategy : Strategy
 
 	public ThreeCommasTurtleStrategy()
 	{
-		_periodFast = Param(nameof(PeriodFast), 10)
+		_periodFast = Param(nameof(PeriodFast), 20)
 			.SetDisplay("Period Fast", "Fast channel period", "Channels");
-		_periodSlow = Param(nameof(PeriodSlow), 15)
+		_periodSlow = Param(nameof(PeriodSlow), 20)
 			.SetDisplay("Period Slow", "Slow channel period", "Channels");
-		_periodExit = Param(nameof(PeriodExit), 5)
+		_periodExit = Param(nameof(PeriodExit), 10)
 			.SetDisplay("Period Exit", "Exit channel period", "Channels");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 

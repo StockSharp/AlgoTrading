@@ -14,21 +14,21 @@ from StockSharp.Algo.Strategies import Strategy
 class vwap_rsi_scalper_final_v1_strategy(Strategy):
     def __init__(self):
         super(vwap_rsi_scalper_final_v1_strategy, self).__init__()
-        self._rsi_length = self.Param("RsiLength", 7) \
+        self._rsi_length = self.Param("RsiLength", 3) \
             .SetDisplay("RSI Length", "RSI period", "Indicators")
-        self._rsi_oversold = self.Param("RsiOversold", 25) \
+        self._rsi_oversold = self.Param("RsiOversold", 35) \
             .SetDisplay("RSI Oversold", "Oversold level", "Indicators")
-        self._rsi_overbought = self.Param("RsiOverbought", 75) \
+        self._rsi_overbought = self.Param("RsiOverbought", 70) \
             .SetDisplay("RSI Overbought", "Overbought level", "Indicators")
         self._ema_length = self.Param("EmaLength", 50) \
             .SetDisplay("EMA Length", "EMA period", "Indicators")
-        self._max_trades_per_day = self.Param("MaxTradesPerDay", 2) \
+        self._max_trades_per_day = self.Param("MaxTradesPerDay", 3) \
             .SetDisplay("Max Trades", "Max trades per day", "Risk")
         self._stop_mult = self.Param("StopMult", 1) \
             .SetDisplay("Stop Mult", "StdDev multiplier for stop", "Risk")
         self._target_mult = self.Param("TargetMult", 2) \
             .SetDisplay("Target Mult", "StdDev multiplier for target", "Risk")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
         self._trades_today = 0
         self._current_day = None

@@ -22,9 +22,9 @@ public class OptionsV13Strategy : Strategy
 
 	public OptionsV13Strategy()
 	{
-		_emaShortLength = Param(nameof(EmaShortLength), 14).SetGreaterThanZero();
-		_emaLongLength = Param(nameof(EmaLongLength), 40).SetGreaterThanZero();
-		_rsiLength = Param(nameof(RsiLength), 14).SetGreaterThanZero();
+		_emaShortLength = Param(nameof(EmaShortLength), 8).SetGreaterThanZero();
+		_emaLongLength = Param(nameof(EmaLongLength), 28).SetGreaterThanZero();
+		_rsiLength = Param(nameof(RsiLength), 12).SetGreaterThanZero();
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
 	}
 

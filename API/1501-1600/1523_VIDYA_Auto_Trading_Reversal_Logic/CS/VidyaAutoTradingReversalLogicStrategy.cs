@@ -40,7 +40,7 @@ public class VidyaAutoTradingReversalLogicStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Momentum Length", "Length for momentum", "General");
 
-		_bandDistance = Param(nameof(BandDistance), 3m)
+		_bandDistance = Param(nameof(BandDistance), 2m)
 			.SetDisplay("Band Distance", "ATR multiplier for bands", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())

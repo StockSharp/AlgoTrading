@@ -20,10 +20,10 @@ class machine_learning_super_trend_strategy(Strategy):
         super(machine_learning_super_trend_strategy, self).__init__()
         self._atr_period = self.Param("AtrPeriod", 4).SetDisplay("ATR Period", "ATR length for SuperTrend", "SuperTrend")
         self._atr_factor = self.Param("AtrFactor", 2.94).SetDisplay("Multiplier", "ATR multiplier", "SuperTrend")
-        self._stop_loss_mult = self.Param("StopLossMultiplier", 0.01).SetDisplay("Stop Loss Mult", "Pct from SuperTrend", "Risk")
-        self._take_profit_mult = self.Param("TakeProfitMultiplier", 0.03).SetDisplay("Take Profit Mult", "Pct from SuperTrend", "Risk")
+        self._stop_loss_mult = self.Param("StopLossMultiplier", 0.0025).SetDisplay("Stop Loss Mult", "Pct from SuperTrend", "Risk")
+        self._take_profit_mult = self.Param("TakeProfitMultiplier", 0.022).SetDisplay("Take Profit Mult", "Pct from SuperTrend", "Risk")
         self._cooldown_bars = self.Param("CooldownBars", 8).SetDisplay("Cooldown", "Bars between trades", "Risk")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(10))).SetDisplay("Candle Type", "Candles", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Candles", "General")
 
         self._super_trend = None
         self._dummy_ema1 = None

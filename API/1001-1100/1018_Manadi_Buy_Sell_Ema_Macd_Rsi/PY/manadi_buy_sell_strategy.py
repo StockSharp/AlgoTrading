@@ -20,10 +20,10 @@ class manadi_buy_sell_strategy(Strategy):
         self._fast_ema_length = self.Param("FastEmaLength", 9).SetDisplay("Fast EMA", "Fast EMA", "Indicators")
         self._slow_ema_length = self.Param("SlowEmaLength", 21).SetDisplay("Slow EMA", "Slow EMA", "Indicators")
         self._rsi_length = self.Param("RsiLength", 14).SetDisplay("RSI", "RSI period", "Indicators")
-        self._take_profit_pct = self.Param("TakeProfitPercent", 0.15).SetDisplay("TP %", "Take profit percent", "Risk")
-        self._stop_loss_pct = self.Param("StopLossPercent", 0.06).SetDisplay("SL %", "Stop loss percent", "Risk")
+        self._take_profit_pct = self.Param("TakeProfitPercent", 0.03).SetDisplay("TP %", "Take profit percent", "Risk")
+        self._stop_loss_pct = self.Param("StopLossPercent", 0.015).SetDisplay("SL %", "Stop loss percent", "Risk")
         self._cooldown_bars = self.Param("CooldownBars", 100).SetDisplay("Cooldown", "Bars between trades", "Risk")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))).SetDisplay("Candle Type", "Candles", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Candles", "General")
 
         self._prev_fast = 0.0
         self._prev_slow = 0.0

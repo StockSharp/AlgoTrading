@@ -14,7 +14,7 @@ from StockSharp.Algo.Strategies import Strategy
 class vawsi_trend_persistance_reversal_strategy(Strategy):
     def __init__(self):
         super(vawsi_trend_persistance_reversal_strategy, self).__init__()
-        self._sl_tp = self.Param("SlTp", 2) \
+        self._sl_tp = self.Param("SlTp", 5) \
             .SetDisplay("SL/TP", "Stop loss / take profit ratio", "Risk")
         self._rsi_length = self.Param("RsiLength", 14) \
             .SetDisplay("RSI Length", "RSI period", "Indicators")

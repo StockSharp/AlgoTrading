@@ -14,7 +14,7 @@ from StockSharp.Algo.Strategies import Strategy
 class mateos_time_of_day_analysis_le_strategy(Strategy):
     def __init__(self):
         super(mateos_time_of_day_analysis_le_strategy, self).__init__()
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
         self._start_hour = self.Param("StartHour", 9) \
             .SetDisplay("Start Hour", "Hour to enter", "General")

@@ -14,7 +14,7 @@ from StockSharp.Algo.Strategies import Strategy
 class up_gap_with_delay_strategy(Strategy):
     def __init__(self):
         super(up_gap_with_delay_strategy, self).__init__()
-        self._gap_threshold = self.Param("GapThreshold", 0.1) \
+        self._gap_threshold = self.Param("GapThreshold", 1.0) \
             .SetDisplay("Gap Threshold (%)", "Minimum gap size", "General")
         self._delay_periods = self.Param("DelayPeriods", 0) \
             .SetDisplay("Delay Periods", "Bars to wait", "General")

@@ -14,11 +14,11 @@ from StockSharp.Algo.Strategies import Strategy
 class volatility_arbitrage_spread_oscillator_model_strategy(Strategy):
     def __init__(self):
         super(volatility_arbitrage_spread_oscillator_model_strategy, self).__init__()
-        self._rsi_period = self.Param("RsiPeriod", 14) \
+        self._rsi_period = self.Param("RsiPeriod", 2) \
             .SetDisplay("RSI Period", "Length of RSI", "Parameters")
-        self._long_threshold = self.Param("LongThreshold", 35) \
+        self._long_threshold = self.Param("LongThreshold", 46) \
             .SetDisplay("Long Threshold", "RSI level to enter long", "Parameters")
-        self._exit_threshold = self.Param("ExitThreshold", 65) \
+        self._exit_threshold = self.Param("ExitThreshold", 76) \
             .SetDisplay("Exit Threshold", "RSI level to exit", "Parameters")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles", "Parameters")

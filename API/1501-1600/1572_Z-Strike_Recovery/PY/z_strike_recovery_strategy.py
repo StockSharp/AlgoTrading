@@ -16,7 +16,7 @@ class z_strike_recovery_strategy(Strategy):
         super(z_strike_recovery_strategy, self).__init__()
         self._z_length = self.Param("ZLength", 16) \
             .SetDisplay("Z-Score Length", "Lookback length for z-score", "Indicators")
-        self._z_threshold = self.Param("ZThreshold", 2.5) \
+        self._z_threshold = self.Param("ZThreshold", 1.3) \
             .SetDisplay("Z-Score Threshold", "Entry threshold", "Trading")
         self._exit_periods = self.Param("ExitPeriods", 10) \
             .SetDisplay("Exit Periods", "Bars to hold position", "Trading")

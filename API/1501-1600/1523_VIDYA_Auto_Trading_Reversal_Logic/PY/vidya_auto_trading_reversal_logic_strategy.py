@@ -18,7 +18,7 @@ class vidya_auto_trading_reversal_logic_strategy(Strategy):
             .SetDisplay("VIDYA Length", "Length of VIDYA", "General")
         self._vidya_momentum = self.Param("VidyaMomentum", 20) \
             .SetDisplay("Momentum Length", "Length for momentum", "General")
-        self._band_distance = self.Param("BandDistance", 3.0) \
+        self._band_distance = self.Param("BandDistance", 2.0) \
             .SetDisplay("Band Distance", "ATR multiplier for bands", "General")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles", "General")

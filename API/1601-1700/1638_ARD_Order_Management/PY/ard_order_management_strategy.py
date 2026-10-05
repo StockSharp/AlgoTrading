@@ -14,11 +14,11 @@ from StockSharp.Algo.Strategies import Strategy
 class ard_order_management_strategy(Strategy):
     def __init__(self):
         super(ard_order_management_strategy, self).__init__()
-        self._de_marker_period = self.Param("DeMarkerPeriod", 14) \
+        self._de_marker_period = self.Param("DeMarkerPeriod", 2) \
             .SetDisplay("DeMarker Period", "DeMarker indicator period", "Parameters")
         self._threshold = self.Param("Threshold", 0.5) \
             .SetDisplay("Threshold", "DeMarker crossing level", "Parameters")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
         self._previous_value = 0.0
         self._has_prev = False

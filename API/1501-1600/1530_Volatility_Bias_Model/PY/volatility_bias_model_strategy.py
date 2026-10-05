@@ -18,7 +18,7 @@ class volatility_bias_model_strategy(Strategy):
             .SetDisplay("Bias Window", "Bars for bias calculation", "Parameters")
         self._bias_threshold = self.Param("BiasThreshold", 0.6) \
             .SetDisplay("Bias Threshold", "Directional bias threshold", "Parameters")
-        self._max_bars = self.Param("MaxBars", 100) \
+        self._max_bars = self.Param("MaxBars", 20) \
             .SetDisplay("Max Bars", "Maximum bars to hold", "Parameters")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles", "Parameters")

@@ -89,7 +89,7 @@ namespace StockSharp.Samples.Strategies;
 	/// </summary>
 	public MachineLearningSuperTrendStrategy()
 	{
-	_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(10).TimeFrame())
+	_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 	.SetDisplay("Candle Type", "Type of candles to use", "General");
 	
 	_atrPeriod = Param(nameof(AtrPeriod), 4)
@@ -104,11 +104,11 @@ namespace StockSharp.Samples.Strategies;
 	
 	.SetOptimize(1m, 5m, 0.5m);
 	
-	_stopLossMultiplier = Param(nameof(StopLossMultiplier), 0.01m)
+	_stopLossMultiplier = Param(nameof(StopLossMultiplier), 0.0025m)
 	.SetRange(0m, 0.05m)
 	.SetDisplay("Stop Loss Mult", "Percentage from SuperTrend", "Risk Management");
 	
-	_takeProfitMultiplier = Param(nameof(TakeProfitMultiplier), 0.03m)
+	_takeProfitMultiplier = Param(nameof(TakeProfitMultiplier), 0.022m)
 	.SetRange(0m, 0.1m)
 	.SetDisplay("Take Profit Mult", "Percentage from SuperTrend", "Risk Management");
 

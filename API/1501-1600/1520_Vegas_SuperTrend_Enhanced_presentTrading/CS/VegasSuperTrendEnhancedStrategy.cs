@@ -46,7 +46,7 @@ public class VegasSuperTrendEnhancedStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Vegas Window", "Vegas channel window", "Indicators");
 
-		_superTrendMultiplier = Param(nameof(SuperTrendMultiplier), 3m)
+		_superTrendMultiplier = Param(nameof(SuperTrendMultiplier), 5m)
 			.SetGreaterThanZero()
 			.SetDisplay("ST Multiplier", "SuperTrend multiplier", "Indicators");
 	}

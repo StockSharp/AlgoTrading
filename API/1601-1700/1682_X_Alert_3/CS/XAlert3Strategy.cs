@@ -30,11 +30,11 @@ public class XAlert3Strategy : Strategy
 
 	public XAlert3Strategy()
 	{
-		_ma1Period = Param(nameof(Ma1Period), 10)
+		_ma1Period = Param(nameof(Ma1Period), 1)
 			.SetGreaterThanZero()
 			.SetDisplay("MA1 Period", "Fast moving average period", "Indicators");
 
-		_ma2Period = Param(nameof(Ma2Period), 30)
+		_ma2Period = Param(nameof(Ma2Period), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("MA2 Period", "Slow moving average period", "Indicators");
 

@@ -14,9 +14,9 @@ from StockSharp.Algo.Strategies import Strategy
 class x_alert3_strategy(Strategy):
     def __init__(self):
         super(x_alert3_strategy, self).__init__()
-        self._ma1_period = self.Param("Ma1Period", 10) \
+        self._ma1_period = self.Param("Ma1Period", 1) \
             .SetDisplay("MA1 Period", "Fast moving average period", "Indicators")
-        self._ma2_period = self.Param("Ma2Period", 30) \
+        self._ma2_period = self.Param("Ma2Period", 14) \
             .SetDisplay("MA2 Period", "Slow moving average period", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")

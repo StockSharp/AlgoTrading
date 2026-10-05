@@ -26,7 +26,7 @@ public class NyFirstCandleBreakAndRetestStrategy : Strategy
 	public NyFirstCandleBreakAndRetestStrategy()
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
-		_emaLength = Param(nameof(EmaLength), 20).SetGreaterThanZero();
+		_emaLength = Param(nameof(EmaLength), 13).SetGreaterThanZero();
 	}
 
 	/// <inheritdoc />

@@ -27,7 +27,7 @@ public class RandomCoinTossStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Length", "Slow EMA period", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 

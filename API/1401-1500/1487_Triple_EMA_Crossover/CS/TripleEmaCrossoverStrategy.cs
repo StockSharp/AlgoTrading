@@ -35,13 +35,13 @@ public class TripleEmaCrossoverStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
-		_sma1Period = Param(nameof(Sma1Period), 5)
+		_sma1Period = Param(nameof(Sma1Period), 9)
 			.SetDisplay("SMA1 Period", "Period for short SMA", "Indicators");
 
-		_sma2Period = Param(nameof(Sma2Period), 13)
+		_sma2Period = Param(nameof(Sma2Period), 21)
 			.SetDisplay("SMA2 Period", "Period for middle SMA", "Indicators");
 
-		_sma3Period = Param(nameof(Sma3Period), 21)
+		_sma3Period = Param(nameof(Sma3Period), 55)
 			.SetDisplay("SMA3 Period", "Period for long SMA", "Indicators");
 
 		_stopLossTicks = Param(nameof(StopLossTicks), 200)

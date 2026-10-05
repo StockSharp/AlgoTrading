@@ -46,10 +46,10 @@ public class TTMGridStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Period", "Slow EMA period", "Indicators");
 
-		_gridLevels = Param(nameof(GridLevels), 14)
+		_gridLevels = Param(nameof(GridLevels), 5)
 			.SetDisplay("RSI Period", "RSI period for momentum", "Strategy");
 
-		_gridSpacing = Param(nameof(GridSpacing), 0.005m)
+		_gridSpacing = Param(nameof(GridSpacing), 0.01m)
 			.SetDisplay("Grid Spacing", "Distance between grid levels (fraction)", "Strategy");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())

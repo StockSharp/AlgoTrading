@@ -14,7 +14,7 @@ from StockSharp.Algo.Strategies import Strategy
 class pivot_point_super_trend_trend_filter_strategy(Strategy):
     def __init__(self):
         super(pivot_point_super_trend_trend_filter_strategy, self).__init__()
-        self._ma_period = self.Param("MaPeriod", 40) \
+        self._ma_period = self.Param("MaPeriod", 20) \
             .SetGreaterThanZero()
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5)))
         self._prev_fast = 0.0

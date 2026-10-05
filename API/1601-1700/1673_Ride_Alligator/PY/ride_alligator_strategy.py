@@ -14,7 +14,7 @@ from StockSharp.Algo.Strategies import Strategy
 class ride_alligator_strategy(Strategy):
     def __init__(self):
         super(ride_alligator_strategy, self).__init__()
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
         self._prev_jaw = 0.0
         self._prev_lips = 0.0

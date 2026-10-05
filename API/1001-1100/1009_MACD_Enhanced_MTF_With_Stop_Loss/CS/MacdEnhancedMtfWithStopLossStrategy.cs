@@ -38,12 +38,12 @@ public class MacdEnhancedMtfWithStopLossStrategy : Strategy
 
 	public MacdEnhancedMtfWithStopLossStrategy()
 	{
-		_fastLength = Param(nameof(FastLength), 8).SetDisplay("Fast", "Fast EMA", "MACD");
-		_slowLength = Param(nameof(SlowLength), 17).SetDisplay("Slow", "Slow EMA", "MACD");
+		_fastLength = Param(nameof(FastLength), 12).SetDisplay("Fast", "Fast EMA", "MACD");
+		_slowLength = Param(nameof(SlowLength), 26).SetDisplay("Slow", "Slow EMA", "MACD");
 		_atrLength = Param(nameof(AtrLength), 14).SetDisplay("ATR", "ATR period", "Risk");
 		_stopAtrMult = Param(nameof(StopAtrMult), 3m).SetDisplay("SL Mult", "ATR stop mult", "Risk");
 		_cooldownBars = Param(nameof(CooldownBars), 10).SetDisplay("Cooldown", "Bars between signals", "Risk");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candles", "General");
 	}
 

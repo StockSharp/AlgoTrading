@@ -33,7 +33,7 @@ public class MomentumAlligator4hBitcoinStrategy : Strategy
 	{
 		_stopLossPercent = Param(nameof(StopLossPercent), 0.02m).SetGreaterThanZero();
 		_signalCooldownBars = Param(nameof(SignalCooldownBars), 2).SetGreaterThanZero();
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame());
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame());
 	}
 
 	/// <inheritdoc />

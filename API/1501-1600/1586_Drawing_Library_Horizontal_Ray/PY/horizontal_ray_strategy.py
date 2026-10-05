@@ -14,9 +14,9 @@ from StockSharp.Algo.Strategies import Strategy
 class horizontal_ray_strategy(Strategy):
     def __init__(self):
         super(horizontal_ray_strategy, self).__init__()
-        self._fast_length = self.Param("FastLength", 10) \
+        self._fast_length = self.Param("FastLength", 20) \
             .SetDisplay("Fast Length", "Fast SMA length", "General")
-        self._slow_length = self.Param("SlowLength", 20) \
+        self._slow_length = self.Param("SlowLength", 50) \
             .SetDisplay("Slow Length", "Slow SMA length", "General")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
             .SetDisplay("Candle Type", "Timeframe for candles", "General")

@@ -16,7 +16,7 @@ class symr_new_bar_strategy(Strategy):
         super(symr_new_bar_strategy, self).__init__()
         self._ema_length = self.Param("EmaLength", 20) \
             .SetDisplay("EMA Length", "EMA period for trend filter", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
         self._prev_high = 0.0
         self._prev_low = 0.0

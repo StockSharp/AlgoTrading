@@ -27,7 +27,7 @@ public class DonchianHlWidthCycleInformationStrategy : Strategy
 
 	public DonchianHlWidthCycleInformationStrategy()
 	{
-		_length = Param(nameof(Length), 20)
+		_length = Param(nameof(Length), 28)
 			.SetDisplay("Donchian Length", "Lookback for Donchian channel", "Donchian");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())

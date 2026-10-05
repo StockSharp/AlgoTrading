@@ -44,21 +44,21 @@ public class VwapRsiScalperFinalV1Strategy : Strategy
 
 	public VwapRsiScalperFinalV1Strategy()
 	{
-		_rsiLength = Param(nameof(RsiLength), 7)
+		_rsiLength = Param(nameof(RsiLength), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "RSI period", "Indicators");
 
-		_rsiOversold = Param(nameof(RsiOversold), 25m)
+		_rsiOversold = Param(nameof(RsiOversold), 35m)
 			.SetDisplay("RSI Oversold", "Oversold level", "Indicators");
 
-		_rsiOverbought = Param(nameof(RsiOverbought), 75m)
+		_rsiOverbought = Param(nameof(RsiOverbought), 70m)
 			.SetDisplay("RSI Overbought", "Overbought level", "Indicators");
 
 		_emaLength = Param(nameof(EmaLength), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Length", "EMA period", "Indicators");
 
-		_maxTradesPerDay = Param(nameof(MaxTradesPerDay), 2)
+		_maxTradesPerDay = Param(nameof(MaxTradesPerDay), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Trades", "Max trades per day", "Risk");
 
@@ -70,7 +70,7 @@ public class VwapRsiScalperFinalV1Strategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Target Mult", "StdDev multiplier for target", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 

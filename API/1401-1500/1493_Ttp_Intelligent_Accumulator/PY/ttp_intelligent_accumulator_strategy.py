@@ -14,11 +14,11 @@ from StockSharp.Algo.Strategies import Strategy
 class ttp_intelligent_accumulator_strategy(Strategy):
     def __init__(self):
         super(ttp_intelligent_accumulator_strategy, self).__init__()
-        self._rsi_period = self.Param("RsiPeriod", 14) \
+        self._rsi_period = self.Param("RsiPeriod", 7) \
             .SetDisplay("RSI Period", "RSI calculation length", "Indicators")
         self._lookback = self.Param("Lookback", 21) \
             .SetDisplay("Lookback", "Slow EMA period", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
         self._prev_rsi = 0.0
         self._prev_fast = 0.0

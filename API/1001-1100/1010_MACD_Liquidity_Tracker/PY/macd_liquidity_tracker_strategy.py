@@ -17,8 +17,8 @@ class macd_liquidity_tracker_strategy(Strategy):
 
     def __init__(self):
         super(macd_liquidity_tracker_strategy, self).__init__()
-        self._fast_length = self.Param("FastLength", 12).SetDisplay("Fast", "Fast EMA", "MACD")
-        self._slow_length = self.Param("SlowLength", 26).SetDisplay("Slow", "Slow EMA", "MACD")
+        self._fast_length = self.Param("FastLength", 25).SetDisplay("Fast", "Fast EMA", "MACD")
+        self._slow_length = self.Param("SlowLength", 60).SetDisplay("Slow", "Slow EMA", "MACD")
         self._cooldown_bars = self.Param("CooldownBars", 10).SetDisplay("Cooldown", "Bars between signals", "Risk")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Candles", "General")
 

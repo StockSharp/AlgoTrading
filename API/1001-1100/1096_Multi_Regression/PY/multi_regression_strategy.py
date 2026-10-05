@@ -14,15 +14,15 @@ from StockSharp.Algo.Strategies import Strategy
 class multi_regression_strategy(Strategy):
     def __init__(self):
         super(multi_regression_strategy, self).__init__()
-        self._length = self.Param("Length", 20) \
+        self._length = self.Param("Length", 90) \
             .SetGreaterThanZero() \
             .SetDisplay("Length", "SMA and StdDev period", "Regression")
-        self._risk_multiplier = self.Param("RiskMultiplier", 2.0) \
+        self._risk_multiplier = self.Param("RiskMultiplier", 1.0) \
             .SetDisplay("Risk Multiplier", "StdDev multiplier for bounds", "Risk")
         self._signal_cooldown_bars = self.Param("SignalCooldownBars", 8) \
             .SetGreaterThanZero() \
             .SetDisplay("Signal Cooldown", "Bars to wait between reversals", "Risk")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
             .SetDisplay("Candle Type", "Type of candles", "Common")
         self._prev_close = 0.0
         self._prev_upper = 0.0

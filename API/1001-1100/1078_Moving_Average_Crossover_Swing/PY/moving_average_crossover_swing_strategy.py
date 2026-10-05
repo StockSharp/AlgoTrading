@@ -17,13 +17,13 @@ class moving_average_crossover_swing_strategy(Strategy):
 
     def __init__(self):
         super(moving_average_crossover_swing_strategy, self).__init__()
-        self._fast_period = self.Param("FastPeriod", 10).SetDisplay("Fast", "Fast EMA", "Indicators")
-        self._medium_period = self.Param("MediumPeriod", 30).SetDisplay("Medium", "Medium EMA", "Indicators")
-        self._atr_period = self.Param("AtrPeriod", 20).SetDisplay("ATR", "ATR period", "Indicators")
+        self._fast_period = self.Param("FastPeriod", 5).SetDisplay("Fast", "Fast EMA", "Indicators")
+        self._medium_period = self.Param("MediumPeriod", 10).SetDisplay("Medium", "Medium EMA", "Indicators")
+        self._atr_period = self.Param("AtrPeriod", 14).SetDisplay("ATR", "ATR period", "Indicators")
         self._atr_stop_mult = self.Param("AtrStopMult", 5.0).SetDisplay("ATR Stop", "ATR stop mult", "Risk")
         self._atr_take_mult = self.Param("AtrTakeMult", 10.0).SetDisplay("ATR Take", "ATR take mult", "Risk")
         self._cooldown_bars = self.Param("CooldownBars", 30).SetDisplay("Cooldown", "Min bars between entries", "Risk")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Candles", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Candles", "General")
 
         self._prev_fast = 0.0
         self._prev_medium = 0.0

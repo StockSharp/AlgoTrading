@@ -15,7 +15,7 @@ class ny_first_candle_break_and_retest_strategy(Strategy):
     def __init__(self):
         super(ny_first_candle_break_and_retest_strategy, self).__init__()
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5)))
-        self._ema_length = self.Param("EmaLength", 20) \
+        self._ema_length = self.Param("EmaLength", 13) \
             .SetGreaterThanZero()
         self._current_day = None
         self._day_high = 0.0

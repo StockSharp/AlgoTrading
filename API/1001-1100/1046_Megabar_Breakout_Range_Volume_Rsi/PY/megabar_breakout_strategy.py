@@ -26,7 +26,7 @@ class megabar_breakout_strategy(Strategy):
         self._signal_cooldown_bars = self.Param("SignalCooldownBars", 8) \
             .SetGreaterThanZero() \
             .SetDisplay("Signal Cooldown Bars", "Minimum bars between entries", "General")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(10))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Candles timeframe", "General")
         self._volumes = []
         self._ranges = []

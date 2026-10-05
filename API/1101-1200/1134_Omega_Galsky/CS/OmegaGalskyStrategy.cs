@@ -22,10 +22,10 @@ public class OmegaGalskyStrategy : Strategy
 
 	public OmegaGalskyStrategy()
 	{
-		_ema8Period = Param(nameof(Ema8Period), 14).SetGreaterThanZero();
-		_ema21Period = Param(nameof(Ema21Period), 40).SetGreaterThanZero();
+		_ema8Period = Param(nameof(Ema8Period), 8).SetGreaterThanZero();
+		_ema21Period = Param(nameof(Ema21Period), 21).SetGreaterThanZero();
 		_ema89Period = Param(nameof(Ema89Period), 89).SetGreaterThanZero();
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame());
 	}
 
 	/// <inheritdoc />

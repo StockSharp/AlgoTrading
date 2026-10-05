@@ -187,7 +187,7 @@ _lookbackPeriod = Param(nameof(LookbackPeriod), 10)
 _stopLossBufferPercent = Param(nameof(StopLossBufferPercent), 0.5m)
 .SetDisplay("Stop Loss Buffer %", "Additional buffer below lowest low", "Risk Management");
 
-_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 .SetDisplay("Candle Type", "Type of candles to use", "General");
 }
 

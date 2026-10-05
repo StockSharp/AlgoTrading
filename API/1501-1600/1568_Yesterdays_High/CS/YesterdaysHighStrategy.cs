@@ -42,14 +42,14 @@ public class YesterdaysHighStrategy : Strategy
 
 	public YesterdaysHighStrategy()
 	{
-		_gap = Param(nameof(Gap), 0.5m)
+		_gap = Param(nameof(Gap), 1m)
 			.SetDisplay("Gap%", "Entry gap percent above prev high", "Entry");
 
-		_stopLoss = Param(nameof(StopLoss), 2m)
+		_stopLoss = Param(nameof(StopLoss), 3m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop-loss", "Stop-loss percent", "Risk");
 
-		_takeProfit = Param(nameof(TakeProfit), 5m)
+		_takeProfit = Param(nameof(TakeProfit), 9m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take-profit", "Take-profit percent", "Risk");
 

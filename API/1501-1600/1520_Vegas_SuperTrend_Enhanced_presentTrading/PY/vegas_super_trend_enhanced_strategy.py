@@ -20,7 +20,7 @@ class vegas_super_trend_enhanced_strategy(Strategy):
             .SetDisplay("ATR Period", "ATR period", "Indicators")
         self._vegas_window = self.Param("VegasWindow", 100) \
             .SetDisplay("Vegas Window", "Vegas channel window", "Indicators")
-        self._super_trend_multiplier = self.Param("SuperTrendMultiplier", 3) \
+        self._super_trend_multiplier = self.Param("SuperTrendMultiplier", 5) \
             .SetDisplay("ST Multiplier", "SuperTrend multiplier", "Indicators")
         self._prev_rsi = 0.0
         self._prev_fast = 0.0

@@ -33,9 +33,9 @@ public class MacdVolumeXauusdStrategy : Strategy
 	public MacdVolumeXauusdStrategy()
 	{
 		_shortLength = Param(nameof(ShortLength), 5);
-		_longLength = Param(nameof(LongLength), 10);
+		_longLength = Param(nameof(LongLength), 8);
 		_cooldownBars = Param(nameof(CooldownBars), 2);
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame());
 	}
 
 	/// <inheritdoc />

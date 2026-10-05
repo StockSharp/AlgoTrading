@@ -23,7 +23,7 @@ public class RsiMacdLongOnlyStrategy : Strategy
 
 	public RsiMacdLongOnlyStrategy()
 	{
-		_slowLength = Param(nameof(SlowLength), 40)
+		_slowLength = Param(nameof(SlowLength), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Length", "Slow EMA period", "General");
 

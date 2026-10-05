@@ -22,7 +22,7 @@ class epsi_multi_set_strategy(Strategy):
             .SetDisplay("ATR Period", "ATR period", "Indicators")
         self._breakout_mult = self.Param("BreakoutMult", 0.5) \
             .SetDisplay("Breakout Mult", "ATR multiplier for breakout", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
             .SetDisplay("Candle Type", "Timeframe", "General")
 
         self._entry_price = 0.0

@@ -43,10 +43,10 @@ public class ManadiBuySellStrategy : Strategy
 		_fastEmaLength = Param(nameof(FastEmaLength), 9);
 		_slowEmaLength = Param(nameof(SlowEmaLength), 21);
 		_rsiLength = Param(nameof(RsiLength), 14);
-		_takeProfitPercent = Param(nameof(TakeProfitPercent), 0.15m);
-		_stopLossPercent = Param(nameof(StopLossPercent), 0.06m);
+		_takeProfitPercent = Param(nameof(TakeProfitPercent), 0.03m);
+		_stopLossPercent = Param(nameof(StopLossPercent), 0.015m);
 		_cooldownBars = Param(nameof(CooldownBars), 100);
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame());
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame());
 	}
 
 	/// <inheritdoc />

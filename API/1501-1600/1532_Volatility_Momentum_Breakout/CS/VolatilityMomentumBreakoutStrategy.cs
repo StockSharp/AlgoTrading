@@ -48,7 +48,7 @@ public class VolatilityMomentumBreakoutStrategy : Strategy
 
 	public VolatilityMomentumBreakoutStrategy()
 	{
-		_lookback = Param(nameof(Lookback), 40)
+		_lookback = Param(nameof(Lookback), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback", "Breakout lookback", "General");
 

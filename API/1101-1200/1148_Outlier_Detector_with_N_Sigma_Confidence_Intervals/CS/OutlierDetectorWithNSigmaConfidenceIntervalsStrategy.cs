@@ -20,9 +20,9 @@ public class OutlierDetectorWithNSigmaConfidenceIntervalsStrategy : Strategy
 
 	public OutlierDetectorWithNSigmaConfidenceIntervalsStrategy()
 	{
-		_sampleSize = Param(nameof(SampleSize), 50).SetGreaterThanZero();
+		_sampleSize = Param(nameof(SampleSize), 30).SetGreaterThanZero();
 		_nSigma = Param(nameof(NSigma), 2.0m);
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame());
 	}
 
 	/// <inheritdoc />

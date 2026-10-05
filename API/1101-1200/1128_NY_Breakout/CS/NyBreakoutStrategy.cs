@@ -22,7 +22,7 @@ public class NyBreakoutStrategy : Strategy
 
 	public NyBreakoutStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame());
 	}
 
 	/// <inheritdoc />

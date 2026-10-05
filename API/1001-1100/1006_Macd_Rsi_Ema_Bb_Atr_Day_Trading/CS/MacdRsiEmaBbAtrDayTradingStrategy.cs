@@ -45,8 +45,8 @@ public class MacdRsiEmaBbAtrDayTradingStrategy : Strategy
 		_emaSlowLen = Param(nameof(EmaSlowLen), 21).SetDisplay("Slow EMA", "Slow EMA", "Indicators");
 		_rsiLength = Param(nameof(RsiLength), 14).SetDisplay("RSI", "RSI period", "Indicators");
 		_atrLength = Param(nameof(AtrLength), 14).SetDisplay("ATR", "ATR period", "Indicators");
-		_atrMultiplier = Param(nameof(AtrMultiplier), 3.0m).SetDisplay("ATR Mult", "ATR stop mult", "Risk");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(25).TimeFrame())
+		_atrMultiplier = Param(nameof(AtrMultiplier), 2m).SetDisplay("ATR Mult", "ATR stop mult", "Risk");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candles", "General");
 	}
 

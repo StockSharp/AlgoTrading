@@ -16,7 +16,7 @@ class us_index_first30m_candle_strategy(Strategy):
         super(us_index_first30m_candle_strategy, self).__init__()
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
-        self._risk_reward = self.Param("RiskReward", 2) \
+        self._risk_reward = self.Param("RiskReward", 1) \
             .SetDisplay("Risk Reward", "Risk reward ratio", "General")
         self._prev_rsi = 0.0
         self._prev_fast = 0.0

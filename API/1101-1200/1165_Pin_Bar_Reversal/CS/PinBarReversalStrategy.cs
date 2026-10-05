@@ -132,7 +132,7 @@ public class PinBarReversalStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Take Mult", "Take profit ATR multiplier", "Risk");
 
-		__minAtr = Param(nameof(MinAtr), 0.01m)
+		__minAtr = Param(nameof(MinAtr), 0.0015m)
 			.SetGreaterThanZero()
 			.SetDisplay("Min ATR", "Minimum ATR to allow entry", "Risk");
 

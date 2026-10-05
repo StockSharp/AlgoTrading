@@ -14,10 +14,10 @@ from StockSharp.Algo.Strategies import Strategy
 class outlier_detector_with_n_sigma_confidence_intervals_strategy(Strategy):
     def __init__(self):
         super(outlier_detector_with_n_sigma_confidence_intervals_strategy, self).__init__()
-        self._sample_size = self.Param("SampleSize", 50) \
+        self._sample_size = self.Param("SampleSize", 30) \
             .SetGreaterThanZero()
         self._n_sigma = self.Param("NSigma", 2.0)
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5)))
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1)))
         self._last_signal_ticks = 0
 
     @property

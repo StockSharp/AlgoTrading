@@ -43,14 +43,14 @@ public class MovingAverageCrossoverSwingStrategy : Strategy
 
 	public MovingAverageCrossoverSwingStrategy()
 	{
-		_fastPeriod = Param(nameof(FastPeriod), 10);
-		_mediumPeriod = Param(nameof(MediumPeriod), 30);
-		_atrPeriod = Param(nameof(AtrPeriod), 20);
+		_fastPeriod = Param(nameof(FastPeriod), 5);
+		_mediumPeriod = Param(nameof(MediumPeriod), 10);
+		_atrPeriod = Param(nameof(AtrPeriod), 14);
 		_atrStopMult = Param(nameof(AtrStopMult), 5.0m);
 		_atrTakeMult = Param(nameof(AtrTakeMult), 10.0m);
 		_cooldownBars = Param(nameof(CooldownBars), 30).SetGreaterThanZero();
 		_minSpreadPercent = Param(nameof(MinSpreadPercent), 0.01m).SetGreaterThanZero();
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame());
 	}
 
 	protected override void OnStarted2(DateTime time)

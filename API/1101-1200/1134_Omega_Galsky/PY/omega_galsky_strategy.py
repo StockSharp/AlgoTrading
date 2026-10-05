@@ -14,13 +14,13 @@ from StockSharp.Algo.Strategies import Strategy
 class omega_galsky_strategy(Strategy):
     def __init__(self):
         super(omega_galsky_strategy, self).__init__()
-        self._ema8_period = self.Param("Ema8Period", 14) \
+        self._ema8_period = self.Param("Ema8Period", 8) \
             .SetGreaterThanZero()
-        self._ema21_period = self.Param("Ema21Period", 40) \
+        self._ema21_period = self.Param("Ema21Period", 21) \
             .SetGreaterThanZero()
         self._ema89_period = self.Param("Ema89Period", 89) \
             .SetGreaterThanZero()
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5)))
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1)))
         self._prev_e8 = 0.0
         self._prev_e21 = 0.0
         self._initialized = False

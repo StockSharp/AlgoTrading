@@ -14,9 +14,9 @@ from StockSharp.Algo.Strategies import Strategy
 class martin_gale_scalping_strategy(Strategy):
     def __init__(self):
         super(martin_gale_scalping_strategy, self).__init__()
-        self._fast_length = self.Param("FastLength", 10) \
+        self._fast_length = self.Param("FastLength", 3) \
             .SetDisplay("Fast SMA Length", "Length for fast SMA", "General")
-        self._slow_length = self.Param("SlowLength", 20) \
+        self._slow_length = self.Param("SlowLength", 8) \
             .SetDisplay("Slow SMA Length", "Length for slow SMA", "General")
         self._take_profit = self.Param("TakeProfit", 1.03) \
             .SetDisplay("Take Profit Mult", "Take profit multiplier", "Risk")
@@ -26,7 +26,7 @@ class martin_gale_scalping_strategy(Strategy):
             .SetDisplay("Trade Direction", "Trade direction", "General")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
             .SetDisplay("Candle Type", "Timeframe for candles", "General")
-        self._max_pyramids = self.Param("MaxPyramids", 2) \
+        self._max_pyramids = self.Param("MaxPyramids", 5) \
             .SetDisplay("Max Pyramids", "Maximum pyramid entries", "General")
         self._stop_price = 0.0
         self._take_price = 0.0

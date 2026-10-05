@@ -14,7 +14,7 @@ from StockSharp.Algo.Strategies import Strategy
 class max_gain_strategy(Strategy):
     def __init__(self):
         super(max_gain_strategy, self).__init__()
-        self._period_length = self.Param("PeriodLength", 64) \
+        self._period_length = self.Param("PeriodLength", 30) \
             .SetGreaterThanZero() \
             .SetDisplay("Period Length", "Rolling high-low length", "General")
         self._edge_multiplier = self.Param("EdgeMultiplier", 1.25) \

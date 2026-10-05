@@ -12,7 +12,7 @@ from StockSharp.Algo.Strategies import Strategy
 class ny_breakout_strategy(Strategy):
     def __init__(self):
         super(ny_breakout_strategy, self).__init__()
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5)))
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1)))
         self._day_high = 0.0
         self._day_low = 0.0
         self._current_day = None

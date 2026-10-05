@@ -40,7 +40,7 @@ public class VolatilityBiasModelStrategy : Strategy
 			.SetRange(0m, 1m)
 			.SetDisplay("Bias Threshold", "Directional bias threshold", "Parameters");
 
-		_maxBars = Param(nameof(MaxBars), 100)
+		_maxBars = Param(nameof(MaxBars), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Bars", "Maximum bars to hold", "Parameters");
 

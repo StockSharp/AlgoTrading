@@ -29,8 +29,8 @@ public class MacdLiquidityTrackerStrategy : Strategy
 
 	public MacdLiquidityTrackerStrategy()
 	{
-		_fastLength = Param(nameof(FastLength), 12).SetDisplay("Fast", "Fast EMA", "MACD");
-		_slowLength = Param(nameof(SlowLength), 26).SetDisplay("Slow", "Slow EMA", "MACD");
+		_fastLength = Param(nameof(FastLength), 25).SetDisplay("Fast", "Fast EMA", "MACD");
+		_slowLength = Param(nameof(SlowLength), 60).SetDisplay("Slow", "Slow EMA", "MACD");
 		_cooldownBars = Param(nameof(CooldownBars), 10).SetDisplay("Cooldown", "Bars between signals", "Risk");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candles", "General");

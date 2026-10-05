@@ -15,7 +15,7 @@ class pavan_cpr_strategy(Strategy):
         super(pavan_cpr_strategy, self).__init__()
         self._take_profit_target = self.Param("TakeProfitTarget", 50.0) \
             .SetGreaterThanZero()
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5)))
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1)))
         self._today_pivot = 0.0
         self._today_top = 0.0
         self._last_close = 0.0

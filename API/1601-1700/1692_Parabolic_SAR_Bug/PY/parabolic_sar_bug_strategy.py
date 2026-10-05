@@ -18,7 +18,7 @@ class parabolic_sar_bug_strategy(Strategy):
             .SetDisplay("Step", "Acceleration factor", "Indicator")
         self._max_step = self.Param("MaxStep", 0.2) \
             .SetDisplay("Max Step", "Maximum acceleration", "Indicator")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
         self._prev_sar = 0.0
         self._prev_close = 0.0

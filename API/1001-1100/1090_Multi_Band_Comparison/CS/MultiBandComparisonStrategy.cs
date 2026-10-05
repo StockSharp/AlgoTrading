@@ -88,11 +88,11 @@ public class MultiBandComparisonStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
-		_length = Param(nameof(Length), 40)
+		_length = Param(nameof(Length), 20)
 			.SetDisplay("Length", "SMA period", "Bands")
 			.SetGreaterThanZero();
 
-		_bollingerMultiplier = Param(nameof(BollingerMultiplier), 1.1m)
+		_bollingerMultiplier = Param(nameof(BollingerMultiplier), 1m)
 			.SetDisplay("BB Mult", "Volatility multiplier for the breakout band", "Bands")
 			.SetGreaterThanZero();
 

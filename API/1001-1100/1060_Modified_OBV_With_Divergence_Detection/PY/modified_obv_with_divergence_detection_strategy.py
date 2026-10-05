@@ -22,7 +22,7 @@ class modified_obv_with_divergence_detection_strategy(Strategy):
             .SetGreaterThanZero()
         self._signal_cooldown_bars = self.Param("SignalCooldownBars", 10) \
             .SetGreaterThanZero()
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15)))
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5)))
         self._was_below_signal = False
         self._is_initialized = False
         self._bars_from_signal = 0

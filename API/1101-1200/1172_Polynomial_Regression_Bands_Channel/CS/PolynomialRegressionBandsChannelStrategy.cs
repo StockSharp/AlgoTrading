@@ -24,7 +24,7 @@ public class PolynomialRegressionBandsChannelStrategy : Strategy
 
 	public PolynomialRegressionBandsChannelStrategy()
 	{
-		_length = Param(nameof(Length), 40)
+		_length = Param(nameof(Length), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("Length", "Slow EMA period", "General");
 

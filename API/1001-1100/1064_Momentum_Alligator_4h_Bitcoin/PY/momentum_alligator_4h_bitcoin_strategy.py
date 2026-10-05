@@ -19,7 +19,7 @@ class momentum_alligator_4h_bitcoin_strategy(Strategy):
         super(momentum_alligator_4h_bitcoin_strategy, self).__init__()
         self._stop_loss_pct = self.Param("StopLossPercent", 0.02).SetDisplay("SL %", "Stop loss percent", "Risk")
         self._cooldown_bars = self.Param("SignalCooldownBars", 2).SetDisplay("Cooldown", "Min bars between entries", "Risk")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))).SetDisplay("Candle Type", "Candles", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))).SetDisplay("Candle Type", "Candles", "General")
 
         self._prev_ao = 0.0
         self._has_prev = False

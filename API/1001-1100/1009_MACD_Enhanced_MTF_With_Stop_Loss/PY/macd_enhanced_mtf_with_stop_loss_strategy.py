@@ -17,12 +17,12 @@ class macd_enhanced_mtf_with_stop_loss_strategy(Strategy):
 
     def __init__(self):
         super(macd_enhanced_mtf_with_stop_loss_strategy, self).__init__()
-        self._fast_length = self.Param("FastLength", 8).SetDisplay("Fast", "Fast EMA", "MACD")
-        self._slow_length = self.Param("SlowLength", 17).SetDisplay("Slow", "Slow EMA", "MACD")
+        self._fast_length = self.Param("FastLength", 12).SetDisplay("Fast", "Fast EMA", "MACD")
+        self._slow_length = self.Param("SlowLength", 26).SetDisplay("Slow", "Slow EMA", "MACD")
         self._atr_length = self.Param("AtrLength", 14).SetDisplay("ATR", "ATR period", "Risk")
         self._stop_atr_mult = self.Param("StopAtrMult", 3.0).SetDisplay("SL Mult", "ATR stop mult", "Risk")
         self._cooldown_bars = self.Param("CooldownBars", 10).SetDisplay("Cooldown", "Bars between signals", "Risk")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Candles", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Candles", "General")
 
         self._prev_fast_above = False
         self._is_init = False

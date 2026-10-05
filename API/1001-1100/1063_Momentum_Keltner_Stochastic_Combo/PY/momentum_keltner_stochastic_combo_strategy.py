@@ -23,7 +23,7 @@ class momentum_keltner_stochastic_combo_strategy(Strategy):
         self._keltner_multiplier = self.Param("KeltnerMultiplier", 0.5) \
             .SetGreaterThanZero() \
             .SetDisplay("Keltner Mult", "Keltner multiplier", "Indicators")
-        self._threshold = self.Param("Threshold", 10.0) \
+        self._threshold = self.Param("Threshold", 99.0) \
             .SetDisplay("Stochastic Threshold", "Threshold for Keltner stochastic", "Indicators")
         self._atr_length = self.Param("AtrLength", 20) \
             .SetGreaterThanZero() \
@@ -34,7 +34,7 @@ class momentum_keltner_stochastic_combo_strategy(Strategy):
         self._signal_cooldown_bars = self.Param("SignalCooldownBars", 24) \
             .SetGreaterThanZero() \
             .SetDisplay("Signal Cooldown Bars", "Minimum bars between entries", "Risk Management")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles for calculations", "General")
         self._prev_momentum = 0.0
         self._has_prev_momentum = False

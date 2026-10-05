@@ -14,11 +14,11 @@ from StockSharp.Algo.Strategies import Strategy
 class options_v13_strategy(Strategy):
     def __init__(self):
         super(options_v13_strategy, self).__init__()
-        self._ema_short_length = self.Param("EmaShortLength", 14) \
+        self._ema_short_length = self.Param("EmaShortLength", 8) \
             .SetGreaterThanZero()
-        self._ema_long_length = self.Param("EmaLongLength", 40) \
+        self._ema_long_length = self.Param("EmaLongLength", 28) \
             .SetGreaterThanZero()
-        self._rsi_length = self.Param("RsiLength", 14) \
+        self._rsi_length = self.Param("RsiLength", 12) \
             .SetGreaterThanZero()
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5)))
         self._prev_fast = 0.0

@@ -30,15 +30,15 @@ public class MultiRegressionStrategy : Strategy
 
 	public MultiRegressionStrategy()
 	{
-		_length = Param(nameof(Length), 20)
+		_length = Param(nameof(Length), 90)
 			.SetGreaterThanZero()
 			.SetDisplay("Length", "SMA and StdDev period", "Regression");
-		_riskMultiplier = Param(nameof(RiskMultiplier), 2m)
+		_riskMultiplier = Param(nameof(RiskMultiplier), 1m)
 			.SetDisplay("Risk Multiplier", "StdDev multiplier for bounds", "Risk");
 		_signalCooldownBars = Param(nameof(SignalCooldownBars), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Cooldown", "Bars to wait between reversals", "Risk");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "Common");
 	}
 

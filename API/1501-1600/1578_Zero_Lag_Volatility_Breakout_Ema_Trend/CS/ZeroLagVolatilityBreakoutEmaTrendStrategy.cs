@@ -37,10 +37,10 @@ public class ZeroLagVolatilityBreakoutEmaTrendStrategy : Strategy
 
 	public ZeroLagVolatilityBreakoutEmaTrendStrategy()
 	{
-		_emaLength = Param(nameof(EmaLength), 50).SetDisplay("EMA Length", "Base EMA length", "Indicators");
+		_emaLength = Param(nameof(EmaLength), 200).SetDisplay("EMA Length", "Base EMA length", "Indicators");
 		_stdMultiplier = Param(nameof(StdMultiplier), 2m).SetDisplay("Std Mult", "Standard deviation multiplier", "Indicators");
 		_useBinary = Param(nameof(UseBinary), true).SetDisplay("Use Binary", "Hold until opposite signal", "General");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()

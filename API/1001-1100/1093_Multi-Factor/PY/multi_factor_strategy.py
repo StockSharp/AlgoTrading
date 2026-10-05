@@ -26,7 +26,7 @@ class multi_factor_strategy(Strategy):
         self._signal_cooldown_bars = self.Param("SignalCooldownBars", 50) \
             .SetGreaterThanZero() \
             .SetDisplay("Signal Cooldown", "Bars to wait after entries and exits", "Trading")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
         self._prev_diff = 0.0
         self._has_prev_diff = False

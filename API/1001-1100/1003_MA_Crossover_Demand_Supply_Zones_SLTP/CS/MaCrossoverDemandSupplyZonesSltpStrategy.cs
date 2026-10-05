@@ -41,9 +41,9 @@ public class MaCrossoverDemandSupplyZonesSltpStrategy : Strategy
 			.SetDisplay("Short MA", "Short MA period", "Indicators");
 		_longMaLength = Param(nameof(LongMaLength), 21).SetGreaterThanZero()
 			.SetDisplay("Long MA", "Long MA period", "Indicators");
-		_stopLossPercent = Param(nameof(StopLossPercent), 7m).SetGreaterThanZero()
+		_stopLossPercent = Param(nameof(StopLossPercent), 1m).SetGreaterThanZero()
 			.SetDisplay("SL %", "Stop loss percent", "Risk");
-		_takeProfitPercent = Param(nameof(TakeProfitPercent), 10m).SetGreaterThanZero()
+		_takeProfitPercent = Param(nameof(TakeProfitPercent), 2m).SetGreaterThanZero()
 			.SetDisplay("TP %", "Take profit percent", "Risk");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(20).TimeFrame())
 			.SetDisplay("Candle Type", "Candles", "General");

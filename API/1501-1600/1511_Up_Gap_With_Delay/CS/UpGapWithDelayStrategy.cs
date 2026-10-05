@@ -35,7 +35,7 @@ public class UpGapWithDelayStrategy : Strategy
 
 	public UpGapWithDelayStrategy()
 	{
-		_gapThreshold = Param(nameof(GapThreshold), 0.1m)
+		_gapThreshold = Param(nameof(GapThreshold), 1m)
 			.SetDisplay("Gap Threshold (%)", "Minimum gap size", "General");
 
 		_delayPeriods = Param(nameof(DelayPeriods), 0)

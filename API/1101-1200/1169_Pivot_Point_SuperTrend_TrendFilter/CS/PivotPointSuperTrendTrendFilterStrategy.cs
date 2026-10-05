@@ -37,7 +37,7 @@ public class PivotPointSuperTrendTrendFilterStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
-		_maPeriod = Param(nameof(MaPeriod), 40)
+		_maPeriod = Param(nameof(MaPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Slow EMA period", "General");
 	}

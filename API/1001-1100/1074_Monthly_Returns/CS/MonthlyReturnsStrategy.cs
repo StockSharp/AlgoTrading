@@ -94,11 +94,11 @@ public class MonthlyReturnsStrategy : Strategy
 	/// </summary>
 	public MonthlyReturnsStrategy()
 	{
-		_leftBars = Param(nameof(LeftBars), 6)
+		_leftBars = Param(nameof(LeftBars), 2)
 			.SetDisplay("Left Bars", "Bars to the left for pivots", "General")
 			.SetGreaterThanZero();
 
-		_rightBars = Param(nameof(RightBars), 3)
+		_rightBars = Param(nameof(RightBars), 1)
 			.SetDisplay("Right Bars", "Bars to the right for pivots", "General")
 			.SetGreaterThanZero();
 
@@ -111,7 +111,7 @@ public class MonthlyReturnsStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetGreaterThanZero();
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(10).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 

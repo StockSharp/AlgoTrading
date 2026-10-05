@@ -14,7 +14,7 @@ from StockSharp.Algo.Strategies import Strategy
 class multi_indicator_swing_strategy(Strategy):
     def __init__(self):
         super(multi_indicator_swing_strategy, self).__init__()
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(2))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
         self._sma_length = self.Param("SmaLength", 20) \
             .SetGreaterThanZero() \

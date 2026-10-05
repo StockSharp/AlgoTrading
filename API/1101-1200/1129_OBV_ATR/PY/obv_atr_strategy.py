@@ -15,7 +15,7 @@ from indicator_extensions import *
 class obv_atr_strategy(Strategy):
     def __init__(self):
         super(obv_atr_strategy, self).__init__()
-        self._lookback = self.Param("LookbackLength", 60) \
+        self._lookback = self.Param("LookbackLength", 30) \
             .SetGreaterThanZero() \
             .SetDisplay("OBV Lookback", "Lookback length for OBV highs and lows", "Parameters")
         self._candle_type = self.Param("CandleType", tf(5)) \

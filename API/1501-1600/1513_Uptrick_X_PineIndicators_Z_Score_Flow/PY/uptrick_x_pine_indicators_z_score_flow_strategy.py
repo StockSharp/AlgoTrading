@@ -16,7 +16,7 @@ class uptrick_x_pine_indicators_z_score_flow_strategy(Strategy):
         super(uptrick_x_pine_indicators_z_score_flow_strategy, self).__init__()
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
-        self._z_score_period = self.Param("ZScorePeriod", 20) \
+        self._z_score_period = self.Param("ZScorePeriod", 100) \
             .SetDisplay("Z-Score Period", "Period for Z-Score calculation", "General")
         self._z_buy_level = self.Param("ZBuyLevel", -2) \
             .SetDisplay("Z Buy Level", "Z-Score buy threshold", "General")

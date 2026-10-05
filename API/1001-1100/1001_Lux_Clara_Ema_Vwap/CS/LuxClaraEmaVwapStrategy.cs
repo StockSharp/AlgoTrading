@@ -38,7 +38,7 @@ public class LuxClaraEmaVwapStrategy : Strategy
 		_fastEmaLength = Param(nameof(FastEmaLength), 8)
 			.SetDisplay("Fast EMA Length", "Length of fast EMA", "Indicators");
 
-		_slowEmaLength = Param(nameof(SlowEmaLength), 21)
+		_slowEmaLength = Param(nameof(SlowEmaLength), 50)
 			.SetDisplay("Slow EMA Length", "Length of slow EMA", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())

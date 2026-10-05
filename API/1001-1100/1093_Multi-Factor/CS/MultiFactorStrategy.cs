@@ -77,7 +77,7 @@ public class MultiFactorStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Cooldown", "Bars to wait after entries and exits", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 

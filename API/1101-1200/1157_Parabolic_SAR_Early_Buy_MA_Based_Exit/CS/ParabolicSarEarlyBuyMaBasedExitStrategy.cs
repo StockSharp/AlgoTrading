@@ -21,7 +21,7 @@ public class ParabolicSarEarlyBuyMaBasedExitStrategy : Strategy
 
 	public ParabolicSarEarlyBuyMaBasedExitStrategy()
 	{
-		_maPeriod = Param(nameof(MaPeriod), 40).SetGreaterThanZero();
+		_maPeriod = Param(nameof(MaPeriod), 11).SetGreaterThanZero();
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
 	}
 

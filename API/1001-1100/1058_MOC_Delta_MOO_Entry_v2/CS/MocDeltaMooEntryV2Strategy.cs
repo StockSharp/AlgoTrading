@@ -61,7 +61,7 @@ public class MocDeltaMooEntryV2Strategy : Strategy
 
 	public MocDeltaMooEntryV2Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candles timeframe", "General");
 		_deltaWindow = Param(nameof(DeltaWindow), 24)
 			.SetGreaterThanZero()

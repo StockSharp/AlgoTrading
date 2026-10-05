@@ -14,13 +14,13 @@ from StockSharp.Algo.Strategies import Strategy
 class three_commas_turtle_strategy(Strategy):
     def __init__(self):
         super(three_commas_turtle_strategy, self).__init__()
-        self._period_fast = self.Param("PeriodFast", 10) \
+        self._period_fast = self.Param("PeriodFast", 20) \
             .SetDisplay("Period Fast", "Fast channel period", "Channels")
-        self._period_slow = self.Param("PeriodSlow", 15) \
+        self._period_slow = self.Param("PeriodSlow", 20) \
             .SetDisplay("Period Slow", "Slow channel period", "Channels")
-        self._period_exit = self.Param("PeriodExit", 5) \
+        self._period_exit = self.Param("PeriodExit", 10) \
             .SetDisplay("Period Exit", "Exit channel period", "Channels")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
         self._prev_upper_fast = 0.0
         self._prev_lower_fast = 0.0

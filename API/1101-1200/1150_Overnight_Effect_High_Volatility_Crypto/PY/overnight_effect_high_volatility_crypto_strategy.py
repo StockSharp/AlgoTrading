@@ -14,7 +14,7 @@ from StockSharp.Algo.Strategies import Strategy
 class overnight_effect_high_volatility_crypto_strategy(Strategy):
     def __init__(self):
         super(overnight_effect_high_volatility_crypto_strategy, self).__init__()
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5)))
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1)))
         self._current_day = None
         self._trade_taken_today = False
 

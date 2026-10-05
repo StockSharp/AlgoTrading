@@ -79,7 +79,7 @@ public class MovingRegressionStrategy : Strategy
 			.SetRange(0, 5)
 			.SetDisplay("Degree", "Sensitivity multiplier", "General");
 
-		_window = Param(nameof(Window), 20)
+		_window = Param(nameof(Window), 18)
 			.SetRange(10, 200)
 			.SetDisplay("Window", "Regression window length", "General");
 

@@ -36,11 +36,11 @@ public class YinYangRsiVolumeTrendStrategy : Strategy
 
 	public YinYangRsiVolumeTrendStrategy()
 	{
-		_trendLength = Param(nameof(TrendLength), 40)
+		_trendLength = Param(nameof(TrendLength), 80)
 			.SetGreaterThanZero()
 			.SetDisplay("Trend Length", "Lookback length", "General");
 
-		_stopLossMultiplier = Param(nameof(StopLossMultiplier), 0.5m)
+		_stopLossMultiplier = Param(nameof(StopLossMultiplier), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("SL Mult %", "Stop distance percent", "Risk");
 

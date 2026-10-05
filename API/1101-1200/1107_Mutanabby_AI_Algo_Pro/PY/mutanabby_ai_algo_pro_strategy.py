@@ -30,7 +30,7 @@ class mutanabby_ai_algo_pro_strategy(Strategy):
         self._lookback_period = self.Param("LookbackPeriod", 10) \
             .SetGreaterThanZero() \
             .SetDisplay("Lookback Period", "Bars for lowest low stop", "Risk Management")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
         self._prev_open = 0.0
         self._prev_close = 0.0

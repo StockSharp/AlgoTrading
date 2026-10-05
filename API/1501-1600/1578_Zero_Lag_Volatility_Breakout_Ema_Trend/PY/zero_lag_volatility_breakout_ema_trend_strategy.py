@@ -14,13 +14,13 @@ from StockSharp.Algo.Strategies import Strategy
 class zero_lag_volatility_breakout_ema_trend_strategy(Strategy):
     def __init__(self):
         super(zero_lag_volatility_breakout_ema_trend_strategy, self).__init__()
-        self._ema_length = self.Param("EmaLength", 50) \
+        self._ema_length = self.Param("EmaLength", 200) \
             .SetDisplay("EMA Length", "Base EMA length", "Indicators")
         self._std_multiplier = self.Param("StdMultiplier", 2.0) \
             .SetDisplay("Std Mult", "Standard deviation multiplier", "Indicators")
         self._use_binary = self.Param("UseBinary", True) \
             .SetDisplay("Use Binary", "Hold until opposite signal", "General")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Candle timeframe", "General")
         self._difs = []
         self._prev_ema = 0.0

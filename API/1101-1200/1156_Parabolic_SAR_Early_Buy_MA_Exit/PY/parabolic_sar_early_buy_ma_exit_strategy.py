@@ -14,7 +14,7 @@ from StockSharp.Algo.Strategies import Strategy
 class parabolic_sar_early_buy_ma_exit_strategy(Strategy):
     def __init__(self):
         super(parabolic_sar_early_buy_ma_exit_strategy, self).__init__()
-        self._ma_period = self.Param("MaPeriod", 40) \
+        self._ma_period = self.Param("MaPeriod", 11) \
             .SetGreaterThanZero()
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5)))
         self._prev_fast = 0.0

@@ -51,7 +51,7 @@ public class TurnAroundTuesdayOnSteroidsStrategy : Strategy
 		_useMaFilter = Param(nameof(UseMaFilter), false)
 			.SetDisplay("Use MA Filter", "Enable moving average filter", "Strategy");
 
-		_maPeriod = Param(nameof(MaPeriod), 14)
+		_maPeriod = Param(nameof(MaPeriod), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "RSI period", "Strategy");
 

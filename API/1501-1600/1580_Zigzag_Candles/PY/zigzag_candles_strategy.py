@@ -16,7 +16,7 @@ class zigzag_candles_strategy(Strategy):
         super(zigzag_candles_strategy, self).__init__()
         self._zigzag_length = self.Param("ZigzagLength", 5) \
             .SetDisplay("ZigZag Length", "Lookback for pivot search", "ZigZag")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
         self._last_zigzag = 0.0
         self._last_zigzag_high = 0.0

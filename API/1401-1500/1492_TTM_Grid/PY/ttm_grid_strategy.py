@@ -18,9 +18,9 @@ class ttm_grid_strategy(Strategy):
             .SetDisplay("Fast Period", "Fast EMA period", "Indicators")
         self._slow_period = self.Param("SlowPeriod", 21) \
             .SetDisplay("Slow Period", "Slow EMA period", "Indicators")
-        self._grid_levels = self.Param("GridLevels", 14) \
+        self._grid_levels = self.Param("GridLevels", 5) \
             .SetDisplay("RSI Period", "RSI period for momentum", "Strategy")
-        self._grid_spacing = self.Param("GridSpacing", 0.005) \
+        self._grid_spacing = self.Param("GridSpacing", 0.01) \
             .SetDisplay("Grid Spacing", "Distance between grid levels (fraction)", "Strategy")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")

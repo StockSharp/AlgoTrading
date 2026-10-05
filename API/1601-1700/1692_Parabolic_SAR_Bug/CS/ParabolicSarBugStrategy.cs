@@ -36,7 +36,7 @@ public class ParabolicSarBugStrategy : Strategy
 		_maxStep = Param(nameof(MaxStep), 0.2m)
 			.SetDisplay("Max Step", "Maximum acceleration", "Indicator");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 

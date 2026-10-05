@@ -42,14 +42,14 @@ public class ArdOrderManagementStrategy : Strategy
 
 	public ArdOrderManagementStrategy()
 	{
-		_deMarkerPeriod = Param(nameof(DeMarkerPeriod), 14)
+		_deMarkerPeriod = Param(nameof(DeMarkerPeriod), 2)
 			.SetGreaterThanZero()
 			.SetDisplay("DeMarker Period", "DeMarker indicator period", "Parameters");
 
 		_threshold = Param(nameof(Threshold), 0.5m)
 			.SetDisplay("Threshold", "DeMarker crossing level", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 

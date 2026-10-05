@@ -16,10 +16,10 @@ class multi_band_comparison_strategy(Strategy):
         super(multi_band_comparison_strategy, self).__init__()
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
-        self._length = self.Param("Length", 40) \
+        self._length = self.Param("Length", 20) \
             .SetDisplay("Length", "SMA period", "Bands") \
             .SetGreaterThanZero()
-        self._bollinger_multiplier = self.Param("BollingerMultiplier", 1.1) \
+        self._bollinger_multiplier = self.Param("BollingerMultiplier", 1.0) \
             .SetDisplay("BB Mult", "Volatility multiplier for the breakout band", "Bands") \
             .SetGreaterThanZero()
         self._entry_confirm_bars = self.Param("EntryConfirmBars", 1) \

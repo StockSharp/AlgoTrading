@@ -50,7 +50,7 @@ public class ObvAtrStrategy : Strategy
 	/// </summary>
 	public ObvAtrStrategy()
 	{
-		_lookbackLength = Param(nameof(LookbackLength), 60)
+		_lookbackLength = Param(nameof(LookbackLength), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("OBV Lookback", "Lookback length for OBV highs and lows", "Parameters")
 			
