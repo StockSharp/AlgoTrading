@@ -5022,6 +5022,86 @@ public abstract partial class StrategyTests
 	public Task S0148_PercentStopWorksBetweenFinishedBars()
 		=> CheckPercentStopBetweenBars("0148_RSI_Stochastic", TimeSpan.FromDays(31));
 
+	[TestMethod]
+	[TestCategory("Shard02")]
+	[DataRow(20, 14, 25.0, 2.0, 14, false)]
+	[DataRow(30, 10, 20.0, 1.0, 10, true)]
+	public async Task S0149_SmaCrossesWithStrongAdxUntilTheReverseCrossOrAnAtrTarget(int maPeriod, int adxPeriod, double threshold, double targetAtr, int atrPeriod, bool secondary)
+	{
+		var sma = new SimpleMovingAverage { Length = maPeriod };
+		var adx = new AverageDirectionalIndex { Length = adxPeriod };
+		var atr = new AverageTrueRange { Length = atrPeriod };
+		decimal? previousClose = null;
+		var previousMa = 0m;
+		var targetPrice = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var crossExits = 0;
+		var targetExits = 0;
+		var violations = new List<string>();
+		await Replay("0149_MA_ADX", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["MaPeriod"].Value);
+			AreEqual(14, strategy.Parameters["AdxPeriod"].Value);
+			AreEqual(25m, Convert.ToDecimal(strategy.Parameters["AdxThreshold"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["TakeProfitAtrMultiplier"].Value));
+			AreEqual(14, strategy.Parameters["AtrPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "MaPeriod", maPeriod);
+			SetParam(strategy, "AdxPeriod", adxPeriod);
+			SetParam(strategy, "AdxThreshold", threshold);
+			SetParam(strategy, "TakeProfitAtrMultiplier", targetAtr);
+			SetParam(strategy, "AtrPeriod", atrPeriod);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var m = sma.Process(candle);
+				var a = adx.Process(candle);
+				var r = atr.Process(candle);
+				if (!m.IsFormed || !a.IsFormed || !r.IsFormed || a is not AverageDirectionalIndexValue { MovingAverage: decimal strength }) return;
+				var ma = m.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var last = previousClose;
+				var lastMa = previousMa;
+				previousClose = close;
+				previousMa = ma;
+				if (last is not decimal lastClose) return;
+				var range = r.GetValue<decimal>();
+				var up = lastClose <= lastMa && close > ma;
+				var down = lastClose >= lastMa && close < ma;
+				var strong = strength > (decimal)threshold;
+				var position = strategy.Position;
+				if (up && strong && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; targetPrice = close + (decimal)targetAtr * range; }
+				else if (down && strong && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; targetPrice = close - (decimal)targetAtr * range; }
+				else if (position > 0m && (down || close >= targetPrice)) { expectedSide = Sides.Sell; expectedVolume = position; if (down) crossExits++; else targetExits++; }
+				else if (position < 0m && (up || close <= targetPrice)) { expectedSide = Sides.Buy; expectedVolume = -position; if (up) crossExits++; else targetExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow an SMA cross with strong ADX, or close on the reverse cross or the ATR target.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && crossExits > 0 && targetExits > 0, "The fixture must trade both sides and exit both on the reverse cross and at the target.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard02")]
+	public Task S0149_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0149_MA_ADX", TimeSpan.FromDays(31));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

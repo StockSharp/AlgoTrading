@@ -7,7 +7,7 @@ Tests zeigen eine durchschnittliche jährliche Rendite von etwa 184%. Sie funkti
 
 Der gleitende Durchschnitt gibt den Trend vor, und ADX prüft, ob er stark genug zum Handeln ist. Einstiege folgen den Preiskreuzungen des MA, wenn ADX einen Schwellenwert überschreitet.
 
-Dieser klassische Trendansatz spricht systematische Trader an. Verluste werden mit einem ATR-basierten Stop gesteuert.
+Dieser klassische Trendansatz spricht systematische Trader an. Verluste werden mit einem prozentualen Stop gesteuert, Gewinne an einem ATR-basierten Ziel mitgenommen.
 
 ## Details
 
@@ -23,6 +23,9 @@ Dieser klassische Trendansatz spricht systematische Trader an. Verluste werden m
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
   - `StopLossPercent` = 2m
   - `TakeProfitAtrMultiplier` = 2m
+  - `AdxThreshold` = 25
+  - `AtrPeriod` = 14
+    Ein Einstieg verlangt, dass der Schluss den SMA auf dieser Kerze kreuzt, während ADX über AdxThreshold liegt; das Gegenkreuzen schließt die Position und eröffnet bei weiterhin starkem ADX die Gegenseite. Das Ziel liegt TakeProfitAtrMultiplier ATR (AtrPeriod) vom Einstiegsschluss entfernt und wird auf Kerzenschlüssen geprüft.
 - **Filter**:
   - Kategorie: Trend
   - Richtung: Beide

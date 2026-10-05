@@ -7,7 +7,7 @@ Las pruebas indican un retorno anual promedio de aproximadamente 184%. Funciona 
 
 La media móvil dicta la tendencia y el ADX verifica si es suficientemente fuerte para operar. Las entradas siguen los cruces del precio de la MA cuando el ADX supera un umbral.
 
-Este enfoque de tendencia clásico atrae a traders sistemáticos. Las pérdidas se gestionan con un stop basado en ATR.
+Este enfoque de tendencia clásico atrae a traders sistemáticos. Las pérdidas se gestionan con un stop porcentual y los beneficios se toman en un objetivo basado en ATR.
 
 ## Detalles
 
@@ -23,6 +23,9 @@ Este enfoque de tendencia clásico atrae a traders sistemáticos. Las pérdidas 
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
   - `StopLossPercent` = 2m
   - `TakeProfitAtrMultiplier` = 2m
+  - `AdxThreshold` = 25
+  - `AtrPeriod` = 14
+    La entrada exige que el cierre cruce la SMA en esa vela con el ADX por encima de AdxThreshold; el cruce inverso cierra la posición y, si el ADX sigue fuerte, abre la contraria. El objetivo está a TakeProfitAtrMultiplier ATR (AtrPeriod) del cierre de entrada y se comprueba en los cierres de vela.
 - **Filtros**:
   - Categoría: Tendencia
   - Dirección: Ambos
