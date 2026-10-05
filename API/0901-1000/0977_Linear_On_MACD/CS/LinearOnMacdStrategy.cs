@@ -11,7 +11,11 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy combining MACD on price and volume based data with linear regression.
+/// Linear On MACD strategy.
+/// One MACD runs on the close and another on candle volume, and a Lookback linear regression projects the price. A long opens when
+/// both MACDs are above their signal lines and the regression price lies between the candle open and close; a short opens when both
+/// are below their signals under the same regression condition. With RiskHigh enabled one MACD agreeing is enough. Opposite signals
+/// reverse the position.
 /// </summary>
 public class LinearOnMacdStrategy : Strategy
 {
@@ -19,112 +23,172 @@ public class LinearOnMacdStrategy : Strategy
 	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<int> _signalLength;
 	private readonly StrategyParam<int> _lookback;
+	private readonly StrategyParam<bool> _riskHigh;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private OnBalanceVolume _obv = null!;
-	private MovingAverageConvergenceDivergenceSignal _obvMacd = null!;
-	private MovingAverageConvergenceDivergenceSignal _priceMacd = null!;
-	private LinearRegression _priceReg = null!;
+	private MovingAverageConvergenceDivergenceSignal _volumeMacd;
 
-	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
-	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
-	public int SignalLength { get => _signalLength.Value; set => _signalLength.Value = value; }
-	public int Lookback { get => _lookback.Value; set => _lookback.Value = value; }
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-
-	public LinearOnMacdStrategy()
+	/// <summary>
+	/// Fast EMA period of both MACDs.
+	/// </summary>
+	public int FastLength
 	{
-		_fastLength = Param(nameof(FastLength), 12);
-		_slowLength = Param(nameof(SlowLength), 26);
-		_signalLength = Param(nameof(SignalLength), 9);
-		_lookback = Param(nameof(Lookback), 21);
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
+		get => _fastLength.Value;
+		set => _fastLength.Value = value;
 	}
 
+	/// <summary>
+	/// Slow EMA period of both MACDs.
+	/// </summary>
+	public int SlowLength
+	{
+		get => _slowLength.Value;
+		set => _slowLength.Value = value;
+	}
+
+	/// <summary>
+	/// Signal line period of both MACDs.
+	/// </summary>
+	public int SignalLength
+	{
+		get => _signalLength.Value;
+		set => _signalLength.Value = value;
+	}
+
+	/// <summary>
+	/// Linear regression lookback.
+	/// </summary>
+	public int Lookback
+	{
+		get => _lookback.Value;
+		set => _lookback.Value = value;
+	}
+
+	/// <summary>
+	/// Accept a signal when only one of the two MACDs agrees.
+	/// </summary>
+	public bool RiskHigh
+	{
+		get => _riskHigh.Value;
+		set => _riskHigh.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
+	/// </summary>
+	public LinearOnMacdStrategy()
+	{
+		_fastLength = Param(nameof(FastLength), 12)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast Length", "Fast EMA period of both MACDs", "MACD");
+
+		_slowLength = Param(nameof(SlowLength), 26)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Length", "Slow EMA period of both MACDs", "MACD");
+
+		_signalLength = Param(nameof(SignalLength), 9)
+			.SetGreaterThanZero()
+			.SetDisplay("Signal Length", "Signal line period of both MACDs", "MACD");
+
+		_lookback = Param(nameof(Lookback), 21)
+			.SetGreaterThanZero()
+			.SetDisplay("Lookback", "Linear regression lookback", "Regression");
+
+		_riskHigh = Param(nameof(RiskHigh), false)
+			.SetDisplay("Risk High", "Accept a signal when only one MACD agrees", "General");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
+	}
+
+	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
+	private MovingAverageConvergenceDivergenceSignal CreateMacd()
+	{
+		return new MovingAverageConvergenceDivergenceSignal
+		{
+			Macd =
+			{
+				ShortMa = { Length = FastLength },
+				LongMa = { Length = SlowLength },
+			},
+			SignalMa = { Length = SignalLength }
+		};
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_obv = new OnBalanceVolume();
-		_obvMacd = new MovingAverageConvergenceDivergenceSignal
-		{
-			Macd =
-			{
-				ShortMa = { Length = FastLength },
-				LongMa = { Length = SlowLength },
-			},
-			SignalMa = { Length = SignalLength }
-		};
-		_priceMacd = new MovingAverageConvergenceDivergenceSignal
-		{
-			Macd =
-			{
-				ShortMa = { Length = FastLength },
-				LongMa = { Length = SlowLength },
-			},
-			SignalMa = { Length = SignalLength }
-		};
-		_priceReg = new LinearRegression { Length = Lookback };
-
-		var dummyEma = new ExponentialMovingAverage { Length = 10 };
+		var priceMacd = CreateMacd();
+		_volumeMacd = CreateMacd();
+		var regression = new LinearReg { Length = Lookback };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_obv, dummyEma, ProcessCandle)
+			.BindEx(priceMacd, regression, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, regression);
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+				DrawIndicator(oscillators, priceMacd);
 		}
 	}
 
-	private static DecimalIndicatorValue CreateFinalValue(IIndicator ind, decimal value, DateTime time)
-	{
-		var v = new DecimalIndicatorValue(ind, value, time);
-		v.IsFinal = true;
-		return v;
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal obvValue, decimal dummyValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue priceMacdValue, IIndicatorValue regressionValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var obvMacdResult = _obvMacd.Process(CreateFinalValue(_obvMacd, obvValue, candle.ServerTime));
-		var priceMacdResult = _priceMacd.Process(CreateFinalValue(_priceMacd, candle.ClosePrice, candle.ServerTime));
-		var regResult = _priceReg.Process(CreateFinalValue(_priceReg, candle.ClosePrice, candle.ServerTime));
+		var volumeMacdValue = _volumeMacd.Process(new DecimalIndicatorValue(_volumeMacd, candle.TotalVolume, candle.OpenTime) { IsFinal = true });
 
-		if (!_obvMacd.IsFormed || !_priceMacd.IsFormed || !_priceReg.IsFormed)
+		if (!priceMacdValue.IsFormed || !regressionValue.IsFormed || !volumeMacdValue.IsFormed)
 			return;
 
-		if (obvMacdResult is not IMovingAverageConvergenceDivergenceSignalValue obvMacdTyped)
-			return;
-		if (priceMacdResult is not IMovingAverageConvergenceDivergenceSignalValue priceMacdTyped)
-			return;
-		if (regResult is not ILinearRegressionValue regTyped)
+		if (priceMacdValue is not IMovingAverageConvergenceDivergenceSignalValue { Macd: decimal priceMacd, Signal: decimal priceSignal } ||
+			volumeMacdValue is not IMovingAverageConvergenceDivergenceSignalValue { Macd: decimal volumeMacd, Signal: decimal volumeSignal })
 			return;
 
-		if (obvMacdTyped.Macd is not decimal obvMacd ||
-			obvMacdTyped.Signal is not decimal obvSignal ||
-			priceMacdTyped.Macd is not decimal priceMacd ||
-			priceMacdTyped.Signal is not decimal priceSignal ||
-			regTyped.LinearReg is not decimal predicted)
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var longCondition = priceMacd > priceSignal && obvMacd > obvSignal && candle.ClosePrice > predicted;
-		var shortCondition = obvMacd < obvSignal && priceMacd < priceSignal && candle.ClosePrice < predicted;
+		var predicted = regressionValue.GetValue<decimal>();
+		var bodyLow = Math.Min(candle.OpenPrice, candle.ClosePrice);
+		var bodyHigh = Math.Max(candle.OpenPrice, candle.ClosePrice);
+		var inBody = predicted >= bodyLow && predicted <= bodyHigh;
 
-		if (longCondition && Position <= 0)
-			BuyMarket();
-		else if (shortCondition && Position >= 0)
-			SellMarket();
+		var priceUp = priceMacd > priceSignal;
+		var volumeUp = volumeMacd > volumeSignal;
+		var priceDown = priceMacd < priceSignal;
+		var volumeDown = volumeMacd < volumeSignal;
+
+		var bullish = RiskHigh ? priceUp || volumeUp : priceUp && volumeUp;
+		var bearish = RiskHigh ? priceDown || volumeDown : priceDown && volumeDown;
+
+		if (inBody && bullish && !bearish && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (inBody && bearish && !bullish && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
 	}
 }

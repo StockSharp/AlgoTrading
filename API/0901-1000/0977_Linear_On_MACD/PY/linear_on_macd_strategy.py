@@ -1,97 +1,107 @@
 import clr
-import math
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan
+from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import (
-    OnBalanceVolume,
-    MovingAverageConvergenceDivergenceSignal,
-    LinearRegression,
-    ExponentialMovingAverage,
-)
+from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergenceSignal, LinearReg
 from StockSharp.Algo.Strategies import Strategy
 from indicator_extensions import *
 
+
 class linear_on_macd_strategy(Strategy):
+    """
+    Linear On MACD strategy.
+    One MACD runs on the close and another on candle volume, and a Lookback linear regression projects the price. A long opens when
+    both MACDs are above their signal lines and the regression price lies between the candle open and close; a short opens when both
+    are below their signals under the same regression condition. With RiskHigh enabled one MACD agreeing is enough. Opposite signals
+    reverse the position.
+    """
+
     def __init__(self):
         super(linear_on_macd_strategy, self).__init__()
-        self._fast_length = self.Param("FastLength", 12) \
-            .SetDisplay("Fast Length", "MACD fast period", "General")
-        self._slow_length = self.Param("SlowLength", 26) \
-            .SetDisplay("Slow Length", "MACD slow period", "General")
-        self._signal_length = self.Param("SignalLength", 9) \
-            .SetDisplay("Signal Length", "MACD signal period", "General")
-        self._lookback = self.Param("Lookback", 21) \
-            .SetDisplay("Lookback", "Linear regression lookback", "General")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
-            .SetDisplay("Candle Type", "Type of candles", "General")
+        self._fast_length = self.Param("FastLength", 12).SetGreaterThanZero().SetDisplay("Fast Length", "Fast EMA period of both MACDs", "MACD")
+        self._slow_length = self.Param("SlowLength", 26).SetGreaterThanZero().SetDisplay("Slow Length", "Slow EMA period of both MACDs", "MACD")
+        self._signal_length = self.Param("SignalLength", 9).SetGreaterThanZero().SetDisplay("Signal Length", "Signal line period of both MACDs", "MACD")
+        self._lookback = self.Param("Lookback", 21).SetGreaterThanZero().SetDisplay("Lookback", "Linear regression lookback", "Regression")
+        self._risk_high = self.Param("RiskHigh", False).SetDisplay("Risk High", "Accept a signal when only one MACD agrees", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._volume_macd = None
 
     @property
     def candle_type(self):
         return self._candle_type.Value
 
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
+    def _create_macd(self):
+        macd = MovingAverageConvergenceDivergenceSignal()
+        macd.Macd.ShortMa.Length = self._fast_length.Value
+        macd.Macd.LongMa.Length = self._slow_length.Value
+        macd.SignalMa.Length = self._signal_length.Value
+        return macd
 
     def OnStarted2(self, time):
         super(linear_on_macd_strategy, self).OnStarted2(time)
-        self._obv = OnBalanceVolume()
-        self._obv_macd = MovingAverageConvergenceDivergenceSignal()
-        self._obv_macd.Macd.ShortMa.Length = self._fast_length.Value
-        self._obv_macd.Macd.LongMa.Length = self._slow_length.Value
-        self._obv_macd.SignalMa.Length = self._signal_length.Value
-        self._price_macd = MovingAverageConvergenceDivergenceSignal()
-        self._price_macd.Macd.ShortMa.Length = self._fast_length.Value
-        self._price_macd.Macd.LongMa.Length = self._slow_length.Value
-        self._price_macd.SignalMa.Length = self._signal_length.Value
-        self._price_reg = LinearRegression()
-        self._price_reg.Length = self._lookback.Value
-        dummy_ema = ExponentialMovingAverage()
-        dummy_ema.Length = 10
+
+        price_macd = self._create_macd()
+        self._volume_macd = self._create_macd()
+        regression = LinearReg()
+        regression.Length = self._lookback.Value
+
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(self._obv, dummy_ema, self.OnProcess).Start()
+        subscription.BindEx(price_macd, regression, self._process_candle).Start()
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
+            self.DrawIndicator(area, regression)
             self.DrawOwnTrades(area)
+            oscillators = self.CreateChartArea()
+            if oscillators is not None:
+                self.DrawIndicator(oscillators, price_macd)
 
-    def OnProcess(self, candle, obv_value, dummy_value):
+    def _process_candle(self, candle, price_macd_value, regression_value):
         if candle.State != CandleStates.Finished:
             return
-        obv_macd_result = process_float(self._obv_macd, obv_value, candle.ServerTime, True)
-        price_macd_result = process_float(self._price_macd, float(candle.ClosePrice), candle.ServerTime, True)
-        reg_result = process_float(self._price_reg, float(candle.ClosePrice), candle.ServerTime, True)
-        if not self._obv_macd.IsFormed or not self._price_macd.IsFormed or not self._price_reg.IsFormed:
+
+        volume_macd_value = process_float(self._volume_macd, candle.TotalVolume, candle.OpenTime, True)
+
+        if not price_macd_value.IsFormed or not regression_value.IsFormed or not volume_macd_value.IsFormed:
             return
-        obv_macd_val = obv_macd_result.Macd
-        obv_signal_val = obv_macd_result.Signal
-        price_macd_val = price_macd_result.Macd
-        price_signal_val = price_macd_result.Signal
-        reg_lr = reg_result.LinearReg
-        if obv_macd_val is None or obv_signal_val is None:
+
+        price_macd = price_macd_value.Macd
+        price_signal = price_macd_value.Signal
+        volume_macd = volume_macd_value.Macd
+        volume_signal = volume_macd_value.Signal
+        if price_macd is None or price_signal is None or volume_macd is None or volume_signal is None:
             return
-        if price_macd_val is None or price_signal_val is None:
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
-        if reg_lr is None:
-            return
-        obv_m = float(obv_macd_val)
-        obv_s = float(obv_signal_val)
-        price_m = float(price_macd_val)
-        price_s = float(price_signal_val)
-        predicted = float(reg_lr)
-        close = float(candle.ClosePrice)
-        long_cond = price_m > price_s and obv_m > obv_s and close > predicted
-        short_cond = obv_m < obv_s and price_m < price_s and close < predicted
-        if long_cond and self.Position <= 0:
-            self.BuyMarket()
-        elif short_cond and self.Position >= 0:
-            self.SellMarket()
+
+        predicted = regression_value.GetValue[Decimal](None)
+        body_low = min(candle.OpenPrice, candle.ClosePrice)
+        body_high = max(candle.OpenPrice, candle.ClosePrice)
+        in_body = predicted >= body_low and predicted <= body_high
+
+        price_up = price_macd > price_signal
+        volume_up = volume_macd > volume_signal
+        price_down = price_macd < price_signal
+        volume_down = volume_macd < volume_signal
+
+        if self._risk_high.Value:
+            bullish = price_up or volume_up
+            bearish = price_down or volume_down
+        else:
+            bullish = price_up and volume_up
+            bearish = price_down and volume_down
+
+        if in_body and bullish and not bearish and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+        elif in_body and bearish and not bullish and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
 
     def CreateClone(self):
         return linear_on_macd_strategy()
