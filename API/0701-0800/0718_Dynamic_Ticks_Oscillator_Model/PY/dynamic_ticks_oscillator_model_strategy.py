@@ -7,70 +7,75 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage
+from StockSharp.Algo.Indicators import RateOfChange, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
+
 
 class dynamic_ticks_oscillator_model_strategy(Strategy):
     """
-    Dynamic Ticks Oscillator Model strategy using EMA crossover.
-    Enters long on golden cross, short on death cross.
+    Dynamic Ticks Oscillator Model strategy.
+    Built for the NYSE Down Ticks index as the strategy security. The RocLength rate of change is compared with the standard
+    deviation of that rate over VolatilityLookback candles: a long opens when the ROC drops below -StdDev * EntryStdDevMultiplier
+    and closes when it rises above StdDev * ExitStdDevMultiplier.
     """
 
     def __init__(self):
         super(dynamic_ticks_oscillator_model_strategy, self).__init__()
-        self._fast_ema_period = self.Param("FastEmaPeriod", 120)             .SetDisplay("Fast EMA", "Fast EMA period", "Indicators")
-        self._slow_ema_period = self.Param("SlowEmaPeriod", 450)             .SetDisplay("Slow EMA", "Slow EMA period", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5)))             .SetDisplay("Candle Type", "Candle type for strategy", "General")
-
-        self._prev_fast_ema = 0.0
-        self._prev_slow_ema = 0.0
+        self._roc_length = self.Param("RocLength", 5).SetGreaterThanZero().SetDisplay("ROC Length", "Rate of change length", "Indicators")
+        self._volatility_lookback = self.Param("VolatilityLookback", 24).SetGreaterThanZero().SetDisplay("Volatility Lookback", "Standard deviation length of the ROC", "Indicators")
+        self._entry_std_dev_multiplier = self.Param("EntryStdDevMultiplier", 1.6).SetGreaterThanZero().SetDisplay("Entry StdDev Mult", "Standard deviation multiplier of the entry threshold", "Signals")
+        self._exit_std_dev_multiplier = self.Param("ExitStdDevMultiplier", 1.4).SetGreaterThanZero().SetDisplay("Exit StdDev Mult", "Standard deviation multiplier of the exit threshold", "Signals")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._roc_std_dev = None
 
     @property
     def candle_type(self):
         return self._candle_type.Value
 
-
     def OnReseted(self):
         super(dynamic_ticks_oscillator_model_strategy, self).OnReseted()
-        self._prev_fast_ema = 0.0
-        self._prev_slow_ema = 0.0
+        self._roc_std_dev = None
+
     def OnStarted2(self, time):
         super(dynamic_ticks_oscillator_model_strategy, self).OnStarted2(time)
 
-        fast_ema = ExponentialMovingAverage()
-        fast_ema.Length = self._fast_ema_period.Value
-        slow_ema = ExponentialMovingAverage()
-        slow_ema.Length = self._slow_ema_period.Value
+        roc = RateOfChange()
+        roc.Length = self._roc_length.Value
+        self._roc_std_dev = StandardDeviation()
+        self._roc_std_dev.Length = self._volatility_lookback.Value
 
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(fast_ema, slow_ema, self.on_process).Start()
+        subscription.Bind(roc, self._process_candle).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, fast_ema)
-            self.DrawIndicator(area, slow_ema)
             self.DrawOwnTrades(area)
+            oscillators = self.CreateChartArea()
+            if oscillators is not None:
+                self.DrawIndicator(oscillators, roc)
 
-    def on_process(self, candle, fast_val, slow_val):
+    def _process_candle(self, candle, roc_value):
         if candle.State != CandleStates.Finished:
             return
 
-        fast_v = float(fast_val)
-        slow_v = float(slow_val)
+        # The deviation is measured on the ROC series itself.
+        std_result = process_float(self._roc_std_dev, roc_value, candle.OpenTime, True)
 
-        if self._prev_fast_ema == 0.0 or self._prev_slow_ema == 0.0:
-            self._prev_fast_ema = fast_v
-            self._prev_slow_ema = slow_v
+        if not std_result.IsFormed:
             return
 
-        if self._prev_fast_ema <= self._prev_slow_ema and fast_v > slow_v and self.Position <= 0:
-            self.BuyMarket()
-        elif self._prev_fast_ema >= self._prev_slow_ema and fast_v < slow_v and self.Position >= 0:
-            self.SellMarket()
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
-        self._prev_fast_ema = fast_v
-        self._prev_slow_ema = slow_v
+        roc = float(roc_value)
+        std = float(std_result)
+
+        if self.Position == 0 and roc < -std * float(self._entry_std_dev_multiplier.Value):
+            self.BuyMarket(self.Volume)
+        elif self.Position > 0 and roc > std * float(self._exit_std_dev_multiplier.Value):
+            self.SellMarket(self.Position)
 
     def CreateClone(self):
         return dynamic_ticks_oscillator_model_strategy()
