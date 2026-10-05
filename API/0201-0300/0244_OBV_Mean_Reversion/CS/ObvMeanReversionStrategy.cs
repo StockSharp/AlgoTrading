@@ -1,10 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,26 +12,22 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// OBV Mean Reversion Strategy (244).
-/// Enter when OBV deviates from its average by a certain multiple of standard deviation.
-/// Exit when OBV returns to its average.
+/// OBV Mean Reversion strategy.
+/// The bands lie Multiplier standard deviations around the average of the last AveragePeriod OBV values, the current one included.
+/// OBV below the lower band with the close below the AveragePeriod simple moving average goes long and OBV above the upper band with the close above it goes short,
+/// reversing an opposite position. A long closes once OBV is back above its average and a short once it is back below it, and a percent stop limits the loss.
 /// </summary>
 public class ObvMeanReversionStrategy : Strategy
 {
 	private readonly StrategyParam<int> _averagePeriod;
 	private readonly StrategyParam<decimal> _multiplier;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private OnBalanceVolume _obv;
-	private SimpleMovingAverage _obvAverage;
-	private StandardDeviation _obvStdDev;
-	
-	private decimal? _currentObv;
-	private decimal? _obvAvgValue;
-	private decimal? _obvStdDevValue;
+	private readonly Queue<decimal> _values = [];
 
 	/// <summary>
-	/// Period for OBV average calculation.
+	/// Values of OBV the average and the standard deviation span.
 	/// </summary>
 	public int AveragePeriod
 	{
@@ -42,7 +36,7 @@ public class ObvMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Standard deviation multiplier for entry.
+	/// Standard deviations between the average and a band.
 	/// </summary>
 	public decimal Multiplier
 	{
@@ -51,7 +45,16 @@ public class ObvMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Type of candles to use.
+	/// Stop loss percentage from entry price.
+	/// </summary>
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -60,24 +63,24 @@ public class ObvMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="ObvMeanReversionStrategy"/>.
+	/// Constructor.
 	/// </summary>
 	public ObvMeanReversionStrategy()
 	{
 		_averagePeriod = Param(nameof(AveragePeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Average Period", "Period for OBV average calculation", "Strategy Parameters")
-			
-			.SetOptimize(10, 30, 5);
+			.SetDisplay("Average Period", "Values of OBV the average and the standard deviation span", "Indicators");
 
-		_multiplier = Param(nameof(Multiplier), 2.0m)
+		_multiplier = Param(nameof(Multiplier), 2m)
 			.SetGreaterThanZero()
-			.SetDisplay("StdDev Multiplier", "Standard deviation multiplier for entry", "Strategy Parameters")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
+			.SetDisplay("Multiplier", "Standard deviations between the average and a band", "Indicators");
+
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "Strategy Parameters");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -85,108 +88,97 @@ public class ObvMeanReversionStrategy : Strategy
 	{
 		return [(Security, CandleType)];
 	}
+
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_currentObv = default;
-		_obvAvgValue = default;
-		_obvStdDevValue = default;
+		_values.Clear();
 	}
-
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
-		_obv = new OnBalanceVolume();
-		_obvAverage = new SMA { Length = AveragePeriod };
-		_obvStdDev = new StandardDeviation { Length = AveragePeriod };
+		_values.Clear();
 
-		// Create candle subscription
+		var obv = new OnBalanceVolume();
+		var sma = new SimpleMovingAverage { Length = AveragePeriod };
+
 		var subscription = SubscribeCandles(CandleType);
-
-		// Create processing chain
 		subscription
-			.BindEx(_obv, ProcessObv)
+			.BindEx(obv, sma, ProcessCandle)
 			.Start();
 
-		// Setup chart visualization if available
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _obv);
+			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
-		}
 
-		// Enable position protection
-		StartProtection(
-			takeProfit: new Unit(5, UnitTypes.Percent),
-			stopLoss: new Unit(2, UnitTypes.Percent)
-		);
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, obv);
+			}
+		}
 	}
 
-	private void ProcessObv(ICandleMessage candle, IIndicatorValue obvValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// The high-level handler activates native protection before this callback, also between signal bars.
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue obvValue, IIndicatorValue smaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Extract OBV value
-		_currentObv = obvValue.ToDecimal();
-
-		// Process OBV through average and standard deviation indicators
-		var avgIndicatorValue = _obvAverage.Process(obvValue);
-		var stdDevIndicatorValue = _obvStdDev.Process(obvValue);
-		
-		_obvAvgValue = avgIndicatorValue.ToDecimal();
-		_obvStdDevValue = stdDevIndicatorValue.ToDecimal();
-		
-		// Check if strategy is ready for trading
-		if (!IsFormedAndOnlineAndAllowTrading() || !_obvAverage.IsFormed || !_obvStdDev.IsFormed)
+		if (!smaValue.IsFormed)
 			return;
 
-		// Ensure we have all needed values
-		if (!_currentObv.HasValue || !_obvAvgValue.HasValue || !_obvStdDevValue.HasValue)
+		if (!obvValue.IsFormed)
 			return;
 
-		// Calculate bands
-		var upperBand = _obvAvgValue.Value + Multiplier * _obvStdDevValue.Value;
-		var lowerBand = _obvAvgValue.Value - Multiplier * _obvStdDevValue.Value;
+		var value = obvValue.GetValue<decimal>();
 
-		LogInfo($"OBV: {_currentObv}, OBV Avg: {_obvAvgValue}, Upper: {upperBand}, Lower: {lowerBand}");
+		_values.Enqueue(value);
 
-		// Entry logic
-		if (Position == 0)
-		{
-			// Long Entry: OBV is below lower band (OBV oversold)
-			if (_currentObv.Value < lowerBand)
-			{
-				LogInfo($"Buy Signal - OBV ({_currentObv}) < Lower Band ({lowerBand})");
-				BuyMarket(Volume);
-			}
-			// Short Entry: OBV is above upper band (OBV overbought)
-			else if (_currentObv.Value > upperBand)
-			{
-				LogInfo($"Sell Signal - OBV ({_currentObv}) > Upper Band ({upperBand})");
-				SellMarket(Volume);
-			}
-		}
-		// Exit logic
-		else if (Position > 0 && _currentObv.Value > _obvAvgValue.Value)
-		{
-			// Exit Long: OBV returned to average
-			LogInfo($"Exit Long - OBV ({_currentObv}) > OBV Avg ({_obvAvgValue})");
-			SellMarket(Math.Abs(Position));
-		}
-		else if (Position < 0 && _currentObv.Value < _obvAvgValue.Value)
-		{
-			// Exit Short: OBV returned to average
-			LogInfo($"Exit Short - OBV ({_currentObv}) < OBV Avg ({_obvAvgValue})");
-			BuyMarket(Math.Abs(Position));
-		}
+		if (_values.Count > AveragePeriod)
+			_values.Dequeue();
+
+		if (_values.Count < AveragePeriod)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		var mean = _values.Average();
+		var deviation = (decimal)Math.Sqrt((double)_values.Average(v => (v - mean) * (v - mean)));
+		var upper = mean + Multiplier * deviation;
+		var lower = mean - Multiplier * deviation;
+		var close = candle.ClosePrice;
+		var ma = smaValue.GetValue<decimal>();
+
+		if (value < lower && close < ma && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (value > upper && close > ma && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
+		else if (Position > 0 && value > mean)
+			SellMarket(Position);
+		else if (Position < 0 && value < mean)
+			BuyMarket(-Position);
 	}
 }

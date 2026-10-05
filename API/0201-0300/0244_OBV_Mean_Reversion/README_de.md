@@ -20,8 +20,10 @@ Der Ansatz ist für Trader nützlich, die neben der Preisbewegung auch Volumenfl
 - **Stops**: Ja, prozentualer Stop-Loss.
 - **Standardwerte**:
   - `AveragePeriod` = 20
-  - `Multiplier` = 2.0m
+  - `Multiplier` = 2
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
+    Avg und StdDev sind Mittelwert und Standardabweichung der letzten AveragePeriod Werte von OBV einschließlich des aktuellen, MA ist der einfache gleitende Durchschnitt der letzten AveragePeriod Schlusskurse. Der Stop liegt bei festen StopLossPercent vom Einstiegspreis und wird auch zwischen den Kerzen überwacht; 0 schaltet ihn ab. Ein Einstiegssignal gegen eine offene Position dreht sie.
 - **Filter**:
   - Kategorie: Mean Reversion
   - Richtung: Beide

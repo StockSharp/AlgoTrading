@@ -20,8 +20,10 @@ El enfoque es útil para traders que consideran los flujos de volumen además de
 - **Stops**: Sí, stop-loss porcentual.
 - **Valores predeterminados**:
   - `AveragePeriod` = 20
-  - `Multiplier` = 2.0m
+  - `Multiplier` = 2
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
+    Avg y StdDev son la media y la desviación estándar de los últimos AveragePeriod valores de OBV, incluido el actual, y MA es la media móvil simple de los últimos AveragePeriod cierres. El stop es un StopLossPercent fijo del precio de entrada, vigilado también entre velas; 0 lo desactiva. Una señal de entrada contra una posición abierta la invierte.
 - **Filtros**:
   - Categoría: Reversión a la media
   - Dirección: Ambos
