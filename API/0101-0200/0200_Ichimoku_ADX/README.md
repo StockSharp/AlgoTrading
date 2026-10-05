@@ -8,7 +8,7 @@ Testing indicates an average annual return of about 187%. It performs best in th
 
 This strategy blends Ichimoku Cloud signals with ADX to filter for powerful trends. Trades occur when price breaks above or below the cloud with ADX confirming.
 
-It favors traders who prefer structured trend setups. ATR-defined stops defend against adverse swings.
+It favors traders who prefer structured trend setups. The cloud itself acts as the stop against adverse swings.
 
 ## Details
 
@@ -26,6 +26,7 @@ It favors traders who prefer structured trend setups. ATR-defined stops defend a
   - `AdxPeriod` = 14
   - `AdxThreshold` = 25m
   - `CandleType` = TimeSpan.FromMinutes(15).TimeFrame()
+    A long closes when price closes below the cloud and a short when it closes above it. An entry signal against an open position reverses it.
 - **Filters**:
   - Category: Trend
   - Direction: Both

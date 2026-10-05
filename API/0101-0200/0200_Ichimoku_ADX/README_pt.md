@@ -8,7 +8,7 @@ Os testes indicam um retorno anual médio de aproximadamente 187%. Funciona melh
 
 Esta estratégia combina sinais do Ichimoku Cloud com ADX para filtrar tendências poderosas. As operações ocorrem quando o preço rompe acima ou abaixo da nuvem com confirmação do ADX.
 
-Favorece traders que preferem configurações de tendência estruturadas. Stops definidos por ATR defendem contra oscilações adversas.
+Favorece traders que preferem configurações de tendência estruturadas. A própria nuvem funciona como stop contra oscilações adversas.
 
 ## Detalhes
 
@@ -26,6 +26,7 @@ Favorece traders que preferem configurações de tendência estruturadas. Stops 
   - `AdxPeriod` = 14
   - `AdxThreshold` = 25m
   - `CandleType` = TimeSpan.FromMinutes(15).TimeFrame()
+    Uma compra é encerrada quando o preço fecha abaixo da nuvem e uma venda quando fecha acima. Um sinal de entrada contra uma posição aberta a inverte.
 - **Filtros**:
   - Categoria: Tendência
   - Direção: Ambos

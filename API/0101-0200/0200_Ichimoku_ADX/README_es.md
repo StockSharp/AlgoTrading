@@ -8,7 +8,7 @@ Las pruebas indican un rendimiento anual promedio de aproximadamente 187%. Funci
 
 Esta estrategia combina señales de Ichimoku Cloud con ADX para filtrar tendencias poderosas. Las operaciones ocurren cuando el precio rompe por encima o por debajo de la nube con confirmación del ADX.
 
-Favorece a los operadores que prefieren configuraciones de tendencia estructuradas. Los stops definidos por ATR defienden contra oscilaciones adversas.
+Favorece a los operadores que prefieren configuraciones de tendencia estructuradas. La propia nube actúa como stop frente a oscilaciones adversas.
 
 ## Detalles
 
@@ -26,6 +26,7 @@ Favorece a los operadores que prefieren configuraciones de tendencia estructurad
   - `AdxPeriod` = 14
   - `AdxThreshold` = 25m
   - `CandleType` = TimeSpan.FromMinutes(15).TimeFrame()
+    Un largo se cierra cuando el precio cierra por debajo de la nube y un corto cuando cierra por encima. Una señal de entrada contra una posición abierta la invierte.
 - **Filtros**:
   - Categoría: Tendencia
   - Dirección: Ambos

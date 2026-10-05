@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,15 +11,10 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on Ichimoku Cloud and ADX indicators.
-/// 
-/// Entry criteria:
-/// Long: Price > Kumo (cloud) && Tenkan > Kijun && ADX > 25 (uptrend with strong movement)
-/// Short: Price < Kumo (cloud) && Tenkan < Kijun && ADX > 25 (downtrend with strong movement)
-/// 
-/// Exit criteria:
-/// Long: Price < Kumo (price falls below cloud)
-/// Short: Price > Kumo (price rises above cloud)
+/// Ichimoku ADX strategy.
+/// A close above the cloud with Tenkan-sen above Kijun-sen while ADX is above AdxThreshold goes long, a close below the cloud with Tenkan-sen
+/// below Kijun-sen under the same ADX condition goes short, reversing an opposite position. The cloud is the trailing stop: a long closes
+/// when price closes below the cloud and a short when it closes above it.
 /// </summary>
 public class IchimokuAdxStrategy : Strategy
 {
@@ -33,13 +25,8 @@ public class IchimokuAdxStrategy : Strategy
 	private readonly StrategyParam<decimal> _adxThreshold;
 	private readonly StrategyParam<DataType> _candleType;
 
-	// Previous state tracking
-	private bool _isPriceAboveCloud;
-	private bool _isTenkanAboveKijun;
-	private decimal _lastAdxValue;
-
 	/// <summary>
-	/// Period for Tenkan-sen calculation (conversion line).
+	/// Period of Tenkan-sen.
 	/// </summary>
 	public int TenkanPeriod
 	{
@@ -48,7 +35,7 @@ public class IchimokuAdxStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Period for Kijun-sen calculation (base line).
+	/// Period of Kijun-sen.
 	/// </summary>
 	public int KijunPeriod
 	{
@@ -57,7 +44,7 @@ public class IchimokuAdxStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Period for Senkou Span B calculation (second cloud component).
+	/// Period of Senkou Span B.
 	/// </summary>
 	public int SenkouSpanBPeriod
 	{
@@ -66,7 +53,7 @@ public class IchimokuAdxStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Period for ADX calculation.
+	/// Period of ADX.
 	/// </summary>
 	public int AdxPeriod
 	{
@@ -75,7 +62,7 @@ public class IchimokuAdxStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Threshold for ADX to confirm trend strength.
+	/// ADX level of a strong trend.
 	/// </summary>
 	public decimal AdxThreshold
 	{
@@ -84,7 +71,7 @@ public class IchimokuAdxStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Type of candles to use.
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -99,33 +86,22 @@ public class IchimokuAdxStrategy : Strategy
 	{
 		_tenkanPeriod = Param(nameof(TenkanPeriod), 9)
 			.SetGreaterThanZero()
-			.SetDisplay("Tenkan Period", "Period for Tenkan-sen (conversion line)", "Ichimoku")
-			
-			.SetOptimize(7, 13, 2);
+			.SetDisplay("Tenkan Period", "Period of Tenkan-sen", "Ichimoku");
 
 		_kijunPeriod = Param(nameof(KijunPeriod), 26)
 			.SetGreaterThanZero()
-			.SetDisplay("Kijun Period", "Period for Kijun-sen (base line)", "Ichimoku")
-			
-			.SetOptimize(20, 32, 3);
+			.SetDisplay("Kijun Period", "Period of Kijun-sen", "Ichimoku");
 
 		_senkouSpanBPeriod = Param(nameof(SenkouSpanBPeriod), 52)
 			.SetGreaterThanZero()
-			.SetDisplay("Senkou Span B Period", "Period for Senkou Span B (second cloud component)", "Ichimoku")
-			
-			.SetOptimize(40, 60, 5);
+			.SetDisplay("Senkou Span B Period", "Period of Senkou Span B", "Ichimoku");
 
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("ADX Period", "Period for ADX calculation", "Indicators")
-			
-			.SetOptimize(10, 20, 5);
+			.SetDisplay("ADX Period", "Period of ADX", "ADX");
 
 		_adxThreshold = Param(nameof(AdxThreshold), 25m)
-			.SetGreaterThanZero()
-			.SetDisplay("ADX Threshold", "Minimum ADX value to confirm trend strength", "Indicators")
-			
-			.SetOptimize(20m, 30m, 5m);
+			.SetDisplay("ADX Threshold", "ADX level of a strong trend", "ADX");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -138,145 +114,64 @@ public class IchimokuAdxStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_isPriceAboveCloud = default;
-		_isTenkanAboveKijun = default;
-		_lastAdxValue = default;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
 		var ichimoku = new Ichimoku
 		{
 			Tenkan = { Length = TenkanPeriod },
 			Kijun = { Length = KijunPeriod },
 			SenkouB = { Length = SenkouSpanBPeriod }
 		};
-		
 		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
 
-		// Create subscription
 		var subscription = SubscribeCandles(CandleType);
-		
-		// We'll need to manually bind Ichimoku and ADX separately as they have different output values
 		subscription
-			.BindEx(ichimoku, adx, ProcessIndicators)
+			.BindEx(ichimoku, adx, ProcessCandle)
 			.Start();
 
-		// Setup chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, ichimoku);
-			
-			// Create separate area for ADX
-			var adxArea = CreateChartArea();
-			if (adxArea != null)
-			{
-				DrawIndicator(adxArea, adx);
-			}
-			
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, adx);
+			}
 		}
 	}
-	
-	// Process Ichimoku indicator data
-	private void ProcessIndicators(ICandleMessage candle, IIndicatorValue ichimokuValue, IIndicatorValue adxValue)
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue ichimokuValue, IIndicatorValue adxValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var typedAdx = (AverageDirectionalIndexValue)adxValue;
-
-		if (typedAdx.MovingAverage is not decimal adx)
+		if (ichimokuValue is not IIchimokuValue { Tenkan: decimal tenkan, Kijun: decimal kijun, SenkouA: decimal senkouA, SenkouB: decimal senkouB })
 			return;
 
-		_lastAdxValue = adx;
-
-		// Get Ichimoku values
-		// The component values must be extracted based on the Ichimoku implementation
-		var ichimokuTyped = (IchimokuValue)ichimokuValue;
-
-		if (ichimokuTyped.Tenkan is not decimal tenkan)
+		if (!adxValue.IsFormed || adxValue is not AverageDirectionalIndexValue { MovingAverage: decimal strength })
 			return;
 
-		if (ichimokuTyped.Kijun is not decimal kijun)
-			return;
-
-		if (ichimokuTyped.SenkouA is not decimal senkouA)
-			return;
-
-		if (ichimokuTyped.SenkouB is not decimal senkouB)
-			return;
-
-		// Determine cloud boundaries
-		var cloudTop = Math.Max(senkouA, senkouB);
-		var cloudBottom = Math.Min(senkouA, senkouB);
-		
-		// Update state
-		var isPriceAboveCloud = candle.ClosePrice > cloudTop;
-		var isPriceBelowCloud = candle.ClosePrice < cloudBottom;
-		var isTenkanAboveKijun = tenkan > kijun;
-		
-		// Log current state
-		LogInfo($"Close: {candle.ClosePrice}, Tenkan: {tenkan:N2}, Kijun: {kijun:N2}, " + 
-					  $"Cloud Top: {cloudTop:N2}, Cloud Bottom: {cloudBottom:N2}, ADX: {_lastAdxValue:N2}");
-		
-		var isPriceRelativeToCloudChanged = _isPriceAboveCloud != isPriceAboveCloud;
-		
-		// Only make trading decisions if both Ichimoku and ADX have been calculated
-		if (_lastAdxValue <= 0)
-			return;
-			
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
-		
-		var isStrongTrend = _lastAdxValue > AdxThreshold;
-		
-		// Trading logic
-		if (Position == 0) // No position
-		{
-			if (isPriceAboveCloud && isTenkanAboveKijun && isStrongTrend)
-			{
-				// Buy signal: price above cloud, Tenkan above Kijun, strong trend
-				BuyMarket(Volume);
-				LogInfo($"Buy signal: Price above cloud, Tenkan above Kijun, ADX = {_lastAdxValue}");
-			}
-			else if (isPriceBelowCloud && !isTenkanAboveKijun && isStrongTrend)
-			{
-				// Sell signal: price below cloud, Tenkan below Kijun, strong trend
-				SellMarket(Volume);
-				LogInfo($"Sell signal: Price below cloud, Tenkan below Kijun, ADX = {_lastAdxValue}");
-			}
-		}
-		else if (isPriceRelativeToCloudChanged) // Exit on cloud crossing
-		{
-			if (Position > 0 && !isPriceAboveCloud)
-			{
-				// Exit long position: price fell below cloud
-				SellMarket(Math.Abs(Position));
-				LogInfo($"Exit long position: Price fell into/below cloud");
-			}
-			else if (Position < 0 && !isPriceBelowCloud)
-			{
-				// Exit short position: price rose above cloud
-				BuyMarket(Math.Abs(Position));
-				LogInfo($"Exit short position: Price rose into/above cloud");
-			}
-		}
-		
-		// Update tracking variables
-		_isPriceAboveCloud = isPriceAboveCloud;
-		_isTenkanAboveKijun = isTenkanAboveKijun;
+
+		var close = candle.ClosePrice;
+		var cloudTop = Math.Max(senkouA, senkouB);
+		var cloudBottom = Math.Min(senkouA, senkouB);
+		var strong = strength > AdxThreshold;
+
+		if (close > cloudTop && tenkan > kijun && strong && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (close < cloudBottom && tenkan < kijun && strong && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
+		else if (Position > 0 && close < cloudBottom)
+			SellMarket(Position);
+		else if (Position < 0 && close > cloudTop)
+			BuyMarket(-Position);
 	}
 }
