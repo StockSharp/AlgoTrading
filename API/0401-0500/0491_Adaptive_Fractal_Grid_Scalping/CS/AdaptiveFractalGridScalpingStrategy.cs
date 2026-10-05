@@ -11,67 +11,137 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that trades based on fractal pivots, ATR volatility, and SMA trend filter.
-/// Buys when price breaks above fractal high in uptrend, sells when breaks below fractal low in downtrend.
+/// Adaptive Fractal Grid Scalping strategy.
+/// Five-bar fractals mark the grid. While ATR is above VolatilityThreshold the strategy keeps a buy limit at the last fractal low minus
+/// ATR * GridMultiplierLow when the close is above the SMA, or a sell limit at the last fractal high plus the same distance when it is
+/// below. A filled long exits at the opposite grid level (fractal high plus ATR * GridMultiplierHigh) or by a trailing stop
+/// ATR * TrailStopMultiplier behind the best price; shorts mirror this.
 /// </summary>
 public class AdaptiveFractalGridScalpingStrategy : Strategy
 {
 	private readonly StrategyParam<int> _atrLength;
 	private readonly StrategyParam<int> _smaLength;
-	private readonly StrategyParam<decimal> _stopMultiplier;
+	private readonly StrategyParam<decimal> _gridMultiplierHigh;
+	private readonly StrategyParam<decimal> _gridMultiplierLow;
+	private readonly StrategyParam<decimal> _trailStopMultiplier;
+	private readonly StrategyParam<decimal> _volatilityThreshold;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
 
-	private decimal _h1, _h2, _h3, _h4, _h5;
-	private decimal _l1, _l2, _l3, _l4, _l5;
+	private readonly List<decimal> _highs = [];
+	private readonly List<decimal> _lows = [];
 	private decimal? _fractalHigh;
 	private decimal? _fractalLow;
-	private decimal _entryPrice;
-	private int _cooldownRemaining;
-	private int _barCount;
+	private Order _entryOrder;
+	private decimal? _target;
+	private decimal? _trailStop;
 
-	public int AtrLength { get => _atrLength.Value; set => _atrLength.Value = value; }
-	public int SmaLength { get => _smaLength.Value; set => _smaLength.Value = value; }
-	public decimal StopMultiplier { get => _stopMultiplier.Value; set => _stopMultiplier.Value = value; }
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
+	/// <summary>
+	/// ATR period.
+	/// </summary>
+	public int AtrLength
+	{
+		get => _atrLength.Value;
+		set => _atrLength.Value = value;
+	}
 
+	/// <summary>
+	/// Period of the trend SMA.
+	/// </summary>
+	public int SmaLength
+	{
+		get => _smaLength.Value;
+		set => _smaLength.Value = value;
+	}
+
+	/// <summary>
+	/// ATR multiplier of the opposite grid level used as the target.
+	/// </summary>
+	public decimal GridMultiplierHigh
+	{
+		get => _gridMultiplierHigh.Value;
+		set => _gridMultiplierHigh.Value = value;
+	}
+
+	/// <summary>
+	/// ATR multiplier of the entry grid level.
+	/// </summary>
+	public decimal GridMultiplierLow
+	{
+		get => _gridMultiplierLow.Value;
+		set => _gridMultiplierLow.Value = value;
+	}
+
+	/// <summary>
+	/// ATR multiplier of the trailing stop distance.
+	/// </summary>
+	public decimal TrailStopMultiplier
+	{
+		get => _trailStopMultiplier.Value;
+		set => _trailStopMultiplier.Value = value;
+	}
+
+	/// <summary>
+	/// ATR level above which the grid is active.
+	/// </summary>
+	public decimal VolatilityThreshold
+	{
+		get => _volatilityThreshold.Value;
+		set => _volatilityThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
+	/// </summary>
 	public AdaptiveFractalGridScalpingStrategy()
 	{
 		_atrLength = Param(nameof(AtrLength), 14)
-			.SetDisplay("ATR Length", "ATR period", "Parameters")
-			.SetOptimize(7, 28, 7);
+			.SetGreaterThanZero()
+			.SetDisplay("ATR Length", "ATR period", "Indicators");
 
 		_smaLength = Param(nameof(SmaLength), 50)
-			.SetDisplay("SMA Length", "SMA period", "Parameters")
-			.SetOptimize(20, 100, 10);
+			.SetGreaterThanZero()
+			.SetDisplay("SMA Length", "Period of the trend SMA", "Indicators");
 
-		_stopMultiplier = Param(nameof(StopMultiplier), 2m)
-			.SetDisplay("Stop Multiplier", "ATR multiplier for stop/TP", "Risk");
+		_gridMultiplierHigh = Param(nameof(GridMultiplierHigh), 2.0m)
+			.SetNotNegative()
+			.SetDisplay("Grid Multiplier High", "ATR multiplier of the opposite grid level used as the target", "Grid");
+
+		_gridMultiplierLow = Param(nameof(GridMultiplierLow), 0.5m)
+			.SetNotNegative()
+			.SetDisplay("Grid Multiplier Low", "ATR multiplier of the entry grid level", "Grid");
+
+		_trailStopMultiplier = Param(nameof(TrailStopMultiplier), 0.5m)
+			.SetNotNegative()
+			.SetDisplay("Trail Stop Multiplier", "ATR multiplier of the trailing stop distance", "Risk");
+
+		_volatilityThreshold = Param(nameof(VolatilityThreshold), 1.0m)
+			.SetNotNegative()
+			.SetDisplay("Volatility Threshold", "ATR level above which the grid is active", "Grid");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "Data");
-
-		_cooldownBars = Param(nameof(CooldownBars), 10)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "Risk");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> [(Security, CandleType)];
+	{
+		return [(Security, CandleType)];
+	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_h1 = _h2 = _h3 = _h4 = _h5 = 0;
-		_l1 = _l2 = _l3 = _l4 = _l5 = 0;
-		_fractalHigh = null;
-		_fractalLow = null;
-		_entryPrice = 0;
-		_cooldownRemaining = 0;
-		_barCount = 0;
+		ResetState();
 	}
 
 	/// <inheritdoc />
@@ -79,13 +149,14 @@ public class AdaptiveFractalGridScalpingStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
+		ResetState();
+
 		var atr = new AverageTrueRange { Length = AtrLength };
 		var sma = new SimpleMovingAverage { Length = SmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
-
 		subscription
-			.Bind(atr, sma, ProcessCandle)
+			.BindEx(atr, sma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -97,83 +168,120 @@ public class AdaptiveFractalGridScalpingStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal atrValue, decimal smaValue)
+	private void ResetState()
+	{
+		_highs.Clear();
+		_lows.Clear();
+		_fractalHigh = null;
+		_fractalLow = null;
+		_entryOrder = null;
+		_target = null;
+		_trailStop = null;
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue atrValue, IIndicatorValue smaValue)
 	{
 		if (candle.State != CandleStates.Finished)
+			return;
+
+		UpdateFractals(candle);
+
+		if (!atrValue.IsFormed || !smaValue.IsFormed)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		_barCount++;
+		var atr = atrValue.ToDecimal();
+		var sma = smaValue.ToDecimal();
+		var close = candle.ClosePrice;
 
-		// Update fractal buffers
-		_h1 = _h2; _h2 = _h3; _h3 = _h4; _h4 = _h5; _h5 = candle.HighPrice;
-		_l1 = _l2; _l2 = _l3; _l3 = _l4; _l4 = _l5; _l5 = candle.LowPrice;
-
-		if (_barCount < 5)
-			return;
-
-		// Detect fractals
-		if (_h3 > _h1 && _h3 > _h2 && _h3 > _h4 && _h3 > _h5)
-			_fractalHigh = _h3;
-
-		if (_l3 < _l1 && _l3 < _l2 && _l3 < _l4 && _l3 < _l5)
-			_fractalLow = _l3;
-
-		if (_cooldownRemaining > 0)
+		if (Position != 0)
 		{
-			_cooldownRemaining--;
+			CancelEntry();
+			ManagePosition(candle, atr);
 			return;
 		}
 
-		// Exit on ATR-based stop/TP
-		if (Position > 0 && _entryPrice > 0)
-		{
-			var stopLoss = _entryPrice - atrValue * StopMultiplier;
-			var takeProfit = _entryPrice + atrValue * StopMultiplier * 2;
+		_target = null;
+		_trailStop = null;
 
-			if (candle.ClosePrice <= stopLoss || candle.ClosePrice >= takeProfit)
-			{
-				SellMarket(Math.Abs(Position));
-				_cooldownRemaining = CooldownBars;
-				_entryPrice = 0;
-				return;
-			}
-		}
-		else if (Position < 0 && _entryPrice > 0)
-		{
-			var stopLoss = _entryPrice + atrValue * StopMultiplier;
-			var takeProfit = _entryPrice - atrValue * StopMultiplier * 2;
+		// A pending order that is still being registered is left alone until its state is known.
+		if (_entryOrder != null && _entryOrder.State is OrderStates.None or OrderStates.Pending)
+			return;
 
-			if (candle.ClosePrice >= stopLoss || candle.ClosePrice <= takeProfit)
-			{
-				BuyMarket(Math.Abs(Position));
-				_cooldownRemaining = CooldownBars;
-				_entryPrice = 0;
-				return;
-			}
+		CancelEntry();
+
+		if (atr <= VolatilityThreshold)
+			return;
+
+		var offset = atr * GridMultiplierLow;
+
+		if (close > sma && _fractalLow is decimal low)
+			_entryOrder = BuyLimit(RoundPrice(low - offset), Volume);
+		else if (close < sma && _fractalHigh is decimal high)
+			_entryOrder = SellLimit(RoundPrice(high + offset), Volume);
+	}
+
+	private void ManagePosition(ICandleMessage candle, decimal atr)
+	{
+		var trailDistance = atr * TrailStopMultiplier;
+
+		if (Position > 0)
+		{
+			_target ??= _fractalHigh is decimal fh ? fh + atr * GridMultiplierHigh : null;
+			var newStop = candle.HighPrice - trailDistance;
+			_trailStop = _trailStop is decimal s ? Math.Max(s, newStop) : newStop;
+
+			if ((_target is decimal t && candle.HighPrice >= t) || candle.ClosePrice <= _trailStop)
+				SellMarket(Position);
+		}
+		else
+		{
+			_target ??= _fractalLow is decimal fl ? fl - atr * GridMultiplierHigh : null;
+			var newStop = candle.LowPrice + trailDistance;
+			_trailStop = _trailStop is decimal s ? Math.Min(s, newStop) : newStop;
+
+			if ((_target is decimal t && candle.LowPrice <= t) || candle.ClosePrice >= _trailStop)
+				BuyMarket(-Position);
+		}
+	}
+
+	private void UpdateFractals(ICandleMessage candle)
+	{
+		_highs.Add(candle.HighPrice);
+		_lows.Add(candle.LowPrice);
+
+		if (_highs.Count > 5)
+		{
+			_highs.RemoveAt(0);
+			_lows.RemoveAt(0);
 		}
 
-		// Entry signals
-		var isBullish = candle.ClosePrice > smaValue;
-		var isBearish = candle.ClosePrice < smaValue;
+		if (_highs.Count < 5)
+			return;
 
-		if (isBullish && _fractalHigh is decimal fh && candle.ClosePrice > fh && Position <= 0)
-		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-			BuyMarket(Volume);
-			_entryPrice = candle.ClosePrice;
-			_cooldownRemaining = CooldownBars;
-		}
-		else if (isBearish && _fractalLow is decimal fl && candle.ClosePrice < fl && Position >= 0)
-		{
-			if (Position > 0)
-				SellMarket(Math.Abs(Position));
-			SellMarket(Volume);
-			_entryPrice = candle.ClosePrice;
-			_cooldownRemaining = CooldownBars;
-		}
+		// The middle bar is a fractal when it beats the two bars on each side.
+		var midHigh = _highs[2];
+		if (midHigh > _highs[0] && midHigh > _highs[1] && midHigh > _highs[3] && midHigh > _highs[4])
+			_fractalHigh = midHigh;
+
+		var midLow = _lows[2];
+		if (midLow < _lows[0] && midLow < _lows[1] && midLow < _lows[3] && midLow < _lows[4])
+			_fractalLow = midLow;
+	}
+
+	private void CancelEntry()
+	{
+		if (_entryOrder != null && _entryOrder.State == OrderStates.Active)
+			CancelOrder(_entryOrder);
+
+		_entryOrder = null;
+	}
+
+	private decimal RoundPrice(decimal price)
+	{
+		var step = Security.PriceStep ?? 0m;
+		return step > 0 ? Math.Round(price / step) * step : price;
 	}
 }
