@@ -19,9 +19,10 @@ Volume > Avg(Volume) かつ Price > Supertrend（出来高急増と上昇トレ�
 - **デフォルト値**:
   - `VolumeAvgPeriod` = 20
   - `SupertrendPeriod` = 10
-  - `SupertrendMultiplier` = 3m
+  - `SupertrendMultiplier` = 3
   - `CandleType` = TimeSpan.FromMinutes(5)
-  - `StopLossPercent` = 2.0m
+  - `StopLossPercent` = 2
+    Avg(Volume)は直前VolumeAvgPeriod本の平均出来高です。Supertrendが下向きに転じたらロングを、上向きに転じたらショートを閉じます。ストップはエントリー価格の固定StopLossPercentで、ローソク足の間も監視されます。 保有ポジションと逆方向のエントリーシグナルはドテンになります。
 - **フィルター**:
   - カテゴリ: トレンド
   - 方向: 両方

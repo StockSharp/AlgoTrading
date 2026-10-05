@@ -19,9 +19,10 @@
 - **默认值**:
   - `VolumeAvgPeriod` = 20
   - `SupertrendPeriod` = 10
-  - `SupertrendMultiplier` = 3m
+  - `SupertrendMultiplier` = 3
   - `CandleType` = TimeSpan.FromMinutes(5)
-  - `StopLossPercent` = 2.0m
+  - `StopLossPercent` = 2
+    Avg(Volume)是之前VolumeAvgPeriod根K线的平均成交量。Supertrend转为下行时平多，转为上行时平空；止损为入场价的固定StopLossPercent百分比，在K线之间同样监控。与持仓方向相反的入场信号会反转持仓。
 - **过滤器**:
   - 类别: Trend
   - 方向: 双向

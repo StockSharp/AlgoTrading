@@ -7940,6 +7940,71 @@ public abstract partial class StrategyTests
 		if (stopAtr < 1) IsTrue(stopExits > 0, "A tight ATR stop must be hit.");
 	}
 
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(20, 10, 3.0, false)]
+	[DataRow(14, 7, 2.0, true)]
+	public async Task S0209_VolumeSurgesOnTheSupertrendSideUntilTheTrendTurns(int volumePeriod, int period, double multiplier, bool secondary)
+	{
+		var supertrend = new SuperTrend { Length = period, Multiplier = (decimal)multiplier };
+		var volumes = new List<decimal>();
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var turnExits = 0;
+		var violations = new List<string>();
+		await Replay("0209_Volume_Supertrend", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["VolumeAvgPeriod"].Value);
+			AreEqual(10, strategy.Parameters["SupertrendPeriod"].Value);
+			AreEqual(3m, Convert.ToDecimal(strategy.Parameters["SupertrendMultiplier"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "VolumeAvgPeriod", volumePeriod);
+			SetParam(strategy, "SupertrendPeriod", period);
+			SetParam(strategy, "SupertrendMultiplier", multiplier);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var result = supertrend.Process(candle);
+				// The strategy is not called while the value is empty.
+				if (result.IsEmpty) return;
+				decimal? average = volumes.Count == volumePeriod ? volumes.Average() : null;
+				volumes.Add(candle.TotalVolume);
+				if (volumes.Count > volumePeriod) volumes.RemoveAt(0);
+				if (result is not SuperTrendIndicatorValue { IsFormed: true } value || average is not decimal avg) return;
+				var close = candle.ClosePrice;
+				var surge = candle.TotalVolume > avg;
+				var position = strategy.Position;
+				if (surge && close > value.Value && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (surge && close < value.Value && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && !value.IsUpTrend) { expectedSide = Sides.Sell; expectedVolume = position; turnExits++; }
+				else if (position < 0m && value.IsUpTrend) { expectedSide = Sides.Buy; expectedVolume = -position; turnExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow above-average volume on the Supertrend side, or close once the Supertrend turns.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && turnExits > 0, "The fixture must trade both sides and exit when the Supertrend turns.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0209_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0209_Volume_Supertrend", TimeSpan.FromDays(31));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";
