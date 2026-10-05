@@ -4954,6 +4954,74 @@ public abstract partial class StrategyTests
 		if (secondary) IsTrue(stopExits > 0, "TON must close a position at the ATR stop.");
 	}
 
+	[TestMethod]
+	[TestCategory("Shard01")]
+	[DataRow(14, 30.0, 70.0, 14, 3, 20.0, 80.0, false)]
+	[DataRow(10, 35.0, 65.0, 9, 3, 25.0, 75.0, true)]
+	public async Task S0148_RsiAndStochasticExtremesTogetherUntilRsiCrossesFifty(int rsiPeriod, double rsiLow, double rsiHigh, int stochPeriod, int stochK, double stochLow, double stochHigh, bool secondary)
+	{
+		var rsi = new RelativeStrengthIndex { Length = rsiPeriod };
+		var stochastic = new StochasticOscillator { K = { Length = stochPeriod }, D = { Length = stochK } };
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var middleExits = 0;
+		var violations = new List<string>();
+		await Replay("0148_RSI_Stochastic", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(14, strategy.Parameters["RsiPeriod"].Value);
+			AreEqual(30m, Convert.ToDecimal(strategy.Parameters["RsiOversold"].Value));
+			AreEqual(70m, Convert.ToDecimal(strategy.Parameters["RsiOverbought"].Value));
+			AreEqual(14, strategy.Parameters["StochPeriod"].Value);
+			AreEqual(3, strategy.Parameters["StochK"].Value);
+			AreEqual(20m, Convert.ToDecimal(strategy.Parameters["StochOversold"].Value));
+			AreEqual(80m, Convert.ToDecimal(strategy.Parameters["StochOverbought"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "RsiPeriod", rsiPeriod);
+			SetParam(strategy, "RsiOversold", rsiLow);
+			SetParam(strategy, "RsiOverbought", rsiHigh);
+			SetParam(strategy, "StochPeriod", stochPeriod);
+			SetParam(strategy, "StochK", stochK);
+			SetParam(strategy, "StochOversold", stochLow);
+			SetParam(strategy, "StochOverbought", stochHigh);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var r = rsi.Process(candle);
+				var st = stochastic.Process(candle);
+				if (!r.IsFormed || st is not IStochasticOscillatorValue { IsFormed: true, D: decimal k }) return;
+				var value = r.GetValue<decimal>();
+				var position = strategy.Position;
+				if (value < (decimal)rsiLow && k < (decimal)stochLow && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (value > (decimal)rsiHigh && k > (decimal)stochHigh && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && value > 50m) { expectedSide = Sides.Sell; expectedVolume = position; middleExits++; }
+				else if (position < 0m && value < 50m) { expectedSide = Sides.Buy; expectedVolume = -position; middleExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow RSI and %K extremes together, or close when RSI crosses 50.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && middleExits > 0, "The fixture must trade both sides and exit at RSI 50.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard01")]
+	public Task S0148_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0148_RSI_Stochastic", TimeSpan.FromDays(31));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";
