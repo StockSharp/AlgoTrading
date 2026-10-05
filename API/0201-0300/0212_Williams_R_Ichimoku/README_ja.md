@@ -5,14 +5,14 @@
 
 テストでは年間平均リターン約73%を示しています。暗号資産市場で最もパフォーマンスが高いです。
 
-オシレーターが-80を下回り、価格が雲の上に留まり、転換線が基準線を上回るクロスをしたときにロングの機会が現れます。%Rが-20を上回って上昇し、価格が雲の下にあり、転換線が基準線の下にあるときにショートシグナルが発生します。価格が雲の反対側をクロスするまでポジションは開いたままです。
+オシレーターがWilliamsROversoldを下回り、価格が雲の上に留まり、転換線が基準線の上にあるときにロングの機会が現れます。%RがWilliamsROverboughtを上回って上昇し、価格が雲の下にあり、転換線が基準線の下にあるときにショートシグナルが発生します。価格が雲の反対側をクロスするまでポジションは開いたままです。
 
-この手法は複数の確認を待つため、速い反転よりも明確なトレンドフィルターを好むトレーダーに適しています。動的ストップは基準線の周りに設定され、リスクが基礎となるトレンドの強さとともに調整されます。
+この手法は複数の確認を待つため、速い反転よりも明確なトレンドフィルターを好むトレーダーに適しています。雲の反対側が動的ストップとなり、リスクは基礎となるトレンドとともに調整されます。
 
 ## 詳細
 - **エントリー条件**:
-  - **ロング**: %R < -80 && price above Ichimoku cloud and Tenkan-sen > Kijun-sen
-  - **ショート**: %R > -20 && price below Ichimoku cloud and Tenkan-sen < Kijun-sen
+  - **ロング**: %R < WilliamsROversold && price above Ichimoku cloud and Tenkan-sen > Kijun-sen
+  - **ショート**: %R > WilliamsROverbought && price below Ichimoku cloud and Tenkan-sen < Kijun-sen
 - **ロング/ショート**: 両方。
 - **エグジット条件**:
   - **ロング**: 価格が雲の下をクロスしたときに終了
@@ -20,10 +20,13 @@
 - **ストップ**: はい。
 - **デフォルト値**:
   - `WilliamsRPeriod` = 14
+  - `WilliamsROversold` = -80
+  - `WilliamsROverbought` = -20
   - `TenkanPeriod` = 9
   - `KijunPeriod` = 26
   - `SenkouSpanBPeriod` = 52
   - `CandleType` = TimeSpan.FromMinutes(15)
+    -80と-20はルールが示すWilliams %R水準の既定値です。ロングは価格が雲の下で引けたとき、ショートは雲の上で引けたときに決済します。 保有ポジションと逆方向のエントリーシグナルはドテンになります。
 - **フィルター**:
   - カテゴリ: 混合
   - 方向: 両方

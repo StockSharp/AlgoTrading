@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -12,135 +9,121 @@ using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
-	
+
 /// <summary>
-/// Strategy based on Williams %R and Ichimoku indicators.
-/// Enters long when Williams %R is below -80 (oversold) and price is above Ichimoku Cloud with Tenkan-sen > Kijun-sen.
-/// Enters short when Williams %R is above -20 (overbought) and price is below Ichimoku Cloud with Tenkan-sen < Kijun-sen.
+/// Williams R Ichimoku strategy.
+/// Williams %R below WilliamsROversold with a close above the cloud and Tenkan-sen above Kijun-sen goes long, %R above WilliamsROverbought
+/// with a close below the cloud and Tenkan-sen below Kijun-sen goes short, reversing an opposite position. The cloud is the trailing stop: a long closes
+/// when price closes below the cloud and a short when it closes above it.
 /// </summary>
 public class WilliamsIchimokuStrategy : Strategy
 {
-	private readonly StrategyParam<int> _williamsRPeriod;
 	private readonly StrategyParam<int> _tenkanPeriod;
 	private readonly StrategyParam<int> _kijunPeriod;
 	private readonly StrategyParam<int> _senkouSpanBPeriod;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<int> _williamsRPeriod;
+	private readonly StrategyParam<decimal> _williamsROversold;
+	private readonly StrategyParam<decimal> _williamsROverbought;
 	private readonly StrategyParam<DataType> _candleType;
-	
-	private WilliamsR _williamsR;
-	private Ichimoku _ichimoku;
-	
-	private decimal? _lastKijun;
-	private decimal _prevWilliamsR;
-	private int _cooldown;
-	
+
 	/// <summary>
-	/// Williams %R indicator period.
-	/// </summary>
-	public int WilliamsRPeriod
-	{
-		get => _williamsRPeriod.Value;
-		set => _williamsRPeriod.Value = value;
-	}
-	
-	/// <summary>
-	/// Tenkan-sen period (Ichimoku).
+	/// Period of Tenkan-sen.
 	/// </summary>
 	public int TenkanPeriod
 	{
 		get => _tenkanPeriod.Value;
 		set => _tenkanPeriod.Value = value;
 	}
-	
+
 	/// <summary>
-	/// Kijun-sen period (Ichimoku).
+	/// Period of Kijun-sen.
 	/// </summary>
 	public int KijunPeriod
 	{
 		get => _kijunPeriod.Value;
 		set => _kijunPeriod.Value = value;
 	}
-	
+
 	/// <summary>
-	/// Senkou Span B period (Ichimoku).
+	/// Period of Senkou Span B.
 	/// </summary>
 	public int SenkouSpanBPeriod
 	{
 		get => _senkouSpanBPeriod.Value;
 		set => _senkouSpanBPeriod.Value = value;
 	}
-	
+
 	/// <summary>
-	/// Bars to wait between trades.
+	/// Period of Williams %R.
 	/// </summary>
-	public int CooldownBars
+	public int WilliamsRPeriod
 	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
+		get => _williamsRPeriod.Value;
+		set => _williamsRPeriod.Value = value;
 	}
 
 	/// <summary>
-	/// Candle type parameter.
+	/// Williams %R level for longs.
+	/// </summary>
+	public decimal WilliamsROversold
+	{
+		get => _williamsROversold.Value;
+		set => _williamsROversold.Value = value;
+	}
+
+	/// <summary>
+	/// Williams %R level for shorts.
+	/// </summary>
+	public decimal WilliamsROverbought
+	{
+		get => _williamsROverbought.Value;
+		set => _williamsROverbought.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
-	
+
 	/// <summary>
 	/// Constructor.
 	/// </summary>
 	public WilliamsIchimokuStrategy()
 	{
-		_williamsRPeriod = Param(nameof(WilliamsRPeriod), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("Williams %R Period", "Period for Williams %R calculation", "Indicators")
-			
-			.SetOptimize(10, 20, 2);
-			
 		_tenkanPeriod = Param(nameof(TenkanPeriod), 9)
 			.SetGreaterThanZero()
-			.SetDisplay("Tenkan-sen Period", "Period for Tenkan-sen line (Ichimoku)", "Indicators")
-			
-			.SetOptimize(7, 13, 1);
-			
+			.SetDisplay("Tenkan Period", "Period of Tenkan-sen", "Ichimoku");
+
 		_kijunPeriod = Param(nameof(KijunPeriod), 26)
 			.SetGreaterThanZero()
-			.SetDisplay("Kijun-sen Period", "Period for Kijun-sen line (Ichimoku)", "Indicators")
-			
-			.SetOptimize(20, 30, 2);
-			
+			.SetDisplay("Kijun Period", "Period of Kijun-sen", "Ichimoku");
+
 		_senkouSpanBPeriod = Param(nameof(SenkouSpanBPeriod), 52)
 			.SetGreaterThanZero()
-			.SetDisplay("Senkou Span B Period", "Period for Senkou Span B line (Ichimoku)", "Indicators")
-			
-			.SetOptimize(40, 60, 4);
+			.SetDisplay("Senkou Span B Period", "Period of Senkou Span B", "Ichimoku");
 
-		_cooldownBars = Param(nameof(CooldownBars), 60)
-			.SetRange(1, 200)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "General");
-			
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_williamsRPeriod = Param(nameof(WilliamsRPeriod), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("Williams %R Period", "Period of Williams %R", "Williams %R");
+
+		_williamsROversold = Param(nameof(WilliamsROversold), -80m)
+			.SetDisplay("Williams %R Oversold", "Williams %R level for longs", "Williams %R");
+
+		_williamsROverbought = Param(nameof(WilliamsROverbought), -20m)
+			.SetDisplay("Williams %R Overbought", "Williams %R level for shorts", "Williams %R");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
-	
+
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
-	}
-	
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_williamsR = null;
-		_ichimoku = null;
-		_lastKijun = null;
-		_prevWilliamsR = -50m;
-		_cooldown = 0;
 	}
 
 	/// <inheritdoc />
@@ -148,115 +131,60 @@ public class WilliamsIchimokuStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Initialize indicators
-		_williamsR = new WilliamsR
-		{
-			Length = WilliamsRPeriod
-		};
-		
-		_ichimoku = new Ichimoku
+		var ichimoku = new Ichimoku
 		{
 			Tenkan = { Length = TenkanPeriod },
 			Kijun = { Length = KijunPeriod },
 			SenkouB = { Length = SenkouSpanBPeriod }
 		};
-		
-		// Create candles subscription
+		var williams = new WilliamsR { Length = WilliamsRPeriod };
+
 		var subscription = SubscribeCandles(CandleType);
-		
-		// Bind indicators to subscription
 		subscription
-			.BindEx(_williamsR, _ichimoku, ProcessCandle)
+			.BindEx(williams, ichimoku, ProcessCandle)
 			.Start();
-		
-		// Setup chart if available
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _williamsR);
-			DrawIndicator(area, _ichimoku);
+			DrawIndicator(area, ichimoku);
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, williams);
+			}
 		}
 	}
-	
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue williamsRValue, IIndicatorValue ichimokuValue)
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue williamsValue, IIndicatorValue ichimokuValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
-			
-		// Skip if strategy is not ready to trade
+
+		if (ichimokuValue is not IIchimokuValue { Tenkan: decimal tenkan, Kijun: decimal kijun, SenkouA: decimal senkouA, SenkouB: decimal senkouB })
+			return;
+
+		if (!williamsValue.IsFormed)
+			return;
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
-			
-		// Extract Ichimoku values
-		var ichimokuTyped = (IchimokuValue)ichimokuValue;
 
-		if (ichimokuTyped.Tenkan is not decimal tenkan)
-			return;
+		var close = candle.ClosePrice;
+		var cloudTop = Math.Max(senkouA, senkouB);
+		var cloudBottom = Math.Min(senkouA, senkouB);
+		var williams = williamsValue.GetValue<decimal>();
 
-		if (ichimokuTyped.Kijun is not decimal kijun)
-			return;
-
-		if (ichimokuTyped.SenkouA is not decimal senkouA)
-			return;
-
-		if (ichimokuTyped.SenkouB is not decimal senkouB)
-			return;
-
-		// Determine if price is above or below the Kumo (cloud)
-		var kumoTop = Math.Max(senkouA, senkouB);
-		var kumoBottom = Math.Min(senkouA, senkouB);
-		var isPriceAboveKumo = candle.ClosePrice > kumoTop;
-		var isPriceBelowKumo = candle.ClosePrice < kumoBottom;
-
-		var williamsRDec = williamsRValue.ToDecimal();
-		var crossedBelow80 = _prevWilliamsR >= -90m && williamsRDec < -90m;
-		var crossedAbove20 = _prevWilliamsR <= -10m && williamsRDec > -10m;
-		_prevWilliamsR = williamsRDec;
-		if (_cooldown > 0)
-			_cooldown--;
-
-		// Save current Kijun for stop-loss
-		_lastKijun = kijun;
-		
-		// Trading logic
-		if (_cooldown == 0 && crossedBelow80 && candle.ClosePrice > kumoTop * 1.002m && isPriceAboveKumo && tenkan > kijun)
-		{
-			// Long signal: %R < -80 (oversold), price above Kumo, Tenkan > Kijun
-			if (Position <= 0)
-			{
-				// Close any existing short position and open long
-				BuyMarket(Volume + Math.Abs(Position));
-				_cooldown = CooldownBars;
-			}
-		}
-		else if (_cooldown == 0 && crossedAbove20 && candle.ClosePrice < kumoBottom * 0.998m && isPriceBelowKumo && tenkan < kijun)
-		{
-			// Short signal: %R > -20 (overbought), price below Kumo, Tenkan < Kijun
-			if (Position >= 0)
-			{
-				// Close any existing long position and open short
-				SellMarket(Volume + Math.Abs(Position));
-				_cooldown = CooldownBars;
-			}
-		}
-		else if ((Position > 0 && candle.ClosePrice < kumoBottom) || 
-				(Position < 0 && candle.ClosePrice > kumoTop))
-		{
-			// Exit positions when price crosses the Kumo
-			if (Position > 0)
-			{
-				SellMarket(Math.Abs(Position));
-				_cooldown = CooldownBars;
-			}
-			else if (Position < 0)
-			{
-				BuyMarket(Math.Abs(Position));
-				_cooldown = CooldownBars;
-			}
-		}
+		if (williams < WilliamsROversold && close > cloudTop && tenkan > kijun && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (williams > WilliamsROverbought && close < cloudBottom && tenkan < kijun && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
+		else if (Position > 0 && close < cloudBottom)
+			SellMarket(Position);
+		else if (Position < 0 && close > cloudTop)
+			BuyMarket(-Position);
 	}
 }
-	

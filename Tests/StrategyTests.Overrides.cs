@@ -8143,6 +8143,70 @@ public abstract partial class StrategyTests
 	public Task S0211_PercentStopWorksBetweenFinishedBars()
 		=> CheckPercentStopBetweenBars("0211_CCI_VWAP", TimeSpan.FromDays(31));
 
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(9, 26, 52, 14, -80.0, -20.0, false)]
+	[DataRow(7, 22, 44, 10, -75.0, -25.0, true)]
+	public async Task S0212_WilliamsRPullbacksInCloudTrendsUntilAnOppositeCloudBreak(int tenkanPeriod, int kijunPeriod, int senkouPeriod, int williamsPeriod, double oversold, double overbought, bool secondary)
+	{
+		var ichimoku = new Ichimoku { Tenkan = { Length = tenkanPeriod }, Kijun = { Length = kijunPeriod }, SenkouB = { Length = senkouPeriod } };
+		var williams = new WilliamsR { Length = williamsPeriod };
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var cloudExits = 0;
+		var violations = new List<string>();
+		await Replay("0212_Williams_R_Ichimoku", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(9, strategy.Parameters["TenkanPeriod"].Value);
+			AreEqual(26, strategy.Parameters["KijunPeriod"].Value);
+			AreEqual(52, strategy.Parameters["SenkouSpanBPeriod"].Value);
+			AreEqual(14, strategy.Parameters["WilliamsRPeriod"].Value);
+			AreEqual(-80m, Convert.ToDecimal(strategy.Parameters["WilliamsROversold"].Value));
+			AreEqual(-20m, Convert.ToDecimal(strategy.Parameters["WilliamsROverbought"].Value));
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "TenkanPeriod", tenkanPeriod);
+			SetParam(strategy, "KijunPeriod", kijunPeriod);
+			SetParam(strategy, "SenkouSpanBPeriod", senkouPeriod);
+			SetParam(strategy, "WilliamsRPeriod", williamsPeriod);
+			SetParam(strategy, "WilliamsROversold", oversold);
+			SetParam(strategy, "WilliamsROverbought", overbought);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var cloud = ichimoku.Process(candle);
+				var w = williams.Process(candle);
+				if (cloud is not IIchimokuValue { Tenkan: decimal tenkan, Kijun: decimal kijun, SenkouA: decimal sa, SenkouB: decimal sb }) return;
+				if (!w.IsFormed) return;
+				var r = w.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var top = Math.Max(sa, sb);
+				var bottom = Math.Min(sa, sb);
+				var position = strategy.Position;
+				if (r < (decimal)oversold && close > top && tenkan > kijun && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (r > (decimal)overbought && close < bottom && tenkan < kijun && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && close < bottom) { expectedSide = Sides.Sell; expectedVolume = position; cloudExits++; }
+				else if (position < 0m && close > top) { expectedSide = Sides.Buy; expectedVolume = -position; cloudExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a Williams %R extreme beyond the cloud with Tenkan/Kijun agreement, or close on an opposite cloud break.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && cloudExits > 0, "The fixture must trade both sides and exit on an opposite cloud break.");
+	}
+
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";
