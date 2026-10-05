@@ -11,31 +11,52 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// DeltaSma1YearHighLowStrategy using EMA crossover for trend timing.
-/// Enters long on golden cross, short on death cross.
+/// Delta SMA 1-year high/low strategy.
+/// The candle volume delta is buy minus sell volume (the candle volume signed by its direction when the split is unknown),
+/// smoothed by an SMA. Its high and low are tracked over the last year of available history.
+/// After the delta SMA has been below 70% of that low, a cross above zero opens a long.
+/// After the delta SMA has risen above 70% of the high, a drop below 60% of the high closes the long.
 /// </summary>
 public class DeltaSma1YearHighLowStrategy : Strategy
 {
-	private readonly StrategyParam<int> _fastEmaPeriod;
-	private readonly StrategyParam<int> _slowEmaPeriod;
+	private static readonly TimeSpan _window = TimeSpan.FromDays(365);
+
+	private readonly StrategyParam<int> _deltaSmaLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevFastEma;
-	private decimal _prevSlowEma;
+	private SimpleMovingAverage _deltaSma;
+	private readonly LinkedList<(DateTime time, decimal value)> _maxQueue = new();
+	private readonly LinkedList<(DateTime time, decimal value)> _minQueue = new();
+	private decimal? _prevDeltaSma;
+	private bool _wasLow;
+	private bool _wasHigh;
 
-	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
-	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	/// <summary>
+	/// SMA length of the volume delta.
+	/// </summary>
+	public int DeltaSmaLength
+	{
+		get => _deltaSmaLength.Value;
+		set => _deltaSmaLength.Value = value;
+	}
 
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
+	/// </summary>
 	public DeltaSma1YearHighLowStrategy()
 	{
-		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+		_deltaSmaLength = Param(nameof(DeltaSmaLength), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
-
-		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
-			.SetGreaterThanZero()
-			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+			.SetDisplay("Delta SMA Length", "SMA length of the volume delta", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -51,8 +72,16 @@ public class DeltaSma1YearHighLowStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevFastEma = 0m;
-		_prevSlowEma = 0m;
+		ResetState();
+	}
+
+	private void ResetState()
+	{
+		_maxQueue.Clear();
+		_minQueue.Clear();
+		_prevDeltaSma = null;
+		_wasLow = false;
+		_wasHigh = false;
 	}
 
 	/// <inheritdoc />
@@ -60,46 +89,83 @@ public class DeltaSma1YearHighLowStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
-		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
+		ResetState();
+		_deltaSma = new SimpleMovingAverage { Length = DeltaSmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(fastEma, slowEma, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, fastEma);
-			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_prevFastEma == 0m || _prevSlowEma == 0m)
-		{
-			_prevFastEma = fastEmaValue;
-			_prevSlowEma = slowEmaValue;
-			return;
-		}
+		var delta = candle.BuyVolume is decimal buy && candle.SellVolume is decimal sell
+			? buy - sell
+			: candle.ClosePrice > candle.OpenPrice ? candle.TotalVolume
+			: candle.ClosePrice < candle.OpenPrice ? -candle.TotalVolume
+			: 0m;
 
-		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+		var smaValue = _deltaSma.Process(delta, candle.ServerTime, true);
+		if (!smaValue.IsFormed)
+			return;
+
+		var deltaSma = smaValue.GetValue<decimal>();
+		var time = candle.OpenTime;
+
+		Push(_maxQueue, time, deltaSma, true);
+		Push(_minQueue, time, deltaSma, false);
+
+		var yearHigh = _maxQueue.First.Value.value;
+		var yearLow = _minQueue.First.Value.value;
+
+		var prev = _prevDeltaSma;
+		_prevDeltaSma = deltaSma;
+
+		if (deltaSma < yearLow * 0.7m)
+			_wasLow = true;
+
+		if (Position > 0 && deltaSma > yearHigh * 0.7m)
+			_wasHigh = true;
+
+		if (prev is not decimal prevDeltaSma)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (Position == 0 && _wasLow && prevDeltaSma <= 0m && deltaSma > 0m)
 		{
 			BuyMarket();
+			_wasLow = false;
+			_wasHigh = false;
 		}
-		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
+		else if (Position > 0 && _wasHigh && deltaSma < yearHigh * 0.6m)
 		{
-			SellMarket();
+			SellMarket(Position);
+			_wasHigh = false;
 		}
+	}
 
-		_prevFastEma = fastEmaValue;
-		_prevSlowEma = slowEmaValue;
+	private static void Push(LinkedList<(DateTime time, decimal value)> queue, DateTime time, decimal value, bool isMax)
+	{
+		// Monotonic queue: the front always holds the extreme of the window.
+		while (queue.Last != null && (isMax ? queue.Last.Value.value <= value : queue.Last.Value.value >= value))
+			queue.RemoveLast();
+
+		queue.AddLast((time, value));
+
+		while (queue.First != null && queue.First.Value.time <= time - _window)
+			queue.RemoveFirst();
 	}
 }
