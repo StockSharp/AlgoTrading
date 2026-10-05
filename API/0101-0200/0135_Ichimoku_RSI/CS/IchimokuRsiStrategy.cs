@@ -11,37 +11,53 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy combining Ichimoku Tenkan/Kijun crossover and RSI indicators.
-/// Enters on Tenkan/Kijun crossover with RSI confirmation.
-/// Uses manual Tenkan(9)/Kijun(26) calculation to avoid Ichimoku composite indicator issues.
+/// Ichimoku RSI strategy.
+/// The cloud gives the trend: Senkou Span A above Senkou Span B is an uptrend, below it a downtrend.
+/// In an uptrend RSI recovering from oversold, crossing back above RsiOversold, goes long; in a downtrend RSI falling from overbought,
+/// crossing back below RsiOverbought, goes short. An opposite signal reverses the position, and a percent stop limits the loss.
 /// </summary>
 public class IchimokuRsiStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _tenkanPeriod;
+	private readonly StrategyParam<int> _kijunPeriod;
+	private readonly StrategyParam<int> _senkouSpanBPeriod;
 	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<decimal> _rsiOversold;
 	private readonly StrategyParam<decimal> _rsiOverbought;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _rsiValue;
-	private int _cooldown;
-
-	private readonly List<decimal> _highs = new();
-	private readonly List<decimal> _lows = new();
-	private const int TenkanPeriod = 9;
-	private const int KijunPeriod = 26;
+	private decimal? _prevRsi;
 
 	/// <summary>
-	/// Data type for candles.
+	/// Period of Tenkan-sen.
 	/// </summary>
-	public DataType CandleType
+	public int TenkanPeriod
 	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
+		get => _tenkanPeriod.Value;
+		set => _tenkanPeriod.Value = value;
 	}
 
 	/// <summary>
-	/// Period for RSI calculation.
+	/// Period of Kijun-sen.
+	/// </summary>
+	public int KijunPeriod
+	{
+		get => _kijunPeriod.Value;
+		set => _kijunPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Period of Senkou Span B.
+	/// </summary>
+	public int SenkouSpanBPeriod
+	{
+		get => _senkouSpanBPeriod.Value;
+		set => _senkouSpanBPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Period of RSI.
 	/// </summary>
 	public int RsiPeriod
 	{
@@ -50,7 +66,7 @@ public class IchimokuRsiStrategy : Strategy
 	}
 
 	/// <summary>
-	/// RSI oversold level.
+	/// RSI level a long recovers from.
 	/// </summary>
 	public decimal RsiOversold
 	{
@@ -59,7 +75,7 @@ public class IchimokuRsiStrategy : Strategy
 	}
 
 	/// <summary>
-	/// RSI overbought level.
+	/// RSI level a short falls from.
 	/// </summary>
 	public decimal RsiOverbought
 	{
@@ -68,35 +84,56 @@ public class IchimokuRsiStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Cooldown bars between trades.
+	/// Stop loss percentage from entry price.
 	/// </summary>
-	public int CooldownBars
+	public decimal StopLossPercent
 	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
 	}
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="IchimokuRsiStrategy"/>.
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
 	/// </summary>
 	public IchimokuRsiStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
+		_tenkanPeriod = Param(nameof(TenkanPeriod), 9)
+			.SetGreaterThanZero()
+			.SetDisplay("Tenkan Period", "Period of Tenkan-sen", "Ichimoku");
+
+		_kijunPeriod = Param(nameof(KijunPeriod), 26)
+			.SetGreaterThanZero()
+			.SetDisplay("Kijun Period", "Period of Kijun-sen", "Ichimoku");
+
+		_senkouSpanBPeriod = Param(nameof(SenkouSpanBPeriod), 52)
+			.SetGreaterThanZero()
+			.SetDisplay("Senkou Span B Period", "Period of Senkou Span B", "Ichimoku");
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
-			.SetRange(5, 30)
-			.SetDisplay("RSI Period", "Period for RSI calculation", "RSI Settings");
+			.SetGreaterThanZero()
+			.SetDisplay("RSI Period", "Period of RSI", "RSI");
 
 		_rsiOversold = Param(nameof(RsiOversold), 30m)
-			.SetDisplay("RSI Oversold", "RSI oversold level", "RSI Settings");
+			.SetDisplay("RSI Oversold", "RSI level a long recovers from", "RSI");
 
 		_rsiOverbought = Param(nameof(RsiOverbought), 70m)
-			.SetDisplay("RSI Overbought", "RSI overbought level", "RSI Settings");
+			.SetDisplay("RSI Overbought", "RSI level a short falls from", "RSI");
 
-		_cooldownBars = Param(nameof(CooldownBars), 100)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "General")
-			.SetRange(5, 500);
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -109,10 +146,7 @@ public class IchimokuRsiStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_rsiValue = 50;
-		_cooldown = 0;
-		_highs.Clear();
-		_lows.Clear();
+		_prevRsi = null;
 	}
 
 	/// <inheritdoc />
@@ -120,104 +154,82 @@ public class IchimokuRsiStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
+		_prevRsi = null;
+
+		var ichimoku = new Ichimoku
+		{
+			Tenkan = { Length = TenkanPeriod },
+			Kijun = { Length = KijunPeriod },
+			SenkouB = { Length = SenkouSpanBPeriod }
+		};
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-
 		subscription
-			.Bind(rsi, ProcessCandle)
+			.BindEx(ichimoku, rsi, ProcessCandle)
 			.Start();
+
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, ichimoku);
 			DrawOwnTrades(area);
 
-			var rsiArea = CreateChartArea();
-			if (rsiArea != null)
-				DrawIndicator(rsiArea, rsi);
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, rsi);
+			}
 		}
 	}
 
-	private static decimal GetHighest(List<decimal> values, int period)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
 	{
-		var start = Math.Max(0, values.Count - period);
-		var max = decimal.MinValue;
-		for (var i = start; i < values.Count; i++)
-			if (values[i] > max) max = values[i];
-		return max;
+		// The high-level handler activates native protection before this callback, also between signal bars.
 	}
 
-	private static decimal GetLowest(List<decimal> values, int period)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue ichimokuValue, IIndicatorValue rsiValue)
 	{
-		var start = Math.Max(0, values.Count - period);
-		var min = decimal.MaxValue;
-		for (var i = start; i < values.Count; i++)
-			if (values[i] < min) min = values[i];
-		return min;
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal rsiVal)
-	{
-		_rsiValue = rsiVal;
-
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!rsiValue.IsFormed)
 			return;
 
-		// Track highs and lows
-		_highs.Add(candle.HighPrice);
-		_lows.Add(candle.LowPrice);
+		var rsi = rsiValue.GetValue<decimal>();
+		var prevRsi = _prevRsi;
+		_prevRsi = rsi;
 
-		// Keep buffer manageable
-		if (_highs.Count > KijunPeriod * 2)
-		{
-			_highs.RemoveRange(0, _highs.Count - KijunPeriod * 2);
-			_lows.RemoveRange(0, _lows.Count - KijunPeriod * 2);
-		}
-
-		// Need at least KijunPeriod bars for full calculation
-		if (_highs.Count < KijunPeriod)
+		if (prevRsi is not decimal lastRsi)
 			return;
 
-		// Tenkan-sen = (highest high over 9 periods + lowest low over 9 periods) / 2
-		var tenkan = (GetHighest(_highs, TenkanPeriod) + GetLowest(_lows, TenkanPeriod)) / 2;
-		// Kijun-sen = (highest high over 26 periods + lowest low over 26 periods) / 2
-		var kijun = (GetHighest(_highs, KijunPeriod) + GetLowest(_lows, KijunPeriod)) / 2;
-
-		if (_cooldown > 0)
-		{
-			_cooldown--;
+		if (ichimokuValue is not IIchimokuValue { SenkouA: decimal senkouA, SenkouB: decimal senkouB })
 			return;
-		}
 
-		// Buy: tenkan > kijun (bullish) + RSI not overbought
-		if (tenkan > kijun && _rsiValue < RsiOverbought && Position == 0)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-		// Sell: tenkan < kijun (bearish) + RSI not oversold
-		else if (tenkan < kijun && _rsiValue > RsiOversold && Position == 0)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
+		var signal = 0;
 
-		// Exit long if tenkan crosses below kijun
-		if (Position > 0 && tenkan < kijun)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		// Exit short if tenkan crosses above kijun
-		else if (Position < 0 && tenkan > kijun)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
+		if (senkouA > senkouB && lastRsi < RsiOversold && rsi >= RsiOversold)
+			signal = 1;
+		else if (senkouA < senkouB && lastRsi > RsiOverbought && rsi <= RsiOverbought)
+			signal = -1;
+
+		if (signal == 0 || !IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (signal > 0 && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (signal < 0 && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
 	}
 }

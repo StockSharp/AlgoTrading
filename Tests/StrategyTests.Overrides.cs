@@ -4068,6 +4068,50 @@ public abstract partial class StrategyTests
 	public Task S0134_PercentStopWorksBetweenFinishedBars()
 		=> CheckPercentStopBetweenBars("0134_ADX_MACD", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
 
+	[TestMethod]
+	[TestCategory("Shard04")]
+	[DataRow(9, 26, 52, 14, 30.0, 70.0, false)]
+	[DataRow(7, 22, 44, 10, 35.0, 65.0, true)]
+	public Task S0135_RsiRecoveriesInTheDirectionOfTheCloud(int tenkan, int kijun, int senkouB, int rsiPeriod, double oversold, double overbought, bool secondary)
+	{
+		var ichimoku = new Ichimoku { Tenkan = { Length = tenkan }, Kijun = { Length = kijun }, SenkouB = { Length = senkouB } };
+		var rsi = new RelativeStrengthIndex { Length = rsiPeriod };
+		decimal? previousRsi = null;
+		return CheckReversingSignals("0135_Ichimoku_RSI", secondary, s =>
+			{
+				AreEqual(9, s.Parameters["TenkanPeriod"].Value);
+				AreEqual(26, s.Parameters["KijunPeriod"].Value);
+				AreEqual(52, s.Parameters["SenkouSpanBPeriod"].Value);
+				AreEqual(14, s.Parameters["RsiPeriod"].Value);
+				AreEqual(30m, Convert.ToDecimal(s.Parameters["RsiOversold"].Value));
+				AreEqual(70m, Convert.ToDecimal(s.Parameters["RsiOverbought"].Value));
+				SetParam(s, "TenkanPeriod", tenkan);
+				SetParam(s, "KijunPeriod", kijun);
+				SetParam(s, "SenkouSpanBPeriod", senkouB);
+				SetParam(s, "RsiPeriod", rsiPeriod);
+				SetParam(s, "RsiOversold", oversold);
+				SetParam(s, "RsiOverbought", overbought);
+			},
+			candle =>
+			{
+				var cloud = ichimoku.Process(candle);
+				var r = rsi.Process(candle);
+				if (!r.IsFormed) return 0;
+				var value = r.GetValue<decimal>();
+				var last = previousRsi;
+				previousRsi = value;
+				if (last is not decimal lastRsi || cloud is not IIchimokuValue { SenkouA: decimal a, SenkouB: decimal b }) return 0;
+				if (a > b && lastRsi < (decimal)oversold && value >= (decimal)oversold) return 1;
+				if (a < b && lastRsi > (decimal)overbought && value <= (decimal)overbought) return -1;
+				return 0;
+			}, "Every order must follow RSI leaving an extreme in the direction of the cloud.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard04")]
+	public Task S0135_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0135_Ichimoku_RSI", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";
