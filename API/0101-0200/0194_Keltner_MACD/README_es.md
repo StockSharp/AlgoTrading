@@ -26,6 +26,7 @@ Ideal para traders que persiguen expansiones de volatilidad con respaldo de mome
   - `MacdSignalPeriod` = 9
   - `AtrMultiplier` = 2m
   - `CandleType` = TimeSpan.FromMinutes(15).TimeFrame()
+    El canal es la EMA más y menos Multiplier ATR. El stop está a AtrMultiplier ATR del cierre de entrada y se comprueba en los cierres de vela. Una señal de entrada contra una posición abierta la invierte.
 - **Filtros**:
   - Categoría: Reversión a la media
   - Dirección: Ambos

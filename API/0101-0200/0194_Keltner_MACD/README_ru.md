@@ -26,6 +26,7 @@
   - `MacdSignalPeriod` = 9
   - `AtrMultiplier` = 2m
   - `CandleType` = TimeSpan.FromMinutes(15).TimeFrame()
+    Канал — EMA плюс и минус Multiplier ATR. Стоп стоит в AtrMultiplier ATR от цены закрытия при входе и проверяется по закрытиям свечей. Сигнал на вход против открытой позиции разворачивает её.
 - **Фильтры**:
   - Категория: Mean reversion
   - Направление: Оба

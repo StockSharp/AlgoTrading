@@ -7170,6 +7170,76 @@ public abstract partial class StrategyTests
 		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && flipExits > 0, "The fixture must trade both sides and exit when Supertrend flips.");
 	}
 
+	[TestMethod]
+	[TestCategory("Shard04")]
+	[DataRow(20, 2.0, 14, 12, 26, 9, 2.0, false)]
+	[DataRow(14, 1.5, 10, 8, 21, 5, 0.5, true)]
+	public async Task S0194_KeltnerBreakoutsConfirmedByMacdUntilMacdCrossesBackOrAnAtrStop(int emaPeriod, double multiplier, int atrPeriod, int fast, int slow, int signalPeriod, double stopAtr, bool secondary)
+	{
+		var ema = new ExponentialMovingAverage { Length = emaPeriod };
+		var atr = new AverageTrueRange { Length = atrPeriod };
+		var macd = new MovingAverageConvergenceDivergenceSignal { Macd = { ShortMa = { Length = fast }, LongMa = { Length = slow } }, SignalMa = { Length = signalPeriod } };
+		var stopPrice = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var crossExits = 0;
+		var stopExits = 0;
+		var violations = new List<string>();
+		await Replay("0194_Keltner_MACD", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["EmaPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["Multiplier"].Value));
+			AreEqual(14, strategy.Parameters["AtrPeriod"].Value);
+			AreEqual(12, strategy.Parameters["MacdFastPeriod"].Value);
+			AreEqual(26, strategy.Parameters["MacdSlowPeriod"].Value);
+			AreEqual(9, strategy.Parameters["MacdSignalPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["AtrMultiplier"].Value));
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "EmaPeriod", emaPeriod);
+			SetParam(strategy, "Multiplier", multiplier);
+			SetParam(strategy, "AtrPeriod", atrPeriod);
+			SetParam(strategy, "MacdFastPeriod", fast);
+			SetParam(strategy, "MacdSlowPeriod", slow);
+			SetParam(strategy, "MacdSignalPeriod", signalPeriod);
+			SetParam(strategy, "AtrMultiplier", stopAtr);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var e = ema.Process(candle);
+				var a = atr.Process(candle);
+				var m = (MovingAverageConvergenceDivergenceSignalValue)macd.Process(candle);
+				if (!e.IsFormed || !a.IsFormed || !m.IsFormed || m.Macd is not decimal line || m.Signal is not decimal sig) return;
+				var middle = e.GetValue<decimal>();
+				var range = a.GetValue<decimal>();
+				var upper = middle + (decimal)multiplier * range;
+				var lower = middle - (decimal)multiplier * range;
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (close > upper && line > sig && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; stopPrice = close - (decimal)stopAtr * range; }
+				else if (close < lower && line < sig && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; stopPrice = close + (decimal)stopAtr * range; }
+				else if (position > 0m && (line < sig || close <= stopPrice)) { expectedSide = Sides.Sell; expectedVolume = position; if (line < sig) crossExits++; else stopExits++; }
+				else if (position < 0m && (line > sig || close >= stopPrice)) { expectedSide = Sides.Buy; expectedVolume = -position; if (line > sig) crossExits++; else stopExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a Keltner breakout confirmed by MACD, or close on the opposite MACD cross or the ATR stop.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && crossExits > 0, "The fixture must trade both sides and exit on the MACD cross.");
+		if (secondary) IsTrue(stopExits > 0, "TON must close a position at the ATR stop.");
+	}
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";
