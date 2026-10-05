@@ -27,6 +27,7 @@ Adequado para operadores de rompimento que esperam continuação. Um stop basead
   - `StopLossAtr` = 2.0m
   - `AtrPeriod` = 14
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    AvgVolume é o volume médio dos VolumePeriod candles anteriores. Um sinal de entrada contra uma posição aberta a inverte. O stop fica a StopLossAtr ATR do fechamento de entrada e é verificado nos fechamentos dos candles.
 - **Filtros**:
   - Categoria: Reversão à média
   - Direção: Ambos

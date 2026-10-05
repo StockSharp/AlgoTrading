@@ -4884,6 +4884,76 @@ public abstract partial class StrategyTests
 	public Task S0146_PercentStopWorksBetweenFinishedBars()
 		=> CheckPercentStopBetweenBars("0146_MACD_Volume", TimeSpan.FromDays(31), setup: (s, _) => SetParam(s, "VolumeMultiplier", 1m));
 
+	[TestMethod]
+	[TestCategory("Shard00")]
+	[DataRow(20, 2.0, 20, 1.5, 2.0, 14, false)]
+	[DataRow(14, 1.5, 10, 1.2, 0.3, 10, true)]
+	public async Task S0147_BandBreakoutsOnVolumeUntilTheMiddleBandOrAnAtrStop(int period, double width, int volumePeriod, double multiplier, double stopAtr, int atrPeriod, bool secondary)
+	{
+		var bollinger = new BollingerBands { Length = period, Width = (decimal)width };
+		var atr = new AverageTrueRange { Length = atrPeriod };
+		var volumes = new List<decimal>();
+		var stopPrice = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var middleExits = 0;
+		var stopExits = 0;
+		var violations = new List<string>();
+		await Replay("0147_Bollinger_Volume", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["BollingerPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["BollingerDeviation"].Value));
+			AreEqual(20, strategy.Parameters["VolumePeriod"].Value);
+			AreEqual(1.5m, Convert.ToDecimal(strategy.Parameters["VolumeMultiplier"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossAtr"].Value));
+			AreEqual(14, strategy.Parameters["AtrPeriod"].Value);
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "BollingerPeriod", period);
+			SetParam(strategy, "BollingerDeviation", width);
+			SetParam(strategy, "VolumePeriod", volumePeriod);
+			SetParam(strategy, "VolumeMultiplier", multiplier);
+			SetParam(strategy, "StopLossAtr", stopAtr);
+			SetParam(strategy, "AtrPeriod", atrPeriod);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var b = (BollingerBandsValue)bollinger.Process(candle);
+				var a = atr.Process(candle);
+				// The strategy only sees candles once no bound indicator returns an empty value.
+				if (b.IsEmpty || a.IsEmpty) return;
+				decimal? average = volumes.Count == volumePeriod ? volumes.Average() : null;
+				volumes.Add(candle.TotalVolume);
+				if (volumes.Count > volumePeriod) volumes.RemoveAt(0);
+				if (!b.IsFormed || !a.IsFormed || average is not decimal avg || b.UpBand is not decimal upper || b.LowBand is not decimal lower || b.MovingAverage is not decimal middle) return;
+				var range = a.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var surge = candle.TotalVolume > avg * (decimal)multiplier;
+				var position = strategy.Position;
+				if (close > upper && surge && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; stopPrice = close - (decimal)stopAtr * range; }
+				else if (close < lower && surge && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; stopPrice = close + (decimal)stopAtr * range; }
+				else if (position > 0m && (close <= middle || close <= stopPrice)) { expectedSide = Sides.Sell; expectedVolume = position; if (close <= middle) middleExits++; else stopExits++; }
+				else if (position < 0m && (close >= middle || close >= stopPrice)) { expectedSide = Sides.Buy; expectedVolume = -position; if (close >= middle) middleExits++; else stopExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a band breakout on a volume surge, or close at the middle band or the ATR stop.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && middleExits > 0, "The fixture must trade both sides and exit at the middle band.");
+		if (secondary) IsTrue(stopExits > 0, "TON must close a position at the ATR stop.");
+	}
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

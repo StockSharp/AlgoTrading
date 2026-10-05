@@ -27,6 +27,7 @@
   - `StopLossAtr` = 2.0m
   - `AtrPeriod` = 14
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    AvgVolumeは直前VolumePeriod本の平均出来高です。保有ポジションと逆方向のエントリーシグナルはドテンになります。ストップはエントリー時の終値からStopLossAtr倍のATRの位置にあり、足の終値で判定します。
 - **フィルター**:
   - カテゴリ: 平均回帰
   - 方向: 両方
