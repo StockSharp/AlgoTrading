@@ -20,7 +20,8 @@ Esta técnica está orientada a los traders intradía que prosperan con los impu
 - **Stops**: Sí, stop-loss a `Multiplier * ATR` desde la entrada.
 - **Valores predeterminados**:
   - `Period` = 20
-  - `Multiplier` = 2.0m
+  - `Multiplier` = 2
+    El stop se sitúa a Multiplier veces el ATR de Period del cierre de entrada y se comprueba al cierre de las velas. Una señal de entrada contra una posición abierta la invierte.
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **Filtros**:
   - Categoría: Ruptura

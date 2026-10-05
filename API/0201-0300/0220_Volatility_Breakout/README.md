@@ -20,7 +20,8 @@ This technique caters to intraday traders who thrive on momentum surges. Using A
 - **Stops**: Yes, stop-loss at `Multiplier * ATR` from entry.
 - **Default Values**:
   - `Period` = 20
-  - `Multiplier` = 2.0m
+  - `Multiplier` = 2
+    The stop is set Multiplier times the Period ATR from the entry close and checked on candle closes. An entry signal against an open position reverses it.
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **Filters**:
   - Category: Breakout
