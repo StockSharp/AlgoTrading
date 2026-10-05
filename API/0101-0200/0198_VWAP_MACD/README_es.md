@@ -7,7 +7,7 @@ Las pruebas indican un rendimiento anual promedio de aproximadamente 181%. Funci
 
 VWAP orienta el valor intradía, y los cruces de MACD revelan cambios de momentum. Las operaciones se inician cuando el MACD gira cerca del nivel VWAP.
 
-Adecuado para operadores de momentum a corto plazo. Las reglas de stop ATR previenen el riesgo excesivo.
+Adecuado para operadores de momentum a corto plazo. Un stop porcentual previene el riesgo excesivo.
 
 ## Detalles
 
@@ -21,8 +21,9 @@ Adecuado para operadores de momentum a corto plazo. Las reglas de stop ATR previ
   - `MacdFastPeriod` = 12
   - `MacdSlowPeriod` = 26
   - `MacdSignalPeriod` = 9
-  - `StopLossPercent` = 2m
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    El mercado opera las 24 horas, por lo que el VWAP de la sesión se reinicia cada día UTC y pondera el precio típico de cada vela por su volumen. Una señal de entrada contra una posición abierta la invierte.
 - **Filtros**:
   - Categoría: Reversión a la media
   - Dirección: Ambos

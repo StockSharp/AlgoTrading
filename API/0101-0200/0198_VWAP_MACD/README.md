@@ -7,7 +7,7 @@ Testing indicates an average annual return of about 181%. It performs best in th
 
 VWAP guides intraday value, and MACD crossovers reveal momentum shifts. Trades are launched as MACD turns near the VWAP level.
 
-Suitable for short-term momentum traders. ATR stop rules prevent excessive risk.
+Suitable for short-term momentum traders. A percent stop prevents excessive risk.
 
 ## Details
 
@@ -21,8 +21,9 @@ Suitable for short-term momentum traders. ATR stop rules prevent excessive risk.
   - `MacdFastPeriod` = 12
   - `MacdSlowPeriod` = 26
   - `MacdSignalPeriod` = 9
-  - `StopLossPercent` = 2m
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    The market trades around the clock, so the session VWAP restarts each UTC day and weighs the typical price of each candle by its volume. An entry signal against an open position reverses it.
 - **Filters**:
   - Category: Mean reversion
   - Direction: Both

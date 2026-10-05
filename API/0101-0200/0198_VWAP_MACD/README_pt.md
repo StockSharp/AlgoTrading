@@ -7,7 +7,7 @@ Os testes indicam um retorno anual médio de aproximadamente 181%. Funciona melh
 
 VWAP orienta o valor intradiário, e os cruzamentos do MACD revelam mudanças de momentum. As operações são iniciadas quando o MACD vira próximo ao nível VWAP.
 
-Adequado para traders de momentum de curto prazo. As regras de stop ATR evitam risco excessivo.
+Adequado para traders de momentum de curto prazo. Um stop percentual evita risco excessivo.
 
 ## Detalhes
 
@@ -21,8 +21,9 @@ Adequado para traders de momentum de curto prazo. As regras de stop ATR evitam r
   - `MacdFastPeriod` = 12
   - `MacdSlowPeriod` = 26
   - `MacdSignalPeriod` = 9
-  - `StopLossPercent` = 2m
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    O mercado negocia 24 horas, por isso o VWAP da sessão reinicia a cada dia UTC e pondera o preço típico de cada candle pelo seu volume. Um sinal de entrada contra uma posição aberta a inverte.
 - **Filtros**:
   - Categoria: Reversão à média
   - Direção: Ambos

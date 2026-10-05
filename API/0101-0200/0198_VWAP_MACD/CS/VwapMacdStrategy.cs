@@ -1,45 +1,36 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on VWAP and MACD.
-/// Enters long when price is above VWAP and MACD > Signal.
-/// Enters short when price is below VWAP and MACD < Signal.
-/// Exits when MACD crosses its signal line in the opposite direction.
+/// VWAP MACD strategy.
+/// The market trades around the clock, so the session VWAP restarts with each UTC day and weighs each candle's typical price by its volume.
+/// MACD above its signal line with a close above VWAP goes long and MACD below the signal line with a close below VWAP goes short,
+/// reversing an opposite position. A long closes when MACD crosses below the signal line and a short when it crosses above it,
+/// and a percent stop limits the loss.
 /// </summary>
 public class VwapMacdStrategy : Strategy
 {
 	private readonly StrategyParam<int> _macdFastPeriod;
 	private readonly StrategyParam<int> _macdSlowPeriod;
 	private readonly StrategyParam<int> _macdSignalPeriod;
-	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private MovingAverageConvergenceDivergenceSignal _macd;
-	private VolumeWeightedMovingAverage _vwap;
-
-	private decimal _prevMacd;
-	private decimal _prevSignal;
-	private int _cooldown;
+	private DateTime? _day;
+	private decimal _cumulativePriceVolume;
+	private decimal _cumulativeVolume;
 
 	/// <summary>
-	/// MACD fast EMA period.
+	/// Fast EMA period of MACD.
 	/// </summary>
 	public int MacdFastPeriod
 	{
@@ -48,7 +39,7 @@ public class VwapMacdStrategy : Strategy
 	}
 
 	/// <summary>
-	/// MACD slow EMA period.
+	/// Slow EMA period of MACD.
 	/// </summary>
 	public int MacdSlowPeriod
 	{
@@ -57,7 +48,7 @@ public class VwapMacdStrategy : Strategy
 	}
 
 	/// <summary>
-	/// MACD signal line period.
+	/// Signal line period of MACD.
 	/// </summary>
 	public int MacdSignalPeriod
 	{
@@ -66,16 +57,7 @@ public class VwapMacdStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Bars to wait between trades.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss percentage value.
+	/// Stop loss percentage from entry price.
 	/// </summary>
 	public decimal StopLossPercent
 	{
@@ -84,7 +66,7 @@ public class VwapMacdStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Candle type for strategy.
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -93,35 +75,32 @@ public class VwapMacdStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="VwapMacdStrategy"/>.
+	/// Constructor.
 	/// </summary>
 	public VwapMacdStrategy()
 	{
 		_macdFastPeriod = Param(nameof(MacdFastPeriod), 12)
-			.SetDisplay("MACD Fast Period", "Fast EMA period for MACD calculation", "Indicators")
-			;
+			.SetGreaterThanZero()
+			.SetDisplay("MACD Fast", "Fast EMA period of MACD", "MACD");
 
 		_macdSlowPeriod = Param(nameof(MacdSlowPeriod), 26)
-			.SetDisplay("MACD Slow Period", "Slow EMA period for MACD calculation", "Indicators")
-			;
+			.SetGreaterThanZero()
+			.SetDisplay("MACD Slow", "Slow EMA period of MACD", "MACD");
 
 		_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 9)
-			.SetDisplay("MACD Signal Period", "Signal line period for MACD calculation", "Indicators")
-			;
-
-		_cooldownBars = Param(nameof(CooldownBars), 30)
-			.SetRange(1, 200)
-			.SetDisplay("Cooldown Bars", "Bars between entries", "General");
+			.SetGreaterThanZero()
+			.SetDisplay("MACD Signal", "Signal line period of MACD", "MACD");
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-			.SetDisplay("Stop Loss (%)", "Stop loss percentage from entry price", "Risk Management");
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-			.SetDisplay("Candle Type", "Timeframe of data for strategy", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
-	public override IEnumerable<(Security, DataType)> GetWorkingSecurities()
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
@@ -130,13 +109,9 @@ public class VwapMacdStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_macd?.Reset();
-		_vwap?.Reset();
-
-		_prevMacd = 0;
-		_prevSignal = 0;
-		_cooldown = 0;
+		_day = null;
+		_cumulativePriceVolume = 0;
+		_cumulativeVolume = 0;
 	}
 
 	/// <inheritdoc />
@@ -144,9 +119,11 @@ public class VwapMacdStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create MACD indicator
+		_day = null;
+		_cumulativePriceVolume = 0;
+		_cumulativeVolume = 0;
 
-		_macd = new()
+		var macd = new MovingAverageConvergenceDivergenceSignal
 		{
 			Macd =
 			{
@@ -155,90 +132,80 @@ public class VwapMacdStrategy : Strategy
 			},
 			SignalMa = { Length = MacdSignalPeriod }
 		};
-		_vwap = new() { Length = MacdSignalPeriod };
-		// Create subscription
-		var subscription = SubscribeCandles(CandleType);
 
-		// Process candles with MACD
+		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_macd, ProcessCandle)
+			.BindEx(macd, ProcessCandle)
 			.Start();
 
-		// Setup chart visualization
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
 			DrawOwnTrades(area);
 
-			// MACD in separate area
-			var macdArea = CreateChartArea();
-			if (macdArea != null)
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
 			{
-				DrawIndicator(macdArea, _macd);
+				DrawIndicator(oscillators, macd);
 			}
 		}
 	}
 
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// The high-level handler activates native protection before this callback, also between signal bars.
+	}
+
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Get VWAP value (calculated per day)
-		var vwap = _vwap.Process(candle).ToDecimal();
+		var day = candle.OpenTime.Date;
+
+		if (_day != day)
+		{
+			_day = day;
+			_cumulativePriceVolume = 0;
+			_cumulativeVolume = 0;
+		}
+
+		var typicalPrice = (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3;
+		_cumulativePriceVolume += typicalPrice * candle.TotalVolume;
+		_cumulativeVolume += candle.TotalVolume;
+
+		if (!macdValue.IsFormed || _cumulativeVolume <= 0)
+			return;
 
 		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
 
-		// Extract MACD and Signal values
 		if (macdTyped.Macd is not decimal macd || macdTyped.Signal is not decimal signal)
-		{
 			return;
-		}
 
-		// Detect MACD crosses
-		bool macdCrossedAboveSignal = _prevMacd <= _prevSignal && macd > signal;
-		bool macdCrossedBelowSignal = _prevMacd >= _prevSignal && macd < signal;
-
-		// Check if strategy is ready for trading
 		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			// Store current values for next candle
-			_prevMacd = macd;
-			_prevSignal = signal;
 			return;
-		}
 
-		// Trading logic
-		if (_cooldown > 0)
-			_cooldown--;
+		var vwap = _cumulativePriceVolume / _cumulativeVolume;
+		var close = candle.ClosePrice;
 
-		if (_cooldown == 0 && candle.ClosePrice > vwap * 1.001m && macdCrossedAboveSignal && Position <= 0)
-		{
+		if (macd > signal && close > vwap && Position <= 0)
 			BuyMarket(Volume + Math.Abs(Position));
-			_cooldown = CooldownBars;
-		}
-		else if (_cooldown == 0 && candle.ClosePrice < vwap * 0.999m && macdCrossedBelowSignal && Position >= 0)
-		{
+		else if (macd < signal && close < vwap && Position >= 0)
 			SellMarket(Volume + Math.Abs(Position));
-			_cooldown = CooldownBars;
-		}
-
-		// Exit logic based on MACD crosses
-		if (Position > 0 && macdCrossedBelowSignal)
-		{
-			ClosePosition();
-			_cooldown = CooldownBars;
-		}
-		else if (Position < 0 && macdCrossedAboveSignal)
-		{
-			ClosePosition();
-			_cooldown = CooldownBars;
-		}
-
-		// Store current values for next candle
-		_prevMacd = macd;
-		_prevSignal = signal;
+		else if (Position > 0 && macd < signal)
+			SellMarket(Position);
+		else if (Position < 0 && macd > signal)
+			BuyMarket(-Position);
 	}
 }

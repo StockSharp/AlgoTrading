@@ -5,7 +5,7 @@
 
 测试表明年均收益约为 181%，该策略在加密市场表现最佳。
 
-VWAP体现当日价值，MACD交叉揭示动量转变。交易在MACD靠近VWAP时反转发出信号。适合短线动量交易者，ATR规则控制风险。
+VWAP体现当日价值，MACD交叉揭示动量转变。交易在MACD靠近VWAP时反转发出信号。适合短线动量交易者，百分比止损控制风险。
 
 ## 细节
 - **入场条件**:
@@ -18,8 +18,9 @@ VWAP体现当日价值，MACD交叉揭示动量转变。交易在MACD靠近VWAP�
   - `MacdFastPeriod` = 12
   - `MacdSlowPeriod` = 26
   - `MacdSignalPeriod` = 9
-  - `StopLossPercent` = 2m
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    市场全天候交易，因此时段VWAP在每个UTC日重新开始，并按成交量加权每根K线的典型价格。与持仓方向相反的入场信号会反转持仓。
 - **过滤器**:
   - 类别: Mean reversion
   - 方向: 双向
