@@ -12,17 +12,19 @@ Um ADX alto denota uma tendência forte e os picos de volume confirmam o comprom
 ## Detalhes
 
 - **Critérios de entrada**:
-  - Comprado: `ADX > AdxThreshold && Volume > AvgVolume`
-  - Vendido: `ADX > AdxThreshold && Volume > AvgVolume`
+  - Comprado: `ADX > AdxThreshold && Volume > AvgVolume && +DI > -DI`
+  - Vendido: `ADX > AdxThreshold && Volume > AvgVolume && -DI > +DI`
 - **Comprado/Vendido**: Ambos
 - **Critérios de saída**: A tendência enfraquece abaixo do limiar
-- **Stops**: Baseados em ATR usando `StopLoss`
+- **Stops**: Baseados em ATR usando `StopLossAtr`
 - **Valores padrão**:
   - `AdxPeriod` = 14
   - `AdxThreshold` = 25m
   - `VolumeAvgPeriod` = 20
-  - `StopLoss` = new Unit(2, UnitTypes.Absolute)
+  - `StopLossAtr` = 2
+  - `AtrPeriod` = 14
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    AvgVolume é o volume médio dos VolumeAvgPeriod candles anteriores. O stop fica a StopLossAtr ATR (AtrPeriod) do fechamento de entrada e é verificado nos fechamentos dos candles. Um sinal de entrada contra uma posição aberta a inverte.
 - **Filtros**:
   - Categoria: Rompimento
   - Direção: Ambos

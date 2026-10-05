@@ -1,43 +1,36 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Implementation of strategy - ADX + Volume.
-/// Enter trades when ADX is above threshold with above average volume.
-/// Direction determined by DI+ and DI- comparison.
+/// ADX Volume strategy.
+/// While ADX is above AdxThreshold, a candle with volume above the average of the previous VolumeAvgPeriod candles goes long when +DI
+/// is above -DI and short when -DI is above +DI, reversing an opposite position. The position closes once ADX falls below AdxThreshold.
+/// The stop lies StopLossAtr ATR from the entry close and is checked on candle closes.
 /// </summary>
 public class AdxVolumeStrategy : Strategy
 {
 	private readonly StrategyParam<int> _adxPeriod;
 	private readonly StrategyParam<decimal> _adxThreshold;
 	private readonly StrategyParam<int> _volumeAvgPeriod;
-	private readonly StrategyParam<decimal> _volumeMultiplier;
-	private readonly StrategyParam<int> _cooldownBars;
-	private readonly StrategyParam<Unit> _stopLoss;
+	private readonly StrategyParam<decimal> _stopLossAtr;
+	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	// For volume tracking
-	private decimal _averageVolume;
-	private int _volumeCounter;
-	private int _cooldown;
+	private readonly List<decimal> _volumes = [];
+	private decimal _stopPrice;
 
 	/// <summary>
-	/// ADX period.
+	/// Period of ADX.
 	/// </summary>
 	public int AdxPeriod
 	{
@@ -46,7 +39,7 @@ public class AdxVolumeStrategy : Strategy
 	}
 
 	/// <summary>
-	/// ADX threshold value to determine strong trend.
+	/// ADX level of a strong trend.
 	/// </summary>
 	public decimal AdxThreshold
 	{
@@ -55,7 +48,7 @@ public class AdxVolumeStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Volume average period.
+	/// Previous candles the volume is averaged over.
 	/// </summary>
 	public int VolumeAvgPeriod
 	{
@@ -64,34 +57,25 @@ public class AdxVolumeStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Volume multiplier above average.
+	/// Stop distance from the entry in ATRs.
 	/// </summary>
-	public decimal VolumeMultiplier
+	public decimal StopLossAtr
 	{
-		get => _volumeMultiplier.Value;
-		set => _volumeMultiplier.Value = value;
+		get => _stopLossAtr.Value;
+		set => _stopLossAtr.Value = value;
 	}
 
 	/// <summary>
-	/// Bars to wait between trades.
+	/// Period of the stop ATR.
 	/// </summary>
-	public int CooldownBars
+	public int AtrPeriod
 	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
+		get => _atrPeriod.Value;
+		set => _atrPeriod.Value = value;
 	}
 
 	/// <summary>
-	/// Stop-loss value.
-	/// </summary>
-	public Unit StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used for strategy.
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -100,39 +84,31 @@ public class AdxVolumeStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initialize <see cref="AdxVolumeStrategy"/>.
+	/// Constructor.
 	/// </summary>
 	public AdxVolumeStrategy()
 	{
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("ADX Period", "Period for ADX indicator", "ADX Parameters");
+			.SetDisplay("ADX Period", "Period of ADX", "Indicators");
 
 		_adxThreshold = Param(nameof(AdxThreshold), 25m)
-			.SetRange(10, 50)
-			.SetDisplay("ADX Threshold", "Threshold above which trend is considered strong", "ADX Parameters");
+			.SetDisplay("ADX Threshold", "ADX level of a strong trend", "Indicators");
 
 		_volumeAvgPeriod = Param(nameof(VolumeAvgPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Volume Average Period", "Period for volume moving average", "Volume Parameters");
+			.SetDisplay("Volume Average Period", "Previous candles the volume is averaged over", "Indicators");
 
-		_volumeMultiplier = Param(nameof(VolumeMultiplier), 1.4m)
-			.SetRange(1.0m, 3.0m)
-			.SetDisplay("Volume Multiplier", "Multiplier over average volume", "Volume Parameters");
+		_stopLossAtr = Param(nameof(StopLossAtr), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss ATR", "Stop distance from the entry in ATRs", "Risk");
 
-		_cooldownBars = Param(nameof(CooldownBars), 160)
-			.SetRange(5, 500)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "General");
-
-		_stopLoss = Param(nameof(StopLoss), new Unit(2, UnitTypes.Absolute))
-			.SetDisplay("Stop Loss", "Stop loss in ATR or value", "Risk Management");
+		_atrPeriod = Param(nameof(AtrPeriod), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("ATR Period", "Period of the stop ATR", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Candle type for strategy", "General");
-
-		_averageVolume = 0;
-		_volumeCounter = 0;
-		_cooldown = 0;
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -145,10 +121,8 @@ public class AdxVolumeStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_averageVolume = 0;
-		_volumeCounter = 0;
-		_cooldown = 0;
+		_volumes.Clear();
+		_stopPrice = default;
 	}
 
 	/// <inheritdoc />
@@ -156,130 +130,75 @@ public class AdxVolumeStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create ADX indicator
+		_volumes.Clear();
+		_stopPrice = default;
+
 		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
+		var atr = new AverageTrueRange { Length = AtrPeriod };
 
-		// Setup candle subscription
 		var subscription = SubscribeCandles(CandleType);
-
-		// Bind ADX indicator to candles
 		subscription
-			.BindEx(adx, ProcessCandle)
+			.BindEx(adx, atr, ProcessCandle)
 			.Start();
 
-		// Setup chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, adx);
 			DrawOwnTrades(area);
-		}
 
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, adx);
+			}
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue adxValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue adxValue, IIndicatorValue atrValue)
 	{
 		if (candle.State != CandleStates.Finished)
+			return;
+
+		// Volume is compared with the candles before this one.
+		var average = _volumes.Count == VolumeAvgPeriod ? _volumes.Average() : (decimal?)null;
+
+		_volumes.Add(candle.TotalVolume);
+
+		if (_volumes.Count > VolumeAvgPeriod)
+			_volumes.RemoveAt(0);
+
+		if (!adxValue.IsFormed || !atrValue.IsFormed || average is not decimal avgVolume)
+			return;
+
+		if (adxValue is not AverageDirectionalIndexValue { MovingAverage: decimal strength } typedAdx
+			|| typedAdx.Dx.Plus is not decimal plusDi || typedAdx.Dx.Minus is not decimal minusDi)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (!adxValue.IsFormed)
-			return;
+		var atr = atrValue.GetValue<decimal>();
+		var close = candle.ClosePrice;
+		var active = strength > AdxThreshold && candle.TotalVolume > avgVolume;
 
-		// Update average volume calculation
-		var currentVolume = candle.TotalVolume;
-		
-		if (_volumeCounter < VolumeAvgPeriod)
+		if (active && plusDi > minusDi && Position <= 0)
 		{
-			_volumeCounter++;
-			_averageVolume = ((_averageVolume * (_volumeCounter - 1)) + currentVolume) / _volumeCounter;
+			BuyMarket(Volume + Math.Abs(Position));
+			_stopPrice = close - StopLossAtr * atr;
 		}
-		else
+		else if (active && minusDi > plusDi && Position >= 0)
 		{
-			_averageVolume = (_averageVolume * (VolumeAvgPeriod - 1) + currentVolume) / VolumeAvgPeriod;
+			SellMarket(Volume + Math.Abs(Position));
+			_stopPrice = close + StopLossAtr * atr;
 		}
-
-		if (_volumeCounter < VolumeAvgPeriod)
+		else if (Position > 0 && (strength < AdxThreshold || (StopLossAtr > 0 && close <= _stopPrice)))
 		{
-			if (_cooldown > 0)
-				_cooldown--;
-			return;
+			SellMarket(Position);
 		}
-
-		var adxTyped = (AverageDirectionalIndexValue)adxValue;
-		var diPlusValue = adxTyped.Dx.Plus;
-		var diMinusValue = adxTyped.Dx.Minus;
-		var adxMa = adxTyped.MovingAverage;
-
-		// Check if volume is above average
-		var isVolumeAboveAverage = currentVolume > _averageVolume * VolumeMultiplier;
-
-		LogInfo($"Candle: {candle.OpenTime}, Close: {candle.ClosePrice}, " +
-			   $"ADX: {adxMa}, DI+: {diPlusValue}, DI-: {diMinusValue}, " +
-			   $"Volume: {currentVolume}, Avg Volume: {_averageVolume}");
-
-		if (_cooldown > 0)
+		else if (Position < 0 && (strength < AdxThreshold || (StopLossAtr > 0 && close >= _stopPrice)))
 		{
-			_cooldown--;
-			return;
-		}
-
-		// Trading rules
-		if (adxMa > AdxThreshold && isVolumeAboveAverage)
-		{
-			// Strong trend detected with above average volume
-			
-			if (diPlusValue > diMinusValue && Position == 0)
-			{
-				// Bullish trend - DI+ > DI-
-				BuyMarket();
-				_cooldown = CooldownBars;
-				
-				LogInfo($"Buy signal: Strong trend (ADX: {adxMa}) with DI+ > DI- and high volume.");
-			}
-			else if (diMinusValue > diPlusValue && Position == 0)
-			{
-				// Bearish trend - DI- > DI+
-				SellMarket();
-				_cooldown = CooldownBars;
-				
-				LogInfo($"Sell signal: Strong trend (ADX: {adxMa}) with DI- > DI+ and high volume.");
-			}
-		}
-		// Exit conditions
-		else if (adxMa < AdxThreshold * 0.8m)
-		{
-			// Trend weakening - exit all positions
-			if (Position > 0)
-			{
-				SellMarket();
-				_cooldown = CooldownBars;
-				LogInfo($"Exit long: ADX weakening below {AdxThreshold * 0.8m}. Position: {Position}");
-			}
-			else if (Position < 0)
-			{
-				BuyMarket();
-				_cooldown = CooldownBars;
-				LogInfo($"Exit short: ADX weakening below {AdxThreshold * 0.8m}. Position: {Position}");
-			}
-		}
-		// Check if DI+/DI- cross to exit positions
-		else if (diPlusValue < diMinusValue && Position > 0)
-		{
-			// DI+ crosses below DI- while in long position
-			SellMarket();
-			_cooldown = CooldownBars;
-			LogInfo($"Exit long: DI+ crossed below DI-. Position: {Position}");
-		}
-		else if (diPlusValue > diMinusValue && Position < 0)
-		{
-			// DI+ crosses above DI- while in short position
-			BuyMarket();
-			_cooldown = CooldownBars;
-			LogInfo($"Exit short: DI+ crossed above DI-. Position: {Position}");
+			BuyMarket(-Position);
 		}
 	}
 }

@@ -12,17 +12,19 @@
 ## Подробности
 
 - **Условия входа**:
-  - Лонг: `ADX > AdxThreshold && Volume > AvgVolume`
-  - Шорт: `ADX > AdxThreshold && Volume > AvgVolume`
+  - Лонг: `ADX > AdxThreshold && Volume > AvgVolume && +DI > -DI`
+  - Шорт: `ADX > AdxThreshold && Volume > AvgVolume && -DI > +DI`
 - **Длинные/короткие**: обе стороны
 - **Условия выхода**: тренд слабеет ниже порога
-- **Стопы**: основаны на ATR через `StopLoss`
+- **Стопы**: основаны на ATR через `StopLossAtr`
 - **Значения по умолчанию**:
   - `AdxPeriod` = 14
   - `AdxThreshold` = 25m
   - `VolumeAvgPeriod` = 20
-  - `StopLoss` = new Unit(2, UnitTypes.Absolute)
+  - `StopLossAtr` = 2
+  - `AtrPeriod` = 14
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    AvgVolume — средний объём предыдущих VolumeAvgPeriod свечей. Стоп стоит в StopLossAtr ATR (AtrPeriod) от цены закрытия при входе и проверяется по закрытиям свечей. Сигнал на вход против открытой позиции разворачивает её.
 - **Фильтры**:
   - Категория: Пробой
   - Направление: Оба
