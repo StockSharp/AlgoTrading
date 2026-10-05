@@ -15,15 +15,18 @@ El trading de pares por cointegración es adecuado para arbitrajistas estadísti
   - **Corto**: Z-Score Residual > EntryThreshold
 - **Largo/Corto**: Ambos lados.
 - **Criterios de salida**:
-  - **Largo**: Salir cuando |Z-Score| < 0.5
-  - **Corto**: Salir cuando |Z-Score| < 0.5
+  - **Largo**: Salir cuando |Z-Score| < ExitThreshold
+  - **Corto**: Salir cuando |Z-Score| < ExitThreshold
 - **Stops**: Sí, stop-loss porcentual.
 - **Valores predeterminados**:
   - `Period` = 20
-  - `EntryThreshold` = 2.0m
-  - `Beta` = 1.0m
-  - `StopLossPercent` = 2.0m
+  - `EntryThreshold` = 2
+  - `ExitThreshold` = 0.5
+  - `Beta` = 1
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
+  - `Asset2` — obligatorio, sin valor por defecto
+    El residuo es el cierre del Security de la estrategia menos Beta veces el cierre de Asset2 en velas de la misma hora, y su z-score usa la media y la desviación estándar de los últimos Period residuos. 0.5 es el nivel de salida por defecto que citan las reglas. La primera pata opera Volume y Asset2 opera Beta veces Volume; una señal contraria invierte ambas patas. El stop cierra ambas patas cuando el residuo se mueve en contra un StopLossPercent de su valor de entrada, comprobado al cierre de las velas; 0 lo desactiva.
 - **Filtros**:
   - Categoría: Arbitraje
   - Dirección: Ambos

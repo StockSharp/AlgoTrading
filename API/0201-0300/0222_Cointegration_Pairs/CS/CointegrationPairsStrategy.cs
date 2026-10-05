@@ -1,12 +1,9 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -15,82 +12,89 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Cointegration pairs trading strategy.
-/// Trades based on cointegration relationship between two assets.
+/// The residual is the first instrument's close minus Beta times Asset2's on candles of the same time, and its z-score is measured against
+/// the mean and standard deviation of the last Period residuals. A z-score below minus EntryThreshold buys the first instrument and sells
+/// Beta times as much of Asset2, one above EntryThreshold does the opposite, reversing an opposite pair. Both legs close once the z-score
+/// is back within ExitThreshold of zero, or once the residual moves StopLossPercent of its entry value against the pair.
 /// </summary>
 public class CointegrationPairsStrategy : Strategy
 {
-	private readonly StrategyParam<int> _periodParam;
-	private readonly StrategyParam<decimal> _entryThresholdParam;
-	private readonly StrategyParam<decimal> _betaParam;
-	private readonly StrategyParam<Security> _asset2Param;
-	private readonly StrategyParam<decimal> _stopLossPercentParam;
-	private readonly StrategyParam<DataType> _candleTypeParam;
+	private readonly StrategyParam<int> _period;
+	private readonly StrategyParam<decimal> _entryThreshold;
+	private readonly StrategyParam<decimal> _exitThreshold;
+	private readonly StrategyParam<decimal> _beta;
+	private readonly StrategyParam<Security> _asset2;
+	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _residualMean;
-	private decimal _residualStdDev;
-	private decimal _residualSum;
-	private decimal _squaredResidualSum;
+	private readonly Dictionary<DateTime, decimal> _firstCloses = [];
+	private readonly Dictionary<DateTime, decimal> _secondCloses = [];
 	private readonly Queue<decimal> _residuals = [];
-	
-	private decimal _asset1Price;
-	private decimal _asset2Price;
-	private const int _tradeCooldownTicks = 30;
-	private int _cooldownTicksLeft;
-
-	private Portfolio _asset2Portfolio;
+	// 1 while long the pair, -1 while short it, 0 while flat.
+	private int _side;
+	private decimal _entryResidual;
 
 	/// <summary>
-	/// Period for calculation of residual mean and standard deviation.
+	/// Number of residuals the mean and standard deviation are measured over.
 	/// </summary>
 	public int Period
 	{
-		get => _periodParam.Value;
-		set => _periodParam.Value = value;
+		get => _period.Value;
+		set => _period.Value = value;
 	}
 
 	/// <summary>
-	/// Entry threshold as a multiple of standard deviation.
+	/// Z-score distance from zero that opens a pair.
 	/// </summary>
 	public decimal EntryThreshold
 	{
-		get => _entryThresholdParam.Value;
-		set => _entryThresholdParam.Value = value;
+		get => _entryThreshold.Value;
+		set => _entryThreshold.Value = value;
 	}
 
 	/// <summary>
-	/// Beta coefficient for calculation of residual.
+	/// Z-score distance from zero within which the pair closes.
+	/// </summary>
+	public decimal ExitThreshold
+	{
+		get => _exitThreshold.Value;
+		set => _exitThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Hedge ratio of Asset2 to the first instrument.
 	/// </summary>
 	public decimal Beta
 	{
-		get => _betaParam.Value;
-		set => _betaParam.Value = value;
+		get => _beta.Value;
+		set => _beta.Value = value;
 	}
 
 	/// <summary>
-	/// Second asset for pair trading.
+	/// Second asset of the pair.
 	/// </summary>
 	public Security Asset2
 	{
-		get => _asset2Param.Value;
-		set => _asset2Param.Value = value;
+		get => _asset2.Value;
+		set => _asset2.Value = value;
 	}
 
 	/// <summary>
-	/// Stop loss percentage.
+	/// Adverse residual move, in percent of the entry residual, that closes the pair.
 	/// </summary>
 	public decimal StopLossPercent
 	{
-		get => _stopLossPercentParam.Value;
-		set => _stopLossPercentParam.Value = value;
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
 	}
 
 	/// <summary>
-	/// Candle type for strategy.
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
-		get => _candleTypeParam.Value;
-		set => _candleTypeParam.Value = value;
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
 	/// <summary>
@@ -98,64 +102,45 @@ public class CointegrationPairsStrategy : Strategy
 	/// </summary>
 	public CointegrationPairsStrategy()
 	{
-		_periodParam = Param(nameof(Period), 20)
+		_period = Param(nameof(Period), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Period", "Period for residual calculations", "Parameters")
-			
-			.SetOptimize(10, 50, 10);
+			.SetDisplay("Period", "Residuals the mean and standard deviation are measured over", "Parameters");
 
-		_entryThresholdParam = Param(nameof(EntryThreshold), 2.0m)
-			.SetRange(0.1m, decimal.MaxValue)
-			.SetDisplay("Entry Threshold", "Entry threshold as multiple of standard deviation", "Parameters")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
+		_entryThreshold = Param(nameof(EntryThreshold), 2m)
+			.SetGreaterThanZero()
+			.SetDisplay("Entry Threshold", "Z-score distance from zero that opens a pair", "Parameters");
 
-		_betaParam = Param(nameof(Beta), 1.0m)
-			.SetRange(0.01m, decimal.MaxValue)
-			.SetDisplay("Beta", "Coefficient of cointegration", "Parameters")
-			
-			.SetOptimize(0.5m, 2.0m, 0.1m);
+		_exitThreshold = Param(nameof(ExitThreshold), 0.5m)
+			.SetNotNegative()
+			.SetDisplay("Exit Threshold", "Z-score distance from zero within which the pair closes", "Parameters");
 
-		_asset2Param = Param<Security>(nameof(Asset2))
-			.SetDisplay("Asset 2", "Second asset for pair trading", "Parameters");
+		_beta = Param(nameof(Beta), 1m)
+			.SetGreaterThanZero()
+			.SetDisplay("Beta", "Hedge ratio of Asset2 to the first instrument", "Parameters");
 
-		_stopLossPercentParam = Param(nameof(StopLossPercent), 2.0m)
-			.SetRange(0.1m, decimal.MaxValue)
-			.SetDisplay("Stop Loss %", "Stop loss percentage", "Parameters")
-			
-			.SetOptimize(1.0m, 5.0m, 1.0m);
+		_asset2 = Param<Security>(nameof(Asset2))
+			.SetDisplay("Asset 2", "Second asset of the pair", "Parameters")
+			.SetRequired();
 
-		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Candle type for strategy", "Common");
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Adverse residual move in percent of the entry residual", "Risk Management");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return
-		[
-			(Security, CandleType),
-			(Asset2, CandleType)
-		];
+		return [(Security, CandleType), (Asset2, CandleType)];
 	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_residualMean = 0;
-		_residualStdDev = 0;
-		_residualSum = 0;
-		_squaredResidualSum = 0;
-		_residuals.Clear();
-		_asset1Price = 0;
-		_asset2Price = 0;
-		_cooldownTicksLeft = 0;
-
-		// Portfolio is not guaranteed to be assigned by the time a strategy is reset,
-		// so the hedge portfolio is resolved on start instead.
-		_asset2Portfolio = null;
+		ResetState();
 	}
 
 	/// <inheritdoc />
@@ -166,176 +151,108 @@ public class CointegrationPairsStrategy : Strategy
 		if (Asset2 == null)
 			throw new InvalidOperationException("Second asset is not specified.");
 
-		// Use the same portfolio for second asset or find another portfolio
-		_asset2Portfolio = Portfolio;
+		ResetState();
 
-		// Subscribe to Asset1 candles
-		var asset1Subscription = SubscribeCandles(CandleType)
-			.Bind(ProcessAsset1Candle)
-			.Start();
+		var firstSubscription = SubscribeCandles(CandleType);
+		firstSubscription.Bind(candle => ProcessCandle(candle, _firstCloses)).Start();
 
-		// Subscribe to Asset2 candles
-		var asset2Subscription = SubscribeCandles(CandleType, security: Asset2)
-			.Bind(ProcessAsset2Candle)
-			.Start();
+		var secondSubscription = SubscribeCandles(CandleType, security: Asset2);
+		secondSubscription.Bind(candle => ProcessCandle(candle, _secondCloses)).Start();
 
-		// Setup chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
-			DrawCandles(area, asset1Subscription);
+			DrawCandles(area, firstSubscription);
 			DrawOwnTrades(area);
 		}
-		
-		// Enable position protection with stop loss
-		StartProtection(
-			takeProfit: new Unit(0, UnitTypes.Absolute), // No take profit
-			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent) // Stop loss percentage
-		);
-	}
-	
-	private void ProcessAsset1Candle(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-			
-		_asset1Price = candle.ClosePrice;
-		ProcessPair();
-	}
-	
-	private void ProcessAsset2Candle(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-			
-		_asset2Price = candle.ClosePrice;
-		ProcessPair();
 	}
 
-	private void ProcessPair()
+	private void ResetState()
 	{
-		if (_asset1Price == 0 || _asset2Price == 0)
+		_firstCloses.Clear();
+		_secondCloses.Clear();
+		_residuals.Clear();
+		_side = 0;
+		_entryResidual = 0;
+	}
+
+	private void ProcessCandle(ICandleMessage candle, Dictionary<DateTime, decimal> closes)
+	{
+		if (candle.State != CandleStates.Finished)
 			return;
-			
+
+		closes[candle.OpenTime] = candle.ClosePrice;
+
+		// The residual needs both instruments' candles of the same time, whichever arrives last.
+		if (!_firstCloses.TryGetValue(candle.OpenTime, out var first) || !_secondCloses.TryGetValue(candle.OpenTime, out var second))
+			return;
+
+		foreach (var stale in _firstCloses.Keys.Where(t => t <= candle.OpenTime).ToArray())
+			_firstCloses.Remove(stale);
+
+		foreach (var stale in _secondCloses.Keys.Where(t => t <= candle.OpenTime).ToArray())
+			_secondCloses.Remove(stale);
+
+		var residual = first - Beta * second;
+
+		_residuals.Enqueue(residual);
+
+		if (_residuals.Count > Period)
+			_residuals.Dequeue();
+
+		if (_residuals.Count < Period)
+			return;
+
+		var mean = _residuals.Average();
+		var deviation = (decimal)Math.Sqrt((double)_residuals.Average(r => (r - mean) * (r - mean)));
+
+		if (deviation == 0)
+			return;
+
+		var zScore = (residual - mean) / deviation;
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (_cooldownTicksLeft > 0)
+		var stopDistance = Math.Abs(_entryResidual) * StopLossPercent / 100;
+
+		if (zScore < -EntryThreshold && _side <= 0)
 		{
-			_cooldownTicksLeft--;
-			_asset1Price = 0;
-			_asset2Price = 0;
-			return;
+			MoveLegs(1);
+			_entryResidual = residual;
 		}
-
-		// Calculate residual = Asset1Price - Beta * Asset2Price
-		var residual = _asset1Price - Beta * _asset2Price;
-		var hasTraded = false;
-		
-		// Track residual statistics over period
-		_residuals.Enqueue(residual);
-		_residualSum += residual;
-		_squaredResidualSum += residual * residual;
-		
-		if (_residuals.Count > Period)
+		else if (zScore > EntryThreshold && _side >= 0)
 		{
-			var oldResidual = _residuals.Dequeue();
-			_residualSum -= oldResidual;
-			_squaredResidualSum -= oldResidual * oldResidual;
+			MoveLegs(-1);
+			_entryResidual = residual;
 		}
-		
-		if (_residuals.Count == Period)
+		else if (_side > 0 && (Math.Abs(zScore) < ExitThreshold || (StopLossPercent > 0 && residual <= _entryResidual - stopDistance)))
 		{
-			// Calculate mean and standard deviation
-			_residualMean = _residualSum / Period;
-			
-			var variance = (_squaredResidualSum / Period) - (_residualMean * _residualMean);
-			_residualStdDev = variance <= 0 ? 0.0001m : (decimal)Math.Sqrt((double)variance);
-			
-			// Calculate z-score of current residual
-			var zScore = (_residualStdDev == 0) ? 0 : (residual - _residualMean) / _residualStdDev;
-			
-			// The strategy never intends to hold more than one leg, so every closing order is
-			// capped at Volume. Sizing an order from the raw position instead feeds exposure
-			// that has not been netted yet into the next order, which compounds without bound.
-			var closingVolume = Math.Min(Math.Abs(Position), Volume);
-
-			// The hedge leg fills independently of Asset1, so it is measured from its own
-			// position and bounded the same way: a closing order takes at most the open leg,
-			// an entry adds only the part of it that its own side nets out.
-			var hedgeVolume = Volume * Beta;
-			var asset2Position = _asset2Portfolio == null ? 0m : GetPositionValue(Asset2, _asset2Portfolio) ?? 0m;
-			var asset2ClosingVolume = Math.Min(Math.Abs(asset2Position), hedgeVolume);
-
-			// Check for trading signals
-			if (zScore < -EntryThreshold && Position <= 0)
-			{
-				// Long Asset1, Short Asset2
-				// First, close any existing short position on Asset1
-				BuyMarket(Volume + closingVolume);
-				hasTraded = true;
-				
-				// Then, short Asset2 using the second portfolio
-				if (_asset2Portfolio != null)
-				{
-					RegisterAsset2Order(Sides.Sell, hedgeVolume + (asset2Position > 0 ? asset2ClosingVolume : 0m));
-					hasTraded = true;
-				}
-			}
-			else if (zScore > EntryThreshold && Position >= 0)
-			{
-				// Short Asset1, Long Asset2
-				// First, close any existing long position on Asset1
-				SellMarket(Volume + closingVolume);
-				hasTraded = true;
-				
-				// Then, buy Asset2 using the second portfolio
-				if (_asset2Portfolio != null)
-				{
-					RegisterAsset2Order(Sides.Buy, hedgeVolume + (asset2Position < 0 ? asset2ClosingVolume : 0m));
-					hasTraded = true;
-				}
-			}
-			else if (Math.Abs(zScore) < 0.5m)
-			{
-				// Close positions when spread reverts to mean
-				if (Position != 0)
-				{
-					if (Position > 0)
-						SellMarket(closingVolume);
-					else
-						BuyMarket(closingVolume);
-					hasTraded = true;
-				}
-
-				// Close position on Asset2 from the real size and side of that leg
-				if (asset2ClosingVolume > 0)
-				{
-					RegisterAsset2Order(asset2Position > 0 ? Sides.Sell : Sides.Buy, asset2ClosingVolume);
-					hasTraded = true;
-				}
-			}
+			MoveLegs(0);
 		}
-
-		if (hasTraded)
-			_cooldownTicksLeft = _tradeCooldownTicks;
-		
-		// Reset prices for next update
-		_asset1Price = 0;
-		_asset2Price = 0;
+		else if (_side < 0 && (Math.Abs(zScore) < ExitThreshold || (StopLossPercent > 0 && residual >= _entryResidual + stopDistance)))
+		{
+			MoveLegs(0);
+		}
 	}
 
-	private void RegisterAsset2Order(Sides side, decimal volume)
+	private void MoveLegs(int side)
 	{
-		var asset2Order = new Order
-		{
-			Side = side,
-			Security = Asset2,
-			Portfolio = _asset2Portfolio,
-			Volume = volume,
-			Type = OrderTypes.Market
-		};
+		_side = side;
 
-		RegisterOrder(asset2Order);
+		// Long the pair holds Volume of the first instrument and is short Beta times as much of Asset2.
+		var firstChange = side * Volume - Position;
+
+		if (firstChange > 0)
+			BuyMarket(firstChange);
+		else if (firstChange < 0)
+			SellMarket(-firstChange);
+
+		var secondChange = -side * Volume * Beta - (GetPositionValue(Asset2, Portfolio) ?? 0m);
+
+		if (secondChange > 0)
+			BuyMarket(secondChange, Asset2);
+		else if (secondChange < 0)
+			SellMarket(-secondChange, Asset2);
 	}
 }

@@ -15,15 +15,18 @@
   - 空头: `Z-Score > EntryThreshold`
 - **多/空**: 双向
 - **离场条件**:
-  - 多头: `|Z-Score| < 0.5` 时平仓
-  - 空头: `|Z-Score| < 0.5` 时平仓
+  - 多头: `|Z-Score| < ExitThreshold` 时平仓
+  - 空头: `|Z-Score| < ExitThreshold` 时平仓
 - **止损**: 百分比止损
 - **默认值**:
   - `Period` = 20
-  - `EntryThreshold` = 2.0m
-  - `Beta` = 1.0m
-  - `StopLossPercent` = 2.0m
+  - `EntryThreshold` = 2
+  - `ExitThreshold` = 0.5
+  - `Beta` = 1
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
+  - `Asset2` — 必填，无默认值
+    残差为策略主品种（Security）收盘价减去Beta倍Asset2在同一时间K线上的收盘价，其z-score基于最近Period个残差的均值和标准差。0.5是规则中离场水平的默认值。第一条腿交易Volume数量，Asset2交易Beta倍Volume；相反信号会同时反转两条腿。当残差朝不利方向移动入场残差的StopLossPercent百分比时止损平掉两条腿，按K线收盘检查；设为0则关闭。
 - **过滤器**:
   - 类别: Arbitrage
   - 方向: 双向

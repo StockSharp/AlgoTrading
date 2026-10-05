@@ -2,297 +2,170 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
-clr.AddReference("StockSharp.BusinessEntities")
-clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import TimeSpan, Math
-from System.Collections.Generic import Queue
-from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates, Sides, OrderTypes
+from System import TimeSpan, Decimal, Math
+from StockSharp.Messages import DataType, CandleStates
+from StockSharp.BusinessEntities import Security
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.BusinessEntities import Order, Security
-from datatype_extensions import *
 
 class cointegration_pairs_strategy(Strategy):
     """
     Cointegration pairs trading strategy.
-    Trades based on cointegration relationship between two assets.
+    The residual is the first instrument's close minus Beta times Asset2's on candles of the same time, and its z-score is measured against
+    the mean and standard deviation of the last Period residuals. A z-score below minus EntryThreshold buys the first instrument and sells
+    Beta times as much of Asset2, one above EntryThreshold does the opposite, reversing an opposite pair. Both legs close once the z-score
+    is back within ExitThreshold of zero, or once the residual moves StopLossPercent of its entry value against the pair.
     """
-
-    # Number of pair updates skipped after any trade.
-    _tradeCooldownTicks = 30
 
     def __init__(self):
         super(cointegration_pairs_strategy, self).__init__()
-
-        # Period for calculation of residual mean and standard deviation.
-        self._period = self.Param("Period", 20) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Period", "Period for residual calculations", "Parameters") \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 50, 10)
-
-        # Entry threshold as a multiple of standard deviation.
-        self._entryThreshold = self.Param("EntryThreshold", 2.0) \
-            .SetRange(0.1, 100.0) \
-            .SetDisplay("Entry Threshold", "Entry threshold as multiple of standard deviation", "Parameters") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.0, 3.0, 0.5)
-
-        # Beta coefficient for calculation of residual.
-        self._beta = self.Param("Beta", 1.0) \
-            .SetRange(0.01, 100.0) \
-            .SetDisplay("Beta", "Coefficient of cointegration", "Parameters") \
-            .SetCanOptimize(True) \
-            .SetOptimize(0.5, 2.0, 0.1)
-
-        # Second asset for pair trading.
-        self._asset2 = self.Param[Security]("Asset2", None) \
-            .SetDisplay("Asset 2", "Second asset for pair trading", "Parameters")
-
-        # Stop loss percentage.
-        self._stopLossPercent = self.Param("StopLossPercent", 2.0) \
-            .SetRange(0.1, 100.0) \
-            .SetDisplay("Stop Loss %", "Stop loss percentage", "Parameters") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.0, 5.0, 1.0)
-
-        # Candle type for strategy.
-        self._candleType = self.Param("CandleType", tf(5)) \
-            .SetDisplay("Candle Type", "Candle type for strategy", "Common")
-
-        # Internal state
-        self._residualMean = 0.0
-        self._residualStdDev = 0.0
-        self._residualSum = 0.0
-        self._squaredResidualSum = 0.0
-        self._residuals = Queue[float]()
-        self._asset1Price = 0.0
-        self._asset2Price = 0.0
-        self._cooldownTicksLeft = 0
-        self._asset2Portfolio = None
+        self._period = self.Param("Period", 20).SetGreaterThanZero().SetDisplay("Period", "Residuals the mean and standard deviation are measured over", "Parameters")
+        self._entry_threshold = self.Param("EntryThreshold", 2.0).SetGreaterThanZero().SetDisplay("Entry Threshold", "Z-score distance from zero that opens a pair", "Parameters")
+        self._exit_threshold = self.Param("ExitThreshold", 0.5).SetNotNegative().SetDisplay("Exit Threshold", "Z-score distance from zero within which the pair closes", "Parameters")
+        self._beta = self.Param("Beta", 1.0).SetGreaterThanZero().SetDisplay("Beta", "Hedge ratio of Asset2 to the first instrument", "Parameters")
+        self._asset2 = self.Param[Security]("Asset2", None).SetDisplay("Asset 2", "Second asset of the pair", "Parameters").SetRequired()
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0).SetNotNegative().SetDisplay("Stop Loss %", "Adverse residual move in percent of the entry residual", "Risk Management")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._reset_state()
 
     @property
-    def Period(self):
-        return self._period.Value
-
-    @Period.setter
-    def Period(self, value):
-        self._period.Value = value
+    def candle_type(self):
+        return self._candle_type.Value
 
     @property
-    def EntryThreshold(self):
-        return self._entryThreshold.Value
-
-    @EntryThreshold.setter
-    def EntryThreshold(self, value):
-        self._entryThreshold.Value = value
-
-    @property
-    def Beta(self):
-        return self._beta.Value
-
-    @Beta.setter
-    def Beta(self, value):
-        self._beta.Value = value
-
-    @property
-    def Asset2(self):
+    def asset2(self):
         return self._asset2.Value
 
-    @Asset2.setter
-    def Asset2(self, value):
+    @asset2.setter
+    def asset2(self, value):
         self._asset2.Value = value
 
-    @property
-    def StopLossPercent(self):
-        return self._stopLossPercent.Value
-
-    @StopLossPercent.setter
-    def StopLossPercent(self, value):
-        self._stopLossPercent.Value = value
-
-    @property
-    def CandleType(self):
-        return self._candleType.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candleType.Value = value
+    def _reset_state(self):
+        self._first_closes = {}
+        self._second_closes = {}
+        self._residuals = []
+        # 1 while long the pair, -1 while short it, 0 while flat.
+        self._side = 0
+        self._entry_residual = Decimal(0)
 
     def GetWorkingSecurities(self):
-        return [(self.Security, self.CandleType), (self.Asset2, self.CandleType)]
+        return [(self.Security, self.candle_type), (self.asset2, self.candle_type)]
 
     def OnReseted(self):
         super(cointegration_pairs_strategy, self).OnReseted()
-
-        self._residualMean = 0
-        self._residualStdDev = 0
-        self._residualSum = 0
-        self._squaredResidualSum = 0
-        self._residuals.Clear()
-        self._asset1Price = 0
-        self._asset2Price = 0
-        self._cooldownTicksLeft = 0
-
-        # Portfolio is not guaranteed to be assigned by the time a strategy is reset,
-        # so the hedge portfolio is resolved on start instead.
-        self._asset2Portfolio = None
+        self._reset_state()
 
     def OnStarted2(self, time):
         super(cointegration_pairs_strategy, self).OnStarted2(time)
 
-        if self.Asset2 is None:
+        if self.asset2 is None:
             raise Exception("Second asset is not specified.")
 
-        # Use the same portfolio for second asset or find another portfolio
-        self._asset2Portfolio = self.Portfolio
+        self._reset_state()
 
-        # Create subscriptions for both assets. The second one names its instrument
-        # explicitly, because the optional argument right after the candle type is
-        # IsFinishedOnly, not the security.
-        asset1Subscription = self.SubscribeCandles(self.CandleType)
-        asset2Subscription = self.SubscribeCandles(self.CandleType, security=self.Asset2)
+        first_subscription = self.SubscribeCandles(self.candle_type)
+        first_subscription.Bind(self._process_first_candle).Start()
 
-        # Subscribe to Asset1 candles
-        asset1Subscription.Bind(self.ProcessAsset1Candle).Start()
+        second_subscription = self.SubscribeCandles(self.candle_type, security=self.asset2)
+        second_subscription.Bind(self._process_second_candle).Start()
 
-        # Subscribe to Asset2 candles
-        asset2Subscription.Bind(self.ProcessAsset2Candle).Start()
-
-        # Setup chart visualization if available
         area = self.CreateChartArea()
         if area is not None:
-            self.DrawCandles(area, asset1Subscription)
+            self.DrawCandles(area, first_subscription)
             self.DrawOwnTrades(area)
 
-        # Enable position protection with stop loss
-        self.StartProtection(
-            takeProfit=Unit(0, UnitTypes.Absolute),
-            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
-        )
+    def _process_first_candle(self, candle):
+        self._process_candle(candle, self._first_closes)
 
-    def ProcessAsset1Candle(self, candle):
+    def _process_second_candle(self, candle):
+        self._process_candle(candle, self._second_closes)
+
+    def _process_candle(self, candle, closes):
         if candle.State != CandleStates.Finished:
             return
 
-        self._asset1Price = float(candle.ClosePrice)
-        self.ProcessPair()
+        time = candle.OpenTime
+        closes[time] = candle.ClosePrice
 
-    def ProcessAsset2Candle(self, candle):
-        if candle.State != CandleStates.Finished:
+        # The residual needs both instruments' candles of the same time, whichever arrives last.
+        if time not in self._first_closes or time not in self._second_closes:
             return
 
-        self._asset2Price = float(candle.ClosePrice)
-        self.ProcessPair()
+        first = self._first_closes[time]
+        second = self._second_closes[time]
 
-    def ProcessPair(self):
-        if self._asset1Price == 0 or self._asset2Price == 0:
+        for stale in [t for t in self._first_closes if t <= time]:
+            del self._first_closes[stale]
+        for stale in [t for t in self._second_closes if t <= time]:
+            del self._second_closes[stale]
+
+        residual = first - Decimal(self._beta.Value) * second
+        period = self._period.Value
+
+        self._residuals.append(residual)
+        if len(self._residuals) > period:
+            self._residuals.pop(0)
+
+        if len(self._residuals) < period:
             return
+
+        total = Decimal(0)
+        for value in self._residuals:
+            total += value
+        mean = total / Decimal(period)
+
+        squares = Decimal(0)
+        for value in self._residuals:
+            squares += (value - mean) * (value - mean)
+        deviation = Decimal(Math.Sqrt(Decimal.ToDouble(squares / Decimal(period))))
+
+        if deviation == 0:
+            return
+
+        z_score = (residual - mean) / deviation
 
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        if self._cooldownTicksLeft > 0:
-            self._cooldownTicksLeft -= 1
-            self._asset1Price = 0
-            self._asset2Price = 0
-            return
+        entry = Decimal(self._entry_threshold.Value)
+        exit_level = Decimal(self._exit_threshold.Value)
+        stop_percent = Decimal(self._stop_loss_percent.Value)
+        stop_distance = abs(self._entry_residual) * stop_percent / Decimal(100)
 
-        # Calculate residual = Asset1Price - Beta * Asset2Price
-        residual = self._asset1Price - self.Beta * self._asset2Price
-        hasTraded = False
+        if z_score < -entry and self._side <= 0:
+            self._move_legs(1)
+            self._entry_residual = residual
+        elif z_score > entry and self._side >= 0:
+            self._move_legs(-1)
+            self._entry_residual = residual
+        elif self._side > 0 and (abs(z_score) < exit_level or (stop_percent > 0 and residual <= self._entry_residual - stop_distance)):
+            self._move_legs(0)
+        elif self._side < 0 and (abs(z_score) < exit_level or (stop_percent > 0 and residual >= self._entry_residual + stop_distance)):
+            self._move_legs(0)
 
-        # Track residual statistics over period
-        self._residuals.Enqueue(residual)
-        self._residualSum += residual
-        self._squaredResidualSum += residual * residual
+    def _move_legs(self, side):
+        self._side = side
 
-        if self._residuals.Count > self.Period:
-            oldResidual = self._residuals.Dequeue()
-            self._residualSum -= oldResidual
-            self._squaredResidualSum -= oldResidual * oldResidual
+        # Long the pair holds Volume of the first instrument and is short Beta times as much of Asset2.
+        first_change = Decimal(side) * self.Volume - self.Position
 
-        if self._residuals.Count == self.Period:
-            # Calculate mean and standard deviation
-            self._residualMean = self._residualSum / self.Period
-            variance = (self._squaredResidualSum / self.Period) - (self._residualMean * self._residualMean)
-            self._residualStdDev = 0.0001 if variance <= 0 else Math.Sqrt(float(variance))
+        if first_change > 0:
+            self.BuyMarket(first_change)
+        elif first_change < 0:
+            self.SellMarket(-first_change)
 
-            # Calculate z-score of current residual
-            zScore = 0 if self._residualStdDev == 0 else (residual - self._residualMean) / self._residualStdDev
+        second_position = self.GetPositionValue(self.asset2, self.Portfolio)
+        if second_position is None:
+            second_position = Decimal(0)
 
-            # The strategy never intends to hold more than one leg, so every closing order is
-            # capped at Volume. Sizing an order from the raw position instead feeds exposure
-            # that has not been netted yet into the next order, which compounds without bound.
-            closingVolume = Math.Min(Math.Abs(self.Position), self.Volume)
+        second_change = Decimal(-side) * self.Volume * Decimal(self._beta.Value) - second_position
 
-            # The hedge leg fills independently of Asset1, so it is measured from its own
-            # position and bounded the same way: a closing order takes at most the open leg,
-            # an entry adds only the part of it that its own side nets out.
-            hedgeVolume = float(self.Volume) * float(self.Beta)
-            asset2Position = 0.0
-            if self._asset2Portfolio is not None:
-                asset2PositionValue = self.GetPositionValue(self.Asset2, self._asset2Portfolio)
-                if asset2PositionValue is not None:
-                    asset2Position = float(asset2PositionValue)
-            asset2ClosingVolume = Math.Min(Math.Abs(asset2Position), hedgeVolume)
-
-            # Check for trading signals
-            if zScore < -self.EntryThreshold and self.Position <= 0:
-                # Long Asset1, Short Asset2
-                # First, close any existing short position on Asset1
-                self.BuyMarket(self.Volume + closingVolume)
-                hasTraded = True
-
-                # Then, short Asset2 using the second portfolio
-                if self._asset2Portfolio is not None:
-                    self.RegisterAsset2Order(Sides.Sell, hedgeVolume + (asset2ClosingVolume if asset2Position > 0 else 0.0))
-                    hasTraded = True
-
-            elif zScore > self.EntryThreshold and self.Position >= 0:
-                # Short Asset1, Long Asset2
-                # First, close any existing long position on Asset1
-                self.SellMarket(self.Volume + closingVolume)
-                hasTraded = True
-
-                # Then, buy Asset2 using the second portfolio
-                if self._asset2Portfolio is not None:
-                    self.RegisterAsset2Order(Sides.Buy, hedgeVolume + (asset2ClosingVolume if asset2Position < 0 else 0.0))
-                    hasTraded = True
-
-            elif Math.Abs(zScore) < 0.5:
-                # Close positions when spread reverts to mean
-                if self.Position != 0:
-                    if self.Position > 0:
-                        self.SellMarket(closingVolume)
-                    else:
-                        self.BuyMarket(closingVolume)
-                    hasTraded = True
-
-                # Close position on Asset2 from the real size and side of that leg
-                if asset2ClosingVolume > 0:
-                    self.RegisterAsset2Order(Sides.Sell if asset2Position > 0 else Sides.Buy, asset2ClosingVolume)
-                    hasTraded = True
-
-        if hasTraded:
-            self._cooldownTicksLeft = self._tradeCooldownTicks
-
-        # Reset prices for next update
-        self._asset1Price = 0
-        self._asset2Price = 0
-
-    def RegisterAsset2Order(self, side, volume):
-        asset2Order = Order()
-        asset2Order.Side = side
-        asset2Order.Security = self.Asset2
-        asset2Order.Portfolio = self._asset2Portfolio
-        asset2Order.Volume = volume
-        asset2Order.Type = OrderTypes.Market
-        self.RegisterOrder(asset2Order)
+        if second_change > 0:
+            self.BuyMarket(second_change, self.asset2)
+        elif second_change < 0:
+            self.SellMarket(-second_change, self.asset2)
 
     def CreateClone(self):
-        """
-        !! REQUIRED!! Creates a new instance of the strategy.
-        """
         return cointegration_pairs_strategy()

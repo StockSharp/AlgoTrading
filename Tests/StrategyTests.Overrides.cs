@@ -105,31 +105,6 @@ public abstract partial class StrategyTests
 		tightStop.AssertDiffersFrom(wideStop, "Changing StopLossPercent did not affect submitted orders.");
 	}
 
-	/// <summary>
-	/// The pair is the whole example, and Beta = 1 is the ratio it documents. Only the presence of
-	/// both legs is asserted: how the two sides net out over a month depends on when positions are
-	/// closed, and the audit makes no claim about that.
-	/// </summary>
-	[TestMethod]
-	[TestCategory("Shard06")]
-	public async Task S0222_CointegrationPairs()
-	{
-		var recorder = new PairedOrderRecorder();
-		Security primary = null;
-		Security hedge = null;
-
-		await Replay("0222_Cointegration_Pairs", (strategy, second) =>
-		{
-			SetParam(strategy, "Asset2", second);
-			SetParam(strategy, "Beta", 1m);
-			primary = strategy.Security;
-			hedge = second;
-			recorder.Attach(strategy);
-		});
-
-		recorder.AssertTradesBoth(primary, hedge);
-	}
-
 	[TestMethod]
 	[TestCategory("Shard06")]
 	public Task S0230_DeltaNeutralArbitrage()
@@ -8791,6 +8766,92 @@ public abstract partial class StrategyTests
 		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
 		AreEqual(expectedOrders, actualOrders);
 		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && insideExits > 0, "The fixture must trade both sides and exit back inside the bands.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(20, 2.0, 0.5, 1.0, 2.0, false)]
+	[DataRow(30, 1.5, 0.3, 2.0, 0.3, true)]
+	public async Task S0222_ResidualZScoresTradeBothLegsUntilTheyNormalizeOrAResidualStop(int period, double entry, double exit, double beta, double stopPercent, bool swapped)
+	{
+		var firsts = new Dictionary<DateTime, decimal>();
+		var seconds = new Dictionary<DateTime, decimal>();
+		var residuals = new Queue<decimal>();
+		var side = 0;
+		var entryResidual = 0m;
+		var expected = new Queue<(SecurityId security, Sides side, decimal volume)>();
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<int, int> { [1] = 0, [-1] = 0 };
+		var normalExits = 0;
+		var stopExits = 0;
+		var legs = new HashSet<SecurityId>();
+		var violations = new List<string>();
+		await Replay("0222_Cointegration_Pairs", (strategy, alternateSecurity) =>
+		{
+			var first = swapped ? alternateSecurity : strategy.Security;
+			var second = swapped ? strategy.Security : alternateSecurity;
+			strategy.Security = first;
+			AreEqual(20, strategy.Parameters["Period"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["EntryThreshold"].Value));
+			AreEqual(0.5m, Convert.ToDecimal(strategy.Parameters["ExitThreshold"].Value));
+			AreEqual(1m, Convert.ToDecimal(strategy.Parameters["Beta"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "Asset2", second);
+			SetParam(strategy, "Period", period);
+			SetParam(strategy, "EntryThreshold", entry);
+			SetParam(strategy, "ExitThreshold", exit);
+			SetParam(strategy, "Beta", beta);
+			SetParam(strategy, "StopLossPercent", stopPercent);
+			var firstId = first.ToSecurityId();
+			var secondId = second.ToSecurityId();
+			void Move(int target)
+			{
+				side = target;
+				var firstChange = target * strategy.Volume - strategy.Position;
+				if (firstChange != 0m) expected.Enqueue((firstId, firstChange > 0m ? Sides.Buy : Sides.Sell, Math.Abs(firstChange)));
+				var secondChange = -target * strategy.Volume * (decimal)beta - (strategy.GetPositionValue(second, strategy.Portfolio) ?? 0m);
+				if (secondChange != 0m) expected.Enqueue((secondId, secondChange > 0m ? Sides.Buy : Sides.Sell, Math.Abs(secondChange)));
+			}
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				(candle.SecurityId == firstId ? firsts : seconds)[candle.OpenTime] = candle.ClosePrice;
+				if (!firsts.TryGetValue(candle.OpenTime, out var a) || !seconds.TryGetValue(candle.OpenTime, out var b)) return;
+				foreach (var t in firsts.Keys.Where(t => t <= candle.OpenTime).ToArray()) firsts.Remove(t);
+				foreach (var t in seconds.Keys.Where(t => t <= candle.OpenTime).ToArray()) seconds.Remove(t);
+				var residual = a - (decimal)beta * b;
+				residuals.Enqueue(residual);
+				if (residuals.Count > period) residuals.Dequeue();
+				if (residuals.Count < period) return;
+				var mean = residuals.Average();
+				var deviation = (decimal)Math.Sqrt((double)residuals.Average(r => (r - mean) * (r - mean)));
+				if (deviation == 0m) return;
+				var z = (residual - mean) / deviation;
+				var normal = Math.Abs(z) < (decimal)exit;
+				var stopDistance = Math.Abs(entryResidual) * (decimal)stopPercent / 100;
+				var before = expected.Count;
+				if (z < -(decimal)entry && side <= 0) { Move(1); entryResidual = residual; entries[1]++; }
+				else if (z > (decimal)entry && side >= 0) { Move(-1); entryResidual = residual; entries[-1]++; }
+				else if (side > 0 && (normal || residual <= entryResidual - stopDistance)) { if (normal) normalExits++; else stopExits++; Move(0); }
+				else if (side < 0 && (normal || residual >= entryResidual + stopDistance)) { if (normal) normalExits++; else stopExits++; Move(0); }
+				expectedOrders += expected.Count - before;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				var id = order.Security.ToSecurityId();
+				legs.Add(id);
+				if (!expected.TryDequeue(out var next) || next.security != id || next.side != order.Side || next.volume != order.Volume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {id} {order.Side} {order.Volume}, expected {next.security} {next.side} {next.volume}. Every order must move both legs, the second by Beta, to the pair the residual z-score calls for.");
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		AreEqual(2, legs.Count, "Both instruments of the pair must be traded.");
+		IsTrue(entries[1] > 0 && entries[-1] > 0 && normalExits > 0, "The fixture must trade both sides of the pair and exit once the z-score normalizes.");
+		if (stopPercent < 1) IsTrue(stopExits > 0, "A tight residual stop must be hit.");
 	}
 
 	private const string Williams = "0017_Williams_R";

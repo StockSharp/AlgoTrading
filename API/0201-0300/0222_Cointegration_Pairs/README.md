@@ -15,15 +15,18 @@ Cointegration pairs trading suits statistical arbitrageurs comfortable managing 
   - **Short**: Residual Z-Score > EntryThreshold
 - **Long/Short**: Both sides.
 - **Exit Criteria**:
-  - **Long**: Exit when |Z-Score| < 0.5
-  - **Short**: Exit when |Z-Score| < 0.5
+  - **Long**: Exit when |Z-Score| < ExitThreshold
+  - **Short**: Exit when |Z-Score| < ExitThreshold
 - **Stops**: Yes, percentage stop-loss.
 - **Default Values**:
   - `Period` = 20
-  - `EntryThreshold` = 2.0m
-  - `Beta` = 1.0m
-  - `StopLossPercent` = 2.0m
+  - `EntryThreshold` = 2
+  - `ExitThreshold` = 0.5
+  - `Beta` = 1
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
+  - `Asset2` — required, no default
+    The residual is the close of the strategy's Security minus Beta times the close of Asset2 on candles of the same time, and its z-score uses the mean and standard deviation of the last Period residuals. 0.5 is the default exit level the rules quote. The first leg trades Volume and Asset2 trades Beta times Volume; an opposite signal reverses both legs. The stop closes both legs once the residual moves StopLossPercent of its entry value against the pair, checked on candle closes; 0 disables it.
 - **Filters**:
   - Category: Arbitrage
   - Direction: Both

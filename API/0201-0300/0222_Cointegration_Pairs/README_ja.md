@@ -15,15 +15,18 @@
   - **ショート**: 残差 Z-Score > EntryThreshold
 - **ロング/ショート**: 両方。
 - **エグジット条件**:
-  - **ロング**: |Z-Score| < 0.5 の時に決済
-  - **ショート**: |Z-Score| < 0.5 の時に決済
+  - **ロング**: |Z-Score| < ExitThreshold の時に決済
+  - **ショート**: |Z-Score| < ExitThreshold の時に決済
 - **ストップ**: あり、パーセンテージストップロス。
 - **デフォルト値**:
   - `Period` = 20
-  - `EntryThreshold` = 2.0m
-  - `Beta` = 1.0m
-  - `StopLossPercent` = 2.0m
+  - `EntryThreshold` = 2
+  - `ExitThreshold` = 0.5
+  - `Beta` = 1
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
+  - `Asset2` — 必須、既定値なし
+    残差は同時刻のローソク足における戦略のSecurityの終値からAsset2の終値のBeta倍を引いた値で、そのzスコアは直近Period個の残差の平均と標準偏差から計算します。0.5はルールが示す決済水準の既定値です。第1レッグはVolume、Asset2はVolumeのBeta倍で取引され、逆のシグナルで両レッグがドテンします。ストップは残差がエントリー時の値のStopLossPercentだけ不利に動いたときに両レッグを閉じ、ローソク足の終値で確認されます。0で無効になります。
 - **フィルター**:
   - カテゴリ: アービトラージ
   - 方向: 両方
