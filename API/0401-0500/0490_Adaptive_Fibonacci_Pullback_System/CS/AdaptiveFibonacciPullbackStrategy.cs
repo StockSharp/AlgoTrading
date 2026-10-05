@@ -1,5 +1,3 @@
-namespace StockSharp.Samples.Strategies;
-
 using System;
 using System.Collections.Generic;
 
@@ -10,13 +8,17 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
+namespace StockSharp.Samples.Strategies;
+
 /// <summary>
 /// Adaptive Fibonacci Pullback strategy.
-/// Combines multiple SuperTrend lines and an adaptive moving average channel.
+/// Three SuperTrend lines with Fibonacci multipliers are averaged and the average is smoothed by an EMA. A long needs the low to dip
+/// below the average while the close stays above the smoothed line, the previous and current close above the Kaufman AMA midline and
+/// RSI above RsiBuy; a short mirrors this with RSI below RsiSell. Positions close when the close crosses the smoothed line against them,
+/// and percent take profit and stop loss protect every trade.
 /// </summary>
 public class AdaptiveFibonacciPullbackStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<decimal> _factor1;
 	private readonly StrategyParam<decimal> _factor2;
@@ -26,70 +28,171 @@ public class AdaptiveFibonacciPullbackStrategy : Strategy
 	private readonly StrategyParam<int> _rsiLength;
 	private readonly StrategyParam<decimal> _rsiBuy;
 	private readonly StrategyParam<decimal> _rsiSell;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _takeProfitPercent;
+	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private SuperTrend _st1;
-	private SuperTrend _st2;
-	private SuperTrend _st3;
-	private ExponentialMovingAverage _stSmooth;
-	private ExponentialMovingAverage _amaMid;
-	private RelativeStrengthIndex _rsi;
+	private ExponentialMovingAverage _smooth;
+	private decimal? _prevClose;
+	private decimal? _prevSmooth;
 
-	private decimal _prevClose;
-	private decimal _prevSmooth;
-	private bool _isFirst;
-	private int _cooldownRemaining;
+	/// <summary>
+	/// ATR period of the SuperTrends.
+	/// </summary>
+	public int AtrPeriod
+	{
+		get => _atrPeriod.Value;
+		set => _atrPeriod.Value = value;
+	}
 
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-	public int AtrPeriod { get => _atrPeriod.Value; set => _atrPeriod.Value = value; }
-	public decimal Factor1 { get => _factor1.Value; set => _factor1.Value = value; }
-	public decimal Factor2 { get => _factor2.Value; set => _factor2.Value = value; }
-	public decimal Factor3 { get => _factor3.Value; set => _factor3.Value = value; }
-	public int SmoothLength { get => _smoothLength.Value; set => _smoothLength.Value = value; }
-	public int AmaLength { get => _amaLength.Value; set => _amaLength.Value = value; }
-	public int RsiLength { get => _rsiLength.Value; set => _rsiLength.Value = value; }
-	public decimal RsiBuy { get => _rsiBuy.Value; set => _rsiBuy.Value = value; }
-	public decimal RsiSell { get => _rsiSell.Value; set => _rsiSell.Value = value; }
-	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
+	/// <summary>
+	/// Multiplier of the first SuperTrend.
+	/// </summary>
+	public decimal Factor1
+	{
+		get => _factor1.Value;
+		set => _factor1.Value = value;
+	}
 
+	/// <summary>
+	/// Multiplier of the second SuperTrend.
+	/// </summary>
+	public decimal Factor2
+	{
+		get => _factor2.Value;
+		set => _factor2.Value = value;
+	}
+
+	/// <summary>
+	/// Multiplier of the third SuperTrend.
+	/// </summary>
+	public decimal Factor3
+	{
+		get => _factor3.Value;
+		set => _factor3.Value = value;
+	}
+
+	/// <summary>
+	/// EMA length that smooths the SuperTrend average.
+	/// </summary>
+	public int SmoothLength
+	{
+		get => _smoothLength.Value;
+		set => _smoothLength.Value = value;
+	}
+
+	/// <summary>
+	/// Period of the AMA midline.
+	/// </summary>
+	public int AmaLength
+	{
+		get => _amaLength.Value;
+		set => _amaLength.Value = value;
+	}
+
+	/// <summary>
+	/// Period of RSI.
+	/// </summary>
+	public int RsiLength
+	{
+		get => _rsiLength.Value;
+		set => _rsiLength.Value = value;
+	}
+
+	/// <summary>
+	/// RSI level a long requires to exceed.
+	/// </summary>
+	public decimal RsiBuy
+	{
+		get => _rsiBuy.Value;
+		set => _rsiBuy.Value = value;
+	}
+
+	/// <summary>
+	/// RSI level a short requires to stay below.
+	/// </summary>
+	public decimal RsiSell
+	{
+		get => _rsiSell.Value;
+		set => _rsiSell.Value = value;
+	}
+
+	/// <summary>
+	/// Take profit percentage.
+	/// </summary>
+	public decimal TakeProfitPercent
+	{
+		get => _takeProfitPercent.Value;
+		set => _takeProfitPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Stop loss percentage.
+	/// </summary>
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
+	/// </summary>
 	public AdaptiveFibonacciPullbackStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
 		_atrPeriod = Param(nameof(AtrPeriod), 8)
 			.SetGreaterThanZero()
-			.SetDisplay("SuperTrend ATR Length", "ATR period for SuperTrend", "SuperTrend");
+			.SetDisplay("ATR Period", "ATR period of the SuperTrends", "SuperTrend");
 
 		_factor1 = Param(nameof(Factor1), 0.618m)
-			.SetDisplay("Factor 1", "Weak Fibonacci factor", "SuperTrend");
+			.SetGreaterThanZero()
+			.SetDisplay("Factor 1", "Multiplier of the first SuperTrend", "SuperTrend");
 
 		_factor2 = Param(nameof(Factor2), 1.618m)
-			.SetDisplay("Factor 2", "Golden Ratio factor", "SuperTrend");
+			.SetGreaterThanZero()
+			.SetDisplay("Factor 2", "Multiplier of the second SuperTrend", "SuperTrend");
 
 		_factor3 = Param(nameof(Factor3), 2.618m)
-			.SetDisplay("Factor 3", "Extended Fibonacci factor", "SuperTrend");
+			.SetGreaterThanZero()
+			.SetDisplay("Factor 3", "Multiplier of the third SuperTrend", "SuperTrend");
 
 		_smoothLength = Param(nameof(SmoothLength), 21)
 			.SetGreaterThanZero()
-			.SetDisplay("Smoothing Length", "EMA length for SuperTrend average", "SuperTrend");
+			.SetDisplay("Smooth Length", "EMA length that smooths the SuperTrend average", "SuperTrend");
 
 		_amaLength = Param(nameof(AmaLength), 55)
 			.SetGreaterThanZero()
-			.SetDisplay("AMA Length", "Length for AMA midline", "AMA");
+			.SetDisplay("AMA Length", "Period of the AMA midline", "AMA");
 
 		_rsiLength = Param(nameof(RsiLength), 7)
 			.SetGreaterThanZero()
-			.SetDisplay("RSI Length", "RSI period", "RSI");
+			.SetDisplay("RSI Length", "Period of RSI", "RSI");
 
 		_rsiBuy = Param(nameof(RsiBuy), 70m)
-			.SetDisplay("RSI Buy Threshold", "RSI must be above for long", "RSI");
+			.SetDisplay("RSI Buy", "RSI level a long requires to exceed", "RSI");
 
 		_rsiSell = Param(nameof(RsiSell), 30m)
-			.SetDisplay("RSI Sell Threshold", "RSI must be below for short", "RSI");
+			.SetDisplay("RSI Sell", "RSI level a short requires to stay below", "RSI");
 
-		_cooldownBars = Param(nameof(CooldownBars), 10)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "Risk");
+		_takeProfitPercent = Param(nameof(TakeProfitPercent), 5m)
+			.SetNotNegative()
+			.SetDisplay("Take Profit %", "Take profit percentage", "Risk");
+
+		_stopLossPercent = Param(nameof(StopLossPercent), 0.75m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -102,11 +205,9 @@ public class AdaptiveFibonacciPullbackStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_prevClose = default;
-		_prevSmooth = default;
-		_isFirst = true;
-		_cooldownRemaining = 0;
+		_smooth = null;
+		_prevClose = null;
+		_prevSmooth = null;
 	}
 
 	/// <inheritdoc />
@@ -114,23 +215,33 @@ public class AdaptiveFibonacciPullbackStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_st1 = new SuperTrend { Length = AtrPeriod, Multiplier = Factor1 };
-		_st2 = new SuperTrend { Length = AtrPeriod, Multiplier = Factor2 };
-		_st3 = new SuperTrend { Length = AtrPeriod, Multiplier = Factor3 };
-		_stSmooth = new ExponentialMovingAverage { Length = SmoothLength };
-		_amaMid = new ExponentialMovingAverage { Length = AmaLength };
-		_rsi = new RelativeStrengthIndex { Length = RsiLength };
+		_prevClose = null;
+		_prevSmooth = null;
+
+		var st1 = new SuperTrend { Length = AtrPeriod, Multiplier = Factor1 };
+		var st2 = new SuperTrend { Length = AtrPeriod, Multiplier = Factor2 };
+		var st3 = new SuperTrend { Length = AtrPeriod, Multiplier = Factor3 };
+		var ama = new KaufmanAdaptiveMovingAverage { Length = AmaLength };
+		var rsi = new RelativeStrengthIndex { Length = RsiLength };
+		_smooth = new ExponentialMovingAverage { Length = SmoothLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(new IIndicator[] { _st1, _st2, _st3, _amaMid, _rsi }, ProcessCandle)
+			.BindEx([st1, st2, st3, ama, rsi], ProcessCandle)
 			.Start();
+
+		StartProtection(new Unit(TakeProfitPercent, UnitTypes.Percent), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true);
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, ama);
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+				DrawIndicator(oscillators, rsi);
 		}
 	}
 
@@ -139,75 +250,43 @@ public class AdaptiveFibonacciPullbackStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		foreach (var value in values)
+		{
+			if (!value.IsFormed)
+				return;
+		}
+
+		var average = (values[0].ToDecimal() + values[1].ToDecimal() + values[2].ToDecimal()) / 3m;
+		var mid = values[3].ToDecimal();
+		var rsi = values[4].ToDecimal();
+
+		var smoothValue = _smooth.Process(average, candle.ServerTime, true);
+		if (!_smooth.IsFormed)
+			return;
+
+		var smooth = smoothValue.ToDecimal();
+		var close = candle.ClosePrice;
+		var prevClose = _prevClose;
+		var prevSmooth = _prevSmooth;
+		_prevClose = close;
+		_prevSmooth = smooth;
+
+		if (prevClose is not decimal pc || prevSmooth is not decimal ps)
+			return;
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (values[0].IsEmpty || values[1].IsEmpty || values[2].IsEmpty ||
-			values[3].IsEmpty || values[4].IsEmpty)
-			return;
-
-		var st1Val = values[0].ToDecimal();
-		var st2Val = values[1].ToDecimal();
-		var st3Val = values[2].ToDecimal();
-		var mid = values[3].ToDecimal();
-		var rsiVal = values[4].ToDecimal();
-
-		var avg = (st1Val + st2Val + st3Val) / 3m;
-		var smooth = _stSmooth.Process(new DecimalIndicatorValue(_stSmooth, avg, candle.ServerTime)).ToDecimal();
-
-		if (_isFirst)
-		{
-			_prevClose = candle.ClosePrice;
-			_prevSmooth = smooth;
-			_isFirst = false;
-			return;
-		}
-
-		if (_cooldownRemaining > 0)
-		{
-			_cooldownRemaining--;
-			_prevClose = candle.ClosePrice;
-			_prevSmooth = smooth;
-			return;
-		}
-
-		var baseLong = candle.LowPrice < avg && candle.ClosePrice > smooth && _prevClose > mid;
-		var baseShort = candle.HighPrice > avg && candle.ClosePrice < smooth && _prevClose < mid;
-
-		var longEntry = baseLong && candle.ClosePrice > mid && rsiVal > RsiBuy;
-		var shortEntry = baseShort && candle.ClosePrice < mid && rsiVal < RsiSell;
+		var longEntry = candle.LowPrice < average && close > smooth && pc > mid && close > mid && rsi > RsiBuy;
+		var shortEntry = candle.HighPrice > average && close < smooth && pc < mid && close < mid && rsi < RsiSell;
 
 		if (longEntry && Position <= 0)
-		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-			BuyMarket(Volume);
-			_cooldownRemaining = CooldownBars;
-		}
+			BuyMarket(Volume + Math.Abs(Position));
 		else if (shortEntry && Position >= 0)
-		{
-			if (Position > 0)
-				SellMarket(Math.Abs(Position));
-			SellMarket(Volume);
-			_cooldownRemaining = CooldownBars;
-		}
-
-		// Exit conditions
-		var longExit = _prevClose > _prevSmooth && candle.ClosePrice <= smooth && Position > 0;
-		var shortExit = _prevClose < _prevSmooth && candle.ClosePrice >= smooth && Position < 0;
-
-		if (longExit)
-		{
-			SellMarket(Math.Abs(Position));
-			_cooldownRemaining = CooldownBars;
-		}
-		else if (shortExit)
-		{
-			BuyMarket(Math.Abs(Position));
-			_cooldownRemaining = CooldownBars;
-		}
-
-		_prevClose = candle.ClosePrice;
-		_prevSmooth = smooth;
+			SellMarket(Volume + Math.Abs(Position));
+		else if (Position > 0 && pc >= ps && close < smooth)
+			SellMarket(Position);
+		else if (Position < 0 && pc <= ps && close > smooth)
+			BuyMarket(-Position);
 	}
 }

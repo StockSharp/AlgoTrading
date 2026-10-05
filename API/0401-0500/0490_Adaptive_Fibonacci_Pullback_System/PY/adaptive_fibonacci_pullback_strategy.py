@@ -6,53 +6,39 @@ clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 clr.AddReference("StockSharp.BusinessEntities")
 
-from System import TimeSpan, Math, Array
-from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import (SuperTrend, ExponentialMovingAverage,
-                                         RelativeStrengthIndex,
-                                         IndicatorHelper, IIndicator)
+from System import TimeSpan, Decimal, Array
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from StockSharp.Algo.Indicators import IIndicator, SuperTrend, ExponentialMovingAverage, KaufmanAdaptiveMovingAverage, RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
 from indicator_extensions import *
 
+
 class adaptive_fibonacci_pullback_strategy(Strategy):
-    """Adaptive Fibonacci Pullback Strategy."""
+    """
+    Adaptive Fibonacci Pullback strategy.
+    Three SuperTrend lines with Fibonacci multipliers are averaged and the average is smoothed by an EMA. A long needs the low to dip
+    below the average while the close stays above the smoothed line, the previous and current close above the Kaufman AMA midline and
+    RSI above RsiBuy; a short mirrors this with RSI below RsiSell. Positions close when the close crosses the smoothed line against them,
+    and percent take profit and stop loss protect every trade.
+    """
 
     def __init__(self):
         super(adaptive_fibonacci_pullback_strategy, self).__init__()
-
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
-            .SetDisplay("Candle Type", "Type of candles to use", "General")
-        self._atr_period = self.Param("AtrPeriod", 8) \
-            .SetDisplay("SuperTrend ATR Length", "ATR period for SuperTrend", "SuperTrend")
-        self._factor1 = self.Param("Factor1", 0.618) \
-            .SetDisplay("Factor 1", "Weak Fibonacci factor", "SuperTrend")
-        self._factor2 = self.Param("Factor2", 1.618) \
-            .SetDisplay("Factor 2", "Golden Ratio factor", "SuperTrend")
-        self._factor3 = self.Param("Factor3", 2.618) \
-            .SetDisplay("Factor 3", "Extended Fibonacci factor", "SuperTrend")
-        self._smooth_length = self.Param("SmoothLength", 21) \
-            .SetDisplay("Smoothing Length", "EMA length for SuperTrend average", "SuperTrend")
-        self._ama_length = self.Param("AmaLength", 55) \
-            .SetDisplay("AMA Length", "Length for AMA midline", "AMA")
-        self._rsi_length = self.Param("RsiLength", 7) \
-            .SetDisplay("RSI Length", "RSI period", "RSI")
-        self._rsi_buy = self.Param("RsiBuy", 70.0) \
-            .SetDisplay("RSI Buy Threshold", "RSI must be above for long", "RSI")
-        self._rsi_sell = self.Param("RsiSell", 30.0) \
-            .SetDisplay("RSI Sell Threshold", "RSI must be below for short", "RSI")
-        self._cooldown_bars = self.Param("CooldownBars", 10) \
-            .SetDisplay("Cooldown Bars", "Bars between trades", "Risk")
-
-        self._st1 = None
-        self._st2 = None
-        self._st3 = None
-        self._st_smooth = None
-        self._ama_mid = None
-        self._rsi = None
-        self._prev_close = 0.0
-        self._prev_smooth = 0.0
-        self._is_first = True
-        self._cooldown_remaining = 0
+        self._atr_period = self.Param("AtrPeriod", 8).SetGreaterThanZero().SetDisplay("ATR Period", "ATR period of the SuperTrends", "SuperTrend")
+        self._factor1 = self.Param("Factor1", 0.618).SetGreaterThanZero().SetDisplay("Factor 1", "Multiplier of the first SuperTrend", "SuperTrend")
+        self._factor2 = self.Param("Factor2", 1.618).SetGreaterThanZero().SetDisplay("Factor 2", "Multiplier of the second SuperTrend", "SuperTrend")
+        self._factor3 = self.Param("Factor3", 2.618).SetGreaterThanZero().SetDisplay("Factor 3", "Multiplier of the third SuperTrend", "SuperTrend")
+        self._smooth_length = self.Param("SmoothLength", 21).SetGreaterThanZero().SetDisplay("Smooth Length", "EMA length that smooths the SuperTrend average", "SuperTrend")
+        self._ama_length = self.Param("AmaLength", 55).SetGreaterThanZero().SetDisplay("AMA Length", "Period of the AMA midline", "AMA")
+        self._rsi_length = self.Param("RsiLength", 7).SetGreaterThanZero().SetDisplay("RSI Length", "Period of RSI", "RSI")
+        self._rsi_buy = self.Param("RsiBuy", 70.0).SetDisplay("RSI Buy", "RSI level a long requires to exceed", "RSI")
+        self._rsi_sell = self.Param("RsiSell", 30.0).SetDisplay("RSI Sell", "RSI level a short requires to stay below", "RSI")
+        self._take_profit_percent = self.Param("TakeProfitPercent", 5.0).SetNotNegative().SetDisplay("Take Profit %", "Take profit percentage", "Risk")
+        self._stop_loss_percent = self.Param("StopLossPercent", 0.75).SetNotNegative().SetDisplay("Stop Loss %", "Stop loss percentage", "Risk")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._smooth = None
+        self._prev_close = None
+        self._prev_smooth = None
 
     @property
     def candle_type(self):
@@ -60,117 +46,86 @@ class adaptive_fibonacci_pullback_strategy(Strategy):
 
     def OnReseted(self):
         super(adaptive_fibonacci_pullback_strategy, self).OnReseted()
-        self._st1 = None
-        self._st2 = None
-        self._st3 = None
-        self._st_smooth = None
-        self._ama_mid = None
-        self._rsi = None
-        self._prev_close = 0.0
-        self._prev_smooth = 0.0
-        self._is_first = True
-        self._cooldown_remaining = 0
+        self._smooth = None
+        self._prev_close = None
+        self._prev_smooth = None
 
     def OnStarted2(self, time):
         super(adaptive_fibonacci_pullback_strategy, self).OnStarted2(time)
 
-        self._st1 = SuperTrend()
-        self._st1.Length = int(self._atr_period.Value)
-        self._st1.Multiplier = self._factor1.Value
-        self._st2 = SuperTrend()
-        self._st2.Length = int(self._atr_period.Value)
-        self._st2.Multiplier = self._factor2.Value
-        self._st3 = SuperTrend()
-        self._st3.Length = int(self._atr_period.Value)
-        self._st3.Multiplier = self._factor3.Value
-        self._st_smooth = ExponentialMovingAverage()
-        self._st_smooth.Length = int(self._smooth_length.Value)
-        self._ama_mid = ExponentialMovingAverage()
-        self._ama_mid.Length = int(self._ama_length.Value)
-        self._rsi = RelativeStrengthIndex()
-        self._rsi.Length = int(self._rsi_length.Value)
+        self._prev_close = None
+        self._prev_smooth = None
 
-        indicators = Array[IIndicator]([self._st1, self._st2, self._st3, self._ama_mid, self._rsi])
+        st1 = SuperTrend()
+        st1.Length = self._atr_period.Value
+        st1.Multiplier = Decimal(self._factor1.Value)
+        st2 = SuperTrend()
+        st2.Length = self._atr_period.Value
+        st2.Multiplier = Decimal(self._factor2.Value)
+        st3 = SuperTrend()
+        st3.Length = self._atr_period.Value
+        st3.Multiplier = Decimal(self._factor3.Value)
+        ama = KaufmanAdaptiveMovingAverage()
+        ama.Length = self._ama_length.Value
+        rsi = RelativeStrengthIndex()
+        rsi.Length = self._rsi_length.Value
+        self._smooth = ExponentialMovingAverage()
+        self._smooth.Length = self._smooth_length.Value
 
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.BindEx(indicators, self._on_process).Start()
+        subscription.BindEx(Array[IIndicator]([st1, st2, st3, ama, rsi]), self._process_candle).Start()
+
+        self.StartProtection(Unit(Decimal(self._take_profit_percent.Value), UnitTypes.Percent), Unit(Decimal(self._stop_loss_percent.Value), UnitTypes.Percent), useMarketOrders=True)
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
+            self.DrawIndicator(area, ama)
             self.DrawOwnTrades(area)
+            oscillators = self.CreateChartArea()
+            if oscillators is not None:
+                self.DrawIndicator(oscillators, rsi)
 
-    def _on_process(self, candle, values):
+    def _process_candle(self, candle, values):
         if candle.State != CandleStates.Finished:
+            return
+
+        for value in values:
+            if not value.IsFormed:
+                return
+
+        average = (values[0].GetValue[Decimal](None) + values[1].GetValue[Decimal](None) + values[2].GetValue[Decimal](None)) / Decimal(3)
+        mid = values[3].GetValue[Decimal](None)
+        rsi = values[4].GetValue[Decimal](None)
+
+        smooth_value = process_value(self._smooth, average, candle.ServerTime, True)
+        if not self._smooth.IsFormed:
+            return
+
+        smooth = smooth_value.GetValue[Decimal](None)
+        close = candle.ClosePrice
+        prev_close = self._prev_close
+        prev_smooth = self._prev_smooth
+        self._prev_close = close
+        self._prev_smooth = smooth
+
+        if prev_close is None or prev_smooth is None:
             return
 
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        if values[0].IsEmpty or values[1].IsEmpty or values[2].IsEmpty or values[3].IsEmpty or values[4].IsEmpty:
-            return
-
-        st1_v = float(IndicatorHelper.ToDecimal(values[0]))
-        st2_v = float(IndicatorHelper.ToDecimal(values[1]))
-        st3_v = float(IndicatorHelper.ToDecimal(values[2]))
-        mid = float(IndicatorHelper.ToDecimal(values[3]))
-        rsi_v = float(IndicatorHelper.ToDecimal(values[4]))
-
-        avg = (st1_v + st2_v + st3_v) / 3.0
-
-        smooth_result = process_float(self._st_smooth, avg, candle.ServerTime, True)
-        smooth = float(IndicatorHelper.ToDecimal(smooth_result))
-
-        close = float(candle.ClosePrice)
-        cooldown = int(self._cooldown_bars.Value)
-
-        if self._is_first:
-            self._prev_close = close
-            self._prev_smooth = smooth
-            self._is_first = False
-            return
-
-        if self._cooldown_remaining > 0:
-            self._cooldown_remaining -= 1
-            self._prev_close = close
-            self._prev_smooth = smooth
-            return
-
-        low = float(candle.LowPrice)
-        high = float(candle.HighPrice)
-        rsi_buy = float(self._rsi_buy.Value)
-        rsi_sell = float(self._rsi_sell.Value)
-
-        base_long = low < avg and close > smooth and self._prev_close > mid
-        base_short = high > avg and close < smooth and self._prev_close < mid
-
-        long_entry = base_long and close > mid and rsi_v > rsi_buy
-        short_entry = base_short and close < mid and rsi_v < rsi_sell
+        long_entry = candle.LowPrice < average and close > smooth and prev_close > mid and close > mid and rsi > Decimal(self._rsi_buy.Value)
+        short_entry = candle.HighPrice > average and close < smooth and prev_close < mid and close < mid and rsi < Decimal(self._rsi_sell.Value)
 
         if long_entry and self.Position <= 0:
-            if self.Position < 0:
-                self.BuyMarket(Math.Abs(self.Position))
-            self.BuyMarket(self.Volume)
-            self._cooldown_remaining = cooldown
+            self.BuyMarket(self.Volume + abs(self.Position))
         elif short_entry and self.Position >= 0:
-            if self.Position > 0:
-                self.SellMarket(Math.Abs(self.Position))
-            self.SellMarket(self.Volume)
-            self._cooldown_remaining = cooldown
-
-        # Exit conditions
-        long_exit = self._prev_close > self._prev_smooth and close <= smooth and self.Position > 0
-        short_exit = self._prev_close < self._prev_smooth and close >= smooth and self.Position < 0
-
-        if long_exit:
-            self.SellMarket(Math.Abs(self.Position))
-            self._cooldown_remaining = cooldown
-        elif short_exit:
-            self.BuyMarket(Math.Abs(self.Position))
-            self._cooldown_remaining = cooldown
-
-        self._prev_close = close
-        self._prev_smooth = smooth
+            self.SellMarket(self.Volume + abs(self.Position))
+        elif self.Position > 0 and prev_close >= prev_smooth and close < smooth:
+            self.SellMarket(self.Position)
+        elif self.Position < 0 and prev_close <= prev_smooth and close > smooth:
+            self.BuyMarket(-self.Position)
 
     def CreateClone(self):
         return adaptive_fibonacci_pullback_strategy()
