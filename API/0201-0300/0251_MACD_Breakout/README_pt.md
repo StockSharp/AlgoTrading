@@ -20,9 +20,10 @@ Este sistema se adapta a traders de momentum que buscam rompimentos precoces. As
   - `SlowEmaPeriod` = 26
   - `SignalPeriod` = 9
   - `SmaPeriod` = 20
-  - `DeviationMultiplier` = 2.0m
-  - `StopLossPercent` = 2.0m
+  - `DeviationMultiplier` = 2
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
+    Avg e StdDev são a média e o desvio padrão dos últimos SmaPeriod valores de linha MACD, incluindo o atual. O stop é um StopLossPercent fixo do preço de entrada, vigiado também entre os candles; 0 o desativa. As bandas são a média mais e menos DeviationMultiplier desvios padrão: a linha MACD acima da banda superior abre uma compra e abaixo da inferior uma venda; uma compra fecha quando a linha MACD volta abaixo da sua média e uma venda quando volta acima. Um sinal de entrada contra uma posição aberta a inverte.
 - **Filtros**:
   - Categoria: Rompimento
   - Direção: Ambos

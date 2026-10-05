@@ -19,9 +19,10 @@
   - `SlowEmaPeriod` = 26
   - `SignalPeriod` = 9
   - `SmaPeriod` = 20
-  - `DeviationMultiplier` = 2.0m
-  - `StopLossPercent` = 2.0m
+  - `DeviationMultiplier` = 2
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
+    Avg和StdDev为最近SmaPeriod个MACD线值（含当前值）的平均值和标准差。止损为入场价的固定StopLossPercent百分比，在K线之间同样监控；设为0则关闭。通道为平均值加减DeviationMultiplier倍标准差：MACD线高于上轨做多，低于下轨做空；MACD线回到平均值以下时平多，回到平均值以上时平空。与持仓方向相反的入场信号会反转持仓。
 - **筛选条件**:
   - 类别: 突破
   - 方向: 双向

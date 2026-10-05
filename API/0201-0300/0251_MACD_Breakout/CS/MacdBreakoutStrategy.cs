@@ -1,10 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,7 +12,10 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// MACD Breakout Strategy that enters positions when MACD Histogram breaks out of its normal range.
+/// MACD Breakout strategy.
+/// The bands lie DeviationMultiplier standard deviations around the average of the last SmaPeriod MACD values, the current one included.
+/// MACD above the upper band goes long and MACD below the lower band goes short,
+/// reversing an opposite position. A long closes once MACD is back below its average and a short once it is back above it, and a percent stop limits the loss.
 /// </summary>
 public class MacdBreakoutStrategy : Strategy
 {
@@ -26,15 +27,10 @@ public class MacdBreakoutStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private MovingAverageConvergenceDivergenceSignal _macd;
-	private SimpleMovingAverage _macdHistSma;
-	private StandardDeviation _macdHistStdDev;
-	
-	private decimal _prevMacdHistValue;
-	private decimal _prevMacdHistSmaValue;
+	private readonly Queue<decimal> _values = [];
 
 	/// <summary>
-	/// MACD Fast EMA period.
+	/// Fast EMA period of MACD.
 	/// </summary>
 	public int FastEmaPeriod
 	{
@@ -43,7 +39,7 @@ public class MacdBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// MACD Slow EMA period.
+	/// Slow EMA period of MACD.
 	/// </summary>
 	public int SlowEmaPeriod
 	{
@@ -52,7 +48,7 @@ public class MacdBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// MACD Signal line period.
+	/// Signal line period of MACD.
 	/// </summary>
 	public int SignalPeriod
 	{
@@ -61,7 +57,7 @@ public class MacdBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Period for MACD Histogram moving average.
+	/// Values of MACD the average and the standard deviation span.
 	/// </summary>
 	public int SmaPeriod
 	{
@@ -70,7 +66,7 @@ public class MacdBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Standard deviation multiplier for breakout threshold.
+	/// Standard deviations between the average and a band.
 	/// </summary>
 	public decimal DeviationMultiplier
 	{
@@ -79,7 +75,7 @@ public class MacdBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop-loss percentage.
+	/// Stop loss percentage from entry price.
 	/// </summary>
 	public decimal StopLossPercent
 	{
@@ -88,7 +84,7 @@ public class MacdBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Type of candles to use.
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -103,39 +99,27 @@ public class MacdBreakoutStrategy : Strategy
 	{
 		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 12)
 			.SetGreaterThanZero()
-			.SetDisplay("Fast EMA Period", "Period for MACD fast EMA", "MACD Settings")
-			
-			.SetOptimize(8, 20, 4);
+			.SetDisplay("MACD Fast", "Fast EMA period of MACD", "Indicators");
 
 		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 26)
 			.SetGreaterThanZero()
-			.SetDisplay("Slow EMA Period", "Period for MACD slow EMA", "MACD Settings")
-			
-			.SetOptimize(20, 40, 4);
+			.SetDisplay("MACD Slow", "Slow EMA period of MACD", "Indicators");
 
 		_signalPeriod = Param(nameof(SignalPeriod), 9)
 			.SetGreaterThanZero()
-			.SetDisplay("Signal Period", "Period for MACD signal line", "MACD Settings")
-			
-			.SetOptimize(5, 15, 2);
+			.SetDisplay("MACD Signal", "Signal line period of MACD", "Indicators");
 
 		_smaPeriod = Param(nameof(SmaPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("SMA Period", "Period for MACD Histogram moving average", "Indicator Settings")
-			
-			.SetOptimize(10, 30, 5);
+			.SetDisplay("Average Period", "Values of MACD the average and the standard deviation span", "Indicators");
 
-		_deviationMultiplier = Param(nameof(DeviationMultiplier), 2.0m)
+		_deviationMultiplier = Param(nameof(DeviationMultiplier), 2m)
 			.SetGreaterThanZero()
-			.SetDisplay("Deviation Multiplier", "Standard deviation multiplier for breakout threshold", "Breakout Settings")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
+			.SetDisplay("Multiplier", "Standard deviations between the average and a band", "Indicators");
 
-		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
-			
-			.SetOptimize(1.0m, 4.0m, 0.5m);
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -151,17 +135,17 @@ public class MacdBreakoutStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevMacdHistSmaValue = default;
-		_prevMacdHistValue = default;
+		_values.Clear();
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
+		base.OnStarted2(time);
 
-		// Initialize indicators
+		_values.Clear();
 
-		_macd = new MovingAverageConvergenceDivergenceSignal
+		var macd = new MovingAverageConvergenceDivergenceSignal
 		{
 			Macd =
 			{
@@ -170,96 +154,74 @@ public class MacdBreakoutStrategy : Strategy
 			},
 			SignalMa = { Length = SignalPeriod }
 		};
-		_macdHistSma = new SMA { Length = SmaPeriod };
-		_macdHistStdDev = new StandardDeviation { Length = SmaPeriod };
 
-		// Create subscription and bind indicators
 		var subscription = SubscribeCandles(CandleType);
-		
 		subscription
-			.BindEx(_macd, ProcessCandle)
+			.BindEx(macd, ProcessCandle)
 			.Start();
 
-		// Enable position protection
-		StartProtection(
-			new Unit(StopLossPercent, UnitTypes.Percent),
-			new Unit(StopLossPercent * 1.5m, UnitTypes.Percent));
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
 
-		// Setup chart visualization
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _macd);
 			DrawOwnTrades(area);
-		}
 
-		base.OnStarted2(time);
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, macd);
+			}
+		}
+	}
+
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// The high-level handler activates native protection before this callback, also between signal bars.
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready for trading
+		if (!macdValue.IsFormed || macdValue is not MovingAverageConvergenceDivergenceSignalValue { Macd: decimal macd, Signal: decimal signal })
+			return;
+
+		var value = macd;
+
+		_values.Enqueue(value);
+
+		if (_values.Count > SmaPeriod)
+			_values.Dequeue();
+
+		if (_values.Count < SmaPeriod)
+			return;
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
+		var mean = _values.Average();
+		var deviation = (decimal)Math.Sqrt((double)_values.Average(v => (v - mean) * (v - mean)));
+		var upper = mean + DeviationMultiplier * deviation;
+		var lower = mean - DeviationMultiplier * deviation;
 
-		// Extract the histogram value (MACD Line - Signal Line)
-		if (macdTyped.Macd is not decimal macd || macdTyped.Signal is not decimal signal)
-		{
-			return;
-		}
-
-		// Process indicators for MACD histogram
-		var macdHistSmaValue = _macdHistSma.Process(new DecimalIndicatorValue(_macdHistSma, macd, candle.ServerTime)).ToDecimal();
-		var macdHistStdDevValue = _macdHistStdDev.Process(new DecimalIndicatorValue(_macdHistStdDev, macd, candle.ServerTime)).ToDecimal();
-		
-		// Store previous values on first call
-		if (_prevMacdHistValue == 0 && _prevMacdHistSmaValue == 0)
-		{
-			_prevMacdHistValue = macd;
-			_prevMacdHistSmaValue = macdHistSmaValue;
-			return;
-		}
-
-		// Calculate breakout thresholds
-		var upperThreshold = macdHistSmaValue + DeviationMultiplier * macdHistStdDevValue;
-		var lowerThreshold = macdHistSmaValue - DeviationMultiplier * macdHistStdDevValue;
-
-		// Trading logic
-		if (macd > upperThreshold && Position <= 0)
-		{
-			// MACD Histogram broke above upper threshold - buy signal (long)
-			BuyMarket(Volume);
-			LogInfo($"Buy signal: MACD Hist({macd}) > Upper Threshold({upperThreshold})");
-		}
-		else if (macd < lowerThreshold && Position >= 0)
-		{
-			// MACD Histogram broke below lower threshold - sell signal (short)
+		if (value > upper && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (value < lower && Position >= 0)
 			SellMarket(Volume + Math.Abs(Position));
-			LogInfo($"Sell signal: MACD Hist({macd}) < Lower Threshold({lowerThreshold})");
-		}
-		// Exit conditions
-		else if (Position > 0 && macd < macdHistSmaValue)
-		{
-			// Exit long position when MACD Histogram returns below its mean
-			SellMarket(Math.Abs(Position));
-			LogInfo($"Exit long: MACD Hist({macd}) < SMA({macdHistSmaValue})");
-		}
-		else if (Position < 0 && macd > macdHistSmaValue)
-		{
-			// Exit short position when MACD Histogram returns above its mean
-			BuyMarket(Math.Abs(Position));
-			LogInfo($"Exit short: MACD Hist({macd}) > SMA({macdHistSmaValue})");
-		}
-
-		// Update previous values
-		_prevMacdHistValue = macd;
-		_prevMacdHistSmaValue = macdHistSmaValue;
+		else if (Position > 0 && value < mean)
+			SellMarket(Position);
+		else if (Position < 0 && value > mean)
+			BuyMarket(-Position);
 	}
 }

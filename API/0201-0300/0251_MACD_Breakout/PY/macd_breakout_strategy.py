@@ -4,102 +4,117 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergenceSignal, SimpleMovingAverage, StandardDeviation
+from System import TimeSpan, Decimal, Math
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, Level1Fields
+from StockSharp.BusinessEntities import Subscription
+from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergenceSignal
 from StockSharp.Algo.Strategies import Strategy
-from indicator_extensions import *
 
 class macd_breakout_strategy(Strategy):
     """
-    MACD Breakout: enters when MACD histogram breaks out of its normal range.
+    MACD Breakout strategy.
+    The bands lie DeviationMultiplier standard deviations around the average of the last SmaPeriod MACD values, the current one included.
+    MACD above the upper band goes long and MACD below the lower band goes short,
+    reversing an opposite position. A long closes once MACD is back below its average and a short once it is back above it, and a percent stop limits the loss.
     """
 
     def __init__(self):
         super(macd_breakout_strategy, self).__init__()
-        self._fast_ema = self.Param("FastEmaPeriod", 12).SetDisplay("Fast EMA", "Fast EMA period", "MACD")
-        self._slow_ema = self.Param("SlowEmaPeriod", 26).SetDisplay("Slow EMA", "Slow EMA period", "MACD")
-        self._signal_period = self.Param("SignalPeriod", 9).SetDisplay("Signal Period", "Signal line period", "MACD")
-        self._sma_period = self.Param("SmaPeriod", 20).SetDisplay("SMA Period", "Histogram SMA period", "Indicators")
-        self._dev_mult = self.Param("DeviationMultiplier", 2.0).SetDisplay("Dev Mult", "Stddev multiplier", "Breakout")
-        self._sl_pct = self.Param("StopLossPercent", 2.0).SetDisplay("SL %", "Stop loss percent", "Risk")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Timeframe", "General")
-
-        self._macd_hist_sma = None
-        self._macd_hist_stddev = None
-        self._prev_macd_hist_value = 0.0
-        self._prev_macd_hist_sma_value = 0.0
+        self._fast_ema_period = self.Param("FastEmaPeriod", 12).SetGreaterThanZero().SetDisplay("MACD Fast", "Fast EMA period of MACD", "Indicators")
+        self._slow_ema_period = self.Param("SlowEmaPeriod", 26).SetGreaterThanZero().SetDisplay("MACD Slow", "Slow EMA period of MACD", "Indicators")
+        self._signal_period = self.Param("SignalPeriod", 9).SetGreaterThanZero().SetDisplay("MACD Signal", "Signal line period of MACD", "Indicators")
+        self._sma_period = self.Param("SmaPeriod", 20).SetGreaterThanZero().SetDisplay("Average Period", "Values of MACD the average and the standard deviation span", "Indicators")
+        self._deviation_multiplier = self.Param("DeviationMultiplier", 2.0).SetGreaterThanZero().SetDisplay("Multiplier", "Standard deviations between the average and a band", "Indicators")
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0).SetNotNegative().SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._reset_state()
 
     @property
     def candle_type(self):
         return self._candle_type.Value
 
+    def _reset_state(self):
+        self._values = []
+
     def OnReseted(self):
         super(macd_breakout_strategy, self).OnReseted()
-        self._prev_macd_hist_value = 0.0
-        self._prev_macd_hist_sma_value = 0.0
+        self._reset_state()
 
     def OnStarted2(self, time):
         super(macd_breakout_strategy, self).OnStarted2(time)
-        macd = MovingAverageConvergenceDivergenceSignal()
-        macd.Macd.ShortMa.Length = self._fast_ema.Value
-        macd.Macd.LongMa.Length = self._slow_ema.Value
-        macd.SignalMa.Length = self._signal_period.Value
 
-        self._macd_hist_sma = SimpleMovingAverage()
-        self._macd_hist_sma.Length = self._sma_period.Value
-        self._macd_hist_stddev = StandardDeviation()
-        self._macd_hist_stddev.Length = self._sma_period.Value
+        self._reset_state()
+
+        macd = MovingAverageConvergenceDivergenceSignal()
+        macd.Macd.ShortMa.Length = self._fast_ema_period.Value
+        macd.Macd.LongMa.Length = self._slow_ema_period.Value
+        macd.SignalMa.Length = self._signal_period.Value
 
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.BindEx(macd, self._process_candle).Start()
-        sl = self._sl_pct.Value
-        self.StartProtection(Unit(sl, UnitTypes.Percent), Unit(sl * 1.5, UnitTypes.Percent))
+
+        self.StartProtection(Unit(), Unit(Decimal(self._stop_loss_percent.Value), UnitTypes.Percent), useMarketOrders=True, isLocalStop=True)
+
+        # The stop has to see prices between candles, not only at their close.
+        for field in (Level1Fields.BestBidPrice, Level1Fields.BestAskPrice):
+            quotes = Subscription(DataType.Level1, self.Security)
+            quotes.MarketData.BuildField = field
+            self.SubscribeLevel1(quotes).Bind(self._observe_protection_quote).Start()
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, macd)
             self.DrawOwnTrades(area)
+            oscillators = self.CreateChartArea()
+            if oscillators is not None:
+                self.DrawIndicator(oscillators, macd)
+
+    def _observe_protection_quote(self, quote):
+        # The high-level handler activates native protection before the callback, including between bars.
+        pass
 
     def _process_candle(self, candle, macd_value):
         if candle.State != CandleStates.Finished:
             return
 
+        if not macd_value.IsFormed or macd_value.Macd is None or macd_value.Signal is None:
+            return
+
+        value = macd_value.Macd
+
+        period = self._sma_period.Value
+        self._values.append(value)
+        if len(self._values) > period:
+            self._values.pop(0)
+
+        if len(self._values) < period:
+            return
+
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        typed_val = macd_value
-        if typed_val.Macd is None or typed_val.Signal is None:
-            return
-        macd_val = float(typed_val.Macd)
+        total = Decimal(0)
+        for item in self._values:
+            total += item
+        mean = total / Decimal(period)
+        squares = Decimal(0)
+        for item in self._values:
+            squares += (item - mean) * (item - mean)
+        deviation = Decimal(Math.Sqrt(Decimal.ToDouble(squares / Decimal(period))))
+        multiplier = Decimal(self._deviation_multiplier.Value)
+        upper = mean + multiplier * deviation
+        lower = mean - multiplier * deviation
 
-        macd_hist_sma_value = float(process_float(self._macd_hist_sma, macd_val, candle.ServerTime, True))
-        macd_hist_stddev_value = float(process_float(self._macd_hist_stddev, macd_val, candle.ServerTime, True))
-
-        # Store previous values on first call
-        if self._prev_macd_hist_value == 0.0 and self._prev_macd_hist_sma_value == 0.0:
-            self._prev_macd_hist_value = macd_val
-            self._prev_macd_hist_sma_value = macd_hist_sma_value
-            return
-
-        # Calculate breakout thresholds
-        dm = float(self._dev_mult.Value)
-        upper_threshold = macd_hist_sma_value + dm * macd_hist_stddev_value
-        lower_threshold = macd_hist_sma_value - dm * macd_hist_stddev_value
-
-        # Trading logic
-        if macd_val > upper_threshold and self.Position <= 0:
-            self.BuyMarket(self.Volume)
-        elif macd_val < lower_threshold and self.Position >= 0:
-            self.SellMarket(self.Volume + Math.Abs(self.Position))
-        elif self.Position > 0 and macd_val < macd_hist_sma_value:
-            self.SellMarket(Math.Abs(self.Position))
-        elif self.Position < 0 and macd_val > macd_hist_sma_value:
-            self.BuyMarket(Math.Abs(self.Position))
-
-        self._prev_macd_hist_value = macd_val
-        self._prev_macd_hist_sma_value = macd_hist_sma_value
+        if value > upper and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+        elif value < lower and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
+        elif self.Position > 0 and value < mean:
+            self.SellMarket(self.Position)
+        elif self.Position < 0 and value > mean:
+            self.BuyMarket(-self.Position)
 
     def CreateClone(self):
         return macd_breakout_strategy()
