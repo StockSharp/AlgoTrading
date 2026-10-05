@@ -11,31 +11,91 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// ContrarianDcStrategy using EMA crossover for trend timing.
-/// Enters long on golden cross, short on death cross.
+/// Contrarian Donchian Channel strategy.
+/// The channel spans the previous DonchianPeriod candles. A low at or below the lower band buys and a high at or above the upper
+/// band sells short. Each trade has a StopLossPercent stop and a target RiskRewardRatio times farther away, and is also closed when
+/// price reaches the opposite band. After a stop-loss, entries in the same direction pause for PauseCandles candles.
 /// </summary>
 public class ContrarianDcStrategy : Strategy
 {
-	private readonly StrategyParam<int> _fastEmaPeriod;
-	private readonly StrategyParam<int> _slowEmaPeriod;
+	private readonly StrategyParam<int> _donchianPeriod;
+	private readonly StrategyParam<decimal> _riskRewardRatio;
+	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<int> _pauseCandles;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevFastEma;
-	private decimal _prevSlowEma;
+	private decimal? _prevUpper;
+	private decimal? _prevLower;
+	private decimal? _stopPrice;
+	private decimal? _takePrice;
+	private int _longPause;
+	private int _shortPause;
 
-	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
-	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	/// <summary>
+	/// Previous candles the channel spans.
+	/// </summary>
+	public int DonchianPeriod
+	{
+		get => _donchianPeriod.Value;
+		set => _donchianPeriod.Value = value;
+	}
 
+	/// <summary>
+	/// Target distance as a multiple of the stop distance.
+	/// </summary>
+	public decimal RiskRewardRatio
+	{
+		get => _riskRewardRatio.Value;
+		set => _riskRewardRatio.Value = value;
+	}
+
+	/// <summary>
+	/// Stop loss percentage from entry price.
+	/// </summary>
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Candles to skip same-direction entries after a stop-loss.
+	/// </summary>
+	public int PauseCandles
+	{
+		get => _pauseCandles.Value;
+		set => _pauseCandles.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
+	/// </summary>
 	public ContrarianDcStrategy()
 	{
-		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+		_donchianPeriod = Param(nameof(DonchianPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+			.SetDisplay("Donchian Period", "Previous candles the channel spans", "Indicators");
 
-		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+		_riskRewardRatio = Param(nameof(RiskRewardRatio), 1.7m)
 			.SetGreaterThanZero()
-			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+			.SetDisplay("Risk/Reward", "Target distance as a multiple of the stop distance", "Risk");
+
+		_stopLossPercent = Param(nameof(StopLossPercent), 0.3m)
+			.SetGreaterThanZero()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
+
+		_pauseCandles = Param(nameof(PauseCandles), 3)
+			.SetNotNegative()
+			.SetDisplay("Pause Candles", "Candles to skip same-direction entries after a stop-loss", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -51,8 +111,17 @@ public class ContrarianDcStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevFastEma = 0m;
-		_prevSlowEma = 0m;
+		ResetState();
+	}
+
+	private void ResetState()
+	{
+		_prevUpper = null;
+		_prevLower = null;
+		_stopPrice = null;
+		_takePrice = null;
+		_longPause = 0;
+		_shortPause = 0;
 	}
 
 	/// <inheritdoc />
@@ -60,46 +129,103 @@ public class ContrarianDcStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
-		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
+		ResetState();
+
+		var donchian = new DonchianChannels { Length = DonchianPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(fastEma, slowEma, ProcessCandle)
+			.BindEx(donchian, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, fastEma);
-			DrawIndicator(area, slowEma);
+			DrawIndicator(area, donchian);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue donchianValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_prevFastEma == 0m || _prevSlowEma == 0m)
+		// The channel is measured on the candles before this one.
+		var upper = _prevUpper;
+		var lower = _prevLower;
+
+		if (donchianValue.IsFormed && donchianValue is IDonchianChannelsValue { UpperBand: decimal currentUpper, LowerBand: decimal currentLower })
 		{
-			_prevFastEma = fastEmaValue;
-			_prevSlowEma = slowEmaValue;
+			_prevUpper = currentUpper;
+			_prevLower = currentLower;
+		}
+
+		if (_longPause > 0)
+			_longPause--;
+
+		if (_shortPause > 0)
+			_shortPause--;
+
+		if (upper is not decimal channelHigh || lower is not decimal channelLow)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (Position > 0)
+		{
+			if (_stopPrice is decimal stop && candle.LowPrice <= stop)
+			{
+				SellMarket(Position);
+				_longPause = PauseCandles;
+				ClearLevels();
+			}
+			else if ((_takePrice is decimal take && candle.HighPrice >= take) || candle.HighPrice >= channelHigh)
+			{
+				SellMarket(Position);
+				ClearLevels();
+			}
 			return;
 		}
 
-		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+		if (Position < 0)
 		{
-			BuyMarket();
-		}
-		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
-		{
-			SellMarket();
+			if (_stopPrice is decimal stop && candle.HighPrice >= stop)
+			{
+				BuyMarket(-Position);
+				_shortPause = PauseCandles;
+				ClearLevels();
+			}
+			else if ((_takePrice is decimal take && candle.LowPrice <= take) || candle.LowPrice <= channelLow)
+			{
+				BuyMarket(-Position);
+				ClearLevels();
+			}
+			return;
 		}
 
-		_prevFastEma = fastEmaValue;
-		_prevSlowEma = slowEmaValue;
+		var close = candle.ClosePrice;
+		var stopDistance = close * StopLossPercent / 100m;
+
+		if (candle.LowPrice <= channelLow && _longPause == 0)
+		{
+			BuyMarket(Volume);
+			_stopPrice = close - stopDistance;
+			_takePrice = close + stopDistance * RiskRewardRatio;
+		}
+		else if (candle.HighPrice >= channelHigh && _shortPause == 0)
+		{
+			SellMarket(Volume);
+			_stopPrice = close + stopDistance;
+			_takePrice = close - stopDistance * RiskRewardRatio;
+		}
+	}
+
+	private void ClearLevels()
+	{
+		_stopPrice = null;
+		_takePrice = null;
 	}
 }
