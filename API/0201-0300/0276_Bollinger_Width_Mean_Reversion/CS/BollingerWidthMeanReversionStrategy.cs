@@ -11,8 +11,10 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Bollinger width mean reversion strategy.
-/// Trades contractions and expansions of normalized Bollinger Bands width around its recent average.
+/// Bollinger Bands width mean reversion.
+/// Enters when the band width is beyond its average by a standard deviation multiplier and starts
+/// turning back toward the average: long on an extreme contraction, short on an extreme expansion.
+/// Exits when the width returns to its average or the ATR stop is hit.
 /// </summary>
 public class BollingerWidthMeanReversionStrategy : Strategy
 {
@@ -20,18 +22,17 @@ public class BollingerWidthMeanReversionStrategy : Strategy
 	private readonly StrategyParam<decimal> _bollingerDeviation;
 	private readonly StrategyParam<int> _widthLookbackPeriod;
 	private readonly StrategyParam<decimal> _widthDeviationMultiplier;
-	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<int> _atrPeriod;
+	private readonly StrategyParam<decimal> _atrMultiplier;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
 
-	private BollingerBands _bollinger;
-	private decimal[] _widthHistory;
-	private int _currentIndex;
-	private int _filledCount;
-	private int _cooldown;
+	private SimpleMovingAverage _widthAverage;
+	private StandardDeviation _widthStdDev;
+	private decimal? _prevWidth;
+	private decimal _stopPrice;
 
 	/// <summary>
-	/// Period for Bollinger Bands calculation.
+	/// Bollinger Bands period.
 	/// </summary>
 	public int BollingerLength
 	{
@@ -40,7 +41,7 @@ public class BollingerWidthMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Deviation multiplier for Bollinger Bands.
+	/// Bollinger Bands deviation.
 	/// </summary>
 	public decimal BollingerDeviation
 	{
@@ -58,7 +59,7 @@ public class BollingerWidthMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Multiplier for width standard deviation thresholds.
+	/// Standard deviation multiplier for extreme width.
 	/// </summary>
 	public decimal WidthDeviationMultiplier
 	{
@@ -67,12 +68,21 @@ public class BollingerWidthMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop loss percentage.
+	/// ATR period for the stop.
 	/// </summary>
-	public decimal StopLossPercent
+	public int AtrPeriod
 	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
+		get => _atrPeriod.Value;
+		set => _atrPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Stop-loss distance in ATR multiples.
+	/// </summary>
+	public decimal AtrMultiplier
+	{
+		get => _atrMultiplier.Value;
+		set => _atrMultiplier.Value = value;
 	}
 
 	/// <summary>
@@ -85,46 +95,33 @@ public class BollingerWidthMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Cooldown bars between orders.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="BollingerWidthMeanReversionStrategy"/>.
+	/// Initialize <see cref="BollingerWidthMeanReversionStrategy"/>.
 	/// </summary>
 	public BollingerWidthMeanReversionStrategy()
 	{
 		_bollingerLength = Param(nameof(BollingerLength), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Bollinger Length", "Period for Bollinger Bands calculation", "Indicators")
-			.SetOptimize(10, 50, 5);
+			.SetDisplay("Bollinger Length", "Period of Bollinger Bands", "Indicators");
 
-		_bollingerDeviation = Param(nameof(BollingerDeviation), 2m)
+		_bollingerDeviation = Param(nameof(BollingerDeviation), 2.0m)
 			.SetGreaterThanZero()
-			.SetDisplay("Bollinger Deviation", "Deviation multiplier for Bollinger Bands", "Indicators")
-			.SetOptimize(1m, 3m, 0.5m);
+			.SetDisplay("Bollinger Deviation", "Standard deviations for Bollinger Bands", "Indicators");
 
 		_widthLookbackPeriod = Param(nameof(WidthLookbackPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Width Lookback", "Lookback for width mean", "Strategy Parameters")
-			.SetOptimize(10, 50, 5);
+			.SetDisplay("Width Lookback", "Period for width statistics", "Strategy");
 
-		_widthDeviationMultiplier = Param(nameof(WidthDeviationMultiplier), 2m)
+		_widthDeviationMultiplier = Param(nameof(WidthDeviationMultiplier), 2.0m)
 			.SetGreaterThanZero()
-			.SetDisplay("Width Dev Mult", "Multiplier for width standard deviation threshold", "Strategy Parameters")
-			.SetOptimize(0.5m, 3m, 0.5m);
+			.SetDisplay("Width Deviation Multiplier", "Standard deviation multiplier for extreme width", "Strategy");
 
-		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management");
+			.SetDisplay("ATR Period", "ATR period for the stop", "Risk Management");
 
-		_cooldownBars = Param(nameof(CooldownBars), 1200)
-			.SetRange(1, 5000)
-			.SetDisplay("Cooldown Bars", "Bars to wait between orders", "Risk Management");
+		_atrMultiplier = Param(nameof(AtrMultiplier), 2.0m)
+			.SetNotNegative()
+			.SetDisplay("ATR Multiplier", "Stop-loss distance in ATR multiples", "Risk Management");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -140,11 +137,10 @@ public class BollingerWidthMeanReversionStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_bollinger = null;
-		_currentIndex = default;
-		_filledCount = default;
-		_cooldown = default;
-		_widthHistory = new decimal[WidthLookbackPeriod];
+		_widthAverage = null;
+		_widthStdDev = null;
+		_prevWidth = null;
+		_stopPrice = 0m;
 	}
 
 	/// <inheritdoc />
@@ -152,114 +148,95 @@ public class BollingerWidthMeanReversionStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_bollinger = new BollingerBands
-		{
-			Length = BollingerLength,
-			Width = BollingerDeviation,
-		};
-
-		_widthHistory = new decimal[WidthLookbackPeriod];
-		_currentIndex = 0;
-		_filledCount = 0;
-		_cooldown = 0;
+		var bollinger = new BollingerBands { Length = BollingerLength, Width = BollingerDeviation };
+		var atr = new AverageTrueRange { Length = AtrPeriod };
+		_widthAverage = new SimpleMovingAverage { Length = WidthLookbackPeriod };
+		_widthStdDev = new StandardDeviation { Length = WidthLookbackPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_bollinger, ProcessCandle)
+			.BindEx(bollinger, atr, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _bollinger);
+			DrawIndicator(area, bollinger);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection(new(), new Unit(StopLossPercent, UnitTypes.Percent));
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue, IIndicatorValue atrValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_bollinger.IsFormed)
+		if (!bollingerValue.IsFormed || !atrValue.IsFormed)
 			return;
 
 		var bb = (BollingerBandsValue)bollingerValue;
-		if (bb.UpBand is not decimal upperBand ||
-			bb.LowBand is not decimal lowerBand ||
-			bb.MovingAverage is not decimal middleBand)
+		if (bb.UpBand is not decimal upper || bb.LowBand is not decimal lower)
 			return;
 
-		if (middleBand <= 0)
+		var atr = atrValue.ToDecimal();
+		var width = upper - lower;
+		var avgWidth = _widthAverage.Process(width, candle.ServerTime, true).ToDecimal();
+		var stdWidth = _widthStdDev.Process(width, candle.ServerTime, true).ToDecimal();
+
+		var prevWidth = _prevWidth;
+		_prevWidth = width;
+
+		if (!_widthAverage.IsFormed || !_widthStdDev.IsFormed || prevWidth is not decimal prev)
 			return;
-
-		var lastWidth = (upperBand - lowerBand) / middleBand;
-
-		_widthHistory[_currentIndex] = lastWidth;
-		_currentIndex = (_currentIndex + 1) % WidthLookbackPeriod;
-
-		if (_filledCount < WidthLookbackPeriod)
-			_filledCount++;
-
-		if (_filledCount < WidthLookbackPeriod)
-			return;
-
-		var avgWidth = 0m;
-		var sumSq = 0m;
-
-		for (var i = 0; i < WidthLookbackPeriod; i++)
-			avgWidth += _widthHistory[i];
-
-		avgWidth /= WidthLookbackPeriod;
-
-		if (avgWidth <= 0)
-			return;
-
-		for (var i = 0; i < WidthLookbackPeriod; i++)
-		{
-			var diff = _widthHistory[i] - avgWidth;
-			sumSq += diff * diff;
-		}
-
-		var stdWidth = (decimal)Math.Sqrt((double)(sumSq / WidthLookbackPeriod));
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (_cooldown > 0)
-		{
-			_cooldown--;
+		if (CheckStop(candle))
 			return;
+
+		var close = candle.ClosePrice;
+		var stopDistance = AtrMultiplier * atr;
+
+		// Extreme reading that has started to turn back toward the average.
+		if (width < avgWidth - WidthDeviationMultiplier * stdWidth && width > prev && Position <= 0)
+		{
+			BuyMarket(Volume + Math.Abs(Position));
+			_stopPrice = stopDistance > 0 ? close - stopDistance : 0m;
+		}
+		else if (width > avgWidth + WidthDeviationMultiplier * stdWidth && width < prev && Position >= 0)
+		{
+			SellMarket(Volume + Math.Abs(Position));
+			_stopPrice = stopDistance > 0 ? close + stopDistance : 0m;
+		}
+		else if ((Position > 0 && width >= avgWidth) || (Position < 0 && width <= avgWidth))
+		{
+			ExitPosition();
+		}
+	}
+
+	private bool CheckStop(ICandleMessage candle)
+	{
+		if (_stopPrice == 0m)
+			return false;
+
+		if ((Position > 0 && candle.LowPrice <= _stopPrice) || (Position < 0 && candle.HighPrice >= _stopPrice))
+		{
+			ExitPosition();
+			return true;
 		}
 
-		var lowerThreshold = avgWidth - WidthDeviationMultiplier * stdWidth;
-		var upperThreshold = avgWidth + WidthDeviationMultiplier * stdWidth;
+		return false;
+	}
 
-		if (Position == 0)
-		{
-			if (lastWidth < lowerThreshold)
-			{
-				BuyMarket();
-				_cooldown = CooldownBars;
-			}
-			else if (lastWidth > upperThreshold)
-			{
-				SellMarket();
-				_cooldown = CooldownBars;
-			}
-		}
-		else if (Position > 0 && lastWidth >= avgWidth)
-		{
-			SellMarket(Math.Abs(Position));
-			_cooldown = CooldownBars;
-		}
-		else if (Position < 0 && lastWidth <= avgWidth)
-		{
-			BuyMarket(Math.Abs(Position));
-			_cooldown = CooldownBars;
-		}
+	private void ExitPosition()
+	{
+		if (Position > 0)
+			SellMarket(Position);
+		else if (Position < 0)
+			BuyMarket(-Position);
+
+		_stopPrice = 0m;
 	}
 }
