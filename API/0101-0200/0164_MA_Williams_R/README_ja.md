@@ -7,7 +7,7 @@
 
 移動平均は優勢なトレンドの方向を示します。Williams %R はそのトレンドに対して買われすぎまたは売られすぎのポイントを探します。
 
-平均に向けた押し目を待つスイングトレーダーに適しています。ストップロスの距離は ATR から導出されます。
+平均に向けた押し目を待つスイングトレーダーに適しています。ストップロスの距離はエントリー価格の一定割合です。
 
 ## 詳細
 
@@ -17,15 +17,16 @@
 - **ロング/ショート**: 両方
 - **エグジット条件**:
   - Williams %R が中間に戻る
-- **ストップ**: `StopLoss` を使用したパーセントベース
+- **ストップ**: `StopLossPercent` を使用したパーセントベース
 - **デフォルト値**:
   - `MaPeriod` = 20
   - `MaType` = MovingAverageTypeEnum.Simple
   - `WilliamsRPeriod` = 14
   - `WilliamsROversold` = -80m
   - `WilliamsROverbought` = -20m
-  - `StopLoss` = new Unit(2, UnitTypes.Percent)
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    MaTypeで単純・指数・加重・平滑・Hullの移動平均を選びます。Williams %Rの中央は-50で、ロングは%Rがそこまで上昇したら、ショートはそこまで下落したら決済します。 保有ポジションと逆方向のエントリーシグナルはドテンになります。
 - **フィルター**:
   - カテゴリ: 平均回帰
   - 方向: 両方

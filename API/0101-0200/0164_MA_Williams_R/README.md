@@ -7,7 +7,7 @@ Testing indicates an average annual return of about 79%. It performs best in the
 
 The moving average shows the prevailing trend direction. Williams %R looks for overbought or oversold points relative to that trend.
 
-Fits swing traders waiting for pullbacks toward the average. Stop-loss distance comes from ATR.
+Fits swing traders waiting for pullbacks toward the average. The stop-loss distance is a fixed percentage of the entry price.
 
 ## Details
 
@@ -17,15 +17,16 @@ Fits swing traders waiting for pullbacks toward the average. Stop-loss distance 
 - **Long/Short**: Both
 - **Exit Criteria**:
   - Williams %R returns to middle
-- **Stops**: Percent-based using `StopLoss`
+- **Stops**: Percent-based using `StopLossPercent`
 - **Default Values**:
   - `MaPeriod` = 20
   - `MaType` = MovingAverageTypeEnum.Simple
   - `WilliamsRPeriod` = 14
   - `WilliamsROversold` = -80m
   - `WilliamsROverbought` = -20m
-  - `StopLoss` = new Unit(2, UnitTypes.Percent)
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    MaType selects a simple, exponential, weighted, smoothed or Hull average. The middle of Williams %R is -50: a long closes once %R rises back to it and a short once it falls back to it. An entry signal against an open position reverses it.
 - **Filters**:
   - Category: Mean reversion
   - Direction: Both
