@@ -2,28 +2,27 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
-clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 
 class forex_hammer_and_hanging_man_strategy(Strategy):
     """
-    ForexHammerAndHangingMan: EMA crossover strategy.
-    Buys when fast EMA crosses above slow EMA, sells on reverse.
+    Forex Hammer and Hanging Man strategy.
+    A candle qualifies when its range exceeds BodyLengthMultiplier times its body and its lower shadow is longer than ShadowRatio
+    times its upper shadow. A bullish one is a hammer and goes long, a bearish one is a hanging man and goes short, reversing an
+    opposite position. A position is closed after HoldPeriods candles.
     """
 
     def __init__(self):
         super(forex_hammer_and_hanging_man_strategy, self).__init__()
-        self._fast_period = self.Param("FastPeriod", 120)             .SetDisplay("Fast EMA", "Fast EMA period", "Indicator")
-        self._slow_period = self.Param("SlowPeriod", 450)             .SetDisplay("Slow EMA", "Slow EMA period", "Indicator")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5)))             .SetDisplay("Candle Type", "Time frame for candles", "General")
-
-        self._prev_fast = 0.0
-        self._prev_slow = 0.0
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._body_length_multiplier = self.Param("BodyLengthMultiplier", 5.0).SetNotNegative().SetDisplay("Body Multiplier", "How many bodies the candle range must exceed", "Pattern")
+        self._shadow_ratio = self.Param("ShadowRatio", 1.0).SetNotNegative().SetDisplay("Shadow Ratio", "How many upper shadows the lower shadow must exceed", "Pattern")
+        self._hold_periods = self.Param("HoldPeriods", 26).SetGreaterThanZero().SetDisplay("Hold Periods", "Candles a position is held", "Trading")
+        self._bars_in_position = 0
 
     @property
     def candle_type(self):
@@ -31,52 +30,64 @@ class forex_hammer_and_hanging_man_strategy(Strategy):
 
     def OnReseted(self):
         super(forex_hammer_and_hanging_man_strategy, self).OnReseted()
-        self._prev_fast = 0.0
-        self._prev_slow = 0.0
+        self._bars_in_position = 0
 
     def OnStarted2(self, time):
         super(forex_hammer_and_hanging_man_strategy, self).OnStarted2(time)
 
-        fast = ExponentialMovingAverage()
-        fast.Length = self._fast_period.Value
-        slow = ExponentialMovingAverage()
-        slow.Length = self._slow_period.Value
+        self._bars_in_position = 0
 
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(fast, slow, self._process_candle).Start()
+        subscription.Bind(self._process_candle).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, fast)
-            self.DrawIndicator(area, slow)
             self.DrawOwnTrades(area)
 
-    def _process_candle(self, candle, fast_val, slow_val):
+    def _process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
 
-        fast_v = float(fast_val)
-        slow_v = float(slow_val)
-
-        if self._prev_fast == 0.0 or self._prev_slow == 0.0:
-            self._prev_fast = fast_val
-            self._prev_slow = slow_val
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        if self._prev_fast <= self._prev_slow and fast_val > slow_val and self.Position <= 0:
+        open_price = float(candle.OpenPrice)
+        close = float(candle.ClosePrice)
+        high = float(candle.HighPrice)
+        low = float(candle.LowPrice)
 
+        body = abs(close - open_price)
+        rng = high - low
+        lower_shadow = min(open_price, close) - low
+        upper_shadow = high - max(open_price, close)
 
-            self.BuyMarket()
+        shape = rng > 0 and rng > float(self._body_length_multiplier.Value) * body and lower_shadow > float(self._shadow_ratio.Value) * upper_shadow
+        hammer = shape and close > open_price
+        hanging_man = shape and close < open_price
 
+        if hammer and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+            self._bars_in_position = 0
+            return
 
-        elif self._prev_fast >= self._prev_slow and fast_val < slow_val and self.Position >= 0:
+        if hanging_man and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
+            self._bars_in_position = 0
+            return
 
+        if self.Position == 0:
+            return
 
-            self.SellMarket()
+        self._bars_in_position += 1
 
-        self._prev_fast = fast_val
-        self._prev_slow = slow_val
+        if self._bars_in_position < self._hold_periods.Value:
+            return
+
+        if self.Position > 0:
+            self.SellMarket(self.Position)
+        else:
+            self.BuyMarket(-self.Position)
 
     def CreateClone(self):
         return forex_hammer_and_hanging_man_strategy()
