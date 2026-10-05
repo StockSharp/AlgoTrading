@@ -2,31 +2,24 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
-clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan
+from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 
 class grid_tendence_v1_strategy(Strategy):
     """
-    EMA crossover strategy.
-    Buys when fast EMA crosses above slow EMA, sells when it crosses below.
+    Grid Tendence V1 strategy.
+    Always in the market, starting long. When the open position gains Percent percent from its entry price it is closed and
+    reopened in the same direction; when it loses Percent percent it is closed and a position in the opposite direction is opened.
     """
 
     def __init__(self):
         super(grid_tendence_v1_strategy, self).__init__()
-        self._fast_period = self.Param("FastPeriod", 120) \
-            .SetDisplay("Fast Period", "Fast EMA period", "General")
-        self._slow_period = self.Param("SlowPeriod", 450) \
-            .SetDisplay("Slow Period", "Slow EMA period", "General")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
-            .SetDisplay("Candle Type", "Candle timeframe", "General")
-
-        self._prev_fast = 0.0
-        self._prev_slow = 0.0
+        self._percent = self.Param("Percent", 1.0).SetGreaterThanZero().SetDisplay("Percent", "Profit or loss percent that reopens or reverses the position", "Trading")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._entry_price = 0.0
 
     @property
     def candle_type(self):
@@ -34,37 +27,58 @@ class grid_tendence_v1_strategy(Strategy):
 
     def OnReseted(self):
         super(grid_tendence_v1_strategy, self).OnReseted()
-        self._prev_fast = 0.0
-        self._prev_slow = 0.0
+        self._entry_price = 0.0
 
     def OnStarted2(self, time):
         super(grid_tendence_v1_strategy, self).OnStarted2(time)
 
-        fast_ema = ExponentialMovingAverage()
-        fast_ema.Length = self._fast_period.Value
-        slow_ema = ExponentialMovingAverage()
-        slow_ema.Length = self._slow_period.Value
+        self._entry_price = 0.0
 
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(fast_ema, slow_ema, self._process_candle).Start()
+        subscription.Bind(self._process_candle).Start()
 
-    def _process_candle(self, candle, fast_val, slow_val):
+        area = self.CreateChartArea()
+        if area is not None:
+            self.DrawCandles(area, subscription)
+            self.DrawOwnTrades(area)
+
+    def _process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
 
-        fast = float(fast_val)
-        slow = float(slow_val)
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
-        if self._prev_fast != 0.0 and self._prev_slow != 0.0:
-            if self._prev_fast <= self._prev_slow and fast > slow:
-                if self.Position <= 0:
-                    self.BuyMarket()
-            elif self._prev_fast >= self._prev_slow and fast < slow:
-                if self.Position >= 0:
-                    self.SellMarket()
+        close = float(candle.ClosePrice)
 
-        self._prev_fast = fast
-        self._prev_slow = slow
+        if self.Position == 0:
+            # The first entry is always long.
+            self.BuyMarket(self.Volume)
+            self._entry_price = close
+            return
+
+        if self._entry_price <= 0.0:
+            self._entry_price = close
+            return
+
+        change = (close - self._entry_price) / self._entry_price * 100.0
+        profit = change if self.Position > 0 else -change
+        percent = float(self._percent.Value)
+
+        if profit >= percent:
+            if self.Position > 0:
+                self.SellMarket(self.Position)
+                self.BuyMarket(self.Volume)
+            else:
+                self.BuyMarket(-self.Position)
+                self.SellMarket(self.Volume)
+            self._entry_price = close
+        elif profit <= -percent:
+            if self.Position > 0:
+                self.SellMarket(self.Volume + abs(self.Position))
+            else:
+                self.BuyMarket(self.Volume + abs(self.Position))
+            self._entry_price = close
 
     def CreateClone(self):
         return grid_tendence_v1_strategy()
