@@ -4,170 +4,113 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import RelativeStrengthIndex, SimpleMovingAverage, StandardDeviation
+from System import TimeSpan, Decimal, Math
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, Level1Fields
+from StockSharp.BusinessEntities import Subscription
+from StockSharp.Algo.Indicators import RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
-
 
 class rsi_breakout_strategy(Strategy):
     """
-    RSI Breakout Strategy (247).
-    Enter when RSI breaks out above/below its average by a certain multiple of standard deviation.
-    Exit when RSI returns to its average.
+    RSI Breakout strategy.
+    The bands lie Multiplier standard deviations around the average of the last AveragePeriod RSI values, the current one included.
+    RSI above the upper band goes long and RSI below the lower band goes short,
+    reversing an opposite position. A long closes once RSI is back below its average and a short once it is back above it, and a percent stop limits the loss.
     """
 
     def __init__(self):
         super(rsi_breakout_strategy, self).__init__()
-
-        # Initialize strategy parameters
-        self._rsiPeriod = self.Param("RsiPeriod", 14) \
-            .SetGreaterThanZero() \
-            .SetDisplay("RSI Period", "Period for RSI calculation", "Strategy Parameters") \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 20, 2)
-
-        self._averagePeriod = self.Param("AveragePeriod", 20) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Average Period", "Period for RSI average calculation", "Strategy Parameters") \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 30, 5)
-
-        self._multiplier = self.Param("Multiplier", 2.0) \
-            .SetGreaterThanZero() \
-            .SetDisplay("StdDev Multiplier", "Standard deviation multiplier for entry", "Strategy Parameters") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.0, 3.0, 0.5)
-
-        self._candleType = self.Param("CandleType", tf(5)) \
-            .SetDisplay("Candle Type", "Type of candles to use", "Strategy Parameters")
-
-        # Internal indicators
-        self._rsi = None
-        self._rsiAverage = None
-        self._rsiStdDev = None
-
-        # State variables
-        self._prevRsiValue = 0.0
-        self._currentRsiValue = 0.0
-        self._currentRsiAvg = 0.0
-        self._currentRsiStdDev = 0.0
+        self._rsi_period = self.Param("RsiPeriod", 14).SetGreaterThanZero().SetDisplay("RSI Period", "Period of RSI", "Indicators")
+        self._average_period = self.Param("AveragePeriod", 20).SetGreaterThanZero().SetDisplay("Average Period", "Values of RSI the average and the standard deviation span", "Indicators")
+        self._multiplier = self.Param("Multiplier", 2.0).SetGreaterThanZero().SetDisplay("Multiplier", "Standard deviations between the average and a band", "Indicators")
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0).SetNotNegative().SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._reset_state()
 
     @property
-    def RsiPeriod(self):
-        """RSI period."""
-        return self._rsiPeriod.Value
+    def candle_type(self):
+        return self._candle_type.Value
 
-    @RsiPeriod.setter
-    def RsiPeriod(self, value):
-        self._rsiPeriod.Value = value
-
-    @property
-    def AveragePeriod(self):
-        """Period for RSI average calculation."""
-        return self._averagePeriod.Value
-
-    @AveragePeriod.setter
-    def AveragePeriod(self, value):
-        self._averagePeriod.Value = value
-
-    @property
-    def Multiplier(self):
-        """Standard deviation multiplier for entry."""
-        return self._multiplier.Value
-
-    @Multiplier.setter
-    def Multiplier(self, value):
-        self._multiplier.Value = value
-
-    @property
-    def CandleType(self):
-        """Type of candles to use."""
-        return self._candleType.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candleType.Value = value
-
-    def GetWorkingSecurities(self):
-        """!! REQUIRED!! Return securities and candle types used."""
-        return [(self.Security, self.CandleType)]
+    def _reset_state(self):
+        self._values = []
 
     def OnReseted(self):
-        """Resets internal state when strategy is reset."""
         super(rsi_breakout_strategy, self).OnReseted()
-        self._prevRsiValue = 0.0
-        self._currentRsiValue = 0.0
-        self._currentRsiAvg = 0.0
-        self._currentRsiStdDev = 0.0
+        self._reset_state()
 
     def OnStarted2(self, time):
-        """Called when the strategy starts."""
         super(rsi_breakout_strategy, self).OnStarted2(time)
 
-        # Create indicators
-        self._rsi = RelativeStrengthIndex()
-        self._rsi.Length = self.RsiPeriod
-        self._rsiAverage = SimpleMovingAverage()
-        self._rsiAverage.Length = self.AveragePeriod
-        self._rsiStdDev = StandardDeviation()
-        self._rsiStdDev.Length = self.AveragePeriod
+        self._reset_state()
 
-        # Create candle subscription
-        subscription = self.SubscribeCandles(self.CandleType)
+        rsi = RelativeStrengthIndex()
+        rsi.Length = self._rsi_period.Value
 
-        # Bind RSI to candles
-        subscription.Bind(self._rsi, self.ProcessRsi).Start()
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.BindEx(rsi, self._process_candle).Start()
 
-        # Setup chart visualization if available
+        self.StartProtection(Unit(), Unit(Decimal(self._stop_loss_percent.Value), UnitTypes.Percent), useMarketOrders=True, isLocalStop=True)
+
+        # The stop has to see prices between candles, not only at their close.
+        for field in (Level1Fields.BestBidPrice, Level1Fields.BestAskPrice):
+            quotes = Subscription(DataType.Level1, self.Security)
+            quotes.MarketData.BuildField = field
+            self.SubscribeLevel1(quotes).Bind(self._observe_protection_quote).Start()
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, self._rsi)
-            self.DrawIndicator(area, self._rsiAverage)
             self.DrawOwnTrades(area)
+            oscillators = self.CreateChartArea()
+            if oscillators is not None:
+                self.DrawIndicator(oscillators, rsi)
 
-        # Enable position protection
-        self.StartProtection(
-            takeProfit=Unit(5, UnitTypes.Percent),
-            stopLoss=Unit(2, UnitTypes.Percent)
-        )
-    def ProcessRsi(self, candle, rsi_value):
+    def _observe_protection_quote(self, quote):
+        # The high-level handler activates native protection before the callback, including between bars.
+        pass
+
+    def _process_candle(self, candle, rsi_value):
         if candle.State != CandleStates.Finished:
             return
 
-        # Store previous and current RSI value
-        self._prevRsiValue = self._currentRsiValue
-        self._currentRsiValue = rsi_value
-
-        # Process RSI through average and standard deviation indicators
-        avg_value = process_float(self._rsiAverage, rsi_value, candle.ServerTime, candle.State == CandleStates.Finished)
-        std_dev_value = process_float(self._rsiStdDev, rsi_value, candle.ServerTime, candle.State == CandleStates.Finished)
-
-        self._currentRsiAvg = float(avg_value)
-        self._currentRsiStdDev = float(std_dev_value)
-
-        if not self._rsiAverage.IsFormed or not self._rsiStdDev.IsFormed:
+        if not rsi_value.IsFormed:
             return
 
-        # Calculate bands
-        upper_band = self._currentRsiAvg + self.Multiplier * self._currentRsiStdDev
-        lower_band = self._currentRsiAvg - self.Multiplier * self._currentRsiStdDev
+        value = rsi_value.GetValue[Decimal](None)
 
-        self.LogInfo(
-            "RSI: {0}, RSI Avg: {1}, Upper: {2}, Lower: {3}".format(
-                self._currentRsiValue, self._currentRsiAvg, upper_band, lower_band))
+        period = self._average_period.Value
+        self._values.append(value)
+        if len(self._values) > period:
+            self._values.pop(0)
 
-        # Entry logic - BREAKOUT only when flat (no exit logic in CS)
-        if self.Position == 0:
-            if self._currentRsiValue > upper_band:
-                self.BuyMarket()
-            elif self._currentRsiValue < lower_band:
-                self.SellMarket()
+        if len(self._values) < period:
+            return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
+        total = Decimal(0)
+        for item in self._values:
+            total += item
+        mean = total / Decimal(period)
+        squares = Decimal(0)
+        for item in self._values:
+            squares += (item - mean) * (item - mean)
+        deviation = Decimal(Math.Sqrt(Decimal.ToDouble(squares / Decimal(period))))
+        multiplier = Decimal(self._multiplier.Value)
+        upper = mean + multiplier * deviation
+        lower = mean - multiplier * deviation
+
+        if value > upper and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+        elif value < lower and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
+        elif self.Position > 0 and value < mean:
+            self.SellMarket(self.Position)
+        elif self.Position < 0 and value > mean:
+            self.BuyMarket(-self.Position)
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return rsi_breakout_strategy()

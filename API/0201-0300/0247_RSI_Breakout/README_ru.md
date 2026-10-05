@@ -21,8 +21,10 @@
 - **Значения по умолчанию**:
   - `RsiPeriod` = 14
   - `AveragePeriod` = 20
-  - `Multiplier` = 2.0m
+  - `Multiplier` = 2
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
+    Avg и StdDev — среднее и стандартное отклонение последних AveragePeriod значений RSI, включая текущее. Стоп — фиксированный StopLossPercent от цены входа, он отслеживается и между свечами; 0 отключает его. Сигнал на вход против открытой позиции разворачивает её.
 - **Фильтры**:
   - Категория: Breakout
   - Направление: оба

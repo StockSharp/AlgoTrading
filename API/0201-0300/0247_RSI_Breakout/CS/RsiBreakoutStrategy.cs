@@ -1,10 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,28 +12,23 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// RSI Breakout Strategy (247).
-/// Enter when RSI breaks out above/below its average by a certain multiple of standard deviation.
-/// Exit when RSI returns to its average.
+/// RSI Breakout strategy.
+/// The bands lie Multiplier standard deviations around the average of the last AveragePeriod RSI values, the current one included.
+/// RSI above the upper band goes long and RSI below the lower band goes short,
+/// reversing an opposite position. A long closes once RSI is back below its average and a short once it is back above it, and a percent stop limits the loss.
 /// </summary>
 public class RsiBreakoutStrategy : Strategy
 {
 	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<int> _averagePeriod;
 	private readonly StrategyParam<decimal> _multiplier;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private RelativeStrengthIndex _rsi;
-	private SimpleMovingAverage _rsiAverage;
-	private StandardDeviation _rsiStdDev;
-	
-	private decimal _prevRsiValue;
-	private decimal _currentRsiValue;
-	private decimal _currentRsiAvg;
-	private decimal _currentRsiStdDev;
+	private readonly Queue<decimal> _values = [];
 
 	/// <summary>
-	/// RSI period.
+	/// Period of RSI.
 	/// </summary>
 	public int RsiPeriod
 	{
@@ -44,7 +37,7 @@ public class RsiBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Period for RSI average calculation.
+	/// Values of RSI the average and the standard deviation span.
 	/// </summary>
 	public int AveragePeriod
 	{
@@ -53,7 +46,7 @@ public class RsiBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Standard deviation multiplier for entry.
+	/// Standard deviations between the average and a band.
 	/// </summary>
 	public decimal Multiplier
 	{
@@ -62,7 +55,16 @@ public class RsiBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Type of candles to use.
+	/// Stop loss percentage from entry price.
+	/// </summary>
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -71,30 +73,28 @@ public class RsiBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="RsiBreakoutStrategy"/>.
+	/// Constructor.
 	/// </summary>
 	public RsiBreakoutStrategy()
 	{
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("RSI Period", "Period for RSI calculation", "Strategy Parameters")
-			
-			.SetOptimize(10, 20, 2);
+			.SetDisplay("RSI Period", "Period of RSI", "Indicators");
 
 		_averagePeriod = Param(nameof(AveragePeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Average Period", "Period for RSI average calculation", "Strategy Parameters")
-			
-			.SetOptimize(10, 30, 5);
+			.SetDisplay("Average Period", "Values of RSI the average and the standard deviation span", "Indicators");
 
-		_multiplier = Param(nameof(Multiplier), 2.0m)
+		_multiplier = Param(nameof(Multiplier), 2m)
 			.SetGreaterThanZero()
-			.SetDisplay("StdDev Multiplier", "Standard deviation multiplier for entry", "Strategy Parameters")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
+			.SetDisplay("Multiplier", "Standard deviations between the average and a band", "Indicators");
+
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "Strategy Parameters");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -102,89 +102,90 @@ public class RsiBreakoutStrategy : Strategy
 	{
 		return [(Security, CandleType)];
 	}
+
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_prevRsiValue = default;
-		_currentRsiValue = default;
-		_currentRsiAvg = default;
-		_currentRsiStdDev = default;
+		_values.Clear();
 	}
-
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
-		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-		_rsiAverage = new SMA { Length = AveragePeriod };
-		_rsiStdDev = new StandardDeviation { Length = AveragePeriod };
+		_values.Clear();
 
-		// Create candle subscription
+		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
+
 		var subscription = SubscribeCandles(CandleType);
-
-		// Bind RSI to candles
 		subscription
-			.Bind(_rsi, ProcessRsi)
+			.BindEx(rsi, ProcessCandle)
 			.Start();
 
-		// Setup chart visualization if available
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _rsi);
-			DrawIndicator(area, _rsiAverage);
 			DrawOwnTrades(area);
-		}
 
-		// Enable position protection
-		StartProtection(
-			takeProfit: new Unit(5, UnitTypes.Percent),
-			stopLoss: new Unit(2, UnitTypes.Percent)
-		);
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, rsi);
+			}
+		}
 	}
 
-	private void ProcessRsi(ICandleMessage candle, decimal rsiValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// The high-level handler activates native protection before this callback, also between signal bars.
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue rsiValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Store previous and current RSI value
-		_prevRsiValue = _currentRsiValue;
-		_currentRsiValue = rsiValue;
-
-		// Process RSI through average and standard deviation indicators
-		var avgValue = _rsiAverage.Process(new DecimalIndicatorValue(_rsiAverage, rsiValue, candle.ServerTime) { IsFinal = true });
-		var stdDevValue = _rsiStdDev.Process(new DecimalIndicatorValue(_rsiStdDev, rsiValue, candle.ServerTime) { IsFinal = true });
-		
-		_currentRsiAvg = avgValue.ToDecimal();
-		_currentRsiStdDev = stdDevValue.ToDecimal();
-		
-		if (!_rsiAverage.IsFormed || !_rsiStdDev.IsFormed)
+		if (!rsiValue.IsFormed)
 			return;
 
-		// Calculate bands
-		var upperBand = _currentRsiAvg + Multiplier * _currentRsiStdDev;
-		var lowerBand = _currentRsiAvg - Multiplier * _currentRsiStdDev;
+		var value = rsiValue.GetValue<decimal>();
 
-		LogInfo($"RSI: {_currentRsiValue}, RSI Avg: {_currentRsiAvg}, Upper: {upperBand}, Lower: {lowerBand}");
+		_values.Enqueue(value);
 
-		// Entry logic - BREAKOUT
-		if (Position == 0)
-		{
-			if (_currentRsiValue > upperBand)
-			{
-				BuyMarket();
-			}
-			else if (_currentRsiValue < lowerBand)
-			{
-				SellMarket();
-			}
-		}
+		if (_values.Count > AveragePeriod)
+			_values.Dequeue();
+
+		if (_values.Count < AveragePeriod)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		var mean = _values.Average();
+		var deviation = (decimal)Math.Sqrt((double)_values.Average(v => (v - mean) * (v - mean)));
+		var upper = mean + Multiplier * deviation;
+		var lower = mean - Multiplier * deviation;
+
+		if (value > upper && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (value < lower && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
+		else if (Position > 0 && value < mean)
+			SellMarket(Position);
+		else if (Position < 0 && value > mean)
+			BuyMarket(-Position);
 	}
 }
