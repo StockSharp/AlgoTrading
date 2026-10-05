@@ -4,101 +4,120 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import AverageTrueRange, MovingAverageConvergenceDivergenceSignal
+from System import TimeSpan, Decimal, Math
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, Level1Fields
+from StockSharp.BusinessEntities import Subscription
+from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergenceSignal, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
 
 class atr_macd_strategy(Strategy):
     """
-    ATR + MACD strategy.
-    Uses ATR for volatility detection and MACD for trend direction.
-    Enters when MACD confirms trend direction.
+    ATR MACD strategy.
+    A MACD cross above its signal line goes long and a cross below goes short, the opposite cross reversing the position.
+    Each new position is sized as Volume times the average of the last AtrAvgPeriod ATR values divided by the current ATR,
+    rounded down to the volume step, so higher volatility trades smaller. A percent stop limits the loss.
     """
 
     def __init__(self):
         super(atr_macd_strategy, self).__init__()
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles to use", "General")
-        self._cooldown_bars = self.Param("CooldownBars", 100).SetDisplay("Cooldown Bars", "Bars between trades", "General")
-
-        self._atr_value = 0.0
-        self._cooldown = 0
+        self._macd_fast = self.Param("MacdFast", 12).SetGreaterThanZero().SetDisplay("MACD Fast", "Fast EMA period of MACD", "MACD")
+        self._macd_slow = self.Param("MacdSlow", 26).SetGreaterThanZero().SetDisplay("MACD Slow", "Slow EMA period of MACD", "MACD")
+        self._macd_signal = self.Param("MacdSignal", 9).SetGreaterThanZero().SetDisplay("MACD Signal", "Signal line period of MACD", "MACD")
+        self._atr_period = self.Param("AtrPeriod", 14).SetGreaterThanZero().SetDisplay("ATR Period", "Period of ATR", "Sizing")
+        self._atr_avg_period = self.Param("AtrAvgPeriod", 20).SetGreaterThanZero().SetDisplay("ATR Average Period", "ATR values the typical volatility is averaged over", "Sizing")
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0).SetNotNegative().SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._reset_state()
 
     @property
     def candle_type(self):
         return self._candle_type.Value
 
+    def _reset_state(self):
+        self._prev_above = None
+        self._atrs = []
+
     def OnReseted(self):
         super(atr_macd_strategy, self).OnReseted()
-        self._atr_value = 0.0
-        self._cooldown = 0
+        self._reset_state()
 
     def OnStarted2(self, time):
         super(atr_macd_strategy, self).OnStarted2(time)
 
-        self._atr_value = 0.0
-        self._cooldown = 0
-
-        atr = AverageTrueRange()
-        atr.Length = 14
+        self._reset_state()
 
         macd = MovingAverageConvergenceDivergenceSignal()
+        macd.Macd.ShortMa.Length = self._macd_fast.Value
+        macd.Macd.LongMa.Length = self._macd_slow.Value
+        macd.SignalMa.Length = self._macd_signal.Value
+        atr = AverageTrueRange()
+        atr.Length = self._atr_period.Value
 
         subscription = self.SubscribeCandles(self.candle_type)
+        subscription.BindEx(macd, atr, self._process_candle).Start()
 
-        # Bind ATR to capture value
-        subscription.BindEx(atr, self._on_atr)
+        self.StartProtection(Unit(), Unit(Decimal(self._stop_loss_percent.Value), UnitTypes.Percent), useMarketOrders=True, isLocalStop=True)
 
-        # Bind MACD for main logic
-        subscription.BindEx(macd, self._process_candle).Start()
+        # The stop has to see prices between candles, not only at their close.
+        for field in (Level1Fields.BestBidPrice, Level1Fields.BestAskPrice):
+            quotes = Subscription(DataType.Level1, self.Security)
+            quotes.MarketData.BuildField = field
+            self.SubscribeLevel1(quotes).Bind(self._observe_protection_quote).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
             self.DrawOwnTrades(area)
-            atr_area = self.CreateChartArea()
-            if atr_area is not None:
-                self.DrawIndicator(atr_area, atr)
-            macd_area = self.CreateChartArea()
-            if macd_area is not None:
-                self.DrawIndicator(macd_area, macd)
+            oscillators = self.CreateChartArea()
+            if oscillators is not None:
+                self.DrawIndicator(oscillators, macd)
+                self.DrawIndicator(oscillators, atr)
 
-    def _on_atr(self, candle, atr_iv):
-        if atr_iv.IsFormed:
-            self._atr_value = float(atr_iv.Value)
+    def _observe_protection_quote(self, quote):
+        # The high-level handler activates native protection before the callback, including between bars.
+        pass
 
-    def _process_candle(self, candle, macd_iv):
+    def _process_candle(self, candle, macd_value, atr_value):
         if candle.State != CandleStates.Finished:
             return
 
-        if macd_iv.Macd is None or macd_iv.Signal is None:
+        avg_period = self._atr_avg_period.Value
+        if atr_value.IsFormed:
+            self._atrs.append(atr_value.GetValue[Decimal](None))
+            if len(self._atrs) > avg_period:
+                self._atrs.pop(0)
+
+        if not macd_value.IsFormed:
+            return
+        if macd_value.Macd is None or macd_value.Signal is None:
             return
 
-        macd_line = float(macd_iv.Macd)
-        signal_line = float(macd_iv.Signal)
-        cd = self._cooldown_bars.Value
+        is_above = macd_value.Macd > macd_value.Signal
+        was_above = self._prev_above
+        self._prev_above = is_above
 
-        if self._cooldown > 0:
-            self._cooldown -= 1
+        if was_above is None or was_above == is_above or len(self._atrs) < avg_period:
             return
 
-        # Entry: MACD bullish crossover
-        if macd_line > signal_line and self.Position == 0:
-            self.BuyMarket()
-            self._cooldown = cd
-        # Entry: MACD bearish crossover
-        elif macd_line < signal_line and self.Position == 0:
-            self.SellMarket()
-            self._cooldown = cd
+        current_atr = self._atrs[-1]
+        if current_atr <= 0 or not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
-        # Exit on MACD crossover against position
-        if self.Position > 0 and macd_line < signal_line:
-            self.SellMarket()
-            self._cooldown = cd
-        elif self.Position < 0 and macd_line > signal_line:
-            self.BuyMarket()
-            self._cooldown = cd
+        total = Decimal(0)
+        for value in self._atrs:
+            total += value
+        size = self.Volume * (total / Decimal(avg_period)) / current_atr
+
+        step = self.Security.VolumeStep if self.Security is not None else None
+        if step is not None and step > 0:
+            size = Math.Max(step, Math.Floor(size / step) * step)
+
+        if is_above and self.Position <= 0:
+            self.BuyMarket(size + abs(self.Position))
+        elif not is_above and self.Position >= 0:
+            self.SellMarket(size + abs(self.Position))
 
     def CreateClone(self):
         return atr_macd_strategy()

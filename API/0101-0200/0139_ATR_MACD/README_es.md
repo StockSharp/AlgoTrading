@@ -6,7 +6,7 @@ Lecturas más altas del ATR resultan en un tamaño de operación menor, mantenie
 
 Las pruebas indican un rendimiento anual promedio de aproximadamente 154%. Funciona mejor en el mercado de acciones.
 
-Las entradas ocurren cuando el MACD cruza su línea de señal, con salidas activadas por el cruce opuesto o un stop basado en volatilidad.
+Las entradas ocurren cuando el MACD cruza su línea de señal, con salidas activadas por el cruce opuesto o un stop porcentual.
 
 Esta combinación busca capturar momentum mientras se tiene en cuenta la volatilidad cambiante.
 
@@ -18,7 +18,13 @@ Esta combinación busca capturar momentum mientras se tiene en cuenta la volatil
 - **Stops**: Sí, basado en porcentaje
 - **Valores predeterminados**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `MacdFast` = 12
+  - `MacdSlow` = 26
+  - `MacdSignal` = 9
+  - `AtrPeriod` = 14
+  - `AtrAvgPeriod` = 20
+    Un cruce del MACD por encima de su línea de señal abre un largo y por debajo un corto; el cruce opuesto invierte la posición. Cada nueva posición es Volume por la media de los últimos AtrAvgPeriod valores del ATR dividida por el ATR actual, redondeada hacia abajo al paso de volumen.
 - **Filtros**:
   - Categoría: Seguimiento de tendencia
   - Dirección: Ambos
