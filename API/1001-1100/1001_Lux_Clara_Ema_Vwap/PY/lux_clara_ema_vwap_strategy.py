@@ -5,112 +5,113 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan
+from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, VolumeWeightedMovingAverage
+from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+
 
 class lux_clara_ema_vwap_strategy(Strategy):
     """
     Lux Clara EMA + VWAP strategy.
-    Buys on fast EMA crossing above slow EMA when above VWAP.
+    Goes long when the fast EMA crosses above the slow EMA while the slow EMA is above the session VWAP, and short on the opposite
+    cross with the slow EMA below VWAP. Entries are taken only between StartTime and EndTime (UTC). A position closes on the opposite
+    EMA cross, which reverses it when the opposite entry conditions are also met.
     """
 
     def __init__(self):
         super(lux_clara_ema_vwap_strategy, self).__init__()
-        self._fast_length = self.Param("FastEmaLength", 8) \
-            .SetDisplay("Fast EMA", "Fast EMA length", "Indicators")
-        self._slow_length = self.Param("SlowEmaLength", 50) \
-            .SetDisplay("Slow EMA", "Slow EMA length", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
-            .SetDisplay("Candle Type", "Timeframe", "General")
-
-        self._prev_fast = 0.0
-        self._prev_slow = 0.0
-        self._initialized = False
-        self._cooldown = 0
+        self._fast_ema_length = self.Param("FastEmaLength", 8).SetGreaterThanZero().SetDisplay("Fast EMA Length", "Period of the fast EMA", "Indicators")
+        self._slow_ema_length = self.Param("SlowEmaLength", 50).SetGreaterThanZero().SetDisplay("Slow EMA Length", "Period of the slow EMA", "Indicators")
+        self._start_time = self.Param("StartTime", TimeSpan(7, 30, 0)).SetDisplay("Start Time", "Session start time (UTC)", "Session")
+        self._end_time = self.Param("EndTime", TimeSpan(14, 30, 0)).SetDisplay("End Time", "Session end time (UTC)", "Session")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._reset_state()
 
     @property
     def candle_type(self):
         return self._candle_type.Value
 
+    def _reset_state(self):
+        self._prev_fast = None
+        self._prev_slow = None
+        self._vwap_day = None
+        self._cum_price_volume = Decimal(0)
+        self._cum_volume = Decimal(0)
+
     def OnReseted(self):
         super(lux_clara_ema_vwap_strategy, self).OnReseted()
-        self._prev_fast = 0.0
-        self._prev_slow = 0.0
-        self._initialized = False
-        self._cooldown = 0
+        self._reset_state()
 
     def OnStarted2(self, time):
         super(lux_clara_ema_vwap_strategy, self).OnStarted2(time)
 
-        self._fast_ema = ExponentialMovingAverage()
-        self._fast_ema.Length = self._fast_length.Value
-        self._slow_ema = ExponentialMovingAverage()
-        self._slow_ema.Length = self._slow_length.Value
-        self._vwap = VolumeWeightedMovingAverage()
-        self._vwap.Length = 20
+        self._reset_state()
+
+        fast_ema = ExponentialMovingAverage()
+        fast_ema.Length = self._fast_ema_length.Value
+        slow_ema = ExponentialMovingAverage()
+        slow_ema.Length = self._slow_ema_length.Value
 
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(self._fast_ema, self._slow_ema, self._vwap, self._process_candle).Start()
+        subscription.BindEx(fast_ema, slow_ema, self._process_candle).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, self._fast_ema)
-            self.DrawIndicator(area, self._slow_ema)
-            self.DrawIndicator(area, self._vwap)
+            self.DrawIndicator(area, fast_ema)
+            self.DrawIndicator(area, slow_ema)
             self.DrawOwnTrades(area)
 
-    def _process_candle(self, candle, fast_val, slow_val, vwap_val):
+    def _process_candle(self, candle, fast_value, slow_value):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self._fast_ema.IsFormed or not self._slow_ema.IsFormed:
+        # VWAP is anchored to the start of each UTC day.
+        day = candle.OpenTime.Date
+        if self._vwap_day is None or self._vwap_day != day:
+            self._vwap_day = day
+            self._cum_price_volume = Decimal(0)
+            self._cum_volume = Decimal(0)
+
+        typical = (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / Decimal(3)
+        self._cum_price_volume += typical * candle.TotalVolume
+        self._cum_volume += candle.TotalVolume
+
+        if not fast_value.IsFormed or not slow_value.IsFormed:
             return
 
-        f = float(fast_val)
-        s = float(slow_val)
-        v = float(vwap_val)
-        close = float(candle.ClosePrice)
+        fast = fast_value.GetValue[Decimal](None)
+        slow = slow_value.GetValue[Decimal](None)
 
-        if not self._initialized:
-            self._prev_fast = f
-            self._prev_slow = s
-            self._initialized = True
+        prev_fast = self._prev_fast
+        prev_slow = self._prev_slow
+        self._prev_fast = fast
+        self._prev_slow = slow
+
+        if prev_fast is None or prev_slow is None or self._cum_volume <= Decimal(0):
             return
 
-        if self._cooldown > 0:
-            self._cooldown -= 1
-            self._prev_fast = f
-            self._prev_slow = s
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        cross_above = self._prev_fast <= self._prev_slow and f > s
-        cross_below = self._prev_fast >= self._prev_slow and f < s
+        vwap = self._cum_price_volume / self._cum_volume
+        cross_up = prev_fast <= prev_slow and fast > slow
+        cross_down = prev_fast >= prev_slow and fast < slow
 
-        above_vwap = not self._vwap.IsFormed or close > v
-        below_vwap = not self._vwap.IsFormed or close < v
+        time_of_day = candle.OpenTime.TimeOfDay
+        in_session = time_of_day >= self._start_time.Value and time_of_day < self._end_time.Value
 
-        if self.Position <= 0 and cross_above and above_vwap:
-            if self.Position < 0:
-                self.BuyMarket()
-            self.BuyMarket()
-            self._cooldown = 12
-        elif self.Position >= 0 and cross_below and below_vwap:
-            if self.Position > 0:
-                self.SellMarket()
-            self.SellMarket()
-            self._cooldown = 12
-        elif self.Position > 0 and cross_below:
-            self.SellMarket()
-            self._cooldown = 12
-        elif self.Position < 0 and cross_above:
-            self.BuyMarket()
-            self._cooldown = 12
-
-        self._prev_fast = f
-        self._prev_slow = s
+        if cross_up:
+            if in_session and slow > vwap and self.Position <= 0:
+                self.BuyMarket(self.Volume + abs(self.Position))
+            elif self.Position < 0:
+                self.BuyMarket(-self.Position)
+        elif cross_down:
+            if in_session and slow < vwap and self.Position >= 0:
+                self.SellMarket(self.Volume + abs(self.Position))
+            elif self.Position > 0:
+                self.SellMarket(self.Position)
 
     def CreateClone(self):
         return lux_clara_ema_vwap_strategy()

@@ -12,37 +12,90 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Lux Clara EMA + VWAP strategy.
-/// Buys on fast EMA crossing above slow EMA when above VWAP, sells on opposite.
+/// Goes long when the fast EMA crosses above the slow EMA while the slow EMA is above the session VWAP, and short on the opposite
+/// cross with the slow EMA below VWAP. Entries are taken only between StartTime and EndTime (UTC). A position closes on the opposite
+/// EMA cross, which reverses it when the opposite entry conditions are also met.
 /// </summary>
 public class LuxClaraEmaVwapStrategy : Strategy
 {
 	private readonly StrategyParam<int> _fastEmaLength;
 	private readonly StrategyParam<int> _slowEmaLength;
+	private readonly StrategyParam<TimeSpan> _startTime;
+	private readonly StrategyParam<TimeSpan> _endTime;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ExponentialMovingAverage _fastEma;
-	private ExponentialMovingAverage _slowEma;
-	private VolumeWeightedMovingAverage _vwap;
+	private decimal? _prevFast;
+	private decimal? _prevSlow;
+	private DateTime? _vwapDay;
+	private decimal _cumPriceVolume;
+	private decimal _cumVolume;
 
-	private decimal _prevFast;
-	private decimal _prevSlow;
-	private bool _isInitialized;
-	private int _cooldown;
+	/// <summary>
+	/// Fast EMA period.
+	/// </summary>
+	public int FastEmaLength
+	{
+		get => _fastEmaLength.Value;
+		set => _fastEmaLength.Value = value;
+	}
 
-	public int FastEmaLength { get => _fastEmaLength.Value; set => _fastEmaLength.Value = value; }
-	public int SlowEmaLength { get => _slowEmaLength.Value; set => _slowEmaLength.Value = value; }
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	/// <summary>
+	/// Slow EMA period.
+	/// </summary>
+	public int SlowEmaLength
+	{
+		get => _slowEmaLength.Value;
+		set => _slowEmaLength.Value = value;
+	}
 
+	/// <summary>
+	/// Session start time (UTC).
+	/// </summary>
+	public TimeSpan StartTime
+	{
+		get => _startTime.Value;
+		set => _startTime.Value = value;
+	}
+
+	/// <summary>
+	/// Session end time (UTC).
+	/// </summary>
+	public TimeSpan EndTime
+	{
+		get => _endTime.Value;
+		set => _endTime.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
+	/// </summary>
 	public LuxClaraEmaVwapStrategy()
 	{
 		_fastEmaLength = Param(nameof(FastEmaLength), 8)
-			.SetDisplay("Fast EMA Length", "Length of fast EMA", "Indicators");
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA Length", "Period of the fast EMA", "Indicators");
 
 		_slowEmaLength = Param(nameof(SlowEmaLength), 50)
-			.SetDisplay("Slow EMA Length", "Length of slow EMA", "Indicators");
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA Length", "Period of the slow EMA", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-			.SetDisplay("Candle Type", "Timeframe of data for strategy", "General");
+		_startTime = Param(nameof(StartTime), new TimeSpan(7, 30, 0))
+			.SetDisplay("Start Time", "Session start time (UTC)", "Session");
+
+		_endTime = Param(nameof(EndTime), new TimeSpan(14, 30, 0))
+			.SetDisplay("End Time", "Session end time (UTC)", "Session");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -55,11 +108,16 @@ public class LuxClaraEmaVwapStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		ResetState();
+	}
 
-		_prevFast = default;
-		_prevSlow = default;
-		_isInitialized = false;
-		_cooldown = default;
+	private void ResetState()
+	{
+		_prevFast = null;
+		_prevSlow = null;
+		_vwapDay = null;
+		_cumPriceVolume = 0m;
+		_cumVolume = 0m;
 	}
 
 	/// <inheritdoc />
@@ -67,84 +125,81 @@ public class LuxClaraEmaVwapStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_fastEma = new ExponentialMovingAverage { Length = FastEmaLength };
-		_slowEma = new ExponentialMovingAverage { Length = SlowEmaLength };
-		_vwap = new VolumeWeightedMovingAverage { Length = 20 };
+		ResetState();
+
+		var fastEma = new ExponentialMovingAverage { Length = FastEmaLength };
+		var slowEma = new ExponentialMovingAverage { Length = SlowEmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_fastEma, _slowEma, _vwap, ProcessCandle)
+			.BindEx(fastEma, slowEma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _fastEma);
-			DrawIndicator(area, _slowEma);
-			DrawIndicator(area, _vwap);
+			DrawIndicator(area, fastEma);
+			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow, decimal vwap)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue fastValue, IIndicatorValue slowValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_fastEma.IsFormed || !_slowEma.IsFormed)
+		// VWAP is anchored to the start of each UTC day.
+		var day = candle.OpenTime.Date;
+		if (_vwapDay != day)
+		{
+			_vwapDay = day;
+			_cumPriceVolume = 0m;
+			_cumVolume = 0m;
+		}
+
+		var typical = (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m;
+		_cumPriceVolume += typical * candle.TotalVolume;
+		_cumVolume += candle.TotalVolume;
+
+		if (!fastValue.IsFormed || !slowValue.IsFormed)
 			return;
 
-		if (!_isInitialized)
-		{
-			_prevFast = fast;
-			_prevSlow = slow;
-			_isInitialized = true;
-			return;
-		}
+		var fast = fastValue.GetValue<decimal>();
+		var slow = slowValue.GetValue<decimal>();
 
-		if (_cooldown > 0)
-		{
-			_cooldown--;
-			_prevFast = fast;
-			_prevSlow = slow;
-			return;
-		}
-
-		var fastCrossAbove = _prevFast <= _prevSlow && fast > slow;
-		var fastCrossBelow = _prevFast >= _prevSlow && fast < slow;
-
-		// Use VWAP as additional confirmation when formed
-		var aboveVwap = !_vwap.IsFormed || candle.ClosePrice > vwap;
-		var belowVwap = !_vwap.IsFormed || candle.ClosePrice < vwap;
-
-		if (Position <= 0 && fastCrossAbove && aboveVwap)
-		{
-			if (Position < 0)
-				BuyMarket();
-			BuyMarket();
-			_cooldown = 12;
-		}
-		else if (Position >= 0 && fastCrossBelow && belowVwap)
-		{
-			if (Position > 0)
-				SellMarket();
-			SellMarket();
-			_cooldown = 12;
-		}
-		// Exit without VWAP condition
-		else if (Position > 0 && fastCrossBelow)
-		{
-			SellMarket();
-			_cooldown = 12;
-		}
-		else if (Position < 0 && fastCrossAbove)
-		{
-			BuyMarket();
-			_cooldown = 12;
-		}
-
+		var prevFast = _prevFast;
+		var prevSlow = _prevSlow;
 		_prevFast = fast;
 		_prevSlow = slow;
+
+		if (prevFast is not decimal pf || prevSlow is not decimal ps || _cumVolume <= 0m)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		var vwap = _cumPriceVolume / _cumVolume;
+		var crossUp = pf <= ps && fast > slow;
+		var crossDown = pf >= ps && fast < slow;
+
+		var timeOfDay = candle.OpenTime.TimeOfDay;
+		var inSession = timeOfDay >= StartTime && timeOfDay < EndTime;
+
+		if (crossUp)
+		{
+			if (inSession && slow > vwap && Position <= 0)
+				BuyMarket(Volume + Math.Abs(Position));
+			else if (Position < 0)
+				BuyMarket(-Position);
+		}
+		else if (crossDown)
+		{
+			if (inSession && slow < vwap && Position >= 0)
+				SellMarket(Volume + Math.Abs(Position));
+			else if (Position > 0)
+				SellMarket(Position);
+		}
 	}
 }
