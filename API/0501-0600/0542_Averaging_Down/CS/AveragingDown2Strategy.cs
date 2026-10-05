@@ -11,20 +11,35 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Averaging Down strategy based on RSI levels with EMA trend filter.
-/// Buys when RSI crosses above oversold level in uptrend,
-/// sells when RSI crosses below overbought level in downtrend.
+/// Averaging down strategy.
+/// Every candle that closes with RSI below RsiBuyThreshold buys another Volume, averaging the entry price of the long. The whole
+/// long closes when a close exceeds the previous candle's high. Long only.
 /// </summary>
 public class AveragingDown2Strategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _rsiLength;
-	private readonly StrategyParam<int> _emaLength;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _rsiBuyThreshold;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevRsi;
-	private int _barIndex;
-	private int _lastTradeBar;
+	private decimal? _prevHigh;
+
+	/// <summary>
+	/// RSI period.
+	/// </summary>
+	public int RsiLength
+	{
+		get => _rsiLength.Value;
+		set => _rsiLength.Value = value;
+	}
+
+	/// <summary>
+	/// RSI level below which the strategy buys.
+	/// </summary>
+	public decimal RsiBuyThreshold
+	{
+		get => _rsiBuyThreshold.Value;
+		set => _rsiBuyThreshold.Value = value;
+	}
 
 	/// <summary>
 	/// Candle type.
@@ -36,50 +51,19 @@ public class AveragingDown2Strategy : Strategy
 	}
 
 	/// <summary>
-	/// RSI calculation length.
-	/// </summary>
-	public int RsiLength
-	{
-		get => _rsiLength.Value;
-		set => _rsiLength.Value = value;
-	}
-
-	/// <summary>
-	/// EMA trend filter period.
-	/// </summary>
-	public int EmaLength
-	{
-		get => _emaLength.Value;
-		set => _emaLength.Value = value;
-	}
-
-	/// <summary>
-	/// Cooldown bars between trades.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
 	/// Constructor.
 	/// </summary>
 	public AveragingDown2Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
 		_rsiLength = Param(nameof(RsiLength), 10)
 			.SetGreaterThanZero()
-			.SetDisplay("RSI Length", "RSI calculation length", "Indicators");
+			.SetDisplay("RSI Length", "RSI period", "Indicators");
 
-		_emaLength = Param(nameof(EmaLength), 40)
-			.SetGreaterThanZero()
-			.SetDisplay("EMA Length", "EMA trend filter period", "Indicators");
+		_rsiBuyThreshold = Param(nameof(RsiBuyThreshold), 33m)
+			.SetDisplay("RSI Buy Threshold", "RSI level below which the strategy buys", "Signals");
 
-		_cooldownBars = Param(nameof(CooldownBars), 350)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "Trading");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -92,9 +76,7 @@ public class AveragingDown2Strategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevRsi = 0;
-		_barIndex = 0;
-		_lastTradeBar = 0;
+		_prevHigh = null;
 	}
 
 	/// <inheritdoc />
@@ -102,48 +84,44 @@ public class AveragingDown2Strategy : Strategy
 	{
 		base.OnStarted2(time);
 
+		_prevHigh = null;
+
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
-		var ema = new ExponentialMovingAverage { Length = EmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(rsi, ema, ProcessCandle)
+			.Bind(rsi, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, ema);
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+				DrawIndicator(oscillators, rsi);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal rsiValue, decimal emaValue)
+	private void ProcessCandle(ICandleMessage candle, decimal rsi)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		_barIndex++;
+		var prevHigh = _prevHigh;
+		_prevHigh = candle.HighPrice;
 
-		var cooldownOk = _barIndex - _lastTradeBar > CooldownBars;
+		if (prevHigh is not decimal ph)
+			return;
 
-		// RSI crosses above 40 from below (oversold recovery) with uptrend
-		var longSignal = _prevRsi > 0 && _prevRsi < 40 && rsiValue >= 40 && candle.ClosePrice > emaValue;
-		// RSI crosses below 60 from above (overbought decline) with downtrend
-		var shortSignal = _prevRsi > 0 && _prevRsi > 60 && rsiValue <= 60 && candle.ClosePrice < emaValue;
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
 
-		if (longSignal && Position <= 0 && cooldownOk)
-		{
-			BuyMarket();
-			_lastTradeBar = _barIndex;
-		}
-		else if (shortSignal && Position >= 0 && cooldownOk)
-		{
-			SellMarket();
-			_lastTradeBar = _barIndex;
-		}
-
-		_prevRsi = rsiValue;
+		if (Position > 0 && candle.ClosePrice > ph)
+			SellMarket(Position);
+		else if (rsi < RsiBuyThreshold)
+			BuyMarket(Volume);
 	}
 }

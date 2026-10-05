@@ -7,80 +7,76 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import RelativeStrengthIndex, ExponentialMovingAverage
+from StockSharp.Algo.Indicators import RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
 
 
 class averaging_down2_strategy(Strategy):
+    """
+    Averaging down strategy.
+    Every candle that closes with RSI below RsiBuyThreshold buys another Volume, averaging the entry price of the long. The whole
+    long closes when a close exceeds the previous candle's high. Long only.
+    """
+
     def __init__(self):
         super(averaging_down2_strategy, self).__init__()
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
-            .SetDisplay("Candle Type", "Type of candles to use", "General")
         self._rsi_length = self.Param("RsiLength", 10) \
             .SetGreaterThanZero() \
-            .SetDisplay("RSI Length", "RSI calculation length", "Indicators")
-        self._ema_length = self.Param("EmaLength", 40) \
-            .SetGreaterThanZero() \
-            .SetDisplay("EMA Length", "EMA trend filter period", "Indicators")
-        self._cooldown_bars = self.Param("CooldownBars", 350) \
-            .SetDisplay("Cooldown Bars", "Bars between trades", "Trading")
-        self._prev_rsi = 0.0
-        self._bar_index = 0
-        self._last_trade_bar = 0
+            .SetDisplay("RSI Length", "RSI period", "Indicators")
+        self._rsi_buy_threshold = self.Param("RsiBuyThreshold", 33.0) \
+            .SetDisplay("RSI Buy Threshold", "RSI level below which the strategy buys", "Signals")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
+            .SetDisplay("Candle Type", "Type of candles to use", "General")
+
+        self._prev_high = None
 
     @property
-    def candle_type(self):
+    def CandleType(self):
         return self._candle_type.Value
 
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
-
-    @property
-    def cooldown_bars(self):
-        return self._cooldown_bars.Value
-
-    @cooldown_bars.setter
-    def cooldown_bars(self, value):
-        self._cooldown_bars.Value = value
+    def GetWorkingSecurities(self):
+        return [(self.Security, self.CandleType)]
 
     def OnReseted(self):
         super(averaging_down2_strategy, self).OnReseted()
-        self._prev_rsi = 0.0
-        self._bar_index = 0
-        self._last_trade_bar = 0
+        self._prev_high = None
 
     def OnStarted2(self, time):
         super(averaging_down2_strategy, self).OnStarted2(time)
+
+        self._prev_high = None
+
         rsi = RelativeStrengthIndex()
         rsi.Length = self._rsi_length.Value
-        ema = ExponentialMovingAverage()
-        ema.Length = self._ema_length.Value
-        subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(rsi, ema, self.OnProcess).Start()
+
+        subscription = self.SubscribeCandles(self.CandleType)
+        subscription.Bind(rsi, self._process_candle).Start()
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, ema)
             self.DrawOwnTrades(area)
+            oscillators = self.CreateChartArea()
+            if oscillators is not None:
+                self.DrawIndicator(oscillators, rsi)
 
-    def OnProcess(self, candle, rsi_val, ema_val):
+    def _process_candle(self, candle, rsi_value):
         if candle.State != CandleStates.Finished:
             return
-        self._bar_index += 1
-        rsi_v = float(rsi_val)
-        ema_v = float(ema_val)
-        close = float(candle.ClosePrice)
-        cooldown_ok = self._bar_index - self._last_trade_bar > self.cooldown_bars
-        long_signal = self._prev_rsi > 0 and self._prev_rsi < 40.0 and rsi_v >= 40.0 and close > ema_v
-        short_signal = self._prev_rsi > 0 and self._prev_rsi > 60.0 and rsi_v <= 60.0 and close < ema_v
-        if long_signal and self.Position <= 0 and cooldown_ok:
-            self.BuyMarket()
-            self._last_trade_bar = self._bar_index
-        elif short_signal and self.Position >= 0 and cooldown_ok:
-            self.SellMarket()
-            self._last_trade_bar = self._bar_index
-        self._prev_rsi = rsi_v
+
+        prev_high = self._prev_high
+        self._prev_high = float(candle.HighPrice)
+
+        if prev_high is None:
+            return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
+        if self.Position > 0 and float(candle.ClosePrice) > prev_high:
+            self.SellMarket(self.Position)
+        elif float(rsi_value) < float(self._rsi_buy_threshold.Value):
+            self.BuyMarket(self.Volume)
 
     def CreateClone(self):
         return averaging_down2_strategy()
