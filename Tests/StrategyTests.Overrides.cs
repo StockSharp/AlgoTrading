@@ -4441,6 +4441,75 @@ public abstract partial class StrategyTests
 	public Task S0140_PercentStopWorksBetweenFinishedBars()
 		=> CheckPercentStopBetweenBars("0140_VWAP_RSI", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
 
+	[TestMethod]
+	[TestCategory("Shard02")]
+	[DataRow(20, 20, false)]
+	[DataRow(30, 10, true)]
+	public async Task S0141_ChannelBreakoutsOnVolumeUntilPriceReentersOrVolumeWanes(int period, int volumePeriod, bool secondary)
+	{
+		var highs = new List<decimal>();
+		var lows = new List<decimal>();
+		var volumes = new List<decimal>();
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var reentryExits = 0;
+		var waningExits = 0;
+		var violations = new List<string>();
+		await Replay("0141_Donchian_Volume", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["DonchianPeriod"].Value);
+			AreEqual(20, strategy.Parameters["VolumePeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "DonchianPeriod", period);
+			SetParam(strategy, "VolumePeriod", volumePeriod);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				decimal? average = volumes.Count == volumePeriod ? volumes.Average() : null;
+				decimal? upper = highs.Count == period ? highs.Max() : null;
+				decimal? lower = lows.Count == period ? lows.Min() : null;
+				volumes.Add(candle.TotalVolume);
+				highs.Add(candle.HighPrice);
+				lows.Add(candle.LowPrice);
+				if (volumes.Count > volumePeriod) volumes.RemoveAt(0);
+				if (highs.Count > period) { highs.RemoveAt(0); lows.RemoveAt(0); }
+				if (average is not decimal avg || upper is not decimal high || lower is not decimal low) return;
+				var close = candle.ClosePrice;
+				var volume = candle.TotalVolume;
+				var signal = volume > avg ? (close > high ? 1 : close < low ? -1 : 0) : 0;
+				var position = strategy.Position;
+				if (signal > 0 && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (signal < 0 && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && (close <= high || volume < avg)) { expectedSide = Sides.Sell; expectedVolume = position; if (close <= high) reentryExits++; else waningExits++; }
+				else if (position < 0m && (close >= low || volume < avg)) { expectedSide = Sides.Buy; expectedVolume = -position; if (close >= low) reentryExits++; else waningExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a channel breakout on above-average volume, or close once price is back inside or volume wanes.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "The fixture must trade both sides.");
+		IsTrue(reentryExits > 0 && waningExits > 0, "The fixture must exit both on re-entry into the channel and on waning volume.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard02")]
+	public Task S0141_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0141_Donchian_Volume", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

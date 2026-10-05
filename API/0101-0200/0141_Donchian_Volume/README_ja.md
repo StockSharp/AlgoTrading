@@ -18,7 +18,10 @@ Donchian Volume は、出来高の増加で確認されたドンチャンチャ�
 - **ストップ**: はい、パーセントベース
 - **デフォルト値**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `DonchianPeriod` = 20
+  - `VolumePeriod` = 20
+    チャネルは直前DonchianPeriod本の最高値と最安値です。直前VolumePeriod本の平均を上回る出来高でチャネルの外側で引ければブレイク方向にエントリーし、反対ポジションはドテンします。価格がチャネル内に戻って引けるか、出来高が平均を下回ったら決済します。ストップはエントリー価格からStopLossPercentの位置、つまり突破した境界のすぐ内側です。
 - **フィルター**:
   - カテゴリ: ブレイクアウト
   - 方向: 両方

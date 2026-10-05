@@ -18,7 +18,10 @@ Stops are set a short distance inside the channel to protect against false moves
 - **Stops**: Yes, percent based
 - **Default Values**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `DonchianPeriod` = 20
+  - `VolumePeriod` = 20
+    The channel spans the highest high and lowest low of the previous DonchianPeriod candles. A close beyond it on volume above the average of the previous VolumePeriod candles enters in the breakout's direction, reversing an opposite position. The position closes once price closes back inside the channel or volume falls below its average; the stop lies StopLossPercent from the entry price, just inside the broken boundary.
 - **Filters**:
   - Category: Breakout
   - Direction: Both
