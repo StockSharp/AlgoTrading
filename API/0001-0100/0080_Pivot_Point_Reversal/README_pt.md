@@ -18,6 +18,7 @@ O método é reiniciado no início de cada sessão de negociação com novos cá
 - **Valores padrão**:
   - `CandleType` = 5 minute
   - `StopLossPercent` = 2
+    Os pivôs de cada dia UTC vêm da máxima, mínima e fechamento do dia anterior. Uma compra exige uma vela de alta que toque S1 e feche acima dele, uma venda uma vela de baixa que alcance R1 e feche abaixo dele; o stop é uma porcentagem do preço de entrada.
 - **Filtros**:
   - Categoria: Reversão à média
   - Direção: Ambos

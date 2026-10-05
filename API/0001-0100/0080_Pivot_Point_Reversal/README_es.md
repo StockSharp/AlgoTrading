@@ -18,6 +18,7 @@ El método se restablece al inicio de cada sesión de negociación con nuevos c�
 - **Valores predeterminados**:
   - `CandleType` = 5 minute
   - `StopLossPercent` = 2
+    Los pivotes de cada día UTC salen del máximo, mínimo y cierre del día anterior. Una compra requiere una vela alcista que toque S1 y cierre por encima, una venta una vela bajista que alcance R1 y cierre por debajo; el stop es un porcentaje del precio de entrada.
 - **Filtros**:
   - Categoría: Reversión a la media
   - Dirección: Ambos

@@ -18,6 +18,7 @@ Die Methode wird zu Beginn jedes Handelstages mit neuen Pivot-Berechnungen zurü
 - **Standardwerte**:
   - `CandleType` = 5 minute
   - `StopLossPercent` = 2
+    Die Pivots jedes UTC-Tages stammen aus Hoch, Tief und Schluss des Vortags. Ein Long braucht eine bullische Kerze, die S1 berührt und darüber schließt, ein Short eine bärische Kerze, die R1 erreicht und darunter schließt; der Stop ist ein Prozentsatz des Einstiegskurses.
 - **Filter**:
   - Kategorie: Mean Reversion
   - Richtung: Beide

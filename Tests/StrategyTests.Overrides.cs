@@ -1895,6 +1895,74 @@ public abstract partial class StrategyTests
 	public Task S0079_PercentStopWorksBetweenFinishedBars()
 		=> CheckPercentStopBetweenBars(TrendlineBounce, TimeSpan.FromDays(31));
 
+	private const string PivotReversal = "0080_Pivot_Point_Reversal";
+
+	[TestMethod]
+	[TestCategory("Shard02")]
+	[DataRow(false)]
+	[DataRow(true)]
+	public async Task S0080_RejectionsOfPriorDayS1AndR1WithPivotExits(bool secondary)
+	{
+		var days = new Dictionary<DateTime, (decimal High, decimal Low, decimal Close)>();
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var pivotExits = 0;
+		var violations = new List<string>();
+		await Replay(PivotReversal, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var day = candle.OpenTime.Date;
+				days[day] = days.TryGetValue(day, out var d)
+					? (Math.Max(d.High, candle.HighPrice), Math.Min(d.Low, candle.LowPrice), candle.ClosePrice)
+					: (candle.HighPrice, candle.LowPrice, candle.ClosePrice);
+				var earlier = days.Keys.Where(k => k < day).ToArray();
+				if (earlier.Length == 0) return;
+				var prior = days[earlier.Max()];
+				var pivot = (prior.High + prior.Low + prior.Close) / 3m;
+				var r1 = 2 * pivot - prior.Low;
+				var s1 = 2 * pivot - prior.High;
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (position > 0m && close >= pivot) { expectedSide = Sides.Sell; expectedVolume = position; pivotExits++; }
+				else if (position < 0m && close <= pivot) { expectedSide = Sides.Buy; expectedVolume = -position; pivotExits++; }
+				else if (position == 0m)
+				{
+					if (close > candle.OpenPrice && candle.LowPrice <= s1 && close > s1) expectedSide = Sides.Buy;
+					else if (close < candle.OpenPrice && candle.HighPrice >= r1 && close < r1) expectedSide = Sides.Sell;
+					if (expectedSide is Sides side) { expectedVolume = strategy.Volume; entries[side]++; }
+				}
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a confirmed rejection of the prior day's S1 or R1 while flat, or close the position at the central pivot.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] + entries[Sides.Sell] > 1, "The fixture must reject pivot levels.");
+		if (secondary) IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "TON must reject both S1 and R1.");
+		IsTrue(pivotExits > 0, "The fixture must reach the central pivot.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard02")]
+	public Task S0080_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars(PivotReversal, TimeSpan.FromDays(31));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

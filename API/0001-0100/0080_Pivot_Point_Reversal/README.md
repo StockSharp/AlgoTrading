@@ -18,6 +18,7 @@ The method resets at the start of each trading day with new pivot calculations, 
 - **Default Values**:
   - `CandleType` = 5 minute
   - `StopLossPercent` = 2
+    The pivots of each UTC day come from the previous day's high, low and close. A long needs a bullish candle that dips to S1 and closes above it, a short a bearish candle that reaches R1 and closes below it; the stop is a percentage of the entry price.
 - **Filters**:
   - Category: Mean Reversion
   - Direction: Both
