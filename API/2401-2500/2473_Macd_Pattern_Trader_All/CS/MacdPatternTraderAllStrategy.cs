@@ -96,12 +96,12 @@ public class MacdPatternTraderAllStrategy : Strategy
 			
 			.SetOptimize(10, 60, 5);
 
-		_ratioThreshold = Param(nameof(RatioThreshold), 8m)
+		_ratioThreshold = Param(nameof(RatioThreshold), 5m)
 			.SetDisplay("MACD Ratio", "Minimal ratio of surrounding MACD values", "Signals")
 			
 			.SetOptimize(3m, 7m, 1m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 

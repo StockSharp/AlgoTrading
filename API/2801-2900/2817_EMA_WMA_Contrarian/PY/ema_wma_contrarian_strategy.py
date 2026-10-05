@@ -21,7 +21,7 @@ class ema_wma_contrarian_strategy(Strategy):
         self._take_profit_points = self.Param("TakeProfitPoints", 50.0)
         self._trailing_stop_points = self.Param("TrailingStopPoints", 50.0)
         self._trailing_step_points = self.Param("TrailingStepPoints", 10.0)
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4)))
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1)))
 
         self._ema = None
         self._wma = None

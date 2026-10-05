@@ -124,7 +124,7 @@ public class PriceExtremeStrategy : Strategy
 	/// </summary>
 	public PriceExtremeStrategy()
 	{
-		_levelLength = Param(nameof(LevelLength), 20)
+		_levelLength = Param(nameof(LevelLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Level Length", "Number of candles for price extremes", "Indicator")
 			
@@ -143,7 +143,7 @@ public class PriceExtremeStrategy : Strategy
 		_reverseSignals = Param(nameof(ReverseSignals), false)
 			.SetDisplay("Reverse Signals", "Invert breakout direction", "Trading");
 
-		_orderVolume = Param(nameof(OrderVolume), 0.1m)
+		_orderVolume = Param(nameof(OrderVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Order Volume", "Volume sent with market orders", "Trading");
 

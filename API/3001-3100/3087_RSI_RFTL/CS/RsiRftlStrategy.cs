@@ -70,7 +70,7 @@ public class RsiRftlStrategy : Strategy
 	/// </summary>
 	public RsiRftlStrategy()
 	{
-		_rsiPeriod = Param(nameof(RsiPeriod), 14)
+		_rsiPeriod = Param(nameof(RsiPeriod), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "Length of the RSI oscillator", "Indicator");
 

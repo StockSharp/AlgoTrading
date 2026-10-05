@@ -58,7 +58,7 @@ public class JsMaDayStrategy : Strategy
 	/// </summary>
 	public JsMaDayStrategy()
 	{
-		_maPeriod = Param(nameof(MaPeriod), 5)
+		_maPeriod = Param(nameof(MaPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "SMA period on daily candles", "Parameters")
 			

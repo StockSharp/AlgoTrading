@@ -20,8 +20,8 @@ class macd_pattern_trader_all_strategy(Strategy):
         self._stop_loss_bars = self.Param("StopLossBars", 22)
         self._take_profit_bars = self.Param("TakeProfitBars", 32)
         self._offset_points = self.Param("OffsetPoints", 40)
-        self._ratio_threshold = self.Param("RatioThreshold", 8.0)
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1)))
+        self._ratio_threshold = self.Param("RatioThreshold", 5.0)
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5)))
 
         self._macd_prev = 0.0
         self._macd_prev2 = 0.0

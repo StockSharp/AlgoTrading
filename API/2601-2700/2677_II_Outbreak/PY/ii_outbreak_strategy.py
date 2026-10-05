@@ -23,16 +23,16 @@ class ii_outbreak_strategy(Strategy):
             .SetDisplay("Epsilon", "Minimum acceleration threshold", "Filters")
         self._spread_threshold = self.Param("SpreadThreshold", 6.0) \
             .SetDisplay("Spread Threshold", "Maximum spread allowed to trade (points)", "Execution")
-        self._trail_stop_points = self.Param("TrailStopPoints", 50000.0) \
+        self._trail_stop_points = self.Param("TrailStopPoints", 20.0) \
             .SetGreaterThanZero() \
             .SetDisplay("Trail Stop Points", "Trailing stop distance in points", "Risk Management")
         self._total_equity_risk = self.Param("TotalEquityRisk", 0.5) \
             .SetDisplay("Equity Risk %", "Maximum floating loss before closing all trades", "Risk Management")
         self._maximum_risk = self.Param("MaximumRisk", 0.1) \
             .SetDisplay("Risk Fraction", "Fraction of balance allocated per order", "Risk Management")
-        self._std_dev_limit = self.Param("StdDevLimit", 5000.0) \
+        self._std_dev_limit = self.Param("StdDevLimit", 0.002) \
             .SetDisplay("StdDev Limit", "Upper bound for standard deviation filter", "Filters")
-        self._volatility_threshold = self.Param("VolatilityThreshold", 0.0) \
+        self._volatility_threshold = self.Param("VolatilityThreshold", 800.0) \
             .SetDisplay("Volatility Threshold", "Minimum volatility score required for entries", "Filters")
         self._account_leverage = self.Param("AccountLeverage", 100.0) \
             .SetGreaterThanZero() \

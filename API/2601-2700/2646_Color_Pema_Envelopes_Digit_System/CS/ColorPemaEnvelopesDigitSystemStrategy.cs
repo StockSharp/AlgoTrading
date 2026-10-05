@@ -93,11 +93,11 @@ public class ColorPemaEnvelopesDigitSystemStrategy : Strategy
 		_allowSellClose = Param(nameof(AllowSellClose), true)
 		.SetDisplay("Allow Sell Close", "Allow closing short positions on opposite signal", "Logic");
 
-		_stopLossPoints = Param(nameof(StopLossPoints), 10m)
+		_stopLossPoints = Param(nameof(StopLossPoints), 1000m)
 		.SetRange(0m, 100000m)
 		.SetDisplay("Stop Loss Points", "Distance for protective stop", "Risk");
 
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 20m)
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000m)
 		.SetRange(0m, 100000m)
 		.SetDisplay("Take Profit Points", "Distance for profit target", "Risk");
 	}

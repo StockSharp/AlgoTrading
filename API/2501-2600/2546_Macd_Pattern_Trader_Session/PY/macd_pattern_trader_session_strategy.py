@@ -90,7 +90,7 @@ class macd_pattern_trader_session_strategy(Strategy):
         self._ema3_period = self.Param("Ema3Period", 365)
 
         self._lot_size = self.Param("LotSize", 0.1)
-        self._use_time_filter = self.Param("UseTimeFilter", False)
+        self._use_time_filter = self.Param("UseTimeFilter", True)
         self._session_start = self.Param("SessionStart", 7)
         self._session_end = self.Param("SessionEnd", 17)
         self._use_martingale = self.Param("UseMartingale", True)

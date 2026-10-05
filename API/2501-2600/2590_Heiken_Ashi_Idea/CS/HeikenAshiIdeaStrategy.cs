@@ -181,15 +181,15 @@ public class HeikenAshiIdeaStrategy : Strategy
 		_closeAllCandleType = Param(nameof(CloseAllCandleType), TimeSpan.FromHours(4).TimeFrame())
 				.SetDisplay("Close-All Candle Type", "Timeframe that triggers a complete exit on a new bar.", "Data");
 
-		_startHour = Param(nameof(StartHour), 0)
+		_startHour = Param(nameof(StartHour), 9)
 				.SetRange(0, 23)
 				.SetDisplay("Start Hour", "First hour of the trading window (inclusive).", "Session");
 
-		_endHour = Param(nameof(EndHour), 23)
+		_endHour = Param(nameof(EndHour), 19)
 				.SetRange(0, 23)
 				.SetDisplay("End Hour", "Last hour of the trading window (inclusive).", "Session");
 
-		_useAtrFilter = Param(nameof(UseAtrFilter), false)
+		_useAtrFilter = Param(nameof(UseAtrFilter), true)
 				.SetDisplay("Use ATR Filter", "Require rising ATR to allow new orders.", "Filters");
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)

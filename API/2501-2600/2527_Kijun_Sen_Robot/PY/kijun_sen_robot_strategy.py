@@ -20,7 +20,7 @@ class kijun_sen_robot_strategy(Strategy):
         self._kijun_period = self.Param("KijunPeriod", 12)
         self._senkou_span_b_period = self.Param("SenkouSpanBPeriod", 24)
         self._lwma_period = self.Param("LwmaPeriod", 20)
-        self._ma_filter_pips = self.Param("MaFilterPips", 20.0)
+        self._ma_filter_pips = self.Param("MaFilterPips", 6.0)
         self._stop_loss_pips = self.Param("StopLossPips", 50.0)
         self._break_even_pips = self.Param("BreakEvenPips", 9.0)
         self._trailing_stop_pips = self.Param("TrailingStopPips", 10.0)

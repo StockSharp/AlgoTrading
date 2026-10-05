@@ -23,7 +23,7 @@ class fibo_i_sar_strategy(Strategy):
         self._indent_stop_loss = self.Param("IndentStopLoss", 30)
         self._fibo_entrance_level = self.Param("FiboEntranceLevel", 50.0)
         self._fibo_profit_level = self.Param("FiboProfitLevel", 161.0)
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1)))
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5)))
         self._use_time_filter = self.Param("UseTimeFilter", False)
         self._start_hour = self.Param("StartHour", 7)
         self._stop_hour = self.Param("StopHour", 17)

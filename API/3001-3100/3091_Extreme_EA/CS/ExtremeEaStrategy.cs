@@ -82,11 +82,11 @@ public class ExtremeEaStrategy : Strategy
 	/// </summary>
 	public ExtremeEaStrategy()
 	{
-		_fastMaPeriod = Param(nameof(FastMaPeriod), 50)
+		_fastMaPeriod = Param(nameof(FastMaPeriod), 15)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MA", "Fast EMA period", "Indicator");
 
-		_slowMaPeriod = Param(nameof(SlowMaPeriod), 200)
+		_slowMaPeriod = Param(nameof(SlowMaPeriod), 75)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA", "Slow EMA period", "Indicator");
 

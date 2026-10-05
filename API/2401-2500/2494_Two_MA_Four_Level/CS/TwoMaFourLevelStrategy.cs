@@ -45,37 +45,37 @@ public class TwoMaFourLevelStrategy : Strategy
 
 	public TwoMaFourLevelStrategy()
 	{
-		_fastPeriod = Param(nameof(FastPeriod), 10)
+		_fastPeriod = Param(nameof(FastPeriod), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast Period", "Period of the fast smoothed MA", "Moving Averages")
 			.SetOptimize(20, 150, 5);
 
-		_slowPeriod = Param(nameof(SlowPeriod), 30)
+		_slowPeriod = Param(nameof(SlowPeriod), 130)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Period", "Period of the slow smoothed MA", "Moving Averages")
 			.SetOptimize(60, 300, 5);
 
-		_mostTopLevel = Param(nameof(MostTopLevel), 2)
+		_mostTopLevel = Param(nameof(MostTopLevel), 500)
 			.SetGreaterThanZero()
 			.SetDisplay("Extreme Upper Level", "Highest positive offset in points", "Levels");
 
-		_topLevel = Param(nameof(TopLevel), 1)
+		_topLevel = Param(nameof(TopLevel), 250)
 			.SetGreaterThanZero()
 			.SetDisplay("Upper Level", "Second positive offset in points", "Levels");
 
-		_lowerLevel = Param(nameof(LowerLevel), 1)
+		_lowerLevel = Param(nameof(LowerLevel), 250)
 			.SetGreaterThanZero()
 			.SetDisplay("Lower Level", "Second negative offset in points", "Levels");
 
-		_lowermostLevel = Param(nameof(LowermostLevel), 2)
+		_lowermostLevel = Param(nameof(LowermostLevel), 500)
 			.SetGreaterThanZero()
 			.SetDisplay("Extreme Lower Level", "Largest negative offset in points", "Levels");
 
-		_takeProfitPips = Param(nameof(TakeProfitPips), 500)
+		_takeProfitPips = Param(nameof(TakeProfitPips), 55)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit (pips)", "Distance to take profit", "Risk");
 
-		_stopLossPips = Param(nameof(StopLossPips), 1000)
+		_stopLossPips = Param(nameof(StopLossPips), 260)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss (pips)", "Distance to stop loss", "Risk");
 

@@ -24,7 +24,7 @@ class hercules_atc2006_strategy(Strategy):
         self._slow_ma_period = self.Param("SlowMaPeriod", 72)
         self._stop_loss_lookback = self.Param("StopLossLookback", 4)
         self._high_low_hours = self.Param("HighLowHours", 10)
-        self._blackout_hours = self.Param("BlackoutHours", 4)
+        self._blackout_hours = self.Param("BlackoutHours", 144)
         self._rsi_length_param = self.Param("RsiLength", 10)
         self._rsi_upper = self.Param("RsiUpper", 55.0)
         self._rsi_lower = self.Param("RsiLower", 45.0)

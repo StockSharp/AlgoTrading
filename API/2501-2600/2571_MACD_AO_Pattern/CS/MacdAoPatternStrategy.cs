@@ -183,10 +183,10 @@ public class MacdAoPatternStrategy : Strategy
 		_bearishNeutralLevel = Param(nameof(BearishNeutralLevel), -30m)
 			.SetDisplay("Bearish Neutral", "Negative MACD level that confirms the hook", "Signals");
 
-		_bullishExtremeLevel = Param(nameof(BullishExtremeLevel), 100m)
+		_bullishExtremeLevel = Param(nameof(BullishExtremeLevel), 0.0015m)
 			.SetDisplay("Bullish Extreme", "Positive MACD level that arms longs", "Signals");
 
-		_bullishNeutralLevel = Param(nameof(BullishNeutralLevel), 30m)
+		_bullishNeutralLevel = Param(nameof(BullishNeutralLevel), 0.0005m)
 			.SetDisplay("Bullish Neutral", "Positive MACD level that confirms the hook", "Signals");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())

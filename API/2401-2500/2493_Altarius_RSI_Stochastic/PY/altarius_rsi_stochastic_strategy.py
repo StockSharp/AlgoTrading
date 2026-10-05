@@ -26,7 +26,7 @@ class altarius_rsi_stochastic_strategy(Strategy):
         self._secondary_stochastic_length = self.Param("SecondaryStochasticLength", 10)
         self._secondary_stochastic_k_period = self.Param("SecondaryStochasticKPeriod", 3)
         self._secondary_stochastic_d_period = self.Param("SecondaryStochasticDPeriod", 3)
-        self._difference_threshold = self.Param("DifferenceThreshold", 10.0)
+        self._difference_threshold = self.Param("DifferenceThreshold", 5.0)
         self._primary_buy_limit = self.Param("PrimaryBuyLimit", 50.0)
         self._primary_sell_limit = self.Param("PrimarySellLimit", 55.0)
         self._primary_exit_upper = self.Param("PrimaryExitUpper", 70.0)

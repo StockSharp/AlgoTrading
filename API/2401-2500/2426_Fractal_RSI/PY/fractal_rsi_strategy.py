@@ -15,11 +15,11 @@ class fractal_rsi_strategy(Strategy):
     def __init__(self):
         super(fractal_rsi_strategy, self).__init__()
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1)))
-        self._fractal_period = self.Param("FractalPeriod", 50)
-        self._normal_speed = self.Param("NormalSpeed", 50)
-        self._high_level = self.Param("HighLevel", 70.0)
-        self._low_level = self.Param("LowLevel", 30.0)
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4)))
+        self._fractal_period = self.Param("FractalPeriod", 30)
+        self._normal_speed = self.Param("NormalSpeed", 30)
+        self._high_level = self.Param("HighLevel", 60.0)
+        self._low_level = self.Param("LowLevel", 40.0)
         self._stop_loss = self.Param("StopLoss", 1000.0)
         self._take_profit = self.Param("TakeProfit", 2000.0)
 

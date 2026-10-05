@@ -130,7 +130,7 @@ public class RsiEraserStrategy : Strategy
 		.SetRange(0m, 100m)
 		.SetDisplay("RSI Neutral", "Neutral level used to detect direction", "Indicators");
 
-		_stopLossPips = Param(nameof(StopLossPips), 500m)
+		_stopLossPips = Param(nameof(StopLossPips), 50m)
 		.SetRange(1m, 5000m)
 		.SetDisplay("Stop Loss (pips)", "Stop-loss distance expressed in pips", "Risk Management");
 

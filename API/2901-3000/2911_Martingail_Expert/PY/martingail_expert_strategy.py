@@ -19,9 +19,9 @@ class martingail_expert_strategy(Strategy):
             .SetDisplay("Candle Type", "Candles", "General")
         self._rsi_length = self.Param("RsiLength", 14) \
             .SetDisplay("RSI Length", "RSI period", "Indicators")
-        self._buy_level = self.Param("BuyLevel", 35.0) \
+        self._buy_level = self.Param("BuyLevel", 20.0) \
             .SetDisplay("Buy Level", "RSI level for longs", "Logic")
-        self._sell_level = self.Param("SellLevel", 65.0) \
+        self._sell_level = self.Param("SellLevel", 55.0) \
             .SetDisplay("Sell Level", "RSI level for shorts", "Logic")
 
         self._prev_rsi = 50.0

@@ -84,19 +84,19 @@ public class YtgAdxLevelCrossStrategy : Strategy
 
 	public YtgAdxLevelCrossStrategy()
 	{
-		_adxPeriod = Param(nameof(AdxPeriod), 14)
+		_adxPeriod = Param(nameof(AdxPeriod), 28)
 			.SetGreaterThanZero()
 			.SetDisplay("ADX Period", "Period for the Average Directional Index", "Indicators")
 			
 			.SetOptimize(10, 40, 2);
 
-		_levelPlus = Param(nameof(LevelPlus), 15)
+		_levelPlus = Param(nameof(LevelPlus), 5)
 			.SetNotNegative()
 			.SetDisplay("+DI Level", "Threshold that the +DI line must break", "Signals")
 			
 			.SetOptimize(5, 40, 5);
 
-		_levelMinus = Param(nameof(LevelMinus), 15)
+		_levelMinus = Param(nameof(LevelMinus), 5)
 			.SetNotNegative()
 			.SetDisplay("-DI Level", "Threshold that the -DI line must break", "Signals")
 			

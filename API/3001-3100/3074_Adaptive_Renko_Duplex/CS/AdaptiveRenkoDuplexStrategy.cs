@@ -90,19 +90,19 @@ public class AdaptiveRenkoDuplexStrategy : Strategy
 		_shortPriceMode = Param(nameof(ShortPriceMode), AdaptiveRenkoPriceModes.Close)
 			.SetDisplay("Short Price Mode", "Price source used when building short bricks", "Short Side");
 
-		_longMinimumBrickPoints = Param(nameof(LongMinimumBrickPoints), 5m)
+		_longMinimumBrickPoints = Param(nameof(LongMinimumBrickPoints), 2m)
 			.SetNotNegative()
 			.SetDisplay("Long Minimum Brick", "Minimal brick height in points for long bricks", "Long Side");
 
-		_shortMinimumBrickPoints = Param(nameof(ShortMinimumBrickPoints), 5m)
+		_shortMinimumBrickPoints = Param(nameof(ShortMinimumBrickPoints), 2m)
 			.SetNotNegative()
 			.SetDisplay("Short Minimum Brick", "Minimal brick height in points for short bricks", "Short Side");
 
-		_longSignalBarOffset = Param(nameof(LongSignalBarOffset), 2)
+		_longSignalBarOffset = Param(nameof(LongSignalBarOffset), 1)
 			.SetRange(0, 10)
 			.SetDisplay("Long Signal Offset", "Number of closed bars to delay long signals", "Long Side");
 
-		_shortSignalBarOffset = Param(nameof(ShortSignalBarOffset), 2)
+		_shortSignalBarOffset = Param(nameof(ShortSignalBarOffset), 1)
 			.SetRange(0, 10)
 			.SetDisplay("Short Signal Offset", "Number of closed bars to delay short signals", "Short Side");
 

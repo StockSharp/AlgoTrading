@@ -15,7 +15,7 @@ class example_of_macd_automated_strategy(Strategy):
     def __init__(self):
         super(example_of_macd_automated_strategy, self).__init__()
 
-        self._base_volume = self.Param("BaseVolume", 1.0)
+        self._base_volume = self.Param("BaseVolume", 0.01)
         self._stop_loss_points = self.Param("StopLossPoints", 50.0)
         self._take_profit_points = self.Param("TakeProfitPoints", 30.0)
         self._macd_fast_length = self.Param("MacdFastLength", 12)

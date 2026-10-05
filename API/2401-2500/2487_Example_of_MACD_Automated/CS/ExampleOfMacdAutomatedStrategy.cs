@@ -47,7 +47,7 @@ public class ExampleOfMacdAutomatedStrategy : Strategy
 	/// </summary>
 	public ExampleOfMacdAutomatedStrategy()
 	{
-		_baseVolume = Param(nameof(BaseVolume), 1m)
+		_baseVolume = Param(nameof(BaseVolume), 0.01m)
 			.SetGreaterThanZero()
 			.SetDisplay("Base Volume", "Starting order volume for AdvancedMM", "Risk")
 			;

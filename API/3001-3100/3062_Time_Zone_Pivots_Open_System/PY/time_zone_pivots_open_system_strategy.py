@@ -25,7 +25,7 @@ class time_zone_pivots_open_system_strategy(Strategy):
         self._offset_points = self.Param("OffsetPoints", Decimal(250)) \
             .SetNotNegative() \
             .SetDisplay("Offset (points)", "Distance from the anchor price expressed in price steps.", "Indicator")
-        self._signal_bar = self.Param("SignalBar", 2) \
+        self._signal_bar = self.Param("SignalBar", 1) \
             .SetNotNegative() \
             .SetDisplay("Signal bar", "Shift of the confirmation candle used to trigger trades.", "Signals")
         self._stop_loss_points = self.Param("StopLossPoints", Decimal(1000)) \

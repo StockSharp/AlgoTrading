@@ -153,7 +153,7 @@ public class MovingAverageTradeSystemStrategy : Strategy
 			
 			.SetOptimize(0m, 100m, 5m);
 
-		_slopeThresholdSteps = Param(nameof(SlopeThresholdSteps), 10m)
+		_slopeThresholdSteps = Param(nameof(SlopeThresholdSteps), 1m)
 			.SetNotNegative()
 			.SetDisplay("Slope Threshold", "Minimum SMA40 vs SMA60 distance in steps", "Signals")
 			

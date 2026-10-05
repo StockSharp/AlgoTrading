@@ -15,9 +15,9 @@ class extreme_ea_strategy(Strategy):
     def __init__(self):
         super(extreme_ea_strategy, self).__init__()
 
-        self._fast_ma_period = self.Param("FastMaPeriod", 50) \
+        self._fast_ma_period = self.Param("FastMaPeriod", 15) \
             .SetDisplay("Fast MA", "Fast EMA period", "Indicator")
-        self._slow_ma_period = self.Param("SlowMaPeriod", 200) \
+        self._slow_ma_period = self.Param("SlowMaPeriod", 75) \
             .SetDisplay("Slow MA", "Slow EMA period", "Indicator")
         self._cci_period = self.Param("CciPeriod", 12) \
             .SetDisplay("CCI Period", "CCI lookback period", "Indicator")

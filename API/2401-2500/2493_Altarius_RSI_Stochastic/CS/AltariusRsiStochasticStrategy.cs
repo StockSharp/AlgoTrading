@@ -264,7 +264,7 @@ public class AltariusRsiStochasticStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Secondary %D Period", "Signal period for secondary Stochastic", "Secondary Stochastic");
 
-		_differenceThreshold = Param(nameof(DifferenceThreshold), 10m)
+		_differenceThreshold = Param(nameof(DifferenceThreshold), 5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Gap", "Minimum gap between %K and %D on the fast Stochastic", "Entries");
 

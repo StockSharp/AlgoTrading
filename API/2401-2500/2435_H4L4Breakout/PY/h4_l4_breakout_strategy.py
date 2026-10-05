@@ -15,7 +15,7 @@ class h4_l4_breakout_strategy(Strategy):
     def __init__(self):
         super(h4_l4_breakout_strategy, self).__init__()
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4)))
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromDays(1)))
 
         self._prev_high = 0.0
         self._prev_low = 0.0

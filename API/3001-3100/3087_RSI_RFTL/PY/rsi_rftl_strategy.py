@@ -15,7 +15,7 @@ class rsi_rftl_strategy(Strategy):
     def __init__(self):
         super(rsi_rftl_strategy, self).__init__()
 
-        self._rsi_period = self.Param("RsiPeriod", 14) \
+        self._rsi_period = self.Param("RsiPeriod", 30) \
             .SetDisplay("RSI Period", "Length of the RSI oscillator", "Indicator")
         self._ema_period = self.Param("EmaPeriod", 44) \
             .SetDisplay("EMA Period", "Length of the trend EMA filter", "Indicator")

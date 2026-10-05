@@ -58,7 +58,7 @@ public class StopLossTakeProfitStrategy : Strategy
 		_takeProfitDistance = Param(nameof(TakeProfitDistance), 5m)
 			.SetDisplay("Take Profit Distance", "Take profit distance in price units", "Risk");
 
-		_initialVolume = Param(nameof(InitialVolume), 1m)
+		_initialVolume = Param(nameof(InitialVolume), 0.01m)
 			.SetGreaterThanZero()
 			.SetDisplay("Initial Volume", "Starting order volume", "Risk");
 	}

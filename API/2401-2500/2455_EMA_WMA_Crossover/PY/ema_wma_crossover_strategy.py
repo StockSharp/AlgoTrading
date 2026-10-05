@@ -19,15 +19,15 @@ class ema_wma_crossover_strategy(Strategy):
 
     def __init__(self):
         super(ema_wma_crossover_strategy, self).__init__()
-        self._ema_period = self.Param("EmaPeriod", 34) \
+        self._ema_period = self.Param("EmaPeriod", 28) \
             .SetDisplay("EMA Period", "EMA period length", "Indicators")
-        self._wma_period = self.Param("WmaPeriod", 13) \
+        self._wma_period = self.Param("WmaPeriod", 8) \
             .SetDisplay("WMA Period", "WMA period length", "Indicators")
         self._stop_loss_ticks = self.Param("StopLossTicks", 50) \
             .SetDisplay("Stop Loss Ticks", "Stop loss distance in ticks", "Risk")
         self._take_profit_ticks = self.Param("TakeProfitTicks", 50) \
             .SetDisplay("Take Profit Ticks", "Take profit distance in ticks", "Risk")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
 
         self._prev_ema = 0.0

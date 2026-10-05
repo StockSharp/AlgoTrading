@@ -17,9 +17,9 @@ class iin_ma_signal_strategy(Strategy):
 
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
             .SetDisplay("Candle Type", "Timeframe", "General")
-        self._fast_period = self.Param("FastPeriod", 7) \
+        self._fast_period = self.Param("FastPeriod", 10) \
             .SetDisplay("Fast SMA", "Fast SMA period", "Indicators")
-        self._slow_period = self.Param("SlowPeriod", 21) \
+        self._slow_period = self.Param("SlowPeriod", 22) \
             .SetDisplay("Slow SMA", "Slow SMA period", "Indicators")
 
         self._prev_fast = None

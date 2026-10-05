@@ -31,9 +31,9 @@ class perceptron_adaptive_strategy(Strategy):
     def __init__(self):
         super(perceptron_adaptive_strategy, self).__init__()
 
-        self._stop_loss_offset = self.Param("StopLossOffset", 500.0) \
+        self._stop_loss_offset = self.Param("StopLossOffset", 0.001) \
             .SetDisplay("Stop Loss Offset", "Stop-loss distance in absolute price units", "Risk Management")
-        self._take_profit_offset = self.Param("TakeProfitOffset", 300.0) \
+        self._take_profit_offset = self.Param("TakeProfitOffset", 0.0004) \
             .SetDisplay("Take Profit Offset", "Take-profit distance in absolute price units", "Risk Management")
         self._sin_max = self.Param("SinMax", 5) \
             .SetDisplay("Synapse Upper Bound", "Maximum value for neuron bias weights", "Neural Network")

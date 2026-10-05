@@ -18,7 +18,7 @@ class bss_triple_ema_separation_strategy(Strategy):
         self._volume_tolerance = self.Param("VolumeTolerance", 1e-8)
         self._order_volume = self.Param("OrderVolume", 0.1)
         self._max_positions = self.Param("MaxPositions", 2)
-        self._minimum_distance = self.Param("MinimumDistance", 50.0)
+        self._minimum_distance = self.Param("MinimumDistance", 0.0005)
         self._minimum_pause_seconds = self.Param("MinimumPauseSeconds", 600)
         self._first_ma_period = self.Param("FirstMaPeriod", 5)
         self._second_ma_period = self.Param("SecondMaPeriod", 25)

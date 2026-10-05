@@ -58,7 +58,7 @@ public class AreaMacdStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Length", "Slow EMA period", "Indicators");
 
-		_historyLength = Param(nameof(HistoryLength), 20)
+		_historyLength = Param(nameof(HistoryLength), 60)
 			.SetGreaterThanZero()
 			.SetDisplay("History Length", "Area accumulation window", "Indicators");
 	}

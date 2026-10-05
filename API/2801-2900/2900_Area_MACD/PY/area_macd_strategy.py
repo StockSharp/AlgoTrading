@@ -22,7 +22,7 @@ class area_macd_strategy(Strategy):
             .SetDisplay("Fast Length", "Fast EMA period", "Indicators")
         self._slow_length = self.Param("SlowLength", 26) \
             .SetDisplay("Slow Length", "Slow EMA period", "Indicators")
-        self._history_length = self.Param("HistoryLength", 20) \
+        self._history_length = self.Param("HistoryLength", 60) \
             .SetDisplay("History Length", "Area accumulation window", "Indicators")
 
         self._diff_history = deque()

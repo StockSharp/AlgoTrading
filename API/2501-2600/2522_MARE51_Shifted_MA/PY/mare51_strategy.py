@@ -19,10 +19,10 @@ class mare51_strategy(Strategy):
         self._take_profit_pips = self.Param("TakeProfitPips", 35.0)
         self._stop_loss_pips = self.Param("StopLossPips", 55.0)
         self._fast_period = self.Param("FastPeriod", 14)
-        self._slow_period = self.Param("SlowPeriod", 20)
-        self._ma_shift = self.Param("MovingAverageShift", 1)
-        self._session_open_hour = self.Param("SessionOpenHour", 0)
-        self._session_close_hour = self.Param("SessionCloseHour", 23)
+        self._slow_period = self.Param("SlowPeriod", 79)
+        self._ma_shift = self.Param("MovingAverageShift", 4)
+        self._session_open_hour = self.Param("SessionOpenHour", 2)
+        self._session_close_hour = self.Param("SessionCloseHour", 3)
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15)))
 
         self._fast_buffer = None

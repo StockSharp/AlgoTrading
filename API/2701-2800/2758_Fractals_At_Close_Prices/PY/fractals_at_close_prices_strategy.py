@@ -15,10 +15,10 @@ class fractals_at_close_prices_strategy(Strategy):
     def __init__(self):
         super(fractals_at_close_prices_strategy, self).__init__()
 
-        self._start_hour = self.Param("StartHour", 0)
-        self._end_hour = self.Param("EndHour", 0)
-        self._stop_loss_pips = self.Param("StopLossPips", 200)
-        self._take_profit_pips = self.Param("TakeProfitPips", 400)
+        self._start_hour = self.Param("StartHour", 10)
+        self._end_hour = self.Param("EndHour", 22)
+        self._stop_loss_pips = self.Param("StopLossPips", 30)
+        self._take_profit_pips = self.Param("TakeProfitPips", 50)
         self._trailing_stop_pips = self.Param("TrailingStopPips", 15)
         self._trailing_step_pips = self.Param("TrailingStepPips", 5)
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4)))

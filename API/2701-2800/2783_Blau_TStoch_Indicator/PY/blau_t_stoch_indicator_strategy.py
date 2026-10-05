@@ -41,7 +41,7 @@ class blau_t_stoch_indicator_strategy(Strategy):
         super(blau_t_stoch_indicator_strategy, self).__init__()
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(8)))
         self._smoothing_method = self.Param("Smoothing", self.SMOOTH_EMA)
-        self._momentum_length = self.Param("MomentumLength", 5)
+        self._momentum_length = self.Param("MomentumLength", 20)
         self._first_smoothing = self.Param("FirstSmoothing", 5)
         self._second_smoothing = self.Param("SecondSmoothing", 8)
         self._third_smoothing = self.Param("ThirdSmoothing", 3)

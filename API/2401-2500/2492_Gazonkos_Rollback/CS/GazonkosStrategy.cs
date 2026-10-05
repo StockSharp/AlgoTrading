@@ -123,19 +123,19 @@ public class GazonkosStrategy : Strategy
 
 	public GazonkosStrategy()
 	{
-		_takeProfit = Param(nameof(TakeProfit), 700m)
+		_takeProfit = Param(nameof(TakeProfit), 0.0016m)
 			.SetDisplay("Take Profit", "Take profit distance in price units", "Risk Management")
 			;
 
-		_rollback = Param(nameof(Rollback), 300m)
+		_rollback = Param(nameof(Rollback), 0.0016m)
 			.SetDisplay("Rollback", "Required pullback before entering", "Signals")
 			;
 
-		_stopLoss = Param(nameof(StopLoss), 1000m)
+		_stopLoss = Param(nameof(StopLoss), 0.004m)
 			.SetDisplay("Stop Loss", "Stop loss distance in price units", "Risk Management")
 			;
 
-		_delta = Param(nameof(Delta), 200m)
+		_delta = Param(nameof(Delta), 0.004m)
 			.SetDisplay("Delta", "Minimum difference between closes", "Signals")
 			;
 

@@ -140,7 +140,7 @@ public class FiboISarStrategy : Strategy
 			.SetDisplay("Fibo Profit", "Fibonacci profit level percentage", "Fibonacci")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
 		_useTimeFilter = Param(nameof(UseTimeFilter), false)

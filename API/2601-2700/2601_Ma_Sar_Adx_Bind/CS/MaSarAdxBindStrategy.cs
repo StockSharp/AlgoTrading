@@ -84,13 +84,13 @@ public class MaSarAdxBindStrategy : Strategy
 	/// </summary>
 	public MaSarAdxBindStrategy()
 	{
-		_maPeriod = Param(nameof(MaPeriod), 120)
+		_maPeriod = Param(nameof(MaPeriod), 100)
 		.SetGreaterThanZero()
 		.SetDisplay("MA Period", "Length of the trend moving average", "Indicators")
 		
 		.SetOptimize(20, 200, 10);
 
-		_adxPeriod = Param(nameof(AdxPeriod), 18)
+		_adxPeriod = Param(nameof(AdxPeriod), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("ADX Period", "Length of the Average Directional Index", "Indicators")
 		

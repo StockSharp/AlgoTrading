@@ -29,11 +29,11 @@ class anubis_strategy(Strategy):
         self._cci_period = self.Param("CciPeriod", 11) \
             .SetGreaterThanZero() \
             .SetDisplay("CCI Period", "CCI lookback on the higher timeframe", "Indicators")
-        self._stop_loss_pips = self.Param("StopLossPips", 500.0) \
+        self._stop_loss_pips = self.Param("StopLossPips", 100.0) \
             .SetDisplay("Stop Loss (pips)", "Stop-loss distance measured in pips", "Risk")
-        self._breakeven_pips = self.Param("BreakevenPips", 300.0) \
+        self._breakeven_pips = self.Param("BreakevenPips", 65.0) \
             .SetDisplay("Breakeven (pips)", "Distance to move stop to entry", "Risk")
-        self._threshold_pips = self.Param("ThresholdPips", 200.0) \
+        self._threshold_pips = self.Param("ThresholdPips", 28.0) \
             .SetDisplay("MACD Exit Threshold (pips)", "Extra profit required before MACD exit", "Risk")
         self._take_std_multiplier = self.Param("TakeStdMultiplier", 2.9) \
             .SetGreaterThanZero() \
@@ -44,10 +44,10 @@ class anubis_strategy(Strategy):
         self._spacing_pips = self.Param("SpacingPips", 20.0) \
             .SetGreaterThanZero() \
             .SetDisplay("Entry Spacing (pips)", "Minimum distance between consecutive entries", "Trading")
-        self._max_long_positions = self.Param("MaxLongPositions", 1) \
+        self._max_long_positions = self.Param("MaxLongPositions", 2) \
             .SetGreaterThanZero() \
             .SetDisplay("Max Long Entries", "Maximum stacked long positions", "Trading")
-        self._max_short_positions = self.Param("MaxShortPositions", 1) \
+        self._max_short_positions = self.Param("MaxShortPositions", 2) \
             .SetGreaterThanZero() \
             .SetDisplay("Max Short Entries", "Maximum stacked short positions", "Trading")
         self._macd_fast_length = self.Param("MacdFastLength", 20) \

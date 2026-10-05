@@ -17,7 +17,7 @@ class rsi_eraser_strategy(Strategy):
         super(rsi_eraser_strategy, self).__init__()
         self._rsi_period = self.Param("RsiPeriod", 14).SetGreaterThanZero().SetDisplay("RSI Period", "RSI lookback", "Indicators")
         self._rsi_neutral = self.Param("RsiNeutralLevel", 50.0).SetDisplay("RSI Neutral", "Neutral level", "Indicators")
-        self._sl_pips = self.Param("StopLossPips", 500.0).SetDisplay("Stop Loss (pips)", "SL distance", "Risk")
+        self._sl_pips = self.Param("StopLossPips", 50.0).SetDisplay("Stop Loss (pips)", "SL distance", "Risk")
         self._tp_multiplier = self.Param("TakeProfitMultiplier", 3.0).SetGreaterThanZero().SetDisplay("TP Multiplier", "TP as multiple of SL", "Risk")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))).SetDisplay("Candle Type", "Primary timeframe", "General")
 

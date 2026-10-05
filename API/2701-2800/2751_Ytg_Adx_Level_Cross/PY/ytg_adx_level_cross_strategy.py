@@ -17,9 +17,9 @@ class ytg_adx_level_cross_strategy(Strategy):
     def __init__(self):
         super(ytg_adx_level_cross_strategy, self).__init__()
 
-        self._adx_period = self.Param("AdxPeriod", 14)
-        self._level_plus = self.Param("LevelPlus", 15)
-        self._level_minus = self.Param("LevelMinus", 15)
+        self._adx_period = self.Param("AdxPeriod", 28)
+        self._level_plus = self.Param("LevelPlus", 5)
+        self._level_minus = self.Param("LevelMinus", 5)
         self._shift = self.Param("Shift", 1)
         self._take_profit_points = self.Param("TakeProfitPoints", 500.0)
         self._stop_loss_points = self.Param("StopLossPoints", 500.0)

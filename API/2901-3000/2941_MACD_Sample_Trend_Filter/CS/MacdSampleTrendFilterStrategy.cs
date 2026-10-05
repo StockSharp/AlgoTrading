@@ -59,7 +59,7 @@ public class MacdSampleTrendFilterStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Period", "Slow EMA for MACD", "Indicators");
 
-		_trendPeriod = Param(nameof(TrendPeriod), 100)
+		_trendPeriod = Param(nameof(TrendPeriod), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("Trend Period", "Trend EMA period", "Indicators");
 	}

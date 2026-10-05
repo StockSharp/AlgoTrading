@@ -15,7 +15,7 @@ class ohlc_stochastic_strategy(Strategy):
     def __init__(self):
         super(ohlc_stochastic_strategy, self).__init__()
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(12))) \
             .SetDisplay("Candle Type", "Timeframe", "General")
         self._rsi_period = self.Param("RsiPeriod", 14) \
             .SetDisplay("RSI Period", "RSI lookback", "Indicators")

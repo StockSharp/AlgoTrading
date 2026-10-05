@@ -35,7 +35,7 @@ public class RndTradeStrategy : Strategy
 	/// </summary>
 	public RndTradeStrategy()
 	{
-		_intervalMinutes = Param(nameof(IntervalMinutes), 360)
+		_intervalMinutes = Param(nameof(IntervalMinutes), 60)
 			.SetGreaterThanZero()
 			.SetDisplay("Interval Minutes", "Minutes between closing and opening positions", "General");
 

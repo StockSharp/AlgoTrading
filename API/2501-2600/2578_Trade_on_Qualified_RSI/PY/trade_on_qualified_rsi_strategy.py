@@ -16,10 +16,10 @@ class trade_on_qualified_rsi_strategy(Strategy):
         super(trade_on_qualified_rsi_strategy, self).__init__()
 
         self._rsi_period = self.Param("RsiPeriod", 28)
-        self._upper_threshold = self.Param("UpperThreshold", 65.0)
-        self._lower_threshold = self.Param("LowerThreshold", 35.0)
-        self._count_bars = self.Param("CountBars", 8)
-        self._stop_loss_points = self.Param("StopLossPoints", 1000)
+        self._upper_threshold = self.Param("UpperThreshold", 55.0)
+        self._lower_threshold = self.Param("LowerThreshold", 45.0)
+        self._count_bars = self.Param("CountBars", 5)
+        self._stop_loss_points = self.Param("StopLossPoints", 21)
         self._trade_volume = self.Param("TradeVolume", 1.0)
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4)))
 

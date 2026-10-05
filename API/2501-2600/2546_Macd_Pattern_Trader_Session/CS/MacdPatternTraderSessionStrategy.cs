@@ -353,7 +353,7 @@ public class MacdPatternTraderSessionStrategy : Strategy
 		_lotSize = Param(nameof(LotSize), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Lot Size", "Base trading volume", "Trading");
-		_useTimeFilter = Param(nameof(UseTimeFilter), false)
+		_useTimeFilter = Param(nameof(UseTimeFilter), true)
 			.SetDisplay("Use Time Filter", "Enable trading window", "Trading");
 		_sessionStart = Param(nameof(SessionStart), new TimeSpan(7, 0, 0))
 			.SetDisplay("Session Start", "Trading start time", "Trading");

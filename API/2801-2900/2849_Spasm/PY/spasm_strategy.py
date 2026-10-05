@@ -16,7 +16,7 @@ class spasm_strategy(Strategy):
 
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Timeframe for analysis", "General")
-        self._volatility_multiplier = self.Param("VolatilityMultiplier", 2.0) \
+        self._volatility_multiplier = self.Param("VolatilityMultiplier", 5.0) \
             .SetDisplay("Volatility Multiplier", "Multiplier applied to ATR for breakout bands", "Trading")
 
         self._highest_price = 0.0

@@ -84,19 +84,19 @@ public class AdxSystemStrategy : Strategy
 	/// </summary>
 	public AdxSystemStrategy()
 	{
-		_adxPeriod = Param(nameof(AdxPeriod), 10)
+		_adxPeriod = Param(nameof(AdxPeriod), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("ADX Period", "Period for ADX indicator", "Indicators");
 
-		_takeProfit = Param(nameof(TakeProfit), 150m)
+		_takeProfit = Param(nameof(TakeProfit), 15m)
 		.SetGreaterThanZero()
 		.SetDisplay("Take Profit", "Distance for profit target", "Risk");
 
-		_stopLoss = Param(nameof(StopLoss), 250m)
+		_stopLoss = Param(nameof(StopLoss), 100m)
 		.SetGreaterThanZero()
 		.SetDisplay("Stop Loss", "Distance for protective stop", "Risk");
 
-		_trailingStop = Param(nameof(TrailingStop), 120m)
+		_trailingStop = Param(nameof(TrailingStop), 20m)
 		.SetGreaterThanZero()
 		.SetDisplay("Trailing Stop", "Distance for trailing stop", "Risk");
 

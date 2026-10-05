@@ -24,13 +24,13 @@ class exp_hans_indicator_cloud_system_tm_plus_strategy(Strategy):
             .SetDisplay("Stop Loss (points)", "Distance to the protective stop in points", "Risk")
         self._take_profit_points = self.Param("TakeProfitPoints", 2000) \
             .SetDisplay("Take Profit (points)", "Distance to the profit target in points", "Risk")
-        self._pips_for_entry = self.Param("PipsForEntry", 5) \
+        self._pips_for_entry = self.Param("PipsForEntry", 100) \
             .SetDisplay("Pips For Entry", "Offset added above/below the breakout range", "Indicator")
         self._signal_bar = self.Param("SignalBar", 1) \
             .SetDisplay("Signal Bar", "Closed candle offset used for signals", "Indicator")
         self._local_time_zone = self.Param("LocalTimeZone", 0) \
             .SetDisplay("Local Time Zone", "Broker/server time zone", "Indicator")
-        self._destination_time_zone = self.Param("DestinationTimeZone", 0) \
+        self._destination_time_zone = self.Param("DestinationTimeZone", 4) \
             .SetDisplay("Destination Time Zone", "Target time zone for sessions", "Indicator")
         self._entry_cooldown_bars = self.Param("EntryCooldownBars", 10) \
             .SetDisplay("Entry Cooldown", "Bars to wait after an entry signal", "Risk")

@@ -99,7 +99,7 @@ public class AmstellGridManagerStrategy : Strategy
 	/// </summary>
 	public AmstellGridManagerStrategy()
 	{
-		_orderVolume = Param(nameof(OrderVolume), 1m)
+		_orderVolume = Param(nameof(OrderVolume), 0.01m)
 			.SetGreaterThanZero()
 			.SetDisplay("Order Volume", "Quantity submitted with each grid order", "Trading")
 			

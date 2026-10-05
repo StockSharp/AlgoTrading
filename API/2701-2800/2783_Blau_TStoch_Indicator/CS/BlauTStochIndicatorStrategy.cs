@@ -302,7 +302,7 @@ public class BlauTStochIndicatorStrategy : Strategy
 		_smoothingMethod = Param(nameof(Smoothing), SmoothingMethods.Ema)
 		.SetDisplay("Smoothing", "Moving average type for smoothing", "Indicator");
 
-		_momentumLength = Param(nameof(MomentumLength), 5)
+		_momentumLength = Param(nameof(MomentumLength), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("Momentum Length", "Lookback for highest and lowest prices", "Indicator");
 

@@ -150,7 +150,7 @@ public class Martin1Strategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used to evaluate conditions", "General");
 
-		_useTradingHours = Param(nameof(UseTradingHours), false)
+		_useTradingHours = Param(nameof(UseTradingHours), true)
 			.SetDisplay("Use Trading Hours", "Restrict entries to a time window", "General");
 
 		_startHour = Param(nameof(StartHour), 2)
@@ -185,11 +185,11 @@ public class Martin1Strategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Initial Volume", "Baseline order size", "Money Management");
 
-		_stopLossPips = Param(nameof(StopLossPips), 400)
+		_stopLossPips = Param(nameof(StopLossPips), 40)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss (pips)", "Distance before hedging the opposite side", "Risk");
 
-		_takeProfitPips = Param(nameof(TakeProfitPips), 1000)
+		_takeProfitPips = Param(nameof(TakeProfitPips), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit (pips)", "Distance to pyramid in the same direction", "Risk");
 	}

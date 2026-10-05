@@ -61,11 +61,11 @@ public class VolatilityPivotStrategy : Strategy
 	/// </summary>
 	public VolatilityPivotStrategy()
 	{
-		_atrPeriod = Param(nameof(AtrPeriod), 14)
+		_atrPeriod = Param(nameof(AtrPeriod), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "ATR calculation period", "Indicator");
 
-		_atrMultiplier = Param(nameof(AtrMultiplier), 5m)
+		_atrMultiplier = Param(nameof(AtrMultiplier), 3m)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Multiplier", "Multiplier for pivot distance", "Indicator");
 

@@ -40,7 +40,7 @@ class reduce_risks_strategy(Strategy):
 
         self._stop_loss_pips = self.Param("StopLossPips", 30)
         self._take_profit_pips = self.Param("TakeProfitPips", 60)
-        self._initial_deposit = self.Param("InitialDeposit", 1000000.0)
+        self._initial_deposit = self.Param("InitialDeposit", 10000.0)
         self._risk_percent = self.Param("RiskPercent", 5.0)
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5)))
 

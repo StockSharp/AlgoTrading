@@ -43,7 +43,7 @@ public class SilverTrendSignalReOpenStrategy : Strategy
 
 	public SilverTrendSignalReOpenStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
 		_ssp = Param(nameof(Ssp), 9)
@@ -54,11 +54,11 @@ public class SilverTrendSignalReOpenStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Risk", "Risk parameter for zone width", "Indicators");
 
-		_priceStep = Param(nameof(PriceStep), 1000m)
+		_priceStep = Param(nameof(PriceStep), 300m)
 			.SetGreaterThanZero()
 			.SetDisplay("Price Step", "Distance to add position", "Trading");
 
-		_posTotal = Param(nameof(PosTotal), 1)
+		_posTotal = Param(nameof(PosTotal), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Positions", "Maximum number of positions", "Trading");
 

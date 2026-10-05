@@ -143,7 +143,7 @@ public class SerialMASwingStrategy : Strategy
 		_reverseSignals = Param(nameof(ReverseSignals), false)
 			.SetDisplay("Reverse Signals", "Invert the generated direction", "Trading");
 
-		_tradeVolume = Param(nameof(TradeVolume), 0.01m)
+		_tradeVolume = Param(nameof(TradeVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trade Volume", "Default order volume", "Trading");
 

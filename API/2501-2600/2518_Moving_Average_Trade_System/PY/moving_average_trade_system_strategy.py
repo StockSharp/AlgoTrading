@@ -17,7 +17,7 @@ class moving_average_trade_system_strategy(Strategy):
         self._take_profit_steps = self.Param("TakeProfitSteps", 50.0)
         self._stop_loss_steps = self.Param("StopLossSteps", 50.0)
         self._trailing_stop_steps = self.Param("TrailingStopSteps", 11.0)
-        self._slope_threshold_steps = self.Param("SlopeThresholdSteps", 10.0)
+        self._slope_threshold_steps = self.Param("SlopeThresholdSteps", 1.0)
         self._fast_period = self.Param("FastPeriod", 5)
         self._medium_period = self.Param("MediumPeriod", 20)
         self._signal_period = self.Param("SignalPeriod", 40)

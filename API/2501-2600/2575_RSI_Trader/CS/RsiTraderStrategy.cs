@@ -35,10 +35,10 @@ public class RsiTraderStrategy : Strategy
 	public RsiTraderStrategy()
 	{
 		_rsiPeriod = Param(nameof(RsiPeriod), 14).SetDisplay("RSI Period", "RSI calculation length", "RSI").SetGreaterThanZero();
-		_shortRsiMaPeriod = Param(nameof(ShortRsiMaPeriod), 12).SetDisplay("Short RSI MA", "Short moving average on RSI", "RSI").SetGreaterThanZero();
-		_longRsiMaPeriod = Param(nameof(LongRsiMaPeriod), 60).SetDisplay("Long RSI MA", "Long moving average on RSI", "RSI").SetGreaterThanZero();
-		_shortPriceMaPeriod = Param(nameof(ShortPriceMaPeriod), 12).SetDisplay("Short Price MA", "Short simple moving average", "Price").SetGreaterThanZero();
-		_longPriceMaPeriod = Param(nameof(LongPriceMaPeriod), 60).SetDisplay("Long Price MA", "Long weighted moving average", "Price").SetGreaterThanZero();
+		_shortRsiMaPeriod = Param(nameof(ShortRsiMaPeriod), 9).SetDisplay("Short RSI MA", "Short moving average on RSI", "RSI").SetGreaterThanZero();
+		_longRsiMaPeriod = Param(nameof(LongRsiMaPeriod), 45).SetDisplay("Long RSI MA", "Long moving average on RSI", "RSI").SetGreaterThanZero();
+		_shortPriceMaPeriod = Param(nameof(ShortPriceMaPeriod), 9).SetDisplay("Short Price MA", "Short simple moving average", "Price").SetGreaterThanZero();
+		_longPriceMaPeriod = Param(nameof(LongPriceMaPeriod), 45).SetDisplay("Long Price MA", "Long weighted moving average", "Price").SetGreaterThanZero();
 		_reverse = Param(nameof(Reverse), false).SetDisplay("Reverse", "Flip buy/sell signals", "Trading");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type", "Primary candle type", "Data");
 	}

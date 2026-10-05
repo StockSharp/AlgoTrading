@@ -19,7 +19,7 @@ public class OhlcStochasticStrategy : Strategy
 
 	public OhlcStochasticStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(12).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General");
 		_rsiPeriod = Param(nameof(RsiPeriod), 14).SetGreaterThanZero().SetDisplay("RSI Period", "RSI lookback", "Indicators");
 	}
 

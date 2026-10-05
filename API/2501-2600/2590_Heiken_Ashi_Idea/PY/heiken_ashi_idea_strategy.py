@@ -39,13 +39,13 @@ class heiken_ashi_idea_strategy(Strategy):
         self._close_all_candle_type = self.Param("CloseAllCandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Close-All Candle Type", "Timeframe that triggers complete exit", "Data")
 
-        self._start_hour = self.Param("StartHour", 0) \
+        self._start_hour = self.Param("StartHour", 9) \
             .SetDisplay("Start Hour", "First hour of trading window", "Session")
 
-        self._end_hour = self.Param("EndHour", 23) \
+        self._end_hour = self.Param("EndHour", 19) \
             .SetDisplay("End Hour", "Last hour of trading window", "Session")
 
-        self._use_atr_filter = self.Param("UseAtrFilter", False) \
+        self._use_atr_filter = self.Param("UseAtrFilter", True) \
             .SetDisplay("Use ATR Filter", "Require rising ATR to allow new orders", "Filters")
 
         self._atr_period = self.Param("AtrPeriod", 14) \

@@ -58,17 +58,17 @@ public class TwentyOneHourSessionBreakoutStrategy : Strategy
 
 	public TwentyOneHourSessionBreakoutStrategy()
 	{
-		_firstSessionStartHour = Param(nameof(FirstSessionStartHour), 2)
+		_firstSessionStartHour = Param(nameof(FirstSessionStartHour), 8)
 			.SetDisplay("Session Start", "Hour of the trading window start", "Schedule");
 
-		_firstSessionStopHour = Param(nameof(FirstSessionStopHour), 20)
+		_firstSessionStopHour = Param(nameof(FirstSessionStopHour), 21)
 			.SetDisplay("Session Stop", "Hour of the trading window stop", "Schedule");
 
-		_stepPoints = Param(nameof(StepPoints), 40m)
+		_stepPoints = Param(nameof(StepPoints), 5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Step Points", "Distance from session open to breakout level", "Orders");
 
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 200m)
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 40m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit Points", "Take-profit distance", "Orders");
 

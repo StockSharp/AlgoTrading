@@ -94,11 +94,11 @@ public class OpeningAndClosingOnTimeV2Strategy : Strategy
 		_tradeMode = Param(nameof(TradeMode), TradeModeses.BuyAndSell)
 			.SetDisplay("Trade Mode", "Allowed trade directions", "General");
 
-		_slowPeriod = Param(nameof(SlowPeriod), 20)
+		_slowPeriod = Param(nameof(SlowPeriod), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA", "Slow EMA period", "Indicators");
 
-		_fastPeriod = Param(nameof(FastPeriod), 5)
+		_fastPeriod = Param(nameof(FastPeriod), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MA", "Fast EMA period", "Indicators");
 
@@ -108,7 +108,7 @@ public class OpeningAndClosingOnTimeV2Strategy : Strategy
 		_takeProfit = Param(nameof(TakeProfit), 2000m)
 			.SetDisplay("Take Profit", "Take profit in price units", "Protection");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for strategy", "General");
 	}
 

@@ -15,7 +15,7 @@ class universum_30_strategy(Strategy):
     def __init__(self):
         super(universum_30_strategy, self).__init__()
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30)))
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1)))
         self._demarker_period = self.Param("DemarkerPeriod", 10)
         self._take_profit_points = self.Param("TakeProfitPoints", 50.0)
         self._stop_loss_points = self.Param("StopLossPoints", 50.0)

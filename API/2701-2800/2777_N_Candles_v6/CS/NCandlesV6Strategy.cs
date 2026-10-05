@@ -78,7 +78,7 @@ public class NCandlesV6Strategy : Strategy
 
 	public NCandlesV6Strategy()
 	{
-		_candlesCount = Param(nameof(CandlesCount), 4)
+		_candlesCount = Param(nameof(CandlesCount), 3)
 		.SetGreaterThanZero()
 		.SetDisplay("Candles", "Number of identical candles", "Pattern");
 
@@ -102,7 +102,7 @@ public class NCandlesV6Strategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Max Position Volume", "Maximum absolute net position", "Risk");
 
-		_useTradingHours = Param(nameof(UseTradingHours), false)
+		_useTradingHours = Param(nameof(UseTradingHours), true)
 		.SetDisplay("Use Trading Hours", "Enable trading window", "Timing");
 
 		_startHour = Param(nameof(StartHour), 11)

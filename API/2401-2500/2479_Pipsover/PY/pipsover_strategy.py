@@ -14,12 +14,12 @@ from indicator_extensions import *
 class pipsover_strategy(Strategy):
     def __init__(self):
         super(pipsover_strategy, self).__init__()
-        self._trade_volume = self.Param("TradeVolume", 1.0)
+        self._trade_volume = self.Param("TradeVolume", 0.1)
         self._ma_length = self.Param("MaLength", 20)
         self._sl_points = self.Param("StopLossPoints", 65.0)
         self._tp_points = self.Param("TakeProfitPoints", 100.0)
-        self._open_level = self.Param("OpenLevel", 20.0)
-        self._close_level = self.Param("CloseLevel", 30.0)
+        self._open_level = self.Param("OpenLevel", 100.0)
+        self._close_level = self.Param("CloseLevel", 125.0)
         self._chaikin_fast = self.Param("ChaikinFastLength", 3)
         self._chaikin_slow = self.Param("ChaikinSlowLength", 10)
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5)))

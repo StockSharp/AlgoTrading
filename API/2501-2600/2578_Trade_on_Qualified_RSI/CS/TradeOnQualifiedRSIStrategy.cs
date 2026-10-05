@@ -106,23 +106,23 @@ public class TradeOnQualifiedRSIStrategy : Strategy
 			
 			.SetOptimize(10, 50, 2);
 
-		_upperThreshold = Param(nameof(UpperThreshold), 65m)
+		_upperThreshold = Param(nameof(UpperThreshold), 55m)
 			.SetDisplay("Upper Threshold", "RSI level used to qualify short signals.", "RSI")
 
 			.SetOptimize(50m, 70m, 1m);
 
-		_lowerThreshold = Param(nameof(LowerThreshold), 35m)
+		_lowerThreshold = Param(nameof(LowerThreshold), 45m)
 			.SetDisplay("Lower Threshold", "RSI level used to qualify long signals.", "RSI")
 
 			.SetOptimize(30m, 50m, 1m);
 
-		_countBars = Param(nameof(CountBars), 8)
+		_countBars = Param(nameof(CountBars), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Qualification Bars", "How many previous RSI bars must stay beyond the threshold.", "Signals")
 
 			.SetOptimize(1, 10, 1);
 
-		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
+		_stopLossPoints = Param(nameof(StopLossPoints), 21)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss Points", "Stop loss distance expressed in price steps.", "Risk")
 

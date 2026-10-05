@@ -29,9 +29,9 @@ class os_ma_ster_v0_strategy(Strategy):
         self._signal_period = self.Param("SignalPeriod", 5) \
             .SetGreaterThanZero() \
             .SetDisplay("Signal Smoothing", "Signal moving average period", "Indicators")
-        self._stop_loss_pips = self.Param("StopLossPips", 500) \
+        self._stop_loss_pips = self.Param("StopLossPips", 30) \
             .SetDisplay("Stop Loss (pips)", "Stop loss distance in pips", "Risk")
-        self._take_profit_pips = self.Param("TakeProfitPips", 1000) \
+        self._take_profit_pips = self.Param("TakeProfitPips", 50) \
             .SetDisplay("Take Profit (pips)", "Take profit distance in pips", "Risk")
         self._trade_volume = self.Param("TradeVolume", 1.0) \
             .SetGreaterThanZero() \

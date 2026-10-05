@@ -15,7 +15,7 @@ class small_inside_bar_strategy(Strategy):
         super(small_inside_bar_strategy, self).__init__()
 
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5)))
-        self._range_ratio_threshold = self.Param("RangeRatioThreshold", 2.25)
+        self._range_ratio_threshold = self.Param("RangeRatioThreshold", 2.0)
         self._enable_long = self.Param("EnableLong", True)
         self._enable_short = self.Param("EnableShort", True)
         self._reverse_signals = self.Param("ReverseSignals", False)

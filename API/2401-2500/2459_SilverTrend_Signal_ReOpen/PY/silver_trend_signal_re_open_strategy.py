@@ -15,11 +15,11 @@ class silver_trend_signal_re_open_strategy(Strategy):
     def __init__(self):
         super(silver_trend_signal_re_open_strategy, self).__init__()
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1)))
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4)))
         self._ssp = self.Param("Ssp", 9)
         self._risk = self.Param("Risk", 3)
-        self._price_step_param = self.Param("PriceStep", 1000.0)
-        self._pos_total = self.Param("PosTotal", 1)
+        self._price_step_param = self.Param("PriceStep", 300.0)
+        self._pos_total = self.Param("PosTotal", 10)
         self._stop_loss = self.Param("StopLoss", 1000.0)
         self._take_profit = self.Param("TakeProfit", 2000.0)
 

@@ -38,7 +38,7 @@ public class SpasmStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for analysis", "General");
 
-		_volatilityMultiplier = Param(nameof(VolatilityMultiplier), 2m)
+		_volatilityMultiplier = Param(nameof(VolatilityMultiplier), 5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Volatility Multiplier", "Multiplier applied to ATR for breakout bands", "Trading");
 	}

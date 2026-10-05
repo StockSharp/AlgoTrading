@@ -203,15 +203,15 @@ public class ProperBotStrategy : Strategy
 			.SetDisplay("Volume Period", "Number of candles for the volume filter", "Filters")
 			;
 
-		_volumeMinimum = Param(nameof(VolumeMinimum), 0m)
+		_volumeMinimum = Param(nameof(VolumeMinimum), 69m)
 			.SetDisplay("Volume Minimum", "Minimal average volume to allow entries", "Filters")
 			;
 
-		_highLevel = Param(nameof(HighLevel), 1000000m)
+		_highLevel = Param(nameof(HighLevel), 1.50001m)
 			.SetDisplay("High Level", "Do not buy above this price", "Filters")
 			;
 
-		_lowLevel = Param(nameof(LowLevel), -1000000m)
+		_lowLevel = Param(nameof(LowLevel), 1.40001m)
 			.SetDisplay("Low Level", "Do not sell below this price", "Filters")
 			;
 

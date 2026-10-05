@@ -143,13 +143,13 @@ class adaptive_renko_duplex_strategy(Strategy):
             .SetDisplay("Long Price Mode Close", "True=Close, False=HighLow for long bricks", "Long Side")
         self._short_price_mode_close = self.Param("ShortPriceModeClose", True) \
             .SetDisplay("Short Price Mode Close", "True=Close, False=HighLow for short bricks", "Short Side")
-        self._long_minimum_brick_points = self.Param("LongMinimumBrickPoints", 5.0) \
+        self._long_minimum_brick_points = self.Param("LongMinimumBrickPoints", 2.0) \
             .SetDisplay("Long Minimum Brick", "Minimal brick height in points for long bricks", "Long Side")
-        self._short_minimum_brick_points = self.Param("ShortMinimumBrickPoints", 5.0) \
+        self._short_minimum_brick_points = self.Param("ShortMinimumBrickPoints", 2.0) \
             .SetDisplay("Short Minimum Brick", "Minimal brick height in points for short bricks", "Short Side")
-        self._long_signal_bar_offset = self.Param("LongSignalBarOffset", 2) \
+        self._long_signal_bar_offset = self.Param("LongSignalBarOffset", 1) \
             .SetDisplay("Long Signal Offset", "Number of closed bars to delay long signals", "Long Side")
-        self._short_signal_bar_offset = self.Param("ShortSignalBarOffset", 2) \
+        self._short_signal_bar_offset = self.Param("ShortSignalBarOffset", 1) \
             .SetDisplay("Short Signal Offset", "Number of closed bars to delay short signals", "Short Side")
         self._long_stop_loss_points = self.Param("LongStopLossPoints", 1000.0) \
             .SetDisplay("Long Stop Loss", "Protective stop distance in points for long trades", "Risk")

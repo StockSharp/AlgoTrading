@@ -17,14 +17,14 @@ class n_candles_v6_strategy(Strategy):
 
     def __init__(self):
         super(n_candles_v6_strategy, self).__init__()
-        self._candles_count = self.Param("CandlesCount", 4)
+        self._candles_count = self.Param("CandlesCount", 3)
         self._order_volume = self.Param("OrderVolume", 0.01)
         self._take_profit_pips = self.Param("TakeProfitPips", 50.0)
         self._stop_loss_pips = self.Param("StopLossPips", 50.0)
         self._trailing_stop_pips = self.Param("TrailingStopPips", 10.0)
         self._trailing_step_pips = self.Param("TrailingStepPips", 4.0)
         self._max_position_volume = self.Param("MaxPositionVolume", 2.0)
-        self._use_trading_hours = self.Param("UseTradingHours", False)
+        self._use_trading_hours = self.Param("UseTradingHours", True)
         self._start_hour = self.Param("StartHour", 11)
         self._end_hour = self.Param("EndHour", 18)
         self._closing_mode = self.Param("ClosingMode", self.CLOSE_ALL)
