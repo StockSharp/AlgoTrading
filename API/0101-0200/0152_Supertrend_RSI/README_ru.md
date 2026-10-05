@@ -1,7 +1,7 @@
 # Стратегия Supertrend RSI
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-Реализация стратегии №152 — Supertrend + RSI. Покупать, когда цена выше линии Supertrend и RSI ниже 30 (перепроданность). Продавать, когда цена ниже Supertrend и RSI выше 70 (перекупленность).
+Реализация стратегии №152 — Supertrend + RSI. Покупать, когда цена выше линии Supertrend и RSI ниже RsiOversold. Продавать, когда цена ниже Supertrend и RSI выше RsiOverbought.
 
 Тестирование показывает среднегодичную доходность около 43%\. Стратегию лучше запускать на фондовом рынке.
 
@@ -22,9 +22,10 @@
   - `SupertrendPeriod` = 10
   - `SupertrendMultiplier` = 3.0m
   - `RsiPeriod` = 14
-  - `RsiOversold` = 30m
-  - `RsiOverbought` = 70m
+  - `RsiOversold` = 40
+  - `RsiOverbought` = 60
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    На пятиминутных свечах RSI почти никогда не опускается до 30, пока цена выше Supertrend (и не поднимается до 70 ниже неё): в архиве BTC за март 2024 года нет ни одной такой свечи. Поэтому по умолчанию уровни 40 и 60 — они по-прежнему отмечают откат против тренда и дают сделки в обе стороны. Сигнал на вход против открытой позиции разворачивает её.
 - **Фильтры**:
   - Категория: Средняя обратная
   - Направление: Оба
