@@ -5,100 +5,123 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan
+from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import SimpleMovingAverage, StandardDeviation
+from StockSharp.Algo.Indicators import LinearReg, AverageTrueRange, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
+
+BAND_WIDTH = 2
 
 
 class multi_regression_strategy(Strategy):
+    """
+    Multi regression strategy.
+    A close crossing above the linear regression line goes long and a close crossing below it goes short, reversing an opposite
+    position. The selected risk measure (ATR, standard deviation, Bollinger or Keltner half-width) times RiskMultiplier sets the
+    distance of the optional stop loss and take profit bounds from the entry price.
+    """
+
     def __init__(self):
         super(multi_regression_strategy, self).__init__()
-        self._length = self.Param("Length", 90) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Length", "SMA and StdDev period", "Regression")
-        self._risk_multiplier = self.Param("RiskMultiplier", 1.0) \
-            .SetDisplay("Risk Multiplier", "StdDev multiplier for bounds", "Risk")
-        self._signal_cooldown_bars = self.Param("SignalCooldownBars", 8) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Signal Cooldown", "Bars to wait between reversals", "Risk")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
-            .SetDisplay("Candle Type", "Type of candles", "Common")
-        self._prev_close = 0.0
-        self._prev_upper = 0.0
-        self._prev_lower = 0.0
-        self._initialized = False
-        self._cooldown_remaining = 0
+        self._length = self.Param("Length", 90).SetGreaterThanZero().SetDisplay("Length", "Regression and risk measure period", "Regression")
+        self._risk_measure = self.Param("RiskMeasure", "Atr").SetDisplay("Risk Measure", "Volatility measure used for the bounds: Atr, StdDev, Bollinger or Keltner", "Risk")
+        self._risk_multiplier = self.Param("RiskMultiplier", 1.0).SetGreaterThanZero().SetDisplay("Risk Multiplier", "Multiplier applied to the risk measure", "Risk")
+        self._use_stop_loss = self.Param("UseStopLoss", True).SetDisplay("Use Stop Loss", "Exit at the adverse bound", "Risk")
+        self._use_take_profit = self.Param("UseTakeProfit", True).SetDisplay("Use Take Profit", "Exit at the favorable bound", "Risk")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._reset_state()
 
     @property
     def candle_type(self):
         return self._candle_type.Value
 
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
+    def _reset_state(self):
+        self._prev_close = None
+        self._prev_regression = None
+        self._stop_price = None
+        self._take_price = None
 
     def OnReseted(self):
         super(multi_regression_strategy, self).OnReseted()
-        self._prev_close = 0.0
-        self._prev_upper = 0.0
-        self._prev_lower = 0.0
-        self._initialized = False
-        self._cooldown_remaining = 0
+        self._reset_state()
 
     def OnStarted2(self, time):
         super(multi_regression_strategy, self).OnStarted2(time)
-        self._prev_close = 0.0
-        self._prev_upper = 0.0
-        self._prev_lower = 0.0
-        self._initialized = False
-        self._cooldown_remaining = 0
-        self._sma = SimpleMovingAverage()
-        self._sma.Length = self._length.Value
-        self._std = StandardDeviation()
-        self._std.Length = self._length.Value
-        subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(self._sma, self._std, self.OnProcess).Start()
 
-    def OnProcess(self, candle, sma_val, std_val):
+        self._reset_state()
+
+        regression = LinearReg()
+        regression.Length = self._length.Value
+        atr = AverageTrueRange()
+        atr.Length = self._length.Value
+        std_dev = StandardDeviation()
+        std_dev.Length = self._length.Value
+
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(regression, atr, std_dev, self._process_candle).Start()
+
+        area = self.CreateChartArea()
+        if area is not None:
+            self.DrawCandles(area, subscription)
+            self.DrawIndicator(area, regression)
+            self.DrawOwnTrades(area)
+
+    def _get_risk_distance(self, atr, std_dev):
+        measure = str(self._risk_measure.Value)
+        if measure == "StdDev":
+            value = std_dev
+        elif measure == "Bollinger":
+            value = std_dev * Decimal(BAND_WIDTH)
+        elif measure == "Keltner":
+            value = atr * Decimal(BAND_WIDTH)
+        else:
+            value = atr
+        return value * Decimal(self._risk_multiplier.Value)
+
+    def _process_candle(self, candle, regression, atr, std_dev):
         if candle.State != CandleStates.Finished:
             return
+
+        close = candle.ClosePrice
+        prev_close = self._prev_close
+        prev_regression = self._prev_regression
+        self._prev_close = close
+        self._prev_regression = regression
+
+        # The bounds are checked against the candle range before a new crossing is acted on.
+        if self.Position > 0:
+            if (self._stop_price is not None and candle.LowPrice <= self._stop_price) or \
+                    (self._take_price is not None and candle.HighPrice >= self._take_price):
+                self.SellMarket(self.Position)
+                self._stop_price = None
+                self._take_price = None
+                return
+        elif self.Position < 0:
+            if (self._stop_price is not None and candle.HighPrice >= self._stop_price) or \
+                    (self._take_price is not None and candle.LowPrice <= self._take_price):
+                self.BuyMarket(-self.Position)
+                self._stop_price = None
+                self._take_price = None
+                return
+
+        if prev_close is None or prev_regression is None:
+            return
+
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
-        sv = float(sma_val)
-        sdv = float(std_val)
-        price = float(candle.ClosePrice)
-        if self._cooldown_remaining > 0:
-            self._cooldown_remaining -= 1
-        rm = float(self._risk_multiplier.Value)
-        if not self._initialized:
-            self._prev_close = price
-            self._prev_upper = sv + sdv * rm
-            self._prev_lower = sv - sdv * rm
-            self._initialized = True
-            return
-        upper_bound = sv + sdv * rm
-        lower_bound = sv - sdv * rm
-        long_entry = self._prev_close < self._prev_lower and price >= lower_bound
-        short_entry = self._prev_close > self._prev_upper and price <= upper_bound
-        long_exit = self.Position > 0 and (price >= sv or price >= upper_bound)
-        short_exit = self.Position < 0 and (price <= sv or price <= lower_bound)
-        cd = self._signal_cooldown_bars.Value
-        if long_exit:
-            self.SellMarket()
-            self._cooldown_remaining = cd
-        elif short_exit:
-            self.BuyMarket()
-            self._cooldown_remaining = cd
-        elif self._cooldown_remaining == 0 and long_entry and self.Position <= 0:
-            self.BuyMarket()
-            self._cooldown_remaining = cd
-        elif self._cooldown_remaining == 0 and short_entry and self.Position >= 0:
-            self.SellMarket()
-            self._cooldown_remaining = cd
-        self._prev_close = price
-        self._prev_upper = upper_bound
-        self._prev_lower = lower_bound
+
+        cross_up = prev_close <= prev_regression and close > regression
+        cross_down = prev_close >= prev_regression and close < regression
+        distance = self._get_risk_distance(atr, std_dev)
+
+        if cross_up and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+            self._stop_price = close - distance if self._use_stop_loss.Value else None
+            self._take_price = close + distance if self._use_take_profit.Value else None
+        elif cross_down and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
+            self._stop_price = close + distance if self._use_stop_loss.Value else None
+            self._take_price = close - distance if self._use_take_profit.Value else None
 
     def CreateClone(self):
         return multi_regression_strategy()
