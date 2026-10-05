@@ -2936,6 +2936,68 @@ public abstract partial class StrategyTests
 			c => c[0].ClosePrice > c[0].OpenPrice && Math.Abs(c[1].ClosePrice - c[1].OpenPrice) < c[0].ClosePrice - c[0].OpenPrice
 				&& Math.Min(c[1].OpenPrice, c[1].ClosePrice) >= c[0].LowPrice && Math.Max(c[1].OpenPrice, c[1].ClosePrice) <= c[0].HighPrice, stopPercent, secondary);
 
+	private const string Rejection = "0104_Rejection_Candle";
+
+	[TestMethod]
+	[TestCategory("Shard00")]
+	[DataRow(1.5, 0.1, false)]
+	[DataRow(1.0, 0.05, true)]
+	public async Task S0104_RejectionWicksBeyondThePreviousCandleWithStopsPastThem(double ratio, double stopPercent, bool secondary)
+	{
+		ICandleMessage previous = null;
+		var stop = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var stopExits = 0;
+		var violations = new List<string>();
+		var k = (decimal)stopPercent / 100m;
+		await Replay(Rejection, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(1.5m, Convert.ToDecimal(strategy.Parameters["WickRatio"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "WickRatio", ratio);
+			SetParam(strategy, "StopLossPercent", stopPercent);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var prior = previous;
+				previous = candle;
+				if (prior == null) return;
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (position > 0m && close <= stop) { expectedSide = Sides.Sell; expectedVolume = position; stopExits++; }
+				else if (position < 0m && close >= stop) { expectedSide = Sides.Buy; expectedVolume = -position; stopExits++; }
+				else if (position == 0m)
+				{
+					var body = Math.Abs(close - candle.OpenPrice);
+					var upper = candle.HighPrice - Math.Max(candle.OpenPrice, close);
+					var lower = Math.Min(candle.OpenPrice, close) - candle.LowPrice;
+					if (candle.LowPrice < prior.LowPrice && close > candle.OpenPrice && lower > body * (decimal)ratio) { expectedSide = Sides.Buy; stop = candle.LowPrice * (1 - k); }
+					else if (candle.HighPrice > prior.HighPrice && close < candle.OpenPrice && upper > body * (decimal)ratio) { expectedSide = Sides.Sell; stop = candle.HighPrice * (1 + k); }
+					if (expectedSide is Sides side) { expectedVolume = strategy.Volume; entries[side]++; }
+				}
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must trade against a rejection wick while flat, or close the position on a close past the stop beyond the rejected extreme.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] + entries[Sides.Sell] > 0, "The fixture must trade rejections.");
+		if (secondary) IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && stopExits > 0, "TON must trade rejections on both sides and stop out.");
+	}
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

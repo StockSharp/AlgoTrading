@@ -18,7 +18,9 @@ Los stops se establecen fuera del máximo o mínimo rechazado para limitar el ri
 - **Stops**: Sí, basados en porcentaje
 - **Valores predeterminados**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `WickRatio` = 1.5
+  - `StopLossPercent` = 2
+    Una vela de rechazo perfora el mínimo (máximo) de la vela anterior, cierra en sentido contrario y tiene una mecha más larga que WickRatio cuerpos. El stop se coloca StopLossPercent más allá del mínimo o máximo rechazado, y un cierre más allá cierra la posición.
 - **Filtros**:
   - Categoría: Patrón
   - Dirección: Ambos

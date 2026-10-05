@@ -18,7 +18,9 @@ Os stops são colocados fora da máxima ou mínima rejeitada para limitar o risc
 - **Stops**: Sim, baseado em percentual
 - **Valores padrão**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `WickRatio` = 1.5
+  - `StopLossPercent` = 2
+    Uma vela de rejeição perfura a mínima (máxima) da vela anterior, fecha no sentido oposto e tem um pavio maior que WickRatio corpos. O stop fica StopLossPercent além da mínima ou máxima rejeitada, e um fechamento além dele fecha a posição.
 - **Filtros**:
   - Categoria: Padrão
   - Direção: Ambos

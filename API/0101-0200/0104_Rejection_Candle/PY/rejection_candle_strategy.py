@@ -5,28 +5,26 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan
+from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 
 class rejection_candle_strategy(Strategy):
     """
-    Rejection Candle (Pin Bar) strategy.
-    Enters long on bullish rejection (lower low + bullish close + long lower wick).
-    Enters short on bearish rejection (higher high + bearish close + long upper wick).
-    Uses SMA for exit confirmation.
+    Rejection Candle strategy.
+    A bullish rejection probes below the previous candle's low, closes up, and has a lower wick longer than WickRatio bodies;
+    a bearish rejection mirrors it above the previous high. While flat the strategy trades against the wick.
+    The stop lies StopLossPercent beyond the rejected low or high, and a close beyond it closes the position.
     """
 
     def __init__(self):
         super(rejection_candle_strategy, self).__init__()
-        self._ma_length = self.Param("MaLength", 20).SetDisplay("MA Length", "Period of SMA for exit", "Indicators")
-        self._wick_ratio = self.Param("WickRatio", 1.5).SetDisplay("Wick Ratio", "Min wick to body ratio for rejection", "Pattern")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Type of candles to use", "General")
-        self._cooldown_bars = self.Param("CooldownBars", 500).SetDisplay("Cooldown Bars", "Bars to wait between trades", "General")
+        self._wick_ratio = self.Param("WickRatio", 1.5).SetGreaterThanZero().SetDisplay("Wick Ratio", "How many bodies long the rejecting wick must be", "Pattern")
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0).SetNotNegative().SetDisplay("Stop Loss %", "Distance of the stop beyond the rejected extreme, in percent", "Risk")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))).SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._prev_candle = None
-        self._cooldown = 0
+        self._stop_price = Decimal(0)
 
     @property
     def candle_type(self):
@@ -35,84 +33,56 @@ class rejection_candle_strategy(Strategy):
     def OnReseted(self):
         super(rejection_candle_strategy, self).OnReseted()
         self._prev_candle = None
-        self._cooldown = 0
+        self._stop_price = Decimal(0)
 
     def OnStarted2(self, time):
         super(rejection_candle_strategy, self).OnStarted2(time)
 
         self._prev_candle = None
-        self._cooldown = 0
-
-        sma = SimpleMovingAverage()
-        sma.Length = self._ma_length.Value
+        self._stop_price = Decimal(0)
 
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(sma, self._process_candle).Start()
+        subscription.Bind(self._process_candle).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, sma)
             self.DrawOwnTrades(area)
 
-    def _process_candle(self, candle, sma_val):
+    def _process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
-        if self._prev_candle is None:
-            self._prev_candle = candle
-            return
-
-        if self._cooldown > 0:
-            self._cooldown -= 1
-            self._prev_candle = candle
-            return
-
-        cd = self._cooldown_bars.Value
-        sv = float(sma_val)
-        wr = self._wick_ratio.Value
-
-        body_size = abs(float(candle.ClosePrice) - float(candle.OpenPrice))
-        if body_size == 0:
-            body_size = 0.01
-
-        upper_wick = float(candle.HighPrice) - max(float(candle.OpenPrice), float(candle.ClosePrice))
-        lower_wick = min(float(candle.OpenPrice), float(candle.ClosePrice)) - float(candle.LowPrice)
-
-        is_bullish = candle.ClosePrice > candle.OpenPrice
-        is_bearish = candle.ClosePrice < candle.OpenPrice
-
-        # Bullish rejection: made lower low, bullish close, long lower wick
-        bullish_rejection = (
-            candle.LowPrice < self._prev_candle.LowPrice and
-            is_bullish and
-            lower_wick > body_size * wr
-        )
-
-        # Bearish rejection: made higher high, bearish close, long upper wick
-        bearish_rejection = (
-            candle.HighPrice > self._prev_candle.HighPrice and
-            is_bearish and
-            upper_wick > body_size * wr
-        )
-
-        if self.Position == 0 and bullish_rejection:
-            self.BuyMarket()
-            self._cooldown = cd
-        elif self.Position == 0 and bearish_rejection:
-            self.SellMarket()
-            self._cooldown = cd
-        elif self.Position > 0 and float(candle.ClosePrice) < sv:
-            self.SellMarket()
-            self._cooldown = cd
-        elif self.Position < 0 and float(candle.ClosePrice) > sv:
-            self.BuyMarket()
-            self._cooldown = cd
-
+        previous = self._prev_candle
         self._prev_candle = candle
+
+        if previous is None or not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
+        close = candle.ClosePrice
+
+        if self.Position > 0:
+            if close <= self._stop_price:
+                self.SellMarket(self.Position)
+            return
+
+        if self.Position < 0:
+            if close >= self._stop_price:
+                self.BuyMarket(-self.Position)
+            return
+
+        body = Math.Abs(close - candle.OpenPrice)
+        upper_wick = candle.HighPrice - Math.Max(candle.OpenPrice, close)
+        lower_wick = Math.Min(candle.OpenPrice, close) - candle.LowPrice
+        ratio = Decimal(self._wick_ratio.Value)
+        percent = Decimal(self._stop_loss_percent.Value) / Decimal(100)
+
+        if candle.LowPrice < previous.LowPrice and close > candle.OpenPrice and lower_wick > body * ratio:
+            self.BuyMarket(self.Volume)
+            self._stop_price = candle.LowPrice * (Decimal(1) - percent)
+        elif candle.HighPrice > previous.HighPrice and close < candle.OpenPrice and upper_wick > body * ratio:
+            self.SellMarket(self.Volume)
+            self._stop_price = candle.HighPrice * (Decimal(1) + percent)
 
     def CreateClone(self):
         return rejection_candle_strategy()
