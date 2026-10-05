@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using Ecng.Common;
 
@@ -10,65 +11,128 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Breakout and retest strategy with trailing stop.
+/// Breaks and retests strategy.
+/// Resistance and support are the highest and lowest closes of the previous LookbackPeriod candles. A close above resistance goes long
+/// and a close below support goes short, reversing an opposite position. When not already in the breakout direction, a retest of the
+/// broken level between RetestBarsSinceBreakout and RetestBarsSinceBreakout + RetestDetectionLimit bars after the breakout (the
+/// candle touches the level and closes back on the breakout side) also enters. A StopLossPercent stop protects the trade until the
+/// close is ProfitThresholdPercent in profit, after which a trailing stop TrailingStopGapPercent from the best close takes over.
 /// </summary>
 public class BreaksAndRetestsStrategy : Strategy
 {
 	private readonly StrategyParam<int> _lookbackPeriod;
-	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<int> _retestBarsSinceBreakout;
+	private readonly StrategyParam<int> _retestDetectionLimit;
 	private readonly StrategyParam<decimal> _profitThresholdPercent;
 	private readonly StrategyParam<decimal> _trailingStopGapPercent;
-	private readonly StrategyParam<int> _maxHoldBars;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly List<decimal> _highs = new();
-	private readonly List<decimal> _lows = new();
-	private decimal _prevHighest;
-	private decimal _prevLowest;
+	private readonly Queue<decimal> _closes = new();
+
+	private decimal? _brokenResistance;
+	private int _barsSinceBullBreak;
+	private decimal? _brokenSupport;
+	private int _barsSinceBearBreak;
+
 	private decimal _entryPrice;
-	private bool _trailingStopActive;
-	private decimal _highestSinceTrailing;
-	private decimal _lowestSinceTrailing;
-	private int _barsInPosition;
-	private int _barsSinceExit;
+	private decimal _bestPrice;
+	private bool _trailingActive;
 
-	public int LookbackPeriod { get => _lookbackPeriod.Value; set => _lookbackPeriod.Value = value; }
-	public decimal StopLossPercent { get => _stopLossPercent.Value; set => _stopLossPercent.Value = value; }
-	public decimal ProfitThresholdPercent { get => _profitThresholdPercent.Value; set => _profitThresholdPercent.Value = value; }
-	public decimal TrailingStopGapPercent { get => _trailingStopGapPercent.Value; set => _trailingStopGapPercent.Value = value; }
-	public int MaxHoldBars { get => _maxHoldBars.Value; set => _maxHoldBars.Value = value; }
-	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	/// <summary>
+	/// Previous candles whose closes define support and resistance.
+	/// </summary>
+	public int LookbackPeriod
+	{
+		get => _lookbackPeriod.Value;
+		set => _lookbackPeriod.Value = value;
+	}
 
+	/// <summary>
+	/// Bars after a breakout before a retest can be detected.
+	/// </summary>
+	public int RetestBarsSinceBreakout
+	{
+		get => _retestBarsSinceBreakout.Value;
+		set => _retestBarsSinceBreakout.Value = value;
+	}
+
+	/// <summary>
+	/// Additional bars during which a retest is still detected.
+	/// </summary>
+	public int RetestDetectionLimit
+	{
+		get => _retestDetectionLimit.Value;
+		set => _retestDetectionLimit.Value = value;
+	}
+
+	/// <summary>
+	/// Profit in percent that switches to the trailing stop.
+	/// </summary>
+	public decimal ProfitThresholdPercent
+	{
+		get => _profitThresholdPercent.Value;
+		set => _profitThresholdPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Trailing stop distance from the best close in percent.
+	/// </summary>
+	public decimal TrailingStopGapPercent
+	{
+		get => _trailingStopGapPercent.Value;
+		set => _trailingStopGapPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Initial stop loss in percent from the entry price.
+	/// </summary>
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
+	/// </summary>
 	public BreaksAndRetestsStrategy()
 	{
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Lookback Period", "Number of bars for support/resistance", "Levels");
+			.SetDisplay("Lookback Period", "Previous candles whose closes define support and resistance", "Levels");
 
-		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss %", "Initial stop loss", "Risk");
+		_retestBarsSinceBreakout = Param(nameof(RetestBarsSinceBreakout), 2)
+			.SetNotNegative()
+			.SetDisplay("Retest Bars Since Breakout", "Bars after a breakout before a retest can be detected", "Retest");
+
+		_retestDetectionLimit = Param(nameof(RetestDetectionLimit), 2)
+			.SetNotNegative()
+			.SetDisplay("Retest Detection Limit", "Additional bars during which a retest is still detected", "Retest");
 
 		_profitThresholdPercent = Param(nameof(ProfitThresholdPercent), 5m)
 			.SetGreaterThanZero()
-			.SetDisplay("Profit Threshold %", "Activate trailing after profit", "Risk");
+			.SetDisplay("Profit Threshold %", "Profit that switches to the trailing stop", "Risk");
 
 		_trailingStopGapPercent = Param(nameof(TrailingStopGapPercent), 1m)
 			.SetGreaterThanZero()
-			.SetDisplay("Trailing Gap %", "Gap for trailing stop", "Risk");
+			.SetDisplay("Trailing Gap %", "Trailing stop distance from the best close", "Risk");
 
-		_maxHoldBars = Param(nameof(MaxHoldBars), 25)
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetGreaterThanZero()
-			.SetDisplay("Max Hold Bars", "Max bars to hold position", "Risk");
-
-		_cooldownBars = Param(nameof(CooldownBars), 3)
-			.SetGreaterThanZero()
-			.SetDisplay("Cooldown Bars", "Bars to wait after exit", "Risk");
+			.SetDisplay("Stop Loss %", "Initial stop loss from the entry price", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Candles for calculations", "General");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -81,22 +145,15 @@ public class BreaksAndRetestsStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_highs.Clear();
-		_lows.Clear();
-		_prevHighest = 0m;
-		_prevLowest = 0m;
-		_entryPrice = 0m;
-		_trailingStopActive = false;
-		_highestSinceTrailing = 0m;
-		_lowestSinceTrailing = 0m;
-		_barsInPosition = 0;
-		_barsSinceExit = 0;
+		ResetState();
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+
+		ResetState();
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -111,17 +168,16 @@ public class BreaksAndRetestsStrategy : Strategy
 		}
 	}
 
-	private void ClosePosition()
+	private void ResetState()
 	{
-		if (Position > 0)
-			SellMarket();
-		else if (Position < 0)
-			BuyMarket();
-
-		_entryPrice = 0m;
-		_trailingStopActive = false;
-		_barsInPosition = 0;
-		_barsSinceExit = 0;
+		_closes.Clear();
+		_brokenResistance = null;
+		_brokenSupport = null;
+		_barsSinceBullBreak = 0;
+		_barsSinceBearBreak = 0;
+		_entryPrice = 0;
+		_bestPrice = 0;
+		_trailingActive = false;
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -129,112 +185,142 @@ public class BreaksAndRetestsStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		_highs.Add(candle.HighPrice);
-		_lows.Add(candle.LowPrice);
+		var close = candle.ClosePrice;
 
-		if (_highs.Count > LookbackPeriod + 1)
-			_highs.RemoveAt(0);
-		if (_lows.Count > LookbackPeriod + 1)
-			_lows.RemoveAt(0);
+		// Levels come from the closes before this candle.
+		decimal? resistance = null;
+		decimal? support = null;
+		if (_closes.Count == LookbackPeriod)
+		{
+			resistance = _closes.Max();
+			support = _closes.Min();
+		}
 
-		if (_highs.Count <= LookbackPeriod)
+		_closes.Enqueue(close);
+		while (_closes.Count > LookbackPeriod)
+			_closes.Dequeue();
+
+		if (_brokenResistance != null)
+			_barsSinceBullBreak++;
+		if (_brokenSupport != null)
+			_barsSinceBearBreak++;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Compute highest/lowest from previous N candles (excluding current)
-		var highest = decimal.MinValue;
-		var lowest = decimal.MaxValue;
-		for (var i = 0; i < _highs.Count - 1; i++)
+		if (Position != 0 && CheckStops(candle))
+			return;
+
+		if (resistance is not decimal res || support is not decimal sup)
+			return;
+
+		var bullBreak = close > res;
+		var bearBreak = close < sup;
+
+		var maxRetestBars = RetestBarsSinceBreakout + RetestDetectionLimit;
+
+		var bullRetest = !bullBreak && _brokenResistance is decimal brokenRes
+			&& _barsSinceBullBreak >= RetestBarsSinceBreakout && _barsSinceBullBreak <= maxRetestBars
+			&& candle.LowPrice <= brokenRes && close > brokenRes;
+
+		var bearRetest = !bearBreak && _brokenSupport is decimal brokenSup
+			&& _barsSinceBearBreak >= RetestBarsSinceBreakout && _barsSinceBearBreak <= maxRetestBars
+			&& candle.HighPrice >= brokenSup && close < brokenSup;
+
+		if (bullBreak)
 		{
-			if (_highs[i] > highest) highest = _highs[i];
-			if (_lows[i] < lowest) lowest = _lows[i];
+			_brokenResistance = res;
+			_barsSinceBullBreak = 0;
+		}
+		else if (_brokenResistance != null && _barsSinceBullBreak > maxRetestBars)
+		{
+			_brokenResistance = null;
 		}
 
-		if (Position != 0)
+		if (bearBreak)
 		{
-			_barsInPosition++;
-
-			// Handle stops
-			HandleStop(candle);
-
-			// Max hold exit
-			if (Position != 0 && _barsInPosition >= MaxHoldBars)
-				ClosePosition();
+			_brokenSupport = sup;
+			_barsSinceBearBreak = 0;
 		}
-		else
+		else if (_brokenSupport != null && _barsSinceBearBreak > maxRetestBars)
 		{
-			_barsSinceExit++;
-
-			// Breakout detection with cooldown
-			if (_barsSinceExit >= CooldownBars && _prevHighest > 0 && _prevLowest > 0)
-			{
-				if (candle.ClosePrice > _prevHighest)
-				{
-					BuyMarket();
-					_entryPrice = candle.ClosePrice;
-					_trailingStopActive = false;
-					_barsInPosition = 0;
-				}
-				else if (candle.ClosePrice < _prevLowest)
-				{
-					SellMarket();
-					_entryPrice = candle.ClosePrice;
-					_trailingStopActive = false;
-					_barsInPosition = 0;
-				}
-			}
+			_brokenSupport = null;
 		}
 
-		_prevHighest = highest;
-		_prevLowest = lowest;
+		if ((bullBreak || bullRetest) && Position <= 0)
+		{
+			if (bullRetest)
+				_brokenResistance = null;
+
+			Enter(true, close);
+		}
+		else if ((bearBreak || bearRetest) && Position >= 0)
+		{
+			if (bearRetest)
+				_brokenSupport = null;
+
+			Enter(false, close);
+		}
 	}
 
-	private void HandleStop(ICandleMessage candle)
+	private void Enter(bool isLong, decimal price)
 	{
-		if (Position > 0 && _entryPrice > 0)
-		{
-			var profitPercent = (candle.ClosePrice - _entryPrice) / _entryPrice * 100m;
-			if (!_trailingStopActive && profitPercent >= ProfitThresholdPercent)
-			{
-				_trailingStopActive = true;
-				_highestSinceTrailing = candle.ClosePrice;
-			}
+		var volume = Volume + Math.Abs(Position);
 
-			if (_trailingStopActive)
+		if (isLong)
+			BuyMarket(volume);
+		else
+			SellMarket(volume);
+
+		_entryPrice = price;
+		_bestPrice = price;
+		_trailingActive = false;
+	}
+
+	private bool CheckStops(ICandleMessage candle)
+	{
+		if (_entryPrice <= 0)
+			return false;
+
+		var close = candle.ClosePrice;
+
+		if (Position > 0)
+		{
+			_bestPrice = Math.Max(_bestPrice, close);
+
+			if (!_trailingActive && (close - _entryPrice) / _entryPrice * 100m >= ProfitThresholdPercent)
+				_trailingActive = true;
+
+			var stop = _trailingActive
+				? _bestPrice * (1m - TrailingStopGapPercent / 100m)
+				: _entryPrice * (1m - StopLossPercent / 100m);
+
+			if (candle.LowPrice <= stop)
 			{
-				_highestSinceTrailing = Math.Max(_highestSinceTrailing, candle.ClosePrice);
-				var stop = _highestSinceTrailing * (1 - TrailingStopGapPercent / 100m);
-				if (candle.ClosePrice <= stop)
-					ClosePosition();
-			}
-			else
-			{
-				var stop = _entryPrice * (1 - StopLossPercent / 100m);
-				if (candle.ClosePrice <= stop)
-					ClosePosition();
+				SellMarket(Position);
+				_entryPrice = 0;
+				return true;
 			}
 		}
-		else if (Position < 0 && _entryPrice > 0)
+		else if (Position < 0)
 		{
-			var profitPercent = (_entryPrice - candle.ClosePrice) / _entryPrice * 100m;
-			if (!_trailingStopActive && profitPercent >= ProfitThresholdPercent)
-			{
-				_trailingStopActive = true;
-				_lowestSinceTrailing = candle.ClosePrice;
-			}
+			_bestPrice = Math.Min(_bestPrice, close);
 
-			if (_trailingStopActive)
+			if (!_trailingActive && (_entryPrice - close) / _entryPrice * 100m >= ProfitThresholdPercent)
+				_trailingActive = true;
+
+			var stop = _trailingActive
+				? _bestPrice * (1m + TrailingStopGapPercent / 100m)
+				: _entryPrice * (1m + StopLossPercent / 100m);
+
+			if (candle.HighPrice >= stop)
 			{
-				_lowestSinceTrailing = Math.Min(_lowestSinceTrailing, candle.ClosePrice);
-				var stop = _lowestSinceTrailing * (1 + TrailingStopGapPercent / 100m);
-				if (candle.ClosePrice >= stop)
-					ClosePosition();
-			}
-			else
-			{
-				var stop = _entryPrice * (1 + StopLossPercent / 100m);
-				if (candle.ClosePrice >= stop)
-					ClosePosition();
+				BuyMarket(-Position);
+				_entryPrice = 0;
+				return true;
 			}
 		}
+
+		return false;
 	}
 }
