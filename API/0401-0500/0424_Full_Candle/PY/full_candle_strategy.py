@@ -5,120 +5,95 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates
+from System import TimeSpan, Decimal
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 
 
 class full_candle_strategy(Strategy):
-    """Full Candle Strategy. Trades on full body candles with EMA trend filter."""
+    """
+    Full Candle strategy.
+    Goes long on a bullish candle closing above the EMA whose upper shadow is at most ShadowPercent of the candle range,
+    and short on a bearish candle closing below the EMA whose lower shadow is at most ShadowPercent of the range. The
+    opposite signal reverses the position; percent take-profit and stop-loss manage the trade (0 disables either).
+    """
 
     def __init__(self):
         super(full_candle_strategy, self).__init__()
-
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
-            .SetDisplay("Candle type", "Candle type for strategy calculation.", "General")
         self._ema_length = self.Param("EmaLength", 10) \
-            .SetDisplay("EMA Length", "EMA period", "Moving Averages")
+            .SetGreaterThanZero() \
+            .SetDisplay("EMA Length", "EMA period", "Indicators")
         self._shadow_percent = self.Param("ShadowPercent", 5.0) \
-            .SetDisplay("Shadow Percent", "Maximum shadow percentage of candle range", "Strategy")
-        self._cooldown_bars = self.Param("CooldownBars", 15) \
-            .SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk")
-
-        self._ema = None
-        self._entry_price = None
-        self._cooldown_remaining = 0
+            .SetNotNegative() \
+            .SetDisplay("Shadow %", "Maximum breakout-side shadow in percent of the candle range", "Signals")
+        self._tp_percent = self.Param("TPPercent", 1.2) \
+            .SetNotNegative() \
+            .SetDisplay("TP %", "Take-profit percentage, 0 disables", "Risk")
+        self._sl_percent = self.Param("SLPercent", 1.8) \
+            .SetNotNegative() \
+            .SetDisplay("SL %", "Stop-loss percentage, 0 disables", "Risk")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
+            .SetDisplay("Candle type", "Candle type for strategy calculation", "General")
 
     @property
-    def candle_type(self):
+    def CandleType(self):
         return self._candle_type.Value
 
-    def OnReseted(self):
-        super(full_candle_strategy, self).OnReseted()
-        self._ema = None
-        self._entry_price = None
-        self._cooldown_remaining = 0
+    def GetWorkingSecurities(self):
+        return [(self.Security, self.CandleType)]
 
     def OnStarted2(self, time):
         super(full_candle_strategy, self).OnStarted2(time)
 
-        self._ema = ExponentialMovingAverage()
-        self._ema.Length = int(self._ema_length.Value)
+        ema = ExponentialMovingAverage()
+        ema.Length = self._ema_length.Value
 
-        subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(self._ema, self._on_process).Start()
+        subscription = self.SubscribeCandles(self.CandleType)
+        subscription.BindEx(ema, self._process_candle).Start()
+
+        tp = float(self._tp_percent.Value)
+        sl = float(self._sl_percent.Value)
+        self.StartProtection(
+            Unit(Decimal(tp), UnitTypes.Percent) if tp > 0 else Unit(),
+            Unit(Decimal(sl), UnitTypes.Percent) if sl > 0 else Unit(),
+            useMarketOrders=True)
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, self._ema)
+            self.DrawIndicator(area, ema)
             self.DrawOwnTrades(area)
 
-    def _on_process(self, candle, ema_val):
+    def _process_candle(self, candle, ema_value):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self._ema.IsFormed:
+        if not ema_value.IsFormed:
             return
 
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        if self._cooldown_remaining > 0:
-            self._cooldown_remaining -= 1
-            return
-
+        ema = float(ema_value.GetValue[Decimal](None))
+        open_price = float(candle.OpenPrice)
         close = float(candle.ClosePrice)
-        opn = float(candle.OpenPrice)
         high = float(candle.HighPrice)
         low = float(candle.LowPrice)
-        ev = float(ema_val)
-        cooldown = int(self._cooldown_bars.Value)
-        shadow_pct_threshold = float(self._shadow_percent.Value)
+        candle_range = high - low
 
-        candle_size = high - low
-        if candle_size <= 0:
+        if candle_range <= 0:
             return
 
-        body_size = abs(close - opn)
+        max_shadow = candle_range * float(self._shadow_percent.Value) / 100.0
 
-        if close > opn:
-            upper_shadow = high - close
-            lower_shadow = opn - low
-        else:
-            upper_shadow = high - opn
-            lower_shadow = close - low
+        long_signal = close > open_price and close > ema and high - close <= max_shadow
+        short_signal = close < open_price and close < ema and close - low <= max_shadow
 
-        total_shadow_pct = ((upper_shadow + lower_shadow) * 100.0) / candle_size
-        is_full_candle = total_shadow_pct <= shadow_pct_threshold and body_size > 0
-
-        # Exit conditions
-        if self.Position > 0 and self._entry_price is not None and close > self._entry_price * 1.003:
-            self.SellMarket(Math.Abs(self.Position))
-            self._entry_price = None
-            self._cooldown_remaining = cooldown
-            return
-        elif self.Position < 0 and self._entry_price is not None and close < self._entry_price * 0.997:
-            self.BuyMarket(Math.Abs(self.Position))
-            self._entry_price = None
-            self._cooldown_remaining = cooldown
-            return
-
-        # Entry: full bullish candle above EMA
-        if is_full_candle and close > opn and close > ev and self.Position <= 0:
-            if self.Position < 0:
-                self.BuyMarket(Math.Abs(self.Position))
-            self.BuyMarket(self.Volume)
-            self._entry_price = close
-            self._cooldown_remaining = cooldown
-        # Entry: full bearish candle below EMA
-        elif is_full_candle and close < opn and close < ev and self.Position >= 0:
-            if self.Position > 0:
-                self.SellMarket(Math.Abs(self.Position))
-            self.SellMarket(self.Volume)
-            self._entry_price = close
-            self._cooldown_remaining = cooldown
+        if long_signal and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+        elif short_signal and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
 
     def CreateClone(self):
         return full_candle_strategy()
