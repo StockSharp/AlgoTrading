@@ -11,47 +11,70 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Average high-low range with IBS reversal strategy.
-/// Uses Highest/Lowest channel with EMA filter and cooldown.
-/// Buys on breakout above channel with uptrend, sells on breakdown below with downtrend.
+/// Average high-low range IBS reversal strategy.
+/// The buy threshold is the highest high of the last Length candles minus 2.5 times the SMA of the candle range over Length
+/// candles. When the close has stayed below that threshold for BarsBelowThreshold consecutive candles and the internal bar
+/// strength (close - low) / (high - low) is below IbsBuyThreshold, a long opens, provided the candle lies between StartTime and
+/// EndTime. The long closes when a close exceeds the previous candle's high. Long only.
 /// </summary>
 public class AverageHighLowRangeIbsReversalStrategy : Strategy
 {
-	private readonly StrategyParam<int> _channelLength;
-	private readonly StrategyParam<int> _emaLength;
-	private readonly StrategyParam<int> _cooldownBars;
+	private const decimal _rangeMultiplier = 2.5m;
+
+	private readonly StrategyParam<int> _length;
+	private readonly StrategyParam<int> _barsBelowThreshold;
+	private readonly StrategyParam<decimal> _ibsBuyThreshold;
+	private readonly StrategyParam<DateTime> _startTime;
+	private readonly StrategyParam<DateTime> _endTime;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevHighest;
-	private decimal _prevLowest;
-	private int _barIndex;
-	private int _lastTradeBar;
+	private SimpleMovingAverage _rangeAverage;
+	private int _barsBelow;
+	private decimal? _prevHigh;
 
 	/// <summary>
-	/// Channel lookback length.
+	/// Lookback of the range average and the highest high.
 	/// </summary>
-	public int ChannelLength
+	public int Length
 	{
-		get => _channelLength.Value;
-		set => _channelLength.Value = value;
+		get => _length.Value;
+		set => _length.Value = value;
 	}
 
 	/// <summary>
-	/// EMA trend filter period.
+	/// Consecutive closes below the threshold required for an entry.
 	/// </summary>
-	public int EmaLength
+	public int BarsBelowThreshold
 	{
-		get => _emaLength.Value;
-		set => _emaLength.Value = value;
+		get => _barsBelowThreshold.Value;
+		set => _barsBelowThreshold.Value = value;
 	}
 
 	/// <summary>
-	/// Cooldown bars between trades.
+	/// Maximum internal bar strength for an entry.
 	/// </summary>
-	public int CooldownBars
+	public decimal IbsBuyThreshold
 	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
+		get => _ibsBuyThreshold.Value;
+		set => _ibsBuyThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Start of the trading window.
+	/// </summary>
+	public DateTime StartTime
+	{
+		get => _startTime.Value;
+		set => _startTime.Value = value;
+	}
+
+	/// <summary>
+	/// End of the trading window.
+	/// </summary>
+	public DateTime EndTime
+	{
+		get => _endTime.Value;
+		set => _endTime.Value = value;
 	}
 
 	/// <summary>
@@ -68,16 +91,22 @@ public class AverageHighLowRangeIbsReversalStrategy : Strategy
 	/// </summary>
 	public AverageHighLowRangeIbsReversalStrategy()
 	{
-		_channelLength = Param(nameof(ChannelLength), 20)
+		_length = Param(nameof(Length), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Channel Length", "Lookback for Highest/Lowest", "Indicators");
+			.SetDisplay("Length", "Lookback of the range average and the highest high", "Indicators");
 
-		_emaLength = Param(nameof(EmaLength), 40)
+		_barsBelowThreshold = Param(nameof(BarsBelowThreshold), 2)
 			.SetGreaterThanZero()
-			.SetDisplay("EMA Length", "EMA trend filter period", "Indicators");
+			.SetDisplay("Bars Below Threshold", "Consecutive closes below the threshold required for an entry", "Signals");
 
-		_cooldownBars = Param(nameof(CooldownBars), 350)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "Trading");
+		_ibsBuyThreshold = Param(nameof(IbsBuyThreshold), 0.2m)
+			.SetDisplay("IBS Buy Threshold", "Maximum internal bar strength for an entry", "Signals");
+
+		_startTime = Param(nameof(StartTime), new DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc))
+			.SetDisplay("Start Time", "Start of the trading window", "Time");
+
+		_endTime = Param(nameof(EndTime), new DateTime(2100, 1, 1, 0, 0, 0, DateTimeKind.Utc))
+			.SetDisplay("End Time", "End of the trading window", "Time");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -93,10 +122,9 @@ public class AverageHighLowRangeIbsReversalStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevHighest = 0;
-		_prevLowest = 0;
-		_barIndex = 0;
-		_lastTradeBar = 0;
+		_rangeAverage = null;
+		_barsBelow = 0;
+		_prevHigh = null;
 	}
 
 	/// <inheritdoc />
@@ -104,50 +132,58 @@ public class AverageHighLowRangeIbsReversalStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var highest = new Highest { Length = ChannelLength };
-		var lowest = new Lowest { Length = ChannelLength };
-		var ema = new ExponentialMovingAverage { Length = EmaLength };
+		_barsBelow = 0;
+		_prevHigh = null;
+
+		var highest = new Highest { Length = Length };
+		_rangeAverage = new SimpleMovingAverage { Length = Length };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(highest, lowest, ema, ProcessCandle)
+			.Bind(highest, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, ema);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal highestValue, decimal lowestValue, decimal emaValue)
+	private void ProcessCandle(ICandleMessage candle, decimal highest)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		_barIndex++;
+		var range = candle.HighPrice - candle.LowPrice;
+		var averageRange = _rangeAverage.Process(range, candle.ServerTime, true).ToDecimal();
 
-		var cooldownOk = _barIndex - _lastTradeBar > CooldownBars;
+		var prevHigh = _prevHigh;
+		_prevHigh = candle.HighPrice;
 
-		// Breakout above previous highest with uptrend
-		var breakUp = _prevHighest > 0 && candle.ClosePrice > _prevHighest && candle.ClosePrice > emaValue;
-		// Breakdown below previous lowest with downtrend
-		var breakDown = _prevLowest > 0 && candle.ClosePrice < _prevLowest && candle.ClosePrice < emaValue;
+		if (!_rangeAverage.IsFormed)
+			return;
 
-		if (breakUp && Position <= 0 && cooldownOk)
+		var close = candle.ClosePrice;
+		var threshold = highest - _rangeMultiplier * averageRange;
+		_barsBelow = close < threshold ? _barsBelow + 1 : 0;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (Position > 0)
 		{
-			BuyMarket();
-			_lastTradeBar = _barIndex;
-		}
-		else if (breakDown && Position >= 0 && cooldownOk)
-		{
-			SellMarket();
-			_lastTradeBar = _barIndex;
+			if (prevHigh is decimal ph && close > ph)
+				SellMarket(Position);
+
+			return;
 		}
 
-		_prevHighest = highestValue;
-		_prevLowest = lowestValue;
+		var ibs = range > 0m ? (close - candle.LowPrice) / range : 0.5m;
+		var inWindow = candle.OpenTime >= StartTime && candle.OpenTime <= EndTime;
+
+		if (Position == 0 && inWindow && _barsBelow >= BarsBelowThreshold && ibs < IbsBuyThreshold)
+			BuyMarket(Volume);
 	}
 }
