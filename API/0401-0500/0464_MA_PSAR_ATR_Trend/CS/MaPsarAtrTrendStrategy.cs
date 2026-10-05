@@ -11,103 +11,158 @@ using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 /// <summary>
-/// Moving Average Crossover with Parabolic SAR filter and ATR stop.
-/// Buys when fast MA > slow MA + price > fast MA + price > PSAR.
-/// Sells when fast MA < slow MA + price < fast MA + price < PSAR.
-/// Uses ATR-based stop loss.
+/// MA PSAR ATR Trend Strategy.
+/// A long opens when Fast MA > Slow MA, the close is above the fast MA and the low is above the Parabolic SAR of the last
+/// finished daily candle; a short mirrors this. UsePsarFilter switches the daily SAR condition off. Each entry gets a stop
+/// AtrMultiplierLong or AtrMultiplierShort ATRs away; a position closes when the stop is hit or the fast MA crosses back
+/// over the slow MA.
 /// </summary>
 public class MaPsarAtrTrendStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _fastMaPeriod;
 	private readonly StrategyParam<int> _slowMaPeriod;
+	private readonly StrategyParam<decimal> _sarStep;
+	private readonly StrategyParam<decimal> _sarMaxStep;
 	private readonly StrategyParam<int> _atrPeriod;
-	private readonly StrategyParam<decimal> _atrMultiplier;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _atrMultiplierLong;
+	private readonly StrategyParam<decimal> _atrMultiplierShort;
+	private readonly StrategyParam<bool> _usePsarFilter;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private ExponentialMovingAverage _fastMa;
-	private ExponentialMovingAverage _slowMa;
-	private AverageTrueRange _atr;
-	private ParabolicSar _psar;
+	private decimal? _dailySar;
+	private decimal? _stopPrice;
 
-	private decimal _stopPrice;
-	private int _cooldownRemaining;
-
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
+	/// <summary>
+	/// Fast MA period.
+	/// </summary>
 	public int FastMaPeriod
 	{
 		get => _fastMaPeriod.Value;
 		set => _fastMaPeriod.Value = value;
 	}
 
+	/// <summary>
+	/// Slow MA period.
+	/// </summary>
 	public int SlowMaPeriod
 	{
 		get => _slowMaPeriod.Value;
 		set => _slowMaPeriod.Value = value;
 	}
 
+	/// <summary>
+	/// Parabolic SAR acceleration step.
+	/// </summary>
+	public decimal SarStep
+	{
+		get => _sarStep.Value;
+		set => _sarStep.Value = value;
+	}
+
+	/// <summary>
+	/// Parabolic SAR maximum acceleration.
+	/// </summary>
+	public decimal SarMaxStep
+	{
+		get => _sarMaxStep.Value;
+		set => _sarMaxStep.Value = value;
+	}
+
+	/// <summary>
+	/// ATR period.
+	/// </summary>
 	public int AtrPeriod
 	{
 		get => _atrPeriod.Value;
 		set => _atrPeriod.Value = value;
 	}
 
-	public decimal AtrMultiplier
+	/// <summary>
+	/// ATR multiplier of the long stop.
+	/// </summary>
+	public decimal AtrMultiplierLong
 	{
-		get => _atrMultiplier.Value;
-		set => _atrMultiplier.Value = value;
+		get => _atrMultiplierLong.Value;
+		set => _atrMultiplierLong.Value = value;
 	}
 
-	public int CooldownBars
+	/// <summary>
+	/// ATR multiplier of the short stop.
+	/// </summary>
+	public decimal AtrMultiplierShort
 	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
+		get => _atrMultiplierShort.Value;
+		set => _atrMultiplierShort.Value = value;
 	}
 
+	/// <summary>
+	/// Require the daily Parabolic SAR to agree.
+	/// </summary>
+	public bool UsePsarFilter
+	{
+		get => _usePsarFilter.Value;
+		set => _usePsarFilter.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type of the signals.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
+	/// </summary>
 	public MaPsarAtrTrendStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 40)
 			.SetGreaterThanZero()
-			.SetDisplay("Fast MA Period", "Fast EMA period", "MA");
+			.SetDisplay("Fast MA", "Fast MA period", "Indicators");
 
 		_slowMaPeriod = Param(nameof(SlowMaPeriod), 160)
 			.SetGreaterThanZero()
-			.SetDisplay("Slow MA Period", "Slow EMA period", "MA");
+			.SetDisplay("Slow MA", "Slow MA period", "Indicators");
+
+		_sarStep = Param(nameof(SarStep), 0.02m)
+			.SetGreaterThanZero()
+			.SetDisplay("SAR Step", "Parabolic SAR acceleration step", "PSAR");
+
+		_sarMaxStep = Param(nameof(SarMaxStep), 0.2m)
+			.SetGreaterThanZero()
+			.SetDisplay("SAR Max Step", "Parabolic SAR maximum acceleration", "PSAR");
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("ATR Period", "ATR period", "ATR");
+			.SetDisplay("ATR Period", "ATR period", "Risk");
 
-		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
-			.SetDisplay("ATR Multiplier", "ATR stop multiplier", "Risk");
+		_atrMultiplierLong = Param(nameof(AtrMultiplierLong), 2m)
+			.SetGreaterThanZero()
+			.SetDisplay("ATR Multiplier Long", "ATR multiplier of the long stop", "Risk");
 
-		_cooldownBars = Param(nameof(CooldownBars), 10)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "Risk");
+		_atrMultiplierShort = Param(nameof(AtrMultiplierShort), 2m)
+			.SetGreaterThanZero()
+			.SetDisplay("ATR Multiplier Short", "ATR multiplier of the short stop", "Risk");
+
+		_usePsarFilter = Param(nameof(UsePsarFilter), true)
+			.SetDisplay("Use PSAR Filter", "Require the daily Parabolic SAR to agree", "PSAR");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type of the signals", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> [(Security, CandleType)];
+		=> [(Security, CandleType), (Security, TimeSpan.FromDays(1).TimeFrame())];
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_fastMa = null;
-		_slowMa = null;
-		_atr = null;
-		_psar = null;
-		_stopPrice = 0;
-		_cooldownRemaining = 0;
+		_dailySar = null;
+		_stopPrice = null;
 	}
 
 	/// <inheritdoc />
@@ -115,96 +170,94 @@ public class MaPsarAtrTrendStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_fastMa = new ExponentialMovingAverage { Length = FastMaPeriod };
-		_slowMa = new ExponentialMovingAverage { Length = SlowMaPeriod };
-		_atr = new AverageTrueRange { Length = AtrPeriod };
-		_psar = new ParabolicSar();
+		_dailySar = null;
+		_stopPrice = null;
+
+		var fastMa = new ExponentialMovingAverage { Length = FastMaPeriod };
+		var slowMa = new ExponentialMovingAverage { Length = SlowMaPeriod };
+		var atr = new AverageTrueRange { Length = AtrPeriod };
+		var psar = new ParabolicSar { AccelerationStep = SarStep, AccelerationMax = SarMaxStep };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_fastMa, _slowMa, _atr, _psar, OnProcess)
+			.BindEx(fastMa, slowMa, atr, ProcessCandle)
+			.Start();
+
+		SubscribeCandles(TimeSpan.FromDays(1).TimeFrame())
+			.BindEx(psar, ProcessDailyCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _fastMa);
-			DrawIndicator(area, _slowMa);
+			DrawIndicator(area, fastMa);
+			DrawIndicator(area, slowMa);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void OnProcess(ICandleMessage candle, decimal fastVal, decimal slowVal, decimal atrVal, decimal psarVal)
+	private void ProcessDailyCandle(ICandleMessage candle, IIndicatorValue psarValue)
+	{
+		if (candle.State != CandleStates.Finished || !psarValue.IsFormed)
+			return;
+
+		_dailySar = psarValue.GetValue<decimal>();
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue fastValue, IIndicatorValue slowValue, IIndicatorValue atrValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_fastMa.IsFormed || !_slowMa.IsFormed || !_atr.IsFormed || !_psar.IsFormed)
+		if (!fastValue.IsFormed || !slowValue.IsFormed || !atrValue.IsFormed)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (_cooldownRemaining > 0)
+		var fast = fastValue.GetValue<decimal>();
+		var slow = slowValue.GetValue<decimal>();
+		var atr = atrValue.GetValue<decimal>();
+		var close = candle.ClosePrice;
+
+		if (Position > 0)
 		{
-			_cooldownRemaining--;
+			if (fast < slow || (_stopPrice is decimal stop && candle.LowPrice <= stop))
+			{
+				SellMarket(Position);
+				_stopPrice = null;
+			}
+
 			return;
 		}
 
-		var price = candle.ClosePrice;
-		var bullishTrend = fastVal > slowVal && price > fastVal;
-		var bearishTrend = fastVal < slowVal && price < fastVal;
-		var psarBull = price > psarVal;
-		var psarBear = price < psarVal;
+		if (Position < 0)
+		{
+			if (fast > slow || (_stopPrice is decimal stop && candle.HighPrice >= stop))
+			{
+				BuyMarket(-Position);
+				_stopPrice = null;
+			}
 
-		// Check stop loss
-		if (Position > 0 && price <= _stopPrice)
-		{
-			SellMarket(Math.Abs(Position));
-			_stopPrice = 0;
-			_cooldownRemaining = CooldownBars;
-			return;
-		}
-		else if (Position < 0 && price >= _stopPrice)
-		{
-			BuyMarket(Math.Abs(Position));
-			_stopPrice = 0;
-			_cooldownRemaining = CooldownBars;
 			return;
 		}
 
-		// Entry long
-		if (bullishTrend && psarBull && Position <= 0)
+		if (UsePsarFilter && _dailySar is null)
+			return;
+
+		var longSar = !UsePsarFilter || candle.LowPrice > _dailySar;
+		var shortSar = !UsePsarFilter || candle.HighPrice < _dailySar;
+
+		if (fast > slow && close > fast && longSar)
 		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
 			BuyMarket(Volume);
-			_stopPrice = price - atrVal * AtrMultiplier;
-			_cooldownRemaining = CooldownBars;
+			_stopPrice = close - atr * AtrMultiplierLong;
 		}
-		// Entry short
-		else if (bearishTrend && psarBear && Position >= 0)
+		else if (fast < slow && close < fast && shortSar)
 		{
-			if (Position > 0)
-				SellMarket(Math.Abs(Position));
 			SellMarket(Volume);
-			_stopPrice = price + atrVal * AtrMultiplier;
-			_cooldownRemaining = CooldownBars;
-		}
-		// Exit long on trend reversal
-		else if (Position > 0 && bearishTrend)
-		{
-			SellMarket(Math.Abs(Position));
-			_stopPrice = 0;
-			_cooldownRemaining = CooldownBars;
-		}
-		// Exit short on trend reversal
-		else if (Position < 0 && bullishTrend)
-		{
-			BuyMarket(Math.Abs(Position));
-			_stopPrice = 0;
-			_cooldownRemaining = CooldownBars;
+			_stopPrice = close + atr * AtrMultiplierShort;
 		}
 	}
 }
