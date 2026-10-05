@@ -4,89 +4,88 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import SimpleMovingAverage, ExponentialMovingAverage
+from System import TimeSpan, Decimal
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, Level1Fields
+from StockSharp.BusinessEntities import Subscription
+from StockSharp.Algo.Indicators import SimpleMovingAverage, ParabolicSar
 from StockSharp.Algo.Strategies import Strategy
 
 class ma_parabolic_sar_strategy(Strategy):
     """
-    MA + SAR proxy (EMA). Enters on combined MA/SAR flip signals.
+    MA Parabolic SAR strategy.
+    A close above both the MaPeriod simple moving average and the Parabolic SAR goes long and a close below both goes short, reversing
+    an opposite position. The SAR is the trailing stop: a long closes when price closes below it and a short when price closes above it,
+    and a percent stop limits the loss.
     """
 
     def __init__(self):
         super(ma_parabolic_sar_strategy, self).__init__()
-        self._ma_period = self.Param("MaPeriod", 20).SetDisplay("MA Period", "SMA period", "Indicators")
-        self._cooldown_bars = self.Param("CooldownBars", 20).SetDisplay("Cooldown", "Bars between trades", "General")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Timeframe", "General")
-
-        self._has_prev = False
-        self._prev_above_ma = False
-        self._prev_above_sar = False
-        self._cooldown = 0
+        self._ma_period = self.Param("MaPeriod", 20).SetGreaterThanZero().SetDisplay("MA Period", "Period of the simple moving average", "Indicators")
+        self._sar_step = self.Param("SarStep", 0.02).SetGreaterThanZero().SetDisplay("SAR Step", "Acceleration factor of the SAR", "Indicators")
+        self._sar_max_step = self.Param("SarMaxStep", 0.2).SetGreaterThanZero().SetDisplay("SAR Max Step", "Maximum acceleration factor of the SAR", "Indicators")
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0).SetNotNegative().SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles to use", "General")
 
     @property
     def candle_type(self):
         return self._candle_type.Value
 
-    def OnReseted(self):
-        super(ma_parabolic_sar_strategy, self).OnReseted()
-        self._has_prev = False
-        self._prev_above_ma = False
-        self._prev_above_sar = False
-        self._cooldown = 0
-
     def OnStarted2(self, time):
         super(ma_parabolic_sar_strategy, self).OnStarted2(time)
+
         ma = SimpleMovingAverage()
         ma.Length = self._ma_period.Value
-        sar_proxy = ExponentialMovingAverage()
-        sar_proxy.Length = max(2, self._ma_period.Value // 2)
+        sar = ParabolicSar()
+        sar.Acceleration = Decimal(self._sar_step.Value)
+        sar.AccelerationMax = Decimal(self._sar_max_step.Value)
+
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(ma, sar_proxy, self._process_candle).Start()
+        subscription.BindEx(ma, sar, self._process_candle).Start()
+
+        self.StartProtection(Unit(), Unit(Decimal(self._stop_loss_percent.Value), UnitTypes.Percent), useMarketOrders=True, isLocalStop=True)
+
+        # The stop has to see prices between candles, not only at their close.
+        for field in (Level1Fields.BestBidPrice, Level1Fields.BestAskPrice):
+            quotes = Subscription(DataType.Level1, self.Security)
+            quotes.MarketData.BuildField = field
+            self.SubscribeLevel1(quotes).Bind(self._observe_protection_quote).Start()
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
             self.DrawIndicator(area, ma)
-            self.DrawIndicator(area, sar_proxy)
+            self.DrawIndicator(area, sar)
             self.DrawOwnTrades(area)
 
-    def _process_candle(self, candle, ma_val, sar_val):
+    def _observe_protection_quote(self, quote):
+        # The high-level handler activates native protection before the callback, including between bars.
+        pass
+
+    def _process_candle(self, candle, ma_value, sar_value):
         if candle.State != CandleStates.Finished:
             return
-        close = float(candle.ClosePrice)
-        ma = float(ma_val)
-        sar = float(sar_val)
-        above_ma = close > ma
-        above_sar = close > sar
-        if not self._has_prev:
-            self._has_prev = True
-            self._prev_above_ma = above_ma
-            self._prev_above_sar = above_sar
+
+        # The first SAR value is formed but empty.
+        if not ma_value.IsFormed or not sar_value.IsFormed or sar_value.IsEmpty:
             return
-        turned_bull = not self._prev_above_sar and above_sar and above_ma
-        turned_bear = self._prev_above_sar and not above_sar and not above_ma
-        sar_flip_down = self._prev_above_sar and not above_sar
-        sar_flip_up = not self._prev_above_sar and above_sar
-        if self._cooldown > 0:
-            self._cooldown -= 1
-        if self._cooldown == 0 and turned_bull:
-            if self.Position <= 0:
-                self.BuyMarket()
-                self._cooldown = self._cooldown_bars.Value
-        elif self._cooldown == 0 and turned_bear:
-            if self.Position >= 0:
-                self.SellMarket()
-                self._cooldown = self._cooldown_bars.Value
-        elif self.Position > 0 and sar_flip_down:
-            self.SellMarket()
-            self._cooldown = self._cooldown_bars.Value
-        elif self.Position < 0 and sar_flip_up:
-            self.BuyMarket()
-            self._cooldown = self._cooldown_bars.Value
-        self._prev_above_ma = above_ma
-        self._prev_above_sar = above_sar
+
+        ma = ma_value.GetValue[Decimal](None)
+        sar = sar_value.GetValue[Decimal](None)
+        close = candle.ClosePrice
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
+        if close > ma and close > sar and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+        elif close < ma and close < sar and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
+        elif self.Position > 0 and close < sar:
+            self.SellMarket(self.Position)
+        elif self.Position < 0 and close > sar:
+            self.BuyMarket(-self.Position)
 
     def CreateClone(self):
         return ma_parabolic_sar_strategy()

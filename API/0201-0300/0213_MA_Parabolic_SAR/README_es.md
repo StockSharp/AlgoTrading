@@ -20,11 +20,11 @@ Este enfoque es más adecuado para traders que prefieren el seguimiento sistemá
 - **Stops**: Sí, dinámico vía Parabolic SAR y stop fijo opcional.
 - **Valores predeterminados**:
   - `MaPeriod` = 20
-  - `SarStep` = 0.02m
-  - `SarMaxStep` = 0.2m
+  - `SarStep` = 0.02
+  - `SarMaxStep` = 0.2
   - `CandleType` = TimeSpan.FromMinutes(5)
-  - `TakeValue` = new Unit(0, UnitTypes.Absolute)
-  - `StopValue` = new Unit(2, UnitTypes.Percent)
+  - `StopLossPercent` = 2
+    Una entrada necesita ambas condiciones al cierre de una vela, sea el giro del SAR o el cruce de la MA lo que ocurra último. El stop fijo opcional es StopLossPercent del precio de entrada, vigilado también entre velas; 0 lo desactiva. Las reglas no fijan objetivo de beneficio, por lo que se eliminó el TakeValue nulo. Una señal de entrada contra una posición abierta la invierte.
 - **Filtros**:
   - Categoría: Tendencia
   - Dirección: Ambos

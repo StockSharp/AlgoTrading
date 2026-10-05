@@ -8207,6 +8207,70 @@ public abstract partial class StrategyTests
 	}
 
 
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(20, 0.02, 0.2, false)]
+	[DataRow(50, 0.03, 0.3, true)]
+	public async Task S0213_ClosesBeyondTheMaAndSarWithTheSarAsTrailingExit(int maPeriod, double af, double maxAf, bool secondary)
+	{
+		var sar = new ParabolicSar { Acceleration = (decimal)af, AccelerationMax = (decimal)maxAf };
+		var ma = new SimpleMovingAverage { Length = maPeriod };
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var sarExits = 0;
+		var violations = new List<string>();
+		await Replay("0213_MA_Parabolic_SAR", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["MaPeriod"].Value);
+			AreEqual(0.02m, Convert.ToDecimal(strategy.Parameters["SarStep"].Value));
+			AreEqual(0.2m, Convert.ToDecimal(strategy.Parameters["SarMaxStep"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "MaPeriod", maPeriod);
+			SetParam(strategy, "SarStep", af);
+			SetParam(strategy, "SarMaxStep", maxAf);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var m = ma.Process(candle);
+				var s = sar.Process(candle);
+				if (!m.IsFormed || !s.IsFormed || s.IsEmpty) return;
+				var level = s.GetValue<decimal>();
+				var average = m.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (close > average && close > level && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (close < average && close < level && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && close < level) { expectedSide = Sides.Sell; expectedVolume = position; sarExits++; }
+				else if (position < 0m && close > level) { expectedSide = Sides.Buy; expectedVolume = -position; sarExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a close beyond both the MA and the SAR, or close when price crosses the SAR.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] + entries[Sides.Sell] > 1 && sarExits > 0, "The fixture must enter and exit at the SAR.");
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "The fixture must trade both sides.");
+	}
+
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0213_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0213_MA_Parabolic_SAR", TimeSpan.FromDays(31));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

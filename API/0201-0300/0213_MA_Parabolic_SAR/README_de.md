@@ -20,11 +20,11 @@ Dieser Ansatz eignet sich am besten für Trader, die systematisches Trendfolgen 
 - **Stops**: Ja, dynamisch über Parabolic SAR und optionaler fester Stop.
 - **Standardwerte**:
   - `MaPeriod` = 20
-  - `SarStep` = 0.02m
-  - `SarMaxStep` = 0.2m
+  - `SarStep` = 0.02
+  - `SarMaxStep` = 0.2
   - `CandleType` = TimeSpan.FromMinutes(5)
-  - `TakeValue` = new Unit(0, UnitTypes.Absolute)
-  - `StopValue` = new Unit(2, UnitTypes.Percent)
+  - `StopLossPercent` = 2
+    Ein Einstieg braucht beide Bedingungen bei Kerzenschluss, egal ob die SAR-Umkehr oder das MA-Kreuzen zuletzt kommt. Der optionale feste Stop liegt bei StopLossPercent vom Einstiegspreis und wird auch zwischen den Kerzen überwacht; 0 schaltet ihn ab. Die Regeln nennen kein Gewinnziel, daher entfällt der TakeValue von null. Ein Einstiegssignal gegen eine offene Position dreht sie.
 - **Filter**:
   - Kategorie: Trend
   - Richtung: Beide
