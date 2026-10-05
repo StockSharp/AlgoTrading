@@ -1,5 +1,3 @@
-namespace StockSharp.Samples.Strategies;
-
 using System;
 using System.Collections.Generic;
 
@@ -10,60 +8,106 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
+namespace StockSharp.Samples.Strategies;
+
 /// <summary>
-/// EMA Moving Away Strategy.
-/// Buys when price moves too far below EMA (mean reversion).
-/// Sells when price moves too far above EMA.
-/// Exits when price returns to EMA.
+/// EMA Moving Away strategy (long only).
+/// Buys when the close is at least MovingAwayPercent below the EMA, optionally requiring a streak of bearish candles
+/// (BearishStreak) and a minimum candle body (MinBodyPercent). The long closes when price returns to the EMA, and a
+/// percent stop-loss protects it if the reversion fails.
 /// </summary>
 public class EmaMovingAwayStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleTypeParam;
 	private readonly StrategyParam<int> _emaLength;
 	private readonly StrategyParam<decimal> _movingAwayPercent;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<int> _bearishStreak;
+	private readonly StrategyParam<decimal> _minBodyPercent;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private ExponentialMovingAverage _ema;
-	private int _cooldownRemaining;
+	private int _bearishCount;
 
-	public EmaMovingAwayStrategy()
-	{
-		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-			.SetDisplay("Candle type", "Candle type for strategy calculation.", "General");
-
-		_emaLength = Param(nameof(EmaLength), 55)
-			.SetGreaterThanZero()
-			.SetDisplay("EMA Length", "EMA period", "Moving Average");
-
-		_movingAwayPercent = Param(nameof(MovingAwayPercent), 2m)
-			.SetDisplay("Moving away (%)", "Required percentage that price moves away from EMA", "Strategy");
-
-		_cooldownBars = Param(nameof(CooldownBars), 10)
-			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk");
-	}
-
-	public DataType CandleType
-	{
-		get => _candleTypeParam.Value;
-		set => _candleTypeParam.Value = value;
-	}
-
+	/// <summary>
+	/// EMA period.
+	/// </summary>
 	public int EmaLength
 	{
 		get => _emaLength.Value;
 		set => _emaLength.Value = value;
 	}
 
+	/// <summary>
+	/// Required distance of the close below the EMA, in percent.
+	/// </summary>
 	public decimal MovingAwayPercent
 	{
 		get => _movingAwayPercent.Value;
 		set => _movingAwayPercent.Value = value;
 	}
 
-	public int CooldownBars
+	/// <summary>
+	/// Stop-loss percentage. 0 disables it.
+	/// </summary>
+	public decimal StopLossPercent
 	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Consecutive bearish candles required before an entry. 0 disables the filter.
+	/// </summary>
+	public int BearishStreak
+	{
+		get => _bearishStreak.Value;
+		set => _bearishStreak.Value = value;
+	}
+
+	/// <summary>
+	/// Minimum body of the signal candle in percent of its open. 0 disables the filter.
+	/// </summary>
+	public decimal MinBodyPercent
+	{
+		get => _minBodyPercent.Value;
+		set => _minBodyPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type for strategy calculation.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
+	/// </summary>
+	public EmaMovingAwayStrategy()
+	{
+		_emaLength = Param(nameof(EmaLength), 55)
+			.SetGreaterThanZero()
+			.SetDisplay("EMA Length", "EMA period", "Moving Average");
+
+		_movingAwayPercent = Param(nameof(MovingAwayPercent), 2.0m)
+			.SetGreaterThanZero()
+			.SetDisplay("Moving away (%)", "Required distance of the close below the EMA", "Strategy");
+
+		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop-loss percentage", "Risk");
+
+		_bearishStreak = Param(nameof(BearishStreak), 0)
+			.SetNotNegative()
+			.SetDisplay("Bearish Streak", "Consecutive bearish candles required, 0 disables", "Filters");
+
+		_minBodyPercent = Param(nameof(MinBodyPercent), 0m)
+			.SetNotNegative()
+			.SetDisplay("Min Body %", "Minimum body of the signal candle in percent, 0 disables", "Filters");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+			.SetDisplay("Candle type", "Candle type for strategy calculation", "General");
 	}
 
 	/// <inheritdoc />
@@ -75,8 +119,7 @@ public class EmaMovingAwayStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_ema = null;
-		_cooldownRemaining = 0;
+		_bearishCount = 0;
 	}
 
 	/// <inheritdoc />
@@ -84,74 +127,56 @@ public class EmaMovingAwayStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_ema = new ExponentialMovingAverage { Length = EmaLength };
+		_bearishCount = 0;
+
+		var ema = new ExponentialMovingAverage { Length = EmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_ema, OnProcess)
+			.BindEx(ema, ProcessCandle)
 			.Start();
+
+		if (StopLossPercent > 0)
+			StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true);
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _ema);
+			DrawIndicator(area, ema);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void OnProcess(ICandleMessage candle, decimal emaValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue emaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_ema.IsFormed)
+		_bearishCount = candle.ClosePrice < candle.OpenPrice ? _bearishCount + 1 : 0;
+
+		if (!emaValue.IsFormed)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (_cooldownRemaining > 0)
-		{
-			_cooldownRemaining--;
-			return;
-		}
-
+		var ema = emaValue.ToDecimal();
 		var close = candle.ClosePrice;
 
-		// Calculate entry zones
-		var longEntryLevel = emaValue * (1 - MovingAwayPercent / 100);
-		var shortEntryLevel = emaValue * (1 + MovingAwayPercent / 100);
+		if (Position > 0)
+		{
+			if (close >= ema)
+				SellMarket(Position);
 
-		// Exit conditions - price returns to EMA
-		if (Position > 0 && close >= emaValue)
-		{
-			SellMarket(Math.Abs(Position));
-			_cooldownRemaining = CooldownBars;
-			return;
-		}
-		else if (Position < 0 && close <= emaValue)
-		{
-			BuyMarket(Math.Abs(Position));
-			_cooldownRemaining = CooldownBars;
 			return;
 		}
 
-		// Entry: price far below EMA - buy (mean reversion)
-		if (close <= longEntryLevel && Position <= 0)
-		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-			BuyMarket(Volume);
-			_cooldownRemaining = CooldownBars;
-		}
-		// Entry: price far above EMA - sell (mean reversion)
-		else if (close >= shortEntryLevel && Position >= 0)
-		{
-			if (Position > 0)
-				SellMarket(Math.Abs(Position));
-			SellMarket(Volume);
-			_cooldownRemaining = CooldownBars;
-		}
+		var stretched = close <= ema * (1m - MovingAwayPercent / 100m);
+		var streakOk = BearishStreak <= 0 || _bearishCount >= BearishStreak;
+		var bodyOk = MinBodyPercent <= 0 || candle.OpenPrice > 0 && Math.Abs(candle.OpenPrice - close) / candle.OpenPrice * 100m >= MinBodyPercent;
+
+		if (stretched && streakOk && bodyOk)
+			BuyMarket(Volume + Math.Abs(Position));
 	}
 }

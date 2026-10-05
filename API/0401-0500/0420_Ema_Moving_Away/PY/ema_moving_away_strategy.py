@@ -5,95 +5,104 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates
+from System import TimeSpan, Decimal
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 
 
 class ema_moving_away_strategy(Strategy):
-    """EMA Moving Away Strategy - mean reversion from EMA."""
+    """
+    EMA Moving Away strategy (long only).
+    Buys when the close is at least MovingAwayPercent below the EMA, optionally requiring a streak of bearish candles
+    (BearishStreak) and a minimum candle body (MinBodyPercent). The long closes when price returns to the EMA, and a
+    percent stop-loss protects it if the reversion fails.
+    """
 
     def __init__(self):
         super(ema_moving_away_strategy, self).__init__()
-
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
-            .SetDisplay("Candle type", "Candle type for strategy calculation.", "General")
         self._ema_length = self.Param("EmaLength", 55) \
+            .SetGreaterThanZero() \
             .SetDisplay("EMA Length", "EMA period", "Moving Average")
-        self._moving_away_pct = self.Param("MovingAwayPercent", 2.0) \
-            .SetDisplay("Moving away (%)", "Required percentage that price moves away from EMA", "Strategy")
-        self._cooldown_bars = self.Param("CooldownBars", 10) \
-            .SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk")
+        self._moving_away_percent = self.Param("MovingAwayPercent", 2.0) \
+            .SetGreaterThanZero() \
+            .SetDisplay("Moving away (%)", "Required distance of the close below the EMA", "Strategy")
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
+            .SetNotNegative() \
+            .SetDisplay("Stop Loss %", "Stop-loss percentage", "Risk")
+        self._bearish_streak = self.Param("BearishStreak", 0) \
+            .SetNotNegative() \
+            .SetDisplay("Bearish Streak", "Consecutive bearish candles required, 0 disables", "Filters")
+        self._min_body_percent = self.Param("MinBodyPercent", 0.0) \
+            .SetNotNegative() \
+            .SetDisplay("Min Body %", "Minimum body of the signal candle in percent, 0 disables", "Filters")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
+            .SetDisplay("Candle type", "Candle type for strategy calculation", "General")
 
-        self._ema = None
-        self._cooldown_remaining = 0
+        self._bearish_count = 0
 
     @property
-    def candle_type(self):
+    def CandleType(self):
         return self._candle_type.Value
+
+    def GetWorkingSecurities(self):
+        return [(self.Security, self.CandleType)]
 
     def OnReseted(self):
         super(ema_moving_away_strategy, self).OnReseted()
-        self._ema = None
-        self._cooldown_remaining = 0
+        self._bearish_count = 0
 
     def OnStarted2(self, time):
         super(ema_moving_away_strategy, self).OnStarted2(time)
 
-        self._ema = ExponentialMovingAverage()
-        self._ema.Length = int(self._ema_length.Value)
+        self._bearish_count = 0
 
-        subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(self._ema, self._on_process).Start()
+        ema = ExponentialMovingAverage()
+        ema.Length = self._ema_length.Value
+
+        subscription = self.SubscribeCandles(self.CandleType)
+        subscription.BindEx(ema, self._process_candle).Start()
+
+        stop_loss = float(self._stop_loss_percent.Value)
+        if stop_loss > 0:
+            self.StartProtection(Unit(), Unit(Decimal(stop_loss), UnitTypes.Percent), useMarketOrders=True)
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, self._ema)
+            self.DrawIndicator(area, ema)
             self.DrawOwnTrades(area)
 
-    def _on_process(self, candle, ema_val):
+    def _process_candle(self, candle, ema_value):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self._ema.IsFormed:
+        self._bearish_count = self._bearish_count + 1 if candle.ClosePrice < candle.OpenPrice else 0
+
+        if not ema_value.IsFormed:
             return
 
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        if self._cooldown_remaining > 0:
-            self._cooldown_remaining -= 1
-            return
-
+        ema = float(ema_value.GetValue[Decimal](None))
         close = float(candle.ClosePrice)
-        ev = float(ema_val)
-        pct = float(self._moving_away_pct.Value)
-        cooldown = int(self._cooldown_bars.Value)
+        open_price = float(candle.OpenPrice)
 
-        long_entry = ev * (1.0 - pct / 100.0)
-        short_entry = ev * (1.0 + pct / 100.0)
-
-        if self.Position > 0 and close >= ev:
-            self.SellMarket(Math.Abs(self.Position))
-            self._cooldown_remaining = cooldown
-            return
-        elif self.Position < 0 and close <= ev:
-            self.BuyMarket(Math.Abs(self.Position))
-            self._cooldown_remaining = cooldown
+        if self.Position > 0:
+            if close >= ema:
+                self.SellMarket(self.Position)
             return
 
-        if close <= long_entry and self.Position <= 0:
-            if self.Position < 0:
-                self.BuyMarket(Math.Abs(self.Position))
-            self.BuyMarket(self.Volume)
-            self._cooldown_remaining = cooldown
-        elif close >= short_entry and self.Position >= 0:
-            if self.Position > 0:
-                self.SellMarket(Math.Abs(self.Position))
-            self.SellMarket(self.Volume)
-            self._cooldown_remaining = cooldown
+        streak = int(self._bearish_streak.Value)
+        min_body = float(self._min_body_percent.Value)
+
+        stretched = close <= ema * (1.0 - float(self._moving_away_percent.Value) / 100.0)
+        streak_ok = streak <= 0 or self._bearish_count >= streak
+        body_ok = min_body <= 0 or (open_price > 0 and abs(open_price - close) / open_price * 100.0 >= min_body)
+
+        if stretched and streak_ok and body_ok:
+            self.BuyMarket(self.Volume + abs(self.Position))
 
     def CreateClone(self):
         return ema_moving_away_strategy()
