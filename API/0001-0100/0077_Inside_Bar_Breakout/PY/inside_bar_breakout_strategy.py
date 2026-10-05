@@ -5,29 +5,26 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan
+from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 
 class inside_bar_breakout_strategy(Strategy):
     """
     Inside Bar Breakout strategy.
-    Detects inside bar patterns (high lower than previous high, low higher than previous low).
-    Enters on breakout of the inside bar's high (buy) or low (sell).
-    Uses SMA for exit signals.
+    An inside bar's range lies within the previous candle's high and low. While flat, a close above the latest inside bar's
+    high buys and a close below its low sells. The stop lies StopLossPercent percent beyond the opposite side of the pattern,
+    and a close beyond the previous candle's extreme against the position also exits.
     """
 
     def __init__(self):
         super(inside_bar_breakout_strategy, self).__init__()
-        self._ma_period = self.Param("MAPeriod", 20).SetDisplay("MA Period", "Period for SMA", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Type of candles to use", "General")
-        self._cooldown_bars = self.Param("CooldownBars", 500).SetDisplay("Cooldown Bars", "Bars to wait between trades", "General")
+        self._stop_loss_percent = self.Param("StopLossPercent", 1.0).SetNotNegative().SetDisplay("Stop Loss %", "Distance of the stop beyond the pattern, in percent", "Risk")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._prev_candle = None
         self._inside_bar = None
-        self._waiting_for_breakout = False
-        self._cooldown = 0
+        self._stop_price = Decimal(0)
 
     @property
     def candle_type(self):
@@ -37,73 +34,58 @@ class inside_bar_breakout_strategy(Strategy):
         super(inside_bar_breakout_strategy, self).OnReseted()
         self._prev_candle = None
         self._inside_bar = None
-        self._waiting_for_breakout = False
-        self._cooldown = 0
+        self._stop_price = Decimal(0)
 
     def OnStarted2(self, time):
         super(inside_bar_breakout_strategy, self).OnStarted2(time)
 
         self._prev_candle = None
         self._inside_bar = None
-        self._waiting_for_breakout = False
-        self._cooldown = 0
-
-        sma = SimpleMovingAverage()
-        sma.Length = self._ma_period.Value
+        self._stop_price = Decimal(0)
 
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(sma, self._process_candle).Start()
+        subscription.Bind(self._process_candle).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, sma)
             self.DrawOwnTrades(area)
 
-    def _process_candle(self, candle, sma_val):
+    def _process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
 
-        if self._cooldown > 0:
-            self._cooldown -= 1
-            self._prev_candle = candle
-            self._waiting_for_breakout = False
+        previous = self._prev_candle
+        pattern = self._inside_bar
+        self._prev_candle = (candle.HighPrice, candle.LowPrice)
+
+        is_inside = previous is not None and candle.HighPrice <= previous[0] and candle.LowPrice >= previous[1]
+        close = candle.ClosePrice
+
+        # A close outside the pattern uses it up; a new inside bar replaces it.
+        if pattern is not None and (close > pattern[0] or close < pattern[1]):
+            self._inside_bar = None
+        if is_inside:
+            self._inside_bar = (candle.HighPrice, candle.LowPrice)
+
+        if previous is None or not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        if self._prev_candle is None:
-            self._prev_candle = candle
-            return
+        percent = Decimal(self._stop_loss_percent.Value) / Decimal(100)
 
-        cd = self._cooldown_bars.Value
-
-        # Check for breakout of a previously detected inside bar
-        if self._waiting_for_breakout and self._inside_bar is not None and self.Position == 0:
-            if candle.HighPrice > self._inside_bar.HighPrice:
-                self.BuyMarket()
-                self._cooldown = cd
-                self._waiting_for_breakout = False
-            elif candle.LowPrice < self._inside_bar.LowPrice:
-                self.SellMarket()
-                self._cooldown = cd
-                self._waiting_for_breakout = False
-
-        # Check if current candle is an inside bar
-        if candle.HighPrice < self._prev_candle.HighPrice and candle.LowPrice > self._prev_candle.LowPrice:
-            self._inside_bar = candle
-            self._waiting_for_breakout = True
-
-        # Exit logic using SMA
-        sv = float(sma_val)
-        close = float(candle.ClosePrice)
-
-        if self.Position > 0 and close < sv:
-            self.SellMarket()
-            self._cooldown = cd
-        elif self.Position < 0 and close > sv:
-            self.BuyMarket()
-            self._cooldown = cd
-
-        self._prev_candle = candle
+        if self.Position > 0:
+            if close <= self._stop_price or close < previous[1]:
+                self.SellMarket(self.Position)
+        elif self.Position < 0:
+            if close >= self._stop_price or close > previous[0]:
+                self.BuyMarket(-self.Position)
+        elif pattern is not None:
+            if close > pattern[0]:
+                self.BuyMarket(self.Volume)
+                self._stop_price = pattern[1] * (Decimal(1) - percent)
+            elif close < pattern[1]:
+                self.SellMarket(self.Volume)
+                self._stop_price = pattern[0] * (Decimal(1) + percent)
 
     def CreateClone(self):
         return inside_bar_breakout_strategy()

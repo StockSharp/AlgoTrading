@@ -18,6 +18,7 @@ Si el precio no logra romper inmediatamente, la estrategia gestiona las posicion
 - **Valores predeterminados**:
   - `CandleType` = 5 minute
   - `StopLossPercent` = 1
+    El stop se coloca este porcentaje más allá del lado opuesto de la barra interior; tanto él como la salida por el extremo de la vela anterior se comprueban al cierre de las velas.
 - **Filtros**:
   - Categoría: Ruptura
   - Dirección: Ambos

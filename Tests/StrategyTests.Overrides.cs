@@ -1664,6 +1664,80 @@ public abstract partial class StrategyTests
 	public Task S0076_PercentStopWorksBetweenFinishedBars()
 		=> CheckPercentStopBetweenBars(FibonacciReversal, TimeSpan.FromDays(31));
 
+	private const string InsideBar = "0077_Inside_Bar_Breakout";
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(1.0, false)]
+	[DataRow(0.05, true)]
+	public async Task S0077_ClosesOutsideTheLatestInsideBarWithPatternStopAndPriorExtremeExits(double stopPercent, bool secondary)
+	{
+		(decimal High, decimal Low)? previous = null;
+		(decimal High, decimal Low)? pattern = null;
+		var stop = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var stopExits = 0;
+		var extremeExits = 0;
+		var violations = new List<string>();
+		await Replay(InsideBar, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(1m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "StopLossPercent", stopPercent);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var prior = previous;
+				var active = pattern;
+				previous = (candle.HighPrice, candle.LowPrice);
+				var close = candle.ClosePrice;
+				if (active is { } used && (close > used.High || close < used.Low)) pattern = null;
+				if (prior is { } p && candle.HighPrice <= p.High && candle.LowPrice >= p.Low) pattern = (candle.HighPrice, candle.LowPrice);
+				if (prior is not { } last) return;
+				var position = strategy.Position;
+				var k = (decimal)stopPercent / 100m;
+				if (position > 0m && (close <= stop || close < last.Low))
+				{
+					expectedSide = Sides.Sell;
+					expectedVolume = position;
+					if (close <= stop) stopExits++; else extremeExits++;
+				}
+				else if (position < 0m && (close >= stop || close > last.High))
+				{
+					expectedSide = Sides.Buy;
+					expectedVolume = -position;
+					if (close >= stop) stopExits++; else extremeExits++;
+				}
+				else if (position == 0m && active is { } bar && (close > bar.High || close < bar.Low))
+				{
+					expectedSide = close > bar.High ? Sides.Buy : Sides.Sell;
+					expectedVolume = strategy.Volume;
+					stop = expectedSide == Sides.Buy ? bar.Low * (1 - k) : bar.High * (1 + k);
+					entries[expectedSide.Value]++;
+				}
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a close outside the latest inside bar while flat, or close the position at the stop beyond the pattern or beyond the previous candle's extreme.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "The fixture must break out on both sides.");
+		IsTrue(extremeExits > 0, "The fixture must exit beyond the previous candle's extreme.");
+		if (stopPercent < 0.5) IsTrue(stopExits > 0, "A tight stop must be reached.");
+	}
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";
