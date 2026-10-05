@@ -11,65 +11,179 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Adaptive Trend Flow Strategy.
-/// Uses EMA crossover with volatility channel breakout for entries.
+/// Adaptive Trend Flow strategy.
+/// The basis is the mean of EMA(Length) and EMA(2 * Length) of the typical price; the channel adds and subtracts Sensitivity times
+/// an EMA(SmoothLength) of the typical price standard deviation over Length bars. A close above the upper band turns the trend up,
+/// a close below the lower band turns it down. The strategy buys when the trend turns from down to up while the close is above
+/// SMA(SmaLength) and the MACD line is above its signal (each filter optional), and closes the long when the trend turns down.
 /// </summary>
 public class AdaptiveTrendFlowStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _fastLength;
-	private readonly StrategyParam<int> _slowLength;
-	private readonly StrategyParam<int> _atrLength;
+	private readonly StrategyParam<int> _length;
+	private readonly StrategyParam<int> _smoothLength;
 	private readonly StrategyParam<decimal> _sensitivity;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<bool> _useSmaFilter;
+	private readonly StrategyParam<int> _smaLength;
+	private readonly StrategyParam<bool> _useMacdFilter;
+	private readonly StrategyParam<int> _macdFastLength;
+	private readonly StrategyParam<int> _macdSlowLength;
+	private readonly StrategyParam<int> _macdSignalLength;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevFast;
-	private decimal _prevSlow;
-	private int _cooldownRemaining;
+	private ExponentialMovingAverage _fastEma;
+	private ExponentialMovingAverage _slowEma;
+	private StandardDeviation _stdDev;
+	private ExponentialMovingAverage _volSmooth;
+	private int _trend;
 
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
-	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
-	public int AtrLength { get => _atrLength.Value; set => _atrLength.Value = value; }
-	public decimal Sensitivity { get => _sensitivity.Value; set => _sensitivity.Value = value; }
-	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
+	/// <summary>
+	/// Fast EMA and deviation length; the slow EMA uses twice this length.
+	/// </summary>
+	public int Length
+	{
+		get => _length.Value;
+		set => _length.Value = value;
+	}
 
+	/// <summary>
+	/// EMA length that smooths the deviation.
+	/// </summary>
+	public int SmoothLength
+	{
+		get => _smoothLength.Value;
+		set => _smoothLength.Value = value;
+	}
+
+	/// <summary>
+	/// Deviation multiplier of the channel.
+	/// </summary>
+	public decimal Sensitivity
+	{
+		get => _sensitivity.Value;
+		set => _sensitivity.Value = value;
+	}
+
+	/// <summary>
+	/// Require the close above the SMA.
+	/// </summary>
+	public bool UseSmaFilter
+	{
+		get => _useSmaFilter.Value;
+		set => _useSmaFilter.Value = value;
+	}
+
+	/// <summary>
+	/// SMA period of the filter.
+	/// </summary>
+	public int SmaLength
+	{
+		get => _smaLength.Value;
+		set => _smaLength.Value = value;
+	}
+
+	/// <summary>
+	/// Require the MACD line above its signal.
+	/// </summary>
+	public bool UseMacdFilter
+	{
+		get => _useMacdFilter.Value;
+		set => _useMacdFilter.Value = value;
+	}
+
+	/// <summary>
+	/// MACD fast EMA length.
+	/// </summary>
+	public int MacdFastLength
+	{
+		get => _macdFastLength.Value;
+		set => _macdFastLength.Value = value;
+	}
+
+	/// <summary>
+	/// MACD slow EMA length.
+	/// </summary>
+	public int MacdSlowLength
+	{
+		get => _macdSlowLength.Value;
+		set => _macdSlowLength.Value = value;
+	}
+
+	/// <summary>
+	/// MACD signal EMA length.
+	/// </summary>
+	public int MacdSignalLength
+	{
+		get => _macdSignalLength.Value;
+		set => _macdSignalLength.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
+	/// </summary>
 	public AdaptiveTrendFlowStrategy()
 	{
+		_length = Param(nameof(Length), 2)
+			.SetGreaterThanZero()
+			.SetDisplay("Length", "Fast EMA and deviation length; the slow EMA uses twice this length", "Trend");
+
+		_smoothLength = Param(nameof(SmoothLength), 2)
+			.SetGreaterThanZero()
+			.SetDisplay("Smooth Length", "EMA length that smooths the deviation", "Trend");
+
+		_sensitivity = Param(nameof(Sensitivity), 2.0m)
+			.SetGreaterThanZero()
+			.SetDisplay("Sensitivity", "Deviation multiplier of the channel", "Trend");
+
+		_useSmaFilter = Param(nameof(UseSmaFilter), true)
+			.SetDisplay("Use SMA Filter", "Require the close above the SMA", "Filters");
+
+		_smaLength = Param(nameof(SmaLength), 4)
+			.SetGreaterThanZero()
+			.SetDisplay("SMA Length", "SMA period of the filter", "Filters");
+
+		_useMacdFilter = Param(nameof(UseMacdFilter), true)
+			.SetDisplay("Use MACD Filter", "Require the MACD line above its signal", "Filters");
+
+		_macdFastLength = Param(nameof(MacdFastLength), 2)
+			.SetGreaterThanZero()
+			.SetDisplay("MACD Fast Length", "MACD fast EMA length", "Filters");
+
+		_macdSlowLength = Param(nameof(MacdSlowLength), 7)
+			.SetGreaterThanZero()
+			.SetDisplay("MACD Slow Length", "MACD slow EMA length", "Filters");
+
+		_macdSignalLength = Param(nameof(MacdSignalLength), 2)
+			.SetGreaterThanZero()
+			.SetDisplay("MACD Signal Length", "MACD signal EMA length", "Filters");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_fastLength = Param(nameof(FastLength), 10)
-			.SetGreaterThanZero()
-			.SetDisplay("Fast EMA Length", "Fast EMA period", "Trend");
-
-		_slowLength = Param(nameof(SlowLength), 30)
-			.SetGreaterThanZero()
-			.SetDisplay("Slow EMA Length", "Slow EMA period", "Trend");
-
-		_atrLength = Param(nameof(AtrLength), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("ATR Length", "ATR period for volatility", "Trend");
-
-		_sensitivity = Param(nameof(Sensitivity), 2m)
-			.SetGreaterThanZero()
-			.SetDisplay("Sensitivity", "ATR multiplier for channel", "Trend");
-
-		_cooldownBars = Param(nameof(CooldownBars), 10)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "Risk");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> [(Security, CandleType)];
+	{
+		return [(Security, CandleType)];
+	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevFast = 0;
-		_prevSlow = 0;
-		_cooldownRemaining = 0;
+		_fastEma = null;
+		_slowEma = null;
+		_stdDev = null;
+		_volSmooth = null;
+		_trend = 0;
 	}
 
 	/// <inheritdoc />
@@ -77,68 +191,82 @@ public class AdaptiveTrendFlowStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var fastEma = new ExponentialMovingAverage { Length = FastLength };
-		var slowEma = new ExponentialMovingAverage { Length = SlowLength };
-		var atr = new AverageTrueRange { Length = AtrLength };
+		_trend = 0;
+		_fastEma = new ExponentialMovingAverage { Length = Length };
+		_slowEma = new ExponentialMovingAverage { Length = Length * 2 };
+		_stdDev = new StandardDeviation { Length = Length };
+		_volSmooth = new ExponentialMovingAverage { Length = SmoothLength };
+
+		var sma = new SimpleMovingAverage { Length = SmaLength };
+		var macd = new MovingAverageConvergenceDivergenceSignal
+		{
+			Macd =
+			{
+				ShortMa = { Length = MacdFastLength },
+				LongMa = { Length = MacdSlowLength },
+			},
+			SignalMa = { Length = MacdSignalLength },
+		};
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(fastEma, slowEma, atr, ProcessCandle)
+			.BindEx(sma, macd, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, fastEma);
-			DrawIndicator(area, slowEma);
+			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fastVal, decimal slowVal, decimal atrVal)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue smaValue, IIndicatorValue macdValue)
 	{
 		if (candle.State != CandleStates.Finished)
+			return;
+
+		var typical = (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m;
+		var time = candle.ServerTime;
+
+		var fast = _fastEma.Process(typical, time, true).ToDecimal();
+		var slow = _slowEma.Process(typical, time, true).ToDecimal();
+		var deviation = _stdDev.Process(typical, time, true);
+
+		if (!_fastEma.IsFormed || !_slowEma.IsFormed || !_stdDev.IsFormed)
+			return;
+
+		var smoothVol = _volSmooth.Process(deviation.ToDecimal(), time, true).ToDecimal();
+		if (!_volSmooth.IsFormed)
+			return;
+
+		var basis = (fast + slow) / 2m;
+		var upper = basis + smoothVol * Sensitivity;
+		var lower = basis - smoothVol * Sensitivity;
+		var close = candle.ClosePrice;
+
+		var prevTrend = _trend;
+		if (close > upper)
+			_trend = 1;
+		else if (close < lower)
+			_trend = -1;
+
+		if (!smaValue.IsFormed || !macdValue.IsFormed)
+			return;
+
+		if (macdValue is not MovingAverageConvergenceDivergenceSignalValue { Macd: decimal macdLine, Signal: decimal signalLine })
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (_prevFast == 0)
-		{
-			_prevFast = fastVal;
-			_prevSlow = slowVal;
-			return;
-		}
+		var smaOk = !UseSmaFilter || close > smaValue.ToDecimal();
+		var macdOk = !UseMacdFilter || macdLine > signalLine;
 
-		if (_cooldownRemaining > 0)
-		{
-			_cooldownRemaining--;
-			_prevFast = fastVal;
-			_prevSlow = slowVal;
-			return;
-		}
-
-		var channel = atrVal * Sensitivity;
-		var crossedAbove = _prevFast <= _prevSlow + channel && fastVal > slowVal + channel;
-		var crossedBelow = _prevFast >= _prevSlow - channel && fastVal < slowVal - channel;
-
-		if (crossedAbove && Position <= 0)
-		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-			BuyMarket(Volume);
-			_cooldownRemaining = CooldownBars;
-		}
-		else if (crossedBelow && Position >= 0)
-		{
-			if (Position > 0)
-				SellMarket(Math.Abs(Position));
-			SellMarket(Volume);
-			_cooldownRemaining = CooldownBars;
-		}
-
-		_prevFast = fastVal;
-		_prevSlow = slowVal;
+		if (prevTrend == -1 && _trend == 1 && smaOk && macdOk && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (prevTrend == 1 && _trend == -1 && Position > 0)
+			SellMarket(Position);
 	}
 }
