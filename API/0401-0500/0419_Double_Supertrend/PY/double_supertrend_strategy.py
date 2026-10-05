@@ -5,132 +5,133 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates
+from System import TimeSpan, Decimal
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import SuperTrend
 from StockSharp.Algo.Strategies import Strategy
 
 
 class double_supertrend_strategy(Strategy):
-    """Double SuperTrend Strategy.
-    Uses two SuperTrend indicators with different parameters.
-    Enters long when both SuperTrends are bullish.
-    Enters short when both SuperTrends are bearish."""
+    """
+    Double Supertrend strategy.
+    A position opens in the allowed Direction ("Long", "Short" or "Both") when the close moves above (below) both
+    Supertrend lines. A close back through the first line exits. With TPType "Supertrend" the second line also works as
+    a trailing exit; with TPType "Percent" a TPPercent take-profit is used instead. SLPercent is a percent stop-loss.
+    """
 
     def __init__(self):
         super(double_supertrend_strategy, self).__init__()
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
-            .SetDisplay("Candle type", "Candle type for strategy calculation.", "General")
         self._atr_period1 = self.Param("ATRPeriod1", 10) \
-            .SetDisplay("ST1 Period", "First SuperTrend ATR period", "SuperTrend 1")
+            .SetGreaterThanZero() \
+            .SetDisplay("ST1 Period", "ATR period of the first Supertrend", "Supertrend 1")
         self._factor1 = self.Param("Factor1", 3.0) \
-            .SetDisplay("ST1 Factor", "First SuperTrend multiplier", "SuperTrend 1")
+            .SetGreaterThanZero() \
+            .SetDisplay("ST1 Factor", "Multiplier of the first Supertrend", "Supertrend 1")
         self._atr_period2 = self.Param("ATRPeriod2", 20) \
-            .SetDisplay("ST2 Period", "Second SuperTrend ATR period", "SuperTrend 2")
+            .SetGreaterThanZero() \
+            .SetDisplay("ST2 Period", "ATR period of the second Supertrend", "Supertrend 2")
         self._factor2 = self.Param("Factor2", 5.0) \
-            .SetDisplay("ST2 Factor", "Second SuperTrend multiplier", "SuperTrend 2")
-        self._cooldown_bars = self.Param("CooldownBars", 10) \
-            .SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk")
+            .SetGreaterThanZero() \
+            .SetDisplay("ST2 Factor", "Multiplier of the second Supertrend", "Supertrend 2")
+        self._direction = self.Param("Direction", "Long") \
+            .SetDisplay("Direction", "Allowed trade direction: Long, Short or Both", "Trading")
+        self._tp_type = self.Param("TPType", "Supertrend") \
+            .SetDisplay("TP Type", "Take-profit type: Supertrend or Percent", "Risk")
+        self._tp_percent = self.Param("TPPercent", 1.5) \
+            .SetNotNegative() \
+            .SetDisplay("TP %", "Take-profit percentage for the Percent type", "Risk")
+        self._sl_percent = self.Param("SLPercent", 10.0) \
+            .SetNotNegative() \
+            .SetDisplay("SL %", "Stop-loss percentage", "Risk")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
+            .SetDisplay("Candle type", "Candle type for strategy calculation", "General")
 
-        self._st1 = None
-        self._st2 = None
-        self._prev_up_trend1 = False
-        self._prev_up_trend2 = False
-        self._has_prev = False
-        self._cooldown_remaining = 0
+        self._prev_above_both = None
+        self._prev_below_both = None
 
     @property
-    def candle_type(self):
+    def CandleType(self):
         return self._candle_type.Value
+
+    def GetWorkingSecurities(self):
+        return [(self.Security, self.CandleType)]
 
     def OnReseted(self):
         super(double_supertrend_strategy, self).OnReseted()
-        self._st1 = None
-        self._st2 = None
-        self._prev_up_trend1 = False
-        self._prev_up_trend2 = False
-        self._has_prev = False
-        self._cooldown_remaining = 0
+        self._prev_above_both = None
+        self._prev_below_both = None
 
     def OnStarted2(self, time):
         super(double_supertrend_strategy, self).OnStarted2(time)
 
-        self._st1 = SuperTrend()
-        self._st1.Length = int(self._atr_period1.Value)
-        self._st1.Multiplier = float(self._factor1.Value)
+        self._prev_above_both = None
+        self._prev_below_both = None
 
-        self._st2 = SuperTrend()
-        self._st2.Length = int(self._atr_period2.Value)
-        self._st2.Multiplier = float(self._factor2.Value)
+        st1 = SuperTrend()
+        st1.Length = self._atr_period1.Value
+        st1.Multiplier = Decimal(self._factor1.Value)
+        st2 = SuperTrend()
+        st2.Length = self._atr_period2.Value
+        st2.Multiplier = Decimal(self._factor2.Value)
 
-        subscription = self.SubscribeCandles(self.candle_type)
-        subscription.BindEx(self._st1, self._st2, self._on_process).Start()
+        subscription = self.SubscribeCandles(self.CandleType)
+        subscription.BindEx(st1, st2, self._process_candle).Start()
+
+        tp_percent = float(self._tp_percent.Value)
+        sl_percent = float(self._sl_percent.Value)
+        take_profit = Unit(Decimal(tp_percent), UnitTypes.Percent) \
+            if str(self._tp_type.Value).lower() == "percent" and tp_percent > 0 else Unit()
+        stop_loss = Unit(Decimal(sl_percent), UnitTypes.Percent) if sl_percent > 0 else Unit()
+        self.StartProtection(take_profit, stop_loss, useMarketOrders=True)
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, self._st1)
-            self.DrawIndicator(area, self._st2)
+            self.DrawIndicator(area, st1)
+            self.DrawIndicator(area, st2)
             self.DrawOwnTrades(area)
 
-    def _on_process(self, candle, st1_value, st2_value):
+    def _process_candle(self, candle, st1_value, st2_value):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self._st1.IsFormed or not self._st2.IsFormed:
+        if not st1_value.IsFormed or not st2_value.IsFormed:
             return
 
-        if st1_value.IsEmpty or st2_value.IsEmpty:
-            return
+        line1 = float(st1_value.GetValue[Decimal](None))
+        line2 = float(st2_value.GetValue[Decimal](None))
+        close = float(candle.ClosePrice)
 
-        up_trend1 = st1_value.IsUpTrend
-        up_trend2 = st2_value.IsUpTrend
+        above_both = close > line1 and close > line2
+        below_both = close < line1 and close < line2
+
+        prev_above = self._prev_above_both
+        prev_below = self._prev_below_both
+        self._prev_above_both = above_both
+        self._prev_below_both = below_both
+
+        if prev_above is None or prev_below is None:
+            return
 
         if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_up_trend1 = up_trend1
-            self._prev_up_trend2 = up_trend2
-            self._has_prev = True
             return
 
-        if self._cooldown_remaining > 0:
-            self._cooldown_remaining -= 1
-            self._prev_up_trend1 = up_trend1
-            self._prev_up_trend2 = up_trend2
-            self._has_prev = True
-            return
+        direction = str(self._direction.Value).lower()
+        allow_long = direction != "short"
+        allow_short = direction != "long"
+        trail_on_second = str(self._tp_type.Value).lower() == "supertrend"
 
-        if not self._has_prev:
-            self._prev_up_trend1 = up_trend1
-            self._prev_up_trend2 = up_trend2
-            self._has_prev = True
-            return
+        long_signal = allow_long and above_both and not prev_above
+        short_signal = allow_short and below_both and not prev_below
 
-        cooldown = int(self._cooldown_bars.Value)
-        both_bullish = up_trend1 and up_trend2
-        both_bearish = not up_trend1 and not up_trend2
-
-        bullish_signal = both_bullish and (not self._prev_up_trend1 or not self._prev_up_trend2)
-        bearish_signal = both_bearish and (self._prev_up_trend1 or self._prev_up_trend2)
-
-        if bullish_signal and self.Position <= 0:
-            if self.Position < 0:
-                self.BuyMarket(Math.Abs(self.Position))
-            self.BuyMarket(self.Volume)
-            self._cooldown_remaining = cooldown
-        elif bearish_signal and self.Position >= 0:
-            if self.Position > 0:
-                self.SellMarket(Math.Abs(self.Position))
-            self.SellMarket(self.Volume)
-            self._cooldown_remaining = cooldown
-        elif self.Position > 0 and not both_bullish and (self._prev_up_trend1 and self._prev_up_trend2):
-            self.SellMarket(Math.Abs(self.Position))
-            self._cooldown_remaining = cooldown
-        elif self.Position < 0 and not both_bearish and (not self._prev_up_trend1 and not self._prev_up_trend2):
-            self.BuyMarket(Math.Abs(self.Position))
-            self._cooldown_remaining = cooldown
-
-        self._prev_up_trend1 = up_trend1
-        self._prev_up_trend2 = up_trend2
+        if long_signal and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+        elif short_signal and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
+        elif self.Position > 0 and (close < line1 or (trail_on_second and close < line2)):
+            self.SellMarket(self.Position)
+        elif self.Position < 0 and (close > line1 or (trail_on_second and close > line2)):
+            self.BuyMarket(-self.Position)
 
     def CreateClone(self):
         return double_supertrend_strategy()
