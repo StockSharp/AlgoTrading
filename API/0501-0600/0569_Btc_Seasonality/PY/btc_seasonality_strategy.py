@@ -2,67 +2,75 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
-clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan
+from System import TimeSpan, DayOfWeek
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+
+EST_OFFSET = TimeSpan.FromHours(-5)
 
 
 class btc_seasonality_strategy(Strategy):
+    """
+    BTC Seasonality strategy.
+    Opens a long (IsLong) or short position at the first candle of EntryHour on EntryDay and closes it at the first candle of
+    ExitHour on ExitDay. Days and hours are in Eastern Standard Time (UTC-5).
+    """
+
     def __init__(self):
         super(btc_seasonality_strategy, self).__init__()
-        self._fast_ema_period = self.Param("FastEmaPeriod", 120)             .SetDisplay("Fast EMA", "Fast EMA period", "Indicators")
-        self._slow_ema_period = self.Param("SlowEmaPeriod", 450)             .SetDisplay("Slow EMA", "Slow EMA period", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1)))             .SetDisplay("Candle Type", "Type of candles to use", "General")
-        self._prev_fast_ema = 0.0
-        self._prev_slow_ema = 0.0
+        self._entry_day = self.Param("EntryDay", DayOfWeek.Saturday).SetDisplay("Entry Day", "EST day of the entry", "Schedule")
+        self._exit_day = self.Param("ExitDay", DayOfWeek.Monday).SetDisplay("Exit Day", "EST day of the exit", "Schedule")
+        self._entry_hour = self.Param("EntryHour", 10).SetRange(0, 23).SetDisplay("Entry Hour", "EST hour of the entry", "Schedule")
+        self._exit_hour = self.Param("ExitHour", 10).SetRange(0, 23).SetDisplay("Exit Hour", "EST hour of the exit", "Schedule")
+        self._is_long = self.Param("IsLong", True).SetDisplay("Is Long", "Trade long when true, short otherwise", "Trading")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Type of candles to use", "General")
 
-    @property
-    def fast_ema_period(self):
-        return self._fast_ema_period.Value
-    @property
-    def slow_ema_period(self):
-        return self._slow_ema_period.Value
     @property
     def candle_type(self):
         return self._candle_type.Value
 
-    def OnReseted(self):
-        super(btc_seasonality_strategy, self).OnReseted()
-        self._prev_fast_ema = 0.0
-        self._prev_slow_ema = 0.0
-
     def OnStarted2(self, time):
         super(btc_seasonality_strategy, self).OnStarted2(time)
-        fast_ema = ExponentialMovingAverage()
-        fast_ema.Length = self.fast_ema_period
-        slow_ema = ExponentialMovingAverage()
-        slow_ema.Length = self.slow_ema_period
+
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(fast_ema, slow_ema, self.OnProcess).Start()
+        subscription.Bind(self._process_candle).Start()
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, fast_ema)
-            self.DrawIndicator(area, slow_ema)
             self.DrawOwnTrades(area)
 
-    def OnProcess(self, candle, fast_ema_value, slow_ema_value):
+    def _process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
-        if self._prev_fast_ema == 0 or self._prev_slow_ema == 0:
-            self._prev_fast_ema = float(fast_ema_value)
-            self._prev_slow_ema = float(slow_ema_value)
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
-        if self._prev_fast_ema <= self._prev_slow_ema and fast_ema_value > slow_ema_value and self.Position <= 0:
-            self.BuyMarket()
-        elif self._prev_fast_ema >= self._prev_slow_ema and fast_ema_value < slow_ema_value and self.Position >= 0:
-            self.SellMarket()
-        self._prev_fast_ema = float(fast_ema_value)
-        self._prev_slow_ema = float(slow_ema_value)
+
+        est = candle.OpenTime.Add(EST_OFFSET)
+        is_exit_moment = est.DayOfWeek == self._exit_day.Value and est.Hour == self._exit_hour.Value
+
+        if self.Position != 0:
+            if is_exit_moment:
+                if self.Position > 0:
+                    self.SellMarket(self.Position)
+                else:
+                    self.BuyMarket(-self.Position)
+            return
+
+        if est.DayOfWeek != self._entry_day.Value or est.Hour != self._entry_hour.Value:
+            return
+
+        # Avoid reopening right after the exit when entry and exit share the same moment.
+        if is_exit_moment:
+            return
+
+        if self._is_long.Value:
+            self.BuyMarket(self.Volume)
+        else:
+            self.SellMarket(self.Volume)
 
     def CreateClone(self):
         return btc_seasonality_strategy()

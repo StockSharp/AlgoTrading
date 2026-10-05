@@ -3,7 +3,6 @@ using System.Collections.Generic;
 
 using Ecng.Common;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -12,31 +11,95 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// BTC Seasonality strategy.
-/// Uses EMA crossover to capture seasonal momentum trends.
-/// Goes long on golden cross, short on death cross.
+/// Opens a long (IsLong) or short position at the first candle of EntryHour on EntryDay and closes it at the first candle of
+/// ExitHour on ExitDay. Days and hours are in Eastern Standard Time (UTC-5).
 /// </summary>
 public class BtcSeasonalityStrategy : Strategy
 {
-	private readonly StrategyParam<int> _fastEmaPeriod;
-	private readonly StrategyParam<int> _slowEmaPeriod;
+	private static readonly TimeSpan _estOffset = TimeSpan.FromHours(-5);
+
+	private readonly StrategyParam<DayOfWeek> _entryDay;
+	private readonly StrategyParam<DayOfWeek> _exitDay;
+	private readonly StrategyParam<int> _entryHour;
+	private readonly StrategyParam<int> _exitHour;
+	private readonly StrategyParam<bool> _isLong;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevFastEma;
-	private decimal _prevSlowEma;
+	/// <summary>
+	/// EST day of the entry.
+	/// </summary>
+	public DayOfWeek EntryDay
+	{
+		get => _entryDay.Value;
+		set => _entryDay.Value = value;
+	}
 
-	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
-	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	/// <summary>
+	/// EST day of the exit.
+	/// </summary>
+	public DayOfWeek ExitDay
+	{
+		get => _exitDay.Value;
+		set => _exitDay.Value = value;
+	}
 
+	/// <summary>
+	/// EST hour of the entry.
+	/// </summary>
+	public int EntryHour
+	{
+		get => _entryHour.Value;
+		set => _entryHour.Value = value;
+	}
+
+	/// <summary>
+	/// EST hour of the exit.
+	/// </summary>
+	public int ExitHour
+	{
+		get => _exitHour.Value;
+		set => _exitHour.Value = value;
+	}
+
+	/// <summary>
+	/// Trade long when true, short otherwise.
+	/// </summary>
+	public bool IsLong
+	{
+		get => _isLong.Value;
+		set => _isLong.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
+	/// </summary>
 	public BtcSeasonalityStrategy()
 	{
-		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
-			.SetGreaterThanZero()
-			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_entryDay = Param(nameof(EntryDay), DayOfWeek.Saturday)
+			.SetDisplay("Entry Day", "EST day of the entry", "Schedule");
 
-		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
-			.SetGreaterThanZero()
-			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+		_exitDay = Param(nameof(ExitDay), DayOfWeek.Monday)
+			.SetDisplay("Exit Day", "EST day of the exit", "Schedule");
+
+		_entryHour = Param(nameof(EntryHour), 10)
+			.SetRange(0, 23)
+			.SetDisplay("Entry Hour", "EST hour of the entry", "Schedule");
+
+		_exitHour = Param(nameof(ExitHour), 10)
+			.SetRange(0, 23)
+			.SetDisplay("Exit Hour", "EST hour of the exit", "Schedule");
+
+		_isLong = Param(nameof(IsLong), true)
+			.SetDisplay("Is Long", "Trade long when true, short otherwise", "Trading");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -49,58 +112,56 @@ public class BtcSeasonalityStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_prevFastEma = 0m;
-		_prevSlowEma = 0m;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
-		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
-
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(fastEma, slowEma, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, fastEma);
-			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_prevFastEma == 0m || _prevSlowEma == 0m)
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		var est = candle.OpenTime.Add(_estOffset);
+
+		if (Position != 0)
 		{
-			_prevFastEma = fastEmaValue;
-			_prevSlowEma = slowEmaValue;
+			if (est.DayOfWeek == ExitDay && est.Hour == ExitHour)
+			{
+				if (Position > 0)
+					SellMarket(Position);
+				else
+					BuyMarket(-Position);
+			}
+
 			return;
 		}
 
-		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
-		{
-			BuyMarket();
-		}
-		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
-		{
-			SellMarket();
-		}
+		if (est.DayOfWeek != EntryDay || est.Hour != EntryHour)
+			return;
 
-		_prevFastEma = fastEmaValue;
-		_prevSlowEma = slowEmaValue;
+		// Avoid reopening right after the exit when entry and exit share the same moment.
+		if (est.DayOfWeek == ExitDay && est.Hour == ExitHour)
+			return;
+
+		if (IsLong)
+			BuyMarket(Volume);
+		else
+			SellMarket(Volume);
 	}
 }
