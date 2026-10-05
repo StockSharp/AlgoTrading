@@ -11,12 +11,13 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// AI Supertrend x Pivot Percentile Strategy - combines two Supertrend indicators
-/// with ADX and Williams %R filters.
+/// AI Supertrend x Pivot Percentile strategy.
+/// Goes long when the close is above both Supertrends, ADX is above AdxThreshold and Williams %R is above -50, and short when
+/// the close is below both Supertrends, ADX is above AdxThreshold and Williams %R is below -50. The opposite signal reverses
+/// the position, and percent take-profit and stop-loss protect it.
 /// </summary>
 public class AiSupertrendPivotPercentileStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _length1;
 	private readonly StrategyParam<decimal> _factor1;
 	private readonly StrategyParam<int> _length2;
@@ -24,67 +25,148 @@ public class AiSupertrendPivotPercentileStrategy : Strategy
 	private readonly StrategyParam<int> _adxLength;
 	private readonly StrategyParam<decimal> _adxThreshold;
 	private readonly StrategyParam<int> _pivotLength;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _tpPercent;
+	private readonly StrategyParam<decimal> _slPercent;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _entryPrice;
-	private int _cooldownRemaining;
+	/// <summary>
+	/// ATR period of the first Supertrend.
+	/// </summary>
+	public int Length1
+	{
+		get => _length1.Value;
+		set => _length1.Value = value;
+	}
 
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-	public int Length1 { get => _length1.Value; set => _length1.Value = value; }
-	public decimal Factor1 { get => _factor1.Value; set => _factor1.Value = value; }
-	public int Length2 { get => _length2.Value; set => _length2.Value = value; }
-	public decimal Factor2 { get => _factor2.Value; set => _factor2.Value = value; }
-	public int AdxLength { get => _adxLength.Value; set => _adxLength.Value = value; }
-	public decimal AdxThreshold { get => _adxThreshold.Value; set => _adxThreshold.Value = value; }
-	public int PivotLength { get => _pivotLength.Value; set => _pivotLength.Value = value; }
-	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
+	/// <summary>
+	/// Multiplier of the first Supertrend.
+	/// </summary>
+	public decimal Factor1
+	{
+		get => _factor1.Value;
+		set => _factor1.Value = value;
+	}
 
+	/// <summary>
+	/// ATR period of the second Supertrend.
+	/// </summary>
+	public int Length2
+	{
+		get => _length2.Value;
+		set => _length2.Value = value;
+	}
+
+	/// <summary>
+	/// Multiplier of the second Supertrend.
+	/// </summary>
+	public decimal Factor2
+	{
+		get => _factor2.Value;
+		set => _factor2.Value = value;
+	}
+
+	/// <summary>
+	/// ADX period.
+	/// </summary>
+	public int AdxLength
+	{
+		get => _adxLength.Value;
+		set => _adxLength.Value = value;
+	}
+
+	/// <summary>
+	/// Minimum ADX for entries.
+	/// </summary>
+	public decimal AdxThreshold
+	{
+		get => _adxThreshold.Value;
+		set => _adxThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Williams %R period.
+	/// </summary>
+	public int PivotLength
+	{
+		get => _pivotLength.Value;
+		set => _pivotLength.Value = value;
+	}
+
+	/// <summary>
+	/// Take-profit percentage.
+	/// </summary>
+	public decimal TpPercent
+	{
+		get => _tpPercent.Value;
+		set => _tpPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Stop-loss percentage.
+	/// </summary>
+	public decimal SlPercent
+	{
+		get => _slPercent.Value;
+		set => _slPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
+	/// </summary>
 	public AiSupertrendPivotPercentileStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
 		_length1 = Param(nameof(Length1), 10)
 			.SetGreaterThanZero()
-			.SetDisplay("ST1 Length", "First Supertrend ATR length", "Supertrend");
+			.SetDisplay("ST1 Length", "ATR period of the first Supertrend", "Supertrend");
 
 		_factor1 = Param(nameof(Factor1), 3m)
 			.SetGreaterThanZero()
-			.SetDisplay("ST1 Factor", "First Supertrend multiplier", "Supertrend");
+			.SetDisplay("ST1 Factor", "Multiplier of the first Supertrend", "Supertrend");
 
 		_length2 = Param(nameof(Length2), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("ST2 Length", "Second Supertrend ATR length", "Supertrend");
+			.SetDisplay("ST2 Length", "ATR period of the second Supertrend", "Supertrend");
 
 		_factor2 = Param(nameof(Factor2), 4m)
 			.SetGreaterThanZero()
-			.SetDisplay("ST2 Factor", "Second Supertrend multiplier", "Supertrend");
+			.SetDisplay("ST2 Factor", "Multiplier of the second Supertrend", "Supertrend");
 
 		_adxLength = Param(nameof(AdxLength), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("ADX Length", "ADX calculation period", "Filter");
+			.SetDisplay("ADX Length", "ADX period", "Filter");
 
 		_adxThreshold = Param(nameof(AdxThreshold), 20m)
-			.SetDisplay("ADX Threshold", "Minimum ADX for trading", "Filter");
+			.SetDisplay("ADX Threshold", "Minimum ADX for entries", "Filter");
 
 		_pivotLength = Param(nameof(PivotLength), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("Pivot Length", "Length for Williams %R", "Filter");
+			.SetDisplay("Pivot Length", "Williams %R period", "Filter");
 
-		_cooldownBars = Param(nameof(CooldownBars), 10)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "Risk");
+		_tpPercent = Param(nameof(TpPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Take Profit %", "Take-profit percentage", "Risk");
+
+		_slPercent = Param(nameof(SlPercent), 1m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop-loss percentage", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> [(Security, CandleType)];
-
-	/// <inheritdoc />
-	protected override void OnReseted()
 	{
-		base.OnReseted();
-		_entryPrice = 0m;
-		_cooldownRemaining = 0;
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
@@ -102,6 +184,8 @@ public class AiSupertrendPivotPercentileStrategy : Strategy
 			.BindEx(st1, st2, adx, wpr, ProcessCandle)
 			.Start();
 
+		StartProtection(new Unit(TpPercent, UnitTypes.Percent), new Unit(SlPercent, UnitTypes.Percent), useMarketOrders: true);
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -109,70 +193,42 @@ public class AiSupertrendPivotPercentileStrategy : Strategy
 			DrawIndicator(area, st1);
 			DrawIndicator(area, st2);
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, adx);
+				DrawIndicator(oscillators, wpr);
+			}
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle,
-		IIndicatorValue st1Value,
-		IIndicatorValue st2Value,
-		IIndicatorValue adxValue,
-		IIndicatorValue wprValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue st1Value, IIndicatorValue st2Value, IIndicatorValue adxValue, IIndicatorValue wprValue)
 	{
 		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (!st1Value.IsFormed || !st2Value.IsFormed || !adxValue.IsFormed || !wprValue.IsFormed)
+			return;
+
+		if (adxValue is not IAverageDirectionalIndexValue { MovingAverage: decimal adx })
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var st1 = (SuperTrendIndicatorValue)st1Value;
-		var st2 = (SuperTrendIndicatorValue)st2Value;
-		var adxTyped = (IAverageDirectionalIndexValue)adxValue;
+		var close = candle.ClosePrice;
+		var st1 = st1Value.ToDecimal();
+		var st2 = st2Value.ToDecimal();
 		var wpr = wprValue.ToDecimal();
+		var strongTrend = adx > AdxThreshold;
 
-		if (adxTyped.MovingAverage is not decimal adxMa)
-			return;
+		var longSignal = close > st1 && close > st2 && strongTrend && wpr > -50m;
+		var shortSignal = close < st1 && close < st2 && strongTrend && wpr < -50m;
 
-		var st1Val = st1Value.ToDecimal();
-		var st2Val = st2Value.ToDecimal();
-
-		var isBull = candle.ClosePrice > st1Val && candle.ClosePrice > st2Val;
-		var isBear = candle.ClosePrice < st1Val && candle.ClosePrice < st2Val;
-		var strongTrend = adxMa > AdxThreshold;
-		var pivotBull = wpr > -50m;
-		var pivotBear = wpr < -50m;
-
-		if (_cooldownRemaining > 0)
-		{
-			_cooldownRemaining--;
-			return;
-		}
-
-		if (isBull && strongTrend && pivotBull && Position <= 0)
-		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-			BuyMarket(Volume);
-			_entryPrice = candle.ClosePrice;
-			_cooldownRemaining = CooldownBars;
-		}
-		else if (isBear && strongTrend && pivotBear && Position >= 0)
-		{
-			if (Position > 0)
-				SellMarket(Math.Abs(Position));
-			SellMarket(Volume);
-			_entryPrice = candle.ClosePrice;
-			_cooldownRemaining = CooldownBars;
-		}
-		// Exit conditions
-		else if (Position > 0 && (!isBull || !pivotBull))
-		{
-			SellMarket(Math.Abs(Position));
-			_cooldownRemaining = CooldownBars;
-		}
-		else if (Position < 0 && (!isBear || !pivotBear))
-		{
-			BuyMarket(Math.Abs(Position));
-			_cooldownRemaining = CooldownBars;
-		}
+		if (longSignal && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (shortSignal && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
 	}
 }
