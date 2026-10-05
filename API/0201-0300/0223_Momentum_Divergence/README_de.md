@@ -20,7 +20,8 @@ Dieser Ansatz spricht Trader an, die Wendepunkte antizipieren möchten, anstatt 
 - **Stops**: Ja, fester Stop-Loss.
 - **Standardwerte**:
   - `MomentumPeriod` = 14
-  - `MaPeriod` = 20
+  - `StopLossPercent` = 2
+    Ein tieferes Tief ist ein Schluss unter dem vorherigen, während das Momentum, der Schluss minus der Schluss vor MomentumPeriod Kerzen, über seinen vorherigen Wert steigt; ein höheres Hoch ist das Spiegelbild. Die Nulldurchgangs-Ausstiege warten, bis das Momentum nach dem Einstieg durch null geht. Der feste Stop liegt bei StopLossPercent vom Einstiegspreis und wird auch zwischen den Kerzen überwacht; 0 schaltet ihn ab. Keine Regel nutzt einen gleitenden Durchschnitt, daher entfällt MaPeriod. Ein Einstiegssignal gegen eine offene Position dreht sie.
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **Filter**:
   - Kategorie: Umkehr

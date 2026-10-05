@@ -8854,6 +8854,68 @@ public abstract partial class StrategyTests
 		if (stopPercent < 1) IsTrue(stopExits > 0, "A tight residual stop must be hit.");
 	}
 
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(14, false)]
+	[DataRow(10, true)]
+	public async Task S0223_CloseAndMomentumDivergencesUntilMomentumCrossesZero(int period, bool secondary)
+	{
+		var momentum = new Momentum { Length = period };
+		decimal? prevClose = null, prevMomentum = null;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var zeroExits = 0;
+		var violations = new List<string>();
+		await Replay("0223_Momentum_Divergence", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(14, strategy.Parameters["MomentumPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			IsFalse(strategy.Parameters.ContainsKey("MaPeriod"), "No rule uses a moving average.");
+			SetParam(strategy, "MomentumPeriod", period);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var m = momentum.Process(candle);
+				if (m.IsEmpty || !m.IsFormed) return;
+				var close = candle.ClosePrice;
+				var value = m.GetValue<decimal>();
+				var lastClose = prevClose;
+				var lastMomentum = prevMomentum;
+				prevClose = close;
+				prevMomentum = value;
+				if (lastClose is not decimal c || lastMomentum is not decimal lm) return;
+				var position = strategy.Position;
+				if (close < c && value > lm && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (close > c && value < lm && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && lm >= 0m && value < 0m) { expectedSide = Sides.Sell; expectedVolume = position; zeroExits++; }
+				else if (position < 0m && lm <= 0m && value > 0m) { expectedSide = Sides.Buy; expectedVolume = -position; zeroExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a close/momentum divergence, or close when momentum crosses zero.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && zeroExits > 0, "The fixture must trade both sides and exit on a zero cross.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0223_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0223_Momentum_Divergence", TimeSpan.FromDays(31));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

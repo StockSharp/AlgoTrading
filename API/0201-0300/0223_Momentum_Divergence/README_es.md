@@ -20,7 +20,8 @@ Este enfoque atrae a traders que buscan anticipar puntos de inflexión en lugar 
 - **Stops**: Sí, stop-loss fijo.
 - **Valores predeterminados**:
   - `MomentumPeriod` = 14
-  - `MaPeriod` = 20
+  - `StopLossPercent` = 2
+    Un mínimo más bajo es un cierre por debajo del cierre anterior mientras el momentum, el cierre menos el cierre de MomentumPeriod velas antes, sube por encima de su valor anterior; un máximo más alto es lo contrario. Las salidas por cruce de cero esperan a que el momentum pase por cero tras la entrada. El stop fijo es StopLossPercent del precio de entrada, vigilado también entre velas; 0 lo desactiva. Ninguna regla usa una media móvil, por lo que MaPeriod se eliminó. Una señal de entrada contra una posición abierta la invierte.
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **Filtros**:
   - Categoría: Reversión

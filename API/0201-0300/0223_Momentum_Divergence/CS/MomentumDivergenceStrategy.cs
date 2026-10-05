@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,47 +12,44 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Momentum Divergence strategy.
-/// Trades based on divergence between price and momentum.
+/// A close below the previous close while MomentumPeriod momentum rises above its previous value is a bullish divergence and goes long;
+/// a close above the previous close while momentum falls is a bearish one and goes short, reversing an opposite position. A long closes
+/// when momentum crosses below zero and a short when it crosses above zero, and a percent stop limits the loss.
 /// </summary>
 public class MomentumDivergenceStrategy : Strategy
 {
-	private readonly StrategyParam<int> _momentumPeriodParam;
-	private readonly StrategyParam<int> _maPeriodParam;
-	private readonly StrategyParam<DataType> _candleTypeParam;
-	
-	private Momentum _momentum;
-	private SimpleMovingAverage _sma;
-	
-	private decimal _prevPrice;
-	private decimal _prevMomentum;
-	private decimal _currentPrice;
-	private decimal _currentMomentum;
+	private readonly StrategyParam<int> _momentumPeriod;
+	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<DataType> _candleType;
+
+	private decimal? _prevClose;
+	private decimal? _prevMomentum;
 
 	/// <summary>
-	/// Momentum indicator period.
+	/// Period of the momentum indicator.
 	/// </summary>
 	public int MomentumPeriod
 	{
-		get => _momentumPeriodParam.Value;
-		set => _momentumPeriodParam.Value = value;
-	}
-	
-	/// <summary>
-	/// Moving average period.
-	/// </summary>
-	public int MaPeriod
-	{
-		get => _maPeriodParam.Value;
-		set => _maPeriodParam.Value = value;
+		get => _momentumPeriod.Value;
+		set => _momentumPeriod.Value = value;
 	}
 
 	/// <summary>
-	/// Candle type for strategy.
+	/// Stop loss percentage from entry price.
+	/// </summary>
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
-		get => _candleTypeParam.Value;
-		set => _candleTypeParam.Value = value;
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
 	/// <summary>
@@ -63,20 +57,16 @@ public class MomentumDivergenceStrategy : Strategy
 	/// </summary>
 	public MomentumDivergenceStrategy()
 	{
-		_momentumPeriodParam = Param(nameof(MomentumPeriod), 14)
+		_momentumPeriod = Param(nameof(MomentumPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("Momentum Period", "Period for Momentum indicator", "Parameters")
-			
-			.SetOptimize(10, 30, 5);
-			
-		_maPeriodParam = Param(nameof(MaPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("MA Period", "Period for Moving Average", "Parameters")
-			
-			.SetOptimize(10, 50, 10);
+			.SetDisplay("Momentum Period", "Period of the momentum indicator", "Indicators");
 
-		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Candle type for strategy", "Common");
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -89,11 +79,8 @@ public class MomentumDivergenceStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_prevPrice = 0;
-		_prevMomentum = 0;
-		_currentPrice = 0;
-		_currentMomentum = 0;
+		_prevClose = null;
+		_prevMomentum = null;
 	}
 
 	/// <inheritdoc />
@@ -101,80 +88,76 @@ public class MomentumDivergenceStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
-		_momentum = new Momentum { Length = MomentumPeriod };
-		_sma = new SMA { Length = MaPeriod };
-		
-		// Create subscription and bind indicators
+		_prevClose = null;
+		_prevMomentum = null;
+
+		var momentum = new Momentum { Length = MomentumPeriod };
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_momentum, _sma, ProcessCandle)
+			.BindEx(momentum, ProcessCandle)
 			.Start();
 
-		// Setup chart visualization if available
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _momentum);
-			DrawIndicator(area, _sma);
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, momentum);
+			}
 		}
-		
-		// Enable position protection
-		StartProtection(
-			takeProfit: new Unit(0, UnitTypes.Absolute), // No take profit
-			stopLoss: new Unit(2, UnitTypes.Percent) // 2% stop loss
-		);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal momentumValue, decimal smaValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// The high-level handler activates native protection before this callback, also between signal bars.
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue momentumValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
-			
+
+		if (!momentumValue.IsFormed)
+			return;
+
+		var close = candle.ClosePrice;
+		var value = momentumValue.GetValue<decimal>();
+		var prevClose = _prevClose;
+		var prevMomentum = _prevMomentum;
+		_prevClose = close;
+		_prevMomentum = value;
+
+		if (prevClose is not decimal lastClose || prevMomentum is not decimal lastMomentum)
+			return;
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
-			
-		// Store previous values before updating current ones
-		_prevPrice = _currentPrice;
-		_prevMomentum = _currentMomentum;
-		
-		// Update current values
-		_currentPrice = candle.ClosePrice;
-		_currentMomentum = momentumValue;
-		
-		// Skip first candle after indicators become formed
-		if (_prevPrice == 0 || _prevMomentum == 0)
-			return;
-			
-		// Detect bullish divergence (price makes lower low but momentum makes higher low)
-		bool bullishDivergence = _currentPrice < _prevPrice && _currentMomentum > _prevMomentum;
-		
-		// Detect bearish divergence (price makes higher high but momentum makes lower high)
-		bool bearishDivergence = _currentPrice > _prevPrice && _currentMomentum < _prevMomentum;
-		
-		// Trading signals
-		if (bullishDivergence && Position <= 0)
-		{
-			// Bullish divergence - buy signal
+
+		var bullish = close < lastClose && value > lastMomentum;
+		var bearish = close > lastClose && value < lastMomentum;
+
+		if (bullish && Position <= 0)
 			BuyMarket(Volume + Math.Abs(Position));
-		}
-		else if (bearishDivergence && Position >= 0)
-		{
-			// Bearish divergence - sell signal
+		else if (bearish && Position >= 0)
 			SellMarket(Volume + Math.Abs(Position));
-		}
-		// Exit when price crosses MA in the opposite direction
-		else if (Position > 0 && candle.ClosePrice < smaValue)
-		{
-			// Exit long position
+		else if (Position > 0 && lastMomentum >= 0 && value < 0)
 			SellMarket(Position);
-		}
-		else if (Position < 0 && candle.ClosePrice > smaValue)
-		{
-			// Exit short position
-			BuyMarket(Math.Abs(Position));
-		}
+		else if (Position < 0 && lastMomentum <= 0 && value > 0)
+			BuyMarket(-Position);
 	}
 }

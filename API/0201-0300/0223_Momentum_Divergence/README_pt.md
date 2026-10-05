@@ -20,7 +20,8 @@ Esta abordagem atrai traders que buscam antecipar pontos de inflexão em vez de 
 - **Stops**: Sim, stop-loss fixo.
 - **Valores padrão**:
   - `MomentumPeriod` = 14
-  - `MaPeriod` = 20
+  - `StopLossPercent` = 2
+    Uma mínima mais baixa é um fechamento abaixo do anterior enquanto o momentum, o fechamento menos o fechamento de MomentumPeriod candles antes, sobe acima do seu valor anterior; uma máxima mais alta é o espelho. As saídas por cruzamento do zero esperam que o momentum passe por zero após a entrada. O stop fixo é StopLossPercent do preço de entrada, vigiado também entre os candles; 0 o desativa. Nenhuma regra usa média móvel, por isso MaPeriod foi removido. Um sinal de entrada contra uma posição aberta a inverte.
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **Filtros**:
   - Categoria: Reversão

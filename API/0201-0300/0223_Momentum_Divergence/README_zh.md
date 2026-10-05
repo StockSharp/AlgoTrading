@@ -20,7 +20,8 @@
 - **止损**: 固定止损
 - **默认值**:
   - `MomentumPeriod` = 14
-  - `MaPeriod` = 20
+  - `StopLossPercent` = 2
+    更低低点指收盘价低于前一收盘价，同时动量（收盘价减去MomentumPeriod根K线前的收盘价）高于其前值；更高高点与之相反。零轴离场需等待入场后动量穿越零轴。固定止损为入场价的StopLossPercent百分比，在K线之间同样监控；设为0则关闭。规则中没有用到移动平均，因此去掉了MaPeriod。与持仓方向相反的入场信号会反转持仓。
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **过滤器**:
   - 类别: Reversal
