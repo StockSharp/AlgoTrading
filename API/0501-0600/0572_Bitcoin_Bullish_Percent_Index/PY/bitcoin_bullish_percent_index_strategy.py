@@ -5,67 +5,74 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan
+from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage
+from StockSharp.Algo.Indicators import RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
 
 
 class bitcoin_bullish_percent_index_strategy(Strategy):
+    """
+    Bitcoin Bullish Percent Index strategy.
+    RSI approximates the bullish percent index: RSI crossing above Oversold goes long, RSI crossing below Overbought goes short,
+    and the opposite signal reverses the position.
+    """
+
     def __init__(self):
         super(bitcoin_bullish_percent_index_strategy, self).__init__()
-        self._fast_ema_period = self.Param("FastEmaPeriod", 120) \
-            .SetDisplay("Fast EMA", "Fast EMA period", "Indicators")
-        self._slow_ema_period = self.Param("SlowEmaPeriod", 450) \
-            .SetDisplay("Slow EMA", "Slow EMA period", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
-            .SetDisplay("Candle Type", "Type of candles", "General")
-        self._prev_fast_ema = 0.0
-        self._prev_slow_ema = 0.0
+        self._rsi_period = self.Param("RsiPeriod", 14).SetGreaterThanZero().SetDisplay("RSI Period", "RSI period", "Indicators")
+        self._overbought = self.Param("Overbought", 70.0).SetDisplay("Overbought", "RSI level whose downward cross opens a short", "Indicators")
+        self._oversold = self.Param("Oversold", 30.0).SetDisplay("Oversold", "RSI level whose upward cross opens a long", "Indicators")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._prev_rsi = None
 
-    @property
-    def fast_ema_period(self):
-        return self._fast_ema_period.Value
-    @property
-    def slow_ema_period(self):
-        return self._slow_ema_period.Value
     @property
     def candle_type(self):
         return self._candle_type.Value
 
     def OnReseted(self):
         super(bitcoin_bullish_percent_index_strategy, self).OnReseted()
-        self._prev_fast_ema = 0.0
-        self._prev_slow_ema = 0.0
+        self._prev_rsi = None
 
     def OnStarted2(self, time):
         super(bitcoin_bullish_percent_index_strategy, self).OnStarted2(time)
-        fast_ema = ExponentialMovingAverage()
-        fast_ema.Length = self.fast_ema_period
-        slow_ema = ExponentialMovingAverage()
-        slow_ema.Length = self.slow_ema_period
+
+        self._prev_rsi = None
+
+        rsi = RelativeStrengthIndex()
+        rsi.Length = self._rsi_period.Value
+
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(fast_ema, slow_ema, self.OnProcess).Start()
+        subscription.Bind(rsi, self._process_candle).Start()
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, fast_ema)
-            self.DrawIndicator(area, slow_ema)
             self.DrawOwnTrades(area)
+            oscillators = self.CreateChartArea()
+            if oscillators is not None:
+                self.DrawIndicator(oscillators, rsi)
 
-    def OnProcess(self, candle, fast_ema_value, slow_ema_value):
+    def _process_candle(self, candle, rsi):
         if candle.State != CandleStates.Finished:
             return
-        if self._prev_fast_ema == 0 or self._prev_slow_ema == 0:
-            self._prev_fast_ema = float(fast_ema_value)
-            self._prev_slow_ema = float(slow_ema_value)
+
+        prev = self._prev_rsi
+        self._prev_rsi = rsi
+
+        if prev is None:
             return
-        if self._prev_fast_ema <= self._prev_slow_ema and fast_ema_value > slow_ema_value and self.Position <= 0:
-            self.BuyMarket()
-        elif self._prev_fast_ema >= self._prev_slow_ema and fast_ema_value < slow_ema_value and self.Position >= 0:
-            self.SellMarket()
-        self._prev_fast_ema = float(fast_ema_value)
-        self._prev_slow_ema = float(slow_ema_value)
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
+        oversold = Decimal(self._oversold.Value)
+        overbought = Decimal(self._overbought.Value)
+
+        if prev <= oversold and rsi > oversold and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+        elif prev >= overbought and rsi < overbought and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
 
     def CreateClone(self):
         return bitcoin_bullish_percent_index_strategy()
