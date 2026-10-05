@@ -19,10 +19,11 @@ ADX > AdxThreshold かつ Price >= upperBorder（強いトレンドと上方ブ�
 - **デフォルト値**:
   - `AdxPeriod` = 14
   - `DonchianPeriod` = 5
-  - `StopLossPercent` = 2m
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
   - `AdxThreshold` = 10
-  - `Multiplier` = 0.1m
+  - `Multiplier` = 0.1
+    upperBorderは現在の足を含む直近DonchianPeriod本の最高値をMultiplierパーセント下げた値、lowerBorderは最安値をMultiplierパーセント上げた値です。ストップはエントリー価格の固定StopLossPercentで、ローソク足の間も監視されます。 保有ポジションと逆方向のエントリーシグナルはドテンになります。
 - **フィルター**:
   - カテゴリ: 混合
   - 方向: 両方

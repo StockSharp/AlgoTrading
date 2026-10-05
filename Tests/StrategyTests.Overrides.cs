@@ -8005,6 +8005,77 @@ public abstract partial class StrategyTests
 	public Task S0209_PercentStopWorksBetweenFinishedBars()
 		=> CheckPercentStopBetweenBars("0209_Volume_Supertrend", TimeSpan.FromDays(31));
 
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(14, 5, 10, 0.1, false)]
+	[DataRow(10, 10, 20, 0.05, true)]
+	public async Task S0210_ChannelBordersUnderStrongAdxUntilAdxFades(int adxPeriod, int period, int threshold, double shift, bool secondary)
+	{
+		var adx = new AverageDirectionalIndex { Length = adxPeriod };
+		var highs = new List<decimal>();
+		var lows = new List<decimal>();
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var fadeExits = 0;
+		var violations = new List<string>();
+		await Replay("0210_ADX_Donchian", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(14, strategy.Parameters["AdxPeriod"].Value);
+			AreEqual(5, strategy.Parameters["DonchianPeriod"].Value);
+			AreEqual(10, strategy.Parameters["AdxThreshold"].Value);
+			AreEqual(0.1m, Convert.ToDecimal(strategy.Parameters["Multiplier"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "AdxPeriod", adxPeriod);
+			SetParam(strategy, "DonchianPeriod", period);
+			SetParam(strategy, "AdxThreshold", threshold);
+			SetParam(strategy, "Multiplier", shift);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				highs.Add(candle.HighPrice);
+				lows.Add(candle.LowPrice);
+				if (highs.Count > period) { highs.RemoveAt(0); lows.RemoveAt(0); }
+				var a = adx.Process(candle);
+				if (highs.Count < period || !a.IsFormed || a is not AverageDirectionalIndexValue { MovingAverage: decimal strength }) return;
+				// The channel includes the current candle.
+				var upperBorder = highs.Max() * (1 - (decimal)shift / 100);
+				var lowerBorder = lows.Min() * (1 + (decimal)shift / 100);
+				var strong = strength > threshold;
+				var weak = strength < threshold - 5;
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (strong && close >= upperBorder && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (strong && close <= lowerBorder && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && weak) { expectedSide = Sides.Sell; expectedVolume = position; fadeExits++; }
+				else if (position < 0m && weak) { expectedSide = Sides.Buy; expectedVolume = -position; fadeExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a close at a channel border under strong ADX, or close once ADX fades below the threshold minus 5.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "The fixture must trade both sides.");
+		if (secondary) IsTrue(fadeExits > 0, "A higher threshold must see ADX fade.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0210_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0210_ADX_Donchian", TimeSpan.FromDays(31));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

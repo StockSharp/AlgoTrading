@@ -19,10 +19,11 @@ Os testes indicam um retorno anual médio de aproximadamente 67%. Funciona melho
 - **Valores padrão**:
   - `AdxPeriod` = 14
   - `DonchianPeriod` = 5
-  - `StopLossPercent` = 2m
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
   - `AdxThreshold` = 10
-  - `Multiplier` = 0.1m
+  - `Multiplier` = 0.1
+    upperBorder é a máxima dos últimos DonchianPeriod candles, incluindo o atual, reduzida em Multiplier por cento, e lowerBorder é a mínima elevada em Multiplier por cento. O stop é um StopLossPercent fixo do preço de entrada, vigiado também entre os candles. Um sinal de entrada contra uma posição aberta a inverte.
 - **Filtros**:
   - Categoria: Misto
   - Direção: Ambos

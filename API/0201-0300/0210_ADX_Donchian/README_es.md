@@ -19,10 +19,11 @@ Las pruebas indican un rendimiento anual promedio de aproximadamente 67%. Funcio
 - **Valores predeterminados**:
   - `AdxPeriod` = 14
   - `DonchianPeriod` = 5
-  - `StopLossPercent` = 2m
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
   - `AdxThreshold` = 10
-  - `Multiplier` = 0.1m
+  - `Multiplier` = 0.1
+    upperBorder es el máximo de las últimas DonchianPeriod velas, incluida la actual, reducido en Multiplier por ciento, y lowerBorder es el mínimo aumentado en Multiplier por ciento. El stop es un StopLossPercent fijo del precio de entrada, vigilado también entre velas. Una señal de entrada contra una posición abierta la invierte.
 - **Filtros**:
   - Categoría: Mixto
   - Dirección: Ambos

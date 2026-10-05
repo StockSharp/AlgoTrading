@@ -4,120 +4,96 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates
+from System import TimeSpan, Decimal
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, Level1Fields
+from StockSharp.BusinessEntities import Subscription
 from StockSharp.Algo.Indicators import AverageDirectionalIndex, DonchianChannels
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
 
 class adx_donchian_strategy(Strategy):
-    """Strategy based on ADX and Donchian Channel indicators"""
+    """
+    ADX Donchian strategy.
+    The borders sit Multiplier percent inside the DonchianPeriod channel, which includes the current candle. With ADX above AdxThreshold
+    a close at or above the upper border goes long and one at or below the lower border goes short, reversing an opposite position.
+    The position closes once ADX falls below AdxThreshold minus 5, and a percent stop limits the loss.
+    """
 
     def __init__(self):
         super(adx_donchian_strategy, self).__init__()
-
-        self._adx_period = self.Param("AdxPeriod", 14) \
-            .SetRange(7, 28) \
-            .SetDisplay("ADX Period", "Period for ADX indicator", "Indicators")
-
-        self._donchian_period = self.Param("DonchianPeriod", 5) \
-            .SetRange(5, 50) \
-            .SetDisplay("Donchian Period", "Period for Donchian Channel", "Indicators")
-
-        self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
-            .SetRange(0.5, 5.0) \
-            .SetDisplay("Stop-Loss %", "Stop-loss percentage from entry price", "Risk Management")
-
-        self._candle_type = self.Param("CandleType", tf(15)) \
-            .SetDisplay("Candle Type", "Type of candles to use", "General")
-
-        self._adx_threshold = self.Param("AdxThreshold", 10) \
-            .SetRange(5, 40) \
-            .SetDisplay("ADX Threshold", "ADX value for strong trend detection", "Indicators")
-
-        self._multiplier = self.Param("Multiplier", 0.1) \
-            .SetRange(0.0, 1.0) \
-            .SetDisplay("Multiplier %", "Sensitivity to Donchian Channel border (percent)", "Indicators")
-
-        self._cooldown_bars = self.Param("CooldownBars", 40) \
-            .SetRange(1, 200) \
-            .SetDisplay("Cooldown Bars", "Bars between trades", "General")
-
-        self._cooldown = 0
+        self._adx_period = self.Param("AdxPeriod", 14).SetGreaterThanZero().SetDisplay("ADX Period", "Period of ADX", "Indicators")
+        self._donchian_period = self.Param("DonchianPeriod", 5).SetGreaterThanZero().SetDisplay("Donchian Period", "Candles the channel spans", "Indicators")
+        self._adx_threshold = self.Param("AdxThreshold", 10).SetGreaterThanZero().SetDisplay("ADX Threshold", "ADX value for strong trend detection", "Indicators")
+        self._multiplier = self.Param("Multiplier", 0.1).SetNotNegative().SetDisplay("Multiplier", "Percent the borders sit inside the channel", "Indicators")
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0).SetNotNegative().SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles to use", "General")
 
     @property
-    def CandleType(self):
+    def candle_type(self):
         return self._candle_type.Value
-
-    def OnReseted(self):
-        super(adx_donchian_strategy, self).OnReseted()
-        self._cooldown = 0
 
     def OnStarted2(self, time):
         super(adx_donchian_strategy, self).OnStarted2(time)
-        self._cooldown = 0
 
         adx = AverageDirectionalIndex()
         adx.Length = self._adx_period.Value
         donchian = DonchianChannels()
         donchian.Length = self._donchian_period.Value
 
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription.BindEx(donchian, adx, self.ProcessCandle).Start()
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.BindEx(adx, donchian, self._process_candle).Start()
+
+        self.StartProtection(Unit(), Unit(Decimal(self._stop_loss_percent.Value), UnitTypes.Percent), useMarketOrders=True, isLocalStop=True)
+
+        # The stop has to see prices between candles, not only at their close.
+        for field in (Level1Fields.BestBidPrice, Level1Fields.BestAskPrice):
+            quotes = Subscription(DataType.Level1, self.Security)
+            quotes.MarketData.BuildField = field
+            self.SubscribeLevel1(quotes).Bind(self._observe_protection_quote).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, adx)
             self.DrawIndicator(area, donchian)
             self.DrawOwnTrades(area)
+            oscillators = self.CreateChartArea()
+            if oscillators is not None:
+                self.DrawIndicator(oscillators, adx)
 
-    def ProcessCandle(self, candle, donchian_value, adx_value):
+    def _observe_protection_quote(self, quote):
+        # The high-level handler activates native protection before the callback, including between bars.
+        pass
+
+    def _process_candle(self, candle, adx_value, donchian_value):
         if candle.State != CandleStates.Finished:
+            return
+
+        if not adx_value.IsFormed or not donchian_value.IsFormed:
+            return
+        if adx_value.MovingAverage is None or donchian_value.UpperBand is None or donchian_value.LowerBand is None:
             return
 
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        adx_ma = adx_value.MovingAverage
-        if adx_ma is None:
-            return
+        strength = adx_value.MovingAverage
+        threshold = Decimal(self._adx_threshold.Value)
+        shift = Decimal(self._multiplier.Value) / Decimal(100)
+        upper_border = donchian_value.UpperBand * (Decimal(1) - shift)
+        lower_border = donchian_value.LowerBand * (Decimal(1) + shift)
+        strong = strength > threshold
+        weak = strength < threshold - Decimal(5)
+        close = candle.ClosePrice
 
-        upper_band = donchian_value.UpperBand
-        lower_band = donchian_value.LowerBand
-        if upper_band is None or lower_band is None:
-            return
-
-        price = float(candle.ClosePrice)
-        adx_val = float(adx_ma)
-        threshold = float(self._adx_threshold.Value)
-        mult = float(self._multiplier.Value)
-
-        strong_trend = adx_val > threshold
-
-        upper_border = float(upper_band) * (1 - mult / 100)
-        lower_border = float(lower_band) * (1 + mult / 100)
-
-        if self._cooldown > 0:
-            self._cooldown -= 1
-
-        cooldown_val = int(self._cooldown_bars.Value)
-
-        if self._cooldown == 0 and strong_trend and price >= upper_border and self.Position <= 0:
-            volume = self.Volume + abs(self.Position)
-            self.BuyMarket(volume)
-            self._cooldown = cooldown_val
-        elif self._cooldown == 0 and strong_trend and price <= lower_border and self.Position >= 0:
-            volume = self.Volume + abs(self.Position)
-            self.SellMarket(volume)
-            self._cooldown = cooldown_val
-        elif self.Position != 0 and adx_val < threshold - 5:
-            if self.Position > 0:
-                self.SellMarket(self.Position)
-            else:
-                self.BuyMarket(abs(self.Position))
-            self._cooldown = cooldown_val
+        if strong and close >= upper_border and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+        elif strong and close <= lower_border and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
+        elif self.Position > 0 and weak:
+            self.SellMarket(self.Position)
+        elif self.Position < 0 and weak:
+            self.BuyMarket(-self.Position)
 
     def CreateClone(self):
         return adx_donchian_strategy()

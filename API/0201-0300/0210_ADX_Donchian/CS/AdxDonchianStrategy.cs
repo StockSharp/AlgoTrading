@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,21 +11,22 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on ADX and Donchian Channel indicators
+/// ADX Donchian strategy.
+/// The borders sit Multiplier percent inside the DonchianPeriod channel, which includes the current candle. With ADX above AdxThreshold
+/// a close at or above the upper border goes long and one at or below the lower border goes short, reversing an opposite position.
+/// The position closes once ADX falls below AdxThreshold minus 5, and a percent stop limits the loss.
 /// </summary>
 public class AdxDonchianStrategy : Strategy
 {
 	private readonly StrategyParam<int> _adxPeriod;
 	private readonly StrategyParam<int> _donchianPeriod;
-	private readonly StrategyParam<decimal> _stopLossPercent;
-	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _adxThreshold;
 	private readonly StrategyParam<decimal> _multiplier;
-	private readonly StrategyParam<int> _cooldownBars;
-	private int _cooldown;
+	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<DataType> _candleType;
 
 	/// <summary>
-	/// ADX period
+	/// Period of ADX.
 	/// </summary>
 	public int AdxPeriod
 	{
@@ -37,7 +35,7 @@ public class AdxDonchianStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Donchian Channel period
+	/// Candles the channel spans.
 	/// </summary>
 	public int DonchianPeriod
 	{
@@ -46,34 +44,7 @@ public class AdxDonchianStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop-loss percentage
-	/// </summary>
-	public decimal StopLossPercent
-	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for strategy
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Bars to wait between trades.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
-	/// ADX threshold for strong trend detection
+	/// ADX value for strong trend detection.
 	/// </summary>
 	public int AdxThreshold
 	{
@@ -82,7 +53,7 @@ public class AdxDonchianStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Multiplier for Donchian Channel border sensitivity (in percent, e.g. 0.1 for 0.1%)
+	/// Percent the borders sit inside the channel.
 	/// </summary>
 	public decimal Multiplier
 	{
@@ -91,138 +62,130 @@ public class AdxDonchianStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Constructor
+	/// Stop loss percentage from entry price.
+	/// </summary>
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
 	/// </summary>
 	public AdxDonchianStrategy()
 	{
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
-			.SetRange(7, 28)
-			.SetDisplay("ADX Period", "Period for ADX indicator", "Indicators")
-			;
+			.SetGreaterThanZero()
+			.SetDisplay("ADX Period", "Period of ADX", "Indicators");
 
 		_donchianPeriod = Param(nameof(DonchianPeriod), 5)
-			.SetRange(5, 50)
-			.SetDisplay("Donchian Period", "Period for Donchian Channel", "Indicators")
-			;
-
-		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-			.SetRange(0.5m, 5m)
-			.SetDisplay("Stop-Loss %", "Stop-loss percentage from entry price", "Risk Management")
-			;
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
+			.SetGreaterThanZero()
+			.SetDisplay("Donchian Period", "Candles the channel spans", "Indicators");
 
 		_adxThreshold = Param(nameof(AdxThreshold), 10)
-			.SetRange(5, 40)
-			.SetDisplay("ADX Threshold", "ADX value for strong trend detection", "Indicators")
-			;
+			.SetGreaterThanZero()
+			.SetDisplay("ADX Threshold", "ADX value for strong trend detection", "Indicators");
 
 		_multiplier = Param(nameof(Multiplier), 0.1m)
-			.SetRange(0m, 1m)
-			.SetDisplay("Multiplier %", "Sensitivity to Donchian Channel border (percent)", "Indicators")
-			;
+			.SetNotNegative()
+			.SetDisplay("Multiplier", "Percent the borders sit inside the channel", "Indicators");
 
-		_cooldownBars = Param(nameof(CooldownBars), 40)
-			.SetRange(1, 200)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "General");
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
-		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		{
-				return [(Security, CandleType)];
-		}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		base.OnReseted();
-		_cooldown = 0;
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
-		protected override void OnStarted2(DateTime time)
-		{
-				base.OnStarted2(time);
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
-		// Initialize indicators
 		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
 		var donchian = new DonchianChannels { Length = DonchianPeriod };
 
-		// Create subscription and bind indicators
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(donchian, adx, ProcessCandle)
+			.BindEx(adx, donchian, ProcessCandle)
 			.Start();
-		
-		// Setup chart visualization if available
+
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, adx);
 			DrawIndicator(area, donchian);
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, adx);
+			}
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue donchianValue, IIndicatorValue adxValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
 	{
-		// Skip unfinished candles
+		// The high-level handler activates native protection before this callback, also between signal bars.
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue adxValue, IIndicatorValue donchianValue)
+	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
+		if (!adxValue.IsFormed || !donchianValue.IsFormed)
+			return;
+
+		if (adxValue is not AverageDirectionalIndexValue { MovingAverage: decimal strength })
+			return;
+
+		if (donchianValue is not IDonchianChannelsValue { UpperBand: decimal upper, LowerBand: decimal lower })
+			return;
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Process ADX
-		var typedAdx = (AverageDirectionalIndexValue)adxValue;
+		var upperBorder = upper * (1 - Multiplier / 100);
+		var lowerBorder = lower * (1 + Multiplier / 100);
+		var strong = strength > AdxThreshold;
+		var close = candle.ClosePrice;
 
-		// Get Donchian Channel values
-		var typedDonchian = (DonchianChannelsValue)donchianValue;
-		var upperBand = typedDonchian.UpperBand;
-		var middleBand = typedDonchian.Middle;
-		var lowerBand = typedDonchian.LowerBand;
-
-		var price = candle.ClosePrice;
-
-		// Trading logic:
-		// Long: ADX > AdxThreshold && Price >= upperBorder (strong trend with breakout up)
-		// Short: ADX > AdxThreshold && Price <= lowerBorder (strong trend with breakout down)
-		
-		var strongTrend = typedAdx.MovingAverage > AdxThreshold;
-		if (_cooldown > 0)
-			_cooldown--;
-
-		var upperBorder = upperBand * (1 - Multiplier / 100);
-		var lowerBorder = lowerBand * (1 + Multiplier / 100);
-
-		if (_cooldown == 0 && strongTrend && price >= upperBorder && Position <= 0)
-		{
-			// Buy signal - Strong trend with Donchian Channel breakout up (with multiplier)
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-			_cooldown = CooldownBars;
-		}
-		else if (_cooldown == 0 && strongTrend && price <= lowerBorder && Position >= 0)
-		{
-			// Sell signal - Strong trend with Donchian Channel breakout down (with multiplier)
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
-			_cooldown = CooldownBars;
-		}
-		// Exit conditions - ADX weakness
-		else if (Position != 0 && typedAdx.MovingAverage < AdxThreshold - 5)
-		{
-			// Exit position when ADX falls below (threshold - 5)
-			if (Position > 0)
-				SellMarket(Position);
-			else
-				BuyMarket(Math.Abs(Position));
-
-			_cooldown = CooldownBars;
-		}
+		if (strong && close >= upperBorder && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (strong && close <= lowerBorder && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
+		else if (Position > 0 && strength < AdxThreshold - 5)
+			SellMarket(Position);
+		else if (Position < 0 && strength < AdxThreshold - 5)
+			BuyMarket(-Position);
 	}
 }
