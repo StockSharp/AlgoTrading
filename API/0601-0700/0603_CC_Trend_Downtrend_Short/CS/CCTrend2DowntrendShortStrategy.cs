@@ -11,31 +11,52 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// CCTrend2DowntrendShortStrategy using EMA crossover for trend timing.
-/// Enters long on golden cross, short on death cross.
+/// CC Trend Strategy 2 Downtrend Short.
+/// Short only. The Fibonacci range spans the lowest low and the highest high of the last FibLength candles, and its 0.236 level lies
+/// 23.6% of the range below the high. A short opens when the previous close is below the Fibonacci high and EMA21 is below EMA55.
+/// It closes when the close crosses above EMA200 while the trade is not losing, or when the previous close is above the 0.236 level
+/// and there is no new short signal.
 /// </summary>
 public class CCTrend2DowntrendShortStrategy : Strategy
 {
-	private readonly StrategyParam<int> _fastEmaPeriod;
-	private readonly StrategyParam<int> _slowEmaPeriod;
+	private const int _fastEmaLength = 21;
+	private const int _slowEmaLength = 55;
+	private const int _trendEmaLength = 200;
+	private const decimal _fibLevel = 0.236m;
+
+	private readonly StrategyParam<int> _fibLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevFastEma;
-	private decimal _prevSlowEma;
+	private decimal? _prevClose;
+	private decimal? _prevTrendEma;
+	private decimal _entryPrice;
 
-	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
-	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	/// <summary>
+	/// Candles of the Fibonacci range.
+	/// </summary>
+	public int FibLength
+	{
+		get => _fibLength.Value;
+		set => _fibLength.Value = value;
+	}
 
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
+	/// </summary>
 	public CCTrend2DowntrendShortStrategy()
 	{
-		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+		_fibLength = Param(nameof(FibLength), 100)
 			.SetGreaterThanZero()
-			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
-
-		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
-			.SetGreaterThanZero()
-			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+			.SetDisplay("Fib Length", "Candles of the Fibonacci range", "Fibonacci");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -51,8 +72,9 @@ public class CCTrend2DowntrendShortStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevFastEma = 0m;
-		_prevSlowEma = 0m;
+		_prevClose = null;
+		_prevTrendEma = null;
+		_entryPrice = 0m;
 	}
 
 	/// <inheritdoc />
@@ -60,12 +82,19 @@ public class CCTrend2DowntrendShortStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
-		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
+		_prevClose = null;
+		_prevTrendEma = null;
+		_entryPrice = 0m;
+
+		var fastEma = new ExponentialMovingAverage { Length = _fastEmaLength };
+		var slowEma = new ExponentialMovingAverage { Length = _slowEmaLength };
+		var trendEma = new ExponentialMovingAverage { Length = _trendEmaLength };
+		var highest = new Highest { Length = FibLength };
+		var lowest = new Lowest { Length = FibLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(fastEma, slowEma, ProcessCandle)
+			.BindEx(fastEma, slowEma, trendEma, highest, lowest, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -74,32 +103,55 @@ public class CCTrend2DowntrendShortStrategy : Strategy
 			DrawCandles(area, subscription);
 			DrawIndicator(area, fastEma);
 			DrawIndicator(area, slowEma);
+			DrawIndicator(area, trendEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue fastValue, IIndicatorValue slowValue, IIndicatorValue trendValue, IIndicatorValue highestValue, IIndicatorValue lowestValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_prevFastEma == 0m || _prevSlowEma == 0m)
+		var close = candle.ClosePrice;
+		var prevClose = _prevClose;
+		var prevTrendEma = _prevTrendEma;
+		_prevClose = close;
+
+		if (!trendValue.IsFormed)
+			return;
+
+		var trendEma = trendValue.GetValue<decimal>();
+		_prevTrendEma = trendEma;
+
+		if (!fastValue.IsFormed || !slowValue.IsFormed || !highestValue.IsFormed || !lowestValue.IsFormed)
+			return;
+
+		if (prevClose is not decimal pc || prevTrendEma is not decimal pt)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		var fibHigh = highestValue.GetValue<decimal>();
+		var fibLow = lowestValue.GetValue<decimal>();
+		var fib236 = fibHigh - (fibHigh - fibLow) * _fibLevel;
+		var shortSignal = pc < fibHigh && fastValue.GetValue<decimal>() < slowValue.GetValue<decimal>();
+
+		if (Position < 0)
 		{
-			_prevFastEma = fastEmaValue;
-			_prevSlowEma = slowEmaValue;
+			var crossAboveTrend = pc <= pt && close > trendEma;
+
+			if ((crossAboveTrend && close <= _entryPrice) || (pc > fib236 && !shortSignal))
+				BuyMarket(-Position);
+
 			return;
 		}
 
-		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+		if (Position == 0 && shortSignal)
 		{
-			BuyMarket();
+			SellMarket(Volume);
+			_entryPrice = close;
 		}
-		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
-		{
-			SellMarket();
-		}
-
-		_prevFastEma = fastEmaValue;
-		_prevSlowEma = slowEmaValue;
 	}
 }
