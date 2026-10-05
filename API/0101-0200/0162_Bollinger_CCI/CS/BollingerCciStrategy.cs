@@ -1,25 +1,20 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Implementation of strategy - Bollinger Bands + CCI.
-/// Buy when price is below lower Bollinger Band and CCI is below -100 (oversold).
-/// Sell when price is above upper Bollinger Band and CCI is above 100 (overbought).
+/// Bollinger CCI strategy.
+/// A close below the lower band with CCI below CciOversold goes long and a close above the upper band with CCI above CciOverbought goes short,
+/// reversing an opposite position. The position closes when price returns to the middle band. The stop lies StopLossAtr ATR from the entry
+/// close and is checked on candle closes.
 /// </summary>
 public class BollingerCciStrategy : Strategy
 {
@@ -28,14 +23,14 @@ public class BollingerCciStrategy : Strategy
 	private readonly StrategyParam<int> _cciPeriod;
 	private readonly StrategyParam<decimal> _cciOversold;
 	private readonly StrategyParam<decimal> _cciOverbought;
-	private readonly StrategyParam<int> _cooldownBars;
-	private readonly StrategyParam<Unit> _stopLoss;
+	private readonly StrategyParam<decimal> _stopLossAtr;
+	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private int _cooldown;
+	private decimal _stopPrice;
 
 	/// <summary>
-	/// Bollinger Bands period.
+	/// Period of the Bollinger Bands.
 	/// </summary>
 	public int BollingerPeriod
 	{
@@ -44,7 +39,7 @@ public class BollingerCciStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Bollinger Bands deviation multiplier.
+	/// Standard deviation multiplier of the bands.
 	/// </summary>
 	public decimal BollingerDeviation
 	{
@@ -53,7 +48,7 @@ public class BollingerCciStrategy : Strategy
 	}
 
 	/// <summary>
-	/// CCI period.
+	/// Period of CCI.
 	/// </summary>
 	public int CciPeriod
 	{
@@ -62,7 +57,7 @@ public class BollingerCciStrategy : Strategy
 	}
 
 	/// <summary>
-	/// CCI oversold level.
+	/// CCI level for longs.
 	/// </summary>
 	public decimal CciOversold
 	{
@@ -71,7 +66,7 @@ public class BollingerCciStrategy : Strategy
 	}
 
 	/// <summary>
-	/// CCI overbought level.
+	/// CCI level for shorts.
 	/// </summary>
 	public decimal CciOverbought
 	{
@@ -80,25 +75,25 @@ public class BollingerCciStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Bars to wait between trades.
+	/// Stop distance from the entry in ATRs.
 	/// </summary>
-	public int CooldownBars
+	public decimal StopLossAtr
 	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
+		get => _stopLossAtr.Value;
+		set => _stopLossAtr.Value = value;
 	}
 
 	/// <summary>
-	/// Stop-loss value.
+	/// Period of the stop ATR.
 	/// </summary>
-	public Unit StopLoss
+	public int AtrPeriod
 	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
+		get => _atrPeriod.Value;
+		set => _atrPeriod.Value = value;
 	}
 
 	/// <summary>
-	/// Candle type used for strategy.
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -107,159 +102,121 @@ public class BollingerCciStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initialize <see cref="BollingerCciStrategy"/>.
+	/// Constructor.
 	/// </summary>
 	public BollingerCciStrategy()
 	{
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Bollinger Period", "Period for Bollinger Bands", "Bollinger Parameters");
+			.SetDisplay("Bollinger Period", "Period of the Bollinger Bands", "Indicators");
 
-		_bollingerDeviation = Param(nameof(BollingerDeviation), 2.0m)
+		_bollingerDeviation = Param(nameof(BollingerDeviation), 2m)
 			.SetGreaterThanZero()
-			.SetDisplay("Bollinger Deviation", "Deviation multiplier for Bollinger Bands", "Bollinger Parameters");
+			.SetDisplay("Bollinger Deviation", "Standard deviation multiplier of the bands", "Indicators");
 
 		_cciPeriod = Param(nameof(CciPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("CCI Period", "Period for Commodity Channel Index", "CCI Parameters");
+			.SetDisplay("CCI Period", "Period of CCI", "Indicators");
 
 		_cciOversold = Param(nameof(CciOversold), -100m)
-			.SetDisplay("CCI Oversold", "CCI level to consider market oversold", "CCI Parameters");
+			.SetDisplay("CCI Oversold", "CCI level for longs", "Indicators");
 
 		_cciOverbought = Param(nameof(CciOverbought), 100m)
-			.SetDisplay("CCI Overbought", "CCI level to consider market overbought", "CCI Parameters");
+			.SetDisplay("CCI Overbought", "CCI level for shorts", "Indicators");
 
-		_cooldownBars = Param(nameof(CooldownBars), 80)
-			.SetRange(5, 500)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "General");
+		_stopLossAtr = Param(nameof(StopLossAtr), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss ATR", "Stop distance from the entry in ATRs", "Risk");
 
-		_stopLoss = Param(nameof(StopLoss), new Unit(2, UnitTypes.Absolute))
-			.SetDisplay("Stop Loss", "Stop loss in ATR or value", "Risk Management");
+		_atrPeriod = Param(nameof(AtrPeriod), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("ATR Period", "Period of the stop ATR", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Candle type for strategy", "General");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
-public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-{
-	return [(Security, CandleType)];
-}
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_cooldown = 0;
+		_stopPrice = default;
 	}
 
-/// <inheritdoc />
-protected override void OnStarted2(DateTime time)
-{
-	base.OnStarted2(time);
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
-		// Create indicators
-		var bollinger = new BollingerBands
-		{
-			Length = BollingerPeriod,
-			Width = BollingerDeviation
-		};
+		_stopPrice = default;
 
+		var bollinger = new BollingerBands { Length = BollingerPeriod, Width = BollingerDeviation };
 		var cci = new CommodityChannelIndex { Length = CciPeriod };
+		var atr = new AverageTrueRange { Length = AtrPeriod };
 
-		// Setup candle subscription
 		var subscription = SubscribeCandles(CandleType);
-		
-		// Bind indicators to candles
 		subscription
-			.BindEx(bollinger, cci, ProcessCandle)
+			.BindEx(bollinger, cci, atr, ProcessCandle)
 			.Start();
 
-		// Setup chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, bollinger);
-			
-			// Create separate area for CCI
-			var cciArea = CreateChartArea();
-			if (cciArea != null)
-			{
-				DrawIndicator(cciArea, cci);
-			}
-			
 			DrawOwnTrades(area);
-		}
 
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, cci);
+			}
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue, IIndicatorValue cciValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue, IIndicatorValue cciValue, IIndicatorValue atrValue)
 	{
 		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (!bollingerValue.IsFormed || !cciValue.IsFormed || !atrValue.IsFormed)
+			return;
+
+		var bands = (BollingerBandsValue)bollingerValue;
+
+		if (bands.UpBand is not decimal upper || bands.LowBand is not decimal lower || bands.MovingAverage is not decimal middle)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (!bollingerValue.IsFormed || !cciValue.IsFormed)
-			return;
+		var atr = atrValue.GetValue<decimal>();
+		var close = candle.ClosePrice;
+		var cci = cciValue.GetValue<decimal>();
 
-		// In this function we receive only the middle band value from the Bollinger Bands indicator
-		// We need to calculate the upper and lower bands ourselves or get them directly from the indicator
-
-		// Get Bollinger Bands values from the indicator
-		var bb = (BollingerBandsValue)bollingerValue;
-		var middleBand = bb.MovingAverage;
-		var upperBand = bb.UpBand;
-		var lowerBand = bb.LowBand;
-		var cciTyped = cciValue.ToDecimal();
-
-		// Current price
-		var price = candle.ClosePrice;
-
-		LogInfo($"Candle: {candle.OpenTime}, Close: {price}, " +
-			$"Upper Band: {upperBand}, Middle Band: {middleBand}, Lower Band: {lowerBand}, " +
-			$"CCI: {cciTyped}");
-
-		if (_cooldown > 0)
+		if (close < lower && cci < CciOversold && Position <= 0)
 		{
-			_cooldown--;
-			return;
+			BuyMarket(Volume + Math.Abs(Position));
+			_stopPrice = close - StopLossAtr * atr;
 		}
-
-		// Trading rules
-		var lowerTouch = price <= lowerBand * 1.002m;
-		var upperTouch = price >= upperBand * 0.998m;
-
-		if (lowerTouch && cciTyped < CciOversold && Position == 0)
+		else if (close > upper && cci > CciOverbought && Position >= 0)
 		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-			
-			LogInfo($"Buy signal: Price below lower Bollinger Band and CCI oversold ({cciTyped} < {CciOversold}).");
+			SellMarket(Volume + Math.Abs(Position));
+			_stopPrice = close + StopLossAtr * atr;
 		}
-		else if (upperTouch && cciTyped > CciOverbought && Position == 0)
+		else if (Position > 0 && (close >= middle || (StopLossAtr > 0 && close <= _stopPrice)))
 		{
-			SellMarket();
-			_cooldown = CooldownBars;
-			
-			LogInfo($"Sell signal: Price above upper Bollinger Band and CCI overbought ({cciTyped} > {CciOverbought}).");
+			SellMarket(Position);
 		}
-		// Exit conditions
-		else if (price > middleBand && Position > 0)
+		else if (Position < 0 && (close <= middle || (StopLossAtr > 0 && close >= _stopPrice)))
 		{
-			// Exit long position when price returns to the middle band
-			SellMarket();
-			_cooldown = CooldownBars;
-			LogInfo($"Exit long: Price returned to middle band. Position: {Position}");
-		}
-		else if (price < middleBand && Position < 0)
-		{
-			// Exit short position when price returns to the middle band
-			BuyMarket();
-			_cooldown = CooldownBars;
-			LogInfo($"Exit short: Price returned to middle band. Position: {Position}");
+			BuyMarket(-Position);
 		}
 	}
 }

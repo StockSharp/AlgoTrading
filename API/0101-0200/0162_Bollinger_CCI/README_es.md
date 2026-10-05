@@ -16,15 +16,17 @@ Adecuado para mercados volátiles donde las tendencias se extienden rápidamente
   - Corto: `Close > UpperBand && CCI > CciOverbought`
 - **Largo/Corto**: Ambos
 - **Criterios de salida**: El precio regresa a la banda media
-- **Stops**: Basados en ATR usando `StopLoss`
+- **Stops**: Basados en ATR usando `StopLossAtr`
 - **Valores predeterminados**:
   - `BollingerPeriod` = 20
   - `BollingerDeviation` = 2.0m
   - `CciPeriod` = 20
   - `CciOversold` = -100m
   - `CciOverbought` = 100m
-  - `StopLoss` = new Unit(2, UnitTypes.Absolute)
+  - `StopLossAtr` = 2
+  - `AtrPeriod` = 14
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    El stop está a StopLossAtr ATR (AtrPeriod) del cierre de entrada y se comprueba en los cierres de vela. Una señal de entrada contra una posición abierta la invierte.
 - **Filtros**:
   - Categoría: Reversión a la media
   - Dirección: Ambos

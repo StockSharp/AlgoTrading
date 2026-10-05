@@ -16,15 +16,17 @@
   - Короткая: `Close > UpperBand && CCI > CciOverbought`
 - **Long/Short**: Оба
 - **Условия выхода**: возврат цены к средней полосе
-- **Стопы**: на основе ATR через `StopLoss`
+- **Стопы**: на основе ATR через `StopLossAtr`
 - **Параметры по умолчанию**:
   - `BollingerPeriod` = 20
   - `BollingerDeviation` = 2.0m
   - `CciPeriod` = 20
   - `CciOversold` = -100m
   - `CciOverbought` = 100m
-  - `StopLoss` = new Unit(2, UnitTypes.Absolute)
+  - `StopLossAtr` = 2
+  - `AtrPeriod` = 14
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    Стоп стоит в StopLossAtr ATR (AtrPeriod) от цены закрытия при входе и проверяется по закрытиям свечей. Сигнал на вход против открытой позиции разворачивает её.
 - **Фильтры**:
   - Категория: Mean reversion
   - Направление: Оба
