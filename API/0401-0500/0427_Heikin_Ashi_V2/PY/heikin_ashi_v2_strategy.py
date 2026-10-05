@@ -5,127 +5,88 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan, Math
+from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 
 
 class heikin_ashi_v2_strategy(Strategy):
-    """Heikin Ashi V2 Strategy. Fast/slow EMA crossover with HA color confirmation."""
+    """
+    Heikin Ashi V2 strategy.
+    Goes long when the Heikin Ashi candle is bullish and the close is above the EMA, and short when the Heikin Ashi
+    candle is bearish and the close is below the EMA. The opposite signal reverses the position.
+    """
 
     def __init__(self):
         super(heikin_ashi_v2_strategy, self).__init__()
-
+        self._ema_length = self.Param("EmaLength", 20) \
+            .SetGreaterThanZero() \
+            .SetDisplay("EMA Length", "EMA trend filter period", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
-            .SetDisplay("Candle type", "Candle type for strategy calculation.", "General")
-        self._fast_period = self.Param("FastPeriod", 5) \
-            .SetDisplay("Fast EMA", "Fast EMA period", "Moving Averages")
-        self._slow_period = self.Param("SlowPeriod", 20) \
-            .SetDisplay("Slow EMA", "Slow EMA period", "Moving Averages")
-        self._cooldown_bars = self.Param("CooldownBars", 10) \
-            .SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk")
+            .SetDisplay("Candle type", "Candle type for strategy calculation", "General")
 
-        self._fast_ema = None
-        self._slow_ema = None
-        self._prev_fast = 0.0
-        self._prev_slow = 0.0
-        self._prev_ha_open = 0.0
-        self._prev_ha_close = 0.0
-        self._cooldown_remaining = 0
+        self._prev_ha_open = None
+        self._prev_ha_close = None
 
     @property
-    def candle_type(self):
+    def CandleType(self):
         return self._candle_type.Value
+
+    def GetWorkingSecurities(self):
+        return [(self.Security, self.CandleType)]
 
     def OnReseted(self):
         super(heikin_ashi_v2_strategy, self).OnReseted()
-        self._fast_ema = None
-        self._slow_ema = None
-        self._prev_fast = 0.0
-        self._prev_slow = 0.0
-        self._prev_ha_open = 0.0
-        self._prev_ha_close = 0.0
-        self._cooldown_remaining = 0
+        self._prev_ha_open = None
+        self._prev_ha_close = None
 
     def OnStarted2(self, time):
         super(heikin_ashi_v2_strategy, self).OnStarted2(time)
 
-        self._fast_ema = ExponentialMovingAverage()
-        self._fast_ema.Length = int(self._fast_period.Value)
+        self._prev_ha_open = None
+        self._prev_ha_close = None
 
-        self._slow_ema = ExponentialMovingAverage()
-        self._slow_ema.Length = int(self._slow_period.Value)
+        ema = ExponentialMovingAverage()
+        ema.Length = self._ema_length.Value
 
-        subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(self._fast_ema, self._slow_ema, self._on_process).Start()
+        subscription = self.SubscribeCandles(self.CandleType)
+        subscription.BindEx(ema, self._process_candle).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, self._fast_ema)
-            self.DrawIndicator(area, self._slow_ema)
+            self.DrawIndicator(area, ema)
             self.DrawOwnTrades(area)
 
-    def _on_process(self, candle, fast, slow):
+    def _process_candle(self, candle, ema_value):
         if candle.State != CandleStates.Finished:
             return
 
-        # Calculate Heikin-Ashi
-        if self._prev_ha_open == 0.0:
-            ha_open = (float(candle.OpenPrice) + float(candle.ClosePrice)) / 2.0
-            ha_close = (float(candle.OpenPrice) + float(candle.ClosePrice) + float(candle.HighPrice) + float(candle.LowPrice)) / 4.0
-        else:
+        open_price = float(candle.OpenPrice)
+        close = float(candle.ClosePrice)
+
+        ha_close = (open_price + float(candle.HighPrice) + float(candle.LowPrice) + close) / 4.0
+        if self._prev_ha_open is not None and self._prev_ha_close is not None:
             ha_open = (self._prev_ha_open + self._prev_ha_close) / 2.0
-            ha_close = (float(candle.OpenPrice) + float(candle.ClosePrice) + float(candle.HighPrice) + float(candle.LowPrice)) / 4.0
+        else:
+            ha_open = (open_price + close) / 2.0
 
         self._prev_ha_open = ha_open
         self._prev_ha_close = ha_close
 
-        if not self._fast_ema.IsFormed or not self._slow_ema.IsFormed:
-            self._prev_fast = float(fast)
-            self._prev_slow = float(slow)
+        if not ema_value.IsFormed:
             return
 
         if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_fast = float(fast)
-            self._prev_slow = float(slow)
             return
 
-        if self._cooldown_remaining > 0:
-            self._cooldown_remaining -= 1
-            self._prev_fast = float(fast)
-            self._prev_slow = float(slow)
-            return
+        ema = float(ema_value.GetValue[Decimal](None))
 
-        f = float(fast)
-        s = float(slow)
-        cooldown = int(self._cooldown_bars.Value)
-
-        if self._prev_fast == 0.0:
-            self._prev_fast = f
-            self._prev_slow = s
-            return
-
-        ha_green = ha_close > ha_open
-        ha_red = ha_close < ha_open
-
-        bullish_cross = f > s and self._prev_fast <= self._prev_slow and ha_green
-        bearish_cross = f < s and self._prev_fast >= self._prev_slow and ha_red
-
-        if bullish_cross and self.Position <= 0:
-            if self.Position < 0:
-                self.BuyMarket(Math.Abs(self.Position))
-            self.BuyMarket(self.Volume)
-            self._cooldown_remaining = cooldown
-        elif bearish_cross and self.Position >= 0:
-            if self.Position > 0:
-                self.SellMarket(Math.Abs(self.Position))
-            self.SellMarket(self.Volume)
-            self._cooldown_remaining = cooldown
-
-        self._prev_fast = f
-        self._prev_slow = s
+        if ha_close > ha_open and close > ema and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+        elif ha_close < ha_open and close < ema and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
 
     def CreateClone(self):
         return heikin_ashi_v2_strategy()
