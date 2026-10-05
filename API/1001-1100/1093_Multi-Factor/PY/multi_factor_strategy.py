@@ -5,93 +5,139 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan
+from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergenceSignal, RelativeStrengthIndex, AverageTrueRange, SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from indicator_extensions import *
+
+TREND_FAST_LENGTH = 50
+TREND_SLOW_LENGTH = 200
+RSI_UPPER = 70
+RSI_LOWER = 30
+
 
 class multi_factor_strategy(Strategy):
+    """
+    Multi-factor strategy.
+    Goes long when MACD is above its signal, RSI is below 70, the close is above the 50-period SMA and the 50 SMA is above the 200 SMA;
+    goes short on the mirrored conditions (RSI above 30), reversing an opposite position. Each position is closed by a stop loss and a
+    take profit placed StopAtrMultiplier and ProfitAtrMultiplier ATRs away from the entry price.
+    """
+
     def __init__(self):
         super(multi_factor_strategy, self).__init__()
-        self._fast_length = self.Param("FastLength", 12) \
-            .SetGreaterThanZero() \
-            .SetDisplay("MACD Fast", "MACD fast EMA length", "MACD")
-        self._slow_length = self.Param("SlowLength", 26) \
-            .SetGreaterThanZero() \
-            .SetDisplay("MACD Slow", "MACD slow EMA length", "MACD")
-        self._signal_length = self.Param("SignalLength", 9) \
-            .SetGreaterThanZero() \
-            .SetDisplay("MACD Signal", "MACD signal EMA length", "MACD")
-        self._signal_cooldown_bars = self.Param("SignalCooldownBars", 50) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Signal Cooldown", "Bars to wait after entries and exits", "Trading")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
-            .SetDisplay("Candle Type", "Type of candles", "General")
-        self._prev_diff = 0.0
-        self._has_prev_diff = False
-        self._cooldown_remaining = 0
+        self._fast_length = self.Param("FastLength", 12).SetGreaterThanZero().SetDisplay("MACD Fast", "MACD fast EMA length", "MACD")
+        self._slow_length = self.Param("SlowLength", 26).SetGreaterThanZero().SetDisplay("MACD Slow", "MACD slow EMA length", "MACD")
+        self._signal_length = self.Param("SignalLength", 9).SetGreaterThanZero().SetDisplay("MACD Signal", "MACD signal EMA length", "MACD")
+        self._rsi_length = self.Param("RsiLength", 14).SetGreaterThanZero().SetDisplay("RSI Length", "RSI period", "RSI")
+        self._atr_length = self.Param("AtrLength", 14).SetGreaterThanZero().SetDisplay("ATR Length", "ATR period", "Risk")
+        self._stop_atr_multiplier = self.Param("StopAtrMultiplier", 2.0).SetNotNegative().SetDisplay("Stop ATR Mult", "ATR multiple for the stop loss", "Risk")
+        self._profit_atr_multiplier = self.Param("ProfitAtrMultiplier", 3.0).SetNotNegative().SetDisplay("Profit ATR Mult", "ATR multiple for the take profit", "Risk")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._reset_state()
 
     @property
     def candle_type(self):
         return self._candle_type.Value
 
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
+    def _reset_state(self):
+        self._stop_price = None
+        self._take_price = None
 
     def OnReseted(self):
         super(multi_factor_strategy, self).OnReseted()
-        self._prev_diff = 0.0
-        self._has_prev_diff = False
-        self._cooldown_remaining = 0
+        self._reset_state()
 
     def OnStarted2(self, time):
         super(multi_factor_strategy, self).OnStarted2(time)
-        self._prev_diff = 0.0
-        self._has_prev_diff = False
-        self._cooldown_remaining = 0
-        self._macd = MovingAverageConvergenceDivergenceSignal()
-        self._macd.Macd.ShortMa.Length = self._fast_length.Value
-        self._macd.Macd.LongMa.Length = self._slow_length.Value
-        self._macd.SignalMa.Length = self._signal_length.Value
-        self._sma50 = SimpleMovingAverage()
-        self._sma50.Length = 50
-        self._dummy = SimpleMovingAverage()
-        self._dummy.Length = 2
-        subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(self._dummy, self.OnProcess).Start()
 
-    def OnProcess(self, candle, dummy_value):
+        self._reset_state()
+
+        macd = MovingAverageConvergenceDivergenceSignal()
+        macd.Macd.ShortMa.Length = self._fast_length.Value
+        macd.Macd.LongMa.Length = self._slow_length.Value
+        macd.SignalMa.Length = self._signal_length.Value
+        rsi = RelativeStrengthIndex()
+        rsi.Length = self._rsi_length.Value
+        atr = AverageTrueRange()
+        atr.Length = self._atr_length.Value
+        sma50 = SimpleMovingAverage()
+        sma50.Length = TREND_FAST_LENGTH
+        sma200 = SimpleMovingAverage()
+        sma200.Length = TREND_SLOW_LENGTH
+
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.BindEx(macd, rsi, atr, sma50, sma200, self._process_candle).Start()
+
+        area = self.CreateChartArea()
+        if area is not None:
+            self.DrawCandles(area, subscription)
+            self.DrawIndicator(area, sma50)
+            self.DrawIndicator(area, sma200)
+            self.DrawOwnTrades(area)
+            oscillators = self.CreateChartArea()
+            if oscillators is not None:
+                self.DrawIndicator(oscillators, macd)
+                self.DrawIndicator(oscillators, rsi)
+
+    def _process_candle(self, candle, macd_value, rsi_value, atr_value, sma50_value, sma200_value):
         if candle.State != CandleStates.Finished:
             return
-        macd_result = process_float(self._macd, candle.ClosePrice, candle.ServerTime, True)
-        sma50_result = process_float(self._sma50, candle.ClosePrice, candle.ServerTime, True)
-        if not self._macd.IsFormed or not self._sma50.IsFormed:
+
+        # The ATR levels are checked against the candle range, so exits happen before new signals.
+        if self.Position > 0 and self._stop_price is not None and self._take_price is not None:
+            if candle.LowPrice <= self._stop_price or candle.HighPrice >= self._take_price:
+                self.SellMarket(self.Position)
+                self._reset_state()
+                return
+        elif self.Position < 0 and self._stop_price is not None and self._take_price is not None:
+            if candle.HighPrice >= self._stop_price or candle.LowPrice <= self._take_price:
+                self.BuyMarket(-self.Position)
+                self._reset_state()
+                return
+
+        if not macd_value.IsFormed or not rsi_value.IsFormed or not atr_value.IsFormed or not sma50_value.IsFormed or not sma200_value.IsFormed:
             return
-        if self._cooldown_remaining > 0:
-            self._cooldown_remaining -= 1
-        macd_line = macd_result.Macd
-        signal_line = macd_result.Signal
-        if macd_line is None or signal_line is None:
+
+        if macd_value.Macd is None or macd_value.Signal is None:
             return
-        diff = float(macd_line) - float(signal_line)
-        sma50 = float(sma50_result)
-        close = float(candle.ClosePrice)
-        if not self._has_prev_diff:
-            self._prev_diff = diff
-            self._has_prev_diff = True
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
-        if self._cooldown_remaining == 0 and self.Position == 0:
-            bullish_cross = self._prev_diff <= 0.0 and diff > 0.0
-            bearish_cross = self._prev_diff >= 0.0 and diff < 0.0
-            if bullish_cross and close > sma50:
-                self.BuyMarket()
-                self._cooldown_remaining = self._signal_cooldown_bars.Value
-            elif bearish_cross and close < sma50:
-                self.SellMarket()
-                self._cooldown_remaining = self._signal_cooldown_bars.Value
-        self._prev_diff = diff
+
+        macd_line = macd_value.Macd
+        signal_line = macd_value.Signal
+        rsi = rsi_value.GetValue[Decimal](None)
+        atr = atr_value.GetValue[Decimal](None)
+        sma50 = sma50_value.GetValue[Decimal](None)
+        sma200 = sma200_value.GetValue[Decimal](None)
+        close = candle.ClosePrice
+
+        long_signal = macd_line > signal_line and rsi < Decimal(RSI_UPPER) and close > sma50 and sma50 > sma200
+        short_signal = macd_line < signal_line and rsi > Decimal(RSI_LOWER) and close < sma50 and sma50 < sma200
+
+        if long_signal and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+            self._set_levels(close, atr, True)
+        elif short_signal and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
+            self._set_levels(close, atr, False)
+
+    def _set_levels(self, entry, atr, is_long):
+        stop_mult = Decimal(self._stop_atr_multiplier.Value)
+        take_mult = Decimal(self._profit_atr_multiplier.Value)
+        stop = atr * stop_mult
+        take = atr * take_mult
+
+        # A zero multiplier disables that level.
+        if stop_mult > Decimal(0):
+            self._stop_price = entry - stop if is_long else entry + stop
+        else:
+            self._stop_price = Decimal.MinValue if is_long else Decimal.MaxValue
+        if take_mult > Decimal(0):
+            self._take_price = entry + take if is_long else entry - take
+        else:
+            self._take_price = Decimal.MaxValue if is_long else Decimal.MinValue
 
     def CreateClone(self):
         return multi_factor_strategy()

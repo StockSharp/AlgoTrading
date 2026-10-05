@@ -1,19 +1,28 @@
-namespace StockSharp.Samples.Strategies;
-
 using System;
 using System.Collections.Generic;
+
+using Ecng.Common;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
+namespace StockSharp.Samples.Strategies;
+
 /// <summary>
-/// Multi-factor strategy combining MACD, RSI, ATR, and trend filters.
-/// Opens long positions only on bullish MACD crossovers confirmed by RSI and long-term trend.
+/// Multi-factor strategy.
+/// Goes long when MACD is above its signal, RSI is below 70, the close is above the 50-period SMA and the 50 SMA is above the 200 SMA;
+/// goes short on the mirrored conditions (RSI above 30), reversing an opposite position. Each position is closed by a stop loss and a
+/// take profit placed StopAtrMultiplier and ProfitAtrMultiplier ATRs away from the entry price.
 /// </summary>
 public class MultiFactorStrategy : Strategy
 {
+	private const int _trendFastLength = 50;
+	private const int _trendSlowLength = 200;
+	private const decimal _rsiUpper = 70m;
+	private const decimal _rsiLower = 30m;
+
 	private readonly StrategyParam<int> _fastLength;
 	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<int> _signalLength;
@@ -21,28 +30,86 @@ public class MultiFactorStrategy : Strategy
 	private readonly StrategyParam<int> _atrLength;
 	private readonly StrategyParam<decimal> _stopAtrMultiplier;
 	private readonly StrategyParam<decimal> _profitAtrMultiplier;
-	private readonly StrategyParam<int> _signalCooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevDiff;
-	private bool _hasPrevDiff;
-	private int _cooldownRemaining;
-	private MovingAverageConvergenceDivergenceSignal _macd;
-	private RelativeStrengthIndex _rsi;
-	private AverageTrueRange _atr;
-	private SMA _sma50;
-	private SMA _sma200;
+	private decimal? _stopPrice;
+	private decimal? _takePrice;
 
-	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
-	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
-	public int SignalLength { get => _signalLength.Value; set => _signalLength.Value = value; }
-	public int RsiLength { get => _rsiLength.Value; set => _rsiLength.Value = value; }
-	public int AtrLength { get => _atrLength.Value; set => _atrLength.Value = value; }
-	public decimal StopAtrMultiplier { get => _stopAtrMultiplier.Value; set => _stopAtrMultiplier.Value = value; }
-	public decimal ProfitAtrMultiplier { get => _profitAtrMultiplier.Value; set => _profitAtrMultiplier.Value = value; }
-	public int SignalCooldownBars { get => _signalCooldownBars.Value; set => _signalCooldownBars.Value = value; }
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	/// <summary>
+	/// MACD fast EMA length.
+	/// </summary>
+	public int FastLength
+	{
+		get => _fastLength.Value;
+		set => _fastLength.Value = value;
+	}
 
+	/// <summary>
+	/// MACD slow EMA length.
+	/// </summary>
+	public int SlowLength
+	{
+		get => _slowLength.Value;
+		set => _slowLength.Value = value;
+	}
+
+	/// <summary>
+	/// MACD signal EMA length.
+	/// </summary>
+	public int SignalLength
+	{
+		get => _signalLength.Value;
+		set => _signalLength.Value = value;
+	}
+
+	/// <summary>
+	/// RSI period.
+	/// </summary>
+	public int RsiLength
+	{
+		get => _rsiLength.Value;
+		set => _rsiLength.Value = value;
+	}
+
+	/// <summary>
+	/// ATR period.
+	/// </summary>
+	public int AtrLength
+	{
+		get => _atrLength.Value;
+		set => _atrLength.Value = value;
+	}
+
+	/// <summary>
+	/// ATR multiple for the stop loss distance.
+	/// </summary>
+	public decimal StopAtrMultiplier
+	{
+		get => _stopAtrMultiplier.Value;
+		set => _stopAtrMultiplier.Value = value;
+	}
+
+	/// <summary>
+	/// ATR multiple for the take profit distance.
+	/// </summary>
+	public decimal ProfitAtrMultiplier
+	{
+		get => _profitAtrMultiplier.Value;
+		set => _profitAtrMultiplier.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
+	/// </summary>
 	public MultiFactorStrategy()
 	{
 		_fastLength = Param(nameof(FastLength), 12)
@@ -63,22 +130,18 @@ public class MultiFactorStrategy : Strategy
 
 		_atrLength = Param(nameof(AtrLength), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("ATR Length", "ATR period", "ATR");
+			.SetDisplay("ATR Length", "ATR period", "Risk");
 
 		_stopAtrMultiplier = Param(nameof(StopAtrMultiplier), 2m)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop ATR Mult", "ATR multiplier for stop", "Risk");
+			.SetNotNegative()
+			.SetDisplay("Stop ATR Mult", "ATR multiple for the stop loss", "Risk");
 
 		_profitAtrMultiplier = Param(nameof(ProfitAtrMultiplier), 3m)
-			.SetGreaterThanZero()
-			.SetDisplay("Profit ATR Mult", "ATR multiplier for take profit", "Risk");
-
-		_signalCooldownBars = Param(nameof(SignalCooldownBars), 50)
-			.SetGreaterThanZero()
-			.SetDisplay("Signal Cooldown", "Bars to wait after entries and exits", "Trading");
+			.SetNotNegative()
+			.SetDisplay("Profit ATR Mult", "ATR multiple for the take profit", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -91,14 +154,8 @@ public class MultiFactorStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevDiff = 0m;
-		_hasPrevDiff = false;
-		_cooldownRemaining = 0;
-		_macd = null;
-		_rsi = null;
-		_atr = null;
-		_sma50 = null;
-		_sma200 = null;
+		_stopPrice = null;
+		_takePrice = null;
 	}
 
 	/// <inheritdoc />
@@ -106,7 +163,10 @@ public class MultiFactorStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_macd = new()
+		_stopPrice = null;
+		_takePrice = null;
+
+		var macd = new MovingAverageConvergenceDivergenceSignal
 		{
 			Macd =
 			{
@@ -115,83 +175,97 @@ public class MultiFactorStrategy : Strategy
 			},
 			SignalMa = { Length = SignalLength }
 		};
-
-		_rsi = new() { Length = RsiLength };
-		_atr = new() { Length = AtrLength };
-		_sma50 = new() { Length = 50 };
-		_sma200 = new() { Length = 200 };
-		_prevDiff = 0m;
-		_hasPrevDiff = false;
-		_cooldownRemaining = 0;
+		var rsi = new RelativeStrengthIndex { Length = RsiLength };
+		var atr = new AverageTrueRange { Length = AtrLength };
+		var sma50 = new SimpleMovingAverage { Length = _trendFastLength };
+		var sma200 = new SimpleMovingAverage { Length = _trendSlowLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.BindEx(macd, rsi, atr, sma50, sma200, ProcessCandle)
 			.Start();
-
-		StartProtection(
-			takeProfit: new Unit(3, UnitTypes.Percent),
-			stopLoss: new Unit(2, UnitTypes.Percent));
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, sma50);
+			DrawIndicator(area, sma200);
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, macd);
+				DrawIndicator(oscillators, rsi);
+			}
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue, IIndicatorValue rsiValue, IIndicatorValue atrValue, IIndicatorValue sma50Value, IIndicatorValue sma200Value)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var macdValue = _macd.Process(candle);
-		var rsiValue = _rsi.Process(candle);
-		var atrValue = _atr.Process(candle);
-		var sma50Value = _sma50.Process(new DecimalIndicatorValue(_sma50, candle.ClosePrice, candle.ServerTime) { IsFinal = true });
-		var sma200Value = _sma200.Process(new DecimalIndicatorValue(_sma200, candle.ClosePrice, candle.ServerTime) { IsFinal = true });
-
-		if (!_macd.IsFormed || !_rsi.IsFormed || !_atr.IsFormed || !_sma50.IsFormed || !_sma200.IsFormed)
-			return;
-
-		if (_cooldownRemaining > 0)
-			_cooldownRemaining--;
-
-		var macdData = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
-		if (macdData.Macd is not decimal macdLine || macdData.Signal is not decimal signalLine)
-			return;
-
-		var diff = macdLine - signalLine;
-		var rsi = rsiValue.ToDecimal();
-		var atr = atrValue.ToDecimal();
-		var sma50 = sma50Value.ToDecimal();
-		var sma200 = sma200Value.ToDecimal();
-
-		if (!_hasPrevDiff)
+		// The ATR levels are checked against the candle range, so exits happen before new signals.
+		if (Position > 0 && _stopPrice is decimal longStop && _takePrice is decimal longTake)
 		{
-			_prevDiff = diff;
-			_hasPrevDiff = true;
-			return;
-		}
-
-		if (_cooldownRemaining == 0 && Position == 0)
-		{
-			var bullishCross = _prevDiff <= 0m && diff > 0m;
-			var bearishCross = _prevDiff >= 0m && diff < 0m;
-
-			if (bullishCross && candle.ClosePrice > sma50)
+			if (candle.LowPrice <= longStop || candle.HighPrice >= longTake)
 			{
-				BuyMarket();
-				_cooldownRemaining = SignalCooldownBars;
+				SellMarket(Position);
+				_stopPrice = null;
+				_takePrice = null;
+				return;
 			}
-			else if (bearishCross && candle.ClosePrice < sma50)
+		}
+		else if (Position < 0 && _stopPrice is decimal shortStop && _takePrice is decimal shortTake)
+		{
+			if (candle.HighPrice >= shortStop || candle.LowPrice <= shortTake)
 			{
-				SellMarket();
-				_cooldownRemaining = SignalCooldownBars;
+				BuyMarket(-Position);
+				_stopPrice = null;
+				_takePrice = null;
+				return;
 			}
 		}
 
-		_prevDiff = diff;
+		if (!macdValue.IsFormed || !rsiValue.IsFormed || !atrValue.IsFormed || !sma50Value.IsFormed || !sma200Value.IsFormed)
+			return;
+
+		if (macdValue is not IMovingAverageConvergenceDivergenceSignalValue { Macd: decimal macdLine, Signal: decimal signalLine })
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		var rsi = rsiValue.GetValue<decimal>();
+		var atr = atrValue.GetValue<decimal>();
+		var sma50 = sma50Value.GetValue<decimal>();
+		var sma200 = sma200Value.GetValue<decimal>();
+		var close = candle.ClosePrice;
+
+		var longSignal = macdLine > signalLine && rsi < _rsiUpper && close > sma50 && sma50 > sma200;
+		var shortSignal = macdLine < signalLine && rsi > _rsiLower && close < sma50 && sma50 < sma200;
+
+		if (longSignal && Position <= 0)
+		{
+			BuyMarket(Volume + Math.Abs(Position));
+			SetLevels(close, atr, true);
+		}
+		else if (shortSignal && Position >= 0)
+		{
+			SellMarket(Volume + Math.Abs(Position));
+			SetLevels(close, atr, false);
+		}
+	}
+
+	private void SetLevels(decimal entry, decimal atr, bool isLong)
+	{
+		var stop = atr * StopAtrMultiplier;
+		var take = atr * ProfitAtrMultiplier;
+
+		// A zero multiplier disables that level.
+		_stopPrice = StopAtrMultiplier > 0 ? (isLong ? entry - stop : entry + stop) : (isLong ? decimal.MinValue : decimal.MaxValue);
+		_takePrice = ProfitAtrMultiplier > 0 ? (isLong ? entry + take : entry - take) : (isLong ? decimal.MaxValue : decimal.MinValue);
 	}
 }
