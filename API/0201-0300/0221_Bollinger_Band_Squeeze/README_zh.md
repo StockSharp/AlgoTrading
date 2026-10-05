@@ -20,8 +20,11 @@
 - **止损**: 通常为2倍ATR
 - **默认值**:
   - `BollingerPeriod` = 20
-  - `BollingerMultiplier` = 2.0m
+  - `BollingerMultiplier` = 2
   - `LookbackPeriod` = 20
+  - `AtrPeriod` = 14
+  - `AtrMultiplier` = 2
+    平均带宽取最近LookbackPeriod根K线（含当前K线）。收盘价回到上轨或以下时平多，回到下轨或以上时平空。止损距入场收盘价AtrMultiplier倍AtrPeriod周期ATR，按K线收盘检查；设为0则关闭。与持仓方向相反的入场信号会反转持仓。
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **过滤器**:
   - 类别: Breakout

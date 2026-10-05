@@ -20,8 +20,11 @@ O método é voltado para traders que gostam de operar rompimentos de volatilida
 - **Stops**: Sim, tipicamente a 2*ATR.
 - **Valores padrão**:
   - `BollingerPeriod` = 20
-  - `BollingerMultiplier` = 2.0m
+  - `BollingerMultiplier` = 2
   - `LookbackPeriod` = 20
+  - `AtrPeriod` = 14
+  - `AtrMultiplier` = 2
+    A largura média abrange os últimos LookbackPeriod candles, incluindo o atual. Uma compra fecha com um fechamento de volta na banda superior ou abaixo e uma venda com um fechamento de volta na banda inferior ou acima. O stop fica a AtrMultiplier vezes o ATR de AtrPeriod do fechamento de entrada e é verificado no fechamento dos candles; 0 o desativa. Um sinal de entrada contra uma posição aberta a inverte.
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **Filtros**:
   - Categoria: Rompimento

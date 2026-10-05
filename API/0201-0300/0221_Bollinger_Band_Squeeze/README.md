@@ -20,8 +20,11 @@ The method targets traders who like to trade volatility breakouts rather than tr
 - **Stops**: Yes, typically at 2*ATR.
 - **Default Values**:
   - `BollingerPeriod` = 20
-  - `BollingerMultiplier` = 2.0m
+  - `BollingerMultiplier` = 2
   - `LookbackPeriod` = 20
+  - `AtrPeriod` = 14
+  - `AtrMultiplier` = 2
+    The average width spans the last LookbackPeriod candles, the current one included. A long closes on a close back at or below the upper band and a short on a close back at or above the lower band. The stop lies AtrMultiplier times the AtrPeriod ATR from the entry close and is checked on candle closes; 0 disables it. An entry signal against an open position reverses it.
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **Filters**:
   - Category: Breakout

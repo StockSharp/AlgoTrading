@@ -20,8 +20,11 @@ El método está dirigido a traders que prefieren operar rupturas de volatilidad
 - **Stops**: Sí, típicamente a 2*ATR.
 - **Valores predeterminados**:
   - `BollingerPeriod` = 20
-  - `BollingerMultiplier` = 2.0m
+  - `BollingerMultiplier` = 2
   - `LookbackPeriod` = 20
+  - `AtrPeriod` = 14
+  - `AtrMultiplier` = 2
+    El ancho medio abarca las últimas LookbackPeriod velas, incluida la actual. Un largo se cierra con un cierre de vuelta en la banda superior o por debajo y un corto con un cierre de vuelta en la banda inferior o por encima. El stop se sitúa a AtrMultiplier veces el ATR de AtrPeriod del cierre de entrada y se comprueba al cierre de las velas; 0 lo desactiva. Una señal de entrada contra una posición abierta la invierte.
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **Filtros**:
   - Categoría: Ruptura
