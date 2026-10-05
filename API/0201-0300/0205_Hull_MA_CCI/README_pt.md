@@ -2,15 +2,15 @@
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
  
 Esta estratégia usa os indicadores Hull MA CCI para gerar sinais.
-A entrada comprada ocorre quando HMA(t) > HMA(t-1) && CCI < -100 (HMA subindo com condições de sobrevenda). A entrada vendida ocorre quando HMA(t) < HMA(t-1) && CCI > 100 (HMA caindo com condições de sobrecompra).
+A entrada comprada ocorre quando HMA(t) > HMA(t-1) && CCI < CciOversold (HMA subindo com condições de sobrevenda). A entrada vendida ocorre quando HMA(t) < HMA(t-1) && CCI > CciOverbought (HMA caindo com condições de sobrecompra).
 É adequada para traders que buscam oportunidades em mercados mistos.
 
 Os testes indicam um retorno anual médio de aproximadamente 52%. Funciona melhor no mercado de criptomoedas.
 
 ## Detalhes
 - **Critérios de entrada**:
-  - **Comprado**: HMA(t) > HMA(t-1) && CCI < -100 (HMA subindo com condições de sobrevenda)
-  - **Vendido**: HMA(t) < HMA(t-1) && CCI > 100 (HMA caindo com condições de sobrecompra)
+  - **Comprado**: HMA(t) > HMA(t-1) && CCI < CciOversold (HMA subindo com condições de sobrevenda)
+  - **Vendido**: HMA(t) < HMA(t-1) && CCI > CciOverbought (HMA caindo com condições de sobrecompra)
 - **Comprado/Vendido**: Ambos os lados.
 - **Critérios de saída**:
   - **Comprado**: Sair da posição comprada quando HMA começa a cair
@@ -19,8 +19,11 @@ Os testes indicam um retorno anual médio de aproximadamente 52%. Funciona melho
 - **Valores padrão**:
   - `HullPeriod` = 9
   - `CciPeriod` = 20
+  - `CciOversold` = -100
+  - `CciOverbought` = 100
   - `AtrPeriod` = 14
-  - `AtrMultiplier` = 2m
+  - `AtrMultiplier` = 2
+    -100 e 100 são os valores padrão dos níveis de CCI citados nas regras. O stop fica a AtrMultiplier vezes o ATR de AtrPeriod do fechamento de entrada e é verificado no fechamento dos candles; 0 o desativa. Um sinal de entrada contra uma posição aberta a inverte.
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **Filtros**:
   - Categoria: Misto

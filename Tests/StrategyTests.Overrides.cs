@@ -7652,6 +7652,80 @@ public abstract partial class StrategyTests
 	}
 
 
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(9, 20, -100.0, 100.0, 14, 2.0, false)]
+	[DataRow(16, 14, -80.0, 80.0, 10, 0.3, true)]
+	public async Task S0205_CciExtremesAlongTheHullSlopeUntilItTurnsOrAnAtrStop(int hullPeriod, int cciPeriod, double oversold, double overbought, int atrPeriod, double stopAtr, bool secondary)
+	{
+		var hull = new HullMovingAverage { Length = hullPeriod };
+		var cci = new CommodityChannelIndex { Length = cciPeriod };
+		var atr = new AverageTrueRange { Length = atrPeriod };
+		decimal? prevHull = null;
+		var stopPrice = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var slopeExits = 0;
+		var stopExits = 0;
+		var violations = new List<string>();
+		await Replay("0205_Hull_MA_CCI", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(9, strategy.Parameters["HullPeriod"].Value);
+			AreEqual(20, strategy.Parameters["CciPeriod"].Value);
+			AreEqual(-100m, Convert.ToDecimal(strategy.Parameters["CciOversold"].Value));
+			AreEqual(100m, Convert.ToDecimal(strategy.Parameters["CciOverbought"].Value));
+			AreEqual(14, strategy.Parameters["AtrPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["AtrMultiplier"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "HullPeriod", hullPeriod);
+			SetParam(strategy, "CciPeriod", cciPeriod);
+			SetParam(strategy, "CciOversold", oversold);
+			SetParam(strategy, "CciOverbought", overbought);
+			SetParam(strategy, "AtrPeriod", atrPeriod);
+			SetParam(strategy, "AtrMultiplier", stopAtr);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var h = hull.Process(candle);
+				var c = cci.Process(candle);
+				var a = atr.Process(candle);
+				// The strategy is not called while any value is empty.
+				if (h.IsEmpty || c.IsEmpty || a.IsEmpty || !h.IsFormed) return;
+				var current = h.GetValue<decimal>();
+				var previous = prevHull;
+				prevHull = current;
+				if (previous is not decimal last || !c.IsFormed || !a.IsFormed) return;
+				var value = c.GetValue<decimal>();
+				var range = a.GetValue<decimal>();
+				var rising = current > last;
+				var falling = current < last;
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (rising && value < (decimal)oversold && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; stopPrice = close - (decimal)stopAtr * range; }
+				else if (falling && value > (decimal)overbought && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; stopPrice = close + (decimal)stopAtr * range; }
+				else if (position > 0m && (falling || close <= stopPrice)) { expectedSide = Sides.Sell; expectedVolume = position; if (falling) slopeExits++; else stopExits++; }
+				else if (position < 0m && (rising || close >= stopPrice)) { expectedSide = Sides.Buy; expectedVolume = -position; if (rising) slopeExits++; else stopExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a CCI extreme along the Hull slope, or close when the slope turns or the ATR stop is hit.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && slopeExits > 0, "The fixture must trade both sides and exit when the Hull slope turns.");
+		if (stopAtr < 1) IsTrue(stopExits > 0, "A tight ATR stop must be hit.");
+	}
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";
