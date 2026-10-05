@@ -20,9 +20,11 @@ El pairs trading atrae a traders neutrales al mercado que prefieren oportunidade
 - **Stops**: Sí, stop porcentual basado en el valor del spread.
 - **Valores predeterminados**:
   - `LookbackPeriod` = 20
-  - `DeviationMultiplier` = 2.0m
-  - `StopLossPercent` = 2m
+  - `DeviationMultiplier` = 2
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
+  - `SecondSecurity` — obligatorio, sin valor por defecto
+    El spread es el cierre del Security de la estrategia menos el cierre de SecondSecurity en velas de la misma hora; Mean y StdDev se calculan sobre los últimos LookbackPeriod spreads. Cada pata opera Volume y una señal contraria invierte ambas patas. El stop cierra ambas patas cuando el spread se mueve en contra un StopLossPercent de su valor de entrada, comprobado al cierre de las velas; 0 lo desactiva.
 - **Filtros**:
   - Categoría: Arbitraje
   - Dirección: Ambos

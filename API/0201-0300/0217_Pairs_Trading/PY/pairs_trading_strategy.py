@@ -2,118 +2,58 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
-clr.AddReference("StockSharp.BusinessEntities")
-clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, UnitTypes, Unit, CandleStates
-from StockSharp.Algo.Indicators import SimpleMovingAverage, StandardDeviation
+from System import TimeSpan, Decimal, Math
+from StockSharp.Messages import DataType, CandleStates
+from StockSharp.BusinessEntities import Security
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.BusinessEntities import Security, Subscription
-from datatype_extensions import *
-from indicator_extensions import *
 
 class pairs_trading_strategy(Strategy):
     """
-    Statistical Pairs Trading strategy.
-    Trades the spread between two correlated assets, entering positions when
-    the spread deviates significantly from its mean.
+    Pairs trading strategy.
+    The spread is the first instrument's close minus the second's on candles of the same time. A spread more than DeviationMultiplier
+    standard deviations below the mean of the last LookbackPeriod spreads buys the first instrument and sells the second, one more than
+    that above it does the opposite, reversing an opposite pair. Both legs close once the spread returns to the mean, or once it moves
+    StopLossPercent of its entry value against the pair.
     """
 
     def __init__(self):
         super(pairs_trading_strategy, self).__init__()
-
-        # Strategy parameters
-        self._lookback_period = self.Param("LookbackPeriod", 20) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Lookback Period", "Period for calculating spread mean and standard deviation", "Parameters") \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 40, 5)
-
-        self._deviation_multiplier = self.Param("DeviationMultiplier", 2.0) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Deviation Multiplier", "Number of standard deviations for entry signals", "Parameters") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.5, 3.0, 0.5)
-
-        self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Stop-loss %", "Stop-loss as percentage of spread at entry", "Risk Management") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.0, 3.0, 0.5)
-
-        self._candle_type = self.Param("CandleType", tf(5)) \
-            .SetDisplay("Candle Type", "Type of candles to use", "General")
-
-        self._second_security = self.Param[Security]("SecondSecurity", None) \
-            .SetDisplay("Second Security", "Second security in the pair", "General") \
-            .SetRequired()
-
-        # Internal state
-        self._spread_ma = None
-        self._spread_std_dev = None
-        self._spread = 0
-        self._last_second_price = 0
-
-    @property
-    def lookback_period(self):
-        """Period for calculating mean and standard deviation of the spread."""
-        return self._lookback_period.Value
-
-    @lookback_period.setter
-    def lookback_period(self, value):
-        self._lookback_period.Value = value
-
-    @property
-    def deviation_multiplier(self):
-        """Number of standard deviations for entry signals."""
-        return self._deviation_multiplier.Value
-
-    @deviation_multiplier.setter
-    def deviation_multiplier(self, value):
-        self._deviation_multiplier.Value = value
-
-    @property
-    def stop_loss_percent(self):
-        """Stop-loss percentage parameter."""
-        return self._stop_loss_percent.Value
-
-    @stop_loss_percent.setter
-    def stop_loss_percent(self, value):
-        self._stop_loss_percent.Value = value
+        self._lookback_period = self.Param("LookbackPeriod", 20).SetGreaterThanZero().SetDisplay("Lookback Period", "Spreads the mean and standard deviation are measured over", "Parameters")
+        self._deviation_multiplier = self.Param("DeviationMultiplier", 2.0).SetGreaterThanZero().SetDisplay("Deviation Multiplier", "Standard deviations between the mean and an entry level", "Parameters")
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0).SetNotNegative().SetDisplay("Stop-loss %", "Adverse spread move in percent of the entry spread", "Risk Management")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._second_security = self.Param[Security]("SecondSecurity", None).SetDisplay("Second Security", "Second security in the pair", "General").SetRequired()
+        self._reset_state()
 
     @property
     def candle_type(self):
-        """Candle type parameter."""
         return self._candle_type.Value
-
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
 
     @property
     def second_security(self):
-        """Second security in the pair."""
         return self._second_security.Value
 
     @second_security.setter
     def second_security(self, value):
         self._second_security.Value = value
 
+    def _reset_state(self):
+        self._first_closes = {}
+        self._second_closes = {}
+        self._spreads = []
+        # 1 while long the spread, -1 while short it, 0 while flat.
+        self._side = 0
+        self._entry_spread = Decimal(0)
+
     def GetWorkingSecurities(self):
-        """Return the securities and candle type this strategy works with."""
-        return [
-            (self.Security, self.candle_type),
-            (self.second_security, self.candle_type)
-        ]
+        return [(self.Security, self.candle_type), (self.second_security, self.candle_type)]
 
     def OnReseted(self):
         super(pairs_trading_strategy, self).OnReseted()
-        self._spread_ma = None
-        self._spread_std_dev = None
-        self._spread = 0
-        self._last_second_price = 0
+        self._reset_state()
 
     def OnStarted2(self, time):
         super(pairs_trading_strategy, self).OnStarted2(time)
@@ -121,100 +61,106 @@ class pairs_trading_strategy(Strategy):
         if self.second_security is None:
             raise Exception("Second security is not specified.")
 
-        # Initialize indicators
-        self._spread_ma = SimpleMovingAverage()
-        self._spread_ma.Length = self.lookback_period
-        self._spread_std_dev = StandardDeviation()
-        self._spread_std_dev.Length = self.lookback_period
+        self._reset_state()
 
-        # Create subscriptions for both securities
         first_subscription = self.SubscribeCandles(self.candle_type)
-        second_subscription = self.SubscribeCandles(self.candle_type, self.second_security)
+        first_subscription.Bind(self._process_first_candle).Start()
 
-        # Bind to first security candles
-        first_subscription.Bind(self.ProcessFirstSecurityCandle).Start()
+        second_subscription = self.SubscribeCandles(self.candle_type, security=self.second_security)
+        second_subscription.Bind(self._process_second_candle).Start()
 
-        # Bind to second security candles
-        second_subscription.Bind(self.ProcessSecondSecurityCandle).Start()
-
-        # Enable position protection with stop-loss
-        self.StartProtection(
-            takeProfit=Unit(0, UnitTypes.Absolute),
-            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent)
-        )
-        # Setup chart if available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, first_subscription)
             self.DrawOwnTrades(area)
 
-    def ProcessFirstSecurityCandle(self, candle):
-        # Skip if we don't have price for the second security yet
-        if self._last_second_price == 0:
-            return
+    def _process_first_candle(self, candle):
+        self._process_candle(candle, self._first_closes)
 
-        # Skip unfinished candles
+    def _process_second_candle(self, candle):
+        self._process_candle(candle, self._second_closes)
+
+    def _process_candle(self, candle, closes):
         if candle.State != CandleStates.Finished:
             return
 
-        # Skip if strategy is not ready to trade
+        time = candle.OpenTime
+        closes[time] = candle.ClosePrice
 
-        # Calculate the spread: Asset1 - Asset2
-        self._spread = float(candle.ClosePrice - self._last_second_price)
-
-        # Process the spread through indicators
-        ma_value = process_float(self._spread_ma, self._spread, candle.ServerTime, True)
-        std_dev_value = process_float(self._spread_std_dev, self._spread, candle.ServerTime, True)
-
-        # Skip until indicators are formed
-        if not self._spread_ma.IsFormed or not self._spread_std_dev.IsFormed:
+        # The spread needs both instruments' candles of the same time, whichever arrives last.
+        if time not in self._first_closes or time not in self._second_closes:
             return
 
-        spread_mean = float(ma_value)
-        spread_std_dev = float(std_dev_value)
+        first = self._first_closes[time]
+        second = self._second_closes[time]
 
-        # Calculate entry thresholds
-        upper_threshold = spread_mean + (spread_std_dev * self.deviation_multiplier)
-        lower_threshold = spread_mean - (spread_std_dev * self.deviation_multiplier)
+        for stale in [t for t in self._first_closes if t <= time]:
+            del self._first_closes[stale]
+        for stale in [t for t in self._second_closes if t <= time]:
+            del self._second_closes[stale]
 
-        # Trading logic
-        if self._spread < lower_threshold:
-            # Spread is below lower threshold:
-            # Buy Asset1 (Security), Sell Asset2 (SecondSecurity)
-            if self.Position <= 0:
-                # Close any existing position and enter new position
-                self.BuyMarket(self.Volume + Math.Abs(self.Position))
-                self.LogInfo("Long Signal: Spread({0:F4}) < Lower Threshold({1:F4})".format(
-                    self._spread, lower_threshold))
-                # Note: In a real implementation, you would also place a sell order
-                # for the second security here, using a different strategy instance or connector
-        elif self._spread > upper_threshold:
-            # Spread is above upper threshold:
-            # Sell Asset1 (Security), Buy Asset2 (SecondSecurity)
-            if self.Position >= 0:
-                # Close any existing position and enter new position
-                self.SellMarket(self.Volume + Math.Abs(self.Position))
-                self.LogInfo("Short Signal: Spread({0:F4}) > Upper Threshold({1:F4})".format(
-                    self._spread, upper_threshold))
-                # Note: In a real implementation, you would also place a buy order
-                # for the second security here, using a different strategy instance or connector
-        elif (self._spread > spread_mean and self.Position > 0) or \
-                (self._spread < spread_mean and self.Position < 0):
-            # Exit signals: Spread returned to the mean
-            if self.Position > 0:
-                self.SellMarket(Math.Abs(self.Position))
-                self.LogInfo("Exit Long: Spread({0:F4}) > Mean({1:F4})".format(
-                    self._spread, spread_mean))
-            elif self.Position < 0:
-                self.BuyMarket(Math.Abs(self.Position))
-                self.LogInfo("Exit Short: Spread({0:F4}) < Mean({1:F4})".format(
-                    self._spread, spread_mean))
+        spread = first - second
+        period = self._lookback_period.Value
 
-    def ProcessSecondSecurityCandle(self, candle):
-        # Store the close price of the second security for spread calculation
-        if candle.State == CandleStates.Finished:
-            self._last_second_price = float(candle.ClosePrice)
+        self._spreads.append(spread)
+        if len(self._spreads) > period:
+            self._spreads.pop(0)
+
+        if len(self._spreads) < period:
+            return
+
+        total = Decimal(0)
+        for value in self._spreads:
+            total += value
+        mean = total / Decimal(period)
+
+        squares = Decimal(0)
+        for value in self._spreads:
+            squares += (value - mean) * (value - mean)
+        deviation = Decimal(Math.Sqrt(Decimal.ToDouble(squares / Decimal(period))))
+
+        multiplier = Decimal(self._deviation_multiplier.Value)
+        upper = mean + multiplier * deviation
+        lower = mean - multiplier * deviation
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
+        stop_percent = Decimal(self._stop_loss_percent.Value)
+        stop_distance = abs(self._entry_spread) * stop_percent / Decimal(100)
+
+        if spread < lower and self._side <= 0:
+            self._move_legs(1)
+            self._entry_spread = spread
+        elif spread > upper and self._side >= 0:
+            self._move_legs(-1)
+            self._entry_spread = spread
+        elif self._side > 0 and (spread >= mean or (stop_percent > 0 and spread <= self._entry_spread - stop_distance)):
+            self._move_legs(0)
+        elif self._side < 0 and (spread <= mean or (stop_percent > 0 and spread >= self._entry_spread + stop_distance)):
+            self._move_legs(0)
+
+    def _move_legs(self, side):
+        self._side = side
+
+        # Long the spread holds the first instrument and is short the second, each by Volume.
+        first_change = Decimal(side) * self.Volume - self.Position
+
+        if first_change > 0:
+            self.BuyMarket(first_change)
+        elif first_change < 0:
+            self.SellMarket(-first_change)
+
+        second_position = self.GetPositionValue(self.second_security, self.Portfolio)
+        if second_position is None:
+            second_position = Decimal(0)
+
+        second_change = Decimal(-side) * self.Volume - second_position
+
+        if second_change > 0:
+            self.BuyMarket(second_change, self.second_security)
+        elif second_change < 0:
+            self.SellMarket(-second_change, self.second_security)
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return pairs_trading_strategy()

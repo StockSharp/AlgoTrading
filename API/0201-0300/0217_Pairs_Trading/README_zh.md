@@ -20,9 +20,11 @@
 - **止损**: 百分比止损，基于价差
 - **默认值**:
   - `LookbackPeriod` = 20
-  - `DeviationMultiplier` = 2.0m
-  - `StopLossPercent` = 2m
+  - `DeviationMultiplier` = 2
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
+  - `SecondSecurity` — 必填，无默认值
+    价差为策略主品种（Security）收盘价减去SecondSecurity在同一时间K线上的收盘价；Mean和StdDev取最近LookbackPeriod个价差计算。每条腿交易Volume数量，相反信号会同时反转两条腿。当价差朝不利方向移动入场价差的StopLossPercent百分比时止损平掉两条腿，按K线收盘检查；设为0则关闭。
 - **过滤器**:
   - 类别: Arbitrage
   - 方向: 双向

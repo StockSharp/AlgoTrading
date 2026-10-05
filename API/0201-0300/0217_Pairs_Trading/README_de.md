@@ -20,9 +20,11 @@ Pairs Trading spricht marktneutrale Trader an, die Relative-Value-Chancen gegen�
 - **Stops**: Ja, prozentualer Stop basierend auf dem Spread-Wert.
 - **Standardwerte**:
   - `LookbackPeriod` = 20
-  - `DeviationMultiplier` = 2.0m
-  - `StopLossPercent` = 2m
+  - `DeviationMultiplier` = 2
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
+  - `SecondSecurity` — erforderlich, ohne Standardwert
+    Der Spread ist der Schlusskurs des Security der Strategie minus der Schlusskurs von SecondSecurity auf Kerzen derselben Zeit; Mean und StdDev werden über die letzten LookbackPeriod Spreads berechnet. Jedes Bein handelt Volume, ein Gegensignal dreht beide Beine. Der Stop schließt beide Beine, sobald sich der Spread um StopLossPercent seines Einstiegswerts gegen das Paar bewegt, geprüft bei Kerzenschluss; 0 schaltet ihn ab.
 - **Filter**:
   - Kategorie: Arbitrage
   - Richtung: Beide
