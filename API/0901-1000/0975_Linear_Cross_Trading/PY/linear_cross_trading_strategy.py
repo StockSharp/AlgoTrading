@@ -5,79 +5,127 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan
+from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import LinearReg
+from StockSharp.Algo.Indicators import WeightedMovingAverage, MovingAverageConvergenceDivergenceSignal
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 
 class linear_cross_trading_strategy(Strategy):
+    """
+    Linear Cross Trading strategy.
+    Regresses the close on volume over Length candles and predicts the price for the current volume. A long opens when the
+    predicted price crosses above its LinearLength WMA while MACD is above its signal and rising. A short opens when MACD is
+    below its signal and falling while the low is lower than the previous low. Opposite signals reverse the position.
+    """
+
     def __init__(self):
         super(linear_cross_trading_strategy, self).__init__()
-        self._length = self.Param("Length", 21) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Regression Length", "Number of bars for linear regression", "Indicator")
-        self._slope_threshold = self.Param("SlopeThresholdPercent", 0.02) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Slope Threshold Pct", "Minimum normalized slope for signals", "Indicator")
-        self._cooldown_bars = self.Param("CooldownBars", 60) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Cooldown Bars", "Minimum bars between entries", "General")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(10))) \
-            .SetDisplay("Candle Type", "Type of candles for strategy", "General")
-        self._prev_slope = 0.0
-        self._prev_slope_set = False
-        self._bars_from_signal = 999999
+        self._length = self.Param("Length", 21).SetGreaterThanZero().SetDisplay("Length", "Number of candles in the price-on-volume regression", "Indicators")
+        self._linear_length = self.Param("LinearLength", 9).SetGreaterThanZero().SetDisplay("Linear Length", "WMA period applied to the predicted price", "Indicators")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._wma = None
+        self._reset_state()
 
     @property
     def candle_type(self):
         return self._candle_type.Value
 
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
+    def _reset_state(self):
+        self._window = []
+        self._prev_predicted = None
+        self._prev_wma = None
+        self._prev_macd = None
+        self._prev_low = None
 
     def OnReseted(self):
         super(linear_cross_trading_strategy, self).OnReseted()
-        self._prev_slope = 0.0
-        self._prev_slope_set = False
-        self._bars_from_signal = 999999
+        self._reset_state()
 
     def OnStarted2(self, time):
         super(linear_cross_trading_strategy, self).OnStarted2(time)
-        lin_reg = LinearReg()
-        lin_reg.Length = self._length.Value
+
+        self._reset_state()
+
+        self._wma = WeightedMovingAverage()
+        self._wma.Length = self._linear_length.Value
+        macd = MovingAverageConvergenceDivergenceSignal()
+
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(lin_reg, self.OnProcess).Start()
+        subscription.BindEx(macd, self._process_candle).Start()
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, lin_reg)
+            self.DrawIndicator(area, self._wma)
             self.DrawOwnTrades(area)
+            oscillators = self.CreateChartArea()
+            if oscillators is not None:
+                self.DrawIndicator(oscillators, macd)
 
-    def OnProcess(self, candle, lin_reg_val):
+    def _process_candle(self, candle, macd_value):
         if candle.State != CandleStates.Finished:
             return
-        close = float(candle.ClosePrice)
-        if close <= 0.0:
+
+        prev_low = self._prev_low
+        self._prev_low = candle.LowPrice
+
+        length = self._length.Value
+        self._window.append((candle.ClosePrice, candle.TotalVolume))
+        while len(self._window) > length:
+            self._window.pop(0)
+
+        predicted = None
+        wma = None
+        if len(self._window) == length:
+            predicted = self._predict(candle.TotalVolume)
+            wma_value = process_float(self._wma, predicted, candle.OpenTime, True)
+            if self._wma.IsFormed:
+                wma = wma_value.GetValue[Decimal](None)
+
+        prev_predicted = self._prev_predicted
+        prev_wma = self._prev_wma
+        self._prev_predicted = predicted
+        self._prev_wma = wma
+
+        if not macd_value.IsFormed or macd_value.Macd is None or macd_value.Signal is None:
             return
-        lrv = float(lin_reg_val)
-        slope = (close - lrv) / close * 100.0
-        if not self._prev_slope_set:
-            self._prev_slope = slope
-            self._prev_slope_set = True
+
+        macd = macd_value.Macd
+        signal = macd_value.Signal
+        prev_macd = self._prev_macd
+        self._prev_macd = macd
+
+        if prev_macd is None or not self.IsFormedAndOnlineAndAllowTrading():
             return
-        self._bars_from_signal += 1
-        th = float(self._slope_threshold.Value)
-        cd = self._cooldown_bars.Value
-        if self._bars_from_signal >= cd:
-            if self._prev_slope <= th and slope > th and self.Position <= 0:
-                self.BuyMarket()
-                self._bars_from_signal = 0
-            elif self._prev_slope >= -th and slope < -th and self.Position >= 0:
-                self.SellMarket()
-                self._bars_from_signal = 0
-        self._prev_slope = slope
+
+        cross_up = predicted is not None and wma is not None and prev_predicted is not None and prev_wma is not None \
+            and prev_predicted <= prev_wma and predicted > wma
+        macd_up = macd > signal and macd > prev_macd
+        macd_down = macd < signal and macd < prev_macd
+        lower_low = prev_low is not None and candle.LowPrice < prev_low
+
+        if cross_up and macd_up and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+        elif macd_down and lower_low and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
+
+    def _predict(self, volume):
+        # Least-squares fit close = a + b * volume over the window, evaluated at the current volume.
+        n = Decimal(len(self._window))
+        mean_volume = sum((v for _, v in self._window), Decimal(0)) / n
+        mean_close = sum((c for c, _ in self._window), Decimal(0)) / n
+
+        covariance = Decimal(0)
+        variance = Decimal(0)
+        for close, vol in self._window:
+            dv = vol - mean_volume
+            covariance += dv * (close - mean_close)
+            variance += dv * dv
+
+        slope = Decimal(0) if variance == Decimal(0) else covariance / variance
+        return mean_close + slope * (volume - mean_volume)
 
     def CreateClone(self):
         return linear_cross_trading_strategy()
