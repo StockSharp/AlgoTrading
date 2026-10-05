@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using Ecng.Common;
 
@@ -11,19 +12,46 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Bar Range Strategy.
-/// Uses ATR-based volatility breakout with EMA trend filter.
+/// Bar Range strategy.
+/// Long only: buys a bearish candle (close below open) whose high-low range has a percent rank of at least PercentRankThreshold
+/// among the previous LookbackPeriod ranges, and closes the long after ExitBars bars.
 /// </summary>
 public class BarRangeStrategy : Strategy
 {
+	private readonly StrategyParam<int> _lookbackPeriod;
+	private readonly StrategyParam<decimal> _percentRankThreshold;
+	private readonly StrategyParam<int> _exitBars;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _emaLength;
-	private readonly StrategyParam<int> _rsiLength;
-	private readonly StrategyParam<int> _cooldownBars;
 
-	private decimal _prevRsi;
-	private int _barIndex;
-	private int _lastTradeBar;
+	private readonly Queue<decimal> _ranges = new();
+	private int _barsInPosition;
+
+	/// <summary>
+	/// Previous bars the range is ranked against.
+	/// </summary>
+	public int LookbackPeriod
+	{
+		get => _lookbackPeriod.Value;
+		set => _lookbackPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Minimum percent rank of the range that allows an entry.
+	/// </summary>
+	public decimal PercentRankThreshold
+	{
+		get => _percentRankThreshold.Value;
+		set => _percentRankThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Bars after which the long is closed.
+	/// </summary>
+	public int ExitBars
+	{
+		get => _exitBars.Value;
+		set => _exitBars.Value = value;
+	}
 
 	/// <summary>
 	/// Candle type.
@@ -35,50 +63,24 @@ public class BarRangeStrategy : Strategy
 	}
 
 	/// <summary>
-	/// EMA trend filter period.
-	/// </summary>
-	public int EmaLength
-	{
-		get => _emaLength.Value;
-		set => _emaLength.Value = value;
-	}
-
-	/// <summary>
-	/// RSI period.
-	/// </summary>
-	public int RsiLength
-	{
-		get => _rsiLength.Value;
-		set => _rsiLength.Value = value;
-	}
-
-	/// <summary>
-	/// Cooldown bars between trades.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
 	/// Constructor.
 	/// </summary>
 	public BarRangeStrategy()
 	{
+		_lookbackPeriod = Param(nameof(LookbackPeriod), 50)
+			.SetGreaterThanZero()
+			.SetDisplay("Lookback Period", "Previous bars the range is ranked against", "Indicators");
+
+		_percentRankThreshold = Param(nameof(PercentRankThreshold), 95m)
+			.SetRange(0m, 100m)
+			.SetDisplay("Percent Rank Threshold", "Minimum percent rank of the range that allows an entry", "Indicators");
+
+		_exitBars = Param(nameof(ExitBars), 1)
+			.SetGreaterThanZero()
+			.SetDisplay("Exit Bars", "Bars after which the long is closed", "Trading");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_emaLength = Param(nameof(EmaLength), 50)
-			.SetGreaterThanZero()
-			.SetDisplay("EMA Length", "EMA trend filter period", "Indicators");
-
-		_rsiLength = Param(nameof(RsiLength), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("RSI Length", "RSI period", "Indicators");
-
-		_cooldownBars = Param(nameof(CooldownBars), 350)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "Trading");
 	}
 
 	/// <inheritdoc />
@@ -91,9 +93,8 @@ public class BarRangeStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevRsi = 0;
-		_barIndex = 0;
-		_lastTradeBar = 0;
+		_ranges.Clear();
+		_barsInPosition = 0;
 	}
 
 	/// <inheritdoc />
@@ -101,48 +102,55 @@ public class BarRangeStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var ema = new ExponentialMovingAverage { Length = EmaLength };
-		var rsi = new RelativeStrengthIndex { Length = RsiLength };
+		_ranges.Clear();
+		_barsInPosition = 0;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ema, rsi, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, ema);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal emaValue, decimal rsiValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		_barIndex++;
+		var range = candle.HighPrice - candle.LowPrice;
 
-		var cooldownOk = _barIndex - _lastTradeBar > CooldownBars;
+		// Percent rank: share of the previous LookbackPeriod ranges that do not exceed the current one.
+		decimal? rank = null;
+		if (_ranges.Count == LookbackPeriod)
+			rank = 100m * _ranges.Count(r => r <= range) / LookbackPeriod;
 
-		// RSI crosses above 45 with uptrend
-		var longSignal = _prevRsi > 0 && _prevRsi < 45 && rsiValue >= 45 && candle.ClosePrice > emaValue;
-		// RSI crosses below 55 with downtrend
-		var shortSignal = _prevRsi > 0 && _prevRsi > 55 && rsiValue <= 55 && candle.ClosePrice < emaValue;
+		_ranges.Enqueue(range);
+		while (_ranges.Count > LookbackPeriod)
+			_ranges.Dequeue();
 
-		if (longSignal && Position <= 0 && cooldownOk)
+		if (Position > 0)
+			_barsInPosition++;
+		else
+			_barsInPosition = 0;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (Position > 0)
 		{
-			BuyMarket();
-			_lastTradeBar = _barIndex;
-		}
-		else if (shortSignal && Position >= 0 && cooldownOk)
-		{
-			SellMarket();
-			_lastTradeBar = _barIndex;
+			if (_barsInPosition >= ExitBars)
+				SellMarket(Position);
+
+			return;
 		}
 
-		_prevRsi = rsiValue;
+		if (Position == 0 && rank is decimal r && r >= PercentRankThreshold && candle.ClosePrice < candle.OpenPrice)
+			BuyMarket(Volume);
 	}
 }
