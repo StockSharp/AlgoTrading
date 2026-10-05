@@ -21,8 +21,10 @@ Williams %Rが平均から`DeviationMultiplier`倍の標準偏差を差し引い
 - **デフォルト値**:
   - `WilliamsRPeriod` = 14
   - `AveragePeriod` = 20
-  - `DeviationMultiplier` = 2m
+  - `DeviationMultiplier` = 2
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
+    AvgとStdDevは現在値を含む直近AveragePeriod個の%Rの平均と標準偏差です。 ストップはエントリー価格の固定StopLossPercentで、ローソク足の間も監視されます。0で無効になります。 保有ポジションと逆方向のエントリーシグナルはドテンになります。
 - **フィルター**:
   - カテゴリ: 平均回帰
   - 方向: 両方

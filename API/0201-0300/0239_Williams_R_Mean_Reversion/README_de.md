@@ -21,8 +21,10 @@ Der Ansatz eignet sich für Trader, die sich auf Momentumerschöpfung stützen, 
 - **Standardwerte**:
   - `WilliamsRPeriod` = 14
   - `AveragePeriod` = 20
-  - `DeviationMultiplier` = 2m
+  - `DeviationMultiplier` = 2
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
+    Avg und StdDev sind Mittelwert und Standardabweichung der letzten AveragePeriod Werte von %R einschließlich des aktuellen. Der Stop liegt bei festen StopLossPercent vom Einstiegspreis und wird auch zwischen den Kerzen überwacht; 0 schaltet ihn ab. Ein Einstiegssignal gegen eine offene Position dreht sie.
 - **Filter**:
   - Kategorie: Mean Reversion
   - Richtung: Beide
