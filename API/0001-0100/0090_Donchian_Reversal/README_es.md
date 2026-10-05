@@ -17,7 +17,7 @@ Al operar solo después de una ruptura fallida, este enfoque intenta capturar mo
 - **Stops**: Sí, basado en porcentaje.
 - **Valores predeterminados**:
   - `Period` = 20
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
   - `CandleType` = 15 minute
 - **Filtros**:
   - Categoría: Reversión

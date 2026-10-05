@@ -17,7 +17,7 @@ By trading only after a failed breakout this approach attempts to capture false 
 - **Stops**: Yes, percentage based.
 - **Default Values**:
   - `Period` = 20
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
   - `CandleType` = 15 minute
 - **Filters**:
   - Category: Reversal

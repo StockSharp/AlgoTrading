@@ -17,7 +17,7 @@ Operando apenas após uma ruptura frustrada, esta abordagem tenta capturar movim
 - **Stops**: Sim, baseado em percentual.
 - **Valores padrão**:
   - `Period` = 20
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
   - `CandleType` = 15 minute
 - **Filtros**:
   - Categoria: Reversão

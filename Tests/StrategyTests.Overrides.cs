@@ -2520,6 +2520,64 @@ public abstract partial class StrategyTests
 		if (multiplier < 1.0) IsTrue(stopExits > 0, "A tight stop must be reached.");
 	}
 
+	private const string DonchianReversal = "0090_Donchian_Reversal";
+
+	[TestMethod]
+	[TestCategory("Shard03")]
+	[DataRow(20, false)]
+	[DataRow(8, true)]
+	public async Task S0090_ClosesBackInsideAfterAOneCandleBreakout(int period, bool secondary)
+	{
+		var candles = new List<(decimal High, decimal Low)>();
+		(decimal Close, decimal Upper, decimal Lower)? previous = null;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var violations = new List<string>();
+		await Replay(DonchianReversal, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["Period"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "Period", period);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var close = candle.ClosePrice;
+				var prior = previous;
+				previous = candles.Count == period ? (close, candles.Max(c => c.High), candles.Min(c => c.Low)) : null;
+				candles.Add((candle.HighPrice, candle.LowPrice));
+				if (candles.Count > period) candles.RemoveAt(0);
+				if (prior is not { } p) return;
+				var position = strategy.Position;
+				if (p.Close < p.Lower && close > p.Lower && position <= 0m) expectedSide = Sides.Buy;
+				else if (p.Close > p.Upper && close < p.Upper && position >= 0m) expectedSide = Sides.Sell;
+				if (expectedSide is Sides side) { expectedVolume = strategy.Volume + Math.Abs(position); entries[side]++; expectedOrders++; }
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a close back inside the band the previous close broke.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] + entries[Sides.Sell] > 1, "The fixture must trade failed breakouts.");
+		if (secondary) IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "TON must fail breakouts on both sides.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard03")]
+	public Task S0090_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars(DonchianReversal, TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

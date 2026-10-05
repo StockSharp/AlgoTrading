@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using Ecng.Common;
 
@@ -12,27 +13,35 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Donchian Reversal strategy.
-/// Enters long when price bounces from the lower Donchian Channel band.
-/// Enters short when price bounces from the upper Donchian Channel band.
-/// Exits at middle band.
-/// Uses cooldown to control trade frequency.
+/// A breakout is a close beyond the channel of the Period candles before it. When the next close returns above the lower band
+/// that was broken the position turns long, and when it returns below a broken upper band it turns short. A percent stop limits the loss.
 /// </summary>
 public class DonchianReversalStrategy : Strategy
 {
 	private readonly StrategyParam<int> _period;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
 
-	private decimal _prevClose;
-	private int _cooldown;
+	private readonly List<(decimal High, decimal Low)> _candles = [];
+	// The previous close and the channel it was compared with.
+	private (decimal Close, decimal Upper, decimal Lower)? _previous;
 
 	/// <summary>
-	/// Donchian period.
+	/// Donchian Channel period.
 	/// </summary>
 	public int Period
 	{
 		get => _period.Value;
 		set => _period.Value = value;
+	}
+
+	/// <summary>
+	/// Stop-loss percentage.
+	/// </summary>
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
 	}
 
 	/// <summary>
@@ -45,29 +54,20 @@ public class DonchianReversalStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Cooldown bars.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
 	/// Constructor.
 	/// </summary>
 	public DonchianReversalStrategy()
 	{
 		_period = Param(nameof(Period), 20)
-			.SetRange(10, 40)
-			.SetDisplay("Period", "Period for Donchian Channel", "Indicators");
+			.SetGreaterThanZero()
+			.SetDisplay("Period", "Donchian Channel period", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_cooldownBars = Param(nameof(CooldownBars), 500)
-			.SetRange(1, 1000)
-			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -80,8 +80,8 @@ public class DonchianReversalStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevClose = default;
-		_cooldown = default;
+		_candles.Clear();
+		_previous = null;
 	}
 
 	/// <inheritdoc />
@@ -89,79 +89,61 @@ public class DonchianReversalStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_prevClose = 0;
-		_cooldown = 0;
-
-		var donchian = new DonchianChannels { Length = Period };
+		_candles.Clear();
+		_previous = null;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(donchian, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
+
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, donchian);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue donchianIv)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// The high-level handler activates native protection before this callback, also between signal bars.
+	}
+
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!donchianIv.IsFormed)
+		var close = candle.ClosePrice;
+		var previous = _previous;
+
+		// The channel of the candles before this one, for the next candle to compare with.
+		_previous = _candles.Count == Period
+			? (close, _candles.Max(c => c.High), _candles.Min(c => c.Low))
+			: null;
+
+		_candles.Add((candle.HighPrice, candle.LowPrice));
+
+		if (_candles.Count > Period)
+			_candles.RemoveAt(0);
+
+		if (previous is not { } prior || !IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var dv = (IDonchianChannelsValue)donchianIv;
-
-		if (dv.UpperBand is not decimal upper ||
-			dv.LowerBand is not decimal lower ||
-			dv.Middle is not decimal middle)
-			return;
-
-		if (_prevClose == 0)
-		{
-			_prevClose = candle.ClosePrice;
-			return;
-		}
-
-		if (_cooldown > 0)
-		{
-			_cooldown--;
-			_prevClose = candle.ClosePrice;
-			return;
-		}
-
-		// Bounce from lower band = bullish
-		var bouncedFromLower = _prevClose <= lower && candle.ClosePrice > lower;
-		// Bounce from upper band = bearish
-		var bouncedFromUpper = _prevClose >= upper && candle.ClosePrice < upper;
-
-		if (Position == 0 && bouncedFromLower)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position == 0 && bouncedFromUpper)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position > 0 && candle.ClosePrice >= middle && bouncedFromUpper)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position < 0 && candle.ClosePrice <= middle && bouncedFromLower)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-
-		_prevClose = candle.ClosePrice;
+		if (prior.Close < prior.Lower && close > prior.Lower && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (prior.Close > prior.Upper && close < prior.Upper && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
 	}
 }

@@ -17,7 +17,7 @@ Donchian Channelは選択した期間の直近の高値と安値をマークし�
 - **ストップ**: はい、パーセンテージベース。
 - **デフォルト値**:
   - `Period` = 20
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
   - `CandleType` = 15 minute
 - **フィルター**:
   - カテゴリ: リバーサル
