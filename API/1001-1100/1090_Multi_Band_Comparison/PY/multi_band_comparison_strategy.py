@@ -5,95 +5,106 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan
+import math
+
+from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
 
 
 class multi_band_comparison_strategy(Strategy):
+    """
+    Multi-band comparison strategy.
+    The trigger line is the UpperQuantile quantile of the last Length closes minus BollingerMultiplier standard deviations.
+    A long opens after EntryConfirmBars consecutive closes above the line and closes after ExitConfirmBars consecutive closes below it.
+    The SMA middle band is drawn for comparison. Long only, no stops.
+    """
+
     def __init__(self):
         super(multi_band_comparison_strategy, self).__init__()
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
-            .SetDisplay("Candle Type", "Type of candles", "General")
-        self._length = self.Param("Length", 20) \
-            .SetDisplay("Length", "SMA period", "Bands") \
-            .SetGreaterThanZero()
-        self._bollinger_multiplier = self.Param("BollingerMultiplier", 1.0) \
-            .SetDisplay("BB Mult", "Volatility multiplier for the breakout band", "Bands") \
-            .SetGreaterThanZero()
-        self._entry_confirm_bars = self.Param("EntryConfirmBars", 1) \
-            .SetDisplay("Entry Confirm Bars", "Bars for entry confirmation", "Trading") \
-            .SetGreaterThanZero()
-        self._exit_confirm_bars = self.Param("ExitConfirmBars", 1) \
-            .SetDisplay("Exit Confirm Bars", "Bars for exit confirmation", "Trading") \
-            .SetGreaterThanZero()
-        self._signal_cooldown_bars = self.Param("SignalCooldownBars", 8) \
-            .SetDisplay("Signal Cooldown", "Bars to wait before accepting a new signal", "Trading") \
-            .SetGreaterThanZero()
-        self._entry_counter = 0
-        self._exit_counter = 0
-        self._cooldown_remaining = 0
-        self._was_above_entry_level = False
+        self._length = self.Param("Length", 20).SetGreaterThanZero().SetDisplay("Length", "Period of the SMA, standard deviation and quantile window", "Bands")
+        self._bollinger_multiplier = self.Param("BollingerMultiplier", 1.0).SetNotNegative().SetDisplay("BB Mult", "Standard deviation multiplier", "Bands")
+        self._upper_quantile = self.Param("UpperQuantile", 0.95).SetDisplay("Upper Quantile", "Quantile of the closes that forms the upper band", "Bands")
+        self._entry_confirm_bars = self.Param("EntryConfirmBars", 1).SetGreaterThanZero().SetDisplay("Entry Confirm Bars", "Consecutive closes above the line required to enter", "Trading")
+        self._exit_confirm_bars = self.Param("ExitConfirmBars", 1).SetGreaterThanZero().SetDisplay("Exit Confirm Bars", "Consecutive closes below the line required to exit", "Trading")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._reset_state()
 
     @property
     def candle_type(self):
         return self._candle_type.Value
 
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
+    def _reset_state(self):
+        self._closes = []
+        self._above_count = 0
+        self._below_count = 0
 
     def OnReseted(self):
         super(multi_band_comparison_strategy, self).OnReseted()
-        self._entry_counter = 0
-        self._exit_counter = 0
-        self._cooldown_remaining = 0
-        self._was_above_entry_level = False
+        self._reset_state()
 
     def OnStarted2(self, time):
         super(multi_band_comparison_strategy, self).OnStarted2(time)
-        self._entry_counter = 0
-        self._exit_counter = 0
-        self._cooldown_remaining = 0
-        self._was_above_entry_level = False
-        self._sma = SimpleMovingAverage()
-        self._sma.Length = self._length.Value
-        self._std = StandardDeviation()
-        self._std.Length = self._length.Value
-        subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(self._sma, self._std, self.OnProcess).Start()
 
-    def OnProcess(self, candle, sma_value, std_value):
+        self._reset_state()
+
+        sma = SimpleMovingAverage()
+        sma.Length = self._length.Value
+        std = StandardDeviation()
+        std.Length = self._length.Value
+
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.BindEx(sma, std, self._process_candle).Start()
+
+        area = self.CreateChartArea()
+        if area is not None:
+            self.DrawCandles(area, subscription)
+            self.DrawIndicator(area, sma)
+            self.DrawOwnTrades(area)
+
+    def _get_quantile(self):
+        ordered = sorted(self._closes)
+        position = float(self._upper_quantile.Value) * (len(ordered) - 1)
+        lower = int(math.floor(position))
+        upper = min(lower + 1, len(ordered) - 1)
+        fraction = position - lower
+        return ordered[lower] + (ordered[upper] - ordered[lower]) * fraction
+
+    def _process_candle(self, candle, sma_value, std_value):
         if candle.State != CandleStates.Finished:
             return
-        sv = float(sma_value)
-        sdv = float(std_value)
-        if self._cooldown_remaining > 0:
-            self._cooldown_remaining -= 1
-        if sdv <= 0.0:
-            return
-        bm = float(self._bollinger_multiplier.Value)
-        entry_level = sv + sdv * bm
-        exit_level = sv
+
         close = float(candle.ClosePrice)
-        is_above_entry_level = close > entry_level
-        crossed_up = not self._was_above_entry_level and is_above_entry_level
-        crossed_down = self._was_above_entry_level and close < exit_level
-        self._entry_counter = self._entry_counter + 1 if crossed_up else 0
-        self._exit_counter = self._exit_counter + 1 if crossed_down else 0
-        ecb = self._entry_confirm_bars.Value
-        xcb = self._exit_confirm_bars.Value
-        scb = self._signal_cooldown_bars.Value
-        if self.Position <= 0 and self._cooldown_remaining == 0 and self._entry_counter >= ecb:
-            self.BuyMarket()
-            self._entry_counter = 0
-            self._cooldown_remaining = scb
-        elif self.Position > 0 and self._exit_counter >= xcb:
-            self.SellMarket()
-            self._exit_counter = 0
-            self._cooldown_remaining = scb
-        self._was_above_entry_level = is_above_entry_level
+        length = self._length.Value
+
+        self._closes.append(close)
+        if len(self._closes) > length:
+            self._closes.pop(0)
+
+        if not sma_value.IsFormed or not std_value.IsFormed or len(self._closes) < length:
+            return
+
+        std = float(std_value.GetValue[Decimal](None))
+        line = self._get_quantile() - std * float(self._bollinger_multiplier.Value)
+
+        if close > line:
+            self._above_count += 1
+            self._below_count = 0
+        elif close < line:
+            self._below_count += 1
+            self._above_count = 0
+        else:
+            self._above_count = 0
+            self._below_count = 0
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
+        if self.Position <= 0 and self._above_count >= self._entry_confirm_bars.Value:
+            self.BuyMarket(self.Volume + abs(self.Position))
+        elif self.Position > 0 and self._below_count >= self._exit_confirm_bars.Value:
+            self.SellMarket(self.Position)
 
     def CreateClone(self):
         return multi_band_comparison_strategy()

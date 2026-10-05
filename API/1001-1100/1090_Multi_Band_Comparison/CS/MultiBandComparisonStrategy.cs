@@ -2,6 +2,9 @@ namespace StockSharp.Samples.Strategies;
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
+
+using Ecng.Common;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -9,34 +12,26 @@ using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 /// <summary>
-/// Multi-band comparison strategy that enters on an upper volatility band breakout
-/// and exits on a return to the middle band.
+/// Multi-band comparison strategy.
+/// The trigger line is the UpperQuantile quantile of the last Length closes minus BollingerMultiplier standard deviations.
+/// A long opens after EntryConfirmBars consecutive closes above the line and closes after ExitConfirmBars consecutive closes below it.
+/// The SMA middle band is drawn for comparison. Long only, no stops.
 /// </summary>
 public class MultiBandComparisonStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _length;
 	private readonly StrategyParam<decimal> _bollingerMultiplier;
+	private readonly StrategyParam<decimal> _upperQuantile;
 	private readonly StrategyParam<int> _entryConfirmBars;
 	private readonly StrategyParam<int> _exitConfirmBars;
-	private readonly StrategyParam<int> _signalCooldownBars;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private int _entryCounter;
-	private int _exitCounter;
-	private int _cooldownRemaining;
-	private bool _wasAboveEntryLevel;
-
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	private readonly Queue<decimal> _closes = new();
+	private int _aboveCount;
+	private int _belowCount;
 
 	/// <summary>
-	/// SMA period.
+	/// Period of the SMA, standard deviation and quantile window.
 	/// </summary>
 	public int Length
 	{
@@ -45,7 +40,7 @@ public class MultiBandComparisonStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Volatility multiplier used for the breakout band.
+	/// Standard deviation multiplier.
 	/// </summary>
 	public decimal BollingerMultiplier
 	{
@@ -54,7 +49,16 @@ public class MultiBandComparisonStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Bars required for entry confirmation.
+	/// Quantile of the closes that forms the upper band.
+	/// </summary>
+	public decimal UpperQuantile
+	{
+		get => _upperQuantile.Value;
+		set => _upperQuantile.Value = value;
+	}
+
+	/// <summary>
+	/// Consecutive closes above the line required to enter.
 	/// </summary>
 	public int EntryConfirmBars
 	{
@@ -63,7 +67,7 @@ public class MultiBandComparisonStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Bars required for exit confirmation.
+	/// Consecutive closes below the line required to exit.
 	/// </summary>
 	public int ExitConfirmBars
 	{
@@ -72,12 +76,12 @@ public class MultiBandComparisonStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Bars to wait before accepting a new signal.
+	/// Candle type.
 	/// </summary>
-	public int SignalCooldownBars
+	public DataType CandleType
 	{
-		get => _signalCooldownBars.Value;
-		set => _signalCooldownBars.Value = value;
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
 	/// <summary>
@@ -85,28 +89,28 @@ public class MultiBandComparisonStrategy : Strategy
 	/// </summary>
 	public MultiBandComparisonStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
-
 		_length = Param(nameof(Length), 20)
-			.SetDisplay("Length", "SMA period", "Bands")
-			.SetGreaterThanZero();
+			.SetGreaterThanZero()
+			.SetDisplay("Length", "Period of the SMA, standard deviation and quantile window", "Bands");
 
 		_bollingerMultiplier = Param(nameof(BollingerMultiplier), 1m)
-			.SetDisplay("BB Mult", "Volatility multiplier for the breakout band", "Bands")
-			.SetGreaterThanZero();
+			.SetNotNegative()
+			.SetDisplay("BB Mult", "Standard deviation multiplier", "Bands");
+
+		_upperQuantile = Param(nameof(UpperQuantile), 0.95m)
+			.SetRange(0m, 1m)
+			.SetDisplay("Upper Quantile", "Quantile of the closes that forms the upper band", "Bands");
 
 		_entryConfirmBars = Param(nameof(EntryConfirmBars), 1)
-			.SetDisplay("Entry Confirm Bars", "Bars for entry confirmation", "Trading")
-			.SetGreaterThanZero();
+			.SetGreaterThanZero()
+			.SetDisplay("Entry Confirm Bars", "Consecutive closes above the line required to enter", "Trading");
 
 		_exitConfirmBars = Param(nameof(ExitConfirmBars), 1)
-			.SetDisplay("Exit Confirm Bars", "Bars for exit confirmation", "Trading")
-			.SetGreaterThanZero();
+			.SetGreaterThanZero()
+			.SetDisplay("Exit Confirm Bars", "Consecutive closes below the line required to exit", "Trading");
 
-		_signalCooldownBars = Param(nameof(SignalCooldownBars), 8)
-			.SetDisplay("Signal Cooldown", "Bars to wait before accepting a new signal", "Trading")
-			.SetGreaterThanZero();
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -119,11 +123,14 @@ public class MultiBandComparisonStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		ResetState();
+	}
 
-		_entryCounter = 0;
-		_exitCounter = 0;
-		_cooldownRemaining = 0;
-		_wasAboveEntryLevel = false;
+	private void ResetState()
+	{
+		_closes.Clear();
+		_aboveCount = 0;
+		_belowCount = 0;
 	}
 
 	/// <inheritdoc />
@@ -131,12 +138,14 @@ public class MultiBandComparisonStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var sma = new SMA { Length = Length };
-		var std = new StandardDeviation { Length = Length };
-		var subscription = SubscribeCandles(CandleType);
+		ResetState();
 
+		var sma = new SimpleMovingAverage { Length = Length };
+		var std = new StandardDeviation { Length = Length };
+
+		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(sma, std, ProcessCandle)
+			.BindEx(sma, std, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -148,42 +157,54 @@ public class MultiBandComparisonStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal smaValue, decimal stdValue)
+	private decimal GetQuantile()
+	{
+		var sorted = _closes.OrderBy(c => c).ToArray();
+		var position = UpperQuantile * (sorted.Length - 1);
+		var lower = (int)Math.Floor(position);
+		var upper = Math.Min(lower + 1, sorted.Length - 1);
+		var fraction = position - lower;
+		return sorted[lower] + (sorted[upper] - sorted[lower]) * fraction;
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue smaValue, IIndicatorValue stdValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		var close = candle.ClosePrice;
+
+		_closes.Enqueue(close);
+		if (_closes.Count > Length)
+			_closes.Dequeue();
+
+		if (!smaValue.IsFormed || !stdValue.IsFormed || _closes.Count < Length)
+			return;
+
+		var line = GetQuantile() - stdValue.ToDecimal() * BollingerMultiplier;
+
+		if (close > line)
+		{
+			_aboveCount++;
+			_belowCount = 0;
+		}
+		else if (close < line)
+		{
+			_belowCount++;
+			_aboveCount = 0;
+		}
+		else
+		{
+			_aboveCount = 0;
+			_belowCount = 0;
+		}
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (_cooldownRemaining > 0)
-			_cooldownRemaining--;
-
-		if (stdValue <= 0m)
-			return;
-
-		var entryLevel = smaValue + stdValue * BollingerMultiplier;
-		var exitLevel = smaValue;
-		var isAboveEntryLevel = candle.ClosePrice > entryLevel;
-		var crossedUp = !_wasAboveEntryLevel && isAboveEntryLevel;
-		var crossedDown = _wasAboveEntryLevel && candle.ClosePrice < exitLevel;
-
-		_entryCounter = crossedUp ? _entryCounter + 1 : 0;
-		_exitCounter = crossedDown ? _exitCounter + 1 : 0;
-
-		if (Position <= 0 && _cooldownRemaining == 0 && _entryCounter >= EntryConfirmBars)
-		{
-			BuyMarket();
-			_entryCounter = 0;
-			_cooldownRemaining = SignalCooldownBars;
-		}
-		else if (Position > 0 && _exitCounter >= ExitConfirmBars)
-		{
+		if (Position <= 0 && _aboveCount >= EntryConfirmBars)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (Position > 0 && _belowCount >= ExitConfirmBars)
 			SellMarket(Position);
-			_exitCounter = 0;
-			_cooldownRemaining = SignalCooldownBars;
-		}
-
-		_wasAboveEntryLevel = isAboveEntryLevel;
 	}
 }
