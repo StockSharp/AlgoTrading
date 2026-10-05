@@ -9490,6 +9490,75 @@ public abstract partial class StrategyTests
 	public Task S0236_PercentStopWorksBetweenFinishedBars()
 		=> CheckPercentStopBetweenBars("0236_RSI_Mean_Reversion", TimeSpan.FromDays(31));
 
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(14, 3, 20, 2.0, false)]
+	[DataRow(10, 3, 30, 1.5, true)]
+	public async Task S0237_SmoothedKBeyondItsDeviationBandsUntilItsAverage(int a0, int a1, int period, double multiplier, bool secondary)
+	{
+		var ind = new StochasticOscillator { K = { Length = a0 }, D = { Length = a1 } };
+		var values = new Queue<decimal>();
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var meanExits = 0;
+		var violations = new List<string>();
+		await Replay("0237_Stochastic_Mean_Reversion", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(14, strategy.Parameters["StochPeriod"].Value);
+			AreEqual(3, strategy.Parameters["KPeriod"].Value);
+			AreEqual(20, strategy.Parameters["AveragePeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["Multiplier"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "StochPeriod", a0);
+			SetParam(strategy, "KPeriod", a1);
+			SetParam(strategy, "AveragePeriod", period);
+			SetParam(strategy, "Multiplier", multiplier);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				// The strategy is not called while a bound value is empty.
+				var r = ind.Process(candle);
+				if (r.IsEmpty) return;
+				if (!r.IsFormed || r is not IStochasticOscillatorValue { D: decimal x }) return;
+				values.Enqueue(x);
+				if (values.Count > period) values.Dequeue();
+				if (values.Count < period) return;
+				var mean = values.Average();
+				var deviation = (decimal)Math.Sqrt((double)values.Average(v => (v - mean) * (v - mean)));
+				var upper = mean + (decimal)multiplier * deviation;
+				var lower = mean - (decimal)multiplier * deviation;
+				var position = strategy.Position;
+				if (x < lower && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (x > upper && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && x > mean) { expectedSide = Sides.Sell; expectedVolume = position; meanExits++; }
+				else if (position < 0m && x < mean) { expectedSide = Sides.Buy; expectedVolume = -position; meanExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow the indicator beyond a deviation band around its average, or close once it is back at the average.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && meanExits > 0, "The fixture must trade both sides and exit at the average.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0237_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0237_Stochastic_Mean_Reversion", TimeSpan.FromDays(31));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

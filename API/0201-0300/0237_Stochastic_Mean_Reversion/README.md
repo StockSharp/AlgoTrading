@@ -21,10 +21,11 @@ The method is designed for short-term traders who like to trade overbought and o
 - **Default Values**:
   - `StochPeriod` = 14
   - `KPeriod` = 3
-  - `DPeriod` = 3
   - `AveragePeriod` = 20
-  - `Multiplier` = 2.0m
+  - `Multiplier` = 2
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
+    Avg and StdDev are the average and the standard deviation of the last AveragePeriod %K values, the current one included. The stop is a fixed StopLossPercent of the entry price, watched between candles as well; 0 disables it. %K is the stochastic over the first period smoothed over KPeriod candles; %D plays no part in the rules, so DPeriod is gone. An entry signal against an open position reverses it.
 - **Filters**:
   - Category: Mean Reversion
   - Direction: Both
