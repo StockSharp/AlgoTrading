@@ -1,5 +1,3 @@
-namespace StockSharp.Samples.Strategies;
-
 using System;
 using System.Collections.Generic;
 
@@ -10,66 +8,67 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
+namespace StockSharp.Samples.Strategies;
+
 /// <summary>
-/// Javo v1 Strategy.
-/// Uses fast and slow EMA crossover on Heikin-Ashi computed close.
-/// Since HA is computed manually, the EMAs are bound on regular candle close,
-/// and HA color is used for signal confirmation.
+/// Javo v1 strategy.
+/// Builds Heikin Ashi candles and runs a fast and a slow EMA on the Heikin Ashi close. Goes long when the Heikin Ashi
+/// candle is bullish and the fast EMA is above the slow one, short when the candle is bearish and the fast EMA is below
+/// the slow one. The opposite signal reverses the position.
 /// </summary>
 public class JavoV1Strategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleTypeParam;
-	private readonly StrategyParam<int> _fastPeriod;
-	private readonly StrategyParam<int> _slowPeriod;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<int> _fastEmaPeriod;
+	private readonly StrategyParam<int> _slowEmaPeriod;
+	private readonly StrategyParam<DataType> _candleType;
 
 	private ExponentialMovingAverage _fastEma;
 	private ExponentialMovingAverage _slowEma;
-	private decimal _prevFast;
-	private decimal _prevSlow;
-	private decimal _prevHaOpen;
-	private decimal _prevHaClose;
-	private int _cooldownRemaining;
+	private decimal? _prevHaOpen;
+	private decimal? _prevHaClose;
 
-	public JavoV1Strategy()
+	/// <summary>
+	/// Fast EMA period.
+	/// </summary>
+	public int FastEmaPeriod
 	{
-		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
-			.SetDisplay("Candle type", "Candle type for strategy calculation.", "General");
-
-		_fastPeriod = Param(nameof(FastPeriod), 5)
-			.SetGreaterThanZero()
-			.SetDisplay("Fast EMA", "Fast EMA period", "Moving Averages");
-
-		_slowPeriod = Param(nameof(SlowPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("Slow EMA", "Slow EMA period", "Moving Averages");
-
-		_cooldownBars = Param(nameof(CooldownBars), 10)
-			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk");
+		get => _fastEmaPeriod.Value;
+		set => _fastEmaPeriod.Value = value;
 	}
 
+	/// <summary>
+	/// Slow EMA period.
+	/// </summary>
+	public int SlowEmaPeriod
+	{
+		get => _slowEmaPeriod.Value;
+		set => _slowEmaPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type for strategy calculation.
+	/// </summary>
 	public DataType CandleType
 	{
-		get => _candleTypeParam.Value;
-		set => _candleTypeParam.Value = value;
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
-	public int FastPeriod
+	/// <summary>
+	/// Constructor.
+	/// </summary>
+	public JavoV1Strategy()
 	{
-		get => _fastPeriod.Value;
-		set => _fastPeriod.Value = value;
-	}
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 1)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period on the Heikin Ashi close", "Moving Averages");
 
-	public int SlowPeriod
-	{
-		get => _slowPeriod.Value;
-		set => _slowPeriod.Value = value;
-	}
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 30)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period on the Heikin Ashi close", "Moving Averages");
 
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+			.SetDisplay("Candle type", "Candle type for strategy calculation", "General");
 	}
 
 	/// <inheritdoc />
@@ -83,11 +82,8 @@ public class JavoV1Strategy : Strategy
 
 		_fastEma = null;
 		_slowEma = null;
-		_prevFast = 0;
-		_prevSlow = 0;
-		_prevHaOpen = 0;
-		_prevHaClose = 0;
-		_cooldownRemaining = 0;
+		_prevHaOpen = null;
+		_prevHaClose = null;
 	}
 
 	/// <inheritdoc />
@@ -95,12 +91,14 @@ public class JavoV1Strategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_fastEma = new ExponentialMovingAverage { Length = FastPeriod };
-		_slowEma = new ExponentialMovingAverage { Length = SlowPeriod };
+		_prevHaOpen = null;
+		_prevHaClose = null;
+		_fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
+		_slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_fastEma, _slowEma, OnProcess)
+			.Bind(ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -113,80 +111,31 @@ public class JavoV1Strategy : Strategy
 		}
 	}
 
-	private void OnProcess(ICandleMessage candle, decimal fast, decimal slow)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Calculate Heikin-Ashi
-		decimal haOpen, haClose;
-		if (_prevHaOpen == 0)
-		{
-			haOpen = (candle.OpenPrice + candle.ClosePrice) / 2;
-			haClose = (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4;
-		}
-		else
-		{
-			haOpen = (_prevHaOpen + _prevHaClose) / 2;
-			haClose = (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4;
-		}
+		var haClose = (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m;
+		var haOpen = _prevHaOpen is decimal prevOpen && _prevHaClose is decimal prevClose
+			? (prevOpen + prevClose) / 2m
+			: (candle.OpenPrice + candle.ClosePrice) / 2m;
 
 		_prevHaOpen = haOpen;
 		_prevHaClose = haClose;
 
+		var fast = _fastEma.Process(haClose, candle.ServerTime, true).ToDecimal();
+		var slow = _slowEma.Process(haClose, candle.ServerTime, true).ToDecimal();
+
 		if (!_fastEma.IsFormed || !_slowEma.IsFormed)
-		{
-			_prevFast = fast;
-			_prevSlow = slow;
 			return;
-		}
 
 		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_prevFast = fast;
-			_prevSlow = slow;
 			return;
-		}
 
-		if (_cooldownRemaining > 0)
-		{
-			_cooldownRemaining--;
-			_prevFast = fast;
-			_prevSlow = slow;
-			return;
-		}
-
-		if (_prevFast == 0)
-		{
-			_prevFast = fast;
-			_prevSlow = slow;
-			return;
-		}
-
-		var haGreen = haClose > haOpen;
-		var haRed = haClose < haOpen;
-
-		// Bullish crossover with HA confirmation
-		var goLong = fast > slow && _prevFast <= _prevSlow && haGreen;
-		// Bearish crossover with HA confirmation
-		var goShort = fast < slow && _prevFast >= _prevSlow && haRed;
-
-		if (goLong && Position <= 0)
-		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-			BuyMarket(Volume);
-			_cooldownRemaining = CooldownBars;
-		}
-		else if (goShort && Position >= 0)
-		{
-			if (Position > 0)
-				SellMarket(Math.Abs(Position));
-			SellMarket(Volume);
-			_cooldownRemaining = CooldownBars;
-		}
-
-		_prevFast = fast;
-		_prevSlow = slow;
+		if (haClose > haOpen && fast > slow && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (haClose < haOpen && fast < slow && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
 	}
 }
