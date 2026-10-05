@@ -1,20 +1,21 @@
-namespace StockSharp.Samples.Strategies;
-
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using Ecng.Common;
 
-using StockSharp.Algo;
-using StockSharp.Algo.Candles;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
+namespace StockSharp.Samples.Strategies;
+
 /// <summary>
-/// MACD Histogram Mean Reversion strategy.
-/// This strategy enters positions when MACD Histogram is significantly below or above its average value.
+/// MACD Mean Reversion strategy.
+/// The bands lie DeviationMultiplier standard deviations around the average of the last AveragePeriod histogram values, the current one included.
+/// histogram below the lower band goes long and histogram above the upper band goes short,
+/// reversing an opposite position. A long closes once histogram is back above its average and a short once it is back below it, and a percent stop limits the loss.
 /// </summary>
 public class MacdMeanReversionStrategy : Strategy
 {
@@ -23,19 +24,13 @@ public class MacdMeanReversionStrategy : Strategy
 	private readonly StrategyParam<int> _signalPeriod;
 	private readonly StrategyParam<int> _averagePeriod;
 	private readonly StrategyParam<decimal> _deviationMultiplier;
-	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevMacdHist;
-	private decimal _avgMacdHist;
-	private decimal _stdDevMacdHist;
-	private decimal _sumMacdHist;
-	private decimal _sumSquaresMacdHist;
-	private int _count;
-	private readonly Queue<decimal> _macdHistValues = [];
+	private readonly Queue<decimal> _values = [];
 
 	/// <summary>
-	/// Fast EMA period for MACD.
+	/// Fast EMA period of MACD.
 	/// </summary>
 	public int FastMacdPeriod
 	{
@@ -44,7 +39,7 @@ public class MacdMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Slow EMA period for MACD.
+	/// Slow EMA period of MACD.
 	/// </summary>
 	public int SlowMacdPeriod
 	{
@@ -53,7 +48,7 @@ public class MacdMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Signal line period for MACD.
+	/// Signal line period of MACD.
 	/// </summary>
 	public int SignalPeriod
 	{
@@ -62,7 +57,7 @@ public class MacdMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Period for calculating mean and standard deviation of MACD Histogram.
+	/// Values of histogram the average and the standard deviation span.
 	/// </summary>
 	public int AveragePeriod
 	{
@@ -71,12 +66,21 @@ public class MacdMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Deviation multiplier for entry signals.
+	/// Standard deviations between the average and a band.
 	/// </summary>
 	public decimal DeviationMultiplier
 	{
 		get => _deviationMultiplier.Value;
 		set => _deviationMultiplier.Value = value;
+	}
+
+	/// <summary>
+	/// Stop loss percentage from entry price.
+	/// </summary>
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
 	}
 
 	/// <summary>
@@ -89,57 +93,36 @@ public class MacdMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop-loss percentage.
-	/// </summary>
-	public decimal StopLossPercent
-	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
-	}
-
-	/// <summary>
 	/// Constructor.
 	/// </summary>
 	public MacdMeanReversionStrategy()
 	{
 		_fastMacdPeriod = Param(nameof(FastMacdPeriod), 12)
 			.SetGreaterThanZero()
-			
-			.SetOptimize(8, 16, 4)
-			.SetDisplay("Fast EMA Period", "Fast EMA period for MACD", "Indicators");
+			.SetDisplay("MACD Fast", "Fast EMA period of MACD", "Indicators");
 
 		_slowMacdPeriod = Param(nameof(SlowMacdPeriod), 26)
 			.SetGreaterThanZero()
-			
-			.SetOptimize(20, 30, 5)
-			.SetDisplay("Slow EMA Period", "Slow EMA period for MACD", "Indicators");
+			.SetDisplay("MACD Slow", "Slow EMA period of MACD", "Indicators");
 
 		_signalPeriod = Param(nameof(SignalPeriod), 9)
 			.SetGreaterThanZero()
-			
-			.SetOptimize(5, 13, 4)
-			.SetDisplay("Signal Period", "Signal line period for MACD", "Indicators");
+			.SetDisplay("MACD Signal", "Signal line period of MACD", "Indicators");
 
 		_averagePeriod = Param(nameof(AveragePeriod), 20)
 			.SetGreaterThanZero()
-			
-			.SetOptimize(10, 50, 10)
-			.SetDisplay("Average Period", "Period for calculating MACD Histogram average", "Settings");
+			.SetDisplay("Average Period", "Values of histogram the average and the standard deviation span", "Indicators");
 
 		_deviationMultiplier = Param(nameof(DeviationMultiplier), 2m)
 			.SetGreaterThanZero()
-			
-			.SetOptimize(1.5m, 3m, 0.5m)
-			.SetDisplay("Deviation Multiplier", "Multiplier for standard deviation", "Settings");
+			.SetDisplay("Multiplier", "Standard deviations between the average and a band", "Indicators");
+
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-			.SetGreaterThanZero()
-			
-			.SetOptimize(1m, 3m, 0.5m)
-			.SetDisplay("Stop Loss %", "Stop loss as percentage of entry price", "Risk Management");
 	}
 
 	/// <inheritdoc />
@@ -152,22 +135,17 @@ public class MacdMeanReversionStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevMacdHist = 0;
-		_avgMacdHist = 0;
-		_stdDevMacdHist = 0;
-		_sumMacdHist = 0;
-		_sumSquaresMacdHist = 0;
-		_count = 0;
-		_macdHistValues.Clear();
+		_values.Clear();
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
-		// Reset variables
+		base.OnStarted2(time);
 
-		// Create MACD indicator
-		var macd = new MovingAverageConvergenceDivergenceHistogram
+		_values.Clear();
+
+		var macd = new MovingAverageConvergenceDivergenceSignal
 		{
 			Macd =
 			{
@@ -177,126 +155,74 @@ public class MacdMeanReversionStrategy : Strategy
 			SignalMa = { Length = SignalPeriod }
 		};
 
-		var macdHistogram = new MovingAverageConvergenceDivergenceHistogram(macd.Macd, new());
-
-		// Create subscription and bind indicator
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(macdHistogram, ProcessCandle)
+			.BindEx(macd, ProcessCandle)
 			.Start();
 
-		// Setup chart visualization
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, macd);
-			DrawIndicator(area, macdHistogram);
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, macd);
+			}
 		}
+	}
 
-		// Enable position protection
-		StartProtection(
-			takeProfit: new Unit(0m), // We'll manage exits ourselves based on MACD Histogram
-			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent)
-		);
-
-		base.OnStarted2(time);
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// The high-level handler activates native protection before this callback, also between signal bars.
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
+		if (!macdValue.IsFormed || macdValue is not MovingAverageConvergenceDivergenceSignalValue { Macd: decimal macd, Signal: decimal signal })
+			return;
+
+		// The histogram is the MACD line minus its signal line.
+		var value = macd - signal;
+
+		_values.Enqueue(value);
+
+		if (_values.Count > AveragePeriod)
+			_values.Dequeue();
+
+		if (_values.Count < AveragePeriod)
+			return;
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Extract MACD Histogram value
-		var macdTyped = (MovingAverageConvergenceDivergenceHistogramValue)macdValue;
-		if (macdTyped.Macd is not decimal macd || macdTyped.Signal is not decimal signal)
-		{
-			return;
-		}
+		var mean = _values.Average();
+		var deviation = (decimal)Math.Sqrt((double)_values.Average(v => (v - mean) * (v - mean)));
+		var upper = mean + DeviationMultiplier * deviation;
+		var lower = mean - DeviationMultiplier * deviation;
 
-		// Update MACD Histogram statistics
-		UpdateMacdHistStatistics(macd);
-
-		// Save current MACD Histogram for next iteration
-		_prevMacdHist = macd;
-
-		// If we don't have enough data yet for statistics
-		if (_count < AveragePeriod)
-			return;
-
-		// Check for entry conditions
-		if (Position == 0)
-		{
-			// Long entry - MACD Histogram is significantly below its average
-			if (macd < _avgMacdHist - DeviationMultiplier * _stdDevMacdHist)
-			{
-				BuyMarket(Volume);
-				LogInfo($"Long entry: MACD Hist = {macd}, Avg = {_avgMacdHist}, StdDev = {_stdDevMacdHist}");
-			}
-			// Short entry - MACD Histogram is significantly above its average
-			else if (macd > _avgMacdHist + DeviationMultiplier * _stdDevMacdHist)
-			{
-				SellMarket(Volume);
-				LogInfo($"Short entry: MACD Hist = {macd}, Avg = {_avgMacdHist}, StdDev = {_stdDevMacdHist}");
-			}
-		}
-		// Check for exit conditions
-		else if (Position > 0) // Long position
-		{
-			if (macd > _avgMacdHist)
-			{
-				ClosePosition();
-				LogInfo($"Long exit: MACD Hist = {macd}, Avg = {_avgMacdHist}");
-			}
-		}
-		else if (Position < 0) // Short position
-		{
-			if (macd < _avgMacdHist)
-			{
-				ClosePosition();
-				LogInfo($"Short exit: MACD Hist = {macd}, Avg = {_avgMacdHist}");
-			}
-		}
-	}
-
-	private void UpdateMacdHistStatistics(decimal currentMacdHist)
-	{
-		// Add current value to the queue
-		_macdHistValues.Enqueue(currentMacdHist);
-		_sumMacdHist += currentMacdHist;
-		_sumSquaresMacdHist += currentMacdHist * currentMacdHist;
-		_count++;
-
-		// If queue is larger than period, remove oldest value
-		if (_macdHistValues.Count > AveragePeriod)
-		{
-			var oldestMacdHist = _macdHistValues.Dequeue();
-			_sumMacdHist -= oldestMacdHist;
-			_sumSquaresMacdHist -= oldestMacdHist * oldestMacdHist;
-			_count--;
-		}
-
-		// Calculate average and standard deviation
-		if (_count > 0)
-		{
-			_avgMacdHist = _sumMacdHist / _count;
-			
-			if (_count > 1)
-			{
-				var variance = (_sumSquaresMacdHist - (_sumMacdHist * _sumMacdHist) / _count) / (_count - 1);
-				_stdDevMacdHist = variance <= 0 ? 0 : (decimal)Math.Sqrt((double)variance);
-			}
-			else
-			{
-				_stdDevMacdHist = 0;
-			}
-		}
+		if (value < lower && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (value > upper && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
+		else if (Position > 0 && value > mean)
+			SellMarket(Position);
+		else if (Position < 0 && value < mean)
+			BuyMarket(-Position);
 	}
 }
