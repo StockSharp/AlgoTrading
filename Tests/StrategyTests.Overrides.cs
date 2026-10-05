@@ -6861,6 +6861,65 @@ public abstract partial class StrategyTests
 		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && cloudExits > 0, "The fixture must trade both sides and exit on an opposite cloud break.");
 	}
 
+	[TestMethod]
+	[TestCategory("Shard06")]
+	[DataRow(10, 3.0, 14, 20.0, 80.0, false)]
+	[DataRow(7, 2.0, 9, 25.0, 75.0, true)]
+	public async Task S0185_StochasticExtremesOnTheSupertrendSideUntilItFlips(int period, double multiplier, int stochPeriod, double oversold, double overbought, bool secondary)
+	{
+		var supertrend = new SuperTrend { Length = period, Multiplier = (decimal)multiplier };
+		var stochastic = new StochasticOscillator { K = { Length = stochPeriod }, D = { Length = 3 } };
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var flipExits = 0;
+		var violations = new List<string>();
+		await Replay("0185_Supertrend_Stochastic", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(10, strategy.Parameters["SupertrendPeriod"].Value);
+			AreEqual(3m, Convert.ToDecimal(strategy.Parameters["SupertrendMultiplier"].Value));
+			AreEqual(14, strategy.Parameters["StochPeriod"].Value);
+			AreEqual(3, strategy.Parameters["StochK"].Value);
+			AreEqual(20m, Convert.ToDecimal(strategy.Parameters["StochOversold"].Value));
+			AreEqual(80m, Convert.ToDecimal(strategy.Parameters["StochOverbought"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "SupertrendPeriod", period);
+			SetParam(strategy, "SupertrendMultiplier", multiplier);
+			SetParam(strategy, "StochPeriod", stochPeriod);
+			SetParam(strategy, "StochOversold", oversold);
+			SetParam(strategy, "StochOverbought", overbought);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var st = supertrend.Process(candle);
+				var r = stochastic.Process(candle);
+				if (st is not SuperTrendIndicatorValue { IsFormed: true } trend || r is not IStochasticOscillatorValue { IsFormed: true, D: decimal value }) return;
+				var line = trend.Value;
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (close > line && value < (decimal)oversold && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (close < line && value > (decimal)overbought && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && !trend.IsUpTrend) { expectedSide = Sides.Sell; expectedVolume = position; flipExits++; }
+				else if (position < 0m && trend.IsUpTrend) { expectedSide = Sides.Buy; expectedVolume = -position; flipExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a %K extreme on the Supertrend side, or close when Supertrend flips.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && flipExits > 0, "The fixture must trade both sides and exit on a Supertrend flip.");
+	}
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

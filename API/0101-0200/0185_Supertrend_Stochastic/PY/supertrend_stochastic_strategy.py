@@ -5,119 +5,79 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from System import TimeSpan, Decimal
+from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import SuperTrend, StochasticOscillator
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class supertrend_stochastic_strategy(Strategy):
     """
-    Supertrend + Stochastic strategy.
-    Enters trades when Supertrend indicates trend direction and Stochastic confirms.
-    Uses StartProtection for exits.
+    Supertrend Stochastic strategy.
+    A close above the Supertrend line with %K below StochOversold goes long and a close below it with %K above StochOverbought goes short,
+    reversing an opposite position; %K is the stochastic over StochPeriod candles smoothed over StochK candles. The Supertrend line is the trailing stop: a long closes when Supertrend flips down and a short
+    when it flips up.
     """
 
     def __init__(self):
         super(supertrend_stochastic_strategy, self).__init__()
-
-        self._supertrendPeriod = self.Param("SupertrendPeriod", 10) \
-            .SetDisplay("Supertrend Period", "Supertrend ATR period length", "Supertrend")
-
-        self._supertrendMultiplier = self.Param("SupertrendMultiplier", 3.0) \
-            .SetDisplay("Supertrend Multiplier", "Supertrend ATR multiplier", "Supertrend")
-
-        self._stochPeriod = self.Param("StochPeriod", 14) \
-            .SetDisplay("Stochastic Period", "Stochastic oscillator period", "Stochastic")
-
-        self._stochK = self.Param("StochK", 3) \
-            .SetDisplay("Stochastic %K", "Stochastic %K period", "Stochastic")
-
-        self._stochD = self.Param("StochD", 3) \
-            .SetDisplay("Stochastic %D", "Stochastic %D period", "Stochastic")
-
-        self._cooldownBars = self.Param("CooldownBars", 8) \
-            .SetRange(1, 50) \
-            .SetDisplay("Cooldown Bars", "Bars between trades", "General")
-
-        self._candleType = self.Param("CandleType", tf(5)) \
-            .SetDisplay("Candle Type", "Type of candles to use", "General")
-
-        self._stopLossPercent = self.Param("StopLossPercent", 1.0) \
-            .SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
-
-        self._supertrend = None
-        self._stochastic = None
-        self._cooldown = 0
+        self._supertrend_period = self.Param("SupertrendPeriod", 10).SetGreaterThanZero().SetDisplay("Supertrend Period", "ATR period of Supertrend", "Supertrend")
+        self._supertrend_multiplier = self.Param("SupertrendMultiplier", 3.0).SetGreaterThanZero().SetDisplay("Supertrend Multiplier", "ATR multiplier of Supertrend", "Supertrend")
+        self._stoch_period = self.Param("StochPeriod", 14).SetGreaterThanZero().SetDisplay("Stochastic Period", "Lookback period of the raw stochastic", "Stochastic")
+        self._stoch_k = self.Param("StochK", 3).SetGreaterThanZero().SetDisplay("Stochastic %K", "Smoothing period of %K", "Stochastic")
+        self._stoch_oversold = self.Param("StochOversold", 20.0).SetDisplay("Stochastic Oversold", "%K level for longs", "Stochastic")
+        self._stoch_overbought = self.Param("StochOverbought", 80.0).SetDisplay("Stochastic Overbought", "%K level for shorts", "Stochastic")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles to use", "General")
 
     @property
-    def CandleType(self):
-        return self._candleType.Value
-
-    def OnReseted(self):
-        super(supertrend_stochastic_strategy, self).OnReseted()
-        self._supertrend = None
-        self._stochastic = None
-        self._cooldown = 0
+    def candle_type(self):
+        return self._candle_type.Value
 
     def OnStarted2(self, time):
         super(supertrend_stochastic_strategy, self).OnStarted2(time)
-        self._cooldown = 0
 
-        self._supertrend = SuperTrend()
-        self._supertrend.Length = self._supertrendPeriod.Value
-        self._supertrend.Multiplier = self._supertrendMultiplier.Value
+        supertrend = SuperTrend()
+        supertrend.Length = self._supertrend_period.Value
+        supertrend.Multiplier = Decimal(self._supertrend_multiplier.Value)
+        # The D line of the core oscillator is the smoothed %K.
+        stochastic = StochasticOscillator()
+        stochastic.K.Length = self._stoch_period.Value
+        stochastic.D.Length = self._stoch_k.Value
 
-        self._stochastic = StochasticOscillator()
-        self._stochastic.K.Length = self._stochK.Value
-        self._stochastic.D.Length = self._stochD.Value
-
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription.BindEx(self._supertrend, self._stochastic, self.ProcessCandle).Start()
-
-        self.StartProtection(
-            takeProfit=Unit(2, UnitTypes.Percent),
-            stopLoss=Unit(self._stopLossPercent.Value, UnitTypes.Percent)
-        )
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.BindEx(supertrend, stochastic, self._process_candle).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, self._supertrend)
+            self.DrawIndicator(area, supertrend)
             self.DrawOwnTrades(area)
+            oscillators = self.CreateChartArea()
+            if oscillators is not None:
+                self.DrawIndicator(oscillators, stochastic)
 
-    def ProcessCandle(self, candle, st_result, stoch_result):
+    def _process_candle(self, candle, supertrend_value, stochastic_value):
         if candle.State != CandleStates.Finished:
+            return
+
+        if not supertrend_value.IsFormed or not stochastic_value.IsFormed or stochastic_value.D is None:
             return
 
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        # Check SuperTrend value type
-        is_bullish = st_result.IsUpTrend
+        line = supertrend_value.Value
+        is_up_trend = supertrend_value.IsUpTrend
+        k = stochastic_value.D
+        close = candle.ClosePrice
 
-        # Get stochastic K
-        stoch_k_val = stoch_result.K
-        if stoch_k_val is None:
-            return
-        stoch_k = float(stoch_k_val)
-
-        if self._cooldown > 0:
-            self._cooldown -= 1
-            return
-
-        if self.Position != 0:
-            return
-
-        # Buy: bullish supertrend + stochastic oversold area
-        if is_bullish and stoch_k < 30:
-            self.BuyMarket()
-            self._cooldown = int(self._cooldownBars.Value)
-        # Sell: bearish supertrend + stochastic overbought area
-        elif not is_bullish and stoch_k > 70:
-            self.SellMarket()
-            self._cooldown = int(self._cooldownBars.Value)
+        if close > line and k < Decimal(self._stoch_oversold.Value) and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+        elif close < line and k > Decimal(self._stoch_overbought.Value) and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
+        elif self.Position > 0 and not is_up_trend:
+            self.SellMarket(self.Position)
+        elif self.Position < 0 and is_up_trend:
+            self.BuyMarket(-self.Position)
 
     def CreateClone(self):
         return supertrend_stochastic_strategy()

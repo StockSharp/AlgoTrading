@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,8 +11,10 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Supertrend + Stochastic strategy.
-/// Strategy enters trades when Supertrend indicates trend direction and Stochastic confirms with oversold/overbought conditions.
+/// Supertrend Stochastic strategy.
+/// A close above the Supertrend line with %K below StochOversold goes long and a close below it with %K above StochOverbought goes short,
+/// reversing an opposite position; %K is the stochastic over StochPeriod candles smoothed over StochK candles. The Supertrend line is the trailing stop: a long closes when Supertrend flips down and a short
+/// when it flips up.
 /// </summary>
 public class SupertrendStochasticStrategy : Strategy
 {
@@ -23,18 +22,12 @@ public class SupertrendStochasticStrategy : Strategy
 	private readonly StrategyParam<decimal> _supertrendMultiplier;
 	private readonly StrategyParam<int> _stochPeriod;
 	private readonly StrategyParam<int> _stochK;
-	private readonly StrategyParam<int> _stochD;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stochOversold;
+	private readonly StrategyParam<decimal> _stochOverbought;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _stopLossPercent;
-	private int _cooldown;
-
-	// Indicators
-	private SuperTrend _supertrend;
-	private StochasticOscillator _stochastic;
 
 	/// <summary>
-	/// Supertrend period.
+	/// ATR period of Supertrend.
 	/// </summary>
 	public int SupertrendPeriod
 	{
@@ -43,7 +36,7 @@ public class SupertrendStochasticStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Supertrend multiplier.
+	/// ATR multiplier of Supertrend.
 	/// </summary>
 	public decimal SupertrendMultiplier
 	{
@@ -52,7 +45,7 @@ public class SupertrendStochasticStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stochastic period.
+	/// Lookback period of the raw stochastic.
 	/// </summary>
 	public int StochPeriod
 	{
@@ -61,7 +54,7 @@ public class SupertrendStochasticStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stochastic %K period.
+	/// Smoothing period of %K.
 	/// </summary>
 	public int StochK
 	{
@@ -70,21 +63,21 @@ public class SupertrendStochasticStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stochastic %D period.
+	/// %K level for longs.
 	/// </summary>
-	public int StochD
+	public decimal StochOversold
 	{
-		get => _stochD.Value;
-		set => _stochD.Value = value;
+		get => _stochOversold.Value;
+		set => _stochOversold.Value = value;
 	}
 
 	/// <summary>
-	/// Bars to wait between trades.
+	/// %K level for shorts.
 	/// </summary>
-	public int CooldownBars
+	public decimal StochOverbought
 	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
+		get => _stochOverbought.Value;
+		set => _stochOverbought.Value = value;
 	}
 
 	/// <summary>
@@ -97,61 +90,34 @@ public class SupertrendStochasticStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop-loss percentage.
-	/// </summary>
-	public decimal StopLossPercent
-	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
-	}
-
-	/// <summary>
 	/// Constructor.
 	/// </summary>
 	public SupertrendStochasticStrategy()
 	{
 		_supertrendPeriod = Param(nameof(SupertrendPeriod), 10)
 			.SetGreaterThanZero()
-			.SetDisplay("Supertrend Period", "Supertrend ATR period length", "Supertrend")
-			
-			.SetOptimize(5, 20, 1);
+			.SetDisplay("Supertrend Period", "ATR period of Supertrend", "Supertrend");
 
-		_supertrendMultiplier = Param(nameof(SupertrendMultiplier), 3.0m)
+		_supertrendMultiplier = Param(nameof(SupertrendMultiplier), 3m)
 			.SetGreaterThanZero()
-			.SetDisplay("Supertrend Multiplier", "Supertrend ATR multiplier", "Supertrend")
-			
-			.SetOptimize(1.0m, 5.0m, 0.5m);
+			.SetDisplay("Supertrend Multiplier", "ATR multiplier of Supertrend", "Supertrend");
 
 		_stochPeriod = Param(nameof(StochPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("Stochastic Period", "Stochastic oscillator period", "Stochastic")
-			
-			.SetOptimize(5, 30, 5);
+			.SetDisplay("Stochastic Period", "Lookback period of the raw stochastic", "Stochastic");
 
 		_stochK = Param(nameof(StochK), 3)
 			.SetGreaterThanZero()
-			.SetDisplay("Stochastic %K", "Stochastic %K period", "Stochastic")
-			
-			.SetOptimize(1, 10, 1);
+			.SetDisplay("Stochastic %K", "Smoothing period of %K", "Stochastic");
 
-		_stochD = Param(nameof(StochD), 3)
-			.SetGreaterThanZero()
-			.SetDisplay("Stochastic %D", "Stochastic %D period", "Stochastic")
-			
-			.SetOptimize(1, 10, 1);
+		_stochOversold = Param(nameof(StochOversold), 20m)
+			.SetDisplay("Stochastic Oversold", "%K level for longs", "Stochastic");
 
-		_cooldownBars = Param(nameof(CooldownBars), 8)
-			.SetRange(1, 50)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "General");
+		_stochOverbought = Param(nameof(StochOverbought), 80m)
+			.SetDisplay("Stochastic Overbought", "%K level for shorts", "Stochastic");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_stopLossPercent = Param(nameof(StopLossPercent), 1.0m)
-			.SetNotNegative()
-			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
-			
-			.SetOptimize(0.5m, 2.0m, 0.5m);
 	}
 
 	/// <inheritdoc />
@@ -161,92 +127,63 @@ public class SupertrendStochasticStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_supertrend = null;
-		_stochastic = null;
-		_cooldown = 0;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
-		_supertrend = new()
+		var supertrend = new SuperTrend { Length = SupertrendPeriod, Multiplier = SupertrendMultiplier };
+		// The D line of the core oscillator is the smoothed %K.
+		var stochastic = new StochasticOscillator
 		{
-			Length = SupertrendPeriod,
-			Multiplier = SupertrendMultiplier
+			K = { Length = StochPeriod },
+			D = { Length = StochK },
 		};
-
-		_stochastic = new()
-		{
-			K = { Length = StochK },
-			D = { Length = StochD },
-		};
-
-		Indicators.Add(_supertrend);
-		Indicators.Add(_stochastic);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.BindEx(supertrend, stochastic, ProcessCandle)
 			.Start();
-
-		StartProtection(
-			takeProfit: new Unit(2, UnitTypes.Percent),
-			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent));
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _supertrend);
+			DrawIndicator(area, supertrend);
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, stochastic);
+			}
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue supertrendValue, IIndicatorValue stochasticValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var stResult = _supertrend.Process(candle);
-		var stochResult = _stochastic.Process(candle);
-
-		if (!_supertrend.IsFormed || !_stochastic.IsFormed)
+		if (!supertrendValue.IsFormed || !stochasticValue.IsFormed || supertrendValue is not SuperTrendIndicatorValue trend)
 			return;
 
-		if (stResult is not SuperTrendIndicatorValue stVal)
+		if (stochasticValue is not IStochasticOscillatorValue { D: decimal k })
 			return;
 
-		if (stochResult is not StochasticOscillatorValue stochTyped || stochTyped.K is not decimal stochK)
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var isBullish = stVal.IsUpTrend;
+		var line = trend.Value;
+		var isUpTrend = trend.IsUpTrend;
+		var close = candle.ClosePrice;
 
-		if (_cooldown > 0)
-		{
-			_cooldown--;
-			return;
-		}
-
-		if (Position != 0)
-			return;
-
-		// Buy: bullish supertrend + stochastic oversold area
-		if (isBullish && stochK < 30)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-		// Sell: bearish supertrend + stochastic overbought area
-		else if (!isBullish && stochK > 70)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
+		if (close > line && k < StochOversold && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (close < line && k > StochOverbought && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
+		else if (Position > 0 && !isUpTrend)
+			SellMarket(Position);
+		else if (Position < 0 && isUpTrend)
+			BuyMarket(-Position);
 	}
 }

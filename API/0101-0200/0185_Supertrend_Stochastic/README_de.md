@@ -22,8 +22,10 @@ Am besten für Momentum-Trader geeignet, die klare Trendsignale benötigen. ATR-
   - `SupertrendMultiplier` = 3.0m
   - `StochPeriod` = 14
   - `StochK` = 3
-  - `StochD` = 3
+  - `StochOversold` = 20
+  - `StochOverbought` = 80
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    Die Werte 20 und 80 in den Regeln sind die Standardwerte von StochOversold und StochOverbought. %K ist die Stochastik über StochPeriod Kerzen, geglättet über StochK Kerzen; %D spielt keine Rolle. Der Stop ist die Supertrend-Linie selbst, deren Abstand aus ihrem ATR stammt: Ein Long schließt, wenn der Supertrend nach unten dreht, ein Short, wenn er nach oben dreht. Ein Einstiegssignal gegen eine offene Position dreht sie.
 - **Filter**:
   - Kategorie: Mean Reversion
   - Richtung: Beide

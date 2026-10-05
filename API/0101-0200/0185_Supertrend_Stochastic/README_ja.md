@@ -22,8 +22,10 @@ Supetrendがトレンドを示し、Stochasticが一時的な逆方向の動き�
   - `SupertrendMultiplier` = 3.0m
   - `StochPeriod` = 14
   - `StochK` = 3
-  - `StochD` = 3
+  - `StochOversold` = 20
+  - `StochOverbought` = 80
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    ルール中の20と80はStochOversoldとStochOverboughtの既定値です。%KはStochPeriod本のストキャスティクスをStochK本で平滑化した値で、%Dは関与しません。ストップはSupertrendのライン自体で、その距離はATRから決まります。ロングはSupertrendが下向きに転換したとき、ショートは上向きに転換したときに決済します。 保有ポジションと逆方向のエントリーシグナルはドテンになります。
 - **フィルター**:
   - カテゴリ: 平均回帰
   - 方向: 両方
