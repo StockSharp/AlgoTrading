@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using StockSharp.Algo.Indicators;
+
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -10,40 +10,31 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// IU Opening Range Breakout Strategy.
-/// Trades breakouts of the first session bar with risk to reward management and daily trade limit.
+/// IU opening range breakout strategy.
+/// The first candle of each UTC day sets the opening range. Before EndTime a close crossing above its high goes long and a close
+/// crossing below its low goes short, reversing an opposite position, with at most MaxTrades entries a day. The stop sits at the
+/// previous candle's low (long) or high (short), the target RiskReward times the stop distance away, and any open position is
+/// closed at EndTime.
 /// </summary>
 public class IUOpeningRangeBreakoutStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _riskReward;
 	private readonly StrategyParam<int> _maxTrades;
-	private readonly StrategyParam<int> _cooldownDays;
 	private readonly StrategyParam<TimeSpan> _endTime;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _orHigh;
-	private decimal _orLow;
-	private bool _rangeSet;
-	private decimal _stopPrice;
-	private decimal _targetPrice;
-	private int _tradesToday;
 	private DateTime _currentDay;
-	private DateTime _nextTradeDate;
-	private decimal _prevHigh;
-	private decimal _prevLow;
-	private int _orBarCount;
+	private decimal? _rangeHigh;
+	private decimal? _rangeLow;
+	private decimal? _prevHigh;
+	private decimal? _prevLow;
+	private decimal? _prevClose;
+	private decimal? _stopPrice;
+	private decimal? _targetPrice;
+	private int _tradesToday;
 
 	/// <summary>
-	/// Candle type for processing.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Risk to reward ratio.
+	/// Target distance as a multiple of the stop distance.
 	/// </summary>
 	public decimal RiskReward
 	{
@@ -52,7 +43,7 @@ public class IUOpeningRangeBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Maximum number of trades per day.
+	/// Maximum entries per day.
 	/// </summary>
 	public int MaxTrades
 	{
@@ -61,16 +52,7 @@ public class IUOpeningRangeBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Minimum days between entries.
-	/// </summary>
-	public int CooldownDays
-	{
-		get => _cooldownDays.Value;
-		set => _cooldownDays.Value = value;
-	}
-
-	/// <summary>
-	/// Time to close all positions.
+	/// Time of day (UTC) when positions are closed and entries stop.
 	/// </summary>
 	public TimeSpan EndTime
 	{
@@ -79,28 +61,33 @@ public class IUOpeningRangeBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
 	/// Constructor.
 	/// </summary>
 	public IUOpeningRangeBreakoutStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
-
 		_riskReward = Param(nameof(RiskReward), 2m)
 			.SetGreaterThanZero()
-			.SetDisplay("Risk/Reward", "Risk to reward ratio", "General")
-			
+			.SetDisplay("Risk/Reward", "Target distance as a multiple of the stop distance", "Risk")
 			.SetOptimize(1m, 3m, 0.5m);
 
 		_maxTrades = Param(nameof(MaxTrades), 2)
 			.SetGreaterThanZero()
-			.SetDisplay("Max Trades", "Maximum trades per day", "General");
-
-		_cooldownDays = Param(nameof(CooldownDays), 3)
-			.SetDisplay("Cooldown Days", "Minimum days between entries", "General");
+			.SetDisplay("Max Trades", "Maximum entries per day", "General");
 
 		_endTime = Param(nameof(EndTime), new TimeSpan(15, 0, 0))
-			.SetDisplay("End Time", "Daily close time (UTC)", "General");
+			.SetDisplay("End Time", "Time of day (UTC) when positions are closed", "General");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -113,17 +100,16 @@ public class IUOpeningRangeBreakoutStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_orHigh = 0m;
-		_orLow = 0m;
-		_rangeSet = false;
-		_stopPrice = 0m;
-		_targetPrice = 0m;
-		_tradesToday = 0;
+		ResetState();
+	}
+
+	private void ResetState()
+	{
 		_currentDay = default;
-		_nextTradeDate = DateTime.MinValue;
-		_prevHigh = 0m;
-		_prevLow = 0m;
-		_orBarCount = 0;
+		_rangeHigh = _rangeLow = null;
+		_prevHigh = _prevLow = _prevClose = null;
+		_stopPrice = _targetPrice = null;
+		_tradesToday = 0;
 	}
 
 	/// <inheritdoc />
@@ -131,85 +117,96 @@ public class IUOpeningRangeBreakoutStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_currentDay = time.Date;
-		_nextTradeDate = DateTime.MinValue;
+		ResetState();
 
-		var dummyEma1 = new ExponentialMovingAverage { Length = 10 };
-		var dummyEma2 = new ExponentialMovingAverage { Length = 20 };
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(dummyEma1, dummyEma2, ProcessCandle).Start();
+		subscription
+			.Bind(ProcessCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal d1, decimal d2)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var openTime = candle.OpenTime;
+		var prevHigh = _prevHigh;
+		var prevLow = _prevLow;
+		var prevClose = _prevClose;
+		_prevHigh = candle.HighPrice;
+		_prevLow = candle.LowPrice;
+		_prevClose = candle.ClosePrice;
 
-		// Reset for new day
-		if (openTime.Date != _currentDay)
+		var day = candle.OpenTime.Date;
+		if (_currentDay != day)
 		{
-			_currentDay = openTime.Date;
-			_rangeSet = false;
+			// The first candle of the day is the opening range.
+			_currentDay = day;
+			_rangeHigh = candle.HighPrice;
+			_rangeLow = candle.LowPrice;
 			_tradesToday = 0;
-			_orBarCount = 0;
-			_orHigh = 0m;
-			_orLow = decimal.MaxValue;
-		}
-
-		_orBarCount++;
-		if (!_rangeSet)
-		{
-			_orHigh = Math.Max(_orHigh, candle.HighPrice);
-			_orLow = Math.Min(_orLow, candle.LowPrice);
-			if (_orBarCount >= 2)
-				_rangeSet = true;
-			_prevHigh = candle.HighPrice;
-			_prevLow = candle.LowPrice;
 			return;
 		}
 
-		// Close positions at end of day
-		if (openTime.TimeOfDay >= EndTime && Position != 0)
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (candle.OpenTime.TimeOfDay >= EndTime)
 		{
 			if (Position > 0)
-				SellMarket();
+				SellMarket(Position);
 			else if (Position < 0)
-				BuyMarket();
+				BuyMarket(-Position);
+
+			_stopPrice = _targetPrice = null;
+			return;
 		}
 
-		if (Position == 0 && _tradesToday < MaxTrades && openTime.Date >= _nextTradeDate)
+		if (Position > 0 && _stopPrice is decimal longStop && _targetPrice is decimal longTarget)
 		{
-			if (candle.HighPrice > _orHigh)
+			if (candle.LowPrice <= longStop || candle.HighPrice >= longTarget)
 			{
-				BuyMarket();
-				_tradesToday++;
-				_nextTradeDate = openTime.Date.AddDays(CooldownDays);
-				_stopPrice = _prevLow;
-				_targetPrice = candle.ClosePrice + (candle.ClosePrice - _stopPrice) * RiskReward;
-			}
-			else if (candle.LowPrice < _orLow)
-			{
-				SellMarket();
-				_tradesToday++;
-				_nextTradeDate = openTime.Date.AddDays(CooldownDays);
-				_stopPrice = _prevHigh;
-				_targetPrice = candle.ClosePrice - (_stopPrice - candle.ClosePrice) * RiskReward;
+				SellMarket(Position);
+				_stopPrice = _targetPrice = null;
+				return;
 			}
 		}
-		else if (Position > 0)
+		else if (Position < 0 && _stopPrice is decimal shortStop && _targetPrice is decimal shortTarget)
 		{
-			if (candle.LowPrice <= _stopPrice || candle.HighPrice >= _targetPrice)
-				SellMarket();
-		}
-		else if (Position < 0)
-		{
-			if (candle.HighPrice >= _stopPrice || candle.LowPrice <= _targetPrice)
-				BuyMarket();
+			if (candle.HighPrice >= shortStop || candle.LowPrice <= shortTarget)
+			{
+				BuyMarket(-Position);
+				_stopPrice = _targetPrice = null;
+				return;
+			}
 		}
 
-		_prevHigh = candle.HighPrice;
-		_prevLow = candle.LowPrice;
+		if (_tradesToday >= MaxTrades || _rangeHigh is not decimal high || _rangeLow is not decimal low ||
+			prevClose is not decimal lastClose || prevHigh is not decimal lastHigh || prevLow is not decimal lastLow)
+			return;
+
+		var close = candle.ClosePrice;
+
+		if (lastClose <= high && close > high && Position <= 0 && lastLow < close)
+		{
+			BuyMarket(Volume + Math.Abs(Position));
+			_tradesToday++;
+			_stopPrice = lastLow;
+			_targetPrice = close + (close - lastLow) * RiskReward;
+		}
+		else if (lastClose >= low && close < low && Position >= 0 && lastHigh > close)
+		{
+			SellMarket(Volume + Math.Abs(Position));
+			_tradesToday++;
+			_stopPrice = lastHigh;
+			_targetPrice = close - (lastHigh - close) * RiskReward;
+		}
 	}
 }
