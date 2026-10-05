@@ -11,31 +11,108 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// DeltaRsiOscillatorStrategy using EMA crossover for trend timing.
-/// Enters long on golden cross, short on death cross.
+/// Delta-RSI oscillator strategy.
+/// Delta-RSI is the bar-to-bar change of RSI and its signal line is an EMA of it.
+/// Entries follow BuyCondition: Delta-RSI crossing zero, crossing its signal line or changing direction;
+/// a bullish event opens a long, a bearish event a short (each side enabled by UseLong and UseShort), reversing an opposite position.
+/// Otherwise positions are closed by the opposite event of ExitCondition.
 /// </summary>
 public class DeltaRsiOscillatorStrategy : Strategy
 {
-	private readonly StrategyParam<int> _fastEmaPeriod;
-	private readonly StrategyParam<int> _slowEmaPeriod;
+	/// <summary>
+	/// Delta-RSI events that can trigger entries or exits.
+	/// </summary>
+	public enum DeltaRsiConditions
+	{
+		/// <summary>
+		/// Delta-RSI crosses zero.
+		/// </summary>
+		ZeroCrossing,
+
+		/// <summary>
+		/// Delta-RSI crosses its signal line.
+		/// </summary>
+		SignalLineCrossing,
+
+		/// <summary>
+		/// Delta-RSI changes direction.
+		/// </summary>
+		DirectionChange,
+	}
+
+	private readonly StrategyParam<int> _rsiLength;
+	private readonly StrategyParam<int> _signalLength;
+	private readonly StrategyParam<DeltaRsiConditions> _buyCondition;
+	private readonly StrategyParam<DeltaRsiConditions> _exitCondition;
+	private readonly StrategyParam<bool> _useLong;
+	private readonly StrategyParam<bool> _useShort;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevFastEma;
-	private decimal _prevSlowEma;
+	private ExponentialMovingAverage _signal;
+	private decimal? _prevRsi;
+	private decimal? _prevDelta;
+	private decimal? _prevPrevDelta;
+	private decimal? _prevSignal;
 
-	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
-	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	/// <summary>
+	/// RSI length.
+	/// </summary>
+	public int RsiLength { get => _rsiLength.Value; set => _rsiLength.Value = value; }
+
+	/// <summary>
+	/// EMA length of the signal line.
+	/// </summary>
+	public int SignalLength { get => _signalLength.Value; set => _signalLength.Value = value; }
+
+	/// <summary>
+	/// Event that opens positions.
+	/// </summary>
+	public DeltaRsiConditions BuyCondition { get => _buyCondition.Value; set => _buyCondition.Value = value; }
+
+	/// <summary>
+	/// Event that closes positions.
+	/// </summary>
+	public DeltaRsiConditions ExitCondition { get => _exitCondition.Value; set => _exitCondition.Value = value; }
+
+	/// <summary>
+	/// Allow long trades.
+	/// </summary>
+	public bool UseLong { get => _useLong.Value; set => _useLong.Value = value; }
+
+	/// <summary>
+	/// Allow short trades.
+	/// </summary>
+	public bool UseShort { get => _useShort.Value; set => _useShort.Value = value; }
+
+	/// <summary>
+	/// Candle type.
+	/// </summary>
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
+	/// <summary>
+	/// Constructor.
+	/// </summary>
 	public DeltaRsiOscillatorStrategy()
 	{
-		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+		_rsiLength = Param(nameof(RsiLength), 21)
 			.SetGreaterThanZero()
-			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+			.SetDisplay("RSI Length", "RSI length", "Indicators");
 
-		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+		_signalLength = Param(nameof(SignalLength), 9)
 			.SetGreaterThanZero()
-			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+			.SetDisplay("Signal Length", "EMA length of the signal line", "Indicators");
+
+		_buyCondition = Param(nameof(BuyCondition), DeltaRsiConditions.ZeroCrossing)
+			.SetDisplay("Entry Condition", "Event that opens positions", "Signals");
+
+		_exitCondition = Param(nameof(ExitCondition), DeltaRsiConditions.ZeroCrossing)
+			.SetDisplay("Exit Condition", "Event that closes positions", "Signals");
+
+		_useLong = Param(nameof(UseLong), true)
+			.SetDisplay("Use Long", "Allow long trades", "Signals");
+
+		_useShort = Param(nameof(UseShort), true)
+			.SetDisplay("Use Short", "Allow short trades", "Signals");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -51,8 +128,15 @@ public class DeltaRsiOscillatorStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevFastEma = 0m;
-		_prevSlowEma = 0m;
+		ResetState();
+	}
+
+	private void ResetState()
+	{
+		_prevRsi = null;
+		_prevDelta = null;
+		_prevPrevDelta = null;
+		_prevSignal = null;
 	}
 
 	/// <inheritdoc />
@@ -60,46 +144,81 @@ public class DeltaRsiOscillatorStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
-		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
+		ResetState();
+
+		var rsi = new RelativeStrengthIndex { Length = RsiLength };
+		_signal = new ExponentialMovingAverage { Length = SignalLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(fastEma, slowEma, ProcessCandle)
+			.BindEx(rsi, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, fastEma);
-			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+				DrawIndicator(oscillators, rsi);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue rsiValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_prevFastEma == 0m || _prevSlowEma == 0m)
-		{
-			_prevFastEma = fastEmaValue;
-			_prevSlowEma = slowEmaValue;
+		if (!rsiValue.IsFormed)
 			return;
-		}
 
-		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
-		{
-			BuyMarket();
-		}
-		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
-		{
-			SellMarket();
-		}
+		var rsi = rsiValue.GetValue<decimal>();
+		var prevRsi = _prevRsi;
+		_prevRsi = rsi;
 
-		_prevFastEma = fastEmaValue;
-		_prevSlowEma = slowEmaValue;
+		if (prevRsi is not decimal pr)
+			return;
+
+		var delta = rsi - pr;
+		var signalValue = _signal.Process(delta, candle.ServerTime, true);
+		var signal = signalValue.GetValue<decimal>();
+
+		var prevDelta = _prevDelta;
+		var prevPrevDelta = _prevPrevDelta;
+		var prevSignal = _prevSignal;
+		_prevPrevDelta = _prevDelta;
+		_prevDelta = delta;
+		_prevSignal = signalValue.IsFormed ? signal : null;
+
+		if (!signalValue.IsFormed || prevDelta is not decimal pd || prevPrevDelta is not decimal ppd || prevSignal is not decimal ps)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		bool IsBullish(DeltaRsiConditions condition) => condition switch
+		{
+			DeltaRsiConditions.ZeroCrossing => pd <= 0m && delta > 0m,
+			DeltaRsiConditions.SignalLineCrossing => pd <= ps && delta > signal,
+			_ => pd <= ppd && delta > pd,
+		};
+
+		bool IsBearish(DeltaRsiConditions condition) => condition switch
+		{
+			DeltaRsiConditions.ZeroCrossing => pd >= 0m && delta < 0m,
+			DeltaRsiConditions.SignalLineCrossing => pd >= ps && delta < signal,
+			_ => pd >= ppd && delta < pd,
+		};
+
+		if (UseLong && IsBullish(BuyCondition) && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (UseShort && IsBearish(BuyCondition) && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
+		else if (Position > 0 && IsBearish(ExitCondition))
+			SellMarket(Position);
+		else if (Position < 0 && IsBullish(ExitCondition))
+			BuyMarket(-Position);
 	}
 }
