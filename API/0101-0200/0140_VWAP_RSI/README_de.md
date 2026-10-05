@@ -18,7 +18,11 @@ Ein prozentualer Stop schützt vor Trends, die den Kurs weiter vom VWAP entferne
 - **Stops**: Ja, prozentbasiert
 - **Standardwerte**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `RsiPeriod` = 14
+  - `RsiOversold` = 30
+  - `RsiOverbought` = 70
+    Der Markt handelt rund um die Uhr, daher beginnt der Sitzungs-VWAP mit jedem UTC-Tag neu und gewichtet den typischen Preis jeder Kerze mit ihrem Volumen. Ein Schluss unter VWAP mit RSI unter RsiOversold eröffnet einen Long; ein Schluss über VWAP mit RSI über RsiOverbought einen Short. Ein Gegensignal dreht die Position.
 - **Filter**:
   - Kategorie: Trendfolge
   - Richtung: Beide

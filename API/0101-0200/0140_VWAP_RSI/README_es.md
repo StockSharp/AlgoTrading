@@ -18,7 +18,11 @@ Un stop porcentual protege contra tendencias que continúan alejando el precio d
 - **Stops**: Sí, basado en porcentaje
 - **Valores predeterminados**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `RsiPeriod` = 14
+  - `RsiOversold` = 30
+  - `RsiOverbought` = 70
+    El mercado opera las 24 horas, por lo que el VWAP de la sesión se reinicia cada día UTC y pondera el precio típico de cada vela por su volumen. Un cierre por debajo del VWAP con RSI por debajo de RsiOversold abre un largo; un cierre por encima del VWAP con RSI por encima de RsiOverbought abre un corto. Una señal opuesta invierte la posición.
 - **Filtros**:
   - Categoría: Seguimiento de tendencia
   - Dirección: Ambos

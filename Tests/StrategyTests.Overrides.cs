@@ -4403,6 +4403,44 @@ public abstract partial class StrategyTests
 	public Task S0139_PercentStopWorksBetweenFinishedBars()
 		=> CheckPercentStopBetweenBars("0139_ATR_MACD", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
 
+	[TestMethod]
+	[TestCategory("Shard01")]
+	[DataRow(14, 30.0, 70.0, false)]
+	[DataRow(10, 35.0, 65.0, true)]
+	public Task S0140_RsiExtremesAwayFromTheDailyVwapAreFaded(int rsiPeriod, double oversold, double overbought, bool secondary)
+	{
+		var rsi = new RelativeStrengthIndex { Length = rsiPeriod };
+		DateTime? day = null;
+		decimal priceVolume = 0m, volume = 0m;
+		return CheckReversingSignals("0140_VWAP_RSI", secondary, s =>
+			{
+				AreEqual(14, s.Parameters["RsiPeriod"].Value);
+				AreEqual(30m, Convert.ToDecimal(s.Parameters["RsiOversold"].Value));
+				AreEqual(70m, Convert.ToDecimal(s.Parameters["RsiOverbought"].Value));
+				SetParam(s, "RsiPeriod", rsiPeriod);
+				SetParam(s, "RsiOversold", oversold);
+				SetParam(s, "RsiOverbought", overbought);
+			},
+			candle =>
+			{
+				if (day != candle.OpenTime.Date) { day = candle.OpenTime.Date; priceVolume = 0m; volume = 0m; }
+				priceVolume += (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3 * candle.TotalVolume;
+				volume += candle.TotalVolume;
+				var r = rsi.Process(candle);
+				if (!r.IsFormed || volume <= 0m) return 0;
+				var vwap = priceVolume / volume;
+				var value = r.GetValue<decimal>();
+				if (candle.ClosePrice < vwap && value < (decimal)oversold) return 1;
+				if (candle.ClosePrice > vwap && value > (decimal)overbought) return -1;
+				return 0;
+			}, "Every order must fade an RSI extreme on the far side of the UTC-day VWAP.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard01")]
+	public Task S0140_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0140_VWAP_RSI", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

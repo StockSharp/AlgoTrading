@@ -18,7 +18,11 @@ A percent stop guards against trends that continue to drive price away from VWAP
 - **Stops**: Yes, percent based
 - **Default Values**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `RsiPeriod` = 14
+  - `RsiOversold` = 30
+  - `RsiOverbought` = 70
+    The market trades around the clock, so the session VWAP restarts each UTC day and weighs the typical price of each candle by its volume. A close below VWAP with RSI below RsiOversold goes long; a close above VWAP with RSI above RsiOverbought goes short. An opposite signal reverses the position.
 - **Filters**:
   - Category: Trend following
   - Direction: Both

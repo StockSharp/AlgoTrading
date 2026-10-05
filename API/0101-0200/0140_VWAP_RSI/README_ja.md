@@ -18,7 +18,11 @@ VWAP RSI は、出来高加重平均価格を使ってセッション中の適�
 - **ストップ**: はい、パーセントベース
 - **デフォルト値**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `RsiPeriod` = 14
+  - `RsiOversold` = 30
+  - `RsiOverbought` = 70
+    市場は24時間取引のため、セッションVWAPはUTCの毎日リセットされ、各足の典型価格を出来高で加重します。終値がVWAPより下でRSIがRsiOversold未満なら買い、終値がVWAPより上でRSIがRsiOverboughtを超えれば売ります。反対シグナルでドテンします。
 - **フィルター**:
   - カテゴリ: トレンドフォロー
   - 方向: 両方
