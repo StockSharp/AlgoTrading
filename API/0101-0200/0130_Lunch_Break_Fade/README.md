@@ -18,7 +18,10 @@ A percent stop manages risk if the trend resumes instead of fading.
 - **Stops**: Yes, percent based
 - **Default Values**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `LunchHour` = 12
+  - `LunchEndHour` = 14
+    The market trades around the clock, so the session is the UTC day. At the close of the candle ending at LunchHour the strategy enters against the move from the day's open and covers at LunchEndHour.
 - **Filters**:
   - Category: Intraday
   - Direction: Both

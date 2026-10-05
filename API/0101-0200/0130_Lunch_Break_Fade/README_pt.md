@@ -18,7 +18,10 @@ Um stop percentual gerencia o risco caso a tendência retome em vez de esmorecer
 - **Stops**: Sim, baseado em percentual
 - **Valores padrão**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `LunchHour` = 12
+  - `LunchEndHour` = 14
+    O mercado negocia 24 horas, por isso a sessão é o dia UTC. No fechamento do candle que termina em LunchHour a estratégia entra contra o movimento desde a abertura do dia e encerra em LunchEndHour.
 - **Filtros**:
   - Categoria: Intradiário
   - Direção: Ambos

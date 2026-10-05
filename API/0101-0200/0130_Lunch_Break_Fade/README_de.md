@@ -18,7 +18,10 @@ Ein prozentualer Stop steuert das Risiko, falls der Trend wieder aufgenommen wir
 - **Stops**: Ja, prozentbasiert
 - **Standardwerte**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `LunchHour` = 12
+  - `LunchEndHour` = 14
+    Der Markt handelt rund um die Uhr, daher ist die Sitzung der UTC-Tag. Zum Schluss der Kerze, die um LunchHour endet, steigt die Strategie gegen die Bewegung seit der Tageseröffnung ein und schließt um LunchEndHour.
 - **Filter**:
   - Kategorie: Intraday
   - Richtung: Beide

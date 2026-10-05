@@ -16,7 +16,10 @@
 - **止损**：是，按百分比
 - **默认值**:
   - `CandleType` = 15分钟
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `MiddayHour` = 12
+  - `AfternoonHour` = 16
+    市场全天候交易，因此交易时段按UTC自然日计算。 早盘走势为当日开盘价到MiddayHour结束的K线收盘价的变化。在MiddayHour与AfternoonHour之间，策略在第一根逆向收盘的K线上逆势入场一次，并在AfternoonHour平仓。
 - **过滤器**:
   - 类别：日内
   - 方向：双向

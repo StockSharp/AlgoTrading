@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using Ecng.Common;
 
@@ -11,50 +12,41 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Implementation of Open Drive trading strategy.
-/// Trades on strong gap openings relative to previous close using ATR filter and MA trend.
+/// Open Drive strategy.
+/// The market trades around the clock, so the session is the UTC day.
+/// The first candle of each UTC day is the opening drive when its volume exceeds the average of the previous VolumePeriod candles;
+/// the strategy joins its direction at its close. The position closes on the first candle that closes against it, when the drive stalls,
+/// and a trailing percent stop follows it as price extends.
 /// </summary>
 public class OpenDriveStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _atrMultiplier;
-	private readonly StrategyParam<int> _atrPeriod;
-	private readonly StrategyParam<int> _maPeriod;
+	private readonly StrategyParam<int> _volumePeriod;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
 
-	private decimal _prevClosePrice;
-	private decimal _atrValue;
-	private int _cooldown;
+	private DateTime? _day;
+	private readonly List<decimal> _volumes = [];
 
 	/// <summary>
-	/// ATR multiplier for gap size.
+	/// Previous candles the opening volume is compared with.
 	/// </summary>
-	public decimal AtrMultiplier
+	public int VolumePeriod
 	{
-		get => _atrMultiplier.Value;
-		set => _atrMultiplier.Value = value;
+		get => _volumePeriod.Value;
+		set => _volumePeriod.Value = value;
 	}
 
 	/// <summary>
-	/// ATR period.
+	/// Trailing stop loss percentage.
 	/// </summary>
-	public int AtrPeriod
+	public decimal StopLossPercent
 	{
-		get => _atrPeriod.Value;
-		set => _atrPeriod.Value = value;
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
 	}
 
 	/// <summary>
-	/// Moving average period.
-	/// </summary>
-	public int MaPeriod
-	{
-		get => _maPeriod.Value;
-		set => _maPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for strategy.
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -63,37 +55,20 @@ public class OpenDriveStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Cooldown bars between trades.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="OpenDriveStrategy"/>.
+	/// Constructor.
 	/// </summary>
 	public OpenDriveStrategy()
 	{
-		_atrMultiplier = Param(nameof(AtrMultiplier), 0.3m)
+		_volumePeriod = Param(nameof(VolumePeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("ATR Multiplier", "Multiplier for ATR to define gap size", "Strategy");
+			.SetDisplay("Volume Period", "Previous candles the opening volume is compared with", "Session");
 
-		_atrPeriod = Param(nameof(AtrPeriod), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("ATR Period", "Period for ATR calculation", "Strategy");
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Trailing stop loss percentage", "Risk");
 
-		_maPeriod = Param(nameof(MaPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("MA Period", "Moving average period for trend confirmation", "Strategy");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles for strategy", "Strategy");
-
-		_cooldownBars = Param(nameof(CooldownBars), 30)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "General")
-			.SetRange(5, 500);
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -106,9 +81,8 @@ public class OpenDriveStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevClosePrice = 0;
-		_atrValue = 0;
-		_cooldown = 0;
+		_day = null;
+		_volumes.Clear();
 	}
 
 	/// <inheritdoc />
@@ -116,69 +90,84 @@ public class OpenDriveStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var sma = new SimpleMovingAverage { Length = MaPeriod };
-		var atr = new AverageTrueRange { Length = AtrPeriod };
+		_day = null;
+		_volumes.Clear();
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(sma, atr, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
 
-		StartProtection(
-			takeProfit: new Unit(3, UnitTypes.Percent),
-			stopLoss: new Unit(2, UnitTypes.Percent));
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), isStopTrailing: true, useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal smaValue, decimal atrValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// The high-level handler activates native protection before this callback, also between signal bars.
+	}
+
+	private void ClosePosition()
+	{
+		if (Position > 0)
+			SellMarket(Position);
+		else if (Position < 0)
+			BuyMarket(-Position);
+	}
+
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// indicators checked via Bind
+		var day = candle.OpenTime.Date;
+		var firstOfDay = _day != day;
 
-		_atrValue = atrValue;
+		if (firstOfDay)
+			_day = day;
+
+		var average = _volumes.Count == VolumePeriod ? _volumes.Average() : (decimal?)null;
+
+		_volumes.Add(candle.TotalVolume);
+
+		if (_volumes.Count > VolumePeriod)
+			_volumes.RemoveAt(0);
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
 
 		var close = candle.ClosePrice;
-		var open = candle.OpenPrice;
 
-		if (_cooldown > 0)
+		if (Position > 0)
 		{
-			_cooldown--;
-			_prevClosePrice = close;
-			return;
+			if (close < candle.OpenPrice)
+				SellMarket(Position);
 		}
-
-		// Detect strong momentum candle (body exceeds ATR * multiplier)
-		if (_prevClosePrice > 0 && atrValue > 0)
+		else if (Position < 0)
 		{
-			var body = close - open;
-			var bodySize = Math.Abs(body);
-
-			if (bodySize > atrValue * AtrMultiplier && Position == 0)
-			{
-				// Bullish momentum + above MA = Buy
-				if (body > 0 && close > smaValue)
-				{
-					BuyMarket();
-					_cooldown = CooldownBars;
-				}
-				// Bearish momentum + below MA = Sell short
-				else if (body < 0 && close < smaValue)
-				{
-					SellMarket();
-					_cooldown = CooldownBars;
-				}
-			}
+			if (close > candle.OpenPrice)
+				BuyMarket(-Position);
 		}
-
-		_prevClosePrice = close;
+		else if (firstOfDay && average is decimal avgVolume && candle.TotalVolume > avgVolume)
+		{
+			if (close > candle.OpenPrice)
+				BuyMarket(Volume);
+			else if (close < candle.OpenPrice)
+				SellMarket(Volume);
+		}
 	}
 }

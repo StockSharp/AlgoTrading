@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using Ecng.Common;
 
@@ -11,32 +12,53 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Implementation of Midday Reversal trading strategy.
-/// Trades on price reversals that occur around midday, using MA for trend confirmation.
+/// Midday Reversal strategy.
+/// The market trades around the clock, so the session is the UTC day.
+/// The morning move runs from the UTC day's open to the close at MiddayHour. From then until AfternoonHour, the first candle that closes
+/// against that move opens a position against it, once a day. The position closes at the candle ending at AfternoonHour,
+/// and a percent stop limits the loss.
 /// </summary>
 public class MiddayReversalStrategy : Strategy
 {
-	private readonly StrategyParam<int> _maPeriod;
+	private readonly StrategyParam<int> _middayHour;
+	private readonly StrategyParam<int> _afternoonHour;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
 
-	private SimpleMovingAverage _ma;
-
-	private decimal _prevClose;
-	private decimal _prevPrevClose;
-	private int _cooldown;
+	private DateTime? _day;
+	private decimal _dayOpen;
+	private int _morning;
+	private bool _tradedToday;
 
 	/// <summary>
-	/// Moving average period.
+	/// UTC hour that ends the morning.
 	/// </summary>
-	public int MaPeriod
+	public int MiddayHour
 	{
-		get => _maPeriod.Value;
-		set => _maPeriod.Value = value;
+		get => _middayHour.Value;
+		set => _middayHour.Value = value;
 	}
 
 	/// <summary>
-	/// Candle type for strategy.
+	/// UTC hour by which the reversal must have worked.
+	/// </summary>
+	public int AfternoonHour
+	{
+		get => _afternoonHour.Value;
+		set => _afternoonHour.Value = value;
+	}
+
+	/// <summary>
+	/// Stop loss percentage from entry price.
+	/// </summary>
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -45,29 +67,24 @@ public class MiddayReversalStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Cooldown bars between trades.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="MiddayReversalStrategy"/>.
+	/// Constructor.
 	/// </summary>
 	public MiddayReversalStrategy()
 	{
-		_maPeriod = Param(nameof(MaPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("MA Period", "Moving average period", "Strategy");
+		_middayHour = Param(nameof(MiddayHour), 12)
+			.SetRange(0, 23)
+			.SetDisplay("Midday Hour", "UTC hour that ends the morning", "Session");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles for strategy", "Strategy");
+		_afternoonHour = Param(nameof(AfternoonHour), 16)
+			.SetRange(0, 23)
+			.SetDisplay("Afternoon Hour", "UTC hour by which the reversal must have worked", "Session");
 
-		_cooldownBars = Param(nameof(CooldownBars), 30)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "General")
-			.SetRange(5, 500);
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -80,10 +97,10 @@ public class MiddayReversalStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_ma = default;
-		_prevClose = 0;
-		_prevPrevClose = 0;
-		_cooldown = 0;
+		_day = null;
+		_dayOpen = default;
+		_morning = 0;
+		_tradedToday = false;
 	}
 
 	/// <inheritdoc />
@@ -91,88 +108,96 @@ public class MiddayReversalStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_ma = new SimpleMovingAverage { Length = MaPeriod };
+		_day = null;
+		_dayOpen = default;
+		_morning = 0;
+		_tradedToday = false;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_ma, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
+
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _ma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal maValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// The high-level handler activates native protection before this callback, also between signal bars.
+	}
+
+	private void ClosePosition()
+	{
+		if (Position > 0)
+			SellMarket(Position);
+		else if (Position < 0)
+			BuyMarket(-Position);
+	}
+
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		var day = candle.OpenTime.Date;
+		var firstOfDay = _day != day;
+
+		if (firstOfDay)
+		{
+			_day = day;
+			_dayOpen = candle.OpenPrice;
+			_morning = 0;
+			_tradedToday = false;
+		}
+
+		var frame = CandleType.Arg is TimeSpan tf ? tf : TimeSpan.Zero;
+		var closeTime = candle.OpenTime + frame;
+		var endsAtMidday = closeTime == day.AddHours(MiddayHour);
+
+		if (endsAtMidday)
+			_morning = Math.Sign(candle.ClosePrice - _dayOpen);
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var close = candle.ClosePrice;
-		var hour = candle.OpenTime.Hour;
-
-		if (_prevClose == 0)
+		if (Position != 0)
 		{
-			_prevClose = close;
+			if (closeTime >= day.AddHours(AfternoonHour))
+				ClosePosition();
+
 			return;
 		}
 
-		if (_prevPrevClose == 0)
-		{
-			_prevPrevClose = _prevClose;
-			_prevClose = close;
+		var window = closeTime > day.AddHours(MiddayHour) && closeTime < day.AddHours(AfternoonHour);
+
+		if (!window || _tradedToday || _morning == 0)
 			return;
-		}
 
-		if (_cooldown > 0)
+		var direction = Math.Sign(candle.ClosePrice - candle.OpenPrice);
+
+		if (direction == -_morning)
 		{
-			_cooldown--;
-			_prevPrevClose = _prevClose;
-			_prevClose = close;
-			return;
-		}
+			if (_morning > 0)
+				SellMarket(Volume);
+			else
+				BuyMarket(Volume);
 
-		// Midday zone: hours 11-14
-		var isMidday = hour >= 11 && hour <= 14;
-
-		var isBullishCandle = close > candle.OpenPrice;
-		var isBearishCandle = close < candle.OpenPrice;
-		var wasPriceDecreasing = _prevClose < _prevPrevClose;
-		var wasPriceIncreasing = _prevClose > _prevPrevClose;
-
-		// Buy at midday reversal: previous decline then bullish candle
-		if (isMidday && wasPriceDecreasing && isBullishCandle && Position == 0)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
+			_tradedToday = true;
 		}
-		// Sell short at midday reversal: previous increase then bearish candle
-		else if (isMidday && wasPriceIncreasing && isBearishCandle && Position == 0)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-
-		// Exit on MA cross
-		if (Position > 0 && close < maValue)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position < 0 && close > maValue)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-
-		_prevPrevClose = _prevClose;
-		_prevClose = close;
 	}
 }

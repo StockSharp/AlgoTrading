@@ -18,7 +18,9 @@ Los stops se basan en un porcentaje más allá de los extremos del gap para gest
 - **Stops**: Sí, basado en porcentaje
 - **Valores predeterminados**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `MinGapPercent` = 0.01
+    El mercado opera las 24 horas, por lo que la sesión es el día UTC. El gap es la distancia entre el último cierre del día anterior y la primera apertura del día. Un gap de al menos MinGapPercent se opera en contra al cierre de la primera vela; el stop se sitúa StopLossPercent más allá del máximo (corto) o del mínimo (largo) de esa vela y se comprueba en los cierres, y la posición se cierra en la última vela del día.
 - **Filtros**:
   - Categoría: Gap
   - Dirección: Ambos

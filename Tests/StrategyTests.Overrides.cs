@@ -3545,6 +3545,193 @@ public abstract partial class StrategyTests
 			(c, d, ma) => d.First && ma is decimal trend && c.ClosePrice != trend && d.Day.Month % 3 == 0 && d.Day == ThirdFriday(d.Day).AddDays(-4) ? (c.ClosePrice > trend ? 1 : -1) : 0,
 			(c, d) => d.Last && d.Day == ThirdFriday(d.Day).AddDays(-1), maPeriod);
 
+	private sealed class SessionCandle
+	{
+		public DateTime Day;
+		public bool First;
+		public bool Last;
+		public DateTime CloseTime;
+		public decimal DayOpen;
+		public decimal? PreviousClose;
+	}
+
+	// The decision returns +1 to buy, -1 to sell and 0 for no order; the strategy's native percent stop is switched off
+	// unless the stop is part of the decision.
+	private async Task CheckSessionStrategy(string key, bool secondary, Action<Strategy> setup, Func<ICandleMessage, SessionCandle, decimal, int> decide,
+		int minimumEntries, bool keepStop = false)
+	{
+		var state = new SessionCandle();
+		DateTime? currentDay = null;
+		decimal? lastClose = null;
+		Sides? expectedSide = null;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var exits = 0;
+		var violations = new List<string>();
+		await Replay(key, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			setup?.Invoke(strategy);
+			if (!keepStop) SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var day = candle.OpenTime.Date;
+				state.First = currentDay != day;
+				if (state.First) { currentDay = day; state.DayOpen = candle.OpenPrice; }
+				state.Day = day;
+				state.CloseTime = candle.OpenTime + TimeSpan.FromMinutes(15);
+				state.Last = state.CloseTime.Date != day;
+				state.PreviousClose = lastClose;
+				lastClose = candle.ClosePrice;
+				var position = strategy.Position;
+				var side = decide(candle, state, position);
+				if (side == 0) return;
+				expectedSide = side > 0 ? Sides.Buy : Sides.Sell;
+				expectedOrders++;
+				if (position == 0m) entries[expectedSide.Value]++;
+				else
+				{
+					IsTrue(position > 0m == (side < 0), "An order while in a position must close it.");
+					exits++;
+				}
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				var expectedVolume = strategy.Position == 0m ? strategy.Volume : Math.Abs(strategy.Position);
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow the documented session rule.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] + entries[Sides.Sell] >= minimumEntries && exits > 0, $"The fixture must enter at least {minimumEntries} time(s) and exit, entered {entries[Sides.Buy] + entries[Sides.Sell]}, exited {exits}.");
+		if (secondary) IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "TON must trade both sides.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard04")]
+	[DataRow(20, false)]
+	[DataRow(10, true)]
+	public Task S0127_FirstCandleOfTheDayOnHighVolumeUntilACandleAgainstIt(int period, bool secondary)
+	{
+		var volumes = new List<decimal>();
+		return CheckSessionStrategy("0127_Open_Drive", secondary, s =>
+			{
+				AreEqual(20, s.Parameters["VolumePeriod"].Value);
+				SetParam(s, "VolumePeriod", period);
+			},
+			(c, d, position) =>
+			{
+				decimal? average = volumes.Count == period ? volumes.Average() : null;
+				volumes.Add(c.TotalVolume);
+				if (volumes.Count > period) volumes.RemoveAt(0);
+				if (position > 0m) return c.ClosePrice < c.OpenPrice ? -1 : 0;
+				if (position < 0m) return c.ClosePrice > c.OpenPrice ? 1 : 0;
+				if (!d.First || average is not decimal avg || c.TotalVolume <= avg) return 0;
+				return Math.Sign(c.ClosePrice - c.OpenPrice);
+			}, minimumEntries: 5);
+	}
+
+	[TestMethod]
+	[TestCategory("Shard04")]
+	public Task S0127_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0127_Open_Drive", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	[DataRow(12, 16, false)]
+	[DataRow(10, 18, true)]
+	public Task S0128_OneFadeOfTheMorningMoveBetweenMiddayAndAfternoon(int midday, int afternoon, bool secondary)
+	{
+		var morning = 0;
+		var traded = false;
+		return CheckSessionStrategy("0128_Midday_Reversal", secondary, s =>
+			{
+				AreEqual(12, s.Parameters["MiddayHour"].Value);
+				AreEqual(16, s.Parameters["AfternoonHour"].Value);
+				SetParam(s, "MiddayHour", midday);
+				SetParam(s, "AfternoonHour", afternoon);
+			},
+			(c, d, position) =>
+			{
+				if (d.First) { morning = 0; traded = false; }
+				if (d.CloseTime == d.Day.AddHours(midday)) morning = Math.Sign(c.ClosePrice - d.DayOpen);
+				if (position != 0m) return d.CloseTime >= d.Day.AddHours(afternoon) ? (position > 0m ? -1 : 1) : 0;
+				if (traded || morning == 0 || d.CloseTime <= d.Day.AddHours(midday) || d.CloseTime >= d.Day.AddHours(afternoon)) return 0;
+				if (Math.Sign(c.ClosePrice - c.OpenPrice) != -morning) return 0;
+				traded = true;
+				return -morning;
+			}, minimumEntries: 10);
+	}
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public Task S0128_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0128_Midday_Reversal", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
+
+	[TestMethod]
+	[TestCategory("Shard06")]
+	[DataRow(0.01, 2.0, false)]
+	[DataRow(0.05, 0.3, true)]
+	public async Task S0129_FadeTheMidnightGapWithAStopBeyondTheFirstCandle(double minGap, double stopPercent, bool secondary)
+	{
+		var stopPrice = 0m;
+		var stops = 0;
+		await CheckSessionStrategy("0129_Overnight_Gap", secondary, s =>
+			{
+				AreEqual(0.01m, Convert.ToDecimal(s.Parameters["MinGapPercent"].Value));
+				SetParam(s, "MinGapPercent", minGap);
+				SetParam(s, "StopLossPercent", stopPercent);
+			},
+			(c, d, position) =>
+			{
+				var close = c.ClosePrice;
+				if (position != 0m)
+				{
+					var stopped = position > 0m ? close <= stopPrice : close >= stopPrice;
+					if (stopped && !d.Last) stops++;
+					return d.Last || stopped ? (position > 0m ? -1 : 1) : 0;
+				}
+				if (!d.First || d.PreviousClose is not decimal last || last <= 0m) return 0;
+				var gap = (c.OpenPrice - last) / last * 100m;
+				var percent = (decimal)stopPercent / 100m;
+				if (gap >= (decimal)minGap) { stopPrice = c.HighPrice * (1 + percent); return -1; }
+				if (-gap >= (decimal)minGap) { stopPrice = c.LowPrice * (1 - percent); return 1; }
+				return 0;
+			}, minimumEntries: secondary ? 10 : 3, keepStop: true);
+		if (secondary) IsTrue(stops > 0, "TON must close a position at the stop.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(12, 14, false)]
+	[DataRow(11, 15, true)]
+	public Task S0130_FadeTheMorningMoveAtLunchUntilItEnds(int lunch, int lunchEnd, bool secondary)
+		=> CheckSessionStrategy("0130_Lunch_Break_Fade", secondary, s =>
+			{
+				AreEqual(12, s.Parameters["LunchHour"].Value);
+				AreEqual(14, s.Parameters["LunchEndHour"].Value);
+				SetParam(s, "LunchHour", lunch);
+				SetParam(s, "LunchEndHour", lunchEnd);
+			},
+			(c, d, position) =>
+			{
+				if (position != 0m) return d.CloseTime >= d.Day.AddHours(lunchEnd) ? (position > 0m ? -1 : 1) : 0;
+				return d.CloseTime == d.Day.AddHours(lunch) ? -Math.Sign(c.ClosePrice - d.DayOpen) : 0;
+			}, minimumEntries: 20);
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0130_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0130_Lunch_Break_Fade", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

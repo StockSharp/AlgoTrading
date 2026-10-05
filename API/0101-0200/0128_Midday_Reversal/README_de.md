@@ -18,7 +18,10 @@ Ein prozentualer Stop kontrolliert das Risiko, und Positionen werden geschlossen
 - **Stops**: Ja, prozentbasiert
 - **Standardwerte**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `MiddayHour` = 12
+  - `AfternoonHour` = 16
+    Der Markt handelt rund um die Uhr, daher ist die Sitzung der UTC-Tag. Die Morgenbewegung ist die Veränderung von der Tageseröffnung bis zum Schluss der Kerze, die um MiddayHour endet. Zwischen MiddayHour und AfternoonHour steigt die Strategie einmal gegen diese Bewegung ein, auf der ersten Kerze, die gegen sie schließt, und schließt die Position um AfternoonHour.
 - **Filter**:
   - Kategorie: Intraday
   - Richtung: Beide

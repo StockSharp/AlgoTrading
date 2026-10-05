@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using Ecng.Common;
 
@@ -11,23 +12,50 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that trades on the price movement fade during the lunch break.
-/// Fades the prior trend around midday, with MA confirmation and cooldown.
+/// Lunch Break Fade strategy.
+/// The market trades around the clock, so the session is the UTC day.
+/// The morning move runs from the UTC day's open to the close at LunchHour. At that close the strategy enters against the move
+/// and covers at the candle ending at LunchEndHour, before volume returns; a percent stop limits the loss.
 /// </summary>
 public class LunchBreakFadeStrategy : Strategy
 {
+	private readonly StrategyParam<int> _lunchHour;
+	private readonly StrategyParam<int> _lunchEndHour;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _maPeriod;
-	private readonly StrategyParam<int> _cooldownBars;
 
-	private SimpleMovingAverage _ma;
-
-	private decimal _prevClose;
-	private decimal _prevPrevClose;
-	private int _cooldown;
+	private DateTime? _day;
+	private decimal _dayOpen;
 
 	/// <summary>
-	/// Data type for candles.
+	/// UTC hour that ends the morning.
+	/// </summary>
+	public int LunchHour
+	{
+		get => _lunchHour.Value;
+		set => _lunchHour.Value = value;
+	}
+
+	/// <summary>
+	/// UTC hour at which the position is covered.
+	/// </summary>
+	public int LunchEndHour
+	{
+		get => _lunchEndHour.Value;
+		set => _lunchEndHour.Value = value;
+	}
+
+	/// <summary>
+	/// Stop loss percentage from entry price.
+	/// </summary>
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -36,38 +64,24 @@ public class LunchBreakFadeStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Moving average period.
-	/// </summary>
-	public int MaPeriod
-	{
-		get => _maPeriod.Value;
-		set => _maPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Cooldown bars between trades.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="LunchBreakFadeStrategy"/>.
+	/// Constructor.
 	/// </summary>
 	public LunchBreakFadeStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_lunchHour = Param(nameof(LunchHour), 12)
+			.SetRange(0, 23)
+			.SetDisplay("Lunch Hour", "UTC hour that ends the morning", "Session");
+
+		_lunchEndHour = Param(nameof(LunchEndHour), 14)
+			.SetRange(0, 23)
+			.SetDisplay("Lunch End Hour", "UTC hour at which the position is covered", "Session");
+
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_maPeriod = Param(nameof(MaPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("MA Period", "Moving average period", "Strategy");
-
-		_cooldownBars = Param(nameof(CooldownBars), 30)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "General")
-			.SetRange(5, 500);
 	}
 
 	/// <inheritdoc />
@@ -80,10 +94,8 @@ public class LunchBreakFadeStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_ma = default;
-		_prevClose = 0;
-		_prevPrevClose = 0;
-		_cooldown = 0;
+		_day = null;
+		_dayOpen = default;
 	}
 
 	/// <inheritdoc />
@@ -91,91 +103,79 @@ public class LunchBreakFadeStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_ma = new SimpleMovingAverage { Length = MaPeriod };
+		_day = null;
+		_dayOpen = default;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_ma, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
+
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _ma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal maValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// The high-level handler activates native protection before this callback, also between signal bars.
+	}
+
+	private void ClosePosition()
+	{
+		if (Position > 0)
+			SellMarket(Position);
+		else if (Position < 0)
+			BuyMarket(-Position);
+	}
+
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		var day = candle.OpenTime.Date;
+		var firstOfDay = _day != day;
+
+		if (firstOfDay)
+		{
+			_day = day;
+			_dayOpen = candle.OpenPrice;
+		}
+
+		var frame = CandleType.Arg is TimeSpan tf ? tf : TimeSpan.Zero;
+		var closeTime = candle.OpenTime + frame;
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var close = candle.ClosePrice;
-		var hour = candle.OpenTime.Hour;
-
-		if (_prevClose == 0)
+		if (Position != 0)
 		{
-			_prevClose = close;
+			if (closeTime >= day.AddHours(LunchEndHour))
+				ClosePosition();
+
 			return;
 		}
 
-		if (_prevPrevClose == 0)
-		{
-			_prevPrevClose = _prevClose;
-			_prevClose = close;
+		if (closeTime != day.AddHours(LunchHour))
 			return;
-		}
 
-		if (_cooldown > 0)
-		{
-			_cooldown--;
-			_prevPrevClose = _prevClose;
-			_prevClose = close;
-			return;
-		}
-
-		// Lunch zone: hours 11-14
-		var isLunchTime = hour >= 11 && hour <= 14;
-
-		if (isLunchTime)
-		{
-			var priorUptrend = _prevClose > _prevPrevClose;
-			var priorDowntrend = _prevClose < _prevPrevClose;
-			var currentBearish = close < candle.OpenPrice;
-			var currentBullish = close > candle.OpenPrice;
-
-			// Fade uptrend at lunch: short
-			if (priorUptrend && currentBearish && Position == 0)
-			{
-				SellMarket();
-				_cooldown = CooldownBars;
-			}
-			// Fade downtrend at lunch: long
-			else if (priorDowntrend && currentBullish && Position == 0)
-			{
-				BuyMarket();
-				_cooldown = CooldownBars;
-			}
-		}
-
-		// Exit on MA cross
-		if (Position > 0 && close < maValue)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position < 0 && close > maValue)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-
-		_prevPrevClose = _prevClose;
-		_prevClose = close;
+		if (candle.ClosePrice > _dayOpen)
+			SellMarket(Volume);
+		else if (candle.ClosePrice < _dayOpen)
+			BuyMarket(Volume);
 	}
 }

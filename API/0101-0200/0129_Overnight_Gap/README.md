@@ -18,7 +18,9 @@ Stops are based on a percentage beyond the gap extremes to manage risk if the mo
 - **Stops**: Yes, percent based
 - **Default Values**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `MinGapPercent` = 0.01
+    The market trades around the clock, so the session is the UTC day. The gap is the distance from the previous day's last close to the day's first open. A gap of at least MinGapPercent is faded at the close of the first candle; the stop lies StopLossPercent beyond that candle's high (short) or low (long) and is checked on candle closes, and the position closes at the day's last candle.
 - **Filters**:
   - Category: Gap
   - Direction: Both

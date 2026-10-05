@@ -18,7 +18,10 @@ Un stop porcentual controla el riesgo y las posiciones se cierran si la reversi�
 - **Stops**: Sí, basado en porcentaje
 - **Valores predeterminados**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `MiddayHour` = 12
+  - `AfternoonHour` = 16
+    El mercado opera las 24 horas, por lo que la sesión es el día UTC. El movimiento matinal es el cambio desde la apertura del día hasta el cierre de la vela que termina en MiddayHour. Entre MiddayHour y AfternoonHour la estrategia entra una vez en contra de ese movimiento, en la primera vela que cierra en su contra, y cierra la posición en AfternoonHour.
 - **Filtros**:
   - Categoría: Intradía
   - Dirección: Ambos

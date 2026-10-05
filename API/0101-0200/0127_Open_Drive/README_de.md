@@ -18,7 +18,9 @@ Positionen werden schnell geschlossen, wenn der Antrieb nachlässt, um Verluste 
 - **Stops**: Ja, prozentbasiert
 - **Standardwerte**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `VolumePeriod` = 20
+    Der Markt handelt rund um die Uhr, daher ist die Sitzung der UTC-Tag. Die erste Kerze des Tages ist der Eröffnungsimpuls, wenn ihr Volumen den Durchschnitt der vorherigen VolumePeriod Kerzen übersteigt; die Strategie folgt ihrer Richtung zum Schlusskurs. Die erste Kerze, die gegen die Position schließt, beendet sie, und der Prozent-Stop wird nachgezogen.
 - **Filter**:
   - Kategorie: Intraday
   - Richtung: Beide

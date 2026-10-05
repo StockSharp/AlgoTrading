@@ -18,7 +18,9 @@ As posições são fechadas rapidamente se o impulso estacionar, mantendo as per
 - **Stops**: Sim, baseado em percentual
 - **Valores padrão**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `VolumePeriod` = 20
+    O mercado negocia 24 horas, por isso a sessão é o dia UTC. O primeiro candle do dia é o impulso de abertura quando seu volume supera a média dos VolumePeriod candles anteriores; a estratégia entra na sua direção no fechamento. O primeiro candle que fecha contra a posição a encerra, e o stop percentual acompanha o preço.
 - **Filtros**:
   - Categoria: Intradiário
   - Direção: Ambos
