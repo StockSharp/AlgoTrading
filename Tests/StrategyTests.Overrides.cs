@@ -9221,6 +9221,75 @@ public abstract partial class StrategyTests
 	public Task S0228_PercentStopWorksBetweenFinishedBars()
 		=> CheckPercentStopBetweenBars("0228_Hurst_Exponent_Reversion", TimeSpan.FromDays(31));
 
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(20, -0.3, false)]
+	[DataRow(30, -0.2, true)]
+	public async Task S0229_FadesAcrossTheAverageUnderNegativeAutocorrelationUntilTheAverageOrItRises(int period, double threshold, bool secondary)
+	{
+		var sma = new SimpleMovingAverage { Length = period };
+		var closes = new Queue<decimal>();
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var exits = 0;
+		var violations = new List<string>();
+		await Replay("0229_Autocorrelation_Reversal", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["AutoCorrPeriod"].Value);
+			AreEqual(-0.3m, Convert.ToDecimal(strategy.Parameters["AutoCorrThreshold"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "AutoCorrPeriod", period);
+			SetParam(strategy, "AutoCorrThreshold", threshold);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var m = sma.Process(candle);
+				// The strategy is not called while the average is empty.
+				if (m.IsEmpty) return;
+				var close = candle.ClosePrice;
+				closes.Enqueue(close);
+				if (closes.Count > period) closes.Dequeue();
+				if (closes.Count < period || !m.IsFormed) return;
+				var prices = closes.ToArray();
+				var changes = prices.Skip(1).Select((p, i) => p - prices[i]).ToArray();
+				var mean = changes.Average();
+				var denominator = changes.Sum(c => (c - mean) * (c - mean));
+				var numerator = changes.Skip(1).Select((c, i) => (changes[i] - mean) * (c - mean)).Sum();
+				var autocorrelation = denominator == 0m ? 0m : numerator / denominator;
+				var average = m.GetValue<decimal>();
+				var reverting = autocorrelation < (decimal)threshold;
+				var position = strategy.Position;
+				if (reverting && close < average && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (reverting && close > average && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && (close > average || autocorrelation > (decimal)threshold)) { expectedSide = Sides.Sell; expectedVolume = position; exits++; }
+				else if (position < 0m && (close < average || autocorrelation > (decimal)threshold)) { expectedSide = Sides.Buy; expectedVolume = -position; exits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must fade the close's side of the average under negative autocorrelation, or close once price crosses the average or the autocorrelation rises.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && exits > 0, "The fixture must trade both sides and exit.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0229_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0229_Autocorrelation_Reversal", TimeSpan.FromDays(31));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

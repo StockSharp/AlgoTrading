@@ -6,191 +6,119 @@ clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 clr.AddReference("StockSharp.BusinessEntities")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from System import TimeSpan, Decimal
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, Level1Fields
+from StockSharp.BusinessEntities import Subscription
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.BusinessEntities import Security
-from datatype_extensions import *
-
 
 class autocorrelation_reversion_strategy(Strategy):
     """
-    Strategy that trades based on price autocorrelation.
-    Buys when autocorrelation is negative and price is below average.
-    Sells when autocorrelation is negative and price is above average.
-
+    Autocorrelation Reversal strategy.
+    The autocorrelation is the lag-one autocorrelation of the close-to-close changes over the last AutoCorrPeriod closes. Below
+    AutoCorrThreshold a close under the AutoCorrPeriod simple moving average goes long and a close above it goes short, reversing an opposite
+    position. A long closes once the close is above the average or the autocorrelation rises above the threshold, a short mirrors it,
+    and a percent stop limits the loss.
     """
 
     def __init__(self):
         super(autocorrelation_reversion_strategy, self).__init__()
+        self._auto_corr_period = self.Param("AutoCorrPeriod", 20).SetGreaterThanZero().SetDisplay("Autocorrelation Period", "Closes the autocorrelation and the average span", "Indicators")
+        self._auto_corr_threshold = self.Param("AutoCorrThreshold", -0.3).SetDisplay("Autocorrelation Threshold", "Autocorrelation below which the market reverts", "Indicators")
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0).SetNotNegative().SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._reset_state()
 
-        # Initialize strategy parameters
-        self._auto_corr_period = self.Param("AutoCorrPeriod", 20) \
-            .SetDisplay("Autocorrelation period", "Period for autocorrelation calculation", "Strategy parameters") \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 30, 5)
-
-        self._auto_corr_threshold = self.Param("AutoCorrThreshold", -0.3) \
-            .SetDisplay("Autocorr threshold", "Threshold for autocorrelation signals", "Strategy parameters") \
-            .SetCanOptimize(True) \
-            .SetOptimize(-0.5, -0.1, 0.1)
-
-        self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
-            .SetDisplay("Stop-loss %", "Stop-loss as percentage from entry price", "Risk management") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.0, 3.0, 0.5)
-
-        self._candle_type = self.Param("CandleType", tf(5)) \
-            .SetDisplay("Candle type", "Type of candles to use", "General")
-
-        self._sma = None
-        self._current_price = 0.0
-        self._price_history = []
-        self._latest_autocorrelation = 0.0
-
-    # Period for autocorrelation calculation.
     @property
-    def AutoCorrPeriod(self):
-        return self._auto_corr_period.Value
-
-    @AutoCorrPeriod.setter
-    def AutoCorrPeriod(self, value):
-        self._auto_corr_period.Value = value
-
-    # Autocorrelation threshold for signal generation.
-    @property
-    def AutoCorrThreshold(self):
-        return self._auto_corr_threshold.Value
-
-    @AutoCorrThreshold.setter
-    def AutoCorrThreshold(self, value):
-        self._auto_corr_threshold.Value = value
-
-    # Stop-loss percentage.
-    @property
-    def StopLossPercent(self):
-        return self._stop_loss_percent.Value
-
-    @StopLossPercent.setter
-    def StopLossPercent(self, value):
-        self._stop_loss_percent.Value = value
-
-    # Type of candles to use.
-    @property
-    def CandleType(self):
+    def candle_type(self):
         return self._candle_type.Value
 
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candle_type.Value = value
-
-    def GetWorkingSecurities(self):
-        return [(self.Security, self.CandleType)]
+    def _reset_state(self):
+        self._closes = []
 
     def OnReseted(self):
         super(autocorrelation_reversion_strategy, self).OnReseted()
-
-        self._price_history = []
-        self._latest_autocorrelation = 0.0
-        self._current_price = 0.0
+        self._reset_state()
 
     def OnStarted2(self, time):
         super(autocorrelation_reversion_strategy, self).OnStarted2(time)
 
+        self._reset_state()
 
-        # Initialize the SMA indicator (using same period as autocorrelation for simplicity)
-        self._sma = SimpleMovingAverage()
-        self._sma.Length = self.AutoCorrPeriod
+        sma = SimpleMovingAverage()
+        sma.Length = self._auto_corr_period.Value
 
-        # Create a subscription to candlesticks
-        subscription = self.SubscribeCandles(self.CandleType)
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.BindEx(sma, self._process_candle).Start()
 
-        # Subscribe to candle processing
-        subscription.Bind(self._sma, self.ProcessCandle).Start()
+        self.StartProtection(Unit(), Unit(Decimal(self._stop_loss_percent.Value), UnitTypes.Percent), useMarketOrders=True, isLocalStop=True)
 
-        # Start position protection
-        self.StartProtection(
-            takeProfit=Unit(self.StopLossPercent, UnitTypes.Percent),
-            stopLoss=Unit(self.StopLossPercent * 1.5, UnitTypes.Percent)
-        )
-        # Setup chart if available
+        # The stop has to see prices between candles, not only at their close.
+        for field in (Level1Fields.BestBidPrice, Level1Fields.BestAskPrice):
+            quotes = Subscription(DataType.Level1, self.Security)
+            quotes.MarketData.BuildField = field
+            self.SubscribeLevel1(quotes).Bind(self._observe_protection_quote).Start()
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, self._sma)
+            self.DrawIndicator(area, sma)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle, sma_value):
-        # Skip unfinished candles
+    def _observe_protection_quote(self, quote):
+        # The high-level handler activates native protection before the callback, including between bars.
+        pass
+
+    def _process_candle(self, candle, sma_value):
         if candle.State != CandleStates.Finished:
             return
 
-        # Update current price and price history
-        self._current_price = float(candle.ClosePrice)
+        close = candle.ClosePrice
+        period = self._auto_corr_period.Value
 
-        # Update price history queue
-        self._price_history.append(self._current_price)
-        if len(self._price_history) > self.AutoCorrPeriod:
-            self._price_history.pop(0)
+        self._closes.append(close)
+        if len(self._closes) > period:
+            self._closes.pop(0)
 
-        # Wait until we have enough data
-        if len(self._price_history) < self.AutoCorrPeriod:
+        if len(self._closes) < period or not sma_value.IsFormed:
             return
 
-        # Check if strategy is ready to trade
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
-        # Calculate autocorrelation
-        self._latest_autocorrelation = self.CalculateAutocorrelation()
+        autocorrelation = self._calculate_autocorrelation()
+        sma = sma_value.GetValue[Decimal](None)
+        threshold = Decimal(self._auto_corr_threshold.Value)
+        reverting = autocorrelation < threshold
 
-        # Log the autocorrelation value
-        self.LogInfo(
-            "Autocorrelation: {0}, Current price: {1}, SMA: {2}".format(
-                self._latest_autocorrelation, self._current_price, sma_value))
+        if reverting and close < sma and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+        elif reverting and close > sma and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
+        elif self.Position > 0 and (close > sma or autocorrelation > threshold):
+            self.SellMarket(self.Position)
+        elif self.Position < 0 and (close < sma or autocorrelation > threshold):
+            self.BuyMarket(-self.Position)
 
-        # Trading logic: Look for negative autocorrelation below threshold
-        if self._latest_autocorrelation < self.AutoCorrThreshold:
-            # Price below average - buy signal
-            if self._current_price < sma_value and self.Position <= 0:
-                self.BuyMarket(self.Volume)
-                self.LogInfo(
-                    "Buy signal: Autocorr={0}, Price={1}, SMA={2}".format(
-                        self._latest_autocorrelation, self._current_price, sma_value))
-            # Price above average - sell signal
-            elif self._current_price > sma_value and self.Position >= 0:
-                self.SellMarket(self.Volume + Math.Abs(self.Position))
-                self.LogInfo(
-                    "Sell signal: Autocorr={0}, Price={1}, SMA={2}".format(
-                        self._latest_autocorrelation, self._current_price, sma_value))
+    def _calculate_autocorrelation(self):
+        changes = [self._closes[i] - self._closes[i - 1] for i in range(1, len(self._closes))]
 
-    def CalculateAutocorrelation(self):
-        # Convert queue to array for easier calculation
-        prices = list(self._price_history)
+        total = Decimal(0)
+        for change in changes:
+            total += change
+        mean = total / Decimal(len(changes))
 
-        # Calculate price changes
-        price_changes = [prices[i + 1] - prices[i] for i in range(len(prices) - 1)]
+        numerator = Decimal(0)
+        denominator = Decimal(0)
+        for i in range(len(changes)):
+            deviation = changes[i] - mean
+            denominator += deviation * deviation
+            if i > 0:
+                numerator += (changes[i - 1] - mean) * deviation
 
-        # Calculate autocorrelation of lag 1
-        if not price_changes:
-            return 0.0
-        mean_change = sum(price_changes) / len(price_changes)
-
-        numerator = 0.0
-        denominator = 0.0
-
-        for i in range(len(price_changes) - 1):
-            deviation1 = price_changes[i] - mean_change
-            deviation2 = price_changes[i + 1] - mean_change
-
-            numerator += deviation1 * deviation2
-            denominator += deviation1 * deviation1
-
-        # Guard against division by zero
         if denominator == 0:
-            return 0.0
-
+            return Decimal(0)
         return numerator / denominator
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return autocorrelation_reversion_strategy()

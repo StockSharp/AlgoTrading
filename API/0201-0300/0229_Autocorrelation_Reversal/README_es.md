@@ -20,8 +20,9 @@ El enfoque es adecuado para traders que buscan ventajas estadísticas en lugar d
 - **Stops**: Sí, stop-loss porcentual.
 - **Valores predeterminados**:
   - `AutoCorrPeriod` = 20
-  - `AutoCorrThreshold` = -0.3m
-  - `StopLossPercent` = 2m
+  - `AutoCorrThreshold` = -0.3
+  - `StopLossPercent` = 2
+    La autocorrelación es la autocorrelación de retardo uno de los cambios entre cierres de los últimos AutoCorrPeriod cierres, y MA es la media móvil simple de las mismas AutoCorrPeriod velas. El stop es un StopLossPercent fijo del precio de entrada, vigilado también entre velas; 0 lo desactiva. Una señal de entrada contra una posición abierta la invierte.
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **Filtros**:
   - Categoría: Mean reversion
