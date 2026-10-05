@@ -5102,6 +5102,74 @@ public abstract partial class StrategyTests
 	public Task S0149_PercentStopWorksBetweenFinishedBars()
 		=> CheckPercentStopBetweenBars("0149_MA_ADX", TimeSpan.FromDays(31));
 
+	[TestMethod]
+	[TestCategory("Shard03")]
+	[DataRow(14, 3, 80.0, 20.0, false)]
+	[DataRow(9, 3, 75.0, 25.0, true)]
+	public async Task S0150_StochasticExtremesAcrossTheDailyVwapUntilPriceCrossesIt(int stochPeriod, int stochK, double overbought, double oversold, bool secondary)
+	{
+		var stochastic = new StochasticOscillator { K = { Length = stochPeriod }, D = { Length = stochK } };
+		DateTime? day = null;
+		decimal priceVolume = 0m, volume = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var vwapExits = 0;
+		var violations = new List<string>();
+		await Replay("0150_VWAP_Stochastic", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(14, strategy.Parameters["StochPeriod"].Value);
+			AreEqual(3, strategy.Parameters["StochKPeriod"].Value);
+			AreEqual(80m, Convert.ToDecimal(strategy.Parameters["OverboughtLevel"].Value));
+			AreEqual(20m, Convert.ToDecimal(strategy.Parameters["OversoldLevel"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "StochPeriod", stochPeriod);
+			SetParam(strategy, "StochKPeriod", stochK);
+			SetParam(strategy, "OverboughtLevel", overbought);
+			SetParam(strategy, "OversoldLevel", oversold);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var st = stochastic.Process(candle);
+				// The strategy only sees candles once the bound indicator returns a value.
+				if (st.IsEmpty) return;
+				if (day != candle.OpenTime.Date) { day = candle.OpenTime.Date; priceVolume = 0m; volume = 0m; }
+				priceVolume += (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3 * candle.TotalVolume;
+				volume += candle.TotalVolume;
+				if (volume <= 0m || st is not IStochasticOscillatorValue { IsFormed: true, D: decimal k }) return;
+				var vwap = priceVolume / volume;
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (close < vwap && k < (decimal)oversold && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (close > vwap && k > (decimal)overbought && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && close > vwap) { expectedSide = Sides.Sell; expectedVolume = position; vwapExits++; }
+				else if (position < 0m && close < vwap) { expectedSide = Sides.Buy; expectedVolume = -position; vwapExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a %K extreme on the far side of the UTC-day VWAP, or close when price crosses VWAP.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && vwapExits > 0, "The fixture must trade both sides and exit at VWAP.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard03")]
+	public Task S0150_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0150_VWAP_Stochastic", TimeSpan.FromDays(31));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

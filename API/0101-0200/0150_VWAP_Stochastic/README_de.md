@@ -7,7 +7,7 @@ Tests zeigen eine durchschnittliche jährliche Rendite von etwa 187%. Sie funkti
 
 VWAP markiert das durchschnittliche Handelsniveau und Stochastic zeigt überkaufte oder überverkaufte Bedingungen. Longs werden unter dem VWAP mit einem steigenden Oszillator ausgelöst, Shorts über dem VWAP mit einem fallenden.
 
-Intraday-Trader, die intraday Wertniveaus beobachten, können von diesem Stil profitieren. Stops werden mit einem ATR-Vielfachen platziert.
+Intraday-Trader, die intraday Wertniveaus beobachten, können von diesem Stil profitieren. Stops werden in festem Prozentabstand vom Einstiegspreis platziert.
 
 ## Details
 
@@ -22,11 +22,11 @@ Intraday-Trader, die intraday Wertniveaus beobachten, können von diesem Stil pr
 - **Standardwerte**:
   - `StochPeriod` = 14
   - `StochKPeriod` = 3
-  - `StochDPeriod` = 3
   - `OverboughtLevel` = 80m
   - `OversoldLevel` = 20m
   - `StopLossPercent` = 2m
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    Der Markt handelt rund um die Uhr, daher beginnt der Sitzungs-VWAP mit jedem UTC-Tag neu und gewichtet den typischen Preis jeder Kerze mit ihrem Volumen. StochK in den Regeln ist %K: die Stochastik über StochPeriod Kerzen, geglättet über StochKPeriod Kerzen; %D spielt keine Rolle und hat daher keine Einstellung. Ein Einstiegssignal gegen eine offene Position dreht sie.
 - **Filter**:
   - Kategorie: Mean Reversion
   - Richtung: Beide
