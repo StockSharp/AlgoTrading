@@ -21,7 +21,9 @@ Este enfoque funciona para traders que desean una confirmación objetiva de que 
 - **Valores predeterminados**:
   - `HurstPeriod` = 100
   - `MaPeriod` = 20
-  - `HurstThreshold` = 0.55m
+  - `HurstThreshold` = 0.55
+  - `StopLossPercent` = 2
+    MA es la media móvil simple de MaPeriod. El stop es un StopLossPercent fijo del precio de entrada, vigilado también entre velas; 0 lo desactiva. Una señal de entrada contra una posición abierta la invierte.
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **Filtros**:
   - Categoría: Tendencia

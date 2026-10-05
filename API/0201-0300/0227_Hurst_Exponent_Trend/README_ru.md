@@ -21,7 +21,9 @@
 - **Параметры по умолчанию**:
   - `HurstPeriod` = 100
   - `MaPeriod` = 20
-  - `HurstThreshold` = 0.55m
+  - `HurstThreshold` = 0.55
+  - `StopLossPercent` = 2
+    MA — простая скользящая средняя за MaPeriod. Стоп — фиксированный StopLossPercent от цены входа, он отслеживается и между свечами; 0 отключает его. Сигнал на вход против открытой позиции разворачивает её.
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **Фильтры**:
   - Категория: Тренд

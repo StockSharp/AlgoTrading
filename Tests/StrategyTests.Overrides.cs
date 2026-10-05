@@ -9093,6 +9093,71 @@ public abstract partial class StrategyTests
 		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && meanExits > 0 && stopExits > 0, "The fixture must trade both sides, exit at the average and hit the ATR stop.");
 	}
 
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(100, 20, 0.55, false)]
+	[DataRow(60, 30, 0.7, true)]
+	public async Task S0227_AverageSidesWhileHurstTrendsUntilTheAverageOrHurstFades(int hurstPeriod, int maPeriod, double threshold, bool secondary)
+	{
+		var hurst = new HurstExponent { Length = hurstPeriod };
+		var sma = new SimpleMovingAverage { Length = maPeriod };
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var fadeExits = 0;
+		var violations = new List<string>();
+		await Replay("0227_Hurst_Exponent_Trend", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(100, strategy.Parameters["HurstPeriod"].Value);
+			AreEqual(20, strategy.Parameters["MaPeriod"].Value);
+			AreEqual(0.55m, Convert.ToDecimal(strategy.Parameters["HurstThreshold"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "HurstPeriod", hurstPeriod);
+			SetParam(strategy, "MaPeriod", maPeriod);
+			SetParam(strategy, "HurstThreshold", threshold);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var h = hurst.Process(candle);
+				var m = sma.Process(candle);
+				if (!h.IsFormed || !m.IsFormed) return;
+				var exponent = h.GetValue<decimal>();
+				var mean = m.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var trending = exponent > (decimal)threshold;
+				var position = strategy.Position;
+				if (trending && close > mean && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (trending && close < mean && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && (close < mean || exponent < (decimal)threshold)) { expectedSide = Sides.Sell; expectedVolume = position; fadeExits++; }
+				else if (position < 0m && (close > mean || exponent < (decimal)threshold)) { expectedSide = Sides.Buy; expectedVolume = -position; fadeExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow the close's side of the average while Hurst trends, or close once price crosses the average or Hurst fades.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "The fixture must trade both sides.");
+		// The exponent stays above 0.55 on the archive, so only a higher threshold sees it fade.
+		if (threshold > 0.6) IsTrue(fadeExits > 0, "A high threshold must close positions on a fading exponent or the average.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0227_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0227_Hurst_Exponent_Trend", TimeSpan.FromDays(31));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";
