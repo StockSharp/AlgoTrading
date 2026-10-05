@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,305 +12,283 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Mutanabby AI Algo Pro strategy.
-/// Enters long on bullish engulfing with RSI and price filters.
+/// Long only. Enters on a bullish engulfing candle whose body is at least CandleStabilityIndex of its range, while RSI is below
+/// RsiIndex and the close is below the close CandleDeltaLength bars ago. Exits on a bearish engulfing candle or when the stop is hit.
+/// The stop is either EntryStopLossPercent below the entry price or StopLossBufferPercent below the lowest low of LookbackPeriod bars.
 /// </summary>
 public class MutanabbyAiAlgoProStrategy : Strategy
 {
-        /// <summary>
-        /// Defines stop loss calculation modes.
-        /// </summary>
-        public enum StopLossModes
-        {
-                /// <summary>
-                /// Stop loss is calculated from entry price.
-                /// </summary>
-                EntryPriceBased,
+	/// <summary>
+	/// Defines stop loss calculation modes.
+	/// </summary>
+	public enum StopLossModes
+	{
+		/// <summary>
+		/// Stop loss is calculated from entry price.
+		/// </summary>
+		EntryPriceBased,
 
-                /// <summary>
-                /// Stop loss is based on the lowest low over a period.
-                /// </summary>
-                LowestLowBased
-        }
+		/// <summary>
+		/// Stop loss is based on the lowest low over a period.
+		/// </summary>
+		LowestLowBased
+	}
 
-private readonly StrategyParam<decimal> _candleStabilityIndex;
-private readonly StrategyParam<int> _rsiIndex;
-private readonly StrategyParam<int> _candleDeltaLength;
-private readonly StrategyParam<bool> _disableRepeatingSignals;
-private readonly StrategyParam<bool> _enableStopLoss;
-private readonly StrategyParam<StopLossModes> _stopLossMethod;
-private readonly StrategyParam<decimal> _entryStopLossPercent;
-private readonly StrategyParam<int> _lookbackPeriod;
-private readonly StrategyParam<decimal> _stopLossBufferPercent;
-private readonly StrategyParam<DataType> _candleType;
-private static readonly object _sync = new();
+	private readonly StrategyParam<decimal> _candleStabilityIndex;
+	private readonly StrategyParam<int> _rsiIndex;
+	private readonly StrategyParam<int> _candleDeltaLength;
+	private readonly StrategyParam<bool> _disableRepeatingSignals;
+	private readonly StrategyParam<bool> _enableStopLoss;
+	private readonly StrategyParam<StopLossModes> _stopLossMethod;
+	private readonly StrategyParam<decimal> _entryStopLossPercent;
+	private readonly StrategyParam<int> _lookbackPeriod;
+	private readonly StrategyParam<decimal> _stopLossBufferPercent;
+	private readonly StrategyParam<DataType> _candleType;
 
-private decimal _prevOpen;
-private decimal _prevClose;
-private readonly Queue<decimal> _closeQueue = new();
-private readonly Queue<decimal> _lowQueue = new();
-private decimal _lowestLow = decimal.MaxValue;
-private string _lastSignal = string.Empty;
-private decimal _stopLossPrice;
-private decimal _entryPrice;
+	private const int _rsiLength = 14;
 
-/// <summary>
-/// Minimum ratio between candle body and true range.
-/// </summary>
-public decimal CandleStabilityIndex
-{
-get => _candleStabilityIndex.Value;
-set => _candleStabilityIndex.Value = value;
-}
+	private decimal? _prevOpen;
+	private decimal? _prevClose;
+	private readonly Queue<decimal> _closes = new();
+	private bool? _lastSignalBuy;
+	private decimal _stopLossPrice;
 
-/// <summary>
-/// RSI threshold.
-/// </summary>
-public int RsiIndex
-{
-get => _rsiIndex.Value;
-set => _rsiIndex.Value = value;
-}
+	/// <summary>
+	/// Minimum ratio between candle body and true range.
+	/// </summary>
+	public decimal CandleStabilityIndex
+	{
+		get => _candleStabilityIndex.Value;
+		set => _candleStabilityIndex.Value = value;
+	}
 
-/// <summary>
-/// Bars for price comparison.
-/// </summary>
-public int CandleDeltaLength
-{
-get => _candleDeltaLength.Value;
-set => _candleDeltaLength.Value = value;
-}
+	/// <summary>
+	/// RSI threshold.
+	/// </summary>
+	public int RsiIndex
+	{
+		get => _rsiIndex.Value;
+		set => _rsiIndex.Value = value;
+	}
 
-/// <summary>
-/// Prevent consecutive identical signals.
-/// </summary>
-public bool DisableRepeatingSignals
-{
-get => _disableRepeatingSignals.Value;
-set => _disableRepeatingSignals.Value = value;
-}
+	/// <summary>
+	/// Bars for price comparison.
+	/// </summary>
+	public int CandleDeltaLength
+	{
+		get => _candleDeltaLength.Value;
+		set => _candleDeltaLength.Value = value;
+	}
 
-/// <summary>
-/// Enable stop loss.
-/// </summary>
-public bool EnableStopLoss
-{
-get => _enableStopLoss.Value;
-set => _enableStopLoss.Value = value;
-}
+	/// <summary>
+	/// Prevent consecutive identical signals.
+	/// </summary>
+	public bool DisableRepeatingSignals
+	{
+		get => _disableRepeatingSignals.Value;
+		set => _disableRepeatingSignals.Value = value;
+	}
 
-/// <summary>
-/// Stop loss calculation method.
-/// </summary>
-public StopLossModes StopLossMethod
-{
-get => _stopLossMethod.Value;
-set => _stopLossMethod.Value = value;
-}
+	/// <summary>
+	/// Enable stop loss.
+	/// </summary>
+	public bool EnableStopLoss
+	{
+		get => _enableStopLoss.Value;
+		set => _enableStopLoss.Value = value;
+	}
 
-/// <summary>
-/// Entry based stop loss percent.
-/// </summary>
-public decimal EntryStopLossPercent
-{
-get => _entryStopLossPercent.Value;
-set => _entryStopLossPercent.Value = value;
-}
+	/// <summary>
+	/// Stop loss calculation method.
+	/// </summary>
+	public StopLossModes StopLossMethod
+	{
+		get => _stopLossMethod.Value;
+		set => _stopLossMethod.Value = value;
+	}
 
-/// <summary>
-/// Lookback period for lowest low stop.
-/// </summary>
-public int LookbackPeriod
-{
-get => _lookbackPeriod.Value;
-set => _lookbackPeriod.Value = value;
-}
+	/// <summary>
+	/// Entry based stop loss percent.
+	/// </summary>
+	public decimal EntryStopLossPercent
+	{
+		get => _entryStopLossPercent.Value;
+		set => _entryStopLossPercent.Value = value;
+	}
 
-/// <summary>
-/// Buffer percent below lowest low.
-/// </summary>
-public decimal StopLossBufferPercent
-{
-get => _stopLossBufferPercent.Value;
-set => _stopLossBufferPercent.Value = value;
-}
+	/// <summary>
+	/// Lookback period for lowest low stop.
+	/// </summary>
+	public int LookbackPeriod
+	{
+		get => _lookbackPeriod.Value;
+		set => _lookbackPeriod.Value = value;
+	}
 
-/// <summary>
-/// Candle type for calculations.
-/// </summary>
-public DataType CandleType
-{
-get => _candleType.Value;
-set => _candleType.Value = value;
-}
+	/// <summary>
+	/// Buffer percent below lowest low.
+	/// </summary>
+	public decimal StopLossBufferPercent
+	{
+		get => _stopLossBufferPercent.Value;
+		set => _stopLossBufferPercent.Value = value;
+	}
 
-/// <summary>
-/// Initializes a new instance of the <see cref="MutanabbyAiAlgoProStrategy"/> class.
-/// </summary>
-public MutanabbyAiAlgoProStrategy()
-{
-_candleStabilityIndex = Param(nameof(CandleStabilityIndex), 0.5m)
-.SetDisplay("Candle Stability Index", "Minimum body/true range ratio", "Technical")
-.SetRange(0m, 1m)
+	/// <summary>
+	/// Candle type for calculations.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
 
-.SetOptimize(0.1m, 1m, 0.1m);
+	/// <summary>
+	/// Initializes a new instance of the <see cref="MutanabbyAiAlgoProStrategy"/> class.
+	/// </summary>
+	public MutanabbyAiAlgoProStrategy()
+	{
+		_candleStabilityIndex = Param(nameof(CandleStabilityIndex), 0.5m)
+			.SetDisplay("Candle Stability Index", "Minimum body/true range ratio", "Technical")
+			.SetRange(0m, 1m);
 
-_rsiIndex = Param(nameof(RsiIndex), 50)
-.SetDisplay("RSI Index", "RSI threshold for entries", "Technical")
-.SetRange(0, 100)
-;
+		_rsiIndex = Param(nameof(RsiIndex), 50)
+			.SetDisplay("RSI Index", "RSI threshold for entries", "Technical")
+			.SetRange(0, 100);
 
-_candleDeltaLength = Param(nameof(CandleDeltaLength), 5)
-.SetDisplay("Candle Delta Length", "Bars for price comparison", "Technical")
-.SetRange(3, 50)
-;
+		_candleDeltaLength = Param(nameof(CandleDeltaLength), 5)
+			.SetDisplay("Candle Delta Length", "Bars for price comparison", "Technical")
+			.SetRange(1, 50);
 
-_disableRepeatingSignals = Param(nameof(DisableRepeatingSignals), false)
-.SetDisplay("Disable Repeating Signals", "Avoid consecutive identical signals", "Technical");
+		_disableRepeatingSignals = Param(nameof(DisableRepeatingSignals), false)
+			.SetDisplay("Disable Repeating Signals", "Avoid consecutive identical signals", "Technical");
 
-_enableStopLoss = Param(nameof(EnableStopLoss), true)
-.SetDisplay("Enable Stop Loss", "Activate stop loss", "Risk Management");
+		_enableStopLoss = Param(nameof(EnableStopLoss), true)
+			.SetDisplay("Enable Stop Loss", "Activate stop loss", "Risk Management");
 
-_stopLossMethod = Param(nameof(StopLossMethod), StopLossModes.EntryPriceBased)
-.SetDisplay("Stop Loss Method", "Entry price or lowest low based", "Risk Management");
+		_stopLossMethod = Param(nameof(StopLossMethod), StopLossModes.EntryPriceBased)
+			.SetDisplay("Stop Loss Method", "Entry price or lowest low based", "Risk Management");
 
-_entryStopLossPercent = Param(nameof(EntryStopLossPercent), 2.0m)
-.SetDisplay("Entry Stop Loss %", "Stop loss percent from entry", "Risk Management")
-.SetGreaterThanZero();
+		_entryStopLossPercent = Param(nameof(EntryStopLossPercent), 2.0m)
+			.SetDisplay("Entry Stop Loss %", "Stop loss percent from entry", "Risk Management")
+			.SetGreaterThanZero();
 
-_lookbackPeriod = Param(nameof(LookbackPeriod), 10)
-.SetDisplay("Lookback Period", "Bars for lowest low stop", "Risk Management")
-.SetGreaterThanZero();
+		_lookbackPeriod = Param(nameof(LookbackPeriod), 10)
+			.SetDisplay("Lookback Period", "Bars for lowest low stop", "Risk Management")
+			.SetGreaterThanZero();
 
-_stopLossBufferPercent = Param(nameof(StopLossBufferPercent), 0.5m)
-.SetDisplay("Stop Loss Buffer %", "Additional buffer below lowest low", "Risk Management");
+		_stopLossBufferPercent = Param(nameof(StopLossBufferPercent), 0.5m)
+			.SetDisplay("Stop Loss Buffer %", "Additional buffer below lowest low", "Risk Management");
 
-_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-.SetDisplay("Candle Type", "Type of candles to use", "General");
-}
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
+	}
 
-/// <inheritdoc />
-public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-{
-return [(Security, CandleType)];
-}
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
 
-/// <inheritdoc />
-protected override void OnReseted()
-{
-base.OnReseted();
-_prevOpen = 0;
-_prevClose = 0;
-_closeQueue.Clear();
-_lowQueue.Clear();
-_lowestLow = decimal.MaxValue;
-_lastSignal = string.Empty;
-_stopLossPrice = 0;
-_entryPrice = 0;
-}
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		ResetState();
+	}
 
-/// <inheritdoc />
-protected override void OnStarted2(DateTime time)
-{
-base.OnStarted2(time);
+	private void ResetState()
+	{
+		_prevOpen = null;
+		_prevClose = null;
+		_closes.Clear();
+		_lastSignalBuy = null;
+		_stopLossPrice = 0m;
+	}
 
-var rsi = new RSI { Length = 14 };
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
-var subscription = SubscribeCandles(CandleType);
+		ResetState();
 
-subscription
-.Bind(candle => ProcessCandle(candle, rsi))
-.Start();
+		var rsi = new RelativeStrengthIndex { Length = _rsiLength };
+		var lowest = new Lowest { Length = LookbackPeriod };
 
-var area = CreateChartArea();
-if (area != null)
-{
-DrawCandles(area, subscription);
-DrawIndicator(area, rsi);
-DrawOwnTrades(area);
-}
-}
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(rsi, lowest, ProcessCandle)
+			.Start();
 
-private void ProcessCandle(ICandleMessage candle, RelativeStrengthIndex rsi)
-{
-if (candle.State != CandleStates.Finished)
-return;
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
 
-if (!IsFormedAndOnlineAndAllowTrading())
-return;
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+				DrawIndicator(oscillators, rsi);
+		}
+	}
 
-decimal rsiValue;
-lock (_sync)
-{
-	var rsiResult = rsi.Process(new DecimalIndicatorValue(rsi, candle.ClosePrice, candle.OpenTime) { IsFinal = true });
-	if (!rsiResult.IsFinal || !rsi.IsFormed)
-		return;
+	private void ProcessCandle(ICandleMessage candle, decimal rsiValue, decimal lowestLow)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
 
-	rsiValue = rsiResult.ToDecimal();
-}
+		var prevOpen = _prevOpen;
+		var prevClose = _prevClose;
+		var closeN = _closes.Count == CandleDeltaLength ? _closes.Peek() : (decimal?)null;
 
-// update low queue
-if (_lowQueue.Count == LookbackPeriod)
-{
-var removed = _lowQueue.Dequeue();
-if (removed <= _lowestLow)
-{
-_lowestLow = decimal.MaxValue;
-foreach (var v in _lowQueue)
-{
-if (v < _lowestLow)
-_lowestLow = v;
-}
-}
-}
+		_prevOpen = candle.OpenPrice;
+		_prevClose = candle.ClosePrice;
+		_closes.Enqueue(candle.ClosePrice);
+		while (_closes.Count > CandleDeltaLength)
+			_closes.Dequeue();
 
-_lowQueue.Enqueue(candle.LowPrice);
-if (candle.LowPrice < _lowestLow)
-_lowestLow = candle.LowPrice;
+		if (prevOpen is not decimal po || prevClose is not decimal pc || closeN is not decimal cn)
+			return;
 
-var priceN = _closeQueue.Count == CandleDeltaLength ? _closeQueue.Peek() : (decimal?)null;
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
 
-var trueRange = candle.HighPrice - candle.LowPrice;
-var stableCandle = trueRange > 0 && Math.Abs(candle.ClosePrice - candle.OpenPrice) / trueRange > CandleStabilityIndex;
-var bullishEngulfing = _prevClose < _prevOpen && candle.ClosePrice > candle.OpenPrice && candle.ClosePrice > _prevOpen;
-var rsiBelow = rsiValue < RsiIndex;
-var decreaseOver = priceN != null && candle.ClosePrice < priceN;
-var entrySignal = bullishEngulfing && stableCandle && rsiBelow && decreaseOver;
+		var close = candle.ClosePrice;
+		var open = candle.OpenPrice;
 
-var bearishEngulfing = _prevClose > _prevOpen && candle.ClosePrice < candle.OpenPrice && candle.ClosePrice < _prevOpen;
-var rsiAbove = rsiValue > 100 - RsiIndex;
-var increaseOver = priceN != null && candle.ClosePrice > priceN;
-var exitSignal = bearishEngulfing && stableCandle && rsiAbove && increaseOver;
+		if (Position > 0)
+		{
+			var stopHit = EnableStopLoss && _stopLossPrice > 0 && candle.LowPrice <= _stopLossPrice;
+			var bearishEngulfing = pc > po && close < open && close < po;
 
-if (entrySignal && Position <= 0 && (!DisableRepeatingSignals || _lastSignal != "buy"))
-{
-BuyMarket(Volume + Math.Abs(Position));
-_entryPrice = candle.ClosePrice;
-if (EnableStopLoss)
-{
-_stopLossPrice = StopLossMethod == StopLossModes.EntryPriceBased
-? _entryPrice * (1 - EntryStopLossPercent / 100m)
-: _lowestLow * (1 - StopLossBufferPercent / 100m);
-}
-_lastSignal = "buy";
-}
+			if (stopHit || bearishEngulfing)
+			{
+				SellMarket(Position);
+				_lastSignalBuy = false;
+				_stopLossPrice = 0m;
+			}
 
-if (exitSignal && Position > 0 && (!DisableRepeatingSignals || _lastSignal != "sell"))
-{
-SellMarket(Position);
-_lastSignal = "sell";
-}
+			return;
+		}
 
-if (EnableStopLoss && Position > 0 && _stopLossPrice > 0 && candle.ClosePrice <= _stopLossPrice)
-{
-SellMarket(Position);
-_lastSignal = "sell";
-}
+		var range = candle.HighPrice - candle.LowPrice;
+		var stable = range > 0 && Math.Abs(close - open) / range >= CandleStabilityIndex;
+		var bullishEngulfing = pc < po && close > open && close > po;
 
-_closeQueue.Enqueue(candle.ClosePrice);
-if (_closeQueue.Count > CandleDeltaLength)
-_closeQueue.Dequeue();
+		if (!bullishEngulfing || !stable || rsiValue >= RsiIndex || close >= cn)
+			return;
 
-_prevOpen = candle.OpenPrice;
-_prevClose = candle.ClosePrice;
-}
+		if (DisableRepeatingSignals && _lastSignalBuy == true)
+			return;
+
+		BuyMarket(Volume + Math.Abs(Position));
+		_lastSignalBuy = true;
+
+		_stopLossPrice = !EnableStopLoss
+			? 0m
+			: StopLossMethod == StopLossModes.EntryPriceBased
+				? close * (1 - EntryStopLossPercent / 100m)
+				: lowestLow * (1 - StopLossBufferPercent / 100m);
+	}
 }
