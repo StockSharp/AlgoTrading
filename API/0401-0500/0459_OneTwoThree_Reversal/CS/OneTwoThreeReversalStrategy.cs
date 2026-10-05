@@ -12,63 +12,63 @@ using StockSharp.Messages;
 
 /// <summary>
 /// One-Two-Three Reversal Strategy.
-/// Detects 1-2-3 bottom pattern (descending lows with rising highs) and buys.
-/// Exits after holding period or when price crosses above MA.
+/// A long opens on a bullish 1-2-3 pattern: the current low is below the previous low, the previous low is below the low
+/// three bars ago, the low two bars ago is below the low four bars ago and the high two bars ago is below the high three
+/// bars ago. The long closes after DaysToHold bars or when the close crosses above the MaLength SMA.
 /// </summary>
 public class OneTwoThreeReversalStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _holdBars;
+	private readonly StrategyParam<int> _daysToHold;
 	private readonly StrategyParam<int> _maLength;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage _sma;
+	private readonly List<ICandleMessage> _history = [];
+	private decimal? _prevClose;
+	private decimal? _prevMa;
+	private int _barsInPosition;
 
-	private decimal _low1, _low2, _low3, _low4;
-	private decimal _high1, _high2, _high3;
-	private int _historyCount;
-	private int _barsSinceEntry;
-	private int _cooldownRemaining;
-
-	public DataType CandleType
+	/// <summary>
+	/// Bars to hold the position.
+	/// </summary>
+	public int DaysToHold
 	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
+		get => _daysToHold.Value;
+		set => _daysToHold.Value = value;
 	}
 
-	public int HoldBars
-	{
-		get => _holdBars.Value;
-		set => _holdBars.Value = value;
-	}
-
+	/// <summary>
+	/// SMA period of the exit.
+	/// </summary>
 	public int MaLength
 	{
 		get => _maLength.Value;
 		set => _maLength.Value = value;
 	}
 
-	public int CooldownBars
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
 	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
+	/// <summary>
+	/// Constructor.
+	/// </summary>
 	public OneTwoThreeReversalStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_holdBars = Param(nameof(HoldBars), 15)
+		_daysToHold = Param(nameof(DaysToHold), 7)
 			.SetGreaterThanZero()
-			.SetDisplay("Hold Bars", "Bars to hold position", "Trading");
+			.SetDisplay("Days To Hold", "Bars to hold the position", "Trading");
 
 		_maLength = Param(nameof(MaLength), 200)
 			.SetGreaterThanZero()
-			.SetDisplay("MA Length", "Moving average period", "Indicators");
+			.SetDisplay("MA Length", "SMA period of the exit", "Indicators");
 
-		_cooldownBars = Param(nameof(CooldownBars), 10)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "Risk");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -79,13 +79,15 @@ public class OneTwoThreeReversalStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		ResetState();
+	}
 
-		_sma = null;
-		_low1 = _low2 = _low3 = _low4 = 0;
-		_high1 = _high2 = _high3 = 0;
-		_historyCount = 0;
-		_barsSinceEntry = int.MaxValue;
-		_cooldownRemaining = 0;
+	private void ResetState()
+	{
+		_history.Clear();
+		_prevClose = null;
+		_prevMa = null;
+		_barsInPosition = 0;
 	}
 
 	/// <inheritdoc />
@@ -93,87 +95,76 @@ public class OneTwoThreeReversalStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_sma = new SimpleMovingAverage { Length = MaLength };
+		ResetState();
+
+		var sma = new SimpleMovingAverage { Length = MaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_sma, OnProcess)
+			.BindEx(sma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _sma);
+			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void OnProcess(ICandleMessage candle, decimal maValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue smaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_sma.IsFormed)
-			return;
+		_history.Add(candle);
+		if (_history.Count > 5)
+			_history.RemoveAt(0);
+
+		decimal? ma = smaValue.IsFormed ? smaValue.GetValue<decimal>() : null;
+		var prevClose = _prevClose;
+		var prevMa = _prevMa;
+		_prevClose = candle.ClosePrice;
+		_prevMa = ma;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		if (Position > 0)
-			_barsSinceEntry++;
-
-		if (_cooldownRemaining > 0)
 		{
-			_cooldownRemaining--;
-			UpdateHistory(candle);
+			_barsInPosition++;
+
+			var crossAboveMa = ma is decimal m && prevMa is decimal pm && prevClose is decimal pc && pc <= pm && candle.ClosePrice > m;
+
+			if (_barsInPosition >= DaysToHold || crossAboveMa)
+			{
+				SellMarket(Position);
+				_barsInPosition = 0;
+			}
+
 			return;
 		}
 
-		if (_historyCount >= 4)
+		if (_history.Count < 5)
+			return;
+
+		// _history[4] is the current bar, _history[0] is the bar four bars ago.
+		var current = _history[4];
+		var bar1 = _history[3];
+		var bar2 = _history[2];
+		var bar3 = _history[1];
+		var bar4 = _history[0];
+
+		var pattern = current.LowPrice < bar1.LowPrice
+			&& bar1.LowPrice < bar3.LowPrice
+			&& bar2.LowPrice < bar4.LowPrice
+			&& bar2.HighPrice < bar3.HighPrice;
+
+		if (pattern && Position == 0)
 		{
-			// Exit conditions
-			if (Position > 0 && (_barsSinceEntry >= HoldBars || candle.ClosePrice >= maValue))
-			{
-				SellMarket(Math.Abs(Position));
-				_barsSinceEntry = int.MaxValue;
-				_cooldownRemaining = CooldownBars;
-			}
-			// 1-2-3 bottom pattern: descending lows (bearish trend weakening)
-			// + highs starting to rise (bullish reversal)
-			else if (Position <= 0)
-			{
-				var condition1 = candle.LowPrice < _low1;
-				var condition2 = _low1 < _low3;
-				var condition3 = _low2 < _low4;
-				var condition4 = _high2 < _high3;
-
-				if (condition1 && condition2 && condition3 && condition4)
-				{
-					if (Position < 0)
-						BuyMarket(Math.Abs(Position));
-					BuyMarket(Volume);
-					_barsSinceEntry = 0;
-					_cooldownRemaining = CooldownBars;
-				}
-			}
+			BuyMarket(Volume);
+			_barsInPosition = 0;
 		}
-
-		UpdateHistory(candle);
-	}
-
-	private void UpdateHistory(ICandleMessage candle)
-	{
-		_low4 = _low3;
-		_low3 = _low2;
-		_low2 = _low1;
-		_low1 = candle.LowPrice;
-
-		_high3 = _high2;
-		_high2 = _high1;
-		_high1 = candle.HighPrice;
-
-		if (_historyCount < 4)
-			_historyCount++;
 	}
 }
