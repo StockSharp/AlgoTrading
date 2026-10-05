@@ -4,225 +4,121 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, Sides
-from StockSharp.Algo.Indicators import AverageDirectionalIndex
+from System import TimeSpan, Decimal, Math
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, Level1Fields
+from StockSharp.BusinessEntities import Subscription
+from StockSharp.Algo.Indicators import AverageDirectionalIndex, SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-
 
 class adx_mean_reversion_strategy(Strategy):
     """
-    ADX Mean Reversion strategy. This strategy enters positions when ADX is
-    significantly below or above its average value.
-
+    ADX Mean Reversion strategy.
+    The bands lie DeviationMultiplier standard deviations around the average of the last AveragePeriod ADX values, the current one included.
+    ADX below the lower band with the close below the AveragePeriod simple moving average goes long and ADX above the upper band with the close above it goes short,
+    reversing an opposite position. A long closes once ADX is back above its average and a short once it is back below it, and a percent stop limits the loss.
     """
 
     def __init__(self):
         super(adx_mean_reversion_strategy, self).__init__()
-
-        # Initialize strategy parameters
-        self._adx_period = self.Param("AdxPeriod", 14) \
-            .SetGreaterThanZero() \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 20, 5) \
-            .SetDisplay("ADX Period", "Period for ADX indicator", "Indicators")
-
-        self._average_period = self.Param("AveragePeriod", 20) \
-            .SetGreaterThanZero() \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 50, 10) \
-            .SetDisplay("Average Period", "Period for calculating ADX average and standard deviation", "Settings")
-
-        self._deviation_multiplier = self.Param("DeviationMultiplier", 2.0) \
-            .SetGreaterThanZero() \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.5, 3.0, 0.5) \
-            .SetDisplay("Deviation Multiplier", "Multiplier for standard deviation", "Settings")
-
-        self._candle_type = self.Param("CandleType", tf(5)) \
-            .SetDisplay("Candle Type", "Type of candles to use", "General")
-
-        self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
-            .SetGreaterThanZero() \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.0, 3.0, 0.5) \
-            .SetDisplay("Stop Loss %", "Stop loss as percentage of entry price", "Risk Management")
-
-        # Internal state variables
-        self._prev_adx = 0.0
-        self._avg_adx = 0.0
-        self._std_dev_adx = 0.0
-        self._sum_adx = 0.0
-        self._sum_squares_adx = 0.0
-        self._count = 0
-        self._adx_values = []
+        self._adx_period = self.Param("AdxPeriod", 14).SetGreaterThanZero().SetDisplay("ADX Period", "Period of ADX", "Indicators")
+        self._average_period = self.Param("AveragePeriod", 20).SetGreaterThanZero().SetDisplay("Average Period", "Values of ADX the average and the standard deviation span", "Indicators")
+        self._deviation_multiplier = self.Param("DeviationMultiplier", 2.0).SetGreaterThanZero().SetDisplay("Multiplier", "Standard deviations between the average and a band", "Indicators")
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0).SetNotNegative().SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._reset_state()
 
     @property
-    def AdxPeriod(self):
-        return self._adx_period.Value
-
-    @AdxPeriod.setter
-    def AdxPeriod(self, value):
-        self._adx_period.Value = value
-
-    @property
-    def AveragePeriod(self):
-        return self._average_period.Value
-
-    @AveragePeriod.setter
-    def AveragePeriod(self, value):
-        self._average_period.Value = value
-
-    @property
-    def DeviationMultiplier(self):
-        return self._deviation_multiplier.Value
-
-    @DeviationMultiplier.setter
-    def DeviationMultiplier(self, value):
-        self._deviation_multiplier.Value = value
-
-    @property
-    def CandleType(self):
+    def candle_type(self):
         return self._candle_type.Value
 
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candle_type.Value = value
-
-    @property
-    def StopLossPercent(self):
-        return self._stop_loss_percent.Value
-
-    @StopLossPercent.setter
-    def StopLossPercent(self, value):
-        self._stop_loss_percent.Value = value
+    def _reset_state(self):
+        self._values = []
 
     def OnReseted(self):
         super(adx_mean_reversion_strategy, self).OnReseted()
-        self._prev_adx = 0.0
-        self._avg_adx = 0.0
-        self._std_dev_adx = 0.0
-        self._sum_adx = 0.0
-        self._sum_squares_adx = 0.0
-        self._count = 0
-        self._adx_values.clear()
+        self._reset_state()
 
     def OnStarted2(self, time):
-        """
-        Called when the strategy starts. Resets statistics, creates indicators,
-        and sets up charting.
-        """
         super(adx_mean_reversion_strategy, self).OnStarted2(time)
 
-        # Create ADX indicator
+        self._reset_state()
+
         adx = AverageDirectionalIndex()
-        adx.Length = self.AdxPeriod
+        adx.Length = self._adx_period.Value
+        sma = SimpleMovingAverage()
+        sma.Length = self._average_period.Value
 
-        # Create subscription and bind indicator
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription.BindEx(adx, self.ProcessCandle).Start()
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.BindEx(adx, sma, self._process_candle).Start()
 
-        # Setup chart visualization
+        self.StartProtection(Unit(), Unit(Decimal(self._stop_loss_percent.Value), UnitTypes.Percent), useMarketOrders=True, isLocalStop=True)
+
+        # The stop has to see prices between candles, not only at their close.
+        for field in (Level1Fields.BestBidPrice, Level1Fields.BestAskPrice):
+            quotes = Subscription(DataType.Level1, self.Security)
+            quotes.MarketData.BuildField = field
+            self.SubscribeLevel1(quotes).Bind(self._observe_protection_quote).Start()
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, adx)
+            self.DrawIndicator(area, sma)
             self.DrawOwnTrades(area)
+            oscillators = self.CreateChartArea()
+            if oscillators is not None:
+                self.DrawIndicator(oscillators, adx)
 
-        # Enable position protection
-        self.StartProtection(
-            takeProfit=None,
-            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
-        )
-    def ProcessCandle(self, candle, adx_value):
-        """
-        Process candle with ADX indicator value.
-        """
-        # Skip unfinished candles
+    def _observe_protection_quote(self, quote):
+        # The high-level handler activates native protection before the callback, including between bars.
+        pass
+
+    def _process_candle(self, candle, adx_value, sma_value):
         if candle.State != CandleStates.Finished:
             return
 
-        # Check if strategy is ready to trade
-
-        if adx_value.MovingAverage is None:
-            return
-        current_adx = float(adx_value.MovingAverage)
-
-        if adx_value.Dx is None or adx_value.Dx.Plus is None or adx_value.Dx.Minus is None:
-            return
-        dx = adx_value.Dx
-        plus_di = float(dx.Plus)
-        minus_di = float(dx.Minus)
-
-        # Update ADX statistics
-        self.UpdateAdxStatistics(current_adx)
-
-        # Save current ADX for next iteration
-        self._prev_adx = current_adx
-
-        # If we don't have enough data yet for statistics
-        if self._count < self.AveragePeriod:
+        if not sma_value.IsFormed:
             return
 
-        if self.Position == 0:
-            # Positive trend strength should correspond to price direction for entry
-            direction = Sides.Buy if plus_di > minus_di else Sides.Sell
+        if not adx_value.IsFormed or adx_value.MovingAverage is None:
+            return
 
-            # ADX significantly below average - expect rise
-            if current_adx < self._avg_adx - self.DeviationMultiplier * self._std_dev_adx:
-                if direction == Sides.Buy:
-                    self.BuyMarket(self.Volume)
-                    self.LogInfo(
-                        f"Long entry: ADX = {current_adx}, Avg = {self._avg_adx}, StdDev = {self._std_dev_adx}, +DI > -DI")
-                else:
-                    self.SellMarket(self.Volume)
-                    self.LogInfo(
-                        f"Short entry: ADX = {current_adx}, Avg = {self._avg_adx}, StdDev = {self._std_dev_adx}, +DI < -DI")
-            # ADX significantly above average - expect fall (trend exhaustion)
-            elif current_adx > self._avg_adx + self.DeviationMultiplier * self._std_dev_adx:
-                if direction == Sides.Sell:
-                    self.BuyMarket(self.Volume)
-                    self.LogInfo(
-                        f"Long entry (trend strength exhaustion): ADX = {current_adx}, Avg = {self._avg_adx}, StdDev = {self._std_dev_adx}")
-                else:
-                    self.SellMarket(self.Volume)
-                    self.LogInfo(
-                        f"Short entry (trend strength exhaustion): ADX = {current_adx}, Avg = {self._avg_adx}, StdDev = {self._std_dev_adx}")
-        elif self.Position > 0:
-            # Long position exit condition
-            if current_adx > self._avg_adx:
-                self.ClosePosition()
-                self.LogInfo(f"Long exit: ADX = {current_adx}, Avg = {self._avg_adx}")
-        elif self.Position < 0:
-            # Short position exit condition
-            if current_adx < self._avg_adx:
-                self.ClosePosition()
-                self.LogInfo(f"Short exit: ADX = {current_adx}, Avg = {self._avg_adx}")
+        value = adx_value.MovingAverage
 
-    def UpdateAdxStatistics(self, current_adx):
-        """Update running mean and standard deviation of ADX."""
-        self._adx_values.append(current_adx)
-        self._sum_adx += current_adx
-        self._sum_squares_adx += current_adx * current_adx
-        self._count += 1
+        period = self._average_period.Value
+        self._values.append(value)
+        if len(self._values) > period:
+            self._values.pop(0)
 
-        if len(self._adx_values) > self.AveragePeriod:
-            oldest_adx = self._adx_values.pop(0)
-            self._sum_adx -= oldest_adx
-            self._sum_squares_adx -= oldest_adx * oldest_adx
-            self._count -= 1
+        if len(self._values) < period:
+            return
 
-        if self._count > 0:
-            self._avg_adx = self._sum_adx / self._count
-            if self._count > 1:
-                variance = (self._sum_squares_adx - (self._sum_adx * self._sum_adx) / self._count) / (self._count - 1)
-                self._std_dev_adx = 0 if variance <= 0 else Math.Sqrt(float(variance))
-            else:
-                self._std_dev_adx = 0
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
+        total = Decimal(0)
+        for item in self._values:
+            total += item
+        mean = total / Decimal(period)
+        squares = Decimal(0)
+        for item in self._values:
+            squares += (item - mean) * (item - mean)
+        deviation = Decimal(Math.Sqrt(Decimal.ToDouble(squares / Decimal(period))))
+        multiplier = Decimal(self._deviation_multiplier.Value)
+        upper = mean + multiplier * deviation
+        lower = mean - multiplier * deviation
+        close = candle.ClosePrice
+        ma = sma_value.GetValue[Decimal](None)
+
+        if value < lower and close < ma and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+        elif value > upper and close > ma and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
+        elif self.Position > 0 and value > mean:
+            self.SellMarket(self.Position)
+        elif self.Position < 0 and value < mean:
+            self.BuyMarket(-self.Position)
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return adx_mean_reversion_strategy()
-
