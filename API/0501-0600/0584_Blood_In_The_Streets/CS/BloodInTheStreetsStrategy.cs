@@ -11,31 +11,87 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Blood in the streets strategy using EMA crossover for trend timing.
-/// Enters long on golden cross, short on death cross.
+/// Blood In The Streets strategy.
+/// The drawdown is the percent distance of the close below the highest high of the last LookbackPeriod candles. When it falls to
+/// its StdDevLength mean plus StdDevThreshold standard deviations or lower, the strategy buys, and it closes the long after ExitBars candles.
 /// </summary>
 public class BloodInTheStreetsStrategy : Strategy
 {
-	private readonly StrategyParam<int> _fastEmaPeriod;
-	private readonly StrategyParam<int> _slowEmaPeriod;
+	private readonly StrategyParam<int> _lookbackPeriod;
+	private readonly StrategyParam<int> _stdDevLength;
+	private readonly StrategyParam<decimal> _stdDevThreshold;
+	private readonly StrategyParam<int> _exitBars;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevFastEma;
-	private decimal _prevSlowEma;
+	private Highest _highest;
+	private SimpleMovingAverage _drawdownMean;
+	private StandardDeviation _drawdownDeviation;
+	private int _barsInPosition;
 
-	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
-	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	/// <summary>
+	/// Candles the highest high spans.
+	/// </summary>
+	public int LookbackPeriod
+	{
+		get => _lookbackPeriod.Value;
+		set => _lookbackPeriod.Value = value;
+	}
 
+	/// <summary>
+	/// Candles the drawdown mean and standard deviation span.
+	/// </summary>
+	public int StdDevLength
+	{
+		get => _stdDevLength.Value;
+		set => _stdDevLength.Value = value;
+	}
+
+	/// <summary>
+	/// Standard deviations from the mean the drawdown has to reach.
+	/// </summary>
+	public decimal StdDevThreshold
+	{
+		get => _stdDevThreshold.Value;
+		set => _stdDevThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Candles a position is held.
+	/// </summary>
+	public int ExitBars
+	{
+		get => _exitBars.Value;
+		set => _exitBars.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
+	/// </summary>
 	public BloodInTheStreetsStrategy()
 	{
-		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+		_lookbackPeriod = Param(nameof(LookbackPeriod), 50)
 			.SetGreaterThanZero()
-			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+			.SetDisplay("Lookback Period", "Candles the highest high spans", "Indicators");
 
-		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+		_stdDevLength = Param(nameof(StdDevLength), 50)
 			.SetGreaterThanZero()
-			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+			.SetDisplay("StdDev Length", "Candles the drawdown mean and standard deviation span", "Indicators");
+
+		_stdDevThreshold = Param(nameof(StdDevThreshold), -1m)
+			.SetDisplay("StdDev Threshold", "Standard deviations from the mean the drawdown has to reach", "Indicators");
+
+		_exitBars = Param(nameof(ExitBars), 35)
+			.SetGreaterThanZero()
+			.SetDisplay("Exit Bars", "Candles a position is held", "Exit");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -51,8 +107,10 @@ public class BloodInTheStreetsStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevFastEma = 0m;
-		_prevSlowEma = 0m;
+		_highest = null;
+		_drawdownMean = null;
+		_drawdownDeviation = null;
+		_barsInPosition = 0;
 	}
 
 	/// <inheritdoc />
@@ -60,46 +118,66 @@ public class BloodInTheStreetsStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
-		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
+		_highest = new Highest { Length = LookbackPeriod };
+		_drawdownMean = new SimpleMovingAverage { Length = StdDevLength };
+		_drawdownDeviation = new StandardDeviation { Length = StdDevLength };
+		_barsInPosition = 0;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(fastEma, slowEma, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, fastEma);
-			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_prevFastEma == 0m || _prevSlowEma == 0m)
+		var highestValue = _highest.Process(new DecimalIndicatorValue(_highest, candle.HighPrice, candle.OpenTime) { IsFinal = true });
+
+		if (!highestValue.IsFormed)
+			return;
+
+		var highest = highestValue.GetValue<decimal>();
+
+		if (highest <= 0)
+			return;
+
+		var drawdown = (candle.ClosePrice - highest) / highest * 100m;
+		var meanValue = _drawdownMean.Process(new DecimalIndicatorValue(_drawdownMean, drawdown, candle.OpenTime) { IsFinal = true });
+		var deviationValue = _drawdownDeviation.Process(new DecimalIndicatorValue(_drawdownDeviation, drawdown, candle.OpenTime) { IsFinal = true });
+
+		if (Position > 0)
+			_barsInPosition++;
+
+		if (!meanValue.IsFormed || !deviationValue.IsFormed)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (Position > 0)
 		{
-			_prevFastEma = fastEmaValue;
-			_prevSlowEma = slowEmaValue;
+			if (_barsInPosition >= ExitBars)
+				SellMarket(Position);
+
 			return;
 		}
 
-		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
-		{
-			BuyMarket();
-		}
-		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
-		{
-			SellMarket();
-		}
+		var threshold = meanValue.GetValue<decimal>() + StdDevThreshold * deviationValue.GetValue<decimal>();
 
-		_prevFastEma = fastEmaValue;
-		_prevSlowEma = slowEmaValue;
+		if (Position == 0 && drawdown <= threshold)
+		{
+			BuyMarket(Volume);
+			_barsInPosition = 0;
+		}
 	}
 }
