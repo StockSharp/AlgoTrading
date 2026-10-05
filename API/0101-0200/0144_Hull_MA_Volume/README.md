@@ -26,6 +26,7 @@ This method targets traders watching for strong participation on breakouts. ATR-
   - `StopLossAtr` = 2.0m
   - `AtrPeriod` = 14
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    AvgVolume is the average volume of the previous VolumePeriod candles. An entry signal against an open position reverses it. The stop is checked on candle closes.
 - **Filters**:
   - Category: Breakout
   - Direction: Both

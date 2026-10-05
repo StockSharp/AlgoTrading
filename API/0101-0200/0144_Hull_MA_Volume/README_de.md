@@ -26,6 +26,7 @@ Diese Methode richtet sich an Trader, die auf starke Beteiligung bei Ausbrüchen
   - `StopLossAtr` = 2.0m
   - `AtrPeriod` = 14
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    AvgVolume ist das durchschnittliche Volumen der vorherigen VolumePeriod Kerzen. Ein Einstiegssignal gegen eine offene Position dreht sie. Der Stop wird auf Kerzenschlüssen geprüft.
 - **Filter**:
   - Kategorie: Ausbruch
   - Richtung: Beide

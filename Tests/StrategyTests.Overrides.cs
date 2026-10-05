@@ -4658,6 +4658,81 @@ public abstract partial class StrategyTests
 		if (secondary) IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "TON must trade both sides.");
 	}
 
+	[TestMethod]
+	[TestCategory("Shard05")]
+	[DataRow(9, 20, 1.5, 2.0, 14, false)]
+	[DataRow(14, 10, 1.2, 0.5, 10, true)]
+	public async Task S0144_HullSlopeOnVolumeSurgesUntilTheSlopeTurnsOrAnAtrStop(int hullPeriod, int volumePeriod, double multiplier, double stopAtr, int atrPeriod, bool secondary)
+	{
+		var hull = new HullMovingAverage { Length = hullPeriod };
+		var atr = new AverageTrueRange { Length = atrPeriod };
+		var volumes = new List<decimal>();
+		decimal? previousHull = null;
+		var stopPrice = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var turnExits = 0;
+		var stopExits = 0;
+		var violations = new List<string>();
+		await Replay("0144_Hull_MA_Volume", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(9, strategy.Parameters["HullPeriod"].Value);
+			AreEqual(20, strategy.Parameters["VolumePeriod"].Value);
+			AreEqual(1.5m, Convert.ToDecimal(strategy.Parameters["VolumeMultiplier"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossAtr"].Value));
+			AreEqual(14, strategy.Parameters["AtrPeriod"].Value);
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "HullPeriod", hullPeriod);
+			SetParam(strategy, "VolumePeriod", volumePeriod);
+			SetParam(strategy, "VolumeMultiplier", multiplier);
+			SetParam(strategy, "StopLossAtr", stopAtr);
+			SetParam(strategy, "AtrPeriod", atrPeriod);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var h = hull.Process(candle);
+				var a = atr.Process(candle);
+				// The strategy only sees candles once no bound indicator returns an empty value.
+				if (h.IsEmpty || a.IsEmpty) return;
+				decimal? average = volumes.Count == volumePeriod ? volumes.Average() : null;
+				volumes.Add(candle.TotalVolume);
+				if (volumes.Count > volumePeriod) volumes.RemoveAt(0);
+				if (!h.IsFormed || !a.IsFormed) return;
+				var value = h.GetValue<decimal>();
+				var last = previousHull;
+				previousHull = value;
+				if (last is not decimal lastHull || average is not decimal avg) return;
+				var range = a.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var rising = value > lastHull;
+				var falling = value < lastHull;
+				var surge = candle.TotalVolume > avg * (decimal)multiplier;
+				var position = strategy.Position;
+				if (rising && surge && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; stopPrice = close - (decimal)stopAtr * range; }
+				else if (falling && surge && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; stopPrice = close + (decimal)stopAtr * range; }
+				else if (position > 0m && (falling || close <= stopPrice)) { expectedSide = Sides.Sell; expectedVolume = position; if (falling) turnExits++; else stopExits++; }
+				else if (position < 0m && (rising || close >= stopPrice)) { expectedSide = Sides.Buy; expectedVolume = -position; if (rising) turnExits++; else stopExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow the Hull slope on a volume surge, or close when the slope turns or at the ATR stop.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && turnExits > 0, "The fixture must trade both sides and exit when the slope turns.");
+		if (secondary) IsTrue(stopExits > 0, "TON must close a position at the ATR stop.");
+	}
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

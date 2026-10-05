@@ -26,6 +26,7 @@ Este método é voltado para traders que observam forte participação em rompim
   - `StopLossAtr` = 2.0m
   - `AtrPeriod` = 14
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    AvgVolume é o volume médio dos VolumePeriod candles anteriores. Um sinal de entrada contra uma posição aberta a inverte. O stop é verificado nos fechamentos dos candles.
 - **Filtros**:
   - Categoria: Rompimento
   - Direção: Ambos

@@ -5,118 +5,108 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan
+from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import HullMovingAverage
+from StockSharp.Algo.Indicators import HullMovingAverage, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-
 
 class hull_ma_volume_strategy(Strategy):
     """
-    Strategy that uses Hull Moving Average for trend direction.
-    Enters when HMA direction changes.
+    Hull MA Volume strategy.
+    A rising Hull average on a candle whose volume exceeds VolumeMultiplier times the average of the previous VolumePeriod candles goes long,
+    a falling one on such volume goes short, reversing an opposite position. A long closes when the Hull average turns down and a short
+    when it turns up. The stop lies StopLossAtr ATR from the entry close and is checked on candle closes.
     """
 
     def __init__(self):
         super(hull_ma_volume_strategy, self).__init__()
-
-        self._candle_type = self.Param("CandleType", tf(5)) \
-            .SetDisplay("Candle Type", "Type of candles to use", "General")
-
-        self._hull_period = self.Param("HullPeriod", 9) \
-            .SetRange(5, 30) \
-            .SetDisplay("Hull MA Period", "Period of the Hull Moving Average", "Indicators")
-
-        self._cooldown_bars = self.Param("CooldownBars", 100) \
-            .SetDisplay("Cooldown Bars", "Bars between trades", "General") \
-            .SetRange(5, 500)
-
-        self._prev_hull_value = 0.0
-        self._cooldown = 0
+        self._hull_period = self.Param("HullPeriod", 9).SetGreaterThanZero().SetDisplay("Hull Period", "Period of the Hull moving average", "Indicators")
+        self._volume_period = self.Param("VolumePeriod", 20).SetGreaterThanZero().SetDisplay("Volume Period", "Previous candles the volume is averaged over", "Indicators")
+        self._volume_multiplier = self.Param("VolumeMultiplier", 1.5).SetGreaterThanZero().SetDisplay("Volume Multiplier", "How many times the average volume a candle must exceed", "Indicators")
+        self._stop_loss_atr = self.Param("StopLossAtr", 2.0).SetNotNegative().SetDisplay("Stop Loss ATR", "Stop distance from the entry in ATRs", "Risk")
+        self._atr_period = self.Param("AtrPeriod", 14).SetGreaterThanZero().SetDisplay("ATR Period", "Period of the stop ATR", "Risk")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._reset_state()
 
     @property
     def candle_type(self):
         return self._candle_type.Value
 
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
+    def _reset_state(self):
+        self._volumes = []
+        self._prev_hull = None
+        self._stop_price = Decimal(0)
 
-    @property
-    def hull_period(self):
-        return self._hull_period.Value
-
-    @hull_period.setter
-    def hull_period(self, value):
-        self._hull_period.Value = value
-
-    @property
-    def cooldown_bars(self):
-        return self._cooldown_bars.Value
-
-    @cooldown_bars.setter
-    def cooldown_bars(self, value):
-        self._cooldown_bars.Value = value
+    def OnReseted(self):
+        super(hull_ma_volume_strategy, self).OnReseted()
+        self._reset_state()
 
     def OnStarted2(self, time):
         super(hull_ma_volume_strategy, self).OnStarted2(time)
 
-        self._prev_hull_value = 0.0
-        self._cooldown = 0
+        self._reset_state()
 
-        hull_ma = HullMovingAverage()
-        hull_ma.Length = self.hull_period
+        hull = HullMovingAverage()
+        hull.Length = self._hull_period.Value
+        atr = AverageTrueRange()
+        atr.Length = self._atr_period.Value
 
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(hull_ma, self.ProcessCandle).Start()
+        subscription.BindEx(hull, atr, self._process_candle).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, hull_ma)
+            self.DrawIndicator(area, hull)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle, hull_value):
+    def _process_candle(self, candle, hull_value, atr_value):
         if candle.State != CandleStates.Finished:
             return
 
-        hv = float(hull_value)
+        # Volume is compared with the candles before this one.
+        period = self._volume_period.Value
+        average = None
+        if len(self._volumes) == period:
+            total = Decimal(0)
+            for volume in self._volumes:
+                total += volume
+            average = total / Decimal(period)
 
-        if self._prev_hull_value == 0:
-            self._prev_hull_value = hv
+        self._volumes.append(candle.TotalVolume)
+        if len(self._volumes) > period:
+            self._volumes.pop(0)
+
+        if not hull_value.IsFormed or not atr_value.IsFormed:
             return
 
-        rising = hv > self._prev_hull_value
-        falling = hv < self._prev_hull_value
-        self._prev_hull_value = hv
+        hull = hull_value.GetValue[Decimal](None)
+        prev_hull = self._prev_hull
+        self._prev_hull = hull
 
-        if self._cooldown > 0:
-            self._cooldown -= 1
+        if prev_hull is None or average is None:
             return
 
-        # Entry: HMA turning up
-        if rising and self.Position == 0:
-            self.BuyMarket()
-            self._cooldown = self.cooldown_bars
-        # Entry: HMA turning down
-        elif falling and self.Position == 0:
-            self.SellMarket()
-            self._cooldown = self.cooldown_bars
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
-        # Exit long: HMA turns down
-        if self.Position > 0 and falling:
-            self.SellMarket()
-            self._cooldown = self.cooldown_bars
-        # Exit short: HMA turns up
-        elif self.Position < 0 and rising:
-            self.BuyMarket()
-            self._cooldown = self.cooldown_bars
+        atr = atr_value.GetValue[Decimal](None)
+        close = candle.ClosePrice
+        rising = hull > prev_hull
+        falling = hull < prev_hull
+        surge = candle.TotalVolume > average * Decimal(self._volume_multiplier.Value)
 
-    def OnReseted(self):
-        super(hull_ma_volume_strategy, self).OnReseted()
-        self._prev_hull_value = 0.0
-        self._cooldown = 0
+        stop_atr = Decimal(self._stop_loss_atr.Value)
+        if rising and surge and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+            self._stop_price = close - stop_atr * atr
+        elif falling and surge and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
+            self._stop_price = close + stop_atr * atr
+        elif self.Position > 0 and (falling or (stop_atr > 0 and close <= self._stop_price)):
+            self.SellMarket(self.Position)
+        elif self.Position < 0 and (rising or (stop_atr > 0 and close >= self._stop_price)):
+            self.BuyMarket(-self.Position)
 
     def CreateClone(self):
         return hull_ma_volume_strategy()
