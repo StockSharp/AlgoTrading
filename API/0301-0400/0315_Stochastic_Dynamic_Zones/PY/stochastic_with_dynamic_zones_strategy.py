@@ -1,174 +1,129 @@
 import clr
-import math
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan, Math
-from System.Collections.Generic import Queue
+from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import StochasticOscillator
+from StockSharp.Algo.Indicators import StochasticK, SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 
 class stochastic_with_dynamic_zones_strategy(Strategy):
     """
-    Strategy based on Stochastic Oscillator with dynamic overbought and oversold zones.
+    Stochastic Oscillator with dynamic overbought and oversold zones.
+    The zones are the average of %K over LookbackPeriod bars plus/minus StandardDeviationFactor
+    standard deviations. Buys when %K crosses above %D inside the oversold zone and sells when %K
+    crosses below %D inside the overbought zone; the opposite signal reverses the position.
     """
 
     def __init__(self):
         super(stochastic_with_dynamic_zones_strategy, self).__init__()
 
+        self._stoch_period = self.Param("StochPeriod", 14) \
+            .SetGreaterThanZero() \
+            .SetDisplay("Stochastic Period", "Stochastic lookback period", "Indicators")
         self._stoch_k_period = self.Param("StochKPeriod", 3) \
-            .SetDisplay("Stoch %K Period", "Smoothing period for %K", "Indicators")
-
+            .SetGreaterThanZero() \
+            .SetDisplay("Stoch %K Period", "Smoothing period of %K", "Indicators")
         self._stoch_d_period = self.Param("StochDPeriod", 3) \
-            .SetDisplay("Stoch %D Period", "Smoothing period for %D", "Indicators")
-
+            .SetGreaterThanZero() \
+            .SetDisplay("Stoch %D Period", "Period of %D", "Indicators")
         self._lookback_period = self.Param("LookbackPeriod", 20) \
+            .SetGreaterThanZero() \
             .SetDisplay("Lookback Period", "Period for dynamic zones", "Indicators")
-
-        self._std_dev_factor = self.Param("StdDevFactor", 3.0) \
-            .SetDisplay("StdDev Factor", "Factor for dynamic zones", "Indicators")
-
-        self._signal_cooldown_bars = self.Param("SignalCooldownBars", 240) \
-            .SetDisplay("Signal Cooldown", "Bars to wait between signals", "Trading") \
-            .SetGreaterThanZero()
-
+        self._standard_deviation_factor = self.Param("StandardDeviationFactor", 2.0) \
+            .SetGreaterThanZero() \
+            .SetDisplay("StdDev Factor", "Standard deviation factor for dynamic zones", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
-        self._prev_stoch_k = 50.0
-        self._stoch_sum = 0.0
-        self._stoch_sq_sum = 0.0
-        self._stoch_count = 0
-        self._cooldown_remaining = 0
-        self._last_entry_time = None
-        self._was_below_oversold = False
-        self._stoch_queue = []
+        self._k_smoothing = None
+        self._d_line = None
+        self._zone_average = None
+        self._zone_std_dev = None
+        self._prev_k = None
+        self._prev_d = None
 
     @property
-    def candle_type(self):
+    def CandleType(self):
         return self._candle_type.Value
+
+    def GetWorkingSecurities(self):
+        return [(self.Security, self.CandleType)]
 
     def OnReseted(self):
         super(stochastic_with_dynamic_zones_strategy, self).OnReseted()
-        self._prev_stoch_k = 50.0
-        self._stoch_sum = 0.0
-        self._stoch_sq_sum = 0.0
-        self._stoch_count = 0
-        self._cooldown_remaining = 0
-        self._last_entry_time = None
-        self._was_below_oversold = False
-        self._stoch_queue = []
+        self._k_smoothing = None
+        self._d_line = None
+        self._zone_average = None
+        self._zone_std_dev = None
+        self._prev_k = None
+        self._prev_d = None
 
     def OnStarted2(self, time):
         super(stochastic_with_dynamic_zones_strategy, self).OnStarted2(time)
 
-        self._prev_stoch_k = 50.0
-        self._stoch_sum = 0.0
-        self._stoch_sq_sum = 0.0
-        self._stoch_count = 0
-        self._cooldown_remaining = 0
-        self._last_entry_time = None
-        self._was_below_oversold = False
-        self._stoch_queue = []
+        raw_k = StochasticK()
+        raw_k.Length = self._stoch_period.Value
+        self._k_smoothing = SimpleMovingAverage()
+        self._k_smoothing.Length = self._stoch_k_period.Value
+        self._d_line = SimpleMovingAverage()
+        self._d_line.Length = self._stoch_d_period.Value
+        self._zone_average = SimpleMovingAverage()
+        self._zone_average.Length = self._lookback_period.Value
+        self._zone_std_dev = StandardDeviation()
+        self._zone_std_dev.Length = self._lookback_period.Value
 
-        stochastic = StochasticOscillator()
-        stochastic.K.Length = int(self._stoch_k_period.Value)
-        stochastic.D.Length = int(self._stoch_d_period.Value)
-
-        subscription = self.SubscribeCandles(self.candle_type)
-        subscription.BindEx(stochastic, self._process_candle).Start()
+        subscription = self.SubscribeCandles(self.CandleType)
+        subscription.Bind(raw_k, self._process_candle).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
             self.DrawOwnTrades(area)
 
-    def _process_candle(self, candle, stoch_value):
+    def _process_candle(self, candle, raw_k_value):
         if candle.State != CandleStates.Finished:
             return
 
-        if not stoch_value.IsFormed:
+        t = candle.ServerTime
+        k = float(process_float(self._k_smoothing, raw_k_value, t, True))
+        if not self._k_smoothing.IsFormed:
             return
 
-        stoch_k_val = stoch_value.K
-        if stoch_k_val is None:
+        d = float(process_float(self._d_line, k, t, True))
+        average = float(process_float(self._zone_average, k, t, True))
+        std_dev = float(process_float(self._zone_std_dev, k, t, True))
+
+        prev_k = self._prev_k
+        prev_d = self._prev_d
+        self._prev_k = k
+        self._prev_d = d
+
+        if not self._d_line.IsFormed or not self._zone_average.IsFormed or not self._zone_std_dev.IsFormed:
             return
 
-        stoch_k = float(stoch_k_val)
-        lookback = int(self._lookback_period.Value)
-
-        self._stoch_queue.append(stoch_k)
-        self._stoch_sum += stoch_k
-        self._stoch_sq_sum += stoch_k * stoch_k
-        self._stoch_count += 1
-
-        if self._stoch_count > lookback:
-            removed = self._stoch_queue.pop(0)
-            self._stoch_sum -= removed
-            self._stoch_sq_sum -= removed * removed
-            self._stoch_count = lookback
-
-        if self._stoch_count < lookback:
-            self._prev_stoch_k = stoch_k
+        if prev_k is None or prev_d is None:
             return
 
-        if self._cooldown_remaining > 0:
-            self._cooldown_remaining -= 1
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
-        average = self._stoch_sum / self._stoch_count
-        variance = (self._stoch_sq_sum / self._stoch_count) - (average * average)
-        std_dev = 0.0 if variance <= 0 else math.sqrt(variance)
+        factor = float(self._standard_deviation_factor.Value)
+        oversold = average - factor * std_dev
+        overbought = average + factor * std_dev
 
-        sdf = float(self._std_dev_factor.Value)
-        dynamic_oversold = max(10.0, average - sdf * std_dev)
-        entry_oversold = min(dynamic_oversold, 10.0)
-        is_reversing_up = stoch_k > self._prev_stoch_k
+        cross_up = prev_k <= prev_d and k > d
+        cross_down = prev_k >= prev_d and k < d
 
-        cd = int(self._signal_cooldown_bars.Value)
-
-        if self.Position > 0 and stoch_k >= 50.0:
-            self.SellMarket()
-            self._cooldown_remaining = cd
-        elif self._cooldown_remaining == 0 and not self._has_entry_today(candle) and self._was_below_oversold and stoch_k >= entry_oversold and is_reversing_up and self.Position == 0:
-            self.BuyMarket()
-            self._cooldown_remaining = cd
-            close_time = candle.CloseTime
-            open_time = candle.OpenTime
-            try:
-                if close_time is not None and str(close_time) != "01/01/0001 00:00:00 +00:00":
-                    self._last_entry_time = close_time
-                else:
-                    self._last_entry_time = open_time
-            except:
-                self._last_entry_time = open_time
-
-        self._was_below_oversold = stoch_k < entry_oversold
-        self._prev_stoch_k = stoch_k
-
-    def _has_entry_today(self, candle):
-        if self._last_entry_time is None:
-            return False
-
-        close_time = candle.CloseTime
-        open_time = candle.OpenTime
-        try:
-            if close_time is not None and str(close_time) != "01/01/0001 00:00:00 +00:00":
-                candle_time = close_time
-            else:
-                candle_time = open_time
-        except:
-            candle_time = open_time
-
-        try:
-            diff_days = (candle_time.Date - self._last_entry_time.Date).TotalDays
-            return diff_days < 3
-        except:
-            return False
+        if cross_up and k < oversold and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+        elif cross_down and k > overbought and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
 
     def CreateClone(self):
         return stochastic_with_dynamic_zones_strategy()
