@@ -18,6 +18,7 @@ The setup seeks quick reversals following an exhaustive thrust and is best used 
 - **Default Values**:
   - `CandleType` = 5 minute
   - `StopLossPercent` = 1
+    A protective stop this many percent from the entry price, watched between candles; the position also closes when a close breaks through the outside bar's opposite extreme.
 - **Filters**:
   - Category: Pattern
   - Direction: Both

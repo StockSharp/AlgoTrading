@@ -1738,6 +1738,73 @@ public abstract partial class StrategyTests
 		if (stopPercent < 0.5) IsTrue(stopExits > 0, "A tight stop must be reached.");
 	}
 
+	private const string OutsideBar = "0078_Outside_Bar_Reversal";
+
+	[TestMethod]
+	[TestCategory("Shard00")]
+	[DataRow(false)]
+	[DataRow(true)]
+	public async Task S0078_OutsideBarsAgainstThePriorCandleWithExtremeBreakExits(bool secondary)
+	{
+		ICandleMessage previous = null;
+		var exitLevel = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var extremeExits = 0;
+		var sameDirectionOutsideBars = 0;
+		var violations = new List<string>();
+		await Replay(OutsideBar, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(1m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var prior = previous;
+				previous = candle;
+				if (prior == null) return;
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (position > 0m && close < exitLevel) { expectedSide = Sides.Sell; expectedVolume = position; extremeExits++; }
+				else if (position < 0m && close > exitLevel) { expectedSide = Sides.Buy; expectedVolume = -position; extremeExits++; }
+				else if (position == 0m && candle.HighPrice > prior.HighPrice && candle.LowPrice < prior.LowPrice)
+				{
+					var bullish = close > candle.OpenPrice;
+					var bearish = close < candle.OpenPrice;
+					if (bullish && prior.ClosePrice < prior.OpenPrice) { expectedSide = Sides.Buy; exitLevel = candle.LowPrice; }
+					else if (bearish && prior.ClosePrice > prior.OpenPrice) { expectedSide = Sides.Sell; exitLevel = candle.HighPrice; }
+					else if (bullish || bearish) sameDirectionOutsideBars++;
+					if (expectedSide is Sides side) { expectedVolume = strategy.Volume; entries[side]++; }
+				}
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must fade an outside bar closing against the previous candle while flat, or close the position when a close breaks the bar's opposite extreme.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] + entries[Sides.Sell] > 0, "The fixture must fade outside bars.");
+		if (secondary) IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "TON must fade outside bars on both sides.");
+		IsTrue(extremeExits > 0, "The fixture must exit through the outside bar's extreme.");
+		if (secondary) IsTrue(sameDirectionOutsideBars > 0, "TON must contain outside bars that continue the previous candle and are not traded.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard00")]
+	public Task S0078_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars(OutsideBar, TimeSpan.FromDays(31), expectedStopPercent: 1m);
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";
