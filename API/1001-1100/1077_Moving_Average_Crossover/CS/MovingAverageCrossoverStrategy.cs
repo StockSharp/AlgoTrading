@@ -11,62 +11,61 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// EMA crossover strategy with signal cooldown.
+/// Moving average crossover strategy.
+/// Goes long when the short SMA crosses above the long SMA and short when it crosses below,
+/// reversing the position on the opposite crossover.
 /// </summary>
 public class MovingAverageCrossoverStrategy : Strategy
 {
+	private readonly StrategyParam<int> _shortLength;
+	private readonly StrategyParam<int> _longLength;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _fastLength;
-	private readonly StrategyParam<int> _slowLength;
-	private readonly StrategyParam<int> _cooldownBars;
 
-	private ExponentialMovingAverage _fastEma;
-	private ExponentialMovingAverage _slowEma;
-	private decimal _prevFast;
-	private decimal _prevSlow;
-	private bool _initialized;
-	private int _barsSinceSignal;
+	private decimal? _prevShort;
+	private decimal? _prevLong;
 
+	/// <summary>
+	/// Short SMA length.
+	/// </summary>
+	public int ShortLength
+	{
+		get => _shortLength.Value;
+		set => _shortLength.Value = value;
+	}
+
+	/// <summary>
+	/// Long SMA length.
+	/// </summary>
+	public int LongLength
+	{
+		get => _longLength.Value;
+		set => _longLength.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
+	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	public int FastLength
-	{
-		get => _fastLength.Value;
-		set => _fastLength.Value = value;
-	}
-
-	public int SlowLength
-	{
-		get => _slowLength.Value;
-		set => _slowLength.Value = value;
-	}
-
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
+	/// <summary>
+	/// Constructor.
+	/// </summary>
 	public MovingAverageCrossoverStrategy()
 	{
+		_shortLength = Param(nameof(ShortLength), 9)
+			.SetGreaterThanZero()
+			.SetDisplay("Short Length", "Short SMA length", "Indicators");
+
+		_longLength = Param(nameof(LongLength), 21)
+			.SetGreaterThanZero()
+			.SetDisplay("Long Length", "Long SMA length", "Indicators");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_fastLength = Param(nameof(FastLength), 72)
-			.SetGreaterThanZero()
-			.SetDisplay("Fast Length", "Fast EMA length", "Indicators");
-
-		_slowLength = Param(nameof(SlowLength), 89)
-			.SetGreaterThanZero()
-			.SetDisplay("Slow Length", "Slow EMA length", "Indicators");
-
-		_cooldownBars = Param(nameof(CooldownBars), 200)
-			.SetGreaterThanZero()
-			.SetDisplay("Cooldown Bars", "Minimum bars between signals", "Risk");
 	}
 
 	/// <inheritdoc />
@@ -79,12 +78,8 @@ public class MovingAverageCrossoverStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_fastEma = null;
-		_slowEma = null;
-		_prevFast = 0m;
-		_prevSlow = 0m;
-		_initialized = false;
-		_barsSinceSignal = 0;
+		_prevShort = null;
+		_prevLong = null;
 	}
 
 	/// <inheritdoc />
@@ -92,58 +87,55 @@ public class MovingAverageCrossoverStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_fastEma = new ExponentialMovingAverage { Length = FastLength };
-		_slowEma = new ExponentialMovingAverage { Length = SlowLength };
+		_prevShort = null;
+		_prevLong = null;
+
+		var shortSma = new SimpleMovingAverage { Length = ShortLength };
+		var longSma = new SimpleMovingAverage { Length = LongLength };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(_fastEma, _slowEma, ProcessCandle).Start();
+		subscription
+			.BindEx(shortSma, longSma, ProcessCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, shortSma);
+			DrawIndicator(area, longSma);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue shortValue, IIndicatorValue longValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_fastEma.IsFormed || !_slowEma.IsFormed)
+		if (!shortValue.IsFormed || !longValue.IsFormed)
 			return;
 
-		if (!_initialized)
-		{
-			_prevFast = fast;
-			_prevSlow = slow;
-			_initialized = true;
-			_barsSinceSignal = CooldownBars;
+		var shortMa = shortValue.GetValue<decimal>();
+		var longMa = longValue.GetValue<decimal>();
+
+		var prevShort = _prevShort;
+		var prevLong = _prevLong;
+		_prevShort = shortMa;
+		_prevLong = longMa;
+
+		if (prevShort is not decimal ps || prevLong is not decimal pl)
 			return;
-		}
 
-		_barsSinceSignal++;
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
 
-		if (_barsSinceSignal >= CooldownBars)
-		{
-			var crossUp = _prevFast <= _prevSlow && fast > slow;
-			var crossDown = _prevFast >= _prevSlow && fast < slow;
+		var crossUp = ps <= pl && shortMa > longMa;
+		var crossDown = ps >= pl && shortMa < longMa;
 
-			if (crossUp)
-			{
-				if (Position < 0)
-					BuyMarket(Math.Abs(Position));
-				else if (Position == 0)
-					BuyMarket();
-
-				_barsSinceSignal = 0;
-			}
-			else if (crossDown)
-			{
-				if (Position > 0)
-					SellMarket(Math.Abs(Position));
-				else if (Position == 0)
-					SellMarket();
-
-				_barsSinceSignal = 0;
-			}
-		}
-
-		_prevFast = fast;
-		_prevSlow = slow;
+		if (crossUp && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (crossDown && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
 	}
 }

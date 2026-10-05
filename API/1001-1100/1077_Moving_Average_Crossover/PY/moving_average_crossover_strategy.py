@@ -5,86 +5,86 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan
+from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage
+from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 
 
 class moving_average_crossover_strategy(Strategy):
+    """
+    Moving average crossover strategy.
+    Goes long when the short SMA crosses above the long SMA and short when it crosses below,
+    reversing the position on the opposite crossover.
+    """
+
     def __init__(self):
         super(moving_average_crossover_strategy, self).__init__()
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
-            .SetDisplay("Candle Type", "Type of candles to use", "General")
-        self._fast_length = self.Param("FastLength", 72) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Fast Length", "Fast EMA length", "Indicators")
-        self._slow_length = self.Param("SlowLength", 89) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Slow Length", "Slow EMA length", "Indicators")
-        self._cooldown_bars = self.Param("CooldownBars", 200) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Cooldown Bars", "Minimum bars between signals", "Risk")
-        self._prev_fast = 0.0
-        self._prev_slow = 0.0
-        self._initialized = False
-        self._bars_since_signal = 0
+        self._short_length = self.Param("ShortLength", 9).SetGreaterThanZero().SetDisplay("Short Length", "Short SMA length", "Indicators")
+        self._long_length = self.Param("LongLength", 21).SetGreaterThanZero().SetDisplay("Long Length", "Long SMA length", "Indicators")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._reset_state()
 
     @property
     def candle_type(self):
         return self._candle_type.Value
 
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
+    def _reset_state(self):
+        self._prev_short = None
+        self._prev_long = None
 
     def OnReseted(self):
         super(moving_average_crossover_strategy, self).OnReseted()
-        self._prev_fast = 0.0
-        self._prev_slow = 0.0
-        self._initialized = False
-        self._bars_since_signal = 0
+        self._reset_state()
 
     def OnStarted2(self, time):
         super(moving_average_crossover_strategy, self).OnStarted2(time)
-        self._prev_fast = 0.0
-        self._prev_slow = 0.0
-        self._initialized = False
-        self._bars_since_signal = 0
-        self._fast_ema = ExponentialMovingAverage()
-        self._fast_ema.Length = self._fast_length.Value
-        self._slow_ema = ExponentialMovingAverage()
-        self._slow_ema.Length = self._slow_length.Value
-        subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(self._fast_ema, self._slow_ema, self.OnProcess).Start()
 
-    def OnProcess(self, candle, fast, slow):
+        self._reset_state()
+
+        short_sma = SimpleMovingAverage()
+        short_sma.Length = self._short_length.Value
+        long_sma = SimpleMovingAverage()
+        long_sma.Length = self._long_length.Value
+
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.BindEx(short_sma, long_sma, self._process_candle).Start()
+
+        area = self.CreateChartArea()
+        if area is not None:
+            self.DrawCandles(area, subscription)
+            self.DrawIndicator(area, short_sma)
+            self.DrawIndicator(area, long_sma)
+            self.DrawOwnTrades(area)
+
+    def _process_candle(self, candle, short_value, long_value):
         if candle.State != CandleStates.Finished:
             return
-        fv = float(fast)
-        sv = float(slow)
-        if not self._fast_ema.IsFormed or not self._slow_ema.IsFormed:
+
+        if not short_value.IsFormed or not long_value.IsFormed:
             return
-        if not self._initialized:
-            self._prev_fast = fv
-            self._prev_slow = sv
-            self._initialized = True
-            self._bars_since_signal = self._cooldown_bars.Value
+
+        short_ma = short_value.GetValue[Decimal](None)
+        long_ma = long_value.GetValue[Decimal](None)
+
+        prev_short = self._prev_short
+        prev_long = self._prev_long
+        self._prev_short = short_ma
+        self._prev_long = long_ma
+
+        if prev_short is None or prev_long is None:
             return
-        self._bars_since_signal += 1
-        if self._bars_since_signal >= self._cooldown_bars.Value:
-            cross_up = self._prev_fast <= self._prev_slow and fv > sv
-            cross_down = self._prev_fast >= self._prev_slow and fv < sv
-            if cross_up:
-                if self.Position <= 0:
-                    self.BuyMarket()
-                self._bars_since_signal = 0
-            elif cross_down:
-                if self.Position >= 0:
-                    self.SellMarket()
-                self._bars_since_signal = 0
-        self._prev_fast = fv
-        self._prev_slow = sv
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
+        cross_up = prev_short <= prev_long and short_ma > long_ma
+        cross_down = prev_short >= prev_long and short_ma < long_ma
+
+        if cross_up and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+        elif cross_down and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
 
     def CreateClone(self):
         return moving_average_crossover_strategy()
