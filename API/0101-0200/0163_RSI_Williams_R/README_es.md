@@ -7,7 +7,7 @@ Las pruebas indican un rendimiento anual promedio de aproximadamente 76%. Funcio
 
 El RSI describe el impulso general, mientras que el Williams %R ofrece una señal más rápida de reversión. Las operaciones se activan cuando ambos osciladores coinciden.
 
-Adecuado para traders activos que buscan oscilaciones cortas. Se utilizan stops basados en ATR.
+Adecuado para traders activos que buscan oscilaciones cortas. Se utiliza un stop porcentual.
 
 ## Detalles
 
@@ -17,7 +17,7 @@ Adecuado para traders activos que buscan oscilaciones cortas. Se utilizan stops 
 - **Largo/Corto**: Ambos
 - **Criterios de salida**:
   - El RSI regresa a la zona neutral
-- **Stops**: Basados en porcentaje usando `StopLoss`
+- **Stops**: Basados en porcentaje usando `StopLossPercent`
 - **Valores predeterminados**:
   - `RsiPeriod` = 14
   - `RsiOversold` = 30m
@@ -25,8 +25,9 @@ Adecuado para traders activos que buscan oscilaciones cortas. Se utilizan stops 
   - `WilliamsRPeriod` = 14
   - `WilliamsROversold` = -80m
   - `WilliamsROverbought` = -20m
-  - `StopLoss` = new Unit(2, UnitTypes.Percent)
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    La zona neutral es el centro de la escala del RSI: un largo se cierra cuando el RSI vuelve a subir a 50 y un corto cuando vuelve a bajar a 50. Una señal de entrada contra una posición abierta la invierte.
 - **Filtros**:
   - Categoría: Reversión a la media
   - Dirección: Ambos

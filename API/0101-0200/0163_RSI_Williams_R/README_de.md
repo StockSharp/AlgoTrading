@@ -7,7 +7,7 @@ Tests zeigen eine durchschnittliche Jahresrendite von etwa 76%. Die Strategie fu
 
 Der RSI beschreibt den allgemeinen Momentum, während der Williams %R ein schnelleres Umkehrsignal liefert. Trades werden ausgelöst, wenn beide Oszillatoren übereinstimmen.
 
-Gut für aktive Trader, die kurze Swings verfolgen. ATR-basierte Stops werden eingesetzt.
+Gut für aktive Trader, die kurze Swings verfolgen. Ein prozentualer Stop wird eingesetzt.
 
 ## Details
 
@@ -17,7 +17,7 @@ Gut für aktive Trader, die kurze Swings verfolgen. ATR-basierte Stops werden ei
 - **Long/Short**: Beide
 - **Ausstiegskriterien**:
   - RSI kehrt in die neutrale Zone zurück
-- **Stops**: Prozentbasiert mit `StopLoss`
+- **Stops**: Prozentbasiert mit `StopLossPercent`
 - **Standardwerte**:
   - `RsiPeriod` = 14
   - `RsiOversold` = 30m
@@ -25,8 +25,9 @@ Gut für aktive Trader, die kurze Swings verfolgen. ATR-basierte Stops werden ei
   - `WilliamsRPeriod` = 14
   - `WilliamsROversold` = -80m
   - `WilliamsROverbought` = -20m
-  - `StopLoss` = new Unit(2, UnitTypes.Percent)
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    Die neutrale Zone ist die Mitte der RSI-Skala: Ein Long schließt, sobald RSI wieder auf 50 steigt, ein Short, sobald er wieder auf 50 fällt. Ein Einstiegssignal gegen eine offene Position dreht sie.
 - **Filter**:
   - Kategorie: Mean Reversion
   - Richtung: Beide

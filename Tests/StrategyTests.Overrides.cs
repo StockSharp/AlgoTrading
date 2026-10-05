@@ -5977,6 +5977,74 @@ public abstract partial class StrategyTests
 		if (secondary) IsTrue(stopExits > 0, "TON must close a position at the ATR stop.");
 	}
 
+	[TestMethod]
+	[TestCategory("Shard00")]
+	[DataRow(14, 30.0, 70.0, 14, -80.0, -20.0, false)]
+	[DataRow(10, 35.0, 65.0, 10, -75.0, -25.0, true)]
+	public async Task S0163_RsiAndWilliamsExtremesTogetherUntilRsiReturnsToFifty(int rsiPeriod, double rsiLow, double rsiHigh, int williamsPeriod, double williamsLow, double williamsHigh, bool secondary)
+	{
+		var rsi = new RelativeStrengthIndex { Length = rsiPeriod };
+		var williams = new WilliamsR { Length = williamsPeriod };
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var neutralExits = 0;
+		var violations = new List<string>();
+		await Replay("0163_RSI_Williams_R", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(14, strategy.Parameters["RsiPeriod"].Value);
+			AreEqual(30m, Convert.ToDecimal(strategy.Parameters["RsiOversold"].Value));
+			AreEqual(70m, Convert.ToDecimal(strategy.Parameters["RsiOverbought"].Value));
+			AreEqual(14, strategy.Parameters["WilliamsRPeriod"].Value);
+			AreEqual(-80m, Convert.ToDecimal(strategy.Parameters["WilliamsROversold"].Value));
+			AreEqual(-20m, Convert.ToDecimal(strategy.Parameters["WilliamsROverbought"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "RsiPeriod", rsiPeriod);
+			SetParam(strategy, "RsiOversold", rsiLow);
+			SetParam(strategy, "RsiOverbought", rsiHigh);
+			SetParam(strategy, "WilliamsRPeriod", williamsPeriod);
+			SetParam(strategy, "WilliamsROversold", williamsLow);
+			SetParam(strategy, "WilliamsROverbought", williamsHigh);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var r = rsi.Process(candle);
+				var w = williams.Process(candle);
+				// The strategy only sees candles once no bound indicator returns an empty value.
+				if (r.IsEmpty || w.IsEmpty || !r.IsFormed || !w.IsFormed) return;
+				var value = r.GetValue<decimal>();
+				var percentR = w.GetValue<decimal>();
+				var position = strategy.Position;
+				if (value < (decimal)rsiLow && percentR < (decimal)williamsLow && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (value > (decimal)rsiHigh && percentR > (decimal)williamsHigh && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && value >= 50m) { expectedSide = Sides.Sell; expectedVolume = position; neutralExits++; }
+				else if (position < 0m && value <= 50m) { expectedSide = Sides.Buy; expectedVolume = -position; neutralExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow RSI and Williams %R extremes together, or close when RSI returns to 50.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && neutralExits > 0, "The fixture must trade both sides and exit at RSI 50.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard00")]
+	public Task S0163_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0163_RSI_Williams_R", TimeSpan.FromDays(31));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";
