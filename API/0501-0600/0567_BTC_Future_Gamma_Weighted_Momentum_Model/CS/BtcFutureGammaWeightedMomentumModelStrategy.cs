@@ -12,31 +12,57 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// BTC Future Gamma-Weighted Momentum Model strategy.
-/// Uses an exponentially-weighted average price (GWAP) as trend filter
-/// and EMA crossover for entry signals.
+/// The gamma-weighted average price (GWAP) averages the last Length closes with weight GammaFactor^i for the close i bars ago.
+/// A close above GWAP after three consecutively rising closes goes long, a close below GWAP after three consecutively falling closes
+/// goes short, and the opposite signal reverses the position.
 /// </summary>
 public class BtcFutureGammaWeightedMomentumModelStrategy : Strategy
 {
-	private readonly StrategyParam<int> _fastEmaPeriod;
-	private readonly StrategyParam<int> _slowEmaPeriod;
+	private readonly StrategyParam<int> _length;
+	private readonly StrategyParam<decimal> _gammaFactor;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevFastEma;
-	private decimal _prevSlowEma;
+	private readonly List<decimal> _closes = new();
 
-	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
-	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	/// <summary>
+	/// Closes in the GWAP window.
+	/// </summary>
+	public int Length
+	{
+		get => _length.Value;
+		set => _length.Value = value;
+	}
 
+	/// <summary>
+	/// Decay of the weight per bar back.
+	/// </summary>
+	public decimal GammaFactor
+	{
+		get => _gammaFactor.Value;
+		set => _gammaFactor.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
+	/// </summary>
 	public BtcFutureGammaWeightedMomentumModelStrategy()
 	{
-		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+		_length = Param(nameof(Length), 60)
 			.SetGreaterThanZero()
-			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+			.SetDisplay("Length", "Closes in the GWAP window", "GWAP");
 
-		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
-			.SetGreaterThanZero()
-			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+		_gammaFactor = Param(nameof(GammaFactor), 0.75m)
+			.SetRange(0.01m, 1m)
+			.SetDisplay("Gamma Factor", "Decay of the weight per bar back", "GWAP");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -52,8 +78,7 @@ public class BtcFutureGammaWeightedMomentumModelStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevFastEma = 0m;
-		_prevSlowEma = 0m;
+		_closes.Clear();
 	}
 
 	/// <inheritdoc />
@@ -61,48 +86,56 @@ public class BtcFutureGammaWeightedMomentumModelStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
-		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
+		_closes.Clear();
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(fastEma, slowEma, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, fastEma);
-			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_prevFastEma == 0m || _prevSlowEma == 0m)
-		{
-			_prevFastEma = fastEmaValue;
-			_prevSlowEma = slowEmaValue;
+		_closes.Add(candle.ClosePrice);
+		var keep = Math.Max(Length, 3);
+		while (_closes.Count > keep)
+			_closes.RemoveAt(0);
+
+		if (_closes.Count < keep)
 			return;
+
+		var last = _closes.Count - 1;
+
+		decimal weighted = 0, weights = 0, weight = 1;
+		for (var i = 0; i < Length; i++)
+		{
+			weighted += _closes[last - i] * weight;
+			weights += weight;
+			weight *= GammaFactor;
 		}
 
-		// Buy on golden cross
-		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
-		{
-			BuyMarket();
-		}
-		// Sell on death cross
-		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
-		{
-			SellMarket();
-		}
+		var gwap = weighted / weights;
 
-		_prevFastEma = fastEmaValue;
-		_prevSlowEma = slowEmaValue;
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		var close = _closes[last];
+		var rising = close > _closes[last - 1] && _closes[last - 1] > _closes[last - 2];
+		var falling = close < _closes[last - 1] && _closes[last - 1] < _closes[last - 2];
+
+		if (close > gwap && rising && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (close < gwap && falling && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
 	}
 }
