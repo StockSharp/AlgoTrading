@@ -4,196 +4,133 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates
+from System import TimeSpan, Decimal
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
 
+LONG_RSI_LIMIT = 40
+SHORT_RSI_LIMIT = 60
+
 
 class gold_rsi_divergence_strategy(Strategy):
+    """
+    Gold RSI Divergence strategy.
+    RSI pivots are confirmed LookbackLeft bars before and LookbackRight bars after them. A pivot low whose RSI is higher than the
+    previous pivot low while price made a lower low, within RangeLower..RangeUpper bars of it and with RSI below 40, buys; the mirrored
+    bearish divergence with RSI above 60 sells. Positions are closed by a fixed stop loss and take profit in pips.
+    """
+
     def __init__(self):
         super(gold_rsi_divergence_strategy, self).__init__()
-        self._rsi_length = self.Param("RsiLength", 60) \
-            .SetGreaterThanZero() \
-            .SetDisplay("RSI Length", "RSI calculation length", "RSI")
-        self._lookback_left = self.Param("LookbackLeft", 5) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Lookback Left", "Bars to the left of pivot", "Divergence")
-        self._lookback_right = self.Param("LookbackRight", 5) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Lookback Right", "Bars to the right of pivot", "Divergence")
-        self._range_lower = self.Param("RangeLower", 5) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Range Lower", "Minimum bars between pivots", "Divergence")
-        self._range_upper = self.Param("RangeUpper", 60) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Range Upper", "Maximum bars between pivots", "Divergence")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
-            .SetDisplay("Candle Type", "Type of candles to use", "General")
-        self._cooldown_bars = self.Param("CooldownBars", 10) \
-            .SetDisplay("Cooldown Bars", "Bars between trades", "Risk")
-        self._rsi_buffer = []
-        self._low_buffer = []
-        self._high_buffer = []
-        self._buffer_count = 0
-        self._bar_index = 0
-        self._last_rsi_low = None
-        self._last_price_low = None
-        self._last_pivot_low_index = -1
-        self._last_rsi_high = None
-        self._last_price_high = None
-        self._last_pivot_high_index = -1
-        self._cooldown_remaining = 0
+        self._rsi_length = self.Param("RsiLength", 60).SetGreaterThanZero().SetDisplay("RSI Length", "RSI period", "RSI")
+        self._lookback_left = self.Param("LookbackLeft", 5).SetGreaterThanZero().SetDisplay("Lookback Left", "Bars to the left of a pivot", "Divergence")
+        self._lookback_right = self.Param("LookbackRight", 5).SetGreaterThanZero().SetDisplay("Lookback Right", "Bars to the right of a pivot", "Divergence")
+        self._range_lower = self.Param("RangeLower", 5).SetNotNegative().SetDisplay("Range Lower", "Minimum bars between two pivots", "Divergence")
+        self._range_upper = self.Param("RangeUpper", 60).SetGreaterThanZero().SetDisplay("Range Upper", "Maximum bars between two pivots", "Divergence")
+        self._stop_loss_pips = self.Param("StopLossPips", 11.0).SetNotNegative().SetDisplay("Stop Loss Pips", "Stop loss in pips (price steps)", "Risk")
+        self._take_profit_pips = self.Param("TakeProfitPips", 33.0).SetNotNegative().SetDisplay("Take Profit Pips", "Take profit in pips (price steps)", "Risk")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._reset_state()
 
     @property
     def candle_type(self):
         return self._candle_type.Value
 
+    def _reset_state(self):
+        self._window = []
+        self._bar_index = 0
+        self._last_pivot_low = None
+        self._last_pivot_high = None
+
     def OnReseted(self):
         super(gold_rsi_divergence_strategy, self).OnReseted()
-        self._initialize_buffers()
-        self._bar_index = 0
-        self._last_rsi_low = None
-        self._last_price_low = None
-        self._last_pivot_low_index = -1
-        self._last_rsi_high = None
-        self._last_price_high = None
-        self._last_pivot_high_index = -1
-        self._cooldown_remaining = 0
-
-    def _initialize_buffers(self):
-        length = max(1, int(self._lookback_left.Value) + int(self._lookback_right.Value) + 1)
-        self._rsi_buffer = [0.0] * length
-        self._low_buffer = [0.0] * length
-        self._high_buffer = [0.0] * length
-        self._buffer_count = 0
+        self._reset_state()
 
     def OnStarted2(self, time):
         super(gold_rsi_divergence_strategy, self).OnStarted2(time)
-        self._initialize_buffers()
+
+        self._reset_state()
 
         rsi = RelativeStrengthIndex()
-        rsi.Length = int(self._rsi_length.Value)
+        rsi.Length = self._rsi_length.Value
 
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(rsi, self._on_process).Start()
+        subscription.BindEx(rsi, self._process_candle).Start()
+
+        step = self.Security.PriceStep if self.Security.PriceStep is not None else Decimal(1)
+        take = Decimal(self._take_profit_pips.Value) * step
+        stop = Decimal(self._stop_loss_pips.Value) * step
+        self.StartProtection(Unit(take, UnitTypes.Absolute), Unit(stop, UnitTypes.Absolute), useMarketOrders=True)
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
             self.DrawOwnTrades(area)
+            oscillators = self.CreateChartArea()
+            if oscillators is not None:
+                self.DrawIndicator(oscillators, rsi)
 
-    def _add_to_buffer(self, rsi, low, high):
-        buf_len = len(self._rsi_buffer)
-        if self._buffer_count < buf_len:
-            self._rsi_buffer[self._buffer_count] = rsi
-            self._low_buffer[self._buffer_count] = low
-            self._high_buffer[self._buffer_count] = high
-            self._buffer_count += 1
-        else:
-            self._rsi_buffer = self._rsi_buffer[1:] + [rsi]
-            self._low_buffer = self._low_buffer[1:] + [low]
-            self._high_buffer = self._high_buffer[1:] + [high]
+    def _in_range(self, bars):
+        return self._range_lower.Value <= bars <= self._range_upper.Value
 
-    def _is_pivot_low(self, value):
-        lr = int(self._lookback_right.Value)
-        for i in range(len(self._rsi_buffer)):
-            if i == lr:
-                continue
-            if self._rsi_buffer[i] <= value:
-                return False
-        return True
-
-    def _is_pivot_high(self, value):
-        lr = int(self._lookback_right.Value)
-        for i in range(len(self._rsi_buffer)):
-            if i == lr:
-                continue
-            if self._rsi_buffer[i] >= value:
-                return False
-        return True
-
-    def _check_pivots(self, rsi_value, candle):
-        lr = int(self._lookback_right.Value)
-        candidate_rsi = self._rsi_buffer[lr]
-        candidate_bar = self._bar_index - lr
-        if self._is_pivot_low(candidate_rsi):
-            self._last_rsi_low = candidate_rsi
-            self._last_price_low = self._low_buffer[lr]
-            self._last_pivot_low_index = candidate_bar
-        if self._is_pivot_high(candidate_rsi):
-            self._last_rsi_high = candidate_rsi
-            self._last_price_high = self._high_buffer[lr]
-            self._last_pivot_high_index = candidate_bar
-
-    def _on_process(self, candle, rsi_val):
+    def _process_candle(self, candle, rsi_value):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
+        if not rsi_value.IsFormed:
             return
 
-        rsi_value = float(rsi_val)
+        rsi = rsi_value.GetValue[Decimal](None)
         self._bar_index += 1
-        self._add_to_buffer(rsi_value, float(candle.LowPrice), float(candle.HighPrice))
 
-        if self._buffer_count < len(self._rsi_buffer):
+        left = self._lookback_left.Value
+        right = self._lookback_right.Value
+        size = left + right + 1
+
+        self._window.append((rsi, candle.LowPrice, candle.HighPrice))
+        if len(self._window) > size:
+            self._window.pop(0)
+
+        if len(self._window) < size:
             return
 
-        cooldown = int(self._cooldown_bars.Value)
+        pivot_rsi, pivot_low, pivot_high = self._window[left]
+        pivot_bar = self._bar_index - right
+        is_pivot_low = True
+        is_pivot_high = True
 
-        if self._cooldown_remaining > 0:
-            self._cooldown_remaining -= 1
-            self._check_pivots(rsi_value, candle)
-            return
+        for i in range(size):
+            if i == left:
+                continue
+            if self._window[i][0] <= pivot_rsi:
+                is_pivot_low = False
+            if self._window[i][0] >= pivot_rsi:
+                is_pivot_high = False
 
-        lr = int(self._lookback_right.Value)
-        candidate_rsi = self._rsi_buffer[lr]
-        candidate_low = self._low_buffer[lr]
-        candidate_high = self._high_buffer[lr]
-        candidate_bar = self._bar_index - lr
-        range_lo = int(self._range_lower.Value)
-        range_up = int(self._range_upper.Value)
-
-        is_pivot_low = self._is_pivot_low(candidate_rsi)
-        is_pivot_high = self._is_pivot_high(candidate_rsi)
+        can_trade = self.IsFormedAndOnlineAndAllowTrading()
 
         if is_pivot_low:
-            in_range = (self._last_pivot_low_index >= 0 and
-                        candidate_bar - self._last_pivot_low_index >= range_lo and
-                        candidate_bar - self._last_pivot_low_index <= range_up)
-            bullish_div = (in_range and
-                           self._last_rsi_low is not None and
-                           self._last_price_low is not None and
-                           candidate_rsi > self._last_rsi_low and
-                           candidate_low < self._last_price_low)
-            if bullish_div and rsi_value < 40.0 and self.Position <= 0:
-                if self.Position < 0:
-                    self.BuyMarket(Math.Abs(self.Position))
-                self.BuyMarket(self.Volume)
-                self._cooldown_remaining = cooldown
-            self._last_rsi_low = candidate_rsi
-            self._last_price_low = candidate_low
-            self._last_pivot_low_index = candidate_bar
+            prev = self._last_pivot_low
+            bullish = (prev is not None and self._in_range(pivot_bar - prev[2])
+                and pivot_rsi > prev[0] and pivot_low < prev[1])
+
+            if can_trade and bullish and rsi < LONG_RSI_LIMIT and self.Position <= 0:
+                self.BuyMarket(self.Volume + abs(self.Position))
+
+            self._last_pivot_low = (pivot_rsi, pivot_low, pivot_bar)
 
         if is_pivot_high:
-            in_range = (self._last_pivot_high_index >= 0 and
-                        candidate_bar - self._last_pivot_high_index >= range_lo and
-                        candidate_bar - self._last_pivot_high_index <= range_up)
-            bearish_div = (in_range and
-                           self._last_rsi_high is not None and
-                           self._last_price_high is not None and
-                           candidate_rsi < self._last_rsi_high and
-                           candidate_high > self._last_price_high)
-            if bearish_div and rsi_value > 60.0 and self.Position >= 0:
-                if self.Position > 0:
-                    self.SellMarket(Math.Abs(self.Position))
-                self.SellMarket(self.Volume)
-                self._cooldown_remaining = cooldown
-            self._last_rsi_high = candidate_rsi
-            self._last_price_high = candidate_high
-            self._last_pivot_high_index = candidate_bar
+            prev = self._last_pivot_high
+            bearish = (prev is not None and self._in_range(pivot_bar - prev[2])
+                and pivot_rsi < prev[0] and pivot_high > prev[1])
+
+            if can_trade and bearish and rsi > SHORT_RSI_LIMIT and self.Position >= 0:
+                self.SellMarket(self.Volume + abs(self.Position))
+
+            self._last_pivot_high = (pivot_rsi, pivot_high, pivot_bar)
 
     def CreateClone(self):
         return gold_rsi_divergence_strategy()

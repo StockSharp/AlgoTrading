@@ -11,88 +11,150 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// RSI Divergence strategy.
-/// Looks for price/RSI divergence for entries.
+/// Gold RSI Divergence strategy.
+/// RSI pivots are confirmed LookbackLeft bars before and LookbackRight bars after them. A pivot low whose RSI is higher than the
+/// previous pivot low while price made a lower low, within RangeLower..RangeUpper bars of it and with RSI below 40, buys; the mirrored
+/// bearish divergence with RSI above 60 sells. Positions are closed by a fixed stop loss and take profit in pips.
 /// </summary>
 public class GoldRsiDivergenceStrategy : Strategy
 {
+	private const decimal _longRsiLimit = 40m;
+	private const decimal _shortRsiLimit = 60m;
+
+	private readonly StrategyParam<int> _rsiLength;
 	private readonly StrategyParam<int> _lookbackLeft;
 	private readonly StrategyParam<int> _lookbackRight;
 	private readonly StrategyParam<int> _rangeLower;
 	private readonly StrategyParam<int> _rangeUpper;
-	private readonly StrategyParam<int> _rsiLength;
+	private readonly StrategyParam<decimal> _stopLossPips;
+	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
 
-	private decimal[] _rsiBuffer = Array.Empty<decimal>();
-	private decimal[] _lowBuffer = Array.Empty<decimal>();
-	private decimal[] _highBuffer = Array.Empty<decimal>();
-	private int _bufferCount;
+	private readonly List<(decimal rsi, decimal low, decimal high)> _window = [];
 	private int _barIndex;
+	private (decimal rsi, decimal low, int bar)? _lastPivotLow;
+	private (decimal rsi, decimal high, int bar)? _lastPivotHigh;
 
-	private decimal? _lastRsiLow;
-	private decimal? _lastPriceLow;
-	private int _lastPivotLowIndex = -1;
+	/// <summary>
+	/// RSI period.
+	/// </summary>
+	public int RsiLength
+	{
+		get => _rsiLength.Value;
+		set => _rsiLength.Value = value;
+	}
 
-	private decimal? _lastRsiHigh;
-	private decimal? _lastPriceHigh;
-	private int _lastPivotHighIndex = -1;
-	private int _cooldownRemaining;
+	/// <summary>
+	/// Bars to the left of a pivot.
+	/// </summary>
+	public int LookbackLeft
+	{
+		get => _lookbackLeft.Value;
+		set => _lookbackLeft.Value = value;
+	}
 
-	public int RsiLength { get => _rsiLength.Value; set => _rsiLength.Value = value; }
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-	public int LookbackLeft { get => _lookbackLeft.Value; set => _lookbackLeft.Value = value; }
-	public int LookbackRight { get => _lookbackRight.Value; set => _lookbackRight.Value = value; }
-	public int RangeLower { get => _rangeLower.Value; set => _rangeLower.Value = value; }
-	public int RangeUpper { get => _rangeUpper.Value; set => _rangeUpper.Value = value; }
-	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
+	/// <summary>
+	/// Bars to the right of a pivot.
+	/// </summary>
+	public int LookbackRight
+	{
+		get => _lookbackRight.Value;
+		set => _lookbackRight.Value = value;
+	}
 
+	/// <summary>
+	/// Minimum bars between two pivots.
+	/// </summary>
+	public int RangeLower
+	{
+		get => _rangeLower.Value;
+		set => _rangeLower.Value = value;
+	}
+
+	/// <summary>
+	/// Maximum bars between two pivots.
+	/// </summary>
+	public int RangeUpper
+	{
+		get => _rangeUpper.Value;
+		set => _rangeUpper.Value = value;
+	}
+
+	/// <summary>
+	/// Stop loss in pips (price steps).
+	/// </summary>
+	public decimal StopLossPips
+	{
+		get => _stopLossPips.Value;
+		set => _stopLossPips.Value = value;
+	}
+
+	/// <summary>
+	/// Take profit in pips (price steps).
+	/// </summary>
+	public decimal TakeProfitPips
+	{
+		get => _takeProfitPips.Value;
+		set => _takeProfitPips.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
+	/// </summary>
 	public GoldRsiDivergenceStrategy()
 	{
 		_rsiLength = Param(nameof(RsiLength), 60)
 			.SetGreaterThanZero()
-			.SetDisplay("RSI Length", "RSI calculation length", "RSI");
+			.SetDisplay("RSI Length", "RSI period", "RSI");
 
 		_lookbackLeft = Param(nameof(LookbackLeft), 5)
 			.SetGreaterThanZero()
-			.SetDisplay("Lookback Left", "Bars to the left of pivot", "Divergence");
+			.SetDisplay("Lookback Left", "Bars to the left of a pivot", "Divergence");
 
 		_lookbackRight = Param(nameof(LookbackRight), 5)
 			.SetGreaterThanZero()
-			.SetDisplay("Lookback Right", "Bars to the right of pivot", "Divergence");
+			.SetDisplay("Lookback Right", "Bars to the right of a pivot", "Divergence");
 
 		_rangeLower = Param(nameof(RangeLower), 5)
-			.SetGreaterThanZero()
-			.SetDisplay("Range Lower", "Minimum bars between pivots", "Divergence");
+			.SetNotNegative()
+			.SetDisplay("Range Lower", "Minimum bars between two pivots", "Divergence");
 
 		_rangeUpper = Param(nameof(RangeUpper), 60)
 			.SetGreaterThanZero()
-			.SetDisplay("Range Upper", "Maximum bars between pivots", "Divergence");
+			.SetDisplay("Range Upper", "Maximum bars between two pivots", "Divergence");
+
+		_stopLossPips = Param(nameof(StopLossPips), 11m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss Pips", "Stop loss in pips (price steps)", "Risk");
+
+		_takeProfitPips = Param(nameof(TakeProfitPips), 33m)
+			.SetNotNegative()
+			.SetDisplay("Take Profit Pips", "Take profit in pips (price steps)", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_cooldownBars = Param(nameof(CooldownBars), 10)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "Risk");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> [(Security, CandleType)];
+	{
+		return [(Security, CandleType)];
+	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		InitializeBuffers();
-		_barIndex = 0;
-		_lastRsiLow = null;
-		_lastPriceLow = null;
-		_lastPivotLowIndex = -1;
-		_lastRsiHigh = null;
-		_lastPriceHigh = null;
-		_lastPivotHighIndex = -1;
-		_cooldownRemaining = 0;
+		ResetState();
 	}
 
 	/// <inheritdoc />
@@ -100,177 +162,102 @@ public class GoldRsiDivergenceStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		InitializeBuffers();
+		ResetState();
 
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(rsi, ProcessCandle)
+			.BindEx(rsi, ProcessCandle)
 			.Start();
+
+		var step = Security.PriceStep ?? 1m;
+		StartProtection(new Unit(TakeProfitPips * step, UnitTypes.Absolute), new Unit(StopLossPips * step, UnitTypes.Absolute), useMarketOrders: true);
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+				DrawIndicator(oscillators, rsi);
 		}
 	}
 
-	private void InitializeBuffers()
+	private void ResetState()
 	{
-		var length = Math.Max(1, LookbackLeft + LookbackRight + 1);
-		_rsiBuffer = new decimal[length];
-		_lowBuffer = new decimal[length];
-		_highBuffer = new decimal[length];
-		_bufferCount = 0;
+		_window.Clear();
+		_barIndex = 0;
+		_lastPivotLow = null;
+		_lastPivotHigh = null;
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue rsiValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!rsiValue.IsFormed)
 			return;
 
+		var rsi = rsiValue.ToDecimal();
 		_barIndex++;
 
-		AddToBuffer(rsiValue, candle.LowPrice, candle.HighPrice);
+		_window.Add((rsi, candle.LowPrice, candle.HighPrice));
+		var size = LookbackLeft + LookbackRight + 1;
+		if (_window.Count > size)
+			_window.RemoveAt(0);
 
-		if (_bufferCount < _rsiBuffer.Length)
+		if (_window.Count < size)
 			return;
 
-		if (_cooldownRemaining > 0)
+		var pivot = _window[LookbackLeft];
+		var pivotBar = _barIndex - LookbackRight;
+		var isPivotLow = true;
+		var isPivotHigh = true;
+
+		for (var i = 0; i < size; i++)
 		{
-			_cooldownRemaining--;
-			CheckPivots(rsiValue, candle);
-			return;
+			if (i == LookbackLeft)
+				continue;
+
+			if (_window[i].rsi <= pivot.rsi)
+				isPivotLow = false;
+
+			if (_window[i].rsi >= pivot.rsi)
+				isPivotHigh = false;
 		}
 
-		var pivotIndex = LookbackRight;
-		var candidateRsi = _rsiBuffer[pivotIndex];
-		var candidateLow = _lowBuffer[pivotIndex];
-		var candidateHigh = _highBuffer[pivotIndex];
-		var candidateBar = _barIndex - LookbackRight;
-
-		var isPivotLow = IsPivotLow(candidateRsi);
-		var isPivotHigh = IsPivotHigh(candidateRsi);
+		var canTrade = IsFormedAndOnlineAndAllowTrading();
 
 		if (isPivotLow)
 		{
-			var inRange = _lastPivotLowIndex >= 0 &&
-				candidateBar - _lastPivotLowIndex >= RangeLower &&
-				candidateBar - _lastPivotLowIndex <= RangeUpper;
+			var bullish = _lastPivotLow is { } prev
+				&& InRange(pivotBar - prev.bar)
+				&& pivot.rsi > prev.rsi
+				&& pivot.low < prev.low;
 
-			var bullishDiv = inRange &&
-				_lastRsiLow is decimal prevRsiLow &&
-				_lastPriceLow is decimal prevPriceLow &&
-				candidateRsi > prevRsiLow &&
-				candidateLow < prevPriceLow;
+			if (canTrade && bullish && rsi < _longRsiLimit && Position <= 0)
+				BuyMarket(Volume + Math.Abs(Position));
 
-			if (bullishDiv && rsiValue < 40m && Position <= 0)
-			{
-				if (Position < 0)
-					BuyMarket(Math.Abs(Position));
-				BuyMarket(Volume);
-				_cooldownRemaining = CooldownBars;
-			}
-
-			_lastRsiLow = candidateRsi;
-			_lastPriceLow = candidateLow;
-			_lastPivotLowIndex = candidateBar;
+			_lastPivotLow = (pivot.rsi, pivot.low, pivotBar);
 		}
 
 		if (isPivotHigh)
 		{
-			var inRange = _lastPivotHighIndex >= 0 &&
-				candidateBar - _lastPivotHighIndex >= RangeLower &&
-				candidateBar - _lastPivotHighIndex <= RangeUpper;
+			var bearish = _lastPivotHigh is { } prev
+				&& InRange(pivotBar - prev.bar)
+				&& pivot.rsi < prev.rsi
+				&& pivot.high > prev.high;
 
-			var bearishDiv = inRange &&
-				_lastRsiHigh is decimal prevRsiHigh &&
-				_lastPriceHigh is decimal prevPriceHigh &&
-				candidateRsi < prevRsiHigh &&
-				candidateHigh > prevPriceHigh;
+			if (canTrade && bearish && rsi > _shortRsiLimit && Position >= 0)
+				SellMarket(Volume + Math.Abs(Position));
 
-			if (bearishDiv && rsiValue > 60m && Position >= 0)
-			{
-				if (Position > 0)
-					SellMarket(Math.Abs(Position));
-				SellMarket(Volume);
-				_cooldownRemaining = CooldownBars;
-			}
-
-			_lastRsiHigh = candidateRsi;
-			_lastPriceHigh = candidateHigh;
-			_lastPivotHighIndex = candidateBar;
+			_lastPivotHigh = (pivot.rsi, pivot.high, pivotBar);
 		}
 	}
 
-	private void CheckPivots(decimal rsiValue, ICandleMessage candle)
-	{
-		// Still track pivots during cooldown
-		var pivotIndex = LookbackRight;
-		var candidateRsi = _rsiBuffer[pivotIndex];
-		var candidateBar = _barIndex - LookbackRight;
-
-		if (IsPivotLow(candidateRsi))
-		{
-			_lastRsiLow = candidateRsi;
-			_lastPriceLow = _lowBuffer[pivotIndex];
-			_lastPivotLowIndex = candidateBar;
-		}
-
-		if (IsPivotHigh(candidateRsi))
-		{
-			_lastRsiHigh = candidateRsi;
-			_lastPriceHigh = _highBuffer[pivotIndex];
-			_lastPivotHighIndex = candidateBar;
-		}
-	}
-
-	private void AddToBuffer(decimal rsi, decimal low, decimal high)
-	{
-		if (_bufferCount < _rsiBuffer.Length)
-		{
-			_rsiBuffer[_bufferCount] = rsi;
-			_lowBuffer[_bufferCount] = low;
-			_highBuffer[_bufferCount] = high;
-			_bufferCount++;
-		}
-		else
-		{
-			Array.Copy(_rsiBuffer, 1, _rsiBuffer, 0, _rsiBuffer.Length - 1);
-			Array.Copy(_lowBuffer, 1, _lowBuffer, 0, _lowBuffer.Length - 1);
-			Array.Copy(_highBuffer, 1, _highBuffer, 0, _highBuffer.Length - 1);
-			_rsiBuffer[^1] = rsi;
-			_lowBuffer[^1] = low;
-			_highBuffer[^1] = high;
-		}
-	}
-
-	private bool IsPivotLow(decimal value)
-	{
-		for (var i = 0; i < _rsiBuffer.Length; i++)
-		{
-			if (i == LookbackRight)
-				continue;
-			if (_rsiBuffer[i] <= value)
-				return false;
-		}
-		return true;
-	}
-
-	private bool IsPivotHigh(decimal value)
-	{
-		for (var i = 0; i < _rsiBuffer.Length; i++)
-		{
-			if (i == LookbackRight)
-				continue;
-			if (_rsiBuffer[i] >= value)
-				return false;
-		}
-		return true;
-	}
+	private bool InRange(int bars) => bars >= RangeLower && bars <= RangeUpper;
 }
