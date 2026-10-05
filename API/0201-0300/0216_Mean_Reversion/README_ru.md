@@ -20,8 +20,9 @@
 - **Стопы**: да.
 - **Значения по умолчанию**:
   - `MovingAveragePeriod` = 20
-  - `DeviationMultiplier` = 2.0m
-  - `StopLossPercent` = 2m
+  - `DeviationMultiplier` = 2
+  - `StopLossPercent` = 2
+    MA — простая скользящая средняя, StdDev — стандартное отклонение цен закрытия за те же MovingAveragePeriod свечей, k — DeviationMultiplier. Стоп — фиксированный StopLossPercent от цены входа, он отслеживается и между свечами. Сигнал на вход против открытой позиции разворачивает её.
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **Фильтры**:
   - Категория: Mean Reversion

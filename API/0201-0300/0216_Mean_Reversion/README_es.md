@@ -20,8 +20,9 @@ El método atrae a traders con estilo contrario que desean zonas de entrada y sa
 - **Stops**: Sí.
 - **Valores predeterminados**:
   - `MovingAveragePeriod` = 20
-  - `DeviationMultiplier` = 2.0m
-  - `StopLossPercent` = 2m
+  - `DeviationMultiplier` = 2
+  - `StopLossPercent` = 2
+    MA es la media móvil simple y StdDev la desviación estándar de los cierres de las mismas MovingAveragePeriod velas, y k es DeviationMultiplier. El stop es un StopLossPercent fijo del precio de entrada, vigilado también entre velas. Una señal de entrada contra una posición abierta la invierte.
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **Filtros**:
   - Categoría: Reversión a la media

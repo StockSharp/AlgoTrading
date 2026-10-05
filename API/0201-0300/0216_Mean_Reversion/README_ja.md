@@ -20,8 +20,9 @@
 - **ストップ**: はい。
 - **デフォルト値**:
   - `MovingAveragePeriod` = 20
-  - `DeviationMultiplier` = 2.0m
-  - `StopLossPercent` = 2m
+  - `DeviationMultiplier` = 2
+  - `StopLossPercent` = 2
+    MAは単純移動平均、StdDevは同じMovingAveragePeriod本の終値の標準偏差で、kはDeviationMultiplierです。ストップはエントリー価格の固定StopLossPercentで、ローソク足の間も監視されます。 保有ポジションと逆方向のエントリーシグナルはドテンになります。
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **フィルター**:
   - カテゴリ: 平均回帰

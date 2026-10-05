@@ -20,8 +20,9 @@
 - **止损**: 是
 - **默认值**:
   - `MovingAveragePeriod` = 20
-  - `DeviationMultiplier` = 2.0m
-  - `StopLossPercent` = 2m
+  - `DeviationMultiplier` = 2
+  - `StopLossPercent` = 2
+    MA为简单移动平均，StdDev为同样MovingAveragePeriod根K线收盘价的标准差，k即DeviationMultiplier。止损为入场价的固定StopLossPercent百分比，在K线之间同样监控。与持仓方向相反的入场信号会反转持仓。
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **过滤器**:
   - 类别: Mean Reversion

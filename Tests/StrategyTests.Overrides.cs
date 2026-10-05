@@ -8401,6 +8401,66 @@ public abstract partial class StrategyTests
 	public Task S0215_PercentStopWorksBetweenFinishedBars()
 		=> CheckPercentStopBetweenBars("0215_RSI_Donchian", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
 
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(20, 2.0, false)]
+	[DataRow(30, 1.5, true)]
+	public async Task S0216_DeviationBandFadesUntilPriceIsBackAcrossTheAverage(int period, double multiplier, bool secondary)
+	{
+		var ma = new SimpleMovingAverage { Length = period };
+		var stdev = new StandardDeviation { Length = period };
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var meanExits = 0;
+		var violations = new List<string>();
+		await Replay("0216_Mean_Reversion", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["MovingAveragePeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["DeviationMultiplier"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "MovingAveragePeriod", period);
+			SetParam(strategy, "DeviationMultiplier", multiplier);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var m = ma.Process(candle);
+				var d = stdev.Process(candle);
+				if (!m.IsFormed || !d.IsFormed) return;
+				var mean = m.GetValue<decimal>();
+				var width = d.GetValue<decimal>() * (decimal)multiplier;
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (close < mean - width && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (close > mean + width && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && close > mean) { expectedSide = Sides.Sell; expectedVolume = position; meanExits++; }
+				else if (position < 0m && close < mean) { expectedSide = Sides.Buy; expectedVolume = -position; meanExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must fade a close beyond a deviation band, or close once price is back across the average.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && meanExits > 0, "The fixture must trade both sides and exit at the average.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0216_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0216_Mean_Reversion", TimeSpan.FromDays(31));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";
