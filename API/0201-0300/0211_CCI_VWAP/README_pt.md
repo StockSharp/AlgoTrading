@@ -5,14 +5,14 @@ A abordagem CCI VWAP tenta capturar reversões intradiárias quando o momentum e
 
 Os testes indicam um retorno anual médio de aproximadamente 70%. Funciona melhor no mercado de ações.
 
-Um setup de compra surge quando o CCI cai abaixo de -100 e o mercado negocia abaixo do VWAP, sinalizando que a pressão vendedora pode estar esgotada. Um short ocorre quando o CCI sobe acima de +100 com o preço acima do VWAP, destacando um rally esticado vulnerável a uma correção. As posições são fechadas assim que o preço recupera o VWAP na direção oposta.
+Um setup de compra surge quando o CCI cai abaixo de CciOversold e o mercado negocia abaixo do VWAP, sinalizando que a pressão vendedora pode estar esgotada. Um short ocorre quando o CCI sobe acima de CciOverbought com o preço acima do VWAP, destacando um rally esticado vulnerável a uma correção. As posições são fechadas assim que o preço recupera o VWAP na direção oposta.
 
 Esta estratégia é projetada para day traders que gostam de operar nos extremos mas ainda dependem de níveis objetivos para saídas. O stop-loss definido ajuda a gerenciar o risco se o momentum não reverter rapidamente à média.
 
 ## Detalhes
 - **Critérios de entrada**:
-  - **Comprado**: CCI < -100 && Price < VWAP (oversold below VWAP)
-  - **Vendido**: CCI > 100 && Price > VWAP (overbought above VWAP)
+  - **Comprado**: CCI < CciOversold && Price < VWAP (oversold below VWAP)
+  - **Vendido**: CCI > CciOverbought && Price > VWAP (overbought above VWAP)
 - **Comprado/Vendido**: Ambos os lados.
 - **Critérios de saída**:
   - **Comprado**: Sair do comprado quando o preço subir acima do VWAP
@@ -20,7 +20,10 @@ Esta estratégia é projetada para day traders que gostam de operar nos extremos
 - **Stops**: Sim.
 - **Valores padrão**:
   - `CciPeriod` = 20
-  - `StopLossPercent` = 2m
+  - `CciOversold` = -100
+  - `CciOverbought` = 100
+  - `StopLossPercent` = 2
+    -100 e 100 são os valores padrão dos níveis de CCI citados nas regras. O mercado negocia 24 horas, por isso o VWAP da sessão reinicia a cada dia UTC e pondera o preço típico de cada candle pelo seu volume. Um sinal de entrada contra uma posição aberta a inverte.
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **Filtros**:
   - Categoria: Misto

@@ -5,14 +5,14 @@ Der CCI VWAP-Ansatz versucht, Intraday-Umkehrungen zu erfassen, wenn Momentum un
 
 Tests zeigen eine durchschnittliche Jahresrendite von etwa 70%. Sie funktioniert am besten auf dem Aktienmarkt.
 
-Ein Kaufsignal entsteht, wenn der CCI unter -100 fällt und der Markt unter dem VWAP handelt, was darauf hinweist, dass der Verkaufsdruck erschöpft sein könnte. Ein Short entsteht, wenn der CCI über +100 steigt und der Preis über dem VWAP liegt, was eine überdehnte Rally hervorhebt, die anfällig für einen Rücksetzer ist. Positionen werden geschlossen, sobald der Preis den VWAP in die entgegengesetzte Richtung zurückerobert.
+Ein Kaufsignal entsteht, wenn der CCI unter CciOversold fällt und der Markt unter dem VWAP handelt, was darauf hinweist, dass der Verkaufsdruck erschöpft sein könnte. Ein Short entsteht, wenn der CCI über CciOverbought steigt und der Preis über dem VWAP liegt, was eine überdehnte Rally hervorhebt, die anfällig für einen Rücksetzer ist. Positionen werden geschlossen, sobald der Preis den VWAP in die entgegengesetzte Richtung zurückerobert.
 
 Diese Strategie eignet sich für Daytrader, die extreme Positionen handeln möchten, aber dennoch auf objektive Levels für Ausstiege vertrauen. Der definierte Stop-Loss hilft, das Risiko zu managen, wenn das Momentum nicht schnell zur Mitte revertiert.
 
 ## Details
 - **Einstiegskriterien**:
-  - **Long**: CCI < -100 && Price < VWAP (oversold below VWAP)
-  - **Short**: CCI > 100 && Price > VWAP (overbought above VWAP)
+  - **Long**: CCI < CciOversold && Price < VWAP (oversold below VWAP)
+  - **Short**: CCI > CciOverbought && Price > VWAP (overbought above VWAP)
 - **Long/Short**: Beide Seiten.
 - **Ausstiegskriterien**:
   - **Long**: Long schließen, wenn der Preis über den VWAP steigt
@@ -20,7 +20,10 @@ Diese Strategie eignet sich für Daytrader, die extreme Positionen handeln möch
 - **Stops**: Ja.
 - **Standardwerte**:
   - `CciPeriod` = 20
-  - `StopLossPercent` = 2m
+  - `CciOversold` = -100
+  - `CciOverbought` = 100
+  - `StopLossPercent` = 2
+    -100 und 100 sind die Standardwerte der CCI-Schwellen, die die Regeln nennen. Der Markt handelt rund um die Uhr, daher beginnt der Sitzungs-VWAP mit jedem UTC-Tag neu und gewichtet den typischen Preis jeder Kerze mit ihrem Volumen. Ein Einstiegssignal gegen eine offene Position dreht sie.
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **Filter**:
   - Kategorie: Gemischt

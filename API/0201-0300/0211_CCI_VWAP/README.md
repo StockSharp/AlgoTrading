@@ -5,14 +5,14 @@ The CCI VWAP approach attempts to capture intraday reversals when momentum and p
 
 Testing indicates an average annual return of about 70%. It performs best in the stocks market.
 
-A buy setup emerges when the CCI falls below -100 and the market trades beneath VWAP, signalling that selling pressure may be exhausted. A short occurs when the CCI rises above +100 with price above VWAP, highlighting a stretched rally vulnerable to a setback. Positions are closed once price reclaims the VWAP in the opposite direction.
+A buy setup emerges when the CCI falls below CciOversold and the market trades beneath VWAP, signalling that selling pressure may be exhausted. A short occurs when the CCI rises above CciOverbought with price above VWAP, highlighting a stretched rally vulnerable to a setback. Positions are closed once price reclaims the VWAP in the opposite direction.
 
 This strategy is designed for day traders who like to fade extremes yet still rely on objective levels for exits. The defined stop-loss helps manage risk if momentum does not quickly mean revert.
 
 ## Details
 - **Entry Criteria**:
-  - **Long**: CCI < -100 && Price < VWAP (oversold below VWAP)
-  - **Short**: CCI > 100 && Price > VWAP (overbought above VWAP)
+  - **Long**: CCI < CciOversold && Price < VWAP (oversold below VWAP)
+  - **Short**: CCI > CciOverbought && Price > VWAP (overbought above VWAP)
 - **Long/Short**: Both sides.
 - **Exit Criteria**:
   - **Long**: Exit long when price moves above VWAP
@@ -20,7 +20,10 @@ This strategy is designed for day traders who like to fade extremes yet still re
 - **Stops**: Yes.
 - **Default Values**:
   - `CciPeriod` = 20
-  - `StopLossPercent` = 2m
+  - `CciOversold` = -100
+  - `CciOverbought` = 100
+  - `StopLossPercent` = 2
+    -100 and 100 are the defaults of the CCI levels the rules quote. The market trades around the clock, so the session VWAP restarts each UTC day and weighs the typical price of each candle by its volume. An entry signal against an open position reverses it.
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **Filters**:
   - Category: Mixed
