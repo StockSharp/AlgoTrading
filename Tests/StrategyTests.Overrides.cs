@@ -8916,6 +8916,63 @@ public abstract partial class StrategyTests
 	public Task S0223_PercentStopWorksBetweenFinishedBars()
 		=> CheckPercentStopBetweenBars("0223_Momentum_Divergence", TimeSpan.FromDays(31));
 
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(20, 14, 2.0, false)]
+	[DataRow(30, 10, 1.0, true)]
+	public async Task S0224_AtrStretchesFromTheAverageUntilTheAverageOrAnAtrStop(int period, int atrPeriod, double multiplier, bool secondary)
+	{
+		var sma = new SimpleMovingAverage { Length = period };
+		var atr = new AverageTrueRange { Length = atrPeriod };
+		var stopPrice = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var meanExits = 0;
+		var stopExits = 0;
+		var violations = new List<string>();
+		await Replay("0224_ATR_Mean_Reversion", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["MaPeriod"].Value);
+			AreEqual(14, strategy.Parameters["AtrPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["Multiplier"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "MaPeriod", period);
+			SetParam(strategy, "AtrPeriod", atrPeriod);
+			SetParam(strategy, "Multiplier", multiplier);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var m = sma.Process(candle);
+				var a = atr.Process(candle);
+				if (!m.IsFormed || !a.IsFormed) return;
+				var mean = m.GetValue<decimal>();
+				var distance = (decimal)multiplier * a.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (close < mean - distance && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; stopPrice = close - distance; }
+				else if (close > mean + distance && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; stopPrice = close + distance; }
+				else if (position > 0m && (close >= mean || close <= stopPrice)) { expectedSide = Sides.Sell; expectedVolume = position; if (close >= mean) meanExits++; else stopExits++; }
+				else if (position < 0m && (close <= mean || close >= stopPrice)) { expectedSide = Sides.Buy; expectedVolume = -position; if (close <= mean) meanExits++; else stopExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must fade a close an ATR multiple beyond the average, or close at the average or the ATR stop.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && meanExits > 0 && stopExits > 0, "The fixture must trade both sides, exit at the average and hit the ATR stop.");
+	}
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

@@ -21,7 +21,8 @@ Esta técnica está destinada a traders de corto plazo que esperan que los preci
 - **Valores predeterminados**:
   - `MaPeriod` = 20
   - `AtrPeriod` = 14
-  - `Multiplier` = 2.0m
+  - `Multiplier` = 2
+    MA es la media móvil simple de MaPeriod y ATR el rango verdadero medio de AtrPeriod. El stop se sitúa a Multiplier veces el ATR del cierre de entrada, 2 ATR por defecto, y se comprueba al cierre de las velas. Una señal de entrada contra una posición abierta la invierte.
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **Filtros**:
   - Categoría: Reversión a la media

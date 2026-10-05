@@ -21,7 +21,8 @@
 - **默认值**:
   - `MaPeriod` = 20
   - `AtrPeriod` = 14
-  - `Multiplier` = 2.0m
+  - `Multiplier` = 2
+    MA为MaPeriod周期简单移动平均，ATR为AtrPeriod周期平均真实波幅。止损距入场收盘价Multiplier倍ATR，默认2倍ATR，按K线收盘检查。与持仓方向相反的入场信号会反转持仓。
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **过滤器**:
   - 类别: Mean Reversion

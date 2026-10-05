@@ -21,7 +21,8 @@ Diese Technik ist für kurzfristige Trader gedacht, die erwarten, dass die Preis
 - **Standardwerte**:
   - `MaPeriod` = 20
   - `AtrPeriod` = 14
-  - `Multiplier` = 2.0m
+  - `Multiplier` = 2
+    MA ist der einfache gleitende Durchschnitt über MaPeriod und ATR die Average True Range über AtrPeriod. Der Stop liegt Multiplier mal die ATR vom Einstiegsschluss entfernt, standardmäßig 2 ATR, und wird bei Kerzenschluss geprüft. Ein Einstiegssignal gegen eine offene Position dreht sie.
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **Filter**:
   - Kategorie: Mean Reversion

@@ -21,7 +21,8 @@ ATR 平均回帰戦略は、最近のボラティリティに対して価格が�
 - **デフォルト値**:
   - `MaPeriod` = 20
   - `AtrPeriod` = 14
-  - `Multiplier` = 2.0m
+  - `Multiplier` = 2
+    MAはMaPeriod本の単純移動平均、ATRはAtrPeriod本のアベレージトゥルーレンジです。ストップはエントリー時の終値からATRのMultiplier倍（既定では2 ATR）離れた位置に置かれ、ローソク足の終値で確認されます。 保有ポジションと逆方向のエントリーシグナルはドテンになります。
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **フィルター**:
   - カテゴリ: 平均回帰
