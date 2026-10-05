@@ -1805,6 +1805,96 @@ public abstract partial class StrategyTests
 	public Task S0078_PercentStopWorksBetweenFinishedBars()
 		=> CheckPercentStopBetweenBars(OutsideBar, TimeSpan.FromDays(31), expectedStopPercent: 1m);
 
+	private const string TrendlineBounce = "0079_Trendline_Bounce";
+
+	[TestMethod]
+	[TestCategory("Shard01")]
+	[DataRow(20, 20, 0.5, false)]
+	[DataRow(10, 10, 0.2, true)]
+	public async Task S0079_BouncesOffSlopingRegressionLinesWithAverageExits(int period, int maPeriod, double thresholdPercent, bool secondary)
+	{
+		static (decimal Slope, decimal Next) Fit(IReadOnlyList<decimal> values)
+		{
+			var n = values.Count;
+			var meanX = (n - 1) / 2m;
+			var meanY = values.Average();
+			var covariance = 0m;
+			var variance = 0m;
+			for (var i = 0; i < n; i++)
+			{
+				covariance += (i - meanX) * (values[i] - meanY);
+				variance += (i - meanX) * (i - meanX);
+			}
+			var slope = covariance / variance;
+			return (slope, meanY + slope * (n - meanX));
+		}
+		var sma = new SimpleMovingAverage { Length = maPeriod };
+		var highs = new List<decimal>();
+		var lows = new List<decimal>();
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var averageExits = 0;
+		var violations = new List<string>();
+		await Replay(TrendlineBounce, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["TrendlinePeriod"].Value);
+			AreEqual(20, strategy.Parameters["MAPeriod"].Value);
+			AreEqual(0.5m, Convert.ToDecimal(strategy.Parameters["BounceThresholdPercent"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "TrendlinePeriod", period);
+			SetParam(strategy, "MAPeriod", maPeriod);
+			SetParam(strategy, "BounceThresholdPercent", thresholdPercent);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var ready = highs.Count == period;
+				var support = ready ? Fit(lows) : default;
+				var resistance = ready ? Fit(highs) : default;
+				highs.Add(candle.HighPrice);
+				lows.Add(candle.LowPrice);
+				if (highs.Count > period) { highs.RemoveAt(0); lows.RemoveAt(0); }
+				var m = sma.Process(candle);
+				if (!ready || !m.IsFormed) return;
+				var ma = m.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				var t = (decimal)thresholdPercent / 100m;
+				if (position > 0m && close < ma) { expectedSide = Sides.Sell; expectedVolume = position; averageExits++; }
+				else if (position < 0m && close > ma) { expectedSide = Sides.Buy; expectedVolume = -position; averageExits++; }
+				else if (position == 0m)
+				{
+					if (support.Slope > 0m && candle.LowPrice <= support.Next * (1 + t) && close > candle.OpenPrice && close > ma) expectedSide = Sides.Buy;
+					else if (resistance.Slope < 0m && candle.HighPrice >= resistance.Next * (1 - t) && close < candle.OpenPrice && close < ma) expectedSide = Sides.Sell;
+					if (expectedSide is Sides side) { expectedVolume = strategy.Volume; entries[side]++; }
+				}
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a confirmed bounce off a rising support or falling resistance on the side of the average, or close the position when the close crosses the average.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "The fixture must bounce off both lines.");
+		IsTrue(averageExits > 0, "The fixture must exit on the average.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard01")]
+	public Task S0079_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars(TrendlineBounce, TimeSpan.FromDays(31));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";
