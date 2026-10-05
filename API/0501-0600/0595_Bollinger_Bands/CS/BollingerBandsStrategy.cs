@@ -11,31 +11,83 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// BollingerBandsStrategy using EMA crossover for trend timing.
-/// Enters long on golden cross, short on death cross.
+/// Bollinger Bands strategy.
+/// A close above the upper Bollinger band goes long and a close below the lower band goes short, reversing an opposite position.
+/// A long closes when the close falls below SMA(SmaLength) and a short when it rises above it, and a percent stop limits the loss.
 /// </summary>
 public class BollingerBandsStrategy : Strategy
 {
-	private readonly StrategyParam<int> _fastEmaPeriod;
-	private readonly StrategyParam<int> _slowEmaPeriod;
+	private readonly StrategyParam<int> _bbLength;
+	private readonly StrategyParam<decimal> _bbDeviation;
+	private readonly StrategyParam<int> _smaLength;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevFastEma;
-	private decimal _prevSlowEma;
+	/// <summary>
+	/// Bollinger period.
+	/// </summary>
+	public int BbLength
+	{
+		get => _bbLength.Value;
+		set => _bbLength.Value = value;
+	}
 
-	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
-	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	/// <summary>
+	/// Bollinger standard deviation multiplier.
+	/// </summary>
+	public decimal BbDeviation
+	{
+		get => _bbDeviation.Value;
+		set => _bbDeviation.Value = value;
+	}
 
+	/// <summary>
+	/// Period of the exit SMA.
+	/// </summary>
+	public int SmaLength
+	{
+		get => _smaLength.Value;
+		set => _smaLength.Value = value;
+	}
+
+	/// <summary>
+	/// Stop loss percentage from entry price.
+	/// </summary>
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
+	/// </summary>
 	public BollingerBandsStrategy()
 	{
-		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+		_bbLength = Param(nameof(BbLength), 120)
 			.SetGreaterThanZero()
-			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+			.SetDisplay("BB Length", "Bollinger period", "Bollinger");
 
-		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+		_bbDeviation = Param(nameof(BbDeviation), 2m)
 			.SetGreaterThanZero()
-			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+			.SetDisplay("BB Deviation", "Bollinger standard deviation multiplier", "Bollinger");
+
+		_smaLength = Param(nameof(SmaLength), 110)
+			.SetGreaterThanZero()
+			.SetDisplay("SMA Length", "Period of the exit SMA", "Exit");
+
+		_stopLossPercent = Param(nameof(StopLossPercent), 6m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -48,58 +100,69 @@ public class BollingerBandsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_prevFastEma = 0m;
-		_prevSlowEma = 0m;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
-		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
+		var bollinger = new BollingerBands { Length = BbLength, Width = BbDeviation };
+		var sma = new SimpleMovingAverage { Length = SmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(fastEma, slowEma, ProcessCandle)
+			.BindEx(bollinger, sma, ProcessCandle)
 			.Start();
+
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, fastEma);
-			DrawIndicator(area, slowEma);
+			DrawIndicator(area, bollinger);
+			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// The high-level handler activates native protection before this callback, also between signal bars.
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue, IIndicatorValue smaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_prevFastEma == 0m || _prevSlowEma == 0m)
-		{
-			_prevFastEma = fastEmaValue;
-			_prevSlowEma = slowEmaValue;
+		if (!bollingerValue.IsFormed || !smaValue.IsFormed)
 			return;
-		}
 
-		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
-		{
-			BuyMarket();
-		}
-		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
-		{
-			SellMarket();
-		}
+		var bands = (BollingerBandsValue)bollingerValue;
 
-		_prevFastEma = fastEmaValue;
-		_prevSlowEma = slowEmaValue;
+		if (bands.UpBand is not decimal upper || bands.LowBand is not decimal lower)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		var close = candle.ClosePrice;
+		var sma = smaValue.GetValue<decimal>();
+
+		if (close > upper && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (close < lower && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
+		else if (Position > 0 && close < sma)
+			SellMarket(Position);
+		else if (Position < 0 && close > sma)
+			BuyMarket(-Position);
 	}
 }
