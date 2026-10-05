@@ -5,14 +5,14 @@ The RSI Donchian strategy looks for momentum extremes that coincide with breakou
 
 Testing indicates an average annual return of about 82%. It performs best in the stocks market.
 
-A buy signal appears when the RSI dips below 30 and price breaks above the Donchian upper band. A short signal forms when the RSI rises above 70 and price falls through the lower band. Exits occur once price moves back to the Donchian middle line, signalling a return to balance.
+A buy signal appears when the RSI is above RsiOverbought as price breaks above the Donchian upper band. A short signal forms when the RSI is below RsiOversold as price falls through the lower band. Exits occur once price moves back to the Donchian middle line, signalling a return to balance.
 
-This method works well for active traders who like to fade exhaustion moves but still trade with clear breakout levels. The stop-loss helps cap risk if momentum fails to revert quickly.
+This method works well for active traders who like to follow strong momentum but still trade with clear breakout levels. The stop-loss helps cap risk if momentum fails to revert quickly.
 
 ## Details
 - **Entry Criteria**:
-  - **Long**: RSI < 30 && Close > Donchian High
-  - **Short**: RSI > 70 && Close < Donchian Low
+  - **Long**: RSI > RsiOverbought && Close > Donchian High
+  - **Short**: RSI < RsiOversold && Close < Donchian Low
 - **Long/Short**: Both sides.
 - **Exit Criteria**:
   - **Long**: Exit when close < Donchian Middle
@@ -21,7 +21,10 @@ This method works well for active traders who like to fade exhaustion moves but 
 - **Default Values**:
   - `RsiPeriod` = 14
   - `DonchianPeriod` = 20
-  - `StopLossPercent` = 2m
+  - `RsiOverbought` = 70
+  - `RsiOversold` = 30
+  - `StopLossPercent` = 2
+    The channel is the high and low of the previous DonchianPeriod candles, and its middle is halfway between them. An upside breakout is confirmed when RSI is above RsiOverbought and a downside one when RSI is below RsiOversold; the opposite reading, an oversold RSI on a close above the channel, essentially never occurs. The stop is a fixed StopLossPercent of the entry price, watched between candles as well. An entry signal against an open position reverses it.
   - `CandleType` = TimeSpan.FromMinutes(15)
 - **Filters**:
   - Category: Mixed

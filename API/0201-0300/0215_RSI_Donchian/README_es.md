@@ -5,14 +5,14 @@ La estrategia RSI Donchian busca extremos de momentum que coincidan con rupturas
 
 Las pruebas indican un rendimiento anual promedio de aproximadamente 82%. Funciona mejor en el mercado de acciones.
 
-Aparece una señal de compra cuando el RSI cae por debajo de 30 y el precio rompe por encima de la banda superior Donchian. Una señal corta se forma cuando el RSI sube por encima de 70 y el precio cae a través de la banda inferior. Las salidas ocurren una vez que el precio regresa a la línea media Donchian, señalando un retorno al equilibrio.
+Aparece una señal de compra cuando el RSI está por encima de RsiOverbought mientras el precio rompe por encima de la banda superior Donchian. Una señal corta se forma cuando el RSI está por debajo de RsiOversold mientras el precio cae a través de la banda inferior. Las salidas ocurren una vez que el precio regresa a la línea media Donchian, señalando un retorno al equilibrio.
 
-Este método funciona bien para traders activos que prefieren operar contra movimientos de agotamiento pero aun así operan con niveles claros de ruptura. El stop-loss ayuda a limitar el riesgo si el momentum no revierte rápidamente.
+Este método funciona bien para traders activos que prefieren seguir un momentum fuerte pero aun así operan con niveles claros de ruptura. El stop-loss ayuda a limitar el riesgo si el momentum no revierte rápidamente.
 
 ## Detalles
 - **Criterios de entrada**:
-  - **Largo**: RSI < 30 && Close > Donchian High
-  - **Corto**: RSI > 70 && Close < Donchian Low
+  - **Largo**: RSI > RsiOverbought && Close > Donchian High
+  - **Corto**: RSI < RsiOversold && Close < Donchian Low
 - **Largo/Corto**: Ambos lados.
 - **Criterios de salida**:
   - **Largo**: Salir cuando close < Donchian Middle
@@ -21,7 +21,10 @@ Este método funciona bien para traders activos que prefieren operar contra movi
 - **Valores predeterminados**:
   - `RsiPeriod` = 14
   - `DonchianPeriod` = 20
-  - `StopLossPercent` = 2m
+  - `RsiOverbought` = 70
+  - `RsiOversold` = 30
+  - `StopLossPercent` = 2
+    El canal es el máximo y el mínimo de las DonchianPeriod velas anteriores, y su punto medio está a mitad de camino entre ellos. Una ruptura alcista se confirma cuando el RSI está por encima de RsiOverbought y una bajista cuando está por debajo de RsiOversold; la lectura contraria, un RSI sobrevendido con un cierre por encima del canal, prácticamente no ocurre. El stop es un StopLossPercent fijo del precio de entrada, vigilado también entre velas. Una señal de entrada contra una posición abierta la invierte.
   - `CandleType` = TimeSpan.FromMinutes(15)
 - **Filtros**:
   - Categoría: Mixto
