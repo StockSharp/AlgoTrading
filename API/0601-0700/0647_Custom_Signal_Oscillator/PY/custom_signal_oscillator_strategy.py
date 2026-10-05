@@ -2,71 +2,78 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
-clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+
 
 class custom_signal_oscillator_strategy(Strategy):
     """
-    EMA crossover strategy. Enters long on golden cross, short on death cross.
+    Custom Signal Oscillator strategy.
+    The oscillator is the difference between two price signals of the candle, its close and its open.
+    A cross above zero goes long and a cross below zero goes short, reversing an opposite position.
+    In long-only mode a cross below zero only closes the long.
     """
 
     def __init__(self):
         super(custom_signal_oscillator_strategy, self).__init__()
-        self._fast_ema_period = self.Param("FastEmaPeriod", 120)             .SetDisplay("Fast EMA", "Fast EMA period", "Indicators")
-        self._slow_ema_period = self.Param("SlowEmaPeriod", 450)             .SetDisplay("Slow EMA", "Slow EMA period", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5)))             .SetDisplay("Candle Type", "Type of candles to use", "General")
-
-        self._prev_fast_ema = 0.0
-        self._prev_slow_ema = 0.0
+        self._long_only = self.Param("LongOnly", False) \
+            .SetDisplay("Long Only", "Trade only long positions", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+            .SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._prev_oscillator = None
 
     @property
     def candle_type(self):
         return self._candle_type.Value
 
+    def GetWorkingSecurities(self):
+        return [(self.Security, self.candle_type)]
+
     def OnReseted(self):
         super(custom_signal_oscillator_strategy, self).OnReseted()
-        self._prev_fast_ema = 0.0
-        self._prev_slow_ema = 0.0
+        self._prev_oscillator = None
 
     def OnStarted2(self, time):
         super(custom_signal_oscillator_strategy, self).OnStarted2(time)
 
-        fast_ema = ExponentialMovingAverage()
-        fast_ema.Length = self._fast_ema_period.Value
-        slow_ema = ExponentialMovingAverage()
-        slow_ema.Length = self._slow_ema_period.Value
+        self._prev_oscillator = None
 
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(fast_ema, slow_ema, self.on_process).Start()
+        subscription.Bind(self._process_candle).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, fast_ema)
-            self.DrawIndicator(area, slow_ema)
             self.DrawOwnTrades(area)
 
-    def on_process(self, candle, fast_val, slow_val):
+    def _process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
 
-        if self._prev_fast_ema == 0.0 or self._prev_slow_ema == 0.0:
-            self._prev_fast_ema = fast_val
-            self._prev_slow_ema = slow_val
+        oscillator = candle.ClosePrice - candle.OpenPrice
+        prev = self._prev_oscillator
+        self._prev_oscillator = oscillator
+
+        if prev is None:
             return
 
-        if self._prev_fast_ema <= self._prev_slow_ema and fast_val > slow_val and self.Position <= 0:
-            self.BuyMarket()
-        elif self._prev_fast_ema >= self._prev_slow_ema and fast_val < slow_val and self.Position >= 0:
-            self.SellMarket()
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
-        self._prev_fast_ema = fast_val
-        self._prev_slow_ema = slow_val
+        cross_up = prev <= 0 and oscillator > 0
+        cross_down = prev >= 0 and oscillator < 0
+
+        if cross_up and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+        elif cross_down:
+            if self._long_only.Value:
+                if self.Position > 0:
+                    self.SellMarket(self.Position)
+            elif self.Position >= 0:
+                self.SellMarket(self.Volume + abs(self.Position))
 
     def CreateClone(self):
         return custom_signal_oscillator_strategy()

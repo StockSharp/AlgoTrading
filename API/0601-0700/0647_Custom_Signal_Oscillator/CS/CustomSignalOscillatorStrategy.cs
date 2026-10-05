@@ -3,7 +3,6 @@ using System.Collections.Generic;
 
 using Ecng.Common;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -11,31 +10,43 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// CustomSignalOscillatorStrategy using EMA crossover for trend timing.
-/// Enters long on golden cross, short on death cross.
+/// Custom Signal Oscillator strategy.
+/// The oscillator is the difference between two price signals of the candle, its close and its open.
+/// A cross above zero goes long and a cross below zero goes short, reversing an opposite position.
+/// In long-only mode a cross below zero only closes the long.
 /// </summary>
 public class CustomSignalOscillatorStrategy : Strategy
 {
-	private readonly StrategyParam<int> _fastEmaPeriod;
-	private readonly StrategyParam<int> _slowEmaPeriod;
+	private readonly StrategyParam<bool> _longOnly;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevFastEma;
-	private decimal _prevSlowEma;
+	private decimal? _prevOscillator;
 
-	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
-	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	/// <summary>
+	/// Trade only long positions.
+	/// </summary>
+	public bool LongOnly
+	{
+		get => _longOnly.Value;
+		set => _longOnly.Value = value;
+	}
 
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
+	/// </summary>
 	public CustomSignalOscillatorStrategy()
 	{
-		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
-			.SetGreaterThanZero()
-			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
-
-		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
-			.SetGreaterThanZero()
-			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+		_longOnly = Param(nameof(LongOnly), false)
+			.SetDisplay("Long Only", "Trade only long positions", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -51,8 +62,7 @@ public class CustomSignalOscillatorStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevFastEma = 0m;
-		_prevSlowEma = 0m;
+		_prevOscillator = null;
 	}
 
 	/// <inheritdoc />
@@ -60,46 +70,54 @@ public class CustomSignalOscillatorStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
-		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
+		_prevOscillator = null;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(fastEma, slowEma, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, fastEma);
-			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_prevFastEma == 0m || _prevSlowEma == 0m)
-		{
-			_prevFastEma = fastEmaValue;
-			_prevSlowEma = slowEmaValue;
+		var oscillator = candle.ClosePrice - candle.OpenPrice;
+		var prev = _prevOscillator;
+		_prevOscillator = oscillator;
+
+		if (prev is not decimal prevOscillator)
 			return;
-		}
 
-		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
-		{
-			BuyMarket();
-		}
-		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
-		{
-			SellMarket();
-		}
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
 
-		_prevFastEma = fastEmaValue;
-		_prevSlowEma = slowEmaValue;
+		var crossUp = prevOscillator <= 0m && oscillator > 0m;
+		var crossDown = prevOscillator >= 0m && oscillator < 0m;
+
+		if (crossUp && Position <= 0)
+		{
+			BuyMarket(Volume + Math.Abs(Position));
+		}
+		else if (crossDown)
+		{
+			if (LongOnly)
+			{
+				if (Position > 0)
+					SellMarket(Position);
+			}
+			else if (Position >= 0)
+			{
+				SellMarket(Volume + Math.Abs(Position));
+			}
+		}
 	}
 }
