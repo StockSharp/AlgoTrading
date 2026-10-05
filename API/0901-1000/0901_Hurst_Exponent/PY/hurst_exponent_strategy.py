@@ -5,28 +5,30 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage
+from System import TimeSpan, Decimal
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from StockSharp.Algo.Indicators import HurstExponent, ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class hurst_exponent_strategy(Strategy):
     """
-    EMA crossover strategy. Buys when fast EMA crosses above slow EMA,
-    sells when fast EMA crosses below slow EMA.
+    Hurst exponent strategy.
+    The rescaled-range Hurst exponent of the close-to-close returns over HurstPeriod candles is smoothed with an EMA of SmoothLength.
+    A smoothed value above Threshold marks a persistent (trending) regime and holds a long, a value below it holds a short, so each
+    threshold cross exits the current side and reverses. A percent stop loss limits the loss.
     """
 
     def __init__(self):
         super(hurst_exponent_strategy, self).__init__()
-        self._fast_ema_period = self.Param("FastEmaPeriod", 120) \
-            .SetDisplay("Fast EMA", "Fast EMA period", "Indicators")
-        self._slow_ema_period = self.Param("SlowEmaPeriod", 450) \
-            .SetDisplay("Slow EMA", "Slow EMA period", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
-            .SetDisplay("Candle Type", "Type of candles to use", "General")
-
-        self._prev_fast = 0.0
-        self._prev_slow = 0.0
+        self._hurst_period = self.Param("HurstPeriod", 100).SetGreaterThanZero().SetDisplay("Hurst Period", "Number of returns used by the Hurst exponent", "Indicators")
+        self._smooth_length = self.Param("SmoothLength", 10).SetGreaterThanZero().SetDisplay("Smooth Length", "EMA length that smooths the Hurst exponent", "Indicators")
+        self._threshold = self.Param("Threshold", 0.5).SetDisplay("Threshold", "Regime threshold for the smoothed Hurst exponent", "Signals")
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0).SetNotNegative().SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._hurst = None
+        self._smooth = None
+        self._prev_close = None
 
     @property
     def candle_type(self):
@@ -34,46 +36,61 @@ class hurst_exponent_strategy(Strategy):
 
     def OnReseted(self):
         super(hurst_exponent_strategy, self).OnReseted()
-        self._prev_fast = 0.0
-        self._prev_slow = 0.0
+        self._prev_close = None
 
     def OnStarted2(self, time):
         super(hurst_exponent_strategy, self).OnStarted2(time)
 
-        fast_ema = ExponentialMovingAverage()
-        fast_ema.Length = self._fast_ema_period.Value
-        slow_ema = ExponentialMovingAverage()
-        slow_ema.Length = self._slow_ema_period.Value
+        self._prev_close = None
+        self._hurst = HurstExponent()
+        self._hurst.Length = self._hurst_period.Value
+        self._smooth = ExponentialMovingAverage()
+        self._smooth.Length = self._smooth_length.Value
 
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(fast_ema, slow_ema, self._process_candle).Start()
+        subscription.Bind(self._process_candle).Start()
+
+        self.StartProtection(Unit(), Unit(Decimal(self._stop_loss_percent.Value), UnitTypes.Percent), useMarketOrders=True)
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, fast_ema)
-            self.DrawIndicator(area, slow_ema)
             self.DrawOwnTrades(area)
+            oscillators = self.CreateChartArea()
+            if oscillators is not None:
+                self.DrawIndicator(oscillators, self._smooth)
 
-    def _process_candle(self, candle, fast_val, slow_val):
+    def _process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
 
-        fast = float(fast_val)
-        slow = float(slow_val)
+        close = candle.ClosePrice
+        prev = self._prev_close
+        self._prev_close = close
 
-        if self._prev_fast == 0.0 or self._prev_slow == 0.0:
-            self._prev_fast = fast
-            self._prev_slow = slow
+        if prev is None or prev == 0:
             return
 
-        if self._prev_fast <= self._prev_slow and fast > slow and self.Position <= 0:
-            self.BuyMarket()
-        elif self._prev_fast >= self._prev_slow and fast < slow and self.Position >= 0:
-            self.SellMarket()
+        # The exponent is measured on returns: on raw price levels the rescaled range is always near 1.
+        ret = (close - prev) / prev
+        hurst_value = process_value(self._hurst, ret, candle.OpenTime, True)
+        if not self._hurst.IsFormed or hurst_value.IsEmpty:
+            return
 
-        self._prev_fast = fast
-        self._prev_slow = slow
+        smooth_value = process_value(self._smooth, to_decimal(hurst_value), candle.OpenTime, True)
+        if not self._smooth.IsFormed:
+            return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
+        smoothed = to_decimal(smooth_value)
+        threshold = Decimal(self._threshold.Value)
+
+        if smoothed > threshold and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+        elif smoothed < threshold and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
 
     def CreateClone(self):
         return hurst_exponent_strategy()
