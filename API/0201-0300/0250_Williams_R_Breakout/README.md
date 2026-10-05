@@ -21,8 +21,10 @@ The approach caters to breakout traders who want early participation in emerging
 - **Default Values**:
   - `WilliamsRPeriod` = 14
   - `AvgPeriod` = 20
-  - `Multiplier` = 2.0m
+  - `Multiplier` = 2
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
+    Avg and StdDev are the average and the standard deviation of the last AvgPeriod %R values, the current one included. The stop is a fixed StopLossPercent of the entry price, watched between candles as well; 0 disables it. An entry signal against an open position reverses it.
 - **Filters**:
   - Category: Breakout
   - Direction: Both
