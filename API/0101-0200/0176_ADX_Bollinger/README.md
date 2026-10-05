@@ -1,7 +1,7 @@
 # Adx Bollinger Strategy
 [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
-Strategy based on ADX and Bollinger Bands indicators. Enters long when ADX > 25 and price breaks above upper Bollinger band Enters short when ADX > 25 and price breaks below lower Bollinger band
+Strategy based on ADX and Bollinger Bands indicators. Enters long when ADX > 25 and price closes below the lower Bollinger band. Enters short when ADX > 25 and price closes above the upper Bollinger band.
 
 Testing indicates an average annual return of about 115%. It performs best in the stocks market.
 
@@ -19,11 +19,13 @@ Suited for high-volatility environments. An ATR-based stop reduces downside risk
 - **Stops**: ATR-based using `AtrMultiplier`
 - **Default Values**:
   - `AdxPeriod` = 14
+  - `AdxThreshold` = 25
   - `BollingerPeriod` = 20
   - `BollingerDeviation` = 2.0m
   - `AtrPeriod` = 14
   - `AtrMultiplier` = 2.0m
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    The 25 in the rules is the default of AdxThreshold. As the entry criteria, the middle-band exit and the Mean reversion category show, a band break under strong ADX is faded. The stop lies AtrMultiplier ATRs (AtrPeriod) from the entry close and is checked on candle closes. An entry signal against an open position reverses it.
 - **Filters**:
   - Category: Mean reversion
   - Direction: Both

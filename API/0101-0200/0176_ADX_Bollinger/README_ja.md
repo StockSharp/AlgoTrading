@@ -1,7 +1,7 @@
 # Adx Bollinger 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
  
-ADXとBollingerバンドインジケーターに基づく戦略。ADX > 25かつ価格がBollingerバンド上限を突破したときロングエントリー。ADX > 25かつ価格がBollingerバンド下限を割り込んだときショートエントリー。
+ADXとBollingerバンドインジケーターに基づく戦略。ADX > 25かつ価格がBollingerバンド下限より下で引けたときロングエントリー。ADX > 25かつ価格がBollingerバンド上限より上で引けたときショートエントリー。
 
 テストでは年平均リターン約115%を示しています。株式市場で最もパフォーマンスが高くなります。
 
@@ -19,11 +19,13 @@ ADXでフィルタリングされたBollingerバンドのブレイクにより�
 - **ストップ**: `AtrMultiplier`を使用したATRベース
 - **デフォルト値**:
   - `AdxPeriod` = 14
+  - `AdxThreshold` = 25
   - `BollingerPeriod` = 20
   - `BollingerDeviation` = 2.0m
   - `AtrPeriod` = 14
   - `AtrMultiplier` = 2.0m
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    ルール中の25はAdxThresholdの既定値です。エントリー条件、ミドルバンドでの決済、Mean reversionカテゴリーが示すとおり、ADXが強い中でのバンドブレイクには逆張りします。ストップはエントリー時の終値からAtrMultiplier倍のATR（AtrPeriod）の位置にあり、足の終値で判定します。 保有ポジションと逆方向のエントリーシグナルはドテンになります。
 - **フィルター**:
   - カテゴリ: 平均回帰
   - 方向: 両方

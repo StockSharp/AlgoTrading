@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,21 +11,25 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on ADX and Bollinger Bands indicators.
-/// Enters long when ADX > 25 and price breaks above upper Bollinger band
-/// Enters short when ADX > 25 and price breaks below lower Bollinger band
+/// ADX Bollinger strategy.
+/// A close below the lower band while ADX is above AdxThreshold goes long and a close above the upper band goes short, reversing
+/// an opposite position. The position closes when price reverts to the middle band. The stop lies AtrMultiplier ATR from the entry close
+/// and is checked on candle closes.
 /// </summary>
 public class AdxBollingerStrategy : Strategy
 {
 	private readonly StrategyParam<int> _adxPeriod;
+	private readonly StrategyParam<decimal> _adxThreshold;
 	private readonly StrategyParam<int> _bollingerPeriod;
 	private readonly StrategyParam<decimal> _bollingerDeviation;
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<decimal> _atrMultiplier;
 	private readonly StrategyParam<DataType> _candleType;
 
+	private decimal _stopPrice;
+
 	/// <summary>
-	/// ADX period
+	/// Period of ADX.
 	/// </summary>
 	public int AdxPeriod
 	{
@@ -37,7 +38,16 @@ public class AdxBollingerStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Bollinger Bands period
+	/// ADX level of a strong trend.
+	/// </summary>
+	public decimal AdxThreshold
+	{
+		get => _adxThreshold.Value;
+		set => _adxThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Period of the Bollinger Bands.
 	/// </summary>
 	public int BollingerPeriod
 	{
@@ -46,25 +56,25 @@ public class AdxBollingerStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Bollinger Bands deviation
+	/// Standard deviation multiplier of the bands.
 	/// </summary>
 	public decimal BollingerDeviation
 	{
 		get => _bollingerDeviation.Value;
 		set => _bollingerDeviation.Value = value;
 	}
-	
+
 	/// <summary>
-	/// ATR period for stop-loss calculation
+	/// Period of the stop ATR.
 	/// </summary>
 	public int AtrPeriod
 	{
 		get => _atrPeriod.Value;
 		set => _atrPeriod.Value = value;
 	}
-	
+
 	/// <summary>
-	/// ATR multiplier for stop-loss
+	/// Stop distance from the entry in ATRs.
 	/// </summary>
 	public decimal AtrMultiplier
 	{
@@ -73,7 +83,7 @@ public class AdxBollingerStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Candle type for strategy calculation
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -82,42 +92,35 @@ public class AdxBollingerStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Constructor
+	/// Constructor.
 	/// </summary>
 	public AdxBollingerStrategy()
 	{
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("ADX Period", "Period for ADX indicator", "Indicators")
-			
-			.SetOptimize(10, 20, 2);
+			.SetDisplay("ADX Period", "Period of ADX", "Indicators");
+
+		_adxThreshold = Param(nameof(AdxThreshold), 25m)
+			.SetDisplay("ADX Threshold", "ADX level of a strong trend", "Indicators");
 
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Bollinger Period", "Period for Bollinger Bands", "Indicators")
-			
-			.SetOptimize(15, 30, 5);
+			.SetDisplay("Bollinger Period", "Period of the Bollinger Bands", "Indicators");
 
-		_bollingerDeviation = Param(nameof(BollingerDeviation), 2.0m)
+		_bollingerDeviation = Param(nameof(BollingerDeviation), 2m)
 			.SetGreaterThanZero()
-			.SetDisplay("Bollinger Deviation", "Deviation multiplier for Bollinger Bands", "Indicators")
-			
-			.SetOptimize(1.5m, 2.5m, 0.5m);
-			
+			.SetDisplay("Bollinger Deviation", "Standard deviation multiplier of the bands", "Indicators");
+
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("ATR Period", "Period for ATR indicator for stop-loss", "Risk Management")
-			
-			.SetOptimize(10, 20, 2);
-			
-		_atrMultiplier = Param(nameof(AtrMultiplier), 2.0m)
-			.SetGreaterThanZero()
-			.SetDisplay("ATR Multiplier", "Multiplier for ATR-based stop-loss", "Risk Management")
-			
-			.SetOptimize(1.5m, 3.0m, 0.5m);
+			.SetDisplay("ATR Period", "Period of the stop ATR", "Risk");
+
+		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
+			.SetNotNegative()
+			.SetDisplay("ATR Multiplier", "Stop distance from the entry in ATRs", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Timeframe for strategy", "General");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -126,119 +129,84 @@ public class AdxBollingerStrategy : Strategy
 		return [(Security, CandleType)];
 	}
 
-		/// <inheritdoc />
-		protected override void OnReseted()
-		{
-			base.OnReseted();
-		}
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_stopPrice = default;
+	}
 
-		/// <inheritdoc />
-		protected override void OnStarted2(DateTime time)
-		{
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
 		base.OnStarted2(time);
 
-		// Create indicators
+		_stopPrice = default;
+
+		var bollinger = new BollingerBands { Length = BollingerPeriod, Width = BollingerDeviation };
 		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
-		
-		var bollinger = new BollingerBands
-		{
-			Length = BollingerPeriod,
-			Width = BollingerDeviation
-		};
-		
 		var atr = new AverageTrueRange { Length = AtrPeriod };
 
-		// Subscribe to candles and bind indicators
 		var subscription = SubscribeCandles(CandleType);
-		
 		subscription
-			.BindEx(adx, bollinger, atr, ProcessCandle)
+			.BindEx(bollinger, adx, atr, ProcessCandle)
 			.Start();
 
-		// Setup chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, bollinger);
-			
-			// Create a separate area for ADX
-			var adxArea = CreateChartArea();
-			if (adxArea != null)
-			{
-				DrawIndicator(adxArea, adx);
-			}
-			
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, adx);
+			}
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue adxValue, IIndicatorValue bollingerValue, IIndicatorValue atrValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue, IIndicatorValue adxValue, IIndicatorValue atrValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
-		
-		// Check if strategy is ready to trade
+
+		if (!bollingerValue.IsFormed || !adxValue.IsFormed || !atrValue.IsFormed)
+			return;
+
+		var bands = (BollingerBandsValue)bollingerValue;
+
+		if (bands.UpBand is not decimal upper || bands.LowBand is not decimal lower || bands.MovingAverage is not decimal middle)
+			return;
+
+		if (adxValue is not AverageDirectionalIndexValue { MovingAverage: decimal strength })
+			return;
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Get additional values from Bollinger Bands
-		var bollingerValueTyped = (BollingerBandsValue)bollingerValue;
+		var atr = atrValue.GetValue<decimal>();
+		var close = candle.ClosePrice;
+		var strong = strength > AdxThreshold;
 
-		var upperBand = bollingerValueTyped.UpBand;
-		var lowerBand = bollingerValueTyped.LowBand;
-		var middleBand = (upperBand - lowerBand) / 2 + lowerBand;
-
-		// Current price (close of the candle)
-		var price = candle.ClosePrice;
-
-		// Stop-loss size based on ATR
-		var stopSize = atrValue.ToDecimal() * AtrMultiplier;
-
-		var adxValueTyped = (AverageDirectionalIndexValue)adxValue;
-
-		// Trading logic
-		if (adxValueTyped.MovingAverage > 25) // Strong trend
+		if (close < lower && strong && Position <= 0)
 		{
-			if (price > upperBand && Position <= 0)
-			{
-				// Buy signal: price above upper Bollinger band with strong trend
-				BuyMarket(Volume + Math.Abs(Position));
-				
-				// Set stop-loss
-				var stopPrice = price - stopSize;
-				RegisterOrder(CreateOrder(Sides.Sell, stopPrice, Math.Abs(Position + Volume).Max(Volume)));
-			}
-			else if (price < lowerBand && Position >= 0)
-			{
-				// Sell signal: price below lower Bollinger band with strong trend
-				SellMarket(Volume + Math.Abs(Position));
-				
-				// Set stop-loss
-				var stopPrice = price + stopSize;
-				RegisterOrder(CreateOrder(Sides.Buy, stopPrice, Math.Abs(Position + Volume).Max(Volume)));
-			}
+			BuyMarket(Volume + Math.Abs(Position));
+			_stopPrice = close - AtrMultiplier * atr;
 		}
-		// Exit conditions
-		else if (adxValueTyped.MovingAverage < 20)
+		else if (close > upper && strong && Position >= 0)
 		{
-			// Trend is weakening - close any position
-			if (Position > 0)
-				SellMarket(Position);
-			else if (Position < 0)
-				BuyMarket(Math.Abs(Position));
+			SellMarket(Volume + Math.Abs(Position));
+			_stopPrice = close + AtrMultiplier * atr;
 		}
-		// Also exit when price returns to middle band
-		else if (price < middleBand && Position > 0)
+		else if (Position > 0 && (close >= middle || (AtrMultiplier > 0 && close <= _stopPrice)))
 		{
-			// Exit long position when price returns to middle band
 			SellMarket(Position);
 		}
-		else if (price > middleBand && Position < 0)
+		else if (Position < 0 && (close <= middle || (AtrMultiplier > 0 && close >= _stopPrice)))
 		{
-			// Exit short position when price returns to middle band
-			BuyMarket(Math.Abs(Position));
+			BuyMarket(-Position);
 		}
 	}
 }
