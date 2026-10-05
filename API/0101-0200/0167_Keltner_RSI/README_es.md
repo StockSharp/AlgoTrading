@@ -7,7 +7,7 @@ Las pruebas indican un rendimiento anual promedio de aproximadamente 88%. Funcio
 
 Los Keltner Channels mapean la volatilidad reciente mientras el RSI mide los extremos del impulso. Las entradas ocurren cuando el RSI respalda un movimiento más allá del canal.
 
-Ideal para traders de rebote en torno a envolventes de volatilidad. Los stops dependen de un multiplicador de ATR.
+Ideal para traders de rebote en torno a envolventes de volatilidad. El multiplicador de ATR fija el ancho del canal, mientras que el stop es un porcentaje fijo del precio de entrada.
 
 ## Detalles
 
@@ -27,6 +27,7 @@ Ideal para traders de rebote en torno a envolventes de volatilidad. Los stops de
   - `RsiOversoldLevel` = 30m
   - `StopLossPercent` = 2.0m
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    El canal es la EMA más y menos AtrMultiplier ATR; un largo se cierra cuando el precio cierra en la EMA o por encima y un corto en la EMA o por debajo. Una señal de entrada contra una posición abierta la invierte.
 - **Filtros**:
   - Categoría: Reversión a la media
   - Dirección: Ambos

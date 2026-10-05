@@ -6253,6 +6253,79 @@ public abstract partial class StrategyTests
 	public Task S0166_PercentStopWorksBetweenFinishedBars()
 		=> CheckPercentStopBetweenBars("0166_Donchian_Stochastic", TimeSpan.FromDays(31));
 
+	[TestMethod]
+	[TestCategory("Shard04")]
+	[DataRow(20, 14, 2.0, 14, 70.0, 30.0, false)]
+	[DataRow(14, 10, 1.5, 10, 65.0, 35.0, true)]
+	public async Task S0167_KeltnerAndRsiExtremesUntilPriceReturnsToTheEma(int emaPeriod, int atrPeriod, double multiplier, int rsiPeriod, double overbought, double oversold, bool secondary)
+	{
+		var ema = new ExponentialMovingAverage { Length = emaPeriod };
+		var atr = new AverageTrueRange { Length = atrPeriod };
+		var rsi = new RelativeStrengthIndex { Length = rsiPeriod };
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var emaExits = 0;
+		var violations = new List<string>();
+		await Replay("0167_Keltner_RSI", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["EmaPeriod"].Value);
+			AreEqual(14, strategy.Parameters["AtrPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["AtrMultiplier"].Value));
+			AreEqual(14, strategy.Parameters["RsiPeriod"].Value);
+			AreEqual(70m, Convert.ToDecimal(strategy.Parameters["RsiOverboughtLevel"].Value));
+			AreEqual(30m, Convert.ToDecimal(strategy.Parameters["RsiOversoldLevel"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "EmaPeriod", emaPeriod);
+			SetParam(strategy, "AtrPeriod", atrPeriod);
+			SetParam(strategy, "AtrMultiplier", multiplier);
+			SetParam(strategy, "RsiPeriod", rsiPeriod);
+			SetParam(strategy, "RsiOverboughtLevel", overbought);
+			SetParam(strategy, "RsiOversoldLevel", oversold);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var e = ema.Process(candle);
+				var a = atr.Process(candle);
+				var r = rsi.Process(candle);
+				if (!e.IsFormed || !a.IsFormed || !r.IsFormed) return;
+				var middle = e.GetValue<decimal>();
+				var range = a.GetValue<decimal>();
+				var value = r.GetValue<decimal>();
+				var upper = middle + (decimal)multiplier * range;
+				var lower = middle - (decimal)multiplier * range;
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (close < lower && value < (decimal)oversold && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (close > upper && value > (decimal)overbought && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && close >= middle) { expectedSide = Sides.Sell; expectedVolume = position; emaExits++; }
+				else if (position < 0m && close <= middle) { expectedSide = Sides.Buy; expectedVolume = -position; emaExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must fade a Keltner band confirmed by an RSI extreme, or close when price returns to the EMA.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && emaExits > 0, "The fixture must trade both sides and exit at the EMA.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard04")]
+	public Task S0167_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0167_Keltner_RSI", TimeSpan.FromDays(31));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";
