@@ -1,5 +1,3 @@
-namespace StockSharp.Samples.Strategies;
-
 using System;
 using System.Collections.Generic;
 
@@ -10,92 +8,137 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
+namespace StockSharp.Samples.Strategies;
+
 /// <summary>
-/// Flawless Victory Strategy.
-/// Uses Bollinger Bands and RSI for mean reversion trading.
-/// Buys when price below lower BB with RSI oversold.
-/// Sells when price above upper BB with RSI overbought.
+/// Flawless Victory strategy.
+/// Goes long when the close is below the lower Bollinger band with RSI under 30 and short when it is above the upper band
+/// with RSI over 70; the opposite signal reverses the position. Version 2 adds percent take-profit and stop-loss exits,
+/// and Version 3 additionally requires MFI under 20 for longs and over 80 for shorts.
 /// </summary>
 public class FlawlessVictoryStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleTypeParam;
-	private readonly StrategyParam<int> _bbLength;
-	private readonly StrategyParam<decimal> _bbWidth;
+	private const decimal _rsiOversold = 30m;
+	private const decimal _rsiOverbought = 70m;
+	private const decimal _mfiOversold = 20m;
+	private const decimal _mfiOverbought = 80m;
+
+	private readonly StrategyParam<int> _version;
 	private readonly StrategyParam<int> _rsiLength;
-	private readonly StrategyParam<decimal> _rsiOversold;
-	private readonly StrategyParam<decimal> _rsiOverbought;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<int> _mfiLength;
+	private readonly StrategyParam<int> _bbLength;
+	private readonly StrategyParam<decimal> _bbMultiplier;
+	private readonly StrategyParam<decimal> _takeProfitPct;
+	private readonly StrategyParam<decimal> _stopLossPct;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private BollingerBands _bollinger;
-	private RelativeStrengthIndex _rsi;
-	private int _cooldownRemaining;
-
-	public FlawlessVictoryStrategy()
+	/// <summary>
+	/// Strategy version: 1, 2 or 3.
+	/// </summary>
+	public int Version
 	{
-		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-			.SetDisplay("Candle type", "Candle type for strategy calculation.", "General");
-
-		_bbLength = Param(nameof(BBLength), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("BB Period", "Bollinger Bands period", "Bollinger Bands");
-
-		_bbWidth = Param(nameof(BBWidth), 1.5m)
-			.SetDisplay("BB Width", "Bollinger Bands standard deviation", "Bollinger Bands");
-
-		_rsiLength = Param(nameof(RSILength), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("RSI Length", "RSI period", "RSI");
-
-		_rsiOversold = Param(nameof(RSIOversold), 42m)
-			.SetDisplay("RSI Oversold", "RSI oversold level", "RSI");
-
-		_rsiOverbought = Param(nameof(RSIOverbought), 70m)
-			.SetDisplay("RSI Overbought", "RSI overbought level", "RSI");
-
-		_cooldownBars = Param(nameof(CooldownBars), 10)
-			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk");
+		get => _version.Value;
+		set => _version.Value = value;
 	}
 
-	public DataType CandleType
+	/// <summary>
+	/// RSI period.
+	/// </summary>
+	public int RSI_length
 	{
-		get => _candleTypeParam.Value;
-		set => _candleTypeParam.Value = value;
+		get => _rsiLength.Value;
+		set => _rsiLength.Value = value;
 	}
 
+	/// <summary>
+	/// MFI period.
+	/// </summary>
+	public int MFI_length
+	{
+		get => _mfiLength.Value;
+		set => _mfiLength.Value = value;
+	}
+
+	/// <summary>
+	/// Bollinger Bands period.
+	/// </summary>
 	public int BBLength
 	{
 		get => _bbLength.Value;
 		set => _bbLength.Value = value;
 	}
 
-	public decimal BBWidth
+	/// <summary>
+	/// Bollinger Bands standard deviation multiplier.
+	/// </summary>
+	public decimal BBMultiplier
 	{
-		get => _bbWidth.Value;
-		set => _bbWidth.Value = value;
+		get => _bbMultiplier.Value;
+		set => _bbMultiplier.Value = value;
 	}
 
-	public int RSILength
+	/// <summary>
+	/// Take-profit percentage used by version 2.
+	/// </summary>
+	public decimal TakeProfitPct
 	{
-		get => _rsiLength.Value;
-		set => _rsiLength.Value = value;
+		get => _takeProfitPct.Value;
+		set => _takeProfitPct.Value = value;
 	}
 
-	public decimal RSIOversold
+	/// <summary>
+	/// Stop-loss percentage used by version 2.
+	/// </summary>
+	public decimal StopLossPct
 	{
-		get => _rsiOversold.Value;
-		set => _rsiOversold.Value = value;
+		get => _stopLossPct.Value;
+		set => _stopLossPct.Value = value;
 	}
 
-	public decimal RSIOverbought
+	/// <summary>
+	/// Candle type for strategy calculation.
+	/// </summary>
+	public DataType CandleType
 	{
-		get => _rsiOverbought.Value;
-		set => _rsiOverbought.Value = value;
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
-	public int CooldownBars
+	/// <summary>
+	/// Constructor.
+	/// </summary>
+	public FlawlessVictoryStrategy()
 	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
+		_version = Param(nameof(Version), 1)
+			.SetRange(1, 3)
+			.SetDisplay("Version", "1: RSI signals, 2: adds take-profit/stop-loss, 3: adds MFI confirmation", "General");
+
+		_rsiLength = Param(nameof(RSI_length), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("RSI Length", "RSI period", "Indicators");
+
+		_mfiLength = Param(nameof(MFI_length), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("MFI Length", "MFI period", "Indicators");
+
+		_bbLength = Param(nameof(BBLength), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("BB Period", "Bollinger Bands period", "Indicators");
+
+		_bbMultiplier = Param(nameof(BBMultiplier), 2.0m)
+			.SetGreaterThanZero()
+			.SetDisplay("BB Multiplier", "Bollinger Bands standard deviation multiplier", "Indicators");
+
+		_takeProfitPct = Param(nameof(TakeProfitPct), 1.5m)
+			.SetNotNegative()
+			.SetDisplay("Take Profit %", "Take-profit percentage for version 2", "Risk");
+
+		_stopLossPct = Param(nameof(StopLossPct), 1.0m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop-loss percentage for version 2", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+			.SetDisplay("Candle type", "Candle type for strategy calculation", "General");
 	}
 
 	/// <inheritdoc />
@@ -103,99 +146,73 @@ public class FlawlessVictoryStrategy : Strategy
 		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_bollinger = null;
-		_rsi = null;
-		_cooldownRemaining = 0;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_bollinger = new BollingerBands
+		var bollinger = new BollingerBands
 		{
 			Length = BBLength,
-			Width = BBWidth
+			Width = BBMultiplier
 		};
-
-		_rsi = new RelativeStrengthIndex { Length = RSILength };
+		var rsi = new RelativeStrengthIndex { Length = RSI_length };
+		var mfi = new MoneyFlowIndex { Length = MFI_length };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_bollinger, _rsi, OnProcess)
+			.BindEx(bollinger, rsi, mfi, ProcessCandle)
 			.Start();
+
+		if (Version == 2)
+		{
+			StartProtection(
+				TakeProfitPct > 0 ? new Unit(TakeProfitPct, UnitTypes.Percent) : new Unit(),
+				StopLossPct > 0 ? new Unit(StopLossPct, UnitTypes.Percent) : new Unit(),
+				useMarketOrders: true);
+		}
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _bollinger);
+			DrawIndicator(area, bollinger);
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, rsi);
+				DrawIndicator(oscillators, mfi);
+			}
 		}
 	}
 
-	private void OnProcess(ICandleMessage candle, IIndicatorValue bollingerValue, IIndicatorValue rsiValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue, IIndicatorValue rsiValue, IIndicatorValue mfiValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_bollinger.IsFormed || !_rsi.IsFormed)
+		if (!bollingerValue.IsFormed || !rsiValue.IsFormed || !mfiValue.IsFormed)
 			return;
 
 		var bb = (BollingerBandsValue)bollingerValue;
-		if (bb.UpBand is not decimal upper ||
-			bb.LowBand is not decimal lower ||
-			bb.MovingAverage is not decimal middle)
+		if (bb.UpBand is not decimal upper || bb.LowBand is not decimal lower)
 			return;
-
-		if (rsiValue.IsEmpty)
-			return;
-
-		var rsi = rsiValue.ToDecimal();
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (_cooldownRemaining > 0)
-		{
-			_cooldownRemaining--;
-			return;
-		}
-
+		var rsi = rsiValue.ToDecimal();
+		var mfi = mfiValue.ToDecimal();
 		var close = candle.ClosePrice;
+		var useMfi = Version == 3;
 
-		// Buy: price below lower BB with RSI oversold
-		if (close < lower && rsi < RSIOversold && Position <= 0)
-		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-			BuyMarket(Volume);
-			_cooldownRemaining = CooldownBars;
-		}
-		// Sell: price above upper BB with RSI overbought
-		else if (close > upper && rsi > RSIOverbought && Position >= 0)
-		{
-			if (Position > 0)
-				SellMarket(Math.Abs(Position));
-			SellMarket(Volume);
-			_cooldownRemaining = CooldownBars;
-		}
-		// Exit long at middle band
-		else if (Position > 0 && close >= middle)
-		{
-			SellMarket(Math.Abs(Position));
-			_cooldownRemaining = CooldownBars;
-		}
-		// Exit short at middle band
-		else if (Position < 0 && close <= middle)
-		{
-			BuyMarket(Math.Abs(Position));
-			_cooldownRemaining = CooldownBars;
-		}
+		var longSignal = close < lower && rsi < _rsiOversold && (!useMfi || mfi < _mfiOversold);
+		var shortSignal = close > upper && rsi > _rsiOverbought && (!useMfi || mfi > _mfiOverbought);
+
+		if (longSignal && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (shortSignal && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
 	}
 }
