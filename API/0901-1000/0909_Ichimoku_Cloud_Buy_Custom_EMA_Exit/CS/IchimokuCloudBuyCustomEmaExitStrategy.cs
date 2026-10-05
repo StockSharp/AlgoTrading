@@ -10,73 +10,210 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
+/// <summary>
+/// Ichimoku cloud buy with custom EMA exit strategy.
+/// Long only. A long opens when the close is above the Ichimoku cloud and the candle volume exceeds its VolumeAvgPeriod average,
+/// optionally also requiring the close above the EmaLength EMA. The position closes when the close falls below the EMA,
+/// and a percent stop loss limits the loss.
+/// </summary>
 public class IchimokuCloudBuyCustomEmaExitStrategy : Strategy
 {
-	private readonly StrategyParam<int> _fastEmaPeriod;
-	private readonly StrategyParam<int> _slowEmaPeriod;
+	private readonly StrategyParam<int> _tenkanPeriod;
+	private readonly StrategyParam<int> _kijunPeriod;
+	private readonly StrategyParam<int> _senkouSpanPeriod;
+	private readonly StrategyParam<int> _emaLength;
+	private readonly StrategyParam<int> _volumeAvgPeriod;
+	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<bool> _useEmaFilter;
 	private readonly StrategyParam<DataType> _candleType;
-	private decimal _prevFastEma;
-	private decimal _prevSlowEma;
 
-	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
-	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	private SimpleMovingAverage _volumeSma;
 
+	/// <summary>
+	/// Tenkan-sen period.
+	/// </summary>
+	public int TenkanPeriod
+	{
+		get => _tenkanPeriod.Value;
+		set => _tenkanPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Kijun-sen period.
+	/// </summary>
+	public int KijunPeriod
+	{
+		get => _kijunPeriod.Value;
+		set => _kijunPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Senkou Span B period.
+	/// </summary>
+	public int SenkouSpanPeriod
+	{
+		get => _senkouSpanPeriod.Value;
+		set => _senkouSpanPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Exit EMA period.
+	/// </summary>
+	public int EmaLength
+	{
+		get => _emaLength.Value;
+		set => _emaLength.Value = value;
+	}
+
+	/// <summary>
+	/// Volume average period.
+	/// </summary>
+	public int VolumeAvgPeriod
+	{
+		get => _volumeAvgPeriod.Value;
+		set => _volumeAvgPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Stop loss percentage from entry price.
+	/// </summary>
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Require the close above the EMA for entries.
+	/// </summary>
+	public bool UseEmaFilter
+	{
+		get => _useEmaFilter.Value;
+		set => _useEmaFilter.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
+	/// </summary>
 	public IchimokuCloudBuyCustomEmaExitStrategy()
 	{
-		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+		_tenkanPeriod = Param(nameof(TenkanPeriod), 9)
 			.SetGreaterThanZero()
-			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
-		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+			.SetDisplay("Tenkan Period", "Tenkan-sen period", "Ichimoku");
+
+		_kijunPeriod = Param(nameof(KijunPeriod), 26)
 			.SetGreaterThanZero()
-			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+			.SetDisplay("Kijun Period", "Kijun-sen period", "Ichimoku");
+
+		_senkouSpanPeriod = Param(nameof(SenkouSpanPeriod), 52)
+			.SetGreaterThanZero()
+			.SetDisplay("Senkou Span Period", "Senkou Span B period", "Ichimoku");
+
+		_emaLength = Param(nameof(EmaLength), 44)
+			.SetGreaterThanZero()
+			.SetDisplay("EMA Length", "Exit EMA period", "Exit");
+
+		_volumeAvgPeriod = Param(nameof(VolumeAvgPeriod), 10)
+			.SetGreaterThanZero()
+			.SetDisplay("Volume Avg Period", "Volume average period", "Volume");
+
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
+
+		_useEmaFilter = Param(nameof(UseEmaFilter), true)
+			.SetDisplay("Use EMA Filter", "Require the close above the EMA for entries", "Exit");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
+	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
+	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevFastEma = 0m;
-		_prevSlowEma = 0m;
+		_volumeSma = null;
 	}
 
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
-		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
+
+		_volumeSma = new SimpleMovingAverage { Length = VolumeAvgPeriod };
+
+		var ichimoku = new Ichimoku
+		{
+			Tenkan = { Length = TenkanPeriod },
+			Kijun = { Length = KijunPeriod },
+			SenkouB = { Length = SenkouSpanPeriod },
+		};
+		var ema = new ExponentialMovingAverage { Length = EmaLength };
+
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(fastEma, slowEma, ProcessCandle).Start();
+		subscription
+			.BindEx(ichimoku, ema, ProcessCandle)
+			.Start();
+
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true);
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, fastEma);
-			DrawIndicator(area, slowEma);
+			DrawIndicator(area, ichimoku);
+			DrawIndicator(area, ema);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue ichimokuValue, IIndicatorValue emaValue)
 	{
-		if (candle.State != CandleStates.Finished) return;
-		if (_prevFastEma == 0m || _prevSlowEma == 0m)
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		var volume = candle.TotalVolume;
+		var volumeValue = _volumeSma.Process(new DecimalIndicatorValue(_volumeSma, volume, candle.OpenTime) { IsFinal = true });
+
+		if (!_volumeSma.IsFormed || volumeValue.IsEmpty || !emaValue.IsFormed)
+			return;
+
+		if (!ichimokuValue.IsFormed || ichimokuValue is not IchimokuValue { SenkouA: decimal senkouA, SenkouB: decimal senkouB })
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		var averageVolume = volumeValue.GetValue<decimal>();
+		var ema = emaValue.GetValue<decimal>();
+		var close = candle.ClosePrice;
+
+		if (Position > 0)
 		{
-			_prevFastEma = fastEmaValue;
-			_prevSlowEma = slowEmaValue;
+			if (close < ema)
+				SellMarket(Position);
 			return;
 		}
-		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
-			BuyMarket();
-		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
-			SellMarket();
-		_prevFastEma = fastEmaValue;
-		_prevSlowEma = slowEmaValue;
+
+		var aboveCloud = close > Math.Max(senkouA, senkouB);
+		var emaOk = !UseEmaFilter || close > ema;
+
+		if (aboveCloud && volume > averageVolume && emaOk)
+			BuyMarket(Volume + Math.Abs(Position));
 	}
 }
