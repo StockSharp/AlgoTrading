@@ -3,7 +3,6 @@ using System.Collections.Generic;
 
 using Ecng.Common;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -11,20 +10,45 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Automatic Trendlines Strategy.
-/// Uses Highest/Lowest channel breakouts with EMA trend filter.
+/// Automatic trendlines strategy.
+/// A pivot high is a high above the LeftBars candles before it and the RightBars candles after it, and a pivot low is the
+/// mirror. The resistance line connects the last two pivot highs and the support line the last two pivot lows, both extended
+/// to the current candle. A close crossing above resistance goes long and a close crossing below support goes short,
+/// reversing an opposite position.
 /// </summary>
 public class AutomaticTrendlinesStrategy : Strategy
 {
+	private readonly StrategyParam<int> _leftBars;
+	private readonly StrategyParam<int> _rightBars;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _channelLength;
-	private readonly StrategyParam<int> _emaLength;
-	private readonly StrategyParam<int> _cooldownBars;
 
-	private decimal _prevHighest;
-	private decimal _prevLowest;
+	private readonly List<(decimal high, decimal low)> _window = [];
 	private int _barIndex;
-	private int _lastTradeBar;
+	private (int index, decimal price)? _lastHigh;
+	private (int index, decimal price)? _prevHigh;
+	private (int index, decimal price)? _lastLow;
+	private (int index, decimal price)? _prevLow;
+	private decimal? _prevClose;
+	private decimal? _prevResistance;
+	private decimal? _prevSupport;
+
+	/// <summary>
+	/// Candles before a pivot it must exceed.
+	/// </summary>
+	public int LeftBars
+	{
+		get => _leftBars.Value;
+		set => _leftBars.Value = value;
+	}
+
+	/// <summary>
+	/// Candles after a pivot it must exceed.
+	/// </summary>
+	public int RightBars
+	{
+		get => _rightBars.Value;
+		set => _rightBars.Value = value;
+	}
 
 	/// <summary>
 	/// Candle type.
@@ -36,50 +60,20 @@ public class AutomaticTrendlinesStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Channel lookback length.
-	/// </summary>
-	public int ChannelLength
-	{
-		get => _channelLength.Value;
-		set => _channelLength.Value = value;
-	}
-
-	/// <summary>
-	/// EMA trend filter period.
-	/// </summary>
-	public int EmaLength
-	{
-		get => _emaLength.Value;
-		set => _emaLength.Value = value;
-	}
-
-	/// <summary>
-	/// Cooldown bars between trades.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
 	/// Constructor.
 	/// </summary>
 	public AutomaticTrendlinesStrategy()
 	{
+		_leftBars = Param(nameof(LeftBars), 100)
+			.SetGreaterThanZero()
+			.SetDisplay("Left Bars", "Candles before a pivot it must exceed", "Pivots");
+
+		_rightBars = Param(nameof(RightBars), 15)
+			.SetGreaterThanZero()
+			.SetDisplay("Right Bars", "Candles after a pivot it must exceed", "Pivots");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle type", "Candle type for strategy calculation", "General");
-
-		_channelLength = Param(nameof(ChannelLength), 30)
-			.SetGreaterThanZero()
-			.SetDisplay("Channel Length", "Lookback for Highest/Lowest", "Indicators");
-
-		_emaLength = Param(nameof(EmaLength), 50)
-			.SetGreaterThanZero()
-			.SetDisplay("EMA Length", "EMA trend filter period", "Indicators");
-
-		_cooldownBars = Param(nameof(CooldownBars), 350)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "Trading");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -92,10 +86,20 @@ public class AutomaticTrendlinesStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevHighest = 0;
-		_prevLowest = 0;
-		_barIndex = 0;
-		_lastTradeBar = 0;
+		ResetState();
+	}
+
+	private void ResetState()
+	{
+		_window.Clear();
+		_barIndex = -1;
+		_lastHigh = null;
+		_prevHigh = null;
+		_lastLow = null;
+		_prevLow = null;
+		_prevClose = null;
+		_prevResistance = null;
+		_prevSupport = null;
 	}
 
 	/// <inheritdoc />
@@ -103,50 +107,101 @@ public class AutomaticTrendlinesStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var highest = new Highest { Length = ChannelLength };
-		var lowest = new Lowest { Length = ChannelLength };
-		var ema = new ExponentialMovingAverage { Length = EmaLength };
+		ResetState();
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(highest, lowest, ema, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, ema);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal highestValue, decimal lowestValue, decimal emaValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
 		_barIndex++;
+		_window.Add((candle.HighPrice, candle.LowPrice));
 
-		var cooldownOk = _barIndex - _lastTradeBar > CooldownBars;
+		var size = LeftBars + RightBars + 1;
+		if (_window.Count > size)
+			_window.RemoveAt(0);
 
-		// Breakout above resistance trendline with uptrend
-		var breakUp = _prevHighest > 0 && candle.ClosePrice > _prevHighest && candle.ClosePrice > emaValue;
-		// Breakdown below support trendline with downtrend
-		var breakDown = _prevLowest > 0 && candle.ClosePrice < _prevLowest && candle.ClosePrice < emaValue;
+		if (_window.Count == size)
+			DetectPivots();
 
-		if (breakUp && Position <= 0 && cooldownOk)
+		var close = candle.ClosePrice;
+		var resistance = LineValue(_prevHigh, _lastHigh);
+		var support = LineValue(_prevLow, _lastLow);
+
+		var prevClose = _prevClose;
+		var prevResistance = _prevResistance;
+		var prevSupport = _prevSupport;
+		_prevClose = close;
+		_prevResistance = resistance;
+		_prevSupport = support;
+
+		if (prevClose is not decimal pc)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		var crossUp = resistance is decimal res && prevResistance is decimal prevRes && pc <= prevRes && close > res;
+		var crossDown = support is decimal sup && prevSupport is decimal prevSup && pc >= prevSup && close < sup;
+
+		if (crossUp && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (crossDown && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
+	}
+
+	private void DetectPivots()
+	{
+		var (pivotHigh, pivotLow) = _window[LeftBars];
+		var isHigh = true;
+		var isLow = true;
+
+		for (var i = 0; i < _window.Count; i++)
 		{
-			BuyMarket();
-			_lastTradeBar = _barIndex;
-		}
-		else if (breakDown && Position >= 0 && cooldownOk)
-		{
-			SellMarket();
-			_lastTradeBar = _barIndex;
+			if (i == LeftBars)
+				continue;
+
+			if (_window[i].high >= pivotHigh)
+				isHigh = false;
+
+			if (_window[i].low <= pivotLow)
+				isLow = false;
 		}
 
-		_prevHighest = highestValue;
-		_prevLowest = lowestValue;
+		var pivotIndex = _barIndex - RightBars;
+
+		if (isHigh)
+		{
+			_prevHigh = _lastHigh;
+			_lastHigh = (pivotIndex, pivotHigh);
+		}
+
+		if (isLow)
+		{
+			_prevLow = _lastLow;
+			_lastLow = (pivotIndex, pivotLow);
+		}
+	}
+
+	private decimal? LineValue((int index, decimal price)? first, (int index, decimal price)? second)
+	{
+		if (first is not (int i1, decimal p1) || second is not (int i2, decimal p2) || i2 == i1)
+			return null;
+
+		var slope = (p2 - p1) / (i2 - i1);
+		return p2 + slope * (_barIndex - i2);
 	}
 }
