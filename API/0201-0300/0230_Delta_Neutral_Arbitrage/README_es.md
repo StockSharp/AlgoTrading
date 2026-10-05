@@ -20,9 +20,12 @@ La operativa delta neutral es popular entre los traders cuantitativos que buscan
 - **Stops**: Sí, stop-loss porcentual sobre el valor del diferencial.
 - **Valores predeterminados**:
   - `LookbackPeriod` = 20
-  - `EntryThreshold` = 2m
-  - `StopLossPercent` = 2m
+  - `EntryThreshold` = 2
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
+  - `Asset2Security` — obligatorio, sin valor por defecto
+  - `Asset2Portfolio` — la cartera de la estrategia si está vacío
+    El spread es el cierre del Security de la estrategia menos el cierre de Asset2Security en velas de la misma hora; su z-score usa la media y la desviación estándar de los últimos LookbackPeriod spreads. Cada pata opera Volume y una señal contraria invierte ambas patas. El stop cierra ambas patas cuando el spread se mueve en contra un StopLossPercent de su valor de entrada, comprobado al cierre de las velas; 0 lo desactiva.
 - **Filtros**:
   - Categoría: Arbitraje
   - Dirección: Ambos

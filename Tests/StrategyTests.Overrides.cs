@@ -105,15 +105,6 @@ public abstract partial class StrategyTests
 		tightStop.AssertDiffersFrom(wideStop, "Changing StopLossPercent did not affect submitted orders.");
 	}
 
-	[TestMethod]
-	[TestCategory("Shard06")]
-	public Task S0230_DeltaNeutralArbitrage()
-		=> Replay("0230_Delta_Neutral_Arbitrage", (s, sec2) =>
-		{
-			SetParam(s, "Asset2Security", sec2);
-			SetParam(s, "Asset2Portfolio", s.Portfolio);
-		});
-
 	/// <summary>
 	/// The README sells this example as a 5-minute strategy whose stops are ATR multiples and whose
 	/// HmmHistoryLength is the model's history. The implementation runs hour candles, protects the
@@ -9289,6 +9280,88 @@ public abstract partial class StrategyTests
 	[TestCategory("Shard07")]
 	public Task S0229_PercentStopWorksBetweenFinishedBars()
 		=> CheckPercentStopBetweenBars("0229_Autocorrelation_Reversal", TimeSpan.FromDays(31));
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(20, 2.0, 2.0, false)]
+	[DataRow(30, 1.5, 0.3, true)]
+	public async Task S0230_SpreadZScoresTradeBothLegsUntilTheMeanOrASpreadStop(int period, double threshold, double stopPercent, bool swapped)
+	{
+		var firsts = new Dictionary<DateTime, decimal>();
+		var seconds = new Dictionary<DateTime, decimal>();
+		var spreads = new Queue<decimal>();
+		var side = 0;
+		var entrySpread = 0m;
+		var expected = new Queue<(SecurityId security, Sides side, decimal volume)>();
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<int, int> { [1] = 0, [-1] = 0 };
+		var meanExits = 0;
+		var stopExits = 0;
+		var legs = new HashSet<SecurityId>();
+		var violations = new List<string>();
+		await Replay("0230_Delta_Neutral_Arbitrage", (strategy, alternateSecurity) =>
+		{
+			var first = swapped ? alternateSecurity : strategy.Security;
+			var second = swapped ? strategy.Security : alternateSecurity;
+			strategy.Security = first;
+			AreEqual(20, strategy.Parameters["LookbackPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["EntryThreshold"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "Asset2Security", second);
+			SetParam(strategy, "Asset2Portfolio", strategy.Portfolio);
+			SetParam(strategy, "LookbackPeriod", period);
+			SetParam(strategy, "EntryThreshold", threshold);
+			SetParam(strategy, "StopLossPercent", stopPercent);
+			var firstId = first.ToSecurityId();
+			var secondId = second.ToSecurityId();
+			void Move(int target)
+			{
+				side = target;
+				var firstChange = target * strategy.Volume - strategy.Position;
+				if (firstChange != 0m) expected.Enqueue((firstId, firstChange > 0m ? Sides.Buy : Sides.Sell, Math.Abs(firstChange)));
+				var secondChange = -target * strategy.Volume - (strategy.GetPositionValue(second, strategy.Portfolio) ?? 0m);
+				if (secondChange != 0m) expected.Enqueue((secondId, secondChange > 0m ? Sides.Buy : Sides.Sell, Math.Abs(secondChange)));
+			}
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				(candle.SecurityId == firstId ? firsts : seconds)[candle.OpenTime] = candle.ClosePrice;
+				if (!firsts.TryGetValue(candle.OpenTime, out var a) || !seconds.TryGetValue(candle.OpenTime, out var b)) return;
+				foreach (var t in firsts.Keys.Where(t => t <= candle.OpenTime).ToArray()) firsts.Remove(t);
+				foreach (var t in seconds.Keys.Where(t => t <= candle.OpenTime).ToArray()) seconds.Remove(t);
+				var spread = a - b;
+				spreads.Enqueue(spread);
+				if (spreads.Count > period) spreads.Dequeue();
+				if (spreads.Count < period) return;
+				var mean = spreads.Average();
+				var deviation = (decimal)Math.Sqrt((double)spreads.Average(s => (s - mean) * (s - mean)));
+				if (deviation == 0m) return;
+				var z = (spread - mean) / deviation;
+				var stopDistance = Math.Abs(entrySpread) * (decimal)stopPercent / 100;
+				var before = expected.Count;
+				if (z < -(decimal)threshold && side <= 0) { Move(1); entrySpread = spread; entries[1]++; }
+				else if (z > (decimal)threshold && side >= 0) { Move(-1); entrySpread = spread; entries[-1]++; }
+				else if (side > 0 && (spread >= mean || spread <= entrySpread - stopDistance)) { if (spread >= mean) meanExits++; else stopExits++; Move(0); }
+				else if (side < 0 && (spread <= mean || spread >= entrySpread + stopDistance)) { if (spread <= mean) meanExits++; else stopExits++; Move(0); }
+				expectedOrders += expected.Count - before;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				var id = order.Security.ToSecurityId();
+				legs.Add(id);
+				if (!expected.TryDequeue(out var next) || next.security != id || next.side != order.Side || next.volume != order.Volume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {id} {order.Side} {order.Volume}, expected {next.security} {next.side} {next.volume}. Every order must move both legs to the pair the spread z-score calls for.");
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		AreEqual(2, legs.Count, "Both instruments of the pair must be traded.");
+		IsTrue(entries[1] > 0 && entries[-1] > 0 && meanExits > 0, "The fixture must trade both sides of the spread and exit at the mean.");
+		if (stopPercent < 1) IsTrue(stopExits > 0, "A tight spread stop must be hit.");
+	}
 
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";

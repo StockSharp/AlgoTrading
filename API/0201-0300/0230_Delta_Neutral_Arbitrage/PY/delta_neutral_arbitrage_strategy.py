@@ -1,135 +1,60 @@
 import clr
 
 clr.AddReference("StockSharp.Messages")
-clr.AddReference("StockSharp.BusinessEntities")
 clr.AddReference("StockSharp.Algo")
-clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates, Sides
-from StockSharp.BusinessEntities import Security, Portfolio
-from StockSharp.Algo.Indicators import SimpleMovingAverage, StandardDeviation
+from System import TimeSpan, Decimal, Math
+from StockSharp.Messages import DataType, CandleStates, Sides, OrderTypes
+from StockSharp.BusinessEntities import Security, Portfolio, Order
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class delta_neutral_arbitrage_strategy(Strategy):
     """
-    Strategy that creates delta neutral arbitrage positions between two correlated assets.
-    Goes long one asset and short another when spread deviates from the mean.
+    Delta neutral arbitrage strategy.
+    The spread is the first instrument's close minus Asset2Security's on candles of the same time, and its z-score is measured against the
+    mean and standard deviation of the last LookbackPeriod spreads. A z-score below minus EntryThreshold buys the first instrument and sells
+    Asset2Security in equal size, one above EntryThreshold does the opposite, reversing an opposite pair. Both legs close once the spread
+    crosses back over its mean, or once it moves StopLossPercent of its entry value against the pair.
     """
 
     def __init__(self):
         super(delta_neutral_arbitrage_strategy, self).__init__()
+        self._asset2_security = self.Param[Security]("Asset2Security", None).SetDisplay("Asset 2", "Second asset of the pair", "Securities").SetRequired()
+        self._asset2_portfolio = self.Param[Portfolio]("Asset2Portfolio", None).SetDisplay("Portfolio 2", "Portfolio for the second asset", "Portfolios")
+        self._lookback_period = self.Param("LookbackPeriod", 20).SetGreaterThanZero().SetDisplay("Lookback Period", "Spreads the mean and standard deviation are measured over", "Parameters")
+        self._entry_threshold = self.Param("EntryThreshold", 2.0).SetGreaterThanZero().SetDisplay("Entry Threshold", "Z-score distance from zero that opens a pair", "Parameters")
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0).SetNotNegative().SetDisplay("Stop-loss %", "Adverse spread move in percent of the entry spread", "Risk Management")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._reset_state()
 
-        # Secondary security for pair trading.
-        self._asset2_security = self.Param[Security]("Asset2Security") \
-            .SetDisplay("Asset 2", "Secondary asset for arbitrage", "Securities")
-
-        # Portfolio for trading second asset.
-        self._asset2_portfolio = self.Param[Portfolio]("Asset2Portfolio") \
-            .SetDisplay("Portfolio 2", "Portfolio for trading Asset 2", "Portfolios")
-
-        # Period for spread statistics calculation.
-        self._lookback_period = self.Param("LookbackPeriod", 20) \
-            .SetDisplay("Lookback period", "Period for spread statistics calculation", "Strategy parameters") \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 50, 5)
-
-        # Threshold for entries, in standard deviations.
-        self._entry_threshold = self.Param("EntryThreshold", 2.0) \
-            .SetDisplay("Entry threshold", "Entry threshold in standard deviations", "Strategy parameters") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.5, 3.0, 0.5)
-
-        # Stop-loss percentage.
-        self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
-            .SetDisplay("Stop-loss %", "Stop-loss as percentage from entry spread", "Risk management") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.0, 3.0, 0.5)
-
-        # Type of candles to use.
-        self._candle_type = self.Param("CandleType", tf(5)) \
-            .SetDisplay("Candle type", "Type of candles to use", "General")
-
-        self._spread_sma = None
-        self._spread_std_dev = None
-        self._current_spread = 0.0
-        self._last_asset1_price = 0.0
-        self._last_asset2_price = 0.0
-        self._asset1_volume = 0.0
-        self._asset2_volume = 0.0
-        self._spread_direction = 0
+    @property
+    def candle_type(self):
+        return self._candle_type.Value
 
     @property
     def asset2_security(self):
-        """Secondary security for pair trading."""
         return self._asset2_security.Value
 
     @asset2_security.setter
     def asset2_security(self, value):
         self._asset2_security.Value = value
 
-    @property
-    def asset2_portfolio(self):
-        """Portfolio for trading second asset."""
-        return self._asset2_portfolio.Value
-
-    @asset2_portfolio.setter
-    def asset2_portfolio(self, value):
-        self._asset2_portfolio.Value = value
-
-    @property
-    def lookback_period(self):
-        """Period for spread statistics calculation."""
-        return self._lookback_period.Value
-
-    @lookback_period.setter
-    def lookback_period(self, value):
-        self._lookback_period.Value = value
-
-    @property
-    def entry_threshold(self):
-        """Threshold for entries, in standard deviations."""
-        return self._entry_threshold.Value
-
-    @entry_threshold.setter
-    def entry_threshold(self, value):
-        self._entry_threshold.Value = value
-
-    @property
-    def stop_loss_percent(self):
-        """Stop-loss percentage."""
-        return self._stop_loss_percent.Value
-
-    @stop_loss_percent.setter
-    def stop_loss_percent(self, value):
-        self._stop_loss_percent.Value = value
-
-    @property
-    def candle_type(self):
-        """Type of candles to use."""
-        return self._candle_type.Value
-
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
+    def _reset_state(self):
+        self._first_closes = {}
+        self._second_closes = {}
+        self._spreads = []
+        # 1 while long the spread, -1 while short it, 0 while flat.
+        self._side = 0
+        self._entry_spread = Decimal(0)
 
     def GetWorkingSecurities(self):
-        return [
-            (self.Security, self.candle_type),
-            (self.asset2_security, self.candle_type)
-        ]
+        return [(self.Security, self.candle_type), (self.asset2_security, self.candle_type)]
 
     def OnReseted(self):
         super(delta_neutral_arbitrage_strategy, self).OnReseted()
-        self._current_spread = 0.0
-        self._last_asset1_price = 0.0
-        self._last_asset2_price = 0.0
-        self._asset1_volume = 0.0
-        self._asset2_volume = 0.0
-        self._spread_direction = 0
+        self._reset_state()
 
     def OnStarted2(self, time):
         super(delta_neutral_arbitrage_strategy, self).OnStarted2(time)
@@ -137,162 +62,116 @@ class delta_neutral_arbitrage_strategy(Strategy):
         if self.asset2_security is None:
             raise Exception("Asset2Security is not specified.")
 
-        if self.asset2_portfolio is None:
-            raise Exception("Asset2Portfolio is not specified.")
+        self._reset_state()
 
-        # Initialize indicators for spread statistics
-        self._spread_sma = SimpleMovingAverage()
-        self._spread_sma.Length = self.lookback_period
-        self._spread_std_dev = StandardDeviation()
-        self._spread_std_dev.Length = self.lookback_period
+        first_subscription = self.SubscribeCandles(self.candle_type)
+        first_subscription.Bind(self._process_first_candle).Start()
 
-        # Create subscriptions to both securities
-        asset1_subscription = self.SubscribeCandles(self.candle_type)
-        asset2_subscription = self.SubscribeCandles(self.candle_type, security=self.asset2_security)
+        second_subscription = self.SubscribeCandles(self.candle_type, security=self.asset2_security)
+        second_subscription.Bind(self._process_second_candle).Start()
 
-        # Subscribe to candle processing for Asset 1
-        asset1_subscription.Bind(self.ProcessAsset1Candle).Start()
-
-        # Subscribe to candle processing for Asset 2
-        asset2_subscription.Bind(self.ProcessAsset2Candle).Start()
-
-        # Calculate volumes to maintain beta neutrality (simplified approach)
-        # In a real implementation, beta would be calculated dynamically
-        self._asset1_volume = self.Volume
-        self._asset2_volume = self.Volume  # Simplified, in reality would be Volume * Beta ratio
-
-        # Setup chart if available
         area = self.CreateChartArea()
         if area is not None:
-            self.DrawCandles(area, asset1_subscription)
+            self.DrawCandles(area, first_subscription)
             self.DrawOwnTrades(area)
 
-    def ProcessAsset1Candle(self, candle):
-        # Skip unfinished candles
+    def _process_first_candle(self, candle):
+        self._process_candle(candle, self._first_closes)
+
+    def _process_second_candle(self, candle):
+        self._process_candle(candle, self._second_closes)
+
+    def _process_candle(self, candle, closes):
         if candle.State != CandleStates.Finished:
             return
 
-        # Update asset1 price
-        self._last_asset1_price = float(candle.ClosePrice)
+        time = candle.OpenTime
+        closes[time] = candle.ClosePrice
 
-        # Process spread if we have both prices
-        self.ProcessSpreadIfReady(candle)
-
-    def ProcessAsset2Candle(self, candle):
-        # Skip unfinished candles
-        if candle.State != CandleStates.Finished:
+        # The spread needs both instruments' candles of the same time, whichever arrives last.
+        if time not in self._first_closes or time not in self._second_closes:
             return
 
-        # Update asset2 price
-        self._last_asset2_price = float(candle.ClosePrice)
+        first = self._first_closes[time]
+        second = self._second_closes[time]
 
-        # Process spread if we have both prices
-        self.ProcessSpreadIfReady(candle)
+        for stale in [t for t in self._first_closes if t <= time]:
+            del self._first_closes[stale]
+        for stale in [t for t in self._second_closes if t <= time]:
+            del self._second_closes[stale]
 
-    def ProcessSpreadIfReady(self, candle):
-        # Ensure we have both prices
-        if self._last_asset1_price == 0 or self._last_asset2_price == 0:
+        spread = first - second
+        period = self._lookback_period.Value
+
+        self._spreads.append(spread)
+        if len(self._spreads) > period:
+            self._spreads.pop(0)
+
+        if len(self._spreads) < period:
             return
 
-        # Check if strategy is ready to trade
+        total = Decimal(0)
+        for value in self._spreads:
+            total += value
+        mean = total / Decimal(period)
 
-        # Calculate the spread
-        self._current_spread = self._last_asset1_price - self._last_asset2_price
+        squares = Decimal(0)
+        for value in self._spreads:
+            squares += (value - mean) * (value - mean)
+        deviation = Decimal(Math.Sqrt(Decimal.ToDouble(squares / Decimal(period))))
 
-        # Process the spread with our indicators
-        spread_value = process_float(self._spread_sma, self._current_spread, candle.ServerTime, candle.State == CandleStates.Finished)
-        std_dev_value = process_float(self._spread_std_dev, self._current_spread, candle.ServerTime, candle.State == CandleStates.Finished)
-
-        # Check if indicators are formed
-        if not self._spread_sma.IsFormed or not self._spread_std_dev.IsFormed:
+        if deviation == 0:
             return
 
-        spread_sma = float(spread_value)
-        spread_std_dev = float(std_dev_value)
+        z_score = (spread - mean) / deviation
+        threshold = Decimal(self._entry_threshold.Value)
 
-        # Calculate z-score
-        z_score = 0 if spread_std_dev == 0 else (self._current_spread - spread_sma) / spread_std_dev
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
-        self.LogInfo("Current spread: {0}, SMA: {1}, StdDev: {2}, Z-score: {3}".format(
-            self._current_spread, spread_sma, spread_std_dev, z_score))
+        stop_percent = Decimal(self._stop_loss_percent.Value)
+        stop_distance = abs(self._entry_spread) * stop_percent / Decimal(100)
 
-        # Trading logic
-        if self._spread_direction == 0:  # No position, check for entry
-            # Spread is too low (Asset1 cheap relative to Asset2)
-            if z_score < -self.entry_threshold:
-                self.EnterLongSpread()
-                self.LogInfo(
-                    "Long spread entry: Asset1 price={0}, Asset2 price={1}, Spread={2}".format(
-                        self._last_asset1_price, self._last_asset2_price, self._current_spread))
-            # Spread is too high (Asset1 expensive relative to Asset2)
-            elif z_score > self.entry_threshold:
-                self.EnterShortSpread()
-                self.LogInfo(
-                    "Short spread entry: Asset1 price={0}, Asset2 price={1}, Spread={2}".format(
-                        self._last_asset1_price, self._last_asset2_price, self._current_spread))
-        else:  # Have position, check for exit
-            if (self._spread_direction > 0 and self._current_spread >= spread_sma) or \
-                    (self._spread_direction < 0 and self._current_spread <= spread_sma):  # Long spread and spread has reverted to mean / Short spread and spread has reverted to mean
-                self.ClosePositions()
-                self.LogInfo(
-                    "Spread exit: Asset1 price={0}, Asset2 price={1}, Spread={2}".format(
-                        self._last_asset1_price, self._last_asset2_price, self._current_spread))
+        if z_score < -threshold and self._side <= 0:
+            self._move_legs(1)
+            self._entry_spread = spread
+        elif z_score > threshold and self._side >= 0:
+            self._move_legs(-1)
+            self._entry_spread = spread
+        elif self._side > 0 and (spread >= mean or (stop_percent > 0 and spread <= self._entry_spread - stop_distance)):
+            self._move_legs(0)
+        elif self._side < 0 and (spread <= mean or (stop_percent > 0 and spread >= self._entry_spread + stop_distance)):
+            self._move_legs(0)
 
-    def EnterLongSpread(self):
-        # Buy Asset1
-        asset1_order = self.CreateOrder(Sides.Buy, self._last_asset1_price, self._asset1_volume)
-        asset1_order.Security = self.Security
-        asset1_order.Portfolio = self.Portfolio
-        self.RegisterOrder(asset1_order)
+    def _move_legs(self, side):
+        self._side = side
 
-        # Sell Asset2
-        asset2_order = self.CreateOrder(Sides.Sell, self._last_asset2_price, self._asset2_volume)
-        asset2_order.Security = self.asset2_security
-        asset2_order.Portfolio = self.asset2_portfolio
-        self.RegisterOrder(asset2_order)
+        # Long the spread holds the first instrument and is short the second, each by Volume.
+        first_change = Decimal(side) * self.Volume - self.Position
 
-        self._spread_direction = 1
+        if first_change > 0:
+            self.BuyMarket(first_change)
+        elif first_change < 0:
+            self.SellMarket(-first_change)
 
-    def EnterShortSpread(self):
-        # Sell Asset1
-        asset1_order = self.CreateOrder(Sides.Sell, self._last_asset1_price, self._asset1_volume)
-        asset1_order.Security = self.Security
-        asset1_order.Portfolio = self.Portfolio
-        self.RegisterOrder(asset1_order)
+        portfolio = self._asset2_portfolio.Value
+        if portfolio is None:
+            portfolio = self.Portfolio
 
-        # Buy Asset2
-        asset2_order = self.CreateOrder(Sides.Buy, self._last_asset2_price, self._asset2_volume)
-        asset2_order.Security = self.asset2_security
-        asset2_order.Portfolio = self.asset2_portfolio
-        self.RegisterOrder(asset2_order)
+        second_position = self.GetPositionValue(self.asset2_security, portfolio)
+        if second_position is None:
+            second_position = Decimal(0)
 
-        self._spread_direction = -1
+        second_change = Decimal(-side) * self.Volume - second_position
 
-    def ClosePositions(self):
-        # Closing volumes come from the entry, not from Position: the position is refreshed only
-        # when executions arrive, so several candles can size a full-position order before any of
-        # them fills. Both securities share the candle type, so the decision block runs twice per bar.
-        is_long_spread = self._spread_direction > 0
-
-        self._spread_direction = 0
-
-        # Close position in Asset1
-        if is_long_spread:
-            self.SellMarket(self._asset1_volume)
-        else:
-            self.BuyMarket(self._asset1_volume)
-
-        # Close position in Asset2
-        asset2_order = self.CreateOrder(
-            Sides.Buy if is_long_spread else Sides.Sell,
-            self._last_asset2_price,
-            self._asset2_volume)
-
-        asset2_order.Security = self.asset2_security
-        asset2_order.Portfolio = self.asset2_portfolio
-
-        self.RegisterOrder(asset2_order)
+        if second_change != 0:
+            order = Order()
+            order.Security = self.asset2_security
+            order.Portfolio = portfolio
+            order.Side = Sides.Buy if second_change > 0 else Sides.Sell
+            order.Volume = abs(second_change)
+            order.Type = OrderTypes.Market
+            self.RegisterOrder(order)
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return delta_neutral_arbitrage_strategy()

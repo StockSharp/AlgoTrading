@@ -20,9 +20,12 @@
 - **ストップ**: あり、スプレッド値に対するパーセンテージストップロス。
 - **デフォルト値**:
   - `LookbackPeriod` = 20
-  - `EntryThreshold` = 2m
-  - `StopLossPercent` = 2m
+  - `EntryThreshold` = 2
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
+  - `Asset2Security` — 必須、既定値なし
+  - `Asset2Portfolio` — 空の場合は戦略のポートフォリオ
+    スプレッドは同時刻のローソク足における戦略のSecurityの終値からAsset2Securityの終値を引いた値で、そのzスコアは直近LookbackPeriod個のスプレッドの平均と標準偏差から計算します。各レッグはVolumeで取引され、逆のシグナルで両レッグがドテンします。ストップはスプレッドがエントリー時の値のStopLossPercentだけ不利に動いたときに両レッグを閉じ、ローソク足の終値で確認されます。0で無効になります。
 - **フィルター**:
   - カテゴリ: アービトラージ
   - 方向: 両方

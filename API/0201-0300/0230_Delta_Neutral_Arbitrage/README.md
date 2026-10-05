@@ -20,9 +20,12 @@ Delta neutral trading is popular among quantitative traders seeking low volatili
 - **Stops**: Yes, percent stop-loss on spread value.
 - **Default Values**:
   - `LookbackPeriod` = 20
-  - `EntryThreshold` = 2m
-  - `StopLossPercent` = 2m
+  - `EntryThreshold` = 2
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
+  - `Asset2Security` — required, no default
+  - `Asset2Portfolio` — the strategy's portfolio when empty
+    The spread is the close of the strategy's Security minus the close of Asset2Security on candles of the same time; its z-score uses the mean and standard deviation of the last LookbackPeriod spreads. Each leg trades Volume, and an opposite signal reverses both legs. The stop closes both legs once the spread moves StopLossPercent of its entry value against the pair, checked on candle closes; 0 disables it.
 - **Filters**:
   - Category: Arbitrage
   - Direction: Both
