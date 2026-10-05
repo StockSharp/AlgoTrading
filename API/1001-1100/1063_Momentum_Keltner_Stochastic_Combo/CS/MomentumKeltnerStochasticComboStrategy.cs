@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,7 +11,11 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy combining momentum and Keltner stochastic.
+/// Momentum Keltner Stochastic Combo strategy.
+/// The Keltner stochastic places the close inside a Keltner channel (EMA basis, ATR width) on a 0-100 scale.
+/// Goes long when momentum is positive and the stochastic is below Threshold, short when momentum is negative and
+/// the stochastic is above Threshold. A long exits when the stochastic rises above Threshold and a short when it falls
+/// below it. Position size can grow with realized profit, and a fixed stop in points protects every position.
 /// </summary>
 public class MomentumKeltnerStochasticComboStrategy : Strategy
 {
@@ -24,7 +25,6 @@ public class MomentumKeltnerStochasticComboStrategy : Strategy
 	private readonly StrategyParam<decimal> _threshold;
 	private readonly StrategyParam<int> _atrLength;
 	private readonly StrategyParam<decimal> _slPoints;
-	private readonly StrategyParam<int> _signalCooldownBars;
 
 	private readonly StrategyParam<bool> _enableScaling;
 	private readonly StrategyParam<int> _baseContracts;
@@ -33,10 +33,6 @@ public class MomentumKeltnerStochasticComboStrategy : Strategy
 	private readonly StrategyParam<int> _maxContracts;
 
 	private readonly StrategyParam<DataType> _candleType;
-
-	private decimal _prevMomentum;
-	private bool _hasPrevMomentum;
-	private int _barsFromSignal;
 
 	public int MomLength
 	{
@@ -72,12 +68,6 @@ public class MomentumKeltnerStochasticComboStrategy : Strategy
 	{
 		get => _slPoints.Value;
 		set => _slPoints.Value = value;
-	}
-
-	public int SignalCooldownBars
-	{
-		get => _signalCooldownBars.Value;
-		set => _signalCooldownBars.Value = value;
 	}
 
 	public bool EnableScaling
@@ -121,37 +111,31 @@ public class MomentumKeltnerStochasticComboStrategy : Strategy
 		_momLength = Param(nameof(MomLength), 7)
 			.SetGreaterThanZero()
 			.SetDisplay("Momentum Lookback", "Momentum lookback length", "Indicators")
-			
 			.SetOptimize(5, 15, 1);
 
 		_keltnerLength = Param(nameof(KeltnerLength), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Keltner EMA Length", "EMA length for Keltner basis", "Indicators")
-			
 			.SetOptimize(5, 20, 1);
 
 		_keltnerMultiplier = Param(nameof(KeltnerMultiplier), 0.5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Keltner Mult", "Keltner multiplier", "Indicators")
-			
 			.SetOptimize(0.5m, 2m, 0.1m);
 
 		_threshold = Param(nameof(Threshold), 99m)
 			.SetRange(0m, 100m)
 			.SetDisplay("Stochastic Threshold", "Threshold for Keltner stochastic", "Indicators")
-			
 			.SetOptimize(50m, 100m, 5m);
 
 		_atrLength = Param(nameof(AtrLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Length", "ATR length for Keltner", "Indicators")
-			
 			.SetOptimize(10, 30, 1);
 
 		_slPoints = Param(nameof(SlPoints), 1185m)
-			.SetGreaterThanZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss Points", "Stop loss in price points", "Risk Management")
-			
 			.SetOptimize(500m, 2000m, 100m);
 
 		_enableScaling = Param(nameof(EnableScaling), true)
@@ -173,58 +157,43 @@ public class MomentumKeltnerStochasticComboStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Max Contracts", "Maximum contracts allowed", "Money Management");
 
-		_signalCooldownBars = Param(nameof(SignalCooldownBars), 24)
-			.SetGreaterThanZero()
-			.SetDisplay("Signal Cooldown Bars", "Minimum bars between entries", "Risk Management");
-
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for calculations", "General");
 	}
 
+	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_prevMomentum = 0m;
-		_hasPrevMomentum = false;
-		_barsFromSignal = 0;
-	}
-
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		_prevMomentum = 0m;
-		_hasPrevMomentum = false;
-		_barsFromSignal = SignalCooldownBars;
 
-		var ema = new EMA { Length = KeltnerLength };
+		var ema = new ExponentialMovingAverage { Length = KeltnerLength };
 		var atr = new AverageTrueRange { Length = AtrLength };
 		var momentum = new Momentum { Length = MomLength };
 
 		var subscription = SubscribeCandles(CandleType);
-
 		subscription
 			.Bind(ema, atr, momentum, ProcessCandle)
 			.Start();
 
-		StartProtection(
-			takeProfit: new Unit(0, UnitTypes.Absolute),
-			stopLoss: new Unit(SlPoints, UnitTypes.Absolute)
-		);
+		var step = Security?.PriceStep ?? 1m;
+		StartProtection(new Unit(), SlPoints > 0m ? new Unit(SlPoints * step, UnitTypes.Absolute) : new Unit(), useMarketOrders: true);
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, ema);
-			DrawIndicator(area, atr);
-			DrawIndicator(area, momentum);
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+				DrawIndicator(oscillators, momentum);
 		}
 	}
 
@@ -238,44 +207,35 @@ public class MomentumKeltnerStochasticComboStrategy : Strategy
 
 		var upper = emaValue + KeltnerMultiplier * atrValue;
 		var lower = emaValue - KeltnerMultiplier * atrValue;
-		var denominator = upper - lower;
-		var keltnerStoch = denominator != 0m ? 100m * (candle.ClosePrice - lower) / denominator : 50m;
+		var width = upper - lower;
+		if (width == 0m)
+			return;
 
-		var momentumCrossUp = _hasPrevMomentum && _prevMomentum <= 0m && momentumValue > 0m;
-		var momentumCrossDown = _hasPrevMomentum && _prevMomentum >= 0m && momentumValue < 0m;
+		var keltnerStoch = 100m * (candle.ClosePrice - lower) / width;
+		var size = GetContracts();
 
-		var longCondition = momentumCrossUp && keltnerStoch <= Threshold;
-		var shortCondition = momentumCrossDown && keltnerStoch >= (100m - Threshold);
+		if (momentumValue > 0m && keltnerStoch < Threshold && Position <= 0)
+			BuyMarket(size + Math.Abs(Position));
+		else if (momentumValue < 0m && keltnerStoch > Threshold && Position >= 0)
+			SellMarket(size + Math.Abs(Position));
+		else if (Position > 0 && keltnerStoch > Threshold)
+			SellMarket(Position);
+		else if (Position < 0 && keltnerStoch < Threshold)
+			BuyMarket(-Position);
+	}
 
-		var contractSize = BaseContracts;
+	private decimal GetContracts()
+	{
+		var contracts = (decimal)BaseContracts;
 
 		if (EnableScaling)
 		{
-			var profitLoss = PnL;
-			var contractIncrease = (int)Math.Floor(Math.Max(profitLoss, 0m) / EquityStep);
-			var contractDecrease = (int)Math.Floor(Math.Abs(Math.Min(profitLoss, 0m)) / EquityStep);
-			contractSize = Math.Max(BaseContracts + contractIncrease - contractDecrease, BaseContracts);
+			// Every full EquityStep of equity above InitialCapital adds one contract, losses take them away.
+			var equity = InitialCapital + PnL;
+			var steps = Math.Floor((equity - InitialCapital) / EquityStep);
+			contracts = Math.Max(BaseContracts, BaseContracts + steps);
 		}
 
-		if (contractSize > MaxContracts)
-			contractSize = MaxContracts;
-
-		_barsFromSignal++;
-
-		if (_barsFromSignal >= SignalCooldownBars && longCondition && Position <= 0)
-		{
-			var volume = contractSize + Math.Abs(Position);
-			BuyMarket(volume);
-			_barsFromSignal = 0;
-		}
-		else if (_barsFromSignal >= SignalCooldownBars && shortCondition && Position >= 0)
-		{
-			var volume = contractSize + Math.Abs(Position);
-			SellMarket(volume);
-			_barsFromSignal = 0;
-		}
-
-		_prevMomentum = momentumValue;
-		_hasPrevMomentum = true;
+		return Math.Min(contracts, MaxContracts);
 	}
 }

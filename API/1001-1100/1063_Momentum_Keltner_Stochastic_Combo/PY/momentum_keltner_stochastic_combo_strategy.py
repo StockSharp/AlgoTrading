@@ -5,102 +5,110 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan
+import math
+
+from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import ExponentialMovingAverage, AverageTrueRange, Momentum
 from StockSharp.Algo.Strategies import Strategy
 
 
 class momentum_keltner_stochastic_combo_strategy(Strategy):
+    """
+    Momentum Keltner Stochastic Combo strategy.
+    The Keltner stochastic places the close inside a Keltner channel (EMA basis, ATR width) on a 0-100 scale.
+    Goes long when momentum is positive and the stochastic is below Threshold, short when momentum is negative and
+    the stochastic is above Threshold. A long exits when the stochastic rises above Threshold and a short when it falls
+    below it. Position size can grow with realized profit, and a fixed stop in points protects every position.
+    """
+
     def __init__(self):
         super(momentum_keltner_stochastic_combo_strategy, self).__init__()
-        self._mom_length = self.Param("MomLength", 7) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Momentum Lookback", "Momentum lookback length", "Indicators")
-        self._keltner_length = self.Param("KeltnerLength", 9) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Keltner EMA Length", "EMA length for Keltner basis", "Indicators")
-        self._keltner_multiplier = self.Param("KeltnerMultiplier", 0.5) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Keltner Mult", "Keltner multiplier", "Indicators")
-        self._threshold = self.Param("Threshold", 99.0) \
-            .SetDisplay("Stochastic Threshold", "Threshold for Keltner stochastic", "Indicators")
-        self._atr_length = self.Param("AtrLength", 20) \
-            .SetGreaterThanZero() \
-            .SetDisplay("ATR Length", "ATR length for Keltner", "Indicators")
-        self._sl_points = self.Param("SlPoints", 1185.0) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Stop Loss Points", "Stop loss in price points", "Risk Management")
-        self._signal_cooldown_bars = self.Param("SignalCooldownBars", 24) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Signal Cooldown Bars", "Minimum bars between entries", "Risk Management")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
-            .SetDisplay("Candle Type", "Type of candles for calculations", "General")
-        self._prev_momentum = 0.0
-        self._has_prev_momentum = False
-        self._bars_from_signal = 0
+        self._mom_length = self.Param("MomLength", 7).SetGreaterThanZero().SetDisplay("Momentum Lookback", "Momentum lookback length", "Indicators")
+        self._keltner_length = self.Param("KeltnerLength", 9).SetGreaterThanZero().SetDisplay("Keltner EMA Length", "EMA length for Keltner basis", "Indicators")
+        self._keltner_multiplier = self.Param("KeltnerMultiplier", 0.5).SetGreaterThanZero().SetDisplay("Keltner Mult", "Keltner multiplier", "Indicators")
+        self._threshold = self.Param("Threshold", 99.0).SetDisplay("Stochastic Threshold", "Threshold for Keltner stochastic", "Indicators")
+        self._atr_length = self.Param("AtrLength", 20).SetGreaterThanZero().SetDisplay("ATR Length", "ATR length for Keltner", "Indicators")
+        self._sl_points = self.Param("SlPoints", 1185.0).SetNotNegative().SetDisplay("Stop Loss Points", "Stop loss in price points", "Risk Management")
+        self._enable_scaling = self.Param("EnableScaling", True).SetDisplay("Enable Dynamic Contracts", "Use equity based position sizing", "Money Management")
+        self._base_contracts = self.Param("BaseContracts", 1).SetGreaterThanZero().SetDisplay("Base Contracts", "Initial contract size", "Money Management")
+        self._initial_capital = self.Param("InitialCapital", 30000.0).SetGreaterThanZero().SetDisplay("Initial Capital", "Starting capital", "Money Management")
+        self._equity_step = self.Param("EquityStep", 150000.0).SetGreaterThanZero().SetDisplay("Equity Step", "Equity step for contract change", "Money Management")
+        self._max_contracts = self.Param("MaxContracts", 15).SetGreaterThanZero().SetDisplay("Max Contracts", "Maximum contracts allowed", "Money Management")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles for calculations", "General")
 
     @property
     def candle_type(self):
         return self._candle_type.Value
 
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
-
-    def OnReseted(self):
-        super(momentum_keltner_stochastic_combo_strategy, self).OnReseted()
-        self._prev_momentum = 0.0
-        self._has_prev_momentum = False
-        self._bars_from_signal = 0
-
     def OnStarted2(self, time):
         super(momentum_keltner_stochastic_combo_strategy, self).OnStarted2(time)
-        self._prev_momentum = 0.0
-        self._has_prev_momentum = False
-        self._bars_from_signal = self._signal_cooldown_bars.Value
-        self._ema = ExponentialMovingAverage()
-        self._ema.Length = self._keltner_length.Value
-        self._atr = AverageTrueRange()
-        self._atr.Length = self._atr_length.Value
-        self._momentum = Momentum()
-        self._momentum.Length = self._mom_length.Value
-        subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(self._ema, self._atr, self._momentum, self.OnProcess).Start()
-        self.StartProtection(
-            Unit(0, UnitTypes.Absolute),
-            Unit(self._sl_points.Value, UnitTypes.Absolute)
-        )
 
-    def OnProcess(self, candle, ema_value, atr_value, momentum_value):
+        ema = ExponentialMovingAverage()
+        ema.Length = self._keltner_length.Value
+        atr = AverageTrueRange()
+        atr.Length = self._atr_length.Value
+        momentum = Momentum()
+        momentum.Length = self._mom_length.Value
+
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(ema, atr, momentum, self._process_candle).Start()
+
+        step = self.Security.PriceStep if self.Security is not None and self.Security.PriceStep is not None else Decimal(1)
+        sl = self._sl_points.Value
+        self.StartProtection(Unit(), Unit(Decimal(sl) * step, UnitTypes.Absolute) if sl > 0 else Unit(), useMarketOrders=True)
+
+        area = self.CreateChartArea()
+        if area is not None:
+            self.DrawCandles(area, subscription)
+            self.DrawIndicator(area, ema)
+            self.DrawOwnTrades(area)
+            oscillators = self.CreateChartArea()
+            if oscillators is not None:
+                self.DrawIndicator(oscillators, momentum)
+
+    def _process_candle(self, candle, ema_value, atr_value, momentum_value):
         if candle.State != CandleStates.Finished:
             return
+
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
-        ev = float(ema_value)
-        av = float(atr_value)
-        mv = float(momentum_value)
-        km = float(self._keltner_multiplier.Value)
-        upper = ev + km * av
-        lower = ev - km * av
-        denom = upper - lower
-        close = float(candle.ClosePrice)
-        keltner_stoch = 100.0 * (close - lower) / denom if denom != 0.0 else 50.0
-        momentum_cross_up = self._has_prev_momentum and self._prev_momentum <= 0.0 and mv > 0.0
-        momentum_cross_down = self._has_prev_momentum and self._prev_momentum >= 0.0 and mv < 0.0
-        thr = float(self._threshold.Value)
-        long_condition = momentum_cross_up and keltner_stoch <= thr
-        short_condition = momentum_cross_down and keltner_stoch >= (100.0 - thr)
-        self._bars_from_signal += 1
-        cd = self._signal_cooldown_bars.Value
-        if self._bars_from_signal >= cd and long_condition and self.Position <= 0:
-            self.BuyMarket()
-            self._bars_from_signal = 0
-        elif self._bars_from_signal >= cd and short_condition and self.Position >= 0:
-            self.SellMarket()
-            self._bars_from_signal = 0
-        self._prev_momentum = mv
-        self._has_prev_momentum = True
+
+        multiplier = float(self._keltner_multiplier.Value)
+        ema = float(ema_value)
+        atr = float(atr_value)
+        upper = ema + multiplier * atr
+        lower = ema - multiplier * atr
+        width = upper - lower
+        if width == 0.0:
+            return
+
+        keltner_stoch = 100.0 * (float(candle.ClosePrice) - lower) / width
+        momentum = float(momentum_value)
+        threshold = float(self._threshold.Value)
+        size = self._get_contracts()
+
+        if momentum > 0.0 and keltner_stoch < threshold and self.Position <= 0:
+            self.BuyMarket(size + abs(self.Position))
+        elif momentum < 0.0 and keltner_stoch > threshold and self.Position >= 0:
+            self.SellMarket(size + abs(self.Position))
+        elif self.Position > 0 and keltner_stoch > threshold:
+            self.SellMarket(self.Position)
+        elif self.Position < 0 and keltner_stoch < threshold:
+            self.BuyMarket(-self.Position)
+
+    def _get_contracts(self):
+        base = self._base_contracts.Value
+        contracts = float(base)
+
+        if self._enable_scaling.Value:
+            # Every full EquityStep of equity above InitialCapital adds one contract, losses take them away.
+            initial = float(self._initial_capital.Value)
+            equity = initial + float(self.PnL)
+            steps = math.floor((equity - initial) / float(self._equity_step.Value))
+            contracts = max(float(base), base + steps)
+
+        return Decimal(min(contracts, float(self._max_contracts.Value)))
 
     def CreateClone(self):
         return momentum_keltner_stochastic_combo_strategy()
