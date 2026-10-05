@@ -26,6 +26,7 @@ Parabolic SAR обозначает текущий тренд, а RSI показ�
   - `RsiOversold` = 30m
   - `RsiOverbought` = 70m
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    Сигнал на вход против открытой позиции разворачивает её.
 - **Фильтры**:
   - Категория: Средняя обратная
   - Направление: Оба

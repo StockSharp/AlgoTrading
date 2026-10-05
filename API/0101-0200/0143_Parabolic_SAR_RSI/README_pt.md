@@ -26,6 +26,7 @@ A combinação é atraente para quem gosta de stops móveis, já que o SAR tamb�
   - `RsiOversold` = 30m
   - `RsiOverbought` = 70m
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    Um sinal de entrada contra uma posição aberta a inverte.
 - **Filtros**:
   - Categoria: Reversão à média
   - Direção: Ambos
