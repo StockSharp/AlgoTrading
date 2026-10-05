@@ -3,7 +3,6 @@ using System.Collections.Generic;
 
 using Ecng.Common;
 
-using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -12,27 +11,26 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Mean-reversion strategy that enters only when Hurst indicates anti-persistent behavior and ATR confirms a quiet regime.
+/// Hurst exponent mean reversion with a volatility filter.
+/// Trades back toward the moving average only while the Hurst exponent is below 0.5 (anti-persistent prices)
+/// and ATR is below its own average. Exits when price returns to the moving average or volatility expands.
 /// </summary>
 public class HurstVolatilityFilterStrategy : Strategy
 {
+	private const decimal _randomWalkHurst = 0.5m;
+
 	private readonly StrategyParam<int> _hurstPeriod;
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _atrPeriod;
-	private readonly StrategyParam<decimal> _hurstThreshold;
-	private readonly StrategyParam<decimal> _deviationAtrMultiplier;
-	private readonly StrategyParam<decimal> _stopLossPercent;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage _sma;
-	private AverageTrueRange _atr;
-	private HurstExponent _hurstExponent;
 	private SimpleMovingAverage _atrAverage;
-	private int _cooldown;
+	private HurstExponent _hurst;
+	private decimal? _prevClose;
 
 	/// <summary>
-	/// Period for Hurst exponent calculation.
+	/// Period for the Hurst exponent.
 	/// </summary>
 	public int HurstPeriod
 	{
@@ -41,7 +39,7 @@ public class HurstVolatilityFilterStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Period for moving average calculation.
+	/// Period for the moving average.
 	/// </summary>
 	public int MAPeriod
 	{
@@ -50,7 +48,7 @@ public class HurstVolatilityFilterStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Period for ATR calculation.
+	/// Period for ATR and its average.
 	/// </summary>
 	public int ATRPeriod
 	{
@@ -59,43 +57,16 @@ public class HurstVolatilityFilterStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Maximum Hurst value allowed for entries.
+	/// Stop-loss percentage.
 	/// </summary>
-	public decimal HurstThreshold
+	public decimal StopLoss
 	{
-		get => _hurstThreshold.Value;
-		set => _hurstThreshold.Value = value;
+		get => _stopLoss.Value;
+		set => _stopLoss.Value = value;
 	}
 
 	/// <summary>
-	/// ATR multiple required for deviation from the moving average.
-	/// </summary>
-	public decimal DeviationAtrMultiplier
-	{
-		get => _deviationAtrMultiplier.Value;
-		set => _deviationAtrMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss percentage.
-	/// </summary>
-	public decimal StopLossPercent
-	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Bars to wait after each order.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
-	/// Candle series used for calculation.
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -104,37 +75,25 @@ public class HurstVolatilityFilterStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initializes strategy parameters.
+	/// Initialize <see cref="HurstVolatilityFilterStrategy"/>.
 	/// </summary>
 	public HurstVolatilityFilterStrategy()
 	{
 		_hurstPeriod = Param(nameof(HurstPeriod), 100)
-			.SetRange(20, 200)
+			.SetGreaterThanZero()
 			.SetDisplay("Hurst Period", "Period for the Hurst exponent", "Indicators");
 
 		_maPeriod = Param(nameof(MAPeriod), 20)
-			.SetRange(5, 100)
+			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Period for the moving average", "Indicators");
 
 		_atrPeriod = Param(nameof(ATRPeriod), 14)
-			.SetRange(5, 50)
-			.SetDisplay("ATR Period", "Period for the ATR", "Indicators");
+			.SetGreaterThanZero()
+			.SetDisplay("ATR Period", "Period for ATR and its average", "Indicators");
 
-		_hurstThreshold = Param(nameof(HurstThreshold), 0.7m)
-			.SetRange(-1m, 1m)
-			.SetDisplay("Hurst Threshold", "Maximum Hurst value allowed for entries", "Signals");
-
-		_deviationAtrMultiplier = Param(nameof(DeviationAtrMultiplier), 0.5m)
-			.SetRange(0.1m, 5m)
-			.SetDisplay("Deviation ATR", "Minimum ATR multiple required for entry", "Signals");
-
-		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-			.SetRange(0.5m, 10m)
-			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
-
-		_cooldownBars = Param(nameof(CooldownBars), 90)
-			.SetRange(1, 500)
-			.SetDisplay("Cooldown Bars", "Bars to wait after each order", "Risk");
+		_stopLoss = Param(nameof(StopLoss), 2.0m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop-loss percentage", "Risk Management");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -143,20 +102,16 @@ public class HurstVolatilityFilterStrategy : Strategy
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		if (Security != null)
-			yield return (Security, CandleType);
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_sma = null;
-		_atr = null;
-		_hurstExponent = null;
 		_atrAverage = null;
-		_cooldown = 0;
+		_hurst = null;
+		_prevClose = null;
 	}
 
 	/// <inheritdoc />
@@ -164,88 +119,76 @@ public class HurstVolatilityFilterStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		if (Security == null)
-			throw new InvalidOperationException("Security is not specified.");
-
-		_sma = new SimpleMovingAverage { Length = MAPeriod };
-		_atr = new AverageTrueRange { Length = ATRPeriod };
-		_hurstExponent = new HurstExponent { Length = HurstPeriod };
-		_atrAverage = new SimpleMovingAverage { Length = Math.Max(ATRPeriod * 2, 10) };
-		_cooldown = 0;
+		var sma = new SimpleMovingAverage { Length = MAPeriod };
+		var atr = new AverageTrueRange { Length = ATRPeriod };
+		_hurst = new HurstExponent { Length = HurstPeriod };
+		_atrAverage = new SimpleMovingAverage { Length = ATRPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-
 		subscription
-			.Bind(_sma, _atr, _hurstExponent, ProcessCandle)
+			.Bind(sma, atr, ProcessCandle)
 			.Start();
 
-		var area = CreateChartArea();
+		StartProtection(
+			takeProfit: null,
+			stopLoss: StopLoss > 0 ? new Unit(StopLoss, UnitTypes.Percent) : null
+		);
 
+		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _sma);
-			DrawIndicator(area, _atr);
-			DrawIndicator(area, _hurstExponent);
+			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection(new Unit(0, UnitTypes.Absolute), new Unit(StopLossPercent, UnitTypes.Percent), false);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal smaValue, decimal atrValue, decimal hurstValue)
+	private void ProcessCandle(ICandleMessage candle, decimal smaValue, decimal atrValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var atrAverageValue = _atrAverage.Process(atrValue, candle.OpenTime, true).ToDecimal();
+		var atrAverage = _atrAverage.Process(atrValue, candle.ServerTime, true).ToDecimal();
 
-		if (!_sma.IsFormed || !_atr.IsFormed || !_hurstExponent.IsFormed || !_atrAverage.IsFormed)
+		var prevClose = _prevClose;
+		_prevClose = candle.ClosePrice;
+
+		if (prevClose is not decimal prev)
 			return;
 
-		if (ProcessState != ProcessStates.Started)
+		// Hurst is measured on bar-to-bar price changes, where 0.5 separates trending from mean-reverting behaviour.
+		var hurstResult = _hurst.Process(candle.ClosePrice - prev, candle.ServerTime, true);
+
+		if (!_atrAverage.IsFormed || !_hurst.IsFormed || hurstResult.IsEmpty)
 			return;
 
-		if (_cooldown > 0)
+		var hurstValue = hurstResult.ToDecimal();
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		var close = candle.ClosePrice;
+		var isQuiet = atrValue < atrAverage;
+		var isMeanReverting = hurstValue < _randomWalkHurst;
+
+		if (Position > 0 && (close >= smaValue || !isQuiet))
 		{
-			_cooldown--;
-			return;
-		}
-
-		var price = candle.ClosePrice;
-		var deviation = price - smaValue;
-		var requiredDeviation = atrValue * DeviationAtrMultiplier;
-		var isMeanReversionRegime = hurstValue <= HurstThreshold;
-		var isQuietVolatility = atrValue <= atrAverageValue * 1.5m;
-
-		if (Position == 0)
-		{
-			if (!isMeanReversionRegime || !isQuietVolatility)
-				return;
-
-			if (deviation <= -requiredDeviation)
-			{
-				BuyMarket();
-				_cooldown = CooldownBars;
-			}
-			else if (deviation >= requiredDeviation)
-			{
-				SellMarket();
-				_cooldown = CooldownBars;
-			}
-
+			SellMarket(Position);
 			return;
 		}
 
-		if (Position > 0 && (price >= smaValue || deviation >= -atrValue * 0.2m || !isMeanReversionRegime))
+		if (Position < 0 && (close <= smaValue || !isQuiet))
 		{
-			SellMarket(Math.Abs(Position));
-			_cooldown = CooldownBars;
+			BuyMarket(-Position);
+			return;
 		}
-		else if (Position < 0 && (price <= smaValue || deviation <= atrValue * 0.2m || !isMeanReversionRegime))
-		{
-			BuyMarket(Math.Abs(Position));
-			_cooldown = CooldownBars;
-		}
+
+		if (!isMeanReverting || !isQuiet)
+			return;
+
+		if (close < smaValue && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (close > smaValue && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
 	}
 }
