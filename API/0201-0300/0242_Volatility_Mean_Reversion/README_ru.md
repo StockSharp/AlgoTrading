@@ -21,8 +21,10 @@
 - **Значения по умолчанию**:
   - `AtrPeriod` = 14
   - `AveragePeriod` = 20
-  - `DeviationMultiplier` = 2m
+  - `DeviationMultiplier` = 2
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
+    Avg и StdDev — среднее и стандартное отклонение последних AveragePeriod значений ATR, включая текущее, MA — простая скользящая средняя последних AveragePeriod цен закрытия. Стоп — фиксированный StopLossPercent от цены входа, он отслеживается и между свечами; 0 отключает его. Сигнал на вход против открытой позиции разворачивает её.
 - **Фильтры**:
   - Категория: Mean Reversion
   - Направление: оба

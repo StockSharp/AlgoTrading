@@ -4,227 +4,121 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import TimeSpan, Math
-from System.Collections.Generic import Queue
-from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
-from StockSharp.Algo.Indicators import AverageTrueRange
+from System import TimeSpan, Decimal, Math
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, Level1Fields
+from StockSharp.BusinessEntities import Subscription
+from StockSharp.Algo.Indicators import AverageTrueRange, SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class volatility_mean_reversion_strategy(Strategy):
     """
     Volatility Mean Reversion strategy.
-    This strategy enters positions when ATR (volatility) is significantly below or above its average value.
+    The bands lie DeviationMultiplier standard deviations around the average of the last AveragePeriod ATR values, the current one included.
+    ATR below the lower band with the close below the AveragePeriod simple moving average goes long and ATR above the upper band with the close above it goes short,
+    reversing an opposite position. A long closes once ATR is back above its average and a short once it is back below it, and a percent stop limits the loss.
     """
 
     def __init__(self):
         super(volatility_mean_reversion_strategy, self).__init__()
-
-        # Initialize strategy parameters
-        self._atrPeriod = self.Param("AtrPeriod", 14) \
-            .SetGreaterThanZero() \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 20, 5) \
-            .SetDisplay("ATR Period", "Period for Average True Range indicator", "Indicators")
-
-        self._averagePeriod = self.Param("AveragePeriod", 20) \
-            .SetGreaterThanZero() \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 50, 10) \
-            .SetDisplay("Average Period", "Period for calculating ATR average and standard deviation", "Settings")
-
-        self._deviationMultiplier = self.Param("DeviationMultiplier", 2.0) \
-            .SetGreaterThanZero() \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.5, 3.0, 0.5) \
-            .SetDisplay("Deviation Multiplier", "Multiplier for standard deviation", "Settings")
-
-        self._candleType = self.Param("CandleType", tf(5)) \
-            .SetDisplay("Candle Type", "Type of candles to use", "General")
-
-        self._stopLossPercent = self.Param("StopLossPercent", 1.0) \
-            .SetNotNegative() \
-            .SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management") \
-            .SetCanOptimize(True) \
-            .SetOptimize(0.5, 2.0, 0.5)
-
-        # Statistics variables
-        self._prevAtr = 0.0
-        self._avgAtr = 0.0
-        self._stdDevAtr = 0.0
-        self._sumAtr = 0.0
-        self._sumSquaresAtr = 0.0
-        self._count = 0
-        self._atrValues = Queue[float]()
+        self._atr_period = self.Param("AtrPeriod", 14).SetGreaterThanZero().SetDisplay("ATR Period", "Period of ATR", "Indicators")
+        self._average_period = self.Param("AveragePeriod", 20).SetGreaterThanZero().SetDisplay("Average Period", "Values of ATR the average and the standard deviation span", "Indicators")
+        self._deviation_multiplier = self.Param("DeviationMultiplier", 2.0).SetGreaterThanZero().SetDisplay("Multiplier", "Standard deviations between the average and a band", "Indicators")
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0).SetNotNegative().SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._reset_state()
 
     @property
-    def AtrPeriod(self):
-        """ATR Period."""
-        return self._atrPeriod.Value
+    def candle_type(self):
+        return self._candle_type.Value
 
-    @AtrPeriod.setter
-    def AtrPeriod(self, value):
-        self._atrPeriod.Value = value
-
-    @property
-    def AveragePeriod(self):
-        """Period for calculating mean and standard deviation of ATR."""
-        return self._averagePeriod.Value
-
-    @AveragePeriod.setter
-    def AveragePeriod(self, value):
-        self._averagePeriod.Value = value
-
-    @property
-    def DeviationMultiplier(self):
-        """Deviation multiplier for entry signals."""
-        return self._deviationMultiplier.Value
-
-    @DeviationMultiplier.setter
-    def DeviationMultiplier(self, value):
-        self._deviationMultiplier.Value = value
-
-    @property
-    def CandleType(self):
-        """Candle type."""
-        return self._candleType.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candleType.Value = value
-
-    @property
-    def StopLossPercent(self):
-        """Stop-loss percentage."""
-        return self._stopLossPercent.Value
-
-    @StopLossPercent.setter
-    def StopLossPercent(self, value):
-        self._stopLossPercent.Value = value
-
-    def GetWorkingSecurities(self):
-        """!! REQUIRED!! Return securities and candle types used."""
-        return [(self.Security, self.CandleType)]
+    def _reset_state(self):
+        self._values = []
 
     def OnReseted(self):
         super(volatility_mean_reversion_strategy, self).OnReseted()
-        self._prevAtr = 0
-        self._avgAtr = 0
-        self._stdDevAtr = 0
-        self._sumAtr = 0
-        self._sumSquaresAtr = 0
-        self._count = 0
-        self._atrValues.Clear()
+        self._reset_state()
 
     def OnStarted2(self, time):
-        """Called when the strategy starts."""
         super(volatility_mean_reversion_strategy, self).OnStarted2(time)
 
-        # Create ATR indicator
+        self._reset_state()
+
         atr = AverageTrueRange()
-        atr.Length = self.AtrPeriod
+        atr.Length = self._atr_period.Value
+        sma = SimpleMovingAverage()
+        sma.Length = self._average_period.Value
 
-        # Create subscription and bind indicator
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription.BindEx(atr, self.ProcessCandle).Start()
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.BindEx(atr, sma, self._process_candle).Start()
 
-        # Setup chart visualization
+        self.StartProtection(Unit(), Unit(Decimal(self._stop_loss_percent.Value), UnitTypes.Percent), useMarketOrders=True, isLocalStop=True)
+
+        # The stop has to see prices between candles, not only at their close.
+        for field in (Level1Fields.BestBidPrice, Level1Fields.BestAskPrice):
+            quotes = Subscription(DataType.Level1, self.Security)
+            quotes.MarketData.BuildField = field
+            self.SubscribeLevel1(quotes).Bind(self._observe_protection_quote).Start()
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, atr)
+            self.DrawIndicator(area, sma)
             self.DrawOwnTrades(area)
+            oscillators = self.CreateChartArea()
+            if oscillators is not None:
+                self.DrawIndicator(oscillators, atr)
 
-        self.StartProtection(
-            takeProfit=Unit(0),
-            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent),
-            useMarketOrders=True
-        )
-    def ProcessCandle(self, candle, atrValue):
-        """Process candle and ATR value."""
-        # Skip unfinished candles
+    def _observe_protection_quote(self, quote):
+        # The high-level handler activates native protection before the callback, including between bars.
+        pass
+
+    def _process_candle(self, candle, atr_value, sma_value):
         if candle.State != CandleStates.Finished:
             return
 
-        # Check if strategy is ready to trade
-
-        # Extract ATR value
-        currentAtr = float(atrValue)
-
-        # Update ATR statistics
-        self.UpdateAtrStatistics(currentAtr)
-
-        # If we don't have enough data yet for statistics
-        if self._count < self.AveragePeriod:
-            self._prevAtr = currentAtr
+        if not sma_value.IsFormed:
             return
 
-        # For volatility mean reversion, we need to use price action to determine direction
-        # We'll use simple momentum for direction (current price vs previous price)
-        priceDirectionIsBuy = candle.ClosePrice > candle.OpenPrice
+        if not atr_value.IsFormed:
+            return
 
-        # Check for entry conditions
-        if self.Position == 0:
-            # Low volatility expecting increase - possibly prepare for a breakout
-            if currentAtr < self._avgAtr - self.DeviationMultiplier * self._stdDevAtr:
-                # In low volatility, follow the current short-term price direction
-                if priceDirectionIsBuy:
-                    self.BuyMarket(self.Volume)
-                    self.LogInfo(f"Long entry: ATR = {currentAtr}, Avg = {self._avgAtr}, StdDev = {self._stdDevAtr}, Price up")
-                else:
-                    self.SellMarket(self.Volume)
-                    self.LogInfo(f"Short entry: ATR = {currentAtr}, Avg = {self._avgAtr}, StdDev = {self._stdDevAtr}, Price down")
-            # High volatility expecting decrease - possibly looking for market exhaustion
-            elif currentAtr > self._avgAtr + self.DeviationMultiplier * self._stdDevAtr:
-                # In high volatility, consider going against the short-term trend
-                # as excessive volatility often leads to reversals
-                if not priceDirectionIsBuy:
-                    self.BuyMarket(self.Volume)
-                    self.LogInfo(f"Contrarian long entry: ATR = {currentAtr}, Avg = {self._avgAtr}, StdDev = {self._stdDevAtr}, High volatility")
-                else:
-                    self.SellMarket(self.Volume)
-                    self.LogInfo(f"Contrarian short entry: ATR = {currentAtr}, Avg = {self._avgAtr}, StdDev = {self._stdDevAtr}, High volatility")
-        # Check for exit conditions
-        elif self.Position > 0:  # Long position
-            if currentAtr < self._avgAtr and not priceDirectionIsBuy:
-                self.ClosePosition()
-                self.LogInfo(f"Long exit: ATR = {currentAtr}, Avg = {self._avgAtr}, Price down")
-        elif self.Position < 0:  # Short position
-            if currentAtr < self._avgAtr and priceDirectionIsBuy:
-                self.ClosePosition()
-                self.LogInfo(f"Short exit: ATR = {currentAtr}, Avg = {self._avgAtr}, Price up")
+        value = atr_value.GetValue[Decimal](None)
 
-        # Save current ATR for next iteration
-        self._prevAtr = currentAtr
+        period = self._average_period.Value
+        self._values.append(value)
+        if len(self._values) > period:
+            self._values.pop(0)
 
-    def UpdateAtrStatistics(self, currentAtr):
-        # Add current value to the queue
-        self._atrValues.Enqueue(currentAtr)
-        self._sumAtr += currentAtr
-        self._sumSquaresAtr += currentAtr * currentAtr
-        self._count += 1
+        if len(self._values) < period:
+            return
 
-        # If queue is larger than period, remove oldest value
-        while self._atrValues.Count > self.AveragePeriod:
-            oldestAtr = self._atrValues.Dequeue()
-            self._sumAtr -= oldestAtr
-            self._sumSquaresAtr -= oldestAtr * oldestAtr
-            self._count -= 1
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
-        # Calculate average and standard deviation
-        if self._count > 0:
-            self._avgAtr = self._sumAtr / self._count
+        total = Decimal(0)
+        for item in self._values:
+            total += item
+        mean = total / Decimal(period)
+        squares = Decimal(0)
+        for item in self._values:
+            squares += (item - mean) * (item - mean)
+        deviation = Decimal(Math.Sqrt(Decimal.ToDouble(squares / Decimal(period))))
+        multiplier = Decimal(self._deviation_multiplier.Value)
+        upper = mean + multiplier * deviation
+        lower = mean - multiplier * deviation
+        close = candle.ClosePrice
+        ma = sma_value.GetValue[Decimal](None)
 
-            if self._count > 1:
-                variance = (self._sumSquaresAtr - (self._sumAtr * self._sumAtr) / self._count) / (self._count - 1)
-                self._stdDevAtr = 0 if variance <= 0 else Math.Sqrt(float(variance))
-            else:
-                self._stdDevAtr = 0
+        if value < lower and close < ma and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+        elif value > upper and close > ma and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
+        elif self.Position > 0 and value > mean:
+            self.SellMarket(self.Position)
+        elif self.Position < 0 and value < mean:
+            self.BuyMarket(-self.Position)
 
     def CreateClone(self):
-        """
-        !! REQUIRED!! Creates a new instance of the strategy.
-        """
         return volatility_mean_reversion_strategy()

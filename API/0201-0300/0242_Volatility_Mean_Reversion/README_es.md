@@ -21,8 +21,10 @@ Estas configuraciones funcionan para traders que prefieren operar contra los ext
 - **Valores predeterminados**:
   - `AtrPeriod` = 14
   - `AveragePeriod` = 20
-  - `DeviationMultiplier` = 2m
+  - `DeviationMultiplier` = 2
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
+    Avg y StdDev son la media y la desviación estándar de los últimos AveragePeriod valores de ATR, incluido el actual, y MA es la media móvil simple de los últimos AveragePeriod cierres. El stop es un StopLossPercent fijo del precio de entrada, vigilado también entre velas; 0 lo desactiva. Una señal de entrada contra una posición abierta la invierte.
 - **Filtros**:
   - Categoría: Reversión a la media
   - Dirección: Ambos
