@@ -11,23 +11,27 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Autonomous 5-Minute Robot strategy.
-/// Uses SMA trend filter with RSI momentum for entries.
-/// Buys when RSI crosses above 50 in uptrend, sells when RSI crosses below 50 in downtrend.
+/// Autonomous 5-minute robot strategy.
+/// Buy volume is the volume of up candles and sell volume the volume of down candles over the last VolumeLength candles. A close
+/// above the SMA and above the close 6 candles ago with buy volume above sell volume goes long; a close below the SMA and below
+/// the close 6 candles ago with sell volume above buy volume goes short, reversing an opposite position. Percent stop-loss and
+/// take-profit protect every position.
 /// </summary>
 public class Autonomous5MinuteRobotStrategy : Strategy
 {
+	private const int _momentumBars = 6;
+
 	private readonly StrategyParam<int> _maLength;
-	private readonly StrategyParam<int> _rsiLength;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<int> _volumeLength;
+	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<decimal> _takeProfitPercent;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevRsi;
-	private int _barIndex;
-	private int _lastTradeBar;
+	private readonly List<decimal> _closes = [];
+	private readonly List<(decimal buy, decimal sell)> _volumes = [];
 
 	/// <summary>
-	/// Moving average length.
+	/// SMA period.
 	/// </summary>
 	public int MaLength
 	{
@@ -36,21 +40,30 @@ public class Autonomous5MinuteRobotStrategy : Strategy
 	}
 
 	/// <summary>
-	/// RSI period.
+	/// Candles over which buy and sell volume are summed.
 	/// </summary>
-	public int RsiLength
+	public int VolumeLength
 	{
-		get => _rsiLength.Value;
-		set => _rsiLength.Value = value;
+		get => _volumeLength.Value;
+		set => _volumeLength.Value = value;
 	}
 
 	/// <summary>
-	/// Cooldown bars between trades.
+	/// Stop-loss percentage.
 	/// </summary>
-	public int CooldownBars
+	public decimal StopLossPercent
 	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Take-profit percentage.
+	/// </summary>
+	public decimal TakeProfitPercent
+	{
+		get => _takeProfitPercent.Value;
+		set => _takeProfitPercent.Value = value;
 	}
 
 	/// <summary>
@@ -69,17 +82,22 @@ public class Autonomous5MinuteRobotStrategy : Strategy
 	{
 		_maLength = Param(nameof(MaLength), 50)
 			.SetGreaterThanZero()
-			.SetDisplay("Trend MA Length", "Moving average length", "Indicators");
+			.SetDisplay("MA Length", "SMA period", "Trend");
 
-		_rsiLength = Param(nameof(RsiLength), 14)
+		_volumeLength = Param(nameof(VolumeLength), 10)
 			.SetGreaterThanZero()
-			.SetDisplay("RSI Length", "RSI period", "Indicators");
+			.SetDisplay("Volume Length", "Candles over which buy and sell volume are summed", "Volume");
 
-		_cooldownBars = Param(nameof(CooldownBars), 350)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "Trading");
+		_stopLossPercent = Param(nameof(StopLossPercent), 3m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop-loss percentage", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Candle type for strategy", "General");
+		_takeProfitPercent = Param(nameof(TakeProfitPercent), 29m)
+			.SetNotNegative()
+			.SetDisplay("Take Profit %", "Take-profit percentage", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -92,9 +110,8 @@ public class Autonomous5MinuteRobotStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevRsi = 0;
-		_barIndex = 0;
-		_lastTradeBar = 0;
+		_closes.Clear();
+		_volumes.Clear();
 	}
 
 	/// <inheritdoc />
@@ -102,13 +119,20 @@ public class Autonomous5MinuteRobotStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
+		_closes.Clear();
+		_volumes.Clear();
+
 		var sma = new SimpleMovingAverage { Length = MaLength };
-		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(sma, rsi, ProcessCandle)
+			.Bind(sma, ProcessCandle)
 			.Start();
+
+		StartProtection(
+			TakeProfitPercent > 0m ? new Unit(TakeProfitPercent, UnitTypes.Percent) : new Unit(),
+			StopLossPercent > 0m ? new Unit(StopLossPercent, UnitTypes.Percent) : new Unit(),
+			useMarketOrders: true);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -119,34 +143,42 @@ public class Autonomous5MinuteRobotStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal maValue, decimal rsiValue)
+	private void ProcessCandle(ICandleMessage candle, decimal sma)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		_barIndex++;
+		var close = candle.ClosePrice;
+		var volume = candle.TotalVolume;
 
-		var cooldownOk = _barIndex - _lastTradeBar > CooldownBars;
+		_closes.Add(close);
+		if (_closes.Count > _momentumBars + 1)
+			_closes.RemoveAt(0);
 
-		var isBullish = candle.ClosePrice > maValue;
-		var isBearish = candle.ClosePrice < maValue;
+		_volumes.Add((close > candle.OpenPrice ? volume : 0m, close < candle.OpenPrice ? volume : 0m));
+		if (_volumes.Count > VolumeLength)
+			_volumes.RemoveAt(0);
 
-		// RSI crosses above 50 with uptrend
-		var longSignal = _prevRsi > 0 && _prevRsi < 50 && rsiValue >= 50 && isBullish;
-		// RSI crosses below 50 with downtrend
-		var shortSignal = _prevRsi > 0 && _prevRsi > 50 && rsiValue <= 50 && isBearish;
+		if (_closes.Count <= _momentumBars || _volumes.Count < VolumeLength)
+			return;
 
-		if (longSignal && Position <= 0 && cooldownOk)
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		var buyVolume = 0m;
+		var sellVolume = 0m;
+
+		foreach (var (buy, sell) in _volumes)
 		{
-			BuyMarket();
-			_lastTradeBar = _barIndex;
-		}
-		else if (shortSignal && Position >= 0 && cooldownOk)
-		{
-			SellMarket();
-			_lastTradeBar = _barIndex;
+			buyVolume += buy;
+			sellVolume += sell;
 		}
 
-		_prevRsi = rsiValue;
+		var pastClose = _closes[0];
+
+		if (close > sma && close > pastClose && buyVolume > sellVolume && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (close < sma && close < pastClose && sellVolume > buyVolume && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
 	}
 }
