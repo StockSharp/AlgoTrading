@@ -11,34 +11,82 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// DojiTradingStrategy using EMA crossover for trend timing.
-/// Enters long on golden cross, short on death cross.
+/// Doji trading strategy.
+/// A doji is a candle whose body is at most Tolerance of its range. A doji closing above the EMA opens a long.
+/// The stop sits at the lowest low of the last StopBars candles at entry. Once price has risen TrailTriggerPercent above the entry,
+/// a trailing stop follows the highest high at TrailOffsetPercent below it.
 /// </summary>
 public class DojiTradingStrategy : Strategy
 {
-	private readonly StrategyParam<int> _fastEmaPeriod;
-	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _emaLength;
+	private readonly StrategyParam<decimal> _tolerance;
+	private readonly StrategyParam<int> _stopBars;
+	private readonly StrategyParam<decimal> _trailTriggerPercent;
+	private readonly StrategyParam<decimal> _trailOffsetPercent;
 
-	private decimal _prevFastEma;
-	private decimal _prevSlowEma;
+	private decimal? _entryPrice;
+	private decimal? _stopPrice;
+	private decimal? _highestSinceEntry;
+	private bool _trailActive;
 
-	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
-	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
+	/// <summary>
+	/// Candle type.
+	/// </summary>
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
+	/// <summary>
+	/// EMA length.
+	/// </summary>
+	public int EmaLength { get => _emaLength.Value; set => _emaLength.Value = value; }
+
+	/// <summary>
+	/// Largest body as a fraction of the candle range that still counts as a doji.
+	/// </summary>
+	public decimal Tolerance { get => _tolerance.Value; set => _tolerance.Value = value; }
+
+	/// <summary>
+	/// Candles whose lowest low sets the stop.
+	/// </summary>
+	public int StopBars { get => _stopBars.Value; set => _stopBars.Value = value; }
+
+	/// <summary>
+	/// Profit percent that activates the trailing stop.
+	/// </summary>
+	public decimal TrailTriggerPercent { get => _trailTriggerPercent.Value; set => _trailTriggerPercent.Value = value; }
+
+	/// <summary>
+	/// Trailing stop distance in percent below the highest high.
+	/// </summary>
+	public decimal TrailOffsetPercent { get => _trailOffsetPercent.Value; set => _trailOffsetPercent.Value = value; }
+
+	/// <summary>
+	/// Constructor.
+	/// </summary>
 	public DojiTradingStrategy()
 	{
-		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
-			.SetGreaterThanZero()
-			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
-
-		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
-			.SetGreaterThanZero()
-			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_emaLength = Param(nameof(EmaLength), 60)
+			.SetGreaterThanZero()
+			.SetDisplay("EMA Length", "EMA length", "Indicators");
+
+		_tolerance = Param(nameof(Tolerance), 0.05m)
+			.SetNotNegative()
+			.SetDisplay("Tolerance", "Largest body as a fraction of the range for a doji", "Pattern");
+
+		_stopBars = Param(nameof(StopBars), 450)
+			.SetGreaterThanZero()
+			.SetDisplay("Stop Bars", "Candles whose lowest low sets the stop", "Risk");
+
+		_trailTriggerPercent = Param(nameof(TrailTriggerPercent), 1m)
+			.SetNotNegative()
+			.SetDisplay("Trail Trigger %", "Profit percent that activates the trailing stop", "Risk");
+
+		_trailOffsetPercent = Param(nameof(TrailOffsetPercent), 0.5m)
+			.SetNotNegative()
+			.SetDisplay("Trail Offset %", "Trailing stop distance below the highest high", "Risk");
 	}
 
 	/// <inheritdoc />
@@ -51,8 +99,15 @@ public class DojiTradingStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevFastEma = 0m;
-		_prevSlowEma = 0m;
+		ClearTrade();
+	}
+
+	private void ClearTrade()
+	{
+		_entryPrice = null;
+		_stopPrice = null;
+		_highestSinceEntry = null;
+		_trailActive = false;
 	}
 
 	/// <inheritdoc />
@@ -60,46 +115,71 @@ public class DojiTradingStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
-		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
+		ClearTrade();
+
+		var ema = new ExponentialMovingAverage { Length = EmaLength };
+		var lowest = new Lowest { Length = StopBars };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(fastEma, slowEma, ProcessCandle)
+			.BindEx(ema, lowest, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, fastEma);
-			DrawIndicator(area, slowEma);
+			DrawIndicator(area, ema);
+			DrawIndicator(area, lowest);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue emaValue, IIndicatorValue lowestValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_prevFastEma == 0m || _prevSlowEma == 0m)
+		if (!emaValue.IsFormed || !lowestValue.IsFormed)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (Position > 0 && _entryPrice is decimal entry)
 		{
-			_prevFastEma = fastEmaValue;
-			_prevSlowEma = slowEmaValue;
+			_highestSinceEntry = _highestSinceEntry is decimal h ? Math.Max(h, candle.HighPrice) : candle.HighPrice;
+
+			if (!_trailActive && _highestSinceEntry >= entry * (1 + TrailTriggerPercent / 100m))
+				_trailActive = true;
+
+			var stop = _stopPrice;
+			if (_trailActive)
+			{
+				var trail = _highestSinceEntry.Value * (1 - TrailOffsetPercent / 100m);
+				stop = stop is decimal s ? Math.Max(s, trail) : trail;
+			}
+
+			if (stop is decimal exit && candle.LowPrice <= exit)
+			{
+				SellMarket(Position);
+				ClearTrade();
+			}
+
 			return;
 		}
 
-		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+		var range = candle.HighPrice - candle.LowPrice;
+		var body = Math.Abs(candle.ClosePrice - candle.OpenPrice);
+		var isDoji = range > 0m && body <= range * Tolerance;
+
+		if (Position == 0 && isDoji && candle.ClosePrice > emaValue.GetValue<decimal>())
 		{
 			BuyMarket();
+			_entryPrice = candle.ClosePrice;
+			_stopPrice = lowestValue.GetValue<decimal>();
+			_highestSinceEntry = null;
+			_trailActive = false;
 		}
-		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
-		{
-			SellMarket();
-		}
-
-		_prevFastEma = fastEmaValue;
-		_prevSlowEma = slowEmaValue;
 	}
 }
