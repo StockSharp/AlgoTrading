@@ -15,7 +15,7 @@ class my_ts15_strategy(Strategy):
     def __init__(self):
         super(my_ts15_strategy, self).__init__()
 
-        self._ma_period = self.Param("MaPeriod", 100) \
+        self._ma_period = self.Param("MaPeriod", 50) \
             .SetDisplay("MA Period", "WMA period", "Indicators")
         self._atr_period = self.Param("AtrPeriod", 14) \
             .SetDisplay("ATR Period", "ATR period for trailing", "Indicators")

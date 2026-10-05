@@ -79,11 +79,11 @@ public class ExpIKlPriceVolStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Period", "Slow EMA period", "Indicator");
 
-		_stopLossPoints = Param(nameof(StopLossPoints), 200)
+		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss", "Stop-loss in price steps", "Risk");
 
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 400)
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000)
 			.SetNotNegative()
 			.SetDisplay("Take Profit", "Take-profit in price steps", "Risk");
 	}

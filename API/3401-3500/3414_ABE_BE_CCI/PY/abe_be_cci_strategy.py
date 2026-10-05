@@ -15,7 +15,7 @@ class abe_be_cci_strategy(Strategy):
         super(abe_be_cci_strategy, self).__init__()
 
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30)))
-        self._cci_period = self.Param("CciPeriod", 14)
+        self._cci_period = self.Param("CciPeriod", 49)
         self._entry_level = self.Param("EntryLevel", 100.0)
         self._signal_cooldown_candles = self.Param("SignalCooldownCandles", 6)
 

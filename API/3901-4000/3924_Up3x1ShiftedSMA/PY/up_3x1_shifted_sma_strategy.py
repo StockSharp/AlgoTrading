@@ -16,8 +16,8 @@ class up_3x1_shifted_sma_strategy(Strategy):
     """Simple SMA crossover (fast/slow) with cooldown between trades."""
     def __init__(self):
         super(up_3x1_shifted_sma_strategy, self).__init__()
-        self._fast_period = self.Param("FastPeriod", 8).SetDisplay("Fast SMA", "Fast SMA period", "Indicators")
-        self._slow_period = self.Param("SlowPeriod", 24).SetDisplay("Slow SMA", "Slow SMA period", "Indicators")
+        self._fast_period = self.Param("FastPeriod", 24).SetDisplay("Fast SMA", "Fast SMA period", "Indicators")
+        self._slow_period = self.Param("SlowPeriod", 120).SetDisplay("Slow SMA", "Slow SMA period", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))).SetDisplay("Candle Type", "Timeframe", "General")
 
     @property

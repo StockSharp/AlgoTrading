@@ -31,7 +31,7 @@ public class RouletteGameStrategy : Strategy
 
 	public RouletteGameStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 
 		_smaPeriod = Param(nameof(SmaPeriod), 20)

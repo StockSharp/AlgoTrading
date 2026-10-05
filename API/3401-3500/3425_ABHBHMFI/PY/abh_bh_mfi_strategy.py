@@ -15,7 +15,7 @@ class abh_bh_mfi_strategy(Strategy):
         super(abh_bh_mfi_strategy, self).__init__()
 
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30)))
-        self._mfi_period = self.Param("MfiPeriod", 14)
+        self._mfi_period = self.Param("MfiPeriod", 37)
         self._oversold = self.Param("Oversold", 40.0)
         self._overbought = self.Param("Overbought", 60.0)
         self._signal_cooldown_candles = self.Param("SignalCooldownCandles", 6)

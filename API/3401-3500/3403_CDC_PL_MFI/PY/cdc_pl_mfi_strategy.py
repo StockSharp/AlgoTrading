@@ -15,7 +15,7 @@ class cdc_pl_mfi_strategy(Strategy):
     def __init__(self):
         super(cdc_pl_mfi_strategy, self).__init__()
 
-        self._mfi_period = self.Param("MfiPeriod", 14) \
+        self._mfi_period = self.Param("MfiPeriod", 49) \
             .SetDisplay("MFI Period", "Money Flow Index period", "Indicators")
         self._long_level = self.Param("LongLevel", 40.0) \
             .SetDisplay("Long Level", "MFI below this for long entry", "Signals")

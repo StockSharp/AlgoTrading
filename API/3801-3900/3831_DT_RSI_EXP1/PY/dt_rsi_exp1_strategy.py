@@ -15,7 +15,7 @@ from StockSharp.Messages import Unit, UnitTypes
 class dt_rsi_exp1_strategy(Strategy):
     def __init__(self):
         super(dt_rsi_exp1_strategy, self).__init__()
-        self._rsi_period = self.Param("RsiPeriod", 14) \
+        self._rsi_period = self.Param("RsiPeriod", 47) \
             .SetDisplay("RSI Period", "RSI period", "Indicators")
         self._ema_period = self.Param("EmaPeriod", 20) \
             .SetDisplay("EMA Period", "EMA trend filter period", "Indicators")

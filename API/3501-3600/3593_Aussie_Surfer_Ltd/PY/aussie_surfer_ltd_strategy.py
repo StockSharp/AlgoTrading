@@ -15,7 +15,7 @@ class aussie_surfer_ltd_strategy(Strategy):
         super(aussie_surfer_ltd_strategy, self).__init__()
 
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(120)))
-        self._bollinger_period = self.Param("BollingerPeriod", 20)
+        self._bollinger_period = self.Param("BollingerPeriod", 5)
         self._bollinger_width = self.Param("BollingerWidth", 2.5)
         self._sma_period = self.Param("SmaPeriod", 21)
 

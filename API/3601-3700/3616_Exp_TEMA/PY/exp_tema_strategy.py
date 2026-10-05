@@ -15,7 +15,7 @@ class exp_tema_strategy(Strategy):
         super(exp_tema_strategy, self).__init__()
 
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(60)))
-        self._tema_period = self.Param("TemaPeriod", 40)
+        self._tema_period = self.Param("TemaPeriod", 15)
 
         self._prev1 = None
         self._prev2 = None

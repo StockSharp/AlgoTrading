@@ -87,12 +87,12 @@ public class TwoPairCorrelationStrategy : Strategy
 			.SetDisplay("Max Drawdown %", "Maximum drawdown before trading is paused", "Risk")
 			.SetOptimize(5m, 50m, 5m);
 
-		_priceDifferenceThreshold = Param(nameof(PriceDifferenceThreshold), 5m)
+		_priceDifferenceThreshold = Param(nameof(PriceDifferenceThreshold), 100m)
 			.SetGreaterThanZero()
 			.SetDisplay("Price Deviation", "Distance from SMA required to enter", "Signals")
 			.SetOptimize(1m, 20m, 1m);
 
-		_minimumTotalProfit = Param(nameof(MinimumTotalProfit), 3m)
+		_minimumTotalProfit = Param(nameof(MinimumTotalProfit), 0.3m)
 			.SetGreaterThanZero()
 			.SetDisplay("Profit Target", "Floating profit required to close position", "Risk")
 			.SetOptimize(1m, 10m, 1m);

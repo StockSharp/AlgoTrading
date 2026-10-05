@@ -30,7 +30,7 @@ public class ContrarianTradeMaWeeklyStrategy : Strategy
 
 	public ContrarianTradeMaWeeklyStrategy()
 	{
-		_maPeriod = Param(nameof(MaPeriod), 14)
+		_maPeriod = Param(nameof(MaPeriod), 7)
 			.SetDisplay("SMA Period", "SMA period", "Indicators");
 
 		_channelPeriod = Param(nameof(ChannelPeriod), 10)

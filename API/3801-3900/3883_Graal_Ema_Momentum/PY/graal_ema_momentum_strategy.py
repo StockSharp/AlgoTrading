@@ -14,9 +14,9 @@ from StockSharp.Algo.Strategies import Strategy
 class graal_ema_momentum_strategy(Strategy):
     def __init__(self):
         super(graal_ema_momentum_strategy, self).__init__()
-        self._fast_period = self.Param("FastPeriod", 20) \
+        self._fast_period = self.Param("FastPeriod", 13) \
             .SetDisplay("Fast EMA", "Fast EMA period", "Indicators")
-        self._slow_period = self.Param("SlowPeriod", 80) \
+        self._slow_period = self.Param("SlowPeriod", 34) \
             .SetDisplay("Slow EMA", "Slow EMA period", "Indicators")
         self._momentum_period = self.Param("MomentumPeriod", 14) \
             .SetDisplay("Momentum", "Momentum period", "Indicators")

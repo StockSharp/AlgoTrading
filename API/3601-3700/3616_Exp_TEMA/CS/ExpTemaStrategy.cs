@@ -37,7 +37,7 @@ public class ExpTemaStrategy : Strategy
 
 	public ExpTemaStrategy()
 	{
-		_temaPeriod = Param(nameof(TemaPeriod), 40)
+		_temaPeriod = Param(nameof(TemaPeriod), 15)
 			.SetGreaterThanZero()
 			.SetDisplay("TEMA Period", "Length of Triple Exponential Moving Average", "Indicators");
 

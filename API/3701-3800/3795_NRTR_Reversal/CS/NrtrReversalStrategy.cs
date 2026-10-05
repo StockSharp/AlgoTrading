@@ -33,7 +33,7 @@ public class NrtrReversalStrategy : Strategy
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetDisplay("ATR Period", "ATR period for trailing", "Indicators");
 
-		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
+		_atrMultiplier = Param(nameof(AtrMultiplier), 3m)
 			.SetDisplay("ATR Multiplier", "ATR multiplier for trailing distance", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())

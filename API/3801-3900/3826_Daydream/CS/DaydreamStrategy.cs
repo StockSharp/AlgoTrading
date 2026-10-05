@@ -27,7 +27,7 @@ public class DaydreamStrategy : Strategy
 
 	public DaydreamStrategy()
 	{
-		_channelPeriod = Param(nameof(ChannelPeriod), 20)
+		_channelPeriod = Param(nameof(ChannelPeriod), 25)
 			.SetDisplay("Channel Period", "Donchian channel lookback", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())

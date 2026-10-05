@@ -19,9 +19,9 @@ class dealers_trade_v751_rivot_strategy(Strategy):
 
     def __init__(self):
         super(dealers_trade_v751_rivot_strategy, self).__init__()
-        self._max_trades = self.Param("MaxTrades", 2) \
+        self._max_trades = self.Param("MaxTrades", 5) \
             .SetDisplay("Max Trades", "Maximum number of martingale entries", "Position Sizing")
-        self._pip_distance = self.Param("PipDistance", 10.0) \
+        self._pip_distance = self.Param("PipDistance", 4.0) \
             .SetDisplay("Pip Distance", "Distance between averaged entries in pips", "Position Sizing")
         self._take_profit = self.Param("TakeProfit", 15.0) \
             .SetDisplay("Take Profit", "Take-profit distance in pips", "Risk Management")
@@ -33,7 +33,7 @@ class dealers_trade_v751_rivot_strategy(Strategy):
             .SetDisplay("Volume Multiplier", "Multiplier applied after each new entry", "Position Sizing")
         self._max_volume = self.Param("MaxVolume", 5.0) \
             .SetDisplay("Max Volume", "Upper limit for single-entry volume", "Position Sizing")
-        self._gap_threshold = self.Param("GapThreshold", 15.0) \
+        self._gap_threshold = self.Param("GapThreshold", 7.0) \
             .SetDisplay("Gap Threshold", "Minimal pivot gap required to enable trading", "Signal")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles used for pivot calculations", "Signal")

@@ -15,9 +15,9 @@ class ka_gold_bot_strategy(Strategy):
         super(ka_gold_bot_strategy, self).__init__()
 
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5)))
-        self._keltner_period = self.Param("KeltnerPeriod", 20)
+        self._keltner_period = self.Param("KeltnerPeriod", 50)
         self._ema_short_period = self.Param("EmaShortPeriod", 10)
-        self._ema_long_period = self.Param("EmaLongPeriod", 50)
+        self._ema_long_period = self.Param("EmaLongPeriod", 200)
 
         self._prev_ema_short = None
         self._prev_ema_long = None

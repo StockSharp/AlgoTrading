@@ -15,7 +15,7 @@ class expert_aml_mfi_strategy(Strategy):
         super(expert_aml_mfi_strategy, self).__init__()
 
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5)))
-        self._mfi_period = self.Param("MfiPeriod", 14)
+        self._mfi_period = self.Param("MfiPeriod", 12)
         self._mfi_low = self.Param("MfiLow", 40.0)
         self._mfi_high = self.Param("MfiHigh", 60.0)
 

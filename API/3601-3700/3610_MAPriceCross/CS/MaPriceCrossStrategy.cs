@@ -39,7 +39,7 @@ public class MaPriceCrossStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for MA cross detection", "General");
 
-		_maPeriod = Param(nameof(MaPeriod), 100)
+		_maPeriod = Param(nameof(MaPeriod), 160)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "SMA period", "Indicators");
 	}

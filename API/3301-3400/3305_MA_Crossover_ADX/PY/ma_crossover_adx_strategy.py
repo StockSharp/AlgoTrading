@@ -19,9 +19,9 @@ class ma_crossover_adx_strategy(Strategy):
             .SetDisplay("Fast Period", "Fast MA period", "Indicator")
         self._slow_period = self.Param("SlowPeriod", 50) \
             .SetDisplay("Slow Period", "Slow MA period", "Indicator")
-        self._stop_loss_points = self.Param("StopLossPoints", 200) \
+        self._stop_loss_points = self.Param("StopLossPoints", 400) \
             .SetDisplay("Stop Loss", "Stop-loss in price steps", "Risk")
-        self._take_profit_points = self.Param("TakeProfitPoints", 400) \
+        self._take_profit_points = self.Param("TakeProfitPoints", 900) \
             .SetDisplay("Take Profit", "Take-profit in price steps", "Risk")
 
         self._fast = None

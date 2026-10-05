@@ -15,7 +15,7 @@ class cbc_ws_rsi_strategy(Strategy):
     def __init__(self):
         super(cbc_ws_rsi_strategy, self).__init__()
 
-        self._rsi_period = self.Param("RsiPeriod", 14) \
+        self._rsi_period = self.Param("RsiPeriod", 37) \
             .SetDisplay("RSI Period", "RSI period for confirmation", "Indicators")
         self._signal_cooldown = self.Param("SignalCooldownCandles", 6) \
             .SetDisplay("Signal Cooldown", "Bars to wait between trades", "Trading")

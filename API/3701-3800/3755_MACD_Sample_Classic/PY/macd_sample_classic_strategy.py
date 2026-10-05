@@ -26,9 +26,9 @@ class macd_sample_classic_strategy(Strategy):
             .SetDisplay("Signal EMA", "Signal EMA period for MACD", "Indicators")
         self._trend_ma_period = self.Param("TrendMaPeriod", 26) \
             .SetDisplay("Trend EMA", "EMA period used for directional filter", "Indicators")
-        self._macd_open_level = self.Param("MacdOpenLevel", 0.0) \
+        self._macd_open_level = self.Param("MacdOpenLevel", 3.0) \
             .SetDisplay("MACD Open", "Entry threshold in MACD points", "Signals")
-        self._macd_close_level = self.Param("MacdCloseLevel", 0.0) \
+        self._macd_close_level = self.Param("MacdCloseLevel", 2.0) \
             .SetDisplay("MACD Close", "Exit threshold in MACD points", "Signals")
         self._take_profit_points = self.Param("TakeProfitPoints", 50.0) \
             .SetDisplay("Take Profit", "Take profit distance in price points", "Risk")

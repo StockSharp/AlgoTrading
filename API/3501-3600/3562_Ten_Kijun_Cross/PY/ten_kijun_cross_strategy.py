@@ -14,8 +14,8 @@ class ten_kijun_cross_strategy(Strategy):
         super(ten_kijun_cross_strategy, self).__init__()
 
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(60)))
-        self._tenkan_period = self.Param("TenkanPeriod", 12)
-        self._kijun_period = self.Param("KijunPeriod", 34)
+        self._tenkan_period = self.Param("TenkanPeriod", 9)
+        self._kijun_period = self.Param("KijunPeriod", 26)
 
         self._highs_tenkan = []
         self._lows_tenkan = []

@@ -25,7 +25,7 @@ class hammer_hanging_stochastic_strategy(Strategy):
             .SetDisplay("Oversold", "Stochastic oversold level", "Signals")
         self._overbought = self.Param("Overbought", 70.0) \
             .SetDisplay("Overbought", "Stochastic overbought level", "Signals")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
             .SetDisplay("Candle Type", "Candle timeframe", "General")
 
     @property

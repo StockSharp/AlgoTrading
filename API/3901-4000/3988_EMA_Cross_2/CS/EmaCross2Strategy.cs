@@ -115,19 +115,19 @@ public class EmaCross2Strategy : Strategy
 		
 		.SetOptimize(0.1m, 5m, 0.1m);
 
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 500m)
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 20m)
 		.SetNotNegative()
 		.SetDisplay("Take Profit (points)", "Distance from entry to take-profit in broker points", "Risk")
 		
 		.SetOptimize(0m, 200m, 5m);
 
-		_stopLossPoints = Param(nameof(StopLossPoints), 500m)
+		_stopLossPoints = Param(nameof(StopLossPoints), 30m)
 		.SetNotNegative()
 		.SetDisplay("Stop Loss (points)", "Distance from entry to stop-loss in broker points", "Risk")
 		
 		.SetOptimize(0m, 200m, 5m);
 
-		_trailingStopPoints = Param(nameof(TrailingStopPoints), 500m)
+		_trailingStopPoints = Param(nameof(TrailingStopPoints), 50m)
 		.SetNotNegative()
 		.SetDisplay("Trailing Stop (points)", "Trailing distance maintained after entry", "Risk")
 		

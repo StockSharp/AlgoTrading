@@ -15,7 +15,7 @@ class dark_cloud_piercing_cci_strategy(Strategy):
     def __init__(self):
         super(dark_cloud_piercing_cci_strategy, self).__init__()
 
-        self._cci_period = self.Param("CciPeriod", 14) \
+        self._cci_period = self.Param("CciPeriod", 49) \
             .SetDisplay("CCI Period", "CCI period", "Indicators")
         self._entry_level = self.Param("EntryLevel", 50.0) \
             .SetDisplay("Entry Level", "CCI level for confirmation", "Signals")

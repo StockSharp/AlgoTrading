@@ -20,11 +20,11 @@ class sweet_spot_extreme_strategy(Strategy):
 
         self._ema_period = self.Param("EmaPeriod", 50) \
             .SetDisplay("EMA Period", "Trend EMA period", "Indicators")
-        self._cci_period = self.Param("CciPeriod", 14) \
+        self._cci_period = self.Param("CciPeriod", 12) \
             .SetDisplay("CCI Period", "CCI lookback", "Indicators")
-        self._buy_cci_level = self.Param("BuyCciLevel", -50.0) \
+        self._buy_cci_level = self.Param("BuyCciLevel", -200.0) \
             .SetDisplay("Buy CCI", "Oversold CCI level for buy", "Indicators")
-        self._sell_cci_level = self.Param("SellCciLevel", 50.0) \
+        self._sell_cci_level = self.Param("SellCciLevel", 200.0) \
             .SetDisplay("Sell CCI", "Overbought CCI level for sell", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Candle series", "General")

@@ -52,11 +52,11 @@ public class TenKijunCrossStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for Ichimoku calculations", "General");
 
-		_tenkanPeriod = Param(nameof(TenkanPeriod), 12)
+		_tenkanPeriod = Param(nameof(TenkanPeriod), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Tenkan Period", "Tenkan-sen conversion line period", "Indicators");
 
-		_kijunPeriod = Param(nameof(KijunPeriod), 34)
+		_kijunPeriod = Param(nameof(KijunPeriod), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("Kijun Period", "Kijun-sen base line period", "Indicators");
 	}

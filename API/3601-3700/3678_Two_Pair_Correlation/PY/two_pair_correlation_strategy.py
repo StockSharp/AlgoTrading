@@ -15,8 +15,8 @@ class two_pair_correlation_strategy(Strategy):
         super(two_pair_correlation_strategy, self).__init__()
 
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1)))
-        self._price_difference_threshold = self.Param("PriceDifferenceThreshold", 5.0)
-        self._minimum_total_profit = self.Param("MinimumTotalProfit", 3.0)
+        self._price_difference_threshold = self.Param("PriceDifferenceThreshold", 100.0)
+        self._minimum_total_profit = self.Param("MinimumTotalProfit", 0.3)
         self._atr_period = self.Param("AtrPeriod", 14)
 
         self._atr_value = 0.0

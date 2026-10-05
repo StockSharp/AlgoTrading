@@ -25,9 +25,9 @@ public class HammerHangingManCciStrategy : Strategy
 
 	public HammerHangingManCciStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
-		_cciPeriod = Param(nameof(CciPeriod), 14)
+		_cciPeriod = Param(nameof(CciPeriod), 11)
 			.SetGreaterThanZero()
 			.SetDisplay("CCI Period", "CCI period", "Indicators");
 		_cciLevel = Param(nameof(CciLevel), 100m)

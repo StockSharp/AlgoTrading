@@ -14,9 +14,9 @@ from StockSharp.Algo.Strategies import Strategy
 class simple_fx_crossover_strategy(Strategy):
     def __init__(self):
         super(simple_fx_crossover_strategy, self).__init__()
-        self._short_period = self.Param("ShortPeriod", 10) \
+        self._short_period = self.Param("ShortPeriod", 50) \
             .SetDisplay("Fast SMA", "Fast SMA period", "Indicators")
-        self._long_period = self.Param("LongPeriod", 30) \
+        self._long_period = self.Param("LongPeriod", 200) \
             .SetDisplay("Slow SMA", "Slow SMA period", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
             .SetDisplay("Candle Type", "Candle timeframe", "General")

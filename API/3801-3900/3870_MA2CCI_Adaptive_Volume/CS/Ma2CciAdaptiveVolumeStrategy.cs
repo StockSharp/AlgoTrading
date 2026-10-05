@@ -35,7 +35,7 @@ public class Ma2CciAdaptiveVolumeStrategy : Strategy
 			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 		_slowPeriod = Param(nameof(SlowPeriod), 21)
 			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
-		_cciPeriod = Param(nameof(CciPeriod), 14)
+		_cciPeriod = Param(nameof(CciPeriod), 4)
 			.SetDisplay("CCI Period", "CCI lookback", "Indicators");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");

@@ -14,17 +14,17 @@ class martingail_expert_v10_stochastic_strategy(Strategy):
     def __init__(self):
         super(martingail_expert_v10_stochastic_strategy, self).__init__()
 
-        self._step_points = self.Param("StepPoints", 500.0) \
+        self._step_points = self.Param("StepPoints", 25.0) \
             .SetDisplay("Step", "Price step in points before averaging", "Martingale")
         self._step_mode = self.Param("StepMode", 0) \
             .SetDisplay("Step Mode", "0 - fixed step, 1 - step plus extra points per order", "Martingale")
-        self._profit_factor_points = self.Param("ProfitFactorPoints", 300.0) \
+        self._profit_factor_points = self.Param("ProfitFactorPoints", 10.0) \
             .SetDisplay("Profit Factor", "Points multiplied by order count for take profit", "Martingale")
         self._multiplier = self.Param("Multiplier", 1.5) \
             .SetDisplay("Multiplier", "Martingale multiplier for averaging", "Martingale")
-        self._k_period = self.Param("KPeriod", 14) \
+        self._k_period = self.Param("KPeriod", 200) \
             .SetDisplay("%K Period", "Stochastic %K lookback", "Indicators")
-        self._d_period = self.Param("DPeriod", 3) \
+        self._d_period = self.Param("DPeriod", 20) \
             .SetDisplay("%D Period", "Stochastic %D smoothing", "Indicators")
         self._zone_buy = self.Param("ZoneBuy", 50.0) \
             .SetDisplay("Zone Buy", "%D lower bound to allow buys", "Indicators")

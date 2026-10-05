@@ -14,8 +14,8 @@ class hammer_hanging_man_cci_strategy(Strategy):
     def __init__(self):
         super(hammer_hanging_man_cci_strategy, self).__init__()
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(60)))
-        self._cci_period = self.Param("CciPeriod", 14)
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15)))
+        self._cci_period = self.Param("CciPeriod", 11)
         self._cci_level = self.Param("CciLevel", 100.0)
         self._signal_cooldown_candles = self.Param("SignalCooldownCandles", 6)
 

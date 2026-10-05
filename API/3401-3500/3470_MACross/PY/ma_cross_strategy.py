@@ -18,9 +18,9 @@ class ma_cross_strategy(Strategy):
 
     def __init__(self):
         super(ma_cross_strategy, self).__init__()
-        self._fast_period = self.Param("FastPeriod", 10).SetDisplay("Fast EMA", "Fast EMA period", "Indicators")
-        self._slow_period = self.Param("SlowPeriod", 30).SetDisplay("Slow EMA", "Slow EMA period", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(60))).SetDisplay("Candle Type", "Timeframe", "General")
+        self._fast_period = self.Param("FastPeriod", 8).SetDisplay("Fast EMA", "Fast EMA period", "Indicators")
+        self._slow_period = self.Param("SlowPeriod", 20).SetDisplay("Slow EMA", "Slow EMA period", "Indicators")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Timeframe", "General")
 
         self._prev_fast = 0.0
         self._prev_slow = 0.0

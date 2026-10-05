@@ -88,7 +88,7 @@ public class KAGoldBotStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA", "Period of the fast EMA filter", "Indicators");
 
-		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 30)
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA", "Period of the slow EMA trend filter", "Indicators");
 

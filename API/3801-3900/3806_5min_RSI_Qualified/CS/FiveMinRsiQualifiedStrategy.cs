@@ -32,16 +32,16 @@ public class FiveMinRsiQualifiedStrategy : Strategy
 
 	public FiveMinRsiQualifiedStrategy()
 	{
-		_rsiPeriod = Param(nameof(RsiPeriod), 14)
+		_rsiPeriod = Param(nameof(RsiPeriod), 28)
 			.SetDisplay("RSI Period", "RSI lookback", "Indicators");
 
-		_qualificationLength = Param(nameof(QualificationLength), 3)
+		_qualificationLength = Param(nameof(QualificationLength), 12)
 			.SetDisplay("Qual Length", "Consecutive candles in extreme zone", "Indicators");
 
-		_upperThreshold = Param(nameof(UpperThreshold), 65m)
+		_upperThreshold = Param(nameof(UpperThreshold), 55m)
 			.SetDisplay("Upper", "RSI overbought threshold", "Indicators");
 
-		_lowerThreshold = Param(nameof(LowerThreshold), 35m)
+		_lowerThreshold = Param(nameof(LowerThreshold), 45m)
 			.SetDisplay("Lower", "RSI oversold threshold", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())

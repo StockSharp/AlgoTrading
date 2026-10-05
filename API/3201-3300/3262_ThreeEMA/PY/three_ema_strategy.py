@@ -15,13 +15,13 @@ class three_ema_strategy(Strategy):
     def __init__(self):
         super(three_ema_strategy, self).__init__()
 
-        self._fast_period = self.Param("FastPeriod", 14) \
+        self._fast_period = self.Param("FastPeriod", 5) \
             .SetDisplay("Fast Period", "Fast MA period", "Indicator")
-        self._slow_period = self.Param("SlowPeriod", 50) \
+        self._slow_period = self.Param("SlowPeriod", 24) \
             .SetDisplay("Slow Period", "Slow MA period", "Indicator")
-        self._stop_loss_points = self.Param("StopLossPoints", 200) \
+        self._stop_loss_points = self.Param("StopLossPoints", 400) \
             .SetDisplay("Stop Loss", "Stop-loss in price steps", "Risk")
-        self._take_profit_points = self.Param("TakeProfitPoints", 400) \
+        self._take_profit_points = self.Param("TakeProfitPoints", 900) \
             .SetDisplay("Take Profit", "Take-profit in price steps", "Risk")
 
         self._fast = None

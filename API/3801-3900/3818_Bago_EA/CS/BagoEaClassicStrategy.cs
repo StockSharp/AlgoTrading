@@ -39,7 +39,7 @@ public class BagoEaClassicStrategy : Strategy
 		_slowPeriod = Param(nameof(SlowPeriod), 12)
 			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
-		_rsiPeriod = Param(nameof(RsiPeriod), 14)
+		_rsiPeriod = Param(nameof(RsiPeriod), 21)
 			.SetDisplay("RSI Period", "RSI period", "Indicators");
 
 		_rsiLevel = Param(nameof(RsiLevel), 50m)

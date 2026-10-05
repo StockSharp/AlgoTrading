@@ -14,7 +14,7 @@ class abe_be_stoch_strategy(Strategy):
     def __init__(self):
         super(abe_be_stoch_strategy, self).__init__()
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30)))
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1)))
         self._stoch_period = self.Param("StochPeriod", 14)
         self._oversold = self.Param("Oversold", 30.0)
         self._overbought = self.Param("Overbought", 70.0)

@@ -15,7 +15,7 @@ class bollinger_rsi_ma_strategy(Strategy):
         super(bollinger_rsi_ma_strategy, self).__init__()
 
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30)))
-        self._rsi_period = self.Param("RsiPeriod", 14)
+        self._rsi_period = self.Param("RsiPeriod", 13)
         self._bb_period = self.Param("BbPeriod", 20)
         self._band_percent = self.Param("BandPercent", 0.01)
         self._signal_cooldown_candles = self.Param("SignalCooldownCandles", 6)

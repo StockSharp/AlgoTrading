@@ -34,7 +34,7 @@ public class MyTs15Strategy : Strategy
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(120).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
-		_maPeriod = Param(nameof(MaPeriod), 100)
+		_maPeriod = Param(nameof(MaPeriod), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "WMA period", "Indicators");
 		_atrPeriod = Param(nameof(AtrPeriod), 14)

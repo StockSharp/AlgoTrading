@@ -15,8 +15,8 @@ class trickerless_rhmp_strategy(Strategy):
         super(trickerless_rhmp_strategy, self).__init__()
 
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(60)))
-        self._fast_ma_period = self.Param("FastMaPeriod", 20)
-        self._slow_ma_period = self.Param("SlowMaPeriod", 50)
+        self._fast_ma_period = self.Param("FastMaPeriod", 60)
+        self._slow_ma_period = self.Param("SlowMaPeriod", 120)
 
         self._prev_fast = 0.0
         self._prev_slow = 0.0

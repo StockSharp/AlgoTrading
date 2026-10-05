@@ -18,7 +18,7 @@ class surefire_thing_strategy(Strategy):
     def __init__(self):
         super(surefire_thing_strategy, self).__init__()
 
-        self._range_multiplier = self.Param("RangeMultiplier", 0.5) \
+        self._range_multiplier = self.Param("RangeMultiplier", 1.1) \
             .SetDisplay("Range Mult", "Multiplier for range-based levels", "General")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
             .SetDisplay("Candle Type", "Candle series", "General")

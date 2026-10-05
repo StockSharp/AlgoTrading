@@ -14,7 +14,7 @@ from StockSharp.Algo.Strategies import Strategy
 class contrarian_trade_ma_weekly_strategy(Strategy):
     def __init__(self):
         super(contrarian_trade_ma_weekly_strategy, self).__init__()
-        self._ma_period = self.Param("MaPeriod", 14) \
+        self._ma_period = self.Param("MaPeriod", 7) \
             .SetDisplay("SMA Period", "SMA period", "Indicators")
         self._channel_period = self.Param("ChannelPeriod", 10) \
             .SetDisplay("Channel Period", "Highest/Lowest lookback", "Indicators")

@@ -28,7 +28,7 @@ public class FiveMinuteRsiCciStrategy : Strategy
 
 	public FiveMinuteRsiCciStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()

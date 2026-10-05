@@ -112,7 +112,7 @@ public class VectorBasketTrendStrategy : Strategy
 /// </summary>
 public VectorBasketTrendStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for MA calculation", "General");
 
 		_rangeCandleType = Param(nameof(RangeCandleType), TimeSpan.FromHours(4).TimeFrame())

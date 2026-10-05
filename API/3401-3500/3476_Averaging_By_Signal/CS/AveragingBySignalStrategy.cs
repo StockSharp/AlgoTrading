@@ -28,10 +28,10 @@ public class AveragingBySignalStrategy : Strategy
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
-		_fastPeriod = Param(nameof(FastPeriod), 10)
+		_fastPeriod = Param(nameof(FastPeriod), 28)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast WMA", "Fast WMA period", "Indicators");
-		_slowPeriod = Param(nameof(SlowPeriod), 30)
+		_slowPeriod = Param(nameof(SlowPeriod), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow WMA", "Slow WMA period", "Indicators");
 	}

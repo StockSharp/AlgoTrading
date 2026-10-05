@@ -15,8 +15,8 @@ class averaging_by_signal_strategy(Strategy):
         super(averaging_by_signal_strategy, self).__init__()
 
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(60)))
-        self._fast_period = self.Param("FastPeriod", 10)
-        self._slow_period = self.Param("SlowPeriod", 30)
+        self._fast_period = self.Param("FastPeriod", 28)
+        self._slow_period = self.Param("SlowPeriod", 50)
 
         self._prev_fast = 0.0
         self._prev_slow = 0.0

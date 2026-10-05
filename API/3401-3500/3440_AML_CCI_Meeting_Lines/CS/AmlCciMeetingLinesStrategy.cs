@@ -28,7 +28,7 @@ public class AmlCciMeetingLinesStrategy : Strategy
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
-		_cciPeriod = Param(nameof(CciPeriod), 14)
+		_cciPeriod = Param(nameof(CciPeriod), 18)
 			.SetGreaterThanZero()
 			.SetDisplay("CCI Period", "CCI period", "Indicators");
 		_cciLow = Param(nameof(CciLow), -50m)

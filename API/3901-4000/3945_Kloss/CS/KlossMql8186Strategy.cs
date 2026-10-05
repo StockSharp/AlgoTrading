@@ -51,7 +51,7 @@ public class KlossMql8186Strategy : Strategy
                         
                         .SetOptimize(5, 40, 5);
 
-                _cciThreshold = Param(nameof(CciThreshold), 150m)
+                _cciThreshold = Param(nameof(CciThreshold), 120m)
                         .SetGreaterThanZero()
                         .SetDisplay("CCI Threshold", "Absolute CCI level that triggers entries", "Indicators")
                         
@@ -75,13 +75,13 @@ public class KlossMql8186Strategy : Strategy
                         
                         .SetOptimize(1, 10, 1);
 
-                _stochasticOversold = Param(nameof(StochasticOversold), 45m)
+                _stochasticOversold = Param(nameof(StochasticOversold), 30m)
                         .SetNotNegative()
                         .SetDisplay("Stochastic Oversold", "Threshold under which %K confirms a long signal", "Signals")
                         
                         .SetOptimize(10m, 40m, 5m);
 
-                _stochasticOverbought = Param(nameof(StochasticOverbought), 55m)
+                _stochasticOverbought = Param(nameof(StochasticOverbought), 70m)
                         .SetNotNegative()
                         .SetDisplay("Stochastic Overbought", "Threshold above which %K confirms a short signal", "Signals")
                         

@@ -19,9 +19,9 @@ class exp_i_kl_price_vol_strategy(Strategy):
             .SetDisplay("Fast Period", "Fast EMA period", "Indicator")
         self._slow_period = self.Param("SlowPeriod", 200) \
             .SetDisplay("Slow Period", "Slow EMA period", "Indicator")
-        self._stop_loss_points = self.Param("StopLossPoints", 200) \
+        self._stop_loss_points = self.Param("StopLossPoints", 1000) \
             .SetDisplay("Stop Loss", "Stop-loss in price steps", "Risk")
-        self._take_profit_points = self.Param("TakeProfitPoints", 400) \
+        self._take_profit_points = self.Param("TakeProfitPoints", 2000) \
             .SetDisplay("Take Profit", "Take-profit in price steps", "Risk")
 
         self._fast = None

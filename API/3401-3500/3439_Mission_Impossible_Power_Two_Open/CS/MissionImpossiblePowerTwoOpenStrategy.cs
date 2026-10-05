@@ -22,7 +22,7 @@ public class MissionImpossiblePowerTwoOpenStrategy : Strategy
 
 	public MissionImpossiblePowerTwoOpenStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 		_emaPeriod = Param(nameof(EmaPeriod), 50)
 			.SetGreaterThanZero()

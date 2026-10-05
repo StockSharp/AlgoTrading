@@ -26,12 +26,12 @@ public class MacrossStrategy : Strategy
 
 	public MacrossStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
-		_fastPeriod = Param(nameof(FastPeriod), 10)
+		_fastPeriod = Param(nameof(FastPeriod), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast SMA", "Fast SMA period", "Indicators");
-		_slowPeriod = Param(nameof(SlowPeriod), 30)
+		_slowPeriod = Param(nameof(SlowPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow SMA", "Slow SMA period", "Indicators");
 	}

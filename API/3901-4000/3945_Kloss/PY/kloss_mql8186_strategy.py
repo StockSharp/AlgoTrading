@@ -16,7 +16,7 @@ class kloss_mql8186_strategy(Strategy):
 
         self._cci_period = self.Param("CciPeriod", 10) \
             .SetDisplay("CCI Period", "Number of candles for the CCI calculation", "Indicators")
-        self._cci_threshold = self.Param("CciThreshold", 150.0) \
+        self._cci_threshold = self.Param("CciThreshold", 120.0) \
             .SetDisplay("CCI Threshold", "Absolute CCI level that triggers entries", "Indicators")
         self._stochastic_k_period = self.Param("StochasticKPeriod", 5) \
             .SetDisplay("Stochastic %K", "Period of the %K line", "Indicators")
@@ -24,9 +24,9 @@ class kloss_mql8186_strategy(Strategy):
             .SetDisplay("Stochastic %D", "SMA length of the %D line", "Indicators")
         self._stochastic_smooth = self.Param("StochasticSmooth", 3) \
             .SetDisplay("Stochastic Smoothing", "Smoothing applied to the %K calculation", "Indicators")
-        self._stochastic_oversold = self.Param("StochasticOversold", 45.0) \
+        self._stochastic_oversold = self.Param("StochasticOversold", 30.0) \
             .SetDisplay("Stochastic Oversold", "Threshold under which %K confirms a long signal", "Signals")
-        self._stochastic_overbought = self.Param("StochasticOverbought", 55.0) \
+        self._stochastic_overbought = self.Param("StochasticOverbought", 70.0) \
             .SetDisplay("Stochastic Overbought", "Threshold above which %K confirms a short signal", "Signals")
         self._stop_loss_points = self.Param("StopLossPoints", 48.0) \
             .SetDisplay("Stop Loss (pts)", "Stop loss distance expressed in price points", "Risk")

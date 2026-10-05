@@ -14,7 +14,7 @@ from StockSharp.Algo.Strategies import Strategy
 class daydream_strategy(Strategy):
     def __init__(self):
         super(daydream_strategy, self).__init__()
-        self._channel_period = self.Param("ChannelPeriod", 20) \
+        self._channel_period = self.Param("ChannelPeriod", 25) \
             .SetDisplay("Channel Period", "Donchian channel lookback", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Candle timeframe", "General")

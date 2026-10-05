@@ -135,14 +135,14 @@ public class MartingailExpertV10StochasticStrategy : Strategy
 	/// </summary>
 	public MartingailExpertV10StochasticStrategy()
 	{
-		_stepPoints = Param(nameof(StepPoints), 500m)
+		_stepPoints = Param(nameof(StepPoints), 25m)
 			.SetGreaterThanZero()
 			.SetDisplay("Step", "Price step in points before averaging", "Martingale");
 
 		_stepMode = Param(nameof(StepMode), 0)
 			.SetDisplay("Step Mode", "0 - fixed step, 1 - step plus extra points per order", "Martingale");
 
-		_profitFactorPoints = Param(nameof(ProfitFactorPoints), 300m)
+		_profitFactorPoints = Param(nameof(ProfitFactorPoints), 10m)
 			.SetGreaterThanZero()
 			.SetDisplay("Profit Factor", "Points multiplied by order count for take profit", "Martingale");
 
@@ -150,11 +150,11 @@ public class MartingailExpertV10StochasticStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Multiplier", "Martingale multiplier for averaging", "Martingale");
 
-		_kPeriod = Param(nameof(KPeriod), 14)
+		_kPeriod = Param(nameof(KPeriod), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("%K Period", "Stochastic %K lookback", "Indicators");
 
-		_dPeriod = Param(nameof(DPeriod), 3)
+		_dPeriod = Param(nameof(DPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("%D Period", "Stochastic %D smoothing", "Indicators");
 

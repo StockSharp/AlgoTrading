@@ -14,9 +14,9 @@ class r_point250_strategy(Strategy):
     def __init__(self):
         super(r_point250_strategy, self).__init__()
 
-        self._order_volume = self.Param("OrderVolume", 1.0) \
+        self._order_volume = self.Param("OrderVolume", 0.1) \
             .SetDisplay("Order Volume", "Base volume for market entries", "Trading")
-        self._take_profit_points = self.Param("TakeProfitPoints", 500.0) \
+        self._take_profit_points = self.Param("TakeProfitPoints", 15.0) \
             .SetDisplay("Take Profit Points", "Take profit distance in price points", "Risk")
         self._stop_loss_points = self.Param("StopLossPoints", 999.0) \
             .SetDisplay("Stop Loss Points", "Stop loss distance in price points", "Risk")
@@ -24,7 +24,7 @@ class r_point250_strategy(Strategy):
             .SetDisplay("Trailing Stop Points", "Optional trailing distance in price points", "Risk")
         self._reverse_point = self.Param("ReversePoint", 250) \
             .SetDisplay("Reverse Point Length", "Number of candles scanned for reversal levels", "Signals")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Candle aggregation used for calculations", "General")
 
         self._last_high_level = 0.0

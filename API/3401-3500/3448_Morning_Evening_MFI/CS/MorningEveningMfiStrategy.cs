@@ -32,7 +32,7 @@ public class MorningEveningMfiStrategy : Strategy
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
-		_mfiPeriod = Param(nameof(MfiPeriod), 14)
+		_mfiPeriod = Param(nameof(MfiPeriod), 49)
 			.SetGreaterThanZero()
 			.SetDisplay("MFI Period", "MFI period", "Indicators");
 		_mfiLow = Param(nameof(MfiLow), 40m)

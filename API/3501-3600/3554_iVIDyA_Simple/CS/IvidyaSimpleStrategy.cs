@@ -44,14 +44,14 @@ public class IvidyaSimpleStrategy : Strategy
 
 	public IvidyaSimpleStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Primary candle series", "General");
 
-		_cmoPeriod = Param(nameof(CmoPeriod), 20)
+		_cmoPeriod = Param(nameof(CmoPeriod), 15)
 			.SetGreaterThanZero()
 			.SetDisplay("CMO Period", "Chande Momentum Oscillator length", "Indicator");
 
-		_emaPeriod = Param(nameof(EmaPeriod), 30)
+		_emaPeriod = Param(nameof(EmaPeriod), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "Base EMA length used by VIDYA", "Indicator");
 	}

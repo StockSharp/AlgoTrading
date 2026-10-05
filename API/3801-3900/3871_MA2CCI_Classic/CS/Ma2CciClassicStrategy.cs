@@ -35,7 +35,7 @@ public class Ma2CciClassicStrategy : Strategy
 			.SetDisplay("Fast SMA", "Fast SMA period", "Indicators");
 		_slowPeriod = Param(nameof(SlowPeriod), 26)
 			.SetDisplay("Slow SMA", "Slow SMA period", "Indicators");
-		_cciPeriod = Param(nameof(CciPeriod), 14)
+		_cciPeriod = Param(nameof(CciPeriod), 4)
 			.SetDisplay("CCI Period", "CCI lookback", "Indicators");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");

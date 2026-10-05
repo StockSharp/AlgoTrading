@@ -17,7 +17,7 @@ class cronex_ac_strategy(Strategy):
 
         self._fast_period = self.Param("FastPeriod", 14) \
             .SetDisplay("Fast Period", "Fast MA period", "Indicator")
-        self._slow_period = self.Param("SlowPeriod", 50) \
+        self._slow_period = self.Param("SlowPeriod", 25) \
             .SetDisplay("Slow Period", "Slow MA period", "Indicator")
         self._stop_loss_points = self.Param("StopLossPoints", 200) \
             .SetDisplay("Stop Loss", "Stop-loss in price steps", "Risk")

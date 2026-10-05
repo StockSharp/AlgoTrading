@@ -28,7 +28,7 @@ public class AbcWsCciStrategy : Strategy
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
-		_cciPeriod = Param(nameof(CciPeriod), 14)
+		_cciPeriod = Param(nameof(CciPeriod), 37)
 			.SetGreaterThanZero()
 			.SetDisplay("CCI Period", "CCI period for confirmation", "Indicators");
 		_signalCooldownCandles = Param(nameof(SignalCooldownCandles), 6)

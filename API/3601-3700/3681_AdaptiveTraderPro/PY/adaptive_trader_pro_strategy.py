@@ -17,7 +17,7 @@ class adaptive_trader_pro_strategy(Strategy):
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1)))
         self._rsi_period = self.Param("RsiPeriod", 14)
         self._atr_period = self.Param("AtrPeriod", 14)
-        self._trailing_stop_multiplier = self.Param("TrailingStopMultiplier", 3.0)
+        self._trailing_stop_multiplier = self.Param("TrailingStopMultiplier", 1.0)
         self._break_even_multiplier = self.Param("BreakEvenMultiplier", 1.5)
         self._trend_period = self.Param("TrendPeriod", 20)
 

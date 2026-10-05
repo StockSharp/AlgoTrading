@@ -17,7 +17,7 @@ class maybeawo222_strategy(Strategy):
 
     def __init__(self):
         super(maybeawo222_strategy, self).__init__()
-        self._moving_period = self.Param("MovingPeriod", 20).SetDisplay("MA Period", "EMA period", "Indicators")
+        self._moving_period = self.Param("MovingPeriod", 14).SetDisplay("MA Period", "EMA period", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))).SetDisplay("Candle Type", "Candles", "General")
 
         self._prev_close = None

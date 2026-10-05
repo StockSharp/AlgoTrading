@@ -54,7 +54,7 @@ public class AussieSurferLtdStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(120).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe", "General");
 
-		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
+		_bollingerPeriod = Param(nameof(BollingerPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Period", "Bollinger Bands window", "Indicators");
 

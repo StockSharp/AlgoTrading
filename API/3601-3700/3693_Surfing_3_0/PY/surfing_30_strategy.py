@@ -18,8 +18,8 @@ class surfing_30_strategy(Strategy):
         self._sl_points = self.Param("StopLossPoints", 50)
         self._ma_period = self.Param("MaPeriod", 50)
         self._rsi_period = self.Param("RsiPeriod", 10)
-        self._long_rsi = self.Param("LongRsiThreshold", 30.0)
-        self._short_rsi = self.Param("ShortRsiThreshold", 70.0)
+        self._long_rsi = self.Param("LongRsiThreshold", 40.0)
+        self._short_rsi = self.Param("ShortRsiThreshold", 65.0)
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15)))
 
         self._prev_close = None

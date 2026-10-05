@@ -73,11 +73,11 @@ public class DealersTradeMacdMql4Strategy : Strategy
 			.SetDisplay("Lot Multiplier", "Multiplier applied to subsequent entries", "Money Management")
 			.SetGreaterThanZero();
 
-		_maxTrades = Param(nameof(MaxTrades), 1)
+		_maxTrades = Param(nameof(MaxTrades), 5)
 			.SetDisplay("Max Trades", "Maximum simultaneous positions", "Money Management")
 			.SetGreaterThanZero();
 
-		_spacingPips = Param(nameof(SpacingPips), 200)
+		_spacingPips = Param(nameof(SpacingPips), 4)
 			.SetDisplay("Spacing (pips)", "Minimum price movement before adding", "Money Management")
 			.SetNotNegative();
 
@@ -92,15 +92,15 @@ public class DealersTradeMacdMql4Strategy : Strategy
 			.SetDisplay("Secure Profit", "Currency profit required to lock gains", "Money Management")
 			.SetNotNegative();
 
-		_takeProfitPips = Param(nameof(TakeProfitPips), 200)
+		_takeProfitPips = Param(nameof(TakeProfitPips), 30)
 			.SetDisplay("Take Profit (pips)", "Take profit distance from entry", "Risk")
 			.SetNotNegative();
 
-		_stopLossPips = Param(nameof(StopLossPips), 500)
+		_stopLossPips = Param(nameof(StopLossPips), 90)
 			.SetDisplay("Stop Loss (pips)", "Initial stop loss distance", "Risk")
 			.SetNotNegative();
 
-		_trailingStopPips = Param(nameof(TrailingStopPips), 100)
+		_trailingStopPips = Param(nameof(TrailingStopPips), 15)
 			.SetDisplay("Trailing Stop (pips)", "Trailing distance applied after activation", "Risk")
 			.SetNotNegative();
 

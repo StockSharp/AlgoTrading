@@ -55,16 +55,16 @@ public class RectangleTestStrategy : Strategy
 
 	public RectangleTestStrategy()
 	{
-		_emaPeriod = Param(nameof(EmaPeriod), 20)
+		_emaPeriod = Param(nameof(EmaPeriod), 45)
 			.SetDisplay("Fast EMA Period", "Length of the fast EMA", "Indicators");
 
-		_smaPeriod = Param(nameof(SmaPeriod), 50)
+		_smaPeriod = Param(nameof(SmaPeriod), 200)
 			.SetDisplay("Slow SMA Period", "Length of the slow SMA", "Indicators");
 
 		_rangeCandles = Param(nameof(RangeCandles), 10)
 			.SetDisplay("Rectangle Candles", "Number of candles for range detection", "Logic");
 
-		_rectangleSizePercent = Param(nameof(RectangleSizePercent), 10m)
+		_rectangleSizePercent = Param(nameof(RectangleSizePercent), 0.5m)
 			.SetDisplay("Rectangle Size (%)", "Maximum range height in percent", "Logic");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())

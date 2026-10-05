@@ -130,11 +130,11 @@ public class MamacdNovltStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Fast Period", "Fast EMA period for MACD", "Indicators");
 
-		_stopLossPoints = Param(nameof(StopLossPoints), 500)
+		_stopLossPoints = Param(nameof(StopLossPoints), 15)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss", "Stop-loss distance", "Risk");
 
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 500)
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 15)
 			.SetNotNegative()
 			.SetDisplay("Take Profit", "Take-profit distance", "Risk");
 

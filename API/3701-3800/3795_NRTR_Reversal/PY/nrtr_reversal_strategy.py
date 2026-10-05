@@ -21,7 +21,7 @@ class nrtr_reversal_strategy(Strategy):
 
         self._atr_period = self.Param("AtrPeriod", 14) \
             .SetDisplay("ATR Period", "ATR period for trailing", "Indicators")
-        self._atr_multiplier = self.Param("AtrMultiplier", 2.0) \
+        self._atr_multiplier = self.Param("AtrMultiplier", 3.0) \
             .SetDisplay("ATR Multiplier", "ATR multiplier for trailing distance", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromDays(1))) \
             .SetDisplay("Candle Type", "Candle timeframe", "General")

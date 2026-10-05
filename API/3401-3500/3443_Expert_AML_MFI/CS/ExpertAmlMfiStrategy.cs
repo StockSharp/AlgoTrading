@@ -28,7 +28,7 @@ public class ExpertAmlMfiStrategy : Strategy
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
-		_mfiPeriod = Param(nameof(MfiPeriod), 14)
+		_mfiPeriod = Param(nameof(MfiPeriod), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("MFI Period", "MFI period", "Indicators");
 		_mfiLow = Param(nameof(MfiLow), 40m)

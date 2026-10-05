@@ -32,7 +32,7 @@ public class DtRsiExp1Strategy : Strategy
 
 	public DtRsiExp1Strategy()
 	{
-		_rsiPeriod = Param(nameof(RsiPeriod), 14)
+		_rsiPeriod = Param(nameof(RsiPeriod), 47)
 			.SetDisplay("RSI Period", "RSI period", "Indicators");
 
 		_emaPeriod = Param(nameof(EmaPeriod), 20)

@@ -19,13 +19,13 @@ class five_min_rsi_qualified_strategy(Strategy):
     def __init__(self):
         super(five_min_rsi_qualified_strategy, self).__init__()
 
-        self._rsi_period = self.Param("RsiPeriod", 14) \
+        self._rsi_period = self.Param("RsiPeriod", 28) \
             .SetDisplay("RSI Period", "RSI lookback", "Indicators")
-        self._qualification_length = self.Param("QualificationLength", 3) \
+        self._qualification_length = self.Param("QualificationLength", 12) \
             .SetDisplay("Qual Length", "Consecutive candles in extreme zone", "Indicators")
-        self._upper_threshold = self.Param("UpperThreshold", 65.0) \
+        self._upper_threshold = self.Param("UpperThreshold", 55.0) \
             .SetDisplay("Upper", "RSI overbought threshold", "Indicators")
-        self._lower_threshold = self.Param("LowerThreshold", 35.0) \
+        self._lower_threshold = self.Param("LowerThreshold", 45.0) \
             .SetDisplay("Lower", "RSI oversold threshold", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Candle timeframe", "General")

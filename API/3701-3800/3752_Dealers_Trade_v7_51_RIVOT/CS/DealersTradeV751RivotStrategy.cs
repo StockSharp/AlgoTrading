@@ -128,13 +128,13 @@ public class DealersTradeV751RivotStrategy : Strategy
 	/// </summary>
 	public DealersTradeV751RivotStrategy()
 	{
-		_maxTrades = Param(nameof(MaxTrades), 2)
+		_maxTrades = Param(nameof(MaxTrades), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Max Trades", "Maximum number of martingale entries", "Position Sizing")
 		
 		.SetOptimize(1, 10, 1);
 
-		_pipDistance = Param(nameof(PipDistance), 10m)
+		_pipDistance = Param(nameof(PipDistance), 4m)
 		.SetGreaterThanZero()
 		.SetDisplay("Pip Distance", "Distance between averaged entries in pips", "Position Sizing")
 		
@@ -168,7 +168,7 @@ public class DealersTradeV751RivotStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Max Volume", "Upper limit for single-entry volume", "Position Sizing");
 
-		_gapThreshold = Param(nameof(GapThreshold), 15m)
+		_gapThreshold = Param(nameof(GapThreshold), 7m)
 		.SetGreaterThanZero()
 		.SetDisplay("Gap Threshold", "Minimal pivot gap required to enable trading", "Signal")
 		

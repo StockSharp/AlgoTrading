@@ -15,10 +15,10 @@ class rectangle_test_strategy(Strategy):
         super(rectangle_test_strategy, self).__init__()
 
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5)))
-        self._ema_period = self.Param("EmaPeriod", 20)
-        self._sma_period = self.Param("SmaPeriod", 50)
+        self._ema_period = self.Param("EmaPeriod", 45)
+        self._sma_period = self.Param("SmaPeriod", 200)
         self._range_candles = self.Param("RangeCandles", 10)
-        self._rectangle_size_percent = self.Param("RectangleSizePercent", 10.0)
+        self._rectangle_size_percent = self.Param("RectangleSizePercent", 0.5)
 
         self._highs = []
         self._lows = []

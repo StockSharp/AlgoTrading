@@ -15,7 +15,7 @@ class ma_price_cross_strategy(Strategy):
         super(ma_price_cross_strategy, self).__init__()
 
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(60)))
-        self._ma_period = self.Param("MaPeriod", 100)
+        self._ma_period = self.Param("MaPeriod", 160)
 
         self._prev_average = None
         self._prev_close = None

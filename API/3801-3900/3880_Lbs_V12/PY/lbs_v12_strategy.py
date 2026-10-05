@@ -16,7 +16,7 @@ class lbs_v12_strategy(Strategy):
         super(lbs_v12_strategy, self).__init__()
         self._ema_period = self.Param("EmaPeriod", 50) \
             .SetDisplay("EMA Period", "EMA lookback", "Indicators")
-        self._atr_period = self.Param("AtrPeriod", 14) \
+        self._atr_period = self.Param("AtrPeriod", 3) \
             .SetDisplay("ATR Period", "ATR lookback", "Indicators")
         self._atr_multiplier = self.Param("AtrMultiplier", 3.0) \
             .SetDisplay("ATR Multiplier", "Channel width multiplier", "Indicators")

@@ -45,10 +45,10 @@ public class AtRandomFullStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe", "General");
 
-		_maxPositions = Param(nameof(MaxPositions), 3)
+		_maxPositions = Param(nameof(MaxPositions), 5)
 			.SetDisplay("Max Positions", "Maximum number of averaged entries", "Risk");
 
-		_randomSeed = Param(nameof(RandomSeed), 123)
+		_randomSeed = Param(nameof(RandomSeed), 0)
 			.SetDisplay("Random Seed", "Fixed seed for deterministic simulations", "Execution");
 	}
 

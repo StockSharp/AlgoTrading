@@ -40,11 +40,11 @@ public class RPoint250Strategy : Strategy
 
 	public RPoint250Strategy()
 	{
-		_orderVolume = Param(nameof(OrderVolume), 1m)
+		_orderVolume = Param(nameof(OrderVolume), 0.1m)
 			.SetDisplay("Order Volume", "Base volume for market entries.", "Trading")
 			;
 
-		_takeProfitPoints = Param(nameof(TakeProfitPoints), 500m)
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 15m)
 			.SetDisplay("Take Profit Points", "Take profit distance expressed in price points.", "Risk")
 			;
 
@@ -61,7 +61,7 @@ public class RPoint250Strategy : Strategy
 			.SetGreaterThanZero()
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle aggregation used for calculations.", "General");
 	}
 

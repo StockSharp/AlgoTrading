@@ -34,7 +34,7 @@ class three_ma_cross_channel_strategy(Strategy):
             .SetDisplay("Stop Loss", "Distance to limit losses", "Risk Management")
         self._use_channel_stop = self.Param("UseChannelStop", True) \
             .SetDisplay("Channel Exit", "Use Donchian channel boundaries for exits", "Risk Management")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
             .SetDisplay("Candle Type", "Type of candles used by the strategy", "General")
 
         self._prev_fast_above_slow = None

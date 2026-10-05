@@ -30,7 +30,7 @@ class stochastic_martingale_grid_strategy(Strategy):
         self._trailing_stop_pips = self.Param("TrailingStopPips", 20.0) \
             .SetGreaterThanZero() \
             .SetDisplay("Trailing Stop (pips)", "Trailing stop distance applied per entry", "Risk")
-        self._max_orders = self.Param("MaxOrders", 2) \
+        self._max_orders = self.Param("MaxOrders", 7) \
             .SetGreaterThanZero() \
             .SetDisplay("Max Orders", "Maximum number of simultaneous averaging entries", "Martingale")
         self._step_pips = self.Param("StepPips", 7.0) \
@@ -45,9 +45,9 @@ class stochastic_martingale_grid_strategy(Strategy):
         self._slowing = self.Param("Slowing", 3) \
             .SetGreaterThanZero() \
             .SetDisplay("Slowing", "Additional smoothing applied to %K", "Indicators")
-        self._zone_buy = self.Param("ZoneBuy", 50.0) \
+        self._zone_buy = self.Param("ZoneBuy", 30.0) \
             .SetDisplay("Buy Zone", "Upper limit that allows long setups when %K is above %D", "Indicators")
-        self._zone_sell = self.Param("ZoneSell", 50.0) \
+        self._zone_sell = self.Param("ZoneSell", 70.0) \
             .SetDisplay("Sell Zone", "Lower limit that allows short setups when %K is below %D", "Indicators")
 
         self._stochastic = None
