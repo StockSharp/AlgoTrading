@@ -20,8 +20,12 @@ Effective for traders who focus on smooth trends with confirmation. ATR stops ke
 - **Default Values**:
   - `HmaPeriod` = 9
   - `AdxPeriod` = 14
-  - `AtrMultiplier` = 2m
+  - `AdxThreshold` = 25
+  - `AdxExitThreshold` = 20
+  - `AtrMultiplier` = 2
+  - `AtrPeriod` = 14
   - `CandleType` = TimeSpan.FromMinutes(15).TimeFrame()
+    The 25 and 20 in the rules are the defaults of AdxThreshold and AdxExitThreshold. The Hull average turns up when it rises after falling and turns down when it falls after rising; a long closes when it falls and a short when it rises, and either closes once ADX drops below AdxExitThreshold. The stop lies AtrMultiplier ATRs (AtrPeriod) from the entry close and is checked on candle closes. An entry signal against an open position reverses it.
 - **Filters**:
   - Category: Trend
   - Direction: Both

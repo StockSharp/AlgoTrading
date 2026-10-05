@@ -17,8 +17,12 @@ Hull MA展示趋势方向，ADX确认强度。只有当Hull斜率与ADX一致时
 - **默认值**:
   - `HmaPeriod` = 9
   - `AdxPeriod` = 14
-  - `AtrMultiplier` = 2m
+  - `AdxThreshold` = 25
+  - `AdxExitThreshold` = 20
+  - `AtrMultiplier` = 2
+  - `AtrPeriod` = 14
   - `CandleType` = TimeSpan.FromMinutes(15).TimeFrame()
+    规则中的25和20分别是AdxThreshold和AdxExitThreshold的默认值。HMA在下跌后上升即为向上拐头，在上升后下跌即为向下拐头；多头在HMA下跌时平仓，空头在其上升时平仓，ADX跌破AdxExitThreshold时任何持仓都会平仓。止损位于距入场收盘价AtrMultiplier倍ATR（AtrPeriod）处，按K线收盘检查。与持仓方向相反的入场信号会反转持仓。
 - **过滤器**:
   - 类别: Trend
   - 方向: 双向

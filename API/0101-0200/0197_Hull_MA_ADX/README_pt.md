@@ -20,8 +20,12 @@ Eficaz para traders que focam em tendências suaves com confirmação. Stops bas
 - **Valores padrão**:
   - `HmaPeriod` = 9
   - `AdxPeriod` = 14
-  - `AtrMultiplier` = 2m
+  - `AdxThreshold` = 25
+  - `AdxExitThreshold` = 20
+  - `AtrMultiplier` = 2
+  - `AtrPeriod` = 14
   - `CandleType` = TimeSpan.FromMinutes(15).TimeFrame()
+    Os valores 25 e 20 das regras são os padrões de AdxThreshold e AdxExitThreshold. A HMA vira para cima quando sobe depois de cair e para baixo quando cai depois de subir; uma compra é encerrada quando ela cai e uma venda quando sobe, e qualquer posição é encerrada quando o ADX cai abaixo de AdxExitThreshold. O stop fica a AtrMultiplier ATR (AtrPeriod) do fechamento de entrada e é verificado nos fechamentos dos candles. Um sinal de entrada contra uma posição aberta a inverte.
 - **Filtros**:
   - Categoria: Tendência
   - Direção: Ambos

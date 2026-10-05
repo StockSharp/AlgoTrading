@@ -1,48 +1,37 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on Hull Moving Average and ADX.
-/// Enters long when HMA increases and ADX > 25 (strong trend).
-/// Enters short when HMA decreases and ADX > 25 (strong trend).
-/// Exits when ADX < 20 (weakening trend).
+/// Hull MA ADX strategy.
+/// The Hull average turns up when it rises after falling and turns down when it falls after rising. While ADX is above AdxThreshold, a turn up
+/// goes long and a turn down goes short, reversing an opposite position. A long closes when the Hull average falls, a short when it rises,
+/// and either closes once ADX drops below AdxExitThreshold. The stop lies AtrMultiplier ATR from the entry close and is checked on candle closes.
 /// </summary>
 public class HullMaAdxStrategy : Strategy
 {
 	private readonly StrategyParam<int> _hmaPeriod;
 	private readonly StrategyParam<int> _adxPeriod;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _adxThreshold;
+	private readonly StrategyParam<decimal> _adxExitThreshold;
 	private readonly StrategyParam<decimal> _atrMultiplier;
+	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _stopLossPercent;
 
-	private HullMovingAverage _hma;
-	private AverageDirectionalIndex _adx;
-	private AverageTrueRange _atr;
-
-	private decimal _prevHmaValue;
-	private decimal _prevAdxValue;
-	private int _cooldown;
-	private bool _hasPrevSlope;
-	private bool _prevSlopeUp;
+	private decimal? _prevHull;
+	private decimal? _prevPrevHull;
+	private decimal _stopPrice;
 
 	/// <summary>
-	/// Hull Moving Average period.
+	/// Period of the Hull moving average.
 	/// </summary>
 	public int HmaPeriod
 	{
@@ -51,7 +40,7 @@ public class HullMaAdxStrategy : Strategy
 	}
 
 	/// <summary>
-	/// ADX indicator period.
+	/// Period of ADX.
 	/// </summary>
 	public int AdxPeriod
 	{
@@ -60,16 +49,25 @@ public class HullMaAdxStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Bars to wait between trades.
+	/// ADX level required to enter.
 	/// </summary>
-	public int CooldownBars
+	public decimal AdxThreshold
 	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
+		get => _adxThreshold.Value;
+		set => _adxThreshold.Value = value;
 	}
 
 	/// <summary>
-	/// ATR multiplier for stop loss calculation.
+	/// ADX level below which the position closes.
+	/// </summary>
+	public decimal AdxExitThreshold
+	{
+		get => _adxExitThreshold.Value;
+		set => _adxExitThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Stop distance from the entry in ATRs.
 	/// </summary>
 	public decimal AtrMultiplier
 	{
@@ -78,7 +76,16 @@ public class HullMaAdxStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Candle type for strategy.
+	/// Period of the stop ATR.
+	/// </summary>
+	public int AtrPeriod
+	{
+		get => _atrPeriod.Value;
+		set => _atrPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -87,48 +94,38 @@ public class HullMaAdxStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop-loss percentage.
-	/// </summary>
-	public decimal StopLossPercent
-	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="HullMaAdxStrategy"/>.
+	/// Constructor.
 	/// </summary>
 	public HullMaAdxStrategy()
 	{
 		_hmaPeriod = Param(nameof(HmaPeriod), 9)
-			.SetDisplay("HMA Period", "Period for Hull Moving Average calculation", "Indicators")
-			
-			.SetOptimize(5, 15, 2);
+			.SetGreaterThanZero()
+			.SetDisplay("HMA Period", "Period of the Hull moving average", "Indicators");
 
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
-			.SetDisplay("ADX Period", "Period for Average Directional Movement Index", "Indicators")
-			
-			.SetOptimize(10, 20, 2);
+			.SetGreaterThanZero()
+			.SetDisplay("ADX Period", "Period of ADX", "Indicators");
 
-		_cooldownBars = Param(nameof(CooldownBars), 80)
-			.SetRange(1, 200)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "General");
+		_adxThreshold = Param(nameof(AdxThreshold), 25m)
+			.SetDisplay("ADX Threshold", "ADX level required to enter", "Indicators");
+
+		_adxExitThreshold = Param(nameof(AdxExitThreshold), 20m)
+			.SetDisplay("ADX Exit Threshold", "ADX level below which the position closes", "Indicators");
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
-			.SetDisplay("ATR Multiplier", "ATR multiplier for stop loss calculation", "Risk Management");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Timeframe of data for strategy", "General");
-
-		_stopLossPercent = Param(nameof(StopLossPercent), 1.0m)
 			.SetNotNegative()
-			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
-			
-			.SetOptimize(0.5m, 2.0m, 0.5m);
+			.SetDisplay("ATR Multiplier", "Stop distance from the entry in ATRs", "Risk");
+
+		_atrPeriod = Param(nameof(AtrPeriod), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("ATR Period", "Period of the stop ATR", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
-	public override IEnumerable<(Security, DataType)> GetWorkingSecurities()
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
@@ -137,16 +134,9 @@ public class HullMaAdxStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_hma?.Reset();
-		_adx?.Reset();
-		_atr?.Reset();
-
-		_prevHmaValue = 0;
-		_prevAdxValue = 0;
-		_cooldown = 0;
-		_hasPrevSlope = false;
-		_prevSlopeUp = false;
+		_prevHull = null;
+		_prevPrevHull = null;
+		_stopPrice = default;
 	}
 
 	/// <inheritdoc />
@@ -154,88 +144,83 @@ public class HullMaAdxStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
-		_hma = new() { Length = HmaPeriod };
-		_adx = new() { Length = AdxPeriod };
-		_atr = new() { Length = 14 };
+		_prevHull = null;
+		_prevPrevHull = null;
+		_stopPrice = default;
 
-		// Create subscription
+		var hull = new HullMovingAverage { Length = HmaPeriod };
+		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
+		var atr = new AverageTrueRange { Length = AtrPeriod };
+
 		var subscription = SubscribeCandles(CandleType);
-
-		// Process candles with indicators
 		subscription
-				.BindEx(_hma, _adx, _atr, ProcessCandle)
-				.Start();
+			.BindEx(hull, adx, atr, ProcessCandle)
+			.Start();
 
-		// Setup chart visualization
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _hma);
+			DrawIndicator(area, hull);
 			DrawOwnTrades(area);
 
-			// ADX in separate area
-			var adxArea = CreateChartArea();
-			if (adxArea != null)
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
 			{
-				DrawIndicator(adxArea, _adx);
+				DrawIndicator(oscillators, adx);
 			}
 		}
-
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue hmaValue, IIndicatorValue adxValue, IIndicatorValue atrValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue hullValue, IIndicatorValue adxValue, IIndicatorValue atrValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var typedAdx = (AverageDirectionalIndexValue)adxValue;
-
-		if (typedAdx.MovingAverage is not decimal adx)
+		if (!hullValue.IsFormed || !adxValue.IsFormed || !atrValue.IsFormed)
 			return;
 
-		var hma = hmaValue.ToDecimal();
+		if (adxValue is not AverageDirectionalIndexValue { MovingAverage: decimal strength })
+			return;
 
-		// Detect HMA direction
-		bool hmaIncreasing = hma > _prevHmaValue;
-		bool hmaDecreasing = hma < _prevHmaValue;
-		if (!_hasPrevSlope)
+		var hull = hullValue.GetValue<decimal>();
+		var prevHull = _prevHull;
+		var prevPrevHull = _prevPrevHull;
+		_prevPrevHull = prevHull;
+		_prevHull = hull;
+
+		if (prevHull is not decimal last || prevPrevHull is not decimal beforeLast)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		var atr = atrValue.GetValue<decimal>();
+		var close = candle.ClosePrice;
+		var rising = hull > last;
+		var falling = hull < last;
+		var turnsUp = rising && last < beforeLast;
+		var turnsDown = falling && last > beforeLast;
+		var strong = strength > AdxThreshold;
+		var weak = strength < AdxExitThreshold;
+
+		if (turnsUp && strong && Position <= 0)
 		{
-			_hasPrevSlope = true;
-			_prevSlopeUp = hmaIncreasing;
+			BuyMarket(Volume + Math.Abs(Position));
+			_stopPrice = close - AtrMultiplier * atr;
 		}
-
-		if (_cooldown > 0)
-			_cooldown--;
-
-		var slopeTurnedUp = !_prevSlopeUp && hmaIncreasing;
-		var slopeTurnedDown = _prevSlopeUp && hmaDecreasing;
-
-		// Trading logic
-		if (_cooldown == 0 && slopeTurnedUp && Position <= 0)
+		else if (turnsDown && strong && Position >= 0)
 		{
-			BuyMarket();
-			_cooldown = CooldownBars;
+			SellMarket(Volume + Math.Abs(Position));
+			_stopPrice = close + AtrMultiplier * atr;
 		}
-		else if (_cooldown == 0 && slopeTurnedDown && Position >= 0)
+		else if (Position > 0 && (falling || weak || (AtrMultiplier > 0 && close <= _stopPrice)))
 		{
-			SellMarket();
-			_cooldown = CooldownBars;
+			SellMarket(Position);
 		}
-		else if (Position != 0 && (slopeTurnedUp || slopeTurnedDown))
+		else if (Position < 0 && (rising || weak || (AtrMultiplier > 0 && close >= _stopPrice)))
 		{
-			if (Position > 0)
-				SellMarket();
-			else
-				BuyMarket();
-			_cooldown = CooldownBars;
+			BuyMarket(-Position);
 		}
-
-		// Store current values for next candle
-		_prevHmaValue = hma;
-		_prevAdxValue = adx;
-		_prevSlopeUp = hmaIncreasing;
 	}
 }

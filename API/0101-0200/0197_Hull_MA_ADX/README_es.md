@@ -20,8 +20,12 @@ Efectiva para operadores que se centran en tendencias suaves con confirmación. 
 - **Valores predeterminados**:
   - `HmaPeriod` = 9
   - `AdxPeriod` = 14
-  - `AtrMultiplier` = 2m
+  - `AdxThreshold` = 25
+  - `AdxExitThreshold` = 20
+  - `AtrMultiplier` = 2
+  - `AtrPeriod` = 14
   - `CandleType` = TimeSpan.FromMinutes(15).TimeFrame()
+    Los valores 25 y 20 de las reglas son los predeterminados de AdxThreshold y AdxExitThreshold. La HMA gira al alza cuando sube después de bajar y a la baja cuando baja después de subir; un largo se cierra cuando baja y un corto cuando sube, y cualquiera se cierra cuando el ADX cae por debajo de AdxExitThreshold. El stop está a AtrMultiplier ATR (AtrPeriod) del cierre de entrada y se comprueba en los cierres de vela. Una señal de entrada contra una posición abierta la invierte.
 - **Filtros**:
   - Categoría: Tendencia
   - Dirección: Ambos

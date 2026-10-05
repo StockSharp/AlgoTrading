@@ -20,8 +20,12 @@ Hull MAはトレンドを示し、ADXがその強度を確認します。ADXが�
 - **デフォルト値**:
   - `HmaPeriod` = 9
   - `AdxPeriod` = 14
-  - `AtrMultiplier` = 2m
+  - `AdxThreshold` = 25
+  - `AdxExitThreshold` = 20
+  - `AtrMultiplier` = 2
+  - `AtrPeriod` = 14
   - `CandleType` = TimeSpan.FromMinutes(15).TimeFrame()
+    ルール中の25と20はAdxThresholdとAdxExitThresholdの既定値です。HMAは下落の後に上昇すると上向きに、上昇の後に下落すると下向きに転じます。ロングはHMAの下落で、ショートは上昇で決済し、ADXがAdxExitThresholdを下回ればどちらも決済します。ストップはエントリー時の終値からAtrMultiplier倍のATR（AtrPeriod）の位置にあり、足の終値で判定します。 保有ポジションと逆方向のエントリーシグナルはドテンになります。
 - **フィルター**:
   - カテゴリ: トレンド
   - 方向: 両方

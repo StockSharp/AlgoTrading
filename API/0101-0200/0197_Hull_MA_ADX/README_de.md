@@ -20,8 +20,12 @@ Effektiv für Trader, die sich auf gleichmäßige Trends mit Bestätigung konzen
 - **Standardwerte**:
   - `HmaPeriod` = 9
   - `AdxPeriod` = 14
-  - `AtrMultiplier` = 2m
+  - `AdxThreshold` = 25
+  - `AdxExitThreshold` = 20
+  - `AtrMultiplier` = 2
+  - `AtrPeriod` = 14
   - `CandleType` = TimeSpan.FromMinutes(15).TimeFrame()
+    Die Werte 25 und 20 in den Regeln sind die Standardwerte von AdxThreshold und AdxExitThreshold. Der HMA dreht nach oben, wenn er nach einem Rückgang steigt, und nach unten, wenn er nach einem Anstieg fällt; ein Long schließt, wenn er fällt, ein Short, wenn er steigt, und jede Position schließt, sobald ADX unter AdxExitThreshold fällt. Der Stop liegt AtrMultiplier ATR (AtrPeriod) vom Einstiegsschluss entfernt und wird auf Kerzenschlüssen geprüft. Ein Einstiegssignal gegen eine offene Position dreht sie.
 - **Filter**:
   - Kategorie: Trend
   - Richtung: Beide
