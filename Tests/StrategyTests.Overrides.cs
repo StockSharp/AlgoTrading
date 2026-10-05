@@ -6988,6 +6988,65 @@ public abstract partial class StrategyTests
 	public Task S0187_PercentStopWorksBetweenFinishedBars()
 		=> CheckPercentStopBetweenBars("0187_Donchian_MACD", TimeSpan.FromDays(31));
 
+	[TestMethod]
+	[TestCategory("Shard00")]
+	[DataRow(0.02, 0.2, 20, false)]
+	[DataRow(0.03, 0.3, 10, true)]
+	public async Task S0188_SarSideOnAboveAverageVolumeUntilTheSarFlips(double af, double maxAf, int volumePeriod, bool secondary)
+	{
+		var sar = new ParabolicSar { Acceleration = (decimal)af, AccelerationMax = (decimal)maxAf };
+		var volumes = new List<decimal>();
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var sarExits = 0;
+		var violations = new List<string>();
+		await Replay("0188_Parabolic_SAR_Volume", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(0.02m, Convert.ToDecimal(strategy.Parameters["Acceleration"].Value));
+			AreEqual(0.2m, Convert.ToDecimal(strategy.Parameters["MaxAcceleration"].Value));
+			AreEqual(20, strategy.Parameters["VolumePeriod"].Value);
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "Acceleration", af);
+			SetParam(strategy, "MaxAcceleration", maxAf);
+			SetParam(strategy, "VolumePeriod", volumePeriod);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var s = sar.Process(candle);
+				// The strategy only sees candles once the bound indicator returns a value.
+				if (s.IsEmpty) return;
+				decimal? average = volumes.Count == volumePeriod ? volumes.Average() : null;
+				volumes.Add(candle.TotalVolume);
+				if (volumes.Count > volumePeriod) volumes.RemoveAt(0);
+				if (!s.IsFormed || average is not decimal avg) return;
+				var level = s.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var surge = candle.TotalVolume > avg;
+				var position = strategy.Position;
+				if (close > level && surge && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (close < level && surge && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && close < level) { expectedSide = Sides.Sell; expectedVolume = position; sarExits++; }
+				else if (position < 0m && close > level) { expectedSide = Sides.Buy; expectedVolume = -position; sarExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow the SAR side on above-average volume, or close when the SAR flips.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && sarExits > 0, "The fixture must trade both sides and exit on a SAR flip.");
+	}
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";
