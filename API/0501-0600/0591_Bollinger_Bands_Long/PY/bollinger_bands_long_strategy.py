@@ -5,64 +5,74 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan
+from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage
+from StockSharp.Algo.Indicators import BollingerBands, RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
 
 
 class bollinger_bands_long_strategy(Strategy):
+    """
+    Bollinger Bands Long strategy.
+    Long only: buys when the close is below the lower Bollinger band and RSI is below RsiOversold, and closes the long once the close
+    is at or above the middle band.
+    """
+
     def __init__(self):
         super(bollinger_bands_long_strategy, self).__init__()
-        self._fast_ema_period = self.Param("FastEmaPeriod", 120)             .SetDisplay("Fast EMA", "Fast EMA period", "Indicators")
-        self._slow_ema_period = self.Param("SlowEmaPeriod", 450)             .SetDisplay("Slow EMA", "Slow EMA period", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1)))             .SetDisplay("Candle Type", "Type of candles to use", "General")
-        self._prev_fast_ema = 0.0
-        self._prev_slow_ema = 0.0
+        self._bb_length = self.Param("BbLength", 10).SetGreaterThanZero().SetDisplay("BB Length", "Bollinger period", "Bollinger")
+        self._bb_deviation = self.Param("BbDeviation", 2.0).SetGreaterThanZero().SetDisplay("BB Deviation", "Bollinger standard deviation multiplier", "Bollinger")
+        self._rsi_length = self.Param("RsiLength", 14).SetGreaterThanZero().SetDisplay("RSI Length", "RSI period", "RSI")
+        self._rsi_oversold = self.Param("RsiOversold", 30.0).SetDisplay("RSI Oversold", "RSI oversold level", "RSI")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Type of candles to use", "General")
 
-    @property
-    def fast_ema_period(self):
-        return self._fast_ema_period.Value
-    @property
-    def slow_ema_period(self):
-        return self._slow_ema_period.Value
     @property
     def candle_type(self):
         return self._candle_type.Value
 
-    def OnReseted(self):
-        super(bollinger_bands_long_strategy, self).OnReseted()
-        self._prev_fast_ema = 0.0
-        self._prev_slow_ema = 0.0
-
     def OnStarted2(self, time):
         super(bollinger_bands_long_strategy, self).OnStarted2(time)
-        fast_ema = ExponentialMovingAverage()
-        fast_ema.Length = self.fast_ema_period
-        slow_ema = ExponentialMovingAverage()
-        slow_ema.Length = self.slow_ema_period
+
+        bollinger = BollingerBands()
+        bollinger.Length = self._bb_length.Value
+        bollinger.Width = Decimal(self._bb_deviation.Value)
+        rsi = RelativeStrengthIndex()
+        rsi.Length = self._rsi_length.Value
+
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(fast_ema, slow_ema, self.OnProcess).Start()
+        subscription.BindEx(bollinger, rsi, self._process_candle).Start()
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, fast_ema)
-            self.DrawIndicator(area, slow_ema)
+            self.DrawIndicator(area, bollinger)
             self.DrawOwnTrades(area)
+            oscillators = self.CreateChartArea()
+            if oscillators is not None:
+                self.DrawIndicator(oscillators, rsi)
 
-    def OnProcess(self, candle, fast_ema_value, slow_ema_value):
+    def _process_candle(self, candle, bollinger_value, rsi_value):
         if candle.State != CandleStates.Finished:
             return
-        if self._prev_fast_ema == 0 or self._prev_slow_ema == 0:
-            self._prev_fast_ema = float(fast_ema_value)
-            self._prev_slow_ema = float(slow_ema_value)
+
+        if not bollinger_value.IsFormed or not rsi_value.IsFormed:
             return
-        if self._prev_fast_ema <= self._prev_slow_ema and fast_ema_value > slow_ema_value and self.Position <= 0:
-            self.BuyMarket()
-        elif self._prev_fast_ema >= self._prev_slow_ema and fast_ema_value < slow_ema_value and self.Position >= 0:
-            self.SellMarket()
-        self._prev_fast_ema = float(fast_ema_value)
-        self._prev_slow_ema = float(slow_ema_value)
+
+        lower = bollinger_value.LowBand
+        middle = bollinger_value.MovingAverage
+        if lower is None or middle is None:
+            return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
+        close = candle.ClosePrice
+        rsi = rsi_value.GetValue[Decimal](None)
+
+        if self.Position == 0 and close < lower and rsi < Decimal(self._rsi_oversold.Value):
+            self.BuyMarket(self.Volume)
+        elif self.Position > 0 and close >= middle:
+            self.SellMarket(self.Position)
 
     def CreateClone(self):
         return bollinger_bands_long_strategy()
