@@ -21,10 +21,11 @@
 - **Значения по умолчанию**:
   - `StochasticPeriod` = 14
   - `KPeriod` = 3
-  - `DPeriod` = 3
   - `LookbackPeriod` = 20
-  - `DeviationMultiplier` = 2.0m
+  - `DeviationMultiplier` = 2
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
+    Avg и StdDev — среднее и стандартное отклонение последних LookbackPeriod значений %K, включая текущее. Стоп — фиксированный StopLossPercent от цены входа, он отслеживается и между свечами; 0 отключает его. %K — стохастик за первый период, сглаженный за KPeriod свечей; линия %D в правилах не участвует, поэтому DPeriod убран. Сигнал на вход против открытой позиции разворачивает её.
 - **Фильтры**:
   - Категория: Breakout
   - Направление: оба

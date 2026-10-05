@@ -21,10 +21,11 @@ The strategy is designed for intraday traders who want early entry into momentum
 - **Default Values**:
   - `StochasticPeriod` = 14
   - `KPeriod` = 3
-  - `DPeriod` = 3
   - `LookbackPeriod` = 20
-  - `DeviationMultiplier` = 2.0m
+  - `DeviationMultiplier` = 2
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
+    Avg and StdDev are the average and the standard deviation of the last LookbackPeriod %K values, the current one included. The stop is a fixed StopLossPercent of the entry price, watched between candles as well; 0 disables it. %K is the stochastic over the first period smoothed over KPeriod candles; %D plays no part in the rules, so DPeriod is gone. An entry signal against an open position reverses it.
 - **Filters**:
   - Category: Breakout
   - Direction: Both

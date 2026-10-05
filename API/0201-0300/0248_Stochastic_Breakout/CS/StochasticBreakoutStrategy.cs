@@ -1,10 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,28 +12,24 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Stochastic Breakout Strategy.
-/// This strategy identifies breakouts based on the Stochastic oscillator values compared to their historical average.
+/// Stochastic Breakout strategy.
+/// The bands lie DeviationMultiplier standard deviations around the average of the last LookbackPeriod %K values, the current one included.
+/// %K above the upper band goes long and %K below the lower band goes short,
+/// reversing an opposite position. A long closes once %K is back below its average and a short once it is back above it, and a percent stop limits the loss.
 /// </summary>
 public class StochasticBreakoutStrategy : Strategy
 {
 	private readonly StrategyParam<int> _stochasticPeriod;
 	private readonly StrategyParam<int> _kPeriod;
-	private readonly StrategyParam<int> _dPeriod;
 	private readonly StrategyParam<int> _lookbackPeriod;
 	private readonly StrategyParam<decimal> _deviationMultiplier;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
-	
-	private StochasticOscillator _stochastic;
-	private SimpleMovingAverage _stochAverage;
-	private StandardDeviation _stochStdDev;
-	
-	private decimal _prevStochValue;
-	private decimal _prevStochAverage;
-	private decimal _prevStochStdDev;
+
+	private readonly Queue<decimal> _values = [];
 
 	/// <summary>
-	/// Stochastic oscillator period.
+	/// Lookback period of the raw stochastic.
 	/// </summary>
 	public int StochasticPeriod
 	{
@@ -44,7 +38,7 @@ public class StochasticBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stochastic %K smoothing period.
+	/// Smoothing period of %K.
 	/// </summary>
 	public int KPeriod
 	{
@@ -53,16 +47,7 @@ public class StochasticBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stochastic %D smoothing period.
-	/// </summary>
-	public int DPeriod
-	{
-		get => _dPeriod.Value;
-		set => _dPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Lookback period for calculating the average and standard deviation.
+	/// Values of %K the average and the standard deviation span.
 	/// </summary>
 	public int LookbackPeriod
 	{
@@ -71,12 +56,21 @@ public class StochasticBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Deviation multiplier for breakout detection.
+	/// Standard deviations between the average and a band.
 	/// </summary>
 	public decimal DeviationMultiplier
 	{
 		get => _deviationMultiplier.Value;
 		set => _deviationMultiplier.Value = value;
+	}
+
+	/// <summary>
+	/// Stop loss percentage from entry price.
+	/// </summary>
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
 	}
 
 	/// <summary>
@@ -94,32 +88,27 @@ public class StochasticBreakoutStrategy : Strategy
 	public StochasticBreakoutStrategy()
 	{
 		_stochasticPeriod = Param(nameof(StochasticPeriod), 14)
-			.SetDisplay("Stochastic Period", "Stochastic oscillator period", "Stochastic")
-			
-			.SetOptimize(5, 30, 5);
+			.SetGreaterThanZero()
+			.SetDisplay("Stochastic Period", "Lookback period of the raw stochastic", "Indicators");
 
 		_kPeriod = Param(nameof(KPeriod), 3)
-			.SetDisplay("K Period", "Stochastic %K smoothing period", "Stochastic")
-			
-			.SetOptimize(1, 5, 1);
-
-		_dPeriod = Param(nameof(DPeriod), 3)
-			.SetDisplay("D Period", "Stochastic %D smoothing period", "Stochastic")
-			
-			.SetOptimize(1, 5, 1);
+			.SetGreaterThanZero()
+			.SetDisplay("%K Period", "Smoothing period of %K", "Indicators");
 
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
-			.SetDisplay("Lookback Period", "Lookback period for calculating the average and standard deviation", "Breakout")
-			
-			.SetOptimize(10, 50, 5);
+			.SetGreaterThanZero()
+			.SetDisplay("Average Period", "Values of %K the average and the standard deviation span", "Indicators");
 
-		_deviationMultiplier = Param(nameof(DeviationMultiplier), 2.0m)
-			.SetDisplay("Deviation Multiplier", "Deviation multiplier for breakout detection", "Breakout")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
+		_deviationMultiplier = Param(nameof(DeviationMultiplier), 2m)
+			.SetGreaterThanZero()
+			.SetDisplay("Multiplier", "Standard deviations between the average and a band", "Indicators");
+
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Candle type for strategy", "General");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -127,108 +116,93 @@ public class StochasticBreakoutStrategy : Strategy
 	{
 		return [(Security, CandleType)];
 	}
+
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_prevStochValue = 0;
-		_prevStochAverage = 0;
-		_prevStochStdDev = 0;
+		_values.Clear();
 	}
-
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		// Initialize indicators
-		_stochastic = new StochasticOscillator
+		_values.Clear();
+
+		var stochastic = new StochasticOscillator
 		{
 			K = { Length = StochasticPeriod },
-			D = { Length = DPeriod },
+			D = { Length = KPeriod },
 		};
 
-		_stochAverage = new SMA { Length = LookbackPeriod };
-		_stochStdDev = new StandardDeviation { Length = LookbackPeriod };
-		
-		Indicators.Add(_stochastic);
-
-		// Create subscription and bind indicators
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessCandle)
+			.BindEx(stochastic, ProcessCandle)
 			.Start();
 
-		// Setup chart visualization if available
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _stochastic);
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, stochastic);
+			}
 		}
-		
-		// Start position protection
-		StartProtection(
-			takeProfit: new Unit(2, UnitTypes.Percent),
-			stopLoss: new Unit(2, UnitTypes.Percent)
-		);
 	}
 
-	private void ProcessCandle(ICandleMessage candle)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// The high-level handler activates native protection before this callback, also between signal bars.
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochasticValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var stochResult = _stochastic.Process(candle);
-		if (!_stochastic.IsFormed)
+		// The smoothed %K is the moving average the core oscillator exposes as D.
+		if (!stochasticValue.IsFormed || stochasticValue is not IStochasticOscillatorValue { D: decimal value })
 			return;
 
-		var stochTyped = (StochasticOscillatorValue)stochResult;
-		if (stochTyped.K is not decimal stochK)
+		_values.Enqueue(value);
+
+		if (_values.Count > LookbackPeriod)
+			_values.Dequeue();
+
+		if (_values.Count < LookbackPeriod)
 			return;
 
-		// Calculate average and standard deviation of stochastic
-		var stochAvgValue = _stochAverage.Process(new DecimalIndicatorValue(_stochAverage, stochK, candle.ServerTime) { IsFinal = true }).ToDecimal();
-		var tempStdDevValue = _stochStdDev.Process(new DecimalIndicatorValue(_stochStdDev, stochK, candle.ServerTime) { IsFinal = true }).ToDecimal();
-
-		if (!_stochAverage.IsFormed || !_stochStdDev.IsFormed)
-		{
-			_prevStochValue = stochK;
-			_prevStochAverage = stochAvgValue;
-			_prevStochStdDev = tempStdDevValue;
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
-		}
 
-		// First values initialization - skip trading decision
-		if (_prevStochValue == 0)
-		{
-			_prevStochValue = stochK;
-			_prevStochAverage = stochAvgValue;
-			_prevStochStdDev = tempStdDevValue;
-			return;
-		}
+		var mean = _values.Average();
+		var deviation = (decimal)Math.Sqrt((double)_values.Average(v => (v - mean) * (v - mean)));
+		var upper = mean + DeviationMultiplier * deviation;
+		var lower = mean - DeviationMultiplier * deviation;
 
-		// Calculate breakout thresholds
-		var upperThreshold = _prevStochAverage + _prevStochStdDev * DeviationMultiplier;
-		var lowerThreshold = _prevStochAverage - _prevStochStdDev * DeviationMultiplier;
-
-		// Buy when stochastic breaks above upper threshold
-		if (stochK > upperThreshold && _prevStochValue <= upperThreshold && Position == 0)
-		{
-			BuyMarket();
-		}
-		// Sell when stochastic breaks below lower threshold
-		else if (stochK < lowerThreshold && _prevStochValue >= lowerThreshold && Position == 0)
-		{
-			SellMarket();
-		}
-
-		// Store current values for next comparison
-		_prevStochValue = stochK;
-		_prevStochAverage = stochAvgValue;
-		_prevStochStdDev = tempStdDevValue;
+		if (value > upper && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (value < lower && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
+		else if (Position > 0 && value < mean)
+			SellMarket(Position);
+		else if (Position < 0 && value > mean)
+			BuyMarket(-Position);
 	}
 }

@@ -21,10 +21,11 @@ La estrategia está diseñada para traders intradía que quieren entrar temprano
 - **Valores predeterminados**:
   - `StochasticPeriod` = 14
   - `KPeriod` = 3
-  - `DPeriod` = 3
   - `LookbackPeriod` = 20
-  - `DeviationMultiplier` = 2.0m
+  - `DeviationMultiplier` = 2
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
+    Avg y StdDev son la media y la desviación estándar de los últimos LookbackPeriod valores de %K, incluido el actual. El stop es un StopLossPercent fijo del precio de entrada, vigilado también entre velas; 0 lo desactiva. %K es el estocástico del primer periodo suavizado en KPeriod velas; %D no interviene en las reglas, por lo que DPeriod se eliminó. Una señal de entrada contra una posición abierta la invierte.
 - **Filtros**:
   - Categoría: Ruptura
   - Dirección: Ambos

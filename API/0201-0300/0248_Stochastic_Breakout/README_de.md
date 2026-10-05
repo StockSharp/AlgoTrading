@@ -21,10 +21,11 @@ Die Strategie ist für Intraday-Trader konzipiert, die früh in Momentum-Schwün
 - **Standardwerte**:
   - `StochasticPeriod` = 14
   - `KPeriod` = 3
-  - `DPeriod` = 3
   - `LookbackPeriod` = 20
-  - `DeviationMultiplier` = 2.0m
+  - `DeviationMultiplier` = 2
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
+    Avg und StdDev sind Mittelwert und Standardabweichung der letzten LookbackPeriod Werte von %K einschließlich des aktuellen. Der Stop liegt bei festen StopLossPercent vom Einstiegspreis und wird auch zwischen den Kerzen überwacht; 0 schaltet ihn ab. %K ist die Stochastik über die erste Periode, geglättet über KPeriod Kerzen; %D spielt in den Regeln keine Rolle, daher entfällt DPeriod. Ein Einstiegssignal gegen eine offene Position dreht sie.
 - **Filter**:
   - Kategorie: Ausbruch
   - Richtung: Beide

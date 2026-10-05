@@ -4,193 +4,116 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import StochasticOscillator, SimpleMovingAverage, StandardDeviation, StochasticOscillatorValue
+from System import TimeSpan, Decimal, Math
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, Level1Fields
+from StockSharp.BusinessEntities import Subscription
+from StockSharp.Algo.Indicators import StochasticOscillator
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class stochastic_breakout_strategy(Strategy):
     """
-    Stochastic Breakout Strategy.
-    This strategy identifies breakouts based on the Stochastic oscillator values compared to their historical average.
-
+    Stochastic Breakout strategy.
+    The bands lie DeviationMultiplier standard deviations around the average of the last LookbackPeriod %K values, the current one included.
+    %K above the upper band goes long and %K below the lower band goes short,
+    reversing an opposite position. A long closes once %K is back below its average and a short once it is back above it, and a percent stop limits the loss.
     """
 
     def __init__(self):
         super(stochastic_breakout_strategy, self).__init__()
-
-        # Initialize strategy parameters
-        self._stochasticPeriod = self.Param("StochasticPeriod", 14) \
-            .SetDisplay("Stochastic Period", "Stochastic oscillator period", "Stochastic")
-
-        self._kPeriod = self.Param("KPeriod", 3) \
-            .SetDisplay("K Period", "Stochastic %K smoothing period", "Stochastic")
-
-        self._dPeriod = self.Param("DPeriod", 3) \
-            .SetDisplay("D Period", "Stochastic %D smoothing period", "Stochastic")
-
-        self._lookbackPeriod = self.Param("LookbackPeriod", 20) \
-            .SetDisplay("Lookback Period", "Lookback period for calculating the average and standard deviation", "Breakout")
-
-        self._deviationMultiplier = self.Param("DeviationMultiplier", 2.0) \
-            .SetDisplay("Deviation Multiplier", "Deviation multiplier for breakout detection", "Breakout")
-
-        self._candleType = self.Param("CandleType", tf(5)) \
-            .SetDisplay("Candle Type", "Candle type for strategy", "General")
-
-        # Internal indicators and state
-        self._stochastic = None
-        self._stochAverage = None
-        self._stochStdDev = None
-
-        self._prevStochValue = 0
-        self._prevStochAverage = 0
-        self._prevStochStdDev = 0
+        self._stochastic_period = self.Param("StochasticPeriod", 14).SetGreaterThanZero().SetDisplay("Stochastic Period", "Lookback period of the raw stochastic", "Indicators")
+        self._k_period = self.Param("KPeriod", 3).SetGreaterThanZero().SetDisplay("%K Period", "Smoothing period of %K", "Indicators")
+        self._lookback_period = self.Param("LookbackPeriod", 20).SetGreaterThanZero().SetDisplay("Average Period", "Values of %K the average and the standard deviation span", "Indicators")
+        self._deviation_multiplier = self.Param("DeviationMultiplier", 2.0).SetGreaterThanZero().SetDisplay("Multiplier", "Standard deviations between the average and a band", "Indicators")
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0).SetNotNegative().SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._reset_state()
 
     @property
-    def StochasticPeriod(self):
-        """Stochastic oscillator period."""
-        return self._stochasticPeriod.Value
+    def candle_type(self):
+        return self._candle_type.Value
 
-    @StochasticPeriod.setter
-    def StochasticPeriod(self, value):
-        self._stochasticPeriod.Value = value
-
-    @property
-    def KPeriod(self):
-        """Stochastic %K smoothing period."""
-        return self._kPeriod.Value
-
-    @KPeriod.setter
-    def KPeriod(self, value):
-        self._kPeriod.Value = value
-
-    @property
-    def DPeriod(self):
-        """Stochastic %D smoothing period."""
-        return self._dPeriod.Value
-
-    @DPeriod.setter
-    def DPeriod(self, value):
-        self._dPeriod.Value = value
-
-    @property
-    def LookbackPeriod(self):
-        """Lookback period for calculating the average and standard deviation."""
-        return self._lookbackPeriod.Value
-
-    @LookbackPeriod.setter
-    def LookbackPeriod(self, value):
-        self._lookbackPeriod.Value = value
-
-    @property
-    def DeviationMultiplier(self):
-        """Deviation multiplier for breakout detection."""
-        return self._deviationMultiplier.Value
-
-    @DeviationMultiplier.setter
-    def DeviationMultiplier(self, value):
-        self._deviationMultiplier.Value = value
-
-    @property
-    def CandleType(self):
-        """Candle type."""
-        return self._candleType.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candleType.Value = value
-
-    def GetWorkingSecurities(self):
-        """!! REQUIRED!! Return securities and candle types used."""
-        return [(self.Security, self.CandleType)]
+    def _reset_state(self):
+        self._values = []
 
     def OnReseted(self):
         super(stochastic_breakout_strategy, self).OnReseted()
-        self._prevStochValue = 0
-        self._prevStochAverage = 0
-        self._prevStochStdDev = 0
+        self._reset_state()
 
     def OnStarted2(self, time):
-        """Called when the strategy starts."""
         super(stochastic_breakout_strategy, self).OnStarted2(time)
 
-        # Initialize indicators
-        self._stochastic = StochasticOscillator()
-        self._stochastic.K.Length = self.StochasticPeriod
-        self._stochastic.D.Length = self.DPeriod
+        self._reset_state()
 
-        self._stochAverage = SimpleMovingAverage()
-        self._stochAverage.Length = self.LookbackPeriod
-        self._stochStdDev = StandardDeviation()
-        self._stochStdDev.Length = self.LookbackPeriod
+        stochastic = StochasticOscillator()
+        stochastic.K.Length = self._stochastic_period.Value
+        stochastic.D.Length = self._k_period.Value
 
-        self.Indicators.Add(self._stochastic)
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.BindEx(stochastic, self._process_candle).Start()
 
-        # Create subscription and bind indicators
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(self.ProcessStochastic).Start()
+        self.StartProtection(Unit(), Unit(Decimal(self._stop_loss_percent.Value), UnitTypes.Percent), useMarketOrders=True, isLocalStop=True)
 
-        # Setup chart visualization if available
+        # The stop has to see prices between candles, not only at their close.
+        for field in (Level1Fields.BestBidPrice, Level1Fields.BestAskPrice):
+            quotes = Subscription(DataType.Level1, self.Security)
+            quotes.MarketData.BuildField = field
+            self.SubscribeLevel1(quotes).Bind(self._observe_protection_quote).Start()
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, self._stochastic)
             self.DrawOwnTrades(area)
+            oscillators = self.CreateChartArea()
+            if oscillators is not None:
+                self.DrawIndicator(oscillators, stochastic)
 
-        # Start position protection
-        self.StartProtection(
-            takeProfit=Unit(2, UnitTypes.Percent),
-            stopLoss=Unit(2, UnitTypes.Percent)
-        )
-    def ProcessStochastic(self, candle):
+    def _observe_protection_quote(self, quote):
+        # The high-level handler activates native protection before the callback, including between bars.
+        pass
+
+    def _process_candle(self, candle, stochastic_value):
         if candle.State != CandleStates.Finished:
             return
 
-        stoch_result = process_candle(self._stochastic, candle)
-        if not self._stochastic.IsFormed:
+        # The smoothed %K is the moving average the core oscillator exposes as D.
+        if not stochastic_value.IsFormed or stochastic_value.D is None:
             return
 
-        k_val = stoch_result.K
-        if k_val is None:
-            return
-        stochK = float(k_val)
+        value = stochastic_value.D
 
-        # Calculate average and standard deviation of stochastic
-        stochAvgValue = float(process_float(self._stochAverage, stochK, candle.ServerTime, True))
-        tempStdDevValue = float(process_float(self._stochStdDev, stochK, candle.ServerTime, True))
+        period = self._lookback_period.Value
+        self._values.append(value)
+        if len(self._values) > period:
+            self._values.pop(0)
 
-        if not self._stochAverage.IsFormed or not self._stochStdDev.IsFormed:
-            self._prevStochValue = stochK
-            self._prevStochAverage = stochAvgValue
-            self._prevStochStdDev = tempStdDevValue
+        if len(self._values) < period:
             return
 
-        # First values initialization - skip trading decision
-        if self._prevStochValue == 0:
-            self._prevStochValue = stochK
-            self._prevStochAverage = stochAvgValue
-            self._prevStochStdDev = tempStdDevValue
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        # Calculate breakout thresholds
-        upperThreshold = self._prevStochAverage + self._prevStochStdDev * float(self.DeviationMultiplier)
-        lowerThreshold = self._prevStochAverage - self._prevStochStdDev * float(self.DeviationMultiplier)
+        total = Decimal(0)
+        for item in self._values:
+            total += item
+        mean = total / Decimal(period)
+        squares = Decimal(0)
+        for item in self._values:
+            squares += (item - mean) * (item - mean)
+        deviation = Decimal(Math.Sqrt(Decimal.ToDouble(squares / Decimal(period))))
+        multiplier = Decimal(self._deviation_multiplier.Value)
+        upper = mean + multiplier * deviation
+        lower = mean - multiplier * deviation
 
-        # Entry only when flat (no exit logic in CS)
-        if stochK > upperThreshold and self._prevStochValue <= upperThreshold and self.Position == 0:
-            self.BuyMarket()
-        elif stochK < lowerThreshold and self._prevStochValue >= lowerThreshold and self.Position == 0:
-            self.SellMarket()
-
-        # Store current values for next comparison
-        self._prevStochValue = stochK
-        self._prevStochAverage = stochAvgValue
-        self._prevStochStdDev = tempStdDevValue
+        if value > upper and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+        elif value < lower and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
+        elif self.Position > 0 and value < mean:
+            self.SellMarket(self.Position)
+        elif self.Position < 0 and value > mean:
+            self.BuyMarket(-self.Position)
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return stochastic_breakout_strategy()
