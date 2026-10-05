@@ -21,9 +21,12 @@
   - `BollingerPeriod` = 20
   - `BollingerDeviation` = 2.0m
   - `WilliamsRPeriod` = 14
+  - `WilliamsROversold` = -80
+  - `WilliamsROverbought` = -20
   - `AtrPeriod` = 14
   - `AtrMultiplier` = 2.0m
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    Значения -80 и -20 в правилах — это значения по умолчанию WilliamsROversold и WilliamsROverbought. Стоп стоит в AtrMultiplier ATR (AtrPeriod) от цены закрытия при входе и проверяется по закрытиям свечей. Сигнал на вход против открытой позиции разворачивает её.
 - **Фильтры**:
   - Категория: Mean reversion
   - Направление: Оба

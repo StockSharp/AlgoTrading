@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,24 +11,26 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on Bollinger Bands and Williams %R indicators.
-/// Enters long when price is at lower band and Williams %R is oversold (< -80)
-/// Enters short when price is at upper band and Williams %R is overbought (> -20)
+/// Bollinger Williams %R strategy.
+/// A close below the lower band with Williams %R below WilliamsROversold goes long and a close above the upper band with %R above
+/// WilliamsROverbought goes short, reversing an opposite position. The position closes when price returns to the middle band.
+/// The stop lies AtrMultiplier ATR from the entry close and is checked on candle closes.
 /// </summary>
 public class BollingerWilliamsRStrategy : Strategy
 {
 	private readonly StrategyParam<int> _bollingerPeriod;
 	private readonly StrategyParam<decimal> _bollingerDeviation;
 	private readonly StrategyParam<int> _williamsRPeriod;
+	private readonly StrategyParam<decimal> _williamsROversold;
+	private readonly StrategyParam<decimal> _williamsROverbought;
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<decimal> _atrMultiplier;
 	private readonly StrategyParam<DataType> _candleType;
-	private int _cooldown;
-	private bool _wasBelowLower;
-	private bool _wasAboveUpper;
+
+	private decimal _stopPrice;
 
 	/// <summary>
-	/// Bollinger Bands period
+	/// Period of the Bollinger Bands.
 	/// </summary>
 	public int BollingerPeriod
 	{
@@ -40,7 +39,7 @@ public class BollingerWilliamsRStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Bollinger Bands deviation
+	/// Standard deviation multiplier of the bands.
 	/// </summary>
 	public decimal BollingerDeviation
 	{
@@ -49,25 +48,43 @@ public class BollingerWilliamsRStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Williams %R period
+	/// Period of Williams %R.
 	/// </summary>
 	public int WilliamsRPeriod
 	{
 		get => _williamsRPeriod.Value;
 		set => _williamsRPeriod.Value = value;
 	}
-	
+
 	/// <summary>
-	/// ATR period for stop-loss calculation
+	/// Williams %R level for longs.
+	/// </summary>
+	public decimal WilliamsROversold
+	{
+		get => _williamsROversold.Value;
+		set => _williamsROversold.Value = value;
+	}
+
+	/// <summary>
+	/// Williams %R level for shorts.
+	/// </summary>
+	public decimal WilliamsROverbought
+	{
+		get => _williamsROverbought.Value;
+		set => _williamsROverbought.Value = value;
+	}
+
+	/// <summary>
+	/// Period of the stop ATR.
 	/// </summary>
 	public int AtrPeriod
 	{
 		get => _atrPeriod.Value;
 		set => _atrPeriod.Value = value;
 	}
-	
+
 	/// <summary>
-	/// ATR multiplier for stop-loss
+	/// Stop distance from the entry in ATRs.
 	/// </summary>
 	public decimal AtrMultiplier
 	{
@@ -76,7 +93,7 @@ public class BollingerWilliamsRStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Candle type for strategy calculation
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -85,42 +102,38 @@ public class BollingerWilliamsRStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Constructor
+	/// Constructor.
 	/// </summary>
 	public BollingerWilliamsRStrategy()
 	{
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Bollinger Period", "Period for Bollinger Bands", "Indicators")
-			
-			.SetOptimize(15, 30, 5);
+			.SetDisplay("Bollinger Period", "Period of the Bollinger Bands", "Indicators");
 
-		_bollingerDeviation = Param(nameof(BollingerDeviation), 2.0m)
+		_bollingerDeviation = Param(nameof(BollingerDeviation), 2m)
 			.SetGreaterThanZero()
-			.SetDisplay("Bollinger Deviation", "Deviation multiplier for Bollinger Bands", "Indicators")
-			
-			.SetOptimize(1.5m, 2.5m, 0.5m);
+			.SetDisplay("Bollinger Deviation", "Standard deviation multiplier of the bands", "Indicators");
 
 		_williamsRPeriod = Param(nameof(WilliamsRPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("Williams %R Period", "Period for Williams %R indicator", "Indicators")
-			
-			.SetOptimize(10, 20, 2);
-			
+			.SetDisplay("Williams %R Period", "Period of Williams %R", "Indicators");
+
+		_williamsROversold = Param(nameof(WilliamsROversold), -80m)
+			.SetDisplay("Williams %R Oversold", "Williams %R level for longs", "Indicators");
+
+		_williamsROverbought = Param(nameof(WilliamsROverbought), -20m)
+			.SetDisplay("Williams %R Overbought", "Williams %R level for shorts", "Indicators");
+
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("ATR Period", "Period for ATR indicator for stop-loss", "Risk Management")
-			
-			.SetOptimize(10, 20, 2);
-			
-		_atrMultiplier = Param(nameof(AtrMultiplier), 2.0m)
-			.SetGreaterThanZero()
-			.SetDisplay("ATR Multiplier", "Multiplier for ATR-based stop-loss", "Risk Management")
-			
-			.SetOptimize(1.5m, 3.0m, 0.5m);
+			.SetDisplay("ATR Period", "Period of the stop ATR", "Risk");
+
+		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
+			.SetNotNegative()
+			.SetDisplay("ATR Multiplier", "Stop distance from the entry in ATRs", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Timeframe for strategy", "General");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -129,125 +142,81 @@ public class BollingerWilliamsRStrategy : Strategy
 		return [(Security, CandleType)];
 	}
 
-		/// <inheritdoc />
+	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_cooldown = 0;
-		_wasBelowLower = false;
-		_wasAboveUpper = false;
+		_stopPrice = default;
 	}
 
-		/// <inheritdoc />
-		protected override void OnStarted2(DateTime time)
-		{
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
 		base.OnStarted2(time);
 
-		// Create indicators
-		var bollinger = new BollingerBands
-		{
-			Length = BollingerPeriod,
-			Width = BollingerDeviation
-		};
+		_stopPrice = default;
 
-		var williamsR = new WilliamsR { Length = WilliamsRPeriod };
-		
+		var bollinger = new BollingerBands { Length = BollingerPeriod, Width = BollingerDeviation };
+		var williams = new WilliamsR { Length = WilliamsRPeriod };
 		var atr = new AverageTrueRange { Length = AtrPeriod };
 
-		// Subscribe to candles and bind indicators
 		var subscription = SubscribeCandles(CandleType);
-		
 		subscription
-			.BindEx(bollinger, williamsR, atr, ProcessCandle)
+			.BindEx(bollinger, williams, atr, ProcessCandle)
 			.Start();
 
-		// Setup chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, bollinger);
-			
-			// Create a separate area for Williams %R
-			var williamsArea = CreateChartArea();
-			if (williamsArea != null)
-			{
-				DrawIndicator(williamsArea, williamsR);
-			}
-			
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, williams);
+			}
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue, IIndicatorValue williamsRValue, IIndicatorValue atrValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue, IIndicatorValue williamsValue, IIndicatorValue atrValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
-		
-		// Check if strategy is ready to trade
+
+		if (!bollingerValue.IsFormed || !williamsValue.IsFormed || !atrValue.IsFormed)
+			return;
+
+		var bands = (BollingerBandsValue)bollingerValue;
+
+		if (bands.UpBand is not decimal upper || bands.LowBand is not decimal lower || bands.MovingAverage is not decimal middle)
+			return;
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Get additional values from Bollinger Bands
-		var bollingerTyped = (BollingerBandsValue)bollingerValue;
+		var atr = atrValue.GetValue<decimal>();
+		var close = candle.ClosePrice;
+		var williams = williamsValue.GetValue<decimal>();
 
-		var middleBand = bollingerTyped.MovingAverage; // Middle band is returned by default
-		var upperBand = bollingerTyped.UpBand;
-		var lowerBand = bollingerTyped.LowBand;
-		
-		// Current price (close of the candle)
-		var price = candle.ClosePrice;
-
-		// Stop-loss size based on ATR
-		var stopSize = atrValue.ToDecimal() * AtrMultiplier;
-
-		var williamsRValueDec = williamsRValue.ToDecimal();
-		var isBelowLower = price <= lowerBand * 1.001m;
-		var isAboveUpper = price >= upperBand * 0.999m;
-
-		if (_cooldown > 0)
+		if (close < lower && williams < WilliamsROversold && Position <= 0)
 		{
-			_cooldown--;
-			_wasBelowLower = isBelowLower;
-			_wasAboveUpper = isAboveUpper;
-			return;
-		}
-
-		// Trading logic
-		if (!_wasBelowLower && isBelowLower && williamsRValueDec < -45 && Position <= 0)
-		{
-			// Buy signal: price at/below lower band and Williams %R oversold
 			BuyMarket(Volume + Math.Abs(Position));
-			_cooldown = 6;
-			
-			// Set stop-loss
-			var stopPrice = price - stopSize;
-			RegisterOrder(CreateOrder(Sides.Sell, stopPrice, Math.Abs(Position + Volume).Max(Volume)));
+			_stopPrice = close - AtrMultiplier * atr;
 		}
-		else if (!_wasAboveUpper && isAboveUpper && williamsRValueDec > -55 && Position >= 0)
+		else if (close > upper && williams > WilliamsROverbought && Position >= 0)
 		{
-			// Sell signal: price at/above upper band and Williams %R overbought
 			SellMarket(Volume + Math.Abs(Position));
-			_cooldown = 6;
-			
-			// Set stop-loss
-			var stopPrice = price + stopSize;
-			RegisterOrder(CreateOrder(Sides.Buy, stopPrice, Math.Abs(Position + Volume).Max(Volume)));
+			_stopPrice = close + AtrMultiplier * atr;
 		}
-		// Exit conditions
-		else if (price >= middleBand && Position < 0)
+		else if (Position > 0 && (close >= middle || (AtrMultiplier > 0 && close <= _stopPrice)))
 		{
-			// Exit short position when price returns to middle band
-			BuyMarket(Math.Abs(Position));
-		}
-		else if (price <= middleBand && Position > 0)
-		{
-			// Exit long position when price returns to middle band
 			SellMarket(Position);
 		}
-
-		_wasBelowLower = isBelowLower;
-		_wasAboveUpper = isAboveUpper;
+		else if (Position < 0 && (close <= middle || (AtrMultiplier > 0 && close >= _stopPrice)))
+		{
+			BuyMarket(-Position);
+		}
 	}
 }

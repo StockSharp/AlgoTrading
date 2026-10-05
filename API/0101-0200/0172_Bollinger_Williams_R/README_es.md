@@ -21,9 +21,12 @@ La mejor opción para traders de expansión de volatilidad. Los stops de ATR man
   - `BollingerPeriod` = 20
   - `BollingerDeviation` = 2.0m
   - `WilliamsRPeriod` = 14
+  - `WilliamsROversold` = -80
+  - `WilliamsROverbought` = -20
   - `AtrPeriod` = 14
   - `AtrMultiplier` = 2.0m
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    Los valores -80 y -20 de las reglas son los predeterminados de WilliamsROversold y WilliamsROverbought. El stop está a AtrMultiplier ATR (AtrPeriod) del cierre de entrada y se comprueba en los cierres de vela. Una señal de entrada contra una posición abierta la invierte.
 - **Filtros**:
   - Categoría: Reversión a la media
   - Dirección: Ambos

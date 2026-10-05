@@ -21,9 +21,12 @@ Am besten für Volatilitätsexpansions-Trader. ATR-Stops handhaben ungünstige W
   - `BollingerPeriod` = 20
   - `BollingerDeviation` = 2.0m
   - `WilliamsRPeriod` = 14
+  - `WilliamsROversold` = -80
+  - `WilliamsROverbought` = -20
   - `AtrPeriod` = 14
   - `AtrMultiplier` = 2.0m
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    Die Werte -80 und -20 in den Regeln sind die Standardwerte von WilliamsROversold und WilliamsROverbought. Der Stop liegt AtrMultiplier ATR (AtrPeriod) vom Einstiegsschluss entfernt und wird auf Kerzenschlüssen geprüft. Ein Einstiegssignal gegen eine offene Position dreht sie.
 - **Filter**:
   - Kategorie: Mean Reversion
   - Richtung: Beide
