@@ -7,7 +7,7 @@ ADX と CCI インジケーターに基づく戦略。ADX > 25 かつ CCI が売
 
 ADX はトレンドに強さがあるかどうかを評価し、CCI は押し目後のエントリータイミングを特定します。ロングとショートは ADX の方向に従います。
 
-押し目でエントリーするモメンタムトレーダー向けです。ATR の倍数がリスクを管理します。
+押し目でエントリーするモメンタムトレーダー向けです。パーセントストップがリスクを管理します。
 
 ## 詳細
 
@@ -19,9 +19,13 @@ ADX はトレンドに強さがあるかどうかを評価し、CCI は押し目
 - **ストップ**: `StopLossPercent` を使用したパーセントベース
 - **デフォルト値**:
   - `AdxPeriod` = 14
+  - `AdxThreshold` = 25
   - `CciPeriod` = 20
-  - `StopLossPercent` = 2.0m
+  - `CciOversold` = -100
+  - `CciOverbought` = 100
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    ルール中の25、-100、100はAdxThreshold、CciOversold、CciOverboughtの既定値です。ADXがAdxThresholdを下回るとトレンドが弱まったとみなします。さらにロングはCCIがゼロまで上昇したとき、ショートはゼロまで下落したときにも決済します。 保有ポジションと逆方向のエントリーシグナルはドテンになります。
 - **フィルター**:
   - カテゴリ: 平均回帰
   - 方向: 両方

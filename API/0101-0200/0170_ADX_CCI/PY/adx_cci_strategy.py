@@ -4,174 +4,93 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from System import TimeSpan, Decimal
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, Level1Fields
+from StockSharp.BusinessEntities import Subscription
 from StockSharp.Algo.Indicators import AverageDirectionalIndex, CommodityChannelIndex
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class adx_cci_strategy(Strategy):
     """
-    Strategy based on ADX and CCI indicators.
-    Enters long when CCI crosses below -40 from above.
-    Enters short when CCI crosses above 40 from below.
-    Exits when ADX weakens or CCI crosses zero.
+    ADX CCI strategy.
+    While ADX is above AdxThreshold, CCI below CciOversold goes long and CCI above CciOverbought goes short, reversing an opposite position.
+    The position closes when the trend weakens, ADX falling below AdxThreshold, or when CCI crosses the zero line, and a percent stop
+    limits the loss.
     """
 
     def __init__(self):
         super(adx_cci_strategy, self).__init__()
-
-        self._adx_period = self.Param("AdxPeriod", 14) \
-            .SetDisplay("ADX Period", "Period for ADX indicator", "Indicators")
-
-        self._cci_period = self.Param("CciPeriod", 20) \
-            .SetDisplay("CCI Period", "Period for CCI indicator", "Indicators")
-
-        self._adx_threshold = self.Param("AdxThreshold", 18.0) \
-            .SetRange(10.0, 40.0) \
-            .SetDisplay("ADX Threshold", "Minimum ADX for trend entries", "Indicators")
-
-        self._cooldown_bars = self.Param("CooldownBars", 120) \
-            .SetRange(5, 500) \
-            .SetDisplay("Cooldown Bars", "Bars between trades", "General")
-
-        self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
-            .SetDisplay("Stop Loss %", "Stop loss as percentage of entry price", "Risk Management")
-
-        self._candle_type = self.Param("CandleType", tf(5)) \
-            .SetDisplay("Candle Type", "Timeframe for strategy", "General")
-
-        self._prev_cci_value = 0.0
-        self._is_first_value = True
-        self._cooldown = 0
+        self._adx_period = self.Param("AdxPeriod", 14).SetGreaterThanZero().SetDisplay("ADX Period", "Period of ADX", "Indicators")
+        self._adx_threshold = self.Param("AdxThreshold", 25.0).SetDisplay("ADX Threshold", "ADX level of a strong trend", "Indicators")
+        self._cci_period = self.Param("CciPeriod", 20).SetGreaterThanZero().SetDisplay("CCI Period", "Period of CCI", "Indicators")
+        self._cci_oversold = self.Param("CciOversold", -100.0).SetDisplay("CCI Oversold", "CCI level for longs", "Indicators")
+        self._cci_overbought = self.Param("CciOverbought", 100.0).SetDisplay("CCI Overbought", "CCI level for shorts", "Indicators")
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0).SetNotNegative().SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles to use", "General")
 
     @property
-    def AdxPeriod(self):
-        return self._adx_period.Value
-
-    @AdxPeriod.setter
-    def AdxPeriod(self, value):
-        self._adx_period.Value = value
-
-    @property
-    def CciPeriod(self):
-        return self._cci_period.Value
-
-    @CciPeriod.setter
-    def CciPeriod(self, value):
-        self._cci_period.Value = value
-
-    @property
-    def AdxThreshold(self):
-        return self._adx_threshold.Value
-
-    @AdxThreshold.setter
-    def AdxThreshold(self, value):
-        self._adx_threshold.Value = value
-
-    @property
-    def CooldownBars(self):
-        return self._cooldown_bars.Value
-
-    @CooldownBars.setter
-    def CooldownBars(self, value):
-        self._cooldown_bars.Value = value
-
-    @property
-    def StopLossPercent(self):
-        return self._stop_loss_percent.Value
-
-    @StopLossPercent.setter
-    def StopLossPercent(self, value):
-        self._stop_loss_percent.Value = value
-
-    @property
-    def CandleType(self):
+    def candle_type(self):
         return self._candle_type.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candle_type.Value = value
-
-    def OnReseted(self):
-        super(adx_cci_strategy, self).OnReseted()
-        self._prev_cci_value = 0.0
-        self._is_first_value = True
-        self._cooldown = 0
 
     def OnStarted2(self, time):
         super(adx_cci_strategy, self).OnStarted2(time)
 
-        # Create indicators
         adx = AverageDirectionalIndex()
-        adx.Length = self.AdxPeriod
+        adx.Length = self._adx_period.Value
         cci = CommodityChannelIndex()
-        cci.Length = self.CciPeriod
+        cci.Length = self._cci_period.Value
 
-        # Reset state
-        self._prev_cci_value = 0.0
-        self._is_first_value = True
-        self._cooldown = 0
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.BindEx(adx, cci, self._process_candle).Start()
 
-        # Subscribe to candles and bind indicators
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription.BindEx(adx, cci, self.ProcessCandle).Start()
+        self.StartProtection(Unit(), Unit(Decimal(self._stop_loss_percent.Value), UnitTypes.Percent), useMarketOrders=True, isLocalStop=True)
 
-        # Setup chart visualization if available
+        # The stop has to see prices between candles, not only at their close.
+        for field in (Level1Fields.BestBidPrice, Level1Fields.BestAskPrice):
+            quotes = Subscription(DataType.Level1, self.Security)
+            quotes.MarketData.BuildField = field
+            self.SubscribeLevel1(quotes).Bind(self._observe_protection_quote).Start()
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, adx)
-
-            cci_area = self.CreateChartArea()
-            if cci_area is not None:
-                self.DrawIndicator(cci_area, cci)
-
             self.DrawOwnTrades(area)
+            oscillators = self.CreateChartArea()
+            if oscillators is not None:
+                self.DrawIndicator(oscillators, adx)
+                self.DrawIndicator(oscillators, cci)
 
-    def ProcessCandle(self, candle, adx_value, cci_value):
+    def _observe_protection_quote(self, quote):
+        # The high-level handler activates native protection before the callback, including between bars.
+        pass
+
+    def _process_candle(self, candle, adx_value, cci_value):
         if candle.State != CandleStates.Finished:
+            return
+
+        if not adx_value.IsFormed or not cci_value.IsFormed or adx_value.MovingAverage is None:
             return
 
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        # For the first value, just store and skip trading
-        if self._is_first_value:
-            self._prev_cci_value = float(cci_value)
-            self._is_first_value = False
-            return
+        strength = adx_value.MovingAverage
+        threshold = Decimal(self._adx_threshold.Value)
+        cci = cci_value.GetValue[Decimal](None)
+        strong = strength > threshold
+        weak = strength < threshold
 
-        cci_dec = float(cci_value)
-
-        adx_ma = float(adx_value.MovingAverage) if adx_value.MovingAverage is not None else 0.0
-
-        if self._cooldown > 0:
-            self._cooldown -= 1
-            self._prev_cci_value = cci_dec
-            return
-
-        # Trading logic
-        if self.Position == 0:
-            if self._prev_cci_value >= -40 and cci_dec < -40:
-                self.BuyMarket()
-                self._cooldown = self.CooldownBars
-            elif self._prev_cci_value <= 40 and cci_dec > 40:
-                self.SellMarket()
-                self._cooldown = self.CooldownBars
-        elif adx_ma < self.AdxThreshold * 0.8 or (self.Position > 0 and cci_dec > 0) or (self.Position < 0 and cci_dec < 0):
-            # Trend is weakening - close any position
-            if self.Position > 0:
-                self.SellMarket()
-                self._cooldown = self.CooldownBars
-            elif self.Position < 0:
-                self.BuyMarket()
-                self._cooldown = self.CooldownBars
-
-        # Store for the next iteration
-        self._prev_cci_value = cci_dec
+        zero = Decimal(0)
+        if strong and cci < Decimal(self._cci_oversold.Value) and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+        elif strong and cci > Decimal(self._cci_overbought.Value) and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
+        elif self.Position > 0 and (weak or cci >= zero):
+            self.SellMarket(self.Position)
+        elif self.Position < 0 and (weak or cci <= zero):
+            self.BuyMarket(-self.Position)
 
     def CreateClone(self):
         return adx_cci_strategy()

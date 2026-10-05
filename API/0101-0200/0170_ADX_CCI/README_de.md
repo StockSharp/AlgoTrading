@@ -7,7 +7,7 @@ Tests zeigen eine durchschnittliche Jahresrendite von etwa 97%. Die Strategie fu
 
 Der ADX bewertet, ob ein Trend Stärke hat, und der CCI identifiziert den Einstiegszeitpunkt nach Rücksetzern. Longs und Shorts folgen der ADX-Richtung.
 
-Ausgerichtet auf Momentum-Trader, die bei Rücksetzern einsteigen. ATR-Vielfache steuern das Risiko.
+Ausgerichtet auf Momentum-Trader, die bei Rücksetzern einsteigen. Ein prozentualer Stop steuert das Risiko.
 
 ## Details
 
@@ -19,9 +19,13 @@ Ausgerichtet auf Momentum-Trader, die bei Rücksetzern einsteigen. ATR-Vielfache
 - **Stops**: Prozentbasiert mit `StopLossPercent`
 - **Standardwerte**:
   - `AdxPeriod` = 14
+  - `AdxThreshold` = 25
   - `CciPeriod` = 20
-  - `StopLossPercent` = 2.0m
+  - `CciOversold` = -100
+  - `CciOverbought` = 100
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    Die Werte 25, -100 und 100 in den Regeln sind die Standardwerte von AdxThreshold, CciOversold und CciOverbought. Der Trend schwächt sich ab, wenn ADX unter AdxThreshold fällt; ein Long schließt außerdem, wenn CCI auf null steigt, ein Short, wenn er auf null fällt. Ein Einstiegssignal gegen eine offene Position dreht sie.
 - **Filter**:
   - Kategorie: Mean Reversion
   - Richtung: Beide
