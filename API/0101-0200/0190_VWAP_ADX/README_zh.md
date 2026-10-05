@@ -5,7 +5,7 @@
 
 测试表明年均收益约为 157%，该策略在加密市场表现最佳。
 
-VWAP作为会话基准，ADX衡量趋势强度。价格偏离VWAP且ADX显示强势时入场。适合日内趋势交易者，止损使用ATR倍数。
+VWAP作为会话基准，ADX衡量趋势强度。价格偏离VWAP且ADX显示强势时入场。适合日内趋势交易者，止损设在距入场价固定百分比处。
 
 ## 细节
 - **入场条件**:
@@ -15,9 +15,12 @@ VWAP作为会话基准，ADX衡量趋势强度。价格偏离VWAP且ADX显示强
 - **离场条件**: ADX跌破阈值
 - **止损**: 百分比止损，使用 `StopLossPercent`
 - **默认值**:
-  - `StopLossPercent` = 2m
+  - `StopLossPercent` = 2
   - `AdxPeriod` = 14
+  - `AdxThreshold` = 25
+  - `AdxExitThreshold` = 20
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    市场全天候交易，因此时段VWAP在每个UTC日重新开始，并按成交量加权每根K线的典型价格。规则中的25和20分别是AdxThreshold和AdxExitThreshold的默认值。与持仓方向相反的入场信号会反转持仓。
 - **过滤器**:
   - 类别: Mean reversion
   - 方向: 双向

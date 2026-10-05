@@ -7047,6 +7047,73 @@ public abstract partial class StrategyTests
 		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && sarExits > 0, "The fixture must trade both sides and exit on a SAR flip.");
 	}
 
+	[TestMethod]
+	[TestCategory("Shard02")]
+	[DataRow(14, 25.0, 20.0, false)]
+	[DataRow(10, 22.0, 18.0, true)]
+	public async Task S0190_DailyVwapSideUnderStrongAdxUntilAdxDropsBelowTheExitLevel(int adxPeriod, double threshold, double exitThreshold, bool secondary)
+	{
+		var adx = new AverageDirectionalIndex { Length = adxPeriod };
+		DateTime? day = null;
+		decimal priceVolume = 0m, volume = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var reversals = 0;
+		var weakExits = 0;
+		var violations = new List<string>();
+		await Replay("0190_VWAP_ADX", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(14, strategy.Parameters["AdxPeriod"].Value);
+			AreEqual(25m, Convert.ToDecimal(strategy.Parameters["AdxThreshold"].Value));
+			AreEqual(20m, Convert.ToDecimal(strategy.Parameters["AdxExitThreshold"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "AdxPeriod", adxPeriod);
+			SetParam(strategy, "AdxThreshold", threshold);
+			SetParam(strategy, "AdxExitThreshold", exitThreshold);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var a = adx.Process(candle);
+				// The strategy only sees candles once the bound indicator returns a value.
+				if (a.IsEmpty) return;
+				if (day != candle.OpenTime.Date) { day = candle.OpenTime.Date; priceVolume = 0m; volume = 0m; }
+				priceVolume += (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3 * candle.TotalVolume;
+				volume += candle.TotalVolume;
+				if (!a.IsFormed || volume <= 0m || a is not AverageDirectionalIndexValue { MovingAverage: decimal strength }) return;
+				var vwap = priceVolume / volume;
+				var close = candle.ClosePrice;
+				var strong = strength > (decimal)threshold;
+				var position = strategy.Position;
+				if (strong && close > vwap && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; if (position != 0m) reversals++; }
+				else if (strong && close < vwap && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; if (position != 0m) reversals++; }
+				else if (position != 0m && strength < (decimal)exitThreshold) { expectedSide = position > 0m ? Sides.Sell : Sides.Buy; expectedVolume = Math.Abs(position); weakExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow the close against the UTC-day VWAP under strong ADX, or close when ADX drops below the exit level.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && weakExits > 0 && reversals > 0, "The fixture must trade both sides, reverse and exit when ADX drops.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard02")]
+	public Task S0190_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0190_VWAP_ADX", TimeSpan.FromDays(31));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";
