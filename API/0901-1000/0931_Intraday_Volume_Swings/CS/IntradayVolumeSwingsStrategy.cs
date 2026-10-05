@@ -10,60 +10,20 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Intraday volume swing based breakout strategy.
-/// Buys when price pushes into swing high regions and sells on swing low
-/// regions.
+/// Intraday volume swings strategy.
+/// A swing high forms when three consecutive candles make higher highs on rising volume, a swing low when three make lower lows
+/// on rising volume. While the run continues the swing region spans the high and low of its candles. Once it ends, the most
+/// extreme region of the day is kept, and the previous day's regions stay active as well. Price pushing up into a high swing
+/// region (from the current or previous day) goes long, price pushing down into a low swing region goes short, reversing an
+/// opposite position. With RegionMustClose the candle has to close inside the region, otherwise touching it is enough.
 /// </summary>
-public class IntradayVolumeSwingsStrategy : Strategy {
+public class IntradayVolumeSwingsStrategy : Strategy
+{
 	private readonly StrategyParam<bool> _regionMustClose;
 	private readonly StrategyParam<DataType> _candleType;
 
-	public bool RegionMustClose {
-		get => _regionMustClose.Value;
-		set => _regionMustClose.Value = value;
-	}
-
-	public DataType CandleType {
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	public IntradayVolumeSwingsStrategy() {
-		_regionMustClose =
-			Param(nameof(RegionMustClose), true)
-				.SetDisplay("Region Must Close", "Close in region to trigger",
-							"General");
-
-		_candleType =
-			Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-				.SetDisplay("Candle Type", "Type of candles", "General");
-	}
-
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)>
-	GetWorkingSecurities() {
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
-	protected override void OnReseted() {
-		base.OnReseted();
-
-		_currentDay = default;
-		_prevOpen = _prevClose = _high1 = _high2 = _low1 = _low2 = _volume1 =
-			0m;
-		_lowBar1 = _lowBar2 = _highBar1 = _highBar2 = false;
-		_prevSwingLow = _prevSwingHigh = false;
-		_currentSwingLowTop = _currentSwingLowBottom = _currentSwingHighTop =
-			_currentSwingHighBottom = null;
-		_dailySwingLowTop = _dailySwingLowBottom = _dailySwingHighTop =
-			_dailySwingHighBottom = null;
-		_prevDaySwingLowTop = _prevDaySwingLowBottom = _prevDaySwingHighTop =
-			_prevDaySwingHighBottom = null;
-	}
-
 	private DateTime _currentDay;
-	private decimal _prevOpen;
+	private int _barCount;
 	private decimal _prevClose;
 	private decimal _high1;
 	private decimal _high2;
@@ -76,105 +36,173 @@ public class IntradayVolumeSwingsStrategy : Strategy {
 	private bool _highBar2;
 	private bool _prevSwingLow;
 	private bool _prevSwingHigh;
-	private decimal? _currentSwingLowTop;
-	private decimal? _currentSwingLowBottom;
-	private decimal? _currentSwingHighTop;
-	private decimal? _currentSwingHighBottom;
-	private decimal? _dailySwingLowTop;
-	private decimal? _dailySwingLowBottom;
-	private decimal? _dailySwingHighTop;
-	private decimal? _dailySwingHighBottom;
-	private decimal? _prevDaySwingLowTop;
-	private decimal? _prevDaySwingLowBottom;
-	private decimal? _prevDaySwingHighTop;
-	private decimal? _prevDaySwingHighBottom;
+	private decimal? _runLowTop;
+	private decimal? _runLowBottom;
+	private decimal? _runHighTop;
+	private decimal? _runHighBottom;
+	private decimal? _dayLowTop;
+	private decimal? _dayLowBottom;
+	private decimal? _dayHighTop;
+	private decimal? _dayHighBottom;
+	private decimal? _prevDayLowTop;
+	private decimal? _prevDayLowBottom;
+	private decimal? _prevDayHighTop;
+	private decimal? _prevDayHighBottom;
+
+	/// <summary>
+	/// Require the candle to close inside the region to trigger.
+	/// </summary>
+	public bool RegionMustClose
+	{
+		get => _regionMustClose.Value;
+		set => _regionMustClose.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
+	/// </summary>
+	public IntradayVolumeSwingsStrategy()
+	{
+		_regionMustClose = Param(nameof(RegionMustClose), true)
+			.SetDisplay("Region Must Close", "Candle must close inside the region to trigger", "General");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
+	}
 
 	/// <inheritdoc />
-	protected override void OnStarted2(DateTime time) {
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		ResetState();
+	}
+
+	private void ResetState()
+	{
+		_currentDay = default;
+		_barCount = 0;
+		_prevClose = _high1 = _high2 = _low1 = _low2 = _volume1 = 0m;
+		_lowBar1 = _lowBar2 = _highBar1 = _highBar2 = false;
+		_prevSwingLow = _prevSwingHigh = false;
+		_runLowTop = _runLowBottom = _runHighTop = _runHighBottom = null;
+		_dayLowTop = _dayLowBottom = _dayHighTop = _dayHighBottom = null;
+		_prevDayLowTop = _prevDayLowBottom = _prevDayHighTop = _prevDayHighBottom = null;
+	}
+
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
 		base.OnStarted2(time);
 
+		ResetState();
+
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		subscription
+			.Bind(ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
-		if (area != null) {
+		if (area != null)
+		{
 			DrawCandles(area, subscription);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle) {
+	private void ProcessCandle(ICandleMessage candle)
+	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
 		var day = candle.OpenTime.Date;
-		var isNewDay = _currentDay != day;
-		if (isNewDay) {
+		if (_currentDay != day)
+		{
+			if (_currentDay != default)
+			{
+				_prevDayLowTop = _dayLowTop;
+				_prevDayLowBottom = _dayLowBottom;
+				_prevDayHighTop = _dayHighTop;
+				_prevDayHighBottom = _dayHighBottom;
+			}
+
 			_currentDay = day;
-			_prevDaySwingLowTop = _dailySwingLowTop;
-			_prevDaySwingLowBottom = _dailySwingLowBottom;
-			_prevDaySwingHighTop = _dailySwingHighTop;
-			_prevDaySwingHighBottom = _dailySwingHighBottom;
-			_dailySwingLowTop = _dailySwingLowBottom = null;
-			_dailySwingHighTop = _dailySwingHighBottom = null;
+			_dayLowTop = _dayLowBottom = _dayHighTop = _dayHighBottom = null;
 		}
 
-		var increasingVolume = candle.TotalVolume > _volume1;
-		var lowerLow = candle.LowPrice < _low1;
-		var higherHigh = candle.HighPrice > _high1;
-
-		var lowBar = increasingVolume && lowerLow;
-		var highBar = increasingVolume && higherHigh;
+		var hasHistory = _barCount > 0;
+		var risingVolume = hasHistory && candle.TotalVolume > _volume1;
+		var lowBar = risingVolume && candle.LowPrice < _low1;
+		var highBar = risingVolume && candle.HighPrice > _high1;
 
 		var swingLow = lowBar && _lowBar1 && _lowBar2;
 		var swingHigh = highBar && _highBar1 && _highBar2;
 
-		var hh3 = Math.Max(candle.HighPrice, Math.Max(_high1, _high2));
-		var ll3 = Math.Min(candle.LowPrice, Math.Min(_low1, _low2));
+		var top3 = Math.Max(candle.HighPrice, Math.Max(_high1, _high2));
+		var bottom3 = Math.Min(candle.LowPrice, Math.Min(_low1, _low2));
 
-		if (swingLow && !_prevSwingLow) {
-			_currentSwingLowTop = hh3;
-			_currentSwingLowBottom = ll3;
-		} else if (swingLow && _prevSwingLow) {
-			_currentSwingLowTop =
-				Math.Max(_currentSwingLowTop ?? hh3, candle.HighPrice);
-			_currentSwingLowBottom =
-				Math.Min(_currentSwingLowBottom ?? ll3, candle.LowPrice);
+		if (swingLow)
+		{
+			_runLowTop = _prevSwingLow && _runLowTop is decimal t ? Math.Max(t, candle.HighPrice) : top3;
+			_runLowBottom = _prevSwingLow && _runLowBottom is decimal b ? Math.Min(b, candle.LowPrice) : bottom3;
 		}
-
-		if (swingHigh && !_prevSwingHigh) {
-			_currentSwingHighTop = hh3;
-			_currentSwingHighBottom = ll3;
-		} else if (swingHigh && _prevSwingHigh) {
-			_currentSwingHighTop =
-				Math.Max(_currentSwingHighTop ?? hh3, candle.HighPrice);
-			_currentSwingHighBottom =
-				Math.Min(_currentSwingHighBottom ?? ll3, candle.LowPrice);
-		}
-
-		if (_prevSwingLow && !swingLow && _currentSwingLowBottom.HasValue) {
-			if (!_dailySwingLowBottom.HasValue ||
-				_currentSwingLowBottom < _dailySwingLowBottom) {
-				_dailySwingLowTop = _currentSwingLowTop;
-				_dailySwingLowBottom = _currentSwingLowBottom;
+		else if (_prevSwingLow && _runLowTop is decimal lowTop && _runLowBottom is decimal lowBottom)
+		{
+			// Keep the lowest swing low region of the day.
+			if (_dayLowBottom is not decimal dayBottom || lowBottom < dayBottom)
+			{
+				_dayLowTop = lowTop;
+				_dayLowBottom = lowBottom;
 			}
-			_currentSwingLowTop = _currentSwingLowBottom = null;
+
+			_runLowTop = _runLowBottom = null;
 		}
 
-		if (_prevSwingHigh && !swingHigh && _currentSwingHighTop.HasValue) {
-			if (!_dailySwingHighTop.HasValue ||
-				_currentSwingHighTop > _dailySwingHighTop) {
-				_dailySwingHighTop = _currentSwingHighTop;
-				_dailySwingHighBottom = _currentSwingHighBottom;
+		if (swingHigh)
+		{
+			_runHighTop = _prevSwingHigh && _runHighTop is decimal t ? Math.Max(t, candle.HighPrice) : top3;
+			_runHighBottom = _prevSwingHigh && _runHighBottom is decimal b ? Math.Min(b, candle.LowPrice) : bottom3;
+		}
+		else if (_prevSwingHigh && _runHighTop is decimal highTop && _runHighBottom is decimal highBottom)
+		{
+			// Keep the highest swing high region of the day.
+			if (_dayHighTop is not decimal dayTop || highTop > dayTop)
+			{
+				_dayHighTop = highTop;
+				_dayHighBottom = highBottom;
 			}
-			_currentSwingHighTop = _currentSwingHighBottom = null;
+
+			_runHighTop = _runHighBottom = null;
 		}
 
-		CheckRegions(candle);
+		if (hasHistory && IsFormedAndOnlineAndAllowTrading())
+		{
+			var goLong = EntersHighRegion(candle, _dayHighBottom) || EntersHighRegion(candle, _prevDayHighBottom);
+			var goShort = EntersLowRegion(candle, _dayLowTop) || EntersLowRegion(candle, _prevDayLowTop);
 
-		_volume1 = candle.TotalVolume;
-		_prevOpen = candle.OpenPrice;
+			if (goLong && !goShort && Position <= 0)
+				BuyMarket(Volume + Math.Abs(Position));
+			else if (goShort && !goLong && Position >= 0)
+				SellMarket(Volume + Math.Abs(Position));
+		}
+
+		_barCount++;
 		_prevClose = candle.ClosePrice;
+		_volume1 = candle.TotalVolume;
 		_high2 = _high1;
 		_high1 = candle.HighPrice;
 		_low2 = _low1;
@@ -187,53 +215,21 @@ public class IntradayVolumeSwingsStrategy : Strategy {
 		_prevSwingHigh = swingHigh;
 	}
 
-	private void CheckRegions(ICandleMessage candle) {
-		if (_prevDaySwingHighBottom.HasValue) {
-			var level = _prevDaySwingHighBottom.Value;
-			if (RegionMustClose) {
-				if (_prevOpen < level && _prevClose >= level && Position <= 0)
-					BuyMarket();
-			} else {
-				if (candle.OpenPrice < level && candle.HighPrice >= level &&
-					Position <= 0)
-					BuyMarket();
-			}
-		}
+	// Price comes from below the region bottom and reaches it.
+	private bool EntersHighRegion(ICandleMessage candle, decimal? bottom)
+	{
+		if (bottom is not decimal level || _prevClose >= level)
+			return false;
 
-		if (_prevDaySwingLowTop.HasValue) {
-			var level = _prevDaySwingLowTop.Value;
-			if (RegionMustClose) {
-				if (_prevOpen > level && _prevClose <= level && Position >= 0)
-					SellMarket();
-			} else {
-				if (candle.OpenPrice > level && candle.LowPrice <= level &&
-					Position >= 0)
-					SellMarket();
-			}
-		}
+		return RegionMustClose ? candle.ClosePrice >= level : candle.HighPrice >= level;
+	}
 
-		if (_dailySwingHighBottom.HasValue) {
-			var level = _dailySwingHighBottom.Value;
-			if (RegionMustClose) {
-				if (_prevOpen < level && _prevClose >= level && Position <= 0)
-					BuyMarket();
-			} else {
-				if (candle.OpenPrice < level && candle.HighPrice >= level &&
-					Position <= 0)
-					BuyMarket();
-			}
-		}
+	// Price comes from above the region top and reaches it.
+	private bool EntersLowRegion(ICandleMessage candle, decimal? top)
+	{
+		if (top is not decimal level || _prevClose <= level)
+			return false;
 
-		if (_dailySwingLowTop.HasValue) {
-			var level = _dailySwingLowTop.Value;
-			if (RegionMustClose) {
-				if (_prevOpen > level && _prevClose <= level && Position >= 0)
-					SellMarket();
-			} else {
-				if (candle.OpenPrice > level && candle.LowPrice <= level &&
-					Position >= 0)
-					SellMarket();
-			}
-		}
+		return RegionMustClose ? candle.ClosePrice <= level : candle.LowPrice <= level;
 	}
 }
