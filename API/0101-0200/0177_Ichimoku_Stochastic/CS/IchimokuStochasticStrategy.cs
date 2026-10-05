@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,9 +11,10 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on Ichimoku Cloud and Stochastic Oscillator indicators.
-/// Enters long when price is above Kumo (cloud), Tenkan > Kijun, and Stochastic is oversold (< 20)
-/// Enters short when price is below Kumo, Tenkan < Kijun, and Stochastic is overbought (> 80)
+/// Ichimoku Stochastic strategy.
+/// A close above the cloud with Tenkan-sen above Kijun-sen and %K below StochOversold goes long, a close below the cloud with Tenkan-sen
+/// below Kijun-sen and %K above StochOverbought goes short, reversing an opposite position; %K is the stochastic over StochPeriod candles smoothed over StochK candles. The cloud is the stop:
+/// a long closes when price closes below the cloud and a short when it closes above it.
 /// </summary>
 public class IchimokuStochasticStrategy : Strategy
 {
@@ -25,13 +23,12 @@ public class IchimokuStochasticStrategy : Strategy
 	private readonly StrategyParam<int> _senkouPeriod;
 	private readonly StrategyParam<int> _stochPeriod;
 	private readonly StrategyParam<int> _stochK;
-	private readonly StrategyParam<int> _stochD;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stochOversold;
+	private readonly StrategyParam<decimal> _stochOverbought;
 	private readonly StrategyParam<DataType> _candleType;
-	private int _cooldown;
 
 	/// <summary>
-	/// Tenkan-sen period
+	/// Period of Tenkan-sen.
 	/// </summary>
 	public int TenkanPeriod
 	{
@@ -40,7 +37,7 @@ public class IchimokuStochasticStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Kijun-sen period
+	/// Period of Kijun-sen.
 	/// </summary>
 	public int KijunPeriod
 	{
@@ -49,7 +46,7 @@ public class IchimokuStochasticStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Senkou Span period
+	/// Period of Senkou Span B.
 	/// </summary>
 	public int SenkouPeriod
 	{
@@ -58,43 +55,43 @@ public class IchimokuStochasticStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stochastic %K period
+	/// Lookback period of the raw stochastic.
 	/// </summary>
 	public int StochPeriod
 	{
 		get => _stochPeriod.Value;
 		set => _stochPeriod.Value = value;
 	}
-	
+
 	/// <summary>
-	/// Stochastic %K smoothing period
+	/// Smoothing period of %K.
 	/// </summary>
 	public int StochK
 	{
 		get => _stochK.Value;
 		set => _stochK.Value = value;
 	}
-	
+
 	/// <summary>
-	/// Stochastic %D period
+	/// %K level for longs.
 	/// </summary>
-	public int StochD
+	public decimal StochOversold
 	{
-		get => _stochD.Value;
-		set => _stochD.Value = value;
+		get => _stochOversold.Value;
+		set => _stochOversold.Value = value;
 	}
 
 	/// <summary>
-	/// Bars to wait between trades.
+	/// %K level for shorts.
 	/// </summary>
-	public int CooldownBars
+	public decimal StochOverbought
 	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
+		get => _stochOverbought.Value;
+		set => _stochOverbought.Value = value;
 	}
 
 	/// <summary>
-	/// Candle type for strategy calculation
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -103,179 +100,109 @@ public class IchimokuStochasticStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Constructor
+	/// Constructor.
 	/// </summary>
 	public IchimokuStochasticStrategy()
 	{
 		_tenkanPeriod = Param(nameof(TenkanPeriod), 9)
 			.SetGreaterThanZero()
-			.SetDisplay("Tenkan-sen Period", "Period for Tenkan-sen line", "Ichimoku")
-			
-			.SetOptimize(7, 12, 1);
+			.SetDisplay("Tenkan Period", "Period of Tenkan-sen", "Ichimoku");
 
 		_kijunPeriod = Param(nameof(KijunPeriod), 26)
 			.SetGreaterThanZero()
-			.SetDisplay("Kijun-sen Period", "Period for Kijun-sen line", "Ichimoku")
-			
-			.SetOptimize(20, 30, 2);
+			.SetDisplay("Kijun Period", "Period of Kijun-sen", "Ichimoku");
 
 		_senkouPeriod = Param(nameof(SenkouPeriod), 52)
 			.SetGreaterThanZero()
-			.SetDisplay("Senkou Span Period", "Period for Senkou Span B line", "Ichimoku")
-			
-			.SetOptimize(40, 60, 5);
+			.SetDisplay("Senkou Period", "Period of Senkou Span B", "Ichimoku");
 
 		_stochPeriod = Param(nameof(StochPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("Stochastic Period", "Period for Stochastic Oscillator", "Stochastic")
-			
-			.SetOptimize(10, 20, 2);
-			
+			.SetDisplay("Stochastic Period", "Lookback period of the raw stochastic", "Stochastic");
+
 		_stochK = Param(nameof(StochK), 3)
 			.SetGreaterThanZero()
-			.SetDisplay("Stochastic %K", "Smoothing for Stochastic %K line", "Stochastic")
-			
-			.SetOptimize(1, 5, 1);
-			
-		_stochD = Param(nameof(StochD), 3)
-			.SetGreaterThanZero()
-			.SetDisplay("Stochastic %D", "Period for Stochastic %D line", "Stochastic")
-			
-			.SetOptimize(1, 5, 1);
+			.SetDisplay("Stochastic %K", "Smoothing period of %K", "Stochastic");
 
-		_cooldownBars = Param(nameof(CooldownBars), 4)
-			.SetRange(1, 20)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "General");
+		_stochOversold = Param(nameof(StochOversold), 20m)
+			.SetDisplay("Stochastic Oversold", "%K level for longs", "Stochastic");
+
+		_stochOverbought = Param(nameof(StochOverbought), 80m)
+			.SetDisplay("Stochastic Overbought", "%K level for shorts", "Stochastic");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
-			.SetDisplay("Candle Type", "Timeframe for strategy", "General");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
-		}
-
-		/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_cooldown = 0;
 	}
 
-		/// <inheritdoc />
-		protected override void OnStarted2(DateTime time)
-		{
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
 		base.OnStarted2(time);
 
-		// Create indicators
 		var ichimoku = new Ichimoku
 		{
 			Tenkan = { Length = TenkanPeriod },
 			Kijun = { Length = KijunPeriod },
 			SenkouB = { Length = SenkouPeriod }
 		};
-
+		// The D line of the core oscillator is the smoothed %K.
 		var stochastic = new StochasticOscillator
 		{
-			K = { Length = StochK },
-			D = { Length = StochD },
+			K = { Length = StochPeriod },
+			D = { Length = StochK },
 		};
 
-		// Subscribe to candles and bind indicators
 		var subscription = SubscribeCandles(CandleType);
-		
 		subscription
 			.BindEx(ichimoku, stochastic, ProcessCandle)
 			.Start();
 
-		// Setup chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, ichimoku);
-			
-			// Create a separate area for Stochastic
-			var stochArea = CreateChartArea();
-			if (stochArea != null)
-			{
-				DrawIndicator(stochArea, stochastic);
-			}
-			
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, stochastic);
+			}
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue ichimokuValue, IIndicatorValue stochValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue ichimokuValue, IIndicatorValue stochasticValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
-		
-		// Check if strategy is ready to trade
+
+		if (ichimokuValue is not IIchimokuValue { Tenkan: decimal tenkan, Kijun: decimal kijun, SenkouA: decimal senkouA, SenkouB: decimal senkouB })
+			return;
+
+		if (!stochasticValue.IsFormed || stochasticValue is not IStochasticOscillatorValue { D: decimal k })
+			return;
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Get additional values from Ichimoku
-		var ichimokuTyped = (IchimokuValue)ichimokuValue;
+		var close = candle.ClosePrice;
+		var cloudTop = Math.Max(senkouA, senkouB);
+		var cloudBottom = Math.Min(senkouA, senkouB);
 
-		if (ichimokuTyped.Tenkan is not decimal tenkan)
-			return;
-
-		if (ichimokuTyped.Kijun is not decimal kijun)
-			return;
-
-		if (ichimokuTyped.SenkouA is not decimal senkouA)
-			return;
-
-		if (ichimokuTyped.SenkouB is not decimal senkouB)
-			return;
-
-		// Current price (close of the candle)
-		var price = candle.ClosePrice;
-		
-		// Check if price is above/below Kumo cloud
-		var isAboveKumo = price > Math.Max(senkouA, senkouB);
-		var isBelowKumo = price < Math.Min(senkouA, senkouB);
-		
-		// Check Tenkan/Kijun cross (trend direction)
-		var isBullishCross = tenkan > kijun;
-		var isBearishCross = tenkan < kijun;
-
-		var stochTyped = (StochasticOscillatorValue)stochValue;
-
-		// Get Stochastic %K value
-		if (stochTyped.K is not decimal stochasticK)
-			return;
-
-		if (_cooldown > 0)
-		{
-			_cooldown--;
-			return;
-		}
-
-		// Trading logic
-		if (isAboveKumo && isBullishCross && stochasticK < 15 && Position <= 0)
-		{
+		if (close > cloudTop && tenkan > kijun && k < StochOversold && Position <= 0)
 			BuyMarket(Volume + Math.Abs(Position));
-			_cooldown = CooldownBars;
-		}
-		else if (isBelowKumo && isBearishCross && stochasticK > 85 && Position >= 0)
-		{
+		else if (close < cloudBottom && tenkan < kijun && k > StochOverbought && Position >= 0)
 			SellMarket(Volume + Math.Abs(Position));
-			_cooldown = CooldownBars;
-		}
-		else if (isBearishCross && Position > 0)
-		{
+		else if (Position > 0 && close < cloudBottom)
 			SellMarket(Position);
-			_cooldown = CooldownBars;
-		}
-		else if (isBullishCross && Position < 0)
-		{
-			BuyMarket(Math.Abs(Position));
-			_cooldown = CooldownBars;
-		}
+		else if (Position < 0 && close > cloudTop)
+			BuyMarket(-Position);
 	}
 }

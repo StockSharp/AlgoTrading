@@ -8,13 +8,13 @@ Las pruebas indican un retorno anual promedio de aproximadamente 118%. Funciona 
 
 Ichimoku define la tendencia y los niveles de soporte mientras Stochastic determina el momento de entrada en los retrocesos. Las operaciones se abren cuando el oscilador se resetea dentro de la dirección predominante de la nube.
 
-Los traders que prefieren indicadores estructurados pueden encontrarlo práctico. Los stops de ATR cubren reversiones abruptas.
+Los traders que prefieren indicadores estructurados pueden encontrarlo práctico. La propia nube actúa como stop frente a reversiones abruptas.
 
 ## Detalles
 
 - **Criterios de entrada**:
-  - Largo: `Price > Cloud && StochK < 20`
-  - Corto: `Price < Cloud && StochK > 80`
+  - Largo: `Price > Cloud && Tenkan > Kijun && StochK < 20`
+  - Corto: `Price < Cloud && Tenkan < Kijun && StochK > 80`
 - **Largo/Corto**: Ambos
 - **Criterios de salida**:
   - Ruptura de la nube en dirección contraria
@@ -25,8 +25,10 @@ Los traders que prefieren indicadores estructurados pueden encontrarlo práctico
   - `SenkouPeriod` = 52
   - `StochPeriod` = 14
   - `StochK` = 3
-  - `StochD` = 3
+  - `StochOversold` = 20
+  - `StochOverbought` = 80
   - `CandleType` = TimeSpan.FromMinutes(30).TimeFrame()
+    Los valores 20 y 80 de las reglas son los predeterminados de StochOversold y StochOverbought. %K es el estocástico de StochPeriod velas suavizado en StochK velas; %D no interviene. Un largo se cierra cuando el precio cierra por debajo de la nube y un corto cuando cierra por encima. Una señal de entrada contra una posición abierta la invierte.
 - **Filtros**:
   - Categoría: Reversión a la media
   - Dirección: Ambos

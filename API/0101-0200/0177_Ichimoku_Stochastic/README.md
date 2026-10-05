@@ -8,13 +8,13 @@ Testing indicates an average annual return of about 118%. It performs best in th
 
 Ichimoku outlines trend and support levels while Stochastic times the entry on pullbacks. Trades open when the oscillator resets within the prevailing cloud direction.
 
-Traders who favor structured indicators may find it practical. ATR stops cover abrupt reversals.
+Traders who favor structured indicators may find it practical. The cloud itself acts as the stop against abrupt reversals.
 
 ## Details
 
 - **Entry Criteria**:
-  - Long: `Price > Cloud && StochK < 20`
-  - Short: `Price < Cloud && StochK > 80`
+  - Long: `Price > Cloud && Tenkan > Kijun && StochK < 20`
+  - Short: `Price < Cloud && Tenkan < Kijun && StochK > 80`
 - **Long/Short**: Both
 - **Exit Criteria**:
   - Cloud breakout in opposite direction
@@ -25,8 +25,10 @@ Traders who favor structured indicators may find it practical. ATR stops cover a
   - `SenkouPeriod` = 52
   - `StochPeriod` = 14
   - `StochK` = 3
-  - `StochD` = 3
+  - `StochOversold` = 20
+  - `StochOverbought` = 80
   - `CandleType` = TimeSpan.FromMinutes(30).TimeFrame()
+    The 20 and 80 in the rules are the defaults of StochOversold and StochOverbought. %K is the stochastic over StochPeriod candles smoothed over StochK candles; %D plays no part. A long closes when price closes below the cloud and a short when it closes above it. An entry signal against an open position reverses it.
 - **Filters**:
   - Category: Mean reversion
   - Direction: Both

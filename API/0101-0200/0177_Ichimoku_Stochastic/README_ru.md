@@ -12,8 +12,8 @@
 ## Подробности
 
 - **Условия входа**:
-  - Длинная: `Price > Cloud && StochK < 20`
-  - Короткая: `Price < Cloud && StochK > 80`
+  - Длинная: `Price > Cloud && Tenkan > Kijun && StochK < 20`
+  - Короткая: `Price < Cloud && Tenkan < Kijun && StochK > 80`
 - **Long/Short**: Оба
 - **Условия выхода**:
   - выход цены из облака в противоположную сторону
@@ -24,8 +24,10 @@
   - `SenkouPeriod` = 52
   - `StochPeriod` = 14
   - `StochK` = 3
-  - `StochD` = 3
+  - `StochOversold` = 20
+  - `StochOverbought` = 80
   - `CandleType` = TimeSpan.FromMinutes(30).TimeFrame()
+    Значения 20 и 80 в правилах — это значения по умолчанию StochOversold и StochOverbought. %K — стохастик за StochPeriod свечей, сглаженный за StochK свечей; линия %D не участвует. Лонг закрывается, когда цена закрывается ниже облака, шорт — когда выше. Сигнал на вход против открытой позиции разворачивает её.
 - **Фильтры**:
   - Категория: Mean reversion
   - Направление: Оба
