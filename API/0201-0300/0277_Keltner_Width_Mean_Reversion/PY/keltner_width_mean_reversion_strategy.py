@@ -5,16 +5,19 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-import math
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, AverageTrueRange
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, AverageTrueRange, SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
+
 
 class keltner_width_mean_reversion_strategy(Strategy):
     """
-    Keltner width mean reversion strategy.
-    Trades contractions and expansions of Keltner Channel width around its recent average.
+    Keltner Channel width mean reversion.
+    Enters when the channel width is beyond its average by a standard deviation multiplier and starts
+    turning back toward the average: long on an extreme contraction, short on an extreme expansion.
+    Exits when the width returns to its average or the ATR stop is hit.
     """
 
     def __init__(self):
@@ -22,136 +25,120 @@ class keltner_width_mean_reversion_strategy(Strategy):
 
         self._ema_period = self.Param("EmaPeriod", 20) \
             .SetGreaterThanZero() \
-            .SetDisplay("EMA Period", "Period for EMA calculation", "Indicators")
-
+            .SetDisplay("EMA Period", "EMA period for Keltner Channel", "Indicators")
         self._atr_period = self.Param("AtrPeriod", 14) \
             .SetGreaterThanZero() \
-            .SetDisplay("ATR Period", "Period for ATR calculation", "Indicators")
-
+            .SetDisplay("ATR Period", "ATR period for Keltner Channel", "Indicators")
         self._keltner_multiplier = self.Param("KeltnerMultiplier", 2.0) \
             .SetGreaterThanZero() \
-            .SetDisplay("Keltner Multiplier", "Multiplier for Keltner Channel bands", "Indicators")
-
-        self._width_dev_mult = self.Param("WidthDeviationMultiplier", 2.0) \
+            .SetDisplay("Keltner Multiplier", "ATR multiplier for Keltner Channel", "Indicators")
+        self._width_lookback_period = self.Param("WidthLookbackPeriod", 20) \
             .SetGreaterThanZero() \
-            .SetDisplay("Width Dev Multiplier", "Multiplier for width deviation threshold", "Strategy Parameters")
-
-        self._width_lookback = self.Param("WidthLookbackPeriod", 20) \
+            .SetDisplay("Width Lookback", "Period for width statistics", "Strategy")
+        self._width_deviation_multiplier = self.Param("WidthDeviationMultiplier", 2.0) \
             .SetGreaterThanZero() \
-            .SetDisplay("Width Lookback", "Lookback period for width statistics", "Strategy Parameters")
-
-        self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
-
-        self._cooldown_bars = self.Param("CooldownBars", 1200) \
-            .SetDisplay("Cooldown Bars", "Bars to wait between orders", "Risk Management")
-
+            .SetDisplay("Width Deviation Multiplier", "Standard deviation multiplier for extreme width", "Strategy")
+        self._atr_stop_multiplier = self.Param("AtrStopMultiplier", 2.0) \
+            .SetNotNegative() \
+            .SetDisplay("ATR Stop Multiplier", "Stop-loss distance in ATR multiples", "Risk Management")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
-        self._ema = None
-        self._atr = None
-        self._width_history = None
-        self._current_index = 0
-        self._filled_count = 0
-        self._cooldown = 0
+        self._width_average = None
+        self._width_std_dev = None
+        self._prev_width = None
+        self._stop_price = 0.0
 
     @property
-    def candle_type(self):
+    def CandleType(self):
         return self._candle_type.Value
+
+    def GetWorkingSecurities(self):
+        return [(self.Security, self.CandleType)]
 
     def OnReseted(self):
         super(keltner_width_mean_reversion_strategy, self).OnReseted()
-        self._ema = None
-        self._atr = None
-        lb = int(self._width_lookback.Value)
-        self._width_history = [0.0] * lb
-        self._current_index = 0
-        self._filled_count = 0
-        self._cooldown = 0
+        self._width_average = None
+        self._width_std_dev = None
+        self._prev_width = None
+        self._stop_price = 0.0
 
     def OnStarted2(self, time):
         super(keltner_width_mean_reversion_strategy, self).OnStarted2(time)
 
-        lb = int(self._width_lookback.Value)
-        self._width_history = [0.0] * lb
-        self._current_index = 0
-        self._filled_count = 0
-        self._cooldown = 0
+        ema = ExponentialMovingAverage()
+        ema.Length = self._ema_period.Value
+        atr = AverageTrueRange()
+        atr.Length = self._atr_period.Value
+        self._width_average = SimpleMovingAverage()
+        self._width_average.Length = self._width_lookback_period.Value
+        self._width_std_dev = StandardDeviation()
+        self._width_std_dev.Length = self._width_lookback_period.Value
 
-        self._ema = ExponentialMovingAverage()
-        self._ema.Length = int(self._ema_period.Value)
-        self._atr = AverageTrueRange()
-        self._atr.Length = int(self._atr_period.Value)
-
-        subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(self._ema, self._atr, self._process_candle).Start()
+        subscription = self.SubscribeCandles(self.CandleType)
+        subscription.Bind(ema, atr, self._process_candle).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, self._ema)
-            self.DrawIndicator(area, self._atr)
+            self.DrawIndicator(area, ema)
             self.DrawOwnTrades(area)
-
-        self.StartProtection(Unit(), Unit(self._stop_loss_percent.Value, UnitTypes.Percent))
 
     def _process_candle(self, candle, ema_value, atr_value):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self._ema.IsFormed or not self._atr.IsFormed:
+        atr_value = float(atr_value)
+
+        # Width of the channel: (EMA + k*ATR) - (EMA - k*ATR).
+        width = 2.0 * float(self._keltner_multiplier.Value) * atr_value
+        avg_width = float(process_float(self._width_average, width, candle.ServerTime, True))
+        std_width = float(process_float(self._width_std_dev, width, candle.ServerTime, True))
+
+        prev = self._prev_width
+        self._prev_width = width
+
+        if not self._width_average.IsFormed or not self._width_std_dev.IsFormed or prev is None:
             return
-
-        km = float(self._keltner_multiplier.Value)
-        width = 2.0 * km * float(atr_value)
-
-        lb = int(self._width_lookback.Value)
-        self._width_history[self._current_index] = width
-        self._current_index = (self._current_index + 1) % lb
-
-        if self._filled_count < lb:
-            self._filled_count += 1
-
-        if self._filled_count < lb:
-            return
-
-        avg_width = 0.0
-        for i in range(lb):
-            avg_width += self._width_history[i]
-        avg_width /= float(lb)
-
-        sum_sq = 0.0
-        for i in range(lb):
-            diff = self._width_history[i] - avg_width
-            sum_sq += diff * diff
-        std_width = math.sqrt(sum_sq / float(lb))
 
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        if self._cooldown > 0:
-            self._cooldown -= 1
+        if self._check_stop(candle):
             return
 
-        wdm = float(self._width_dev_mult.Value)
-        lower_threshold = avg_width - wdm * std_width
-        upper_threshold = avg_width + wdm * std_width
+        close = float(candle.ClosePrice)
+        k = float(self._width_deviation_multiplier.Value)
+        stop_distance = float(self._atr_stop_multiplier.Value) * atr_value
 
-        if self.Position == 0:
-            if width < lower_threshold:
-                self.BuyMarket()
-                self._cooldown = int(self._cooldown_bars.Value)
-            elif width > upper_threshold:
-                self.SellMarket()
-                self._cooldown = int(self._cooldown_bars.Value)
-        elif self.Position > 0 and width >= avg_width:
-            self.SellMarket(Math.Abs(self.Position))
-            self._cooldown = int(self._cooldown_bars.Value)
-        elif self.Position < 0 and width <= avg_width:
-            self.BuyMarket(Math.Abs(self.Position))
-            self._cooldown = int(self._cooldown_bars.Value)
+        # Extreme reading that has started to turn back toward the average.
+        if width < avg_width - k * std_width and width > prev and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+            self._stop_price = close - stop_distance if stop_distance > 0 else 0.0
+        elif width > avg_width + k * std_width and width < prev and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
+            self._stop_price = close + stop_distance if stop_distance > 0 else 0.0
+        elif (self.Position > 0 and width >= avg_width) or (self.Position < 0 and width <= avg_width):
+            self._exit_position()
+
+    def _check_stop(self, candle):
+        if self._stop_price == 0.0:
+            return False
+
+        if (self.Position > 0 and float(candle.LowPrice) <= self._stop_price) or \
+                (self.Position < 0 and float(candle.HighPrice) >= self._stop_price):
+            self._exit_position()
+            return True
+
+        return False
+
+    def _exit_position(self):
+        if self.Position > 0:
+            self.SellMarket(self.Position)
+        elif self.Position < 0:
+            self.BuyMarket(-self.Position)
+
+        self._stop_price = 0.0
 
     def CreateClone(self):
         return keltner_width_mean_reversion_strategy()
