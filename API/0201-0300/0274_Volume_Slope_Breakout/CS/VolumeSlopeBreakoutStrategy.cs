@@ -11,40 +11,34 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on volume slope breakout with EMA direction filter.
-/// Opens positions when candle volume slope deviates from its recent average and price confirms the direction relative to EMA.
+/// Volume slope breakout.
+/// Enters when the slope of the smoothed volume exceeds its average by a standard deviation multiplier,
+/// in the direction of the breakout candle. Exits when the slope returns to its average.
 /// </summary>
 public class VolumeSlopeBreakoutStrategy : Strategy
 {
-	private readonly StrategyParam<int> _emaPeriod;
+	private readonly StrategyParam<int> _volumeSmaPeriod;
 	private readonly StrategyParam<int> _slopePeriod;
 	private readonly StrategyParam<decimal> _breakoutMultiplier;
 	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
 
-	private ExponentialMovingAverage _ema;
-	private decimal _prevVolume;
-	private decimal _currentSlope;
-	private decimal _avgSlope;
-	private decimal _stdDevSlope;
-	private decimal[] _slopes;
-	private int _currentIndex;
-	private int _filledCount;
-	private int _cooldown;
-	private bool _isInitialized;
+	private SimpleMovingAverage _volumeSma;
+	private SimpleMovingAverage _slopeAverage;
+	private StandardDeviation _slopeStdDev;
+	private decimal? _prevVolume;
 
 	/// <summary>
-	/// EMA period.
+	/// Period of the volume moving average.
 	/// </summary>
-	public int EmaPeriod
+	public int VolumeSMAPeriod
 	{
-		get => _emaPeriod.Value;
-		set => _emaPeriod.Value = value;
+		get => _volumeSmaPeriod.Value;
+		set => _volumeSmaPeriod.Value = value;
 	}
 
 	/// <summary>
-	/// Lookback period for slope statistics calculation.
+	/// Period for slope statistics.
 	/// </summary>
 	public int SlopePeriod
 	{
@@ -62,7 +56,7 @@ public class VolumeSlopeBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop loss percentage.
+	/// Stop-loss percentage.
 	/// </summary>
 	public decimal StopLossPercent
 	{
@@ -80,38 +74,25 @@ public class VolumeSlopeBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Cooldown bars between orders.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="VolumeSlopeBreakoutStrategy"/>.
+	/// Initialize <see cref="VolumeSlopeBreakoutStrategy"/>.
 	/// </summary>
 	public VolumeSlopeBreakoutStrategy()
 	{
-		_emaPeriod = Param(nameof(EmaPeriod), 20)
+		_volumeSmaPeriod = Param(nameof(VolumeSMAPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("EMA Period", "Period for EMA direction filter", "Indicator Parameters");
+			.SetDisplay("Volume SMA Period", "Period of the volume moving average", "Indicators");
 
 		_slopePeriod = Param(nameof(SlopePeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Slope Period", "Period for slope statistics calculation", "Strategy Parameters");
+			.SetDisplay("Slope Period", "Period for slope statistics", "Strategy");
 
-		_breakoutMultiplier = Param(nameof(BreakoutMultiplier), 2m)
+		_breakoutMultiplier = Param(nameof(BreakoutMultiplier), 2.0m)
 			.SetGreaterThanZero()
-			.SetDisplay("Breakout Multiplier", "Standard deviation multiplier for breakout detection", "Strategy Parameters");
+			.SetDisplay("Breakout Multiplier", "Standard deviation multiplier for breakout", "Strategy");
 
-		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management");
-
-		_cooldownBars = Param(nameof(CooldownBars), 1200)
-			.SetRange(1, 5000)
-			.SetDisplay("Cooldown Bars", "Bars to wait between orders", "Risk Management");
+		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop-loss percentage", "Risk Management");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -127,16 +108,10 @@ public class VolumeSlopeBreakoutStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_ema = null;
-		_prevVolume = default;
-		_currentSlope = default;
-		_avgSlope = default;
-		_stdDevSlope = default;
-		_currentIndex = default;
-		_filledCount = default;
-		_cooldown = default;
-		_isInitialized = default;
-		_slopes = new decimal[SlopePeriod];
+		_volumeSma = null;
+		_slopeAverage = null;
+		_slopeStdDev = null;
+		_prevVolume = null;
 	}
 
 	/// <inheritdoc />
@@ -144,121 +119,78 @@ public class VolumeSlopeBreakoutStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_ema = new ExponentialMovingAverage { Length = EmaPeriod };
-		_slopes = new decimal[SlopePeriod];
-		_cooldown = 0;
+		_volumeSma = new SimpleMovingAverage { Length = VolumeSMAPeriod };
+		_slopeAverage = new SimpleMovingAverage { Length = SlopePeriod };
+		_slopeStdDev = new StandardDeviation { Length = SlopePeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_ema, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
+
+		StartProtection(
+			takeProfit: null,
+			stopLoss: StopLossPercent > 0 ? new Unit(StopLossPercent, UnitTypes.Percent) : null
+		);
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _ema);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection(new(), new Unit(StopLossPercent, UnitTypes.Percent));
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal emaValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_ema.IsFormed)
+		var volume = _volumeSma.Process(candle.TotalVolume, candle.ServerTime, true).ToDecimal();
+
+		if (!_volumeSma.IsFormed)
 			return;
 
-		var volume = candle.TotalVolume;
-
-		if (!_isInitialized)
+		if (_prevVolume is not decimal prev)
 		{
 			_prevVolume = volume;
-			_isInitialized = true;
 			return;
 		}
 
-		_currentSlope = volume - _prevVolume;
 		_prevVolume = volume;
 
-		_slopes[_currentIndex] = _currentSlope;
-		_currentIndex = (_currentIndex + 1) % SlopePeriod;
+		var slope = volume - prev;
+		var avgSlope = _slopeAverage.Process(slope, candle.ServerTime, true).ToDecimal();
+		var stdSlope = _slopeStdDev.Process(slope, candle.ServerTime, true).ToDecimal();
 
-		if (_filledCount < SlopePeriod)
-			_filledCount++;
-
-		if (_filledCount < SlopePeriod)
+		if (!_slopeAverage.IsFormed || !_slopeStdDev.IsFormed)
 			return;
-
-		CalculateStatistics();
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (_stdDevSlope <= 0)
-			return;
-
-		if (_cooldown > 0)
+		// Volume has no direction, so the breakout candle decides the side.
+		if (slope > avgSlope + BreakoutMultiplier * stdSlope)
 		{
-			_cooldown--;
-			return;
-		}
-
-		var upperThreshold = _avgSlope + BreakoutMultiplier * _stdDevSlope;
-		var closePrice = candle.ClosePrice;
-		var priceAboveEma = closePrice > emaValue;
-		var priceBelowEma = closePrice < emaValue;
-
-		if (Position == 0)
-		{
-			if (_currentSlope > upperThreshold && priceAboveEma)
+			if (candle.ClosePrice > candle.OpenPrice && Position <= 0)
 			{
-				BuyMarket();
-				_cooldown = CooldownBars;
+				BuyMarket(Volume + Math.Abs(Position));
+				return;
 			}
-			else if (_currentSlope > upperThreshold && priceBelowEma)
+
+			if (candle.ClosePrice < candle.OpenPrice && Position >= 0)
 			{
-				SellMarket();
-				_cooldown = CooldownBars;
+				SellMarket(Volume + Math.Abs(Position));
+				return;
 			}
 		}
-		else if (Position > 0)
+
+		if (slope < avgSlope)
 		{
-			if (_currentSlope <= _avgSlope || priceBelowEma)
-			{
-				SellMarket(Math.Abs(Position));
-				_cooldown = CooldownBars;
-			}
+			if (Position > 0)
+				SellMarket(Position);
+			else if (Position < 0)
+				BuyMarket(-Position);
 		}
-		else if (Position < 0)
-		{
-			if (_currentSlope <= _avgSlope || priceAboveEma)
-			{
-				BuyMarket(Math.Abs(Position));
-				_cooldown = CooldownBars;
-			}
-		}
-	}
-
-	private void CalculateStatistics()
-	{
-		_avgSlope = 0;
-		var sumSquaredDiffs = 0m;
-
-		for (var i = 0; i < SlopePeriod; i++)
-			_avgSlope += _slopes[i];
-
-		_avgSlope /= SlopePeriod;
-
-		for (var i = 0; i < SlopePeriod; i++)
-		{
-			var diff = _slopes[i] - _avgSlope;
-			sumSquaredDiffs += diff * diff;
-		}
-
-		_stdDevSlope = (decimal)Math.Sqrt((double)(sumSquaredDiffs / SlopePeriod));
 	}
 }
