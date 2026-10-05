@@ -1,25 +1,20 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Implementation of strategy - Hull Moving Average + RSI.
-/// Buy when HMA is rising and RSI is below 30 (oversold).
-/// Sell when HMA is falling and RSI is above 70 (overbought).
+/// Hull MA RSI strategy.
+/// The Hull average turns up when it rises after falling and turns down when it falls after rising. A turn up with RSI below RsiOversold
+/// goes long and a turn down with RSI above RsiOverbought goes short, reversing an opposite position. A long closes when the Hull average
+/// falls and a short when it rises. The stop lies StopLossAtr ATR from the entry close and is checked on candle closes.
 /// </summary>
 public class HullMaRsiStrategy : Strategy
 {
@@ -27,16 +22,16 @@ public class HullMaRsiStrategy : Strategy
 	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<decimal> _rsiOversold;
 	private readonly StrategyParam<decimal> _rsiOverbought;
-	private readonly StrategyParam<Unit> _stopLoss;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLossAtr;
+	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _hmaValue;
-	private decimal _prevHmaValue;
-	private int _cooldown;
+	private decimal? _prevHull;
+	private decimal? _prevPrevHull;
+	private decimal _stopPrice;
 
 	/// <summary>
-	/// Hull Moving Average period.
+	/// Period of the Hull moving average.
 	/// </summary>
 	public int HmaPeriod
 	{
@@ -45,7 +40,7 @@ public class HullMaRsiStrategy : Strategy
 	}
 
 	/// <summary>
-	/// RSI period.
+	/// Period of RSI.
 	/// </summary>
 	public int RsiPeriod
 	{
@@ -54,7 +49,7 @@ public class HullMaRsiStrategy : Strategy
 	}
 
 	/// <summary>
-	/// RSI oversold level.
+	/// RSI level for longs.
 	/// </summary>
 	public decimal RsiOversold
 	{
@@ -63,7 +58,7 @@ public class HullMaRsiStrategy : Strategy
 	}
 
 	/// <summary>
-	/// RSI overbought level.
+	/// RSI level for shorts.
 	/// </summary>
 	public decimal RsiOverbought
 	{
@@ -72,25 +67,25 @@ public class HullMaRsiStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop-loss value.
+	/// Stop distance from the entry in ATRs.
 	/// </summary>
-	public Unit StopLoss
+	public decimal StopLossAtr
 	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
+		get => _stopLossAtr.Value;
+		set => _stopLossAtr.Value = value;
 	}
 
 	/// <summary>
-	/// Bars to wait between trades.
+	/// Period of the stop ATR.
 	/// </summary>
-	public int CooldownBars
+	public int AtrPeriod
 	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
+		get => _atrPeriod.Value;
+		set => _atrPeriod.Value = value;
 	}
 
 	/// <summary>
-	/// Candle type used for strategy.
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -99,158 +94,129 @@ public class HullMaRsiStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initialize <see cref="HullMaRsiStrategy"/>.
+	/// Constructor.
 	/// </summary>
 	public HullMaRsiStrategy()
 	{
 		_hmaPeriod = Param(nameof(HmaPeriod), 9)
 			.SetGreaterThanZero()
-			.SetDisplay("HMA Period", "Period for Hull Moving Average", "HMA Parameters");
+			.SetDisplay("HMA Period", "Period of the Hull moving average", "Indicators");
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("RSI Period", "Period for Relative Strength Index", "RSI Parameters");
+			.SetDisplay("RSI Period", "Period of RSI", "Indicators");
 
 		_rsiOversold = Param(nameof(RsiOversold), 30m)
-			.SetRange(1, 100)
-			.SetDisplay("RSI Oversold", "RSI level to consider market oversold", "RSI Parameters");
+			.SetDisplay("RSI Oversold", "RSI level for longs", "Indicators");
 
 		_rsiOverbought = Param(nameof(RsiOverbought), 70m)
-			.SetRange(1, 100)
-			.SetDisplay("RSI Overbought", "RSI level to consider market overbought", "RSI Parameters");
+			.SetDisplay("RSI Overbought", "RSI level for shorts", "Indicators");
 
-		_stopLoss = Param(nameof(StopLoss), new Unit(2, UnitTypes.Absolute))
-			.SetDisplay("Stop Loss", "Stop loss in ATR or value", "Risk Management");
+		_stopLossAtr = Param(nameof(StopLossAtr), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss ATR", "Stop distance from the entry in ATRs", "Risk");
 
-		_cooldownBars = Param(nameof(CooldownBars), 130)
-			.SetRange(5, 500)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "General");
+		_atrPeriod = Param(nameof(AtrPeriod), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("ATR Period", "Period of the stop ATR", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Candle type for strategy", "General");
-
-		_prevHmaValue = 0;
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
-public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-{
-			return [(Security, CandleType)];
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
-			base.OnReseted();
-
-			_hmaValue = 0;
-			_prevHmaValue = 0;
-			_cooldown = 0;
+		base.OnReseted();
+		_prevHull = null;
+		_prevPrevHull = null;
+		_stopPrice = default;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
-			base.OnStarted2(time);
+		base.OnStarted2(time);
 
-			// Create indicators
-			var hma = new HullMovingAverage { Length = HmaPeriod };
-			var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
+		_prevHull = null;
+		_prevPrevHull = null;
+		_stopPrice = default;
 
-			// Setup candle subscription
-			var subscription = SubscribeCandles(CandleType);
-		
-		// Store HMA value in field, process logic on RSI callback.
-		subscription.Bind(hma, OnHma);
+		var hull = new HullMovingAverage { Length = HmaPeriod };
+		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
+		var atr = new AverageTrueRange { Length = AtrPeriod };
+
+		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(rsi, ProcessCandle)
+			.BindEx(hull, rsi, atr, ProcessCandle)
 			.Start();
 
-		// Setup chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, hma);
-			
-			// Create separate area for RSI
-			var rsiArea = CreateChartArea();
-			if (rsiArea != null)
-			{
-				DrawIndicator(rsiArea, rsi);
-			}
-			
+			DrawIndicator(area, hull);
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, rsi);
+			}
 		}
-
 	}
 
-	private void OnHma(ICandleMessage candle, decimal hmaValue)
-	{
-		_hmaValue = hmaValue;
-	}
-
-	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue hullValue, IIndicatorValue rsiValue, IIndicatorValue atrValue)
 	{
 		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (!hullValue.IsFormed || !rsiValue.IsFormed || !atrValue.IsFormed)
+			return;
+
+		var hull = hullValue.GetValue<decimal>();
+		var prevHull = _prevHull;
+		var prevPrevHull = _prevPrevHull;
+		_prevPrevHull = prevHull;
+		_prevHull = hull;
+
+		if (prevHull is not decimal last || prevPrevHull is not decimal beforeLast)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (_hmaValue == 0)
-			return;
+		var rsi = rsiValue.GetValue<decimal>();
+		var atr = atrValue.GetValue<decimal>();
+		var close = candle.ClosePrice;
+		var rising = hull > last;
+		var falling = hull < last;
+		var turnsUp = rising && last < beforeLast;
+		var turnsDown = falling && last > beforeLast;
 
-		if (_prevHmaValue == 0)
+		if (turnsUp && rsi < RsiOversold && Position <= 0)
 		{
-			_prevHmaValue = _hmaValue;
-			return;
+			BuyMarket(Volume + Math.Abs(Position));
+			_stopPrice = close - StopLossAtr * atr;
 		}
-
-		// Determine if HMA is rising or falling
-		var isHmaRising = _prevHmaValue != 0 && _hmaValue > _prevHmaValue;
-		var isHmaFalling = _prevHmaValue != 0 && _hmaValue < _prevHmaValue;
-
-		LogInfo($"Candle: {candle.OpenTime}, Close: {candle.ClosePrice}, " +
-			   $"HMA: {_hmaValue}, Previous HMA: {_prevHmaValue}, " +
-			   $"HMA Rising: {isHmaRising}, HMA Falling: {isHmaFalling}, " +
-			   $"RSI: {rsiValue}");
-
-		if (_cooldown > 0)
+		else if (turnsDown && rsi > RsiOverbought && Position >= 0)
 		{
-			_cooldown--;
-			_prevHmaValue = _hmaValue;
-			return;
+			SellMarket(Volume + Math.Abs(Position));
+			_stopPrice = close + StopLossAtr * atr;
 		}
-
-		// Trading rules
-		if (isHmaRising && rsiValue < RsiOversold && Position == 0)
+		else if (Position > 0 && (falling || (StopLossAtr > 0 && close <= _stopPrice)))
 		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-			LogInfo($"Buy signal: HMA rising and RSI oversold ({rsiValue} < {RsiOversold}).");
+			SellMarket(Position);
 		}
-		else if (isHmaFalling && rsiValue > RsiOverbought && Position == 0)
+		else if (Position < 0 && (rising || (StopLossAtr > 0 && close >= _stopPrice)))
 		{
-			SellMarket();
-			_cooldown = CooldownBars;
-			LogInfo($"Sell signal: HMA falling and RSI overbought ({rsiValue} > {RsiOverbought}).");
+			BuyMarket(-Position);
 		}
-		// Exit conditions based on HMA direction change
-		else if (isHmaFalling && Position > 0)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-			LogInfo($"Exit long: HMA started falling. Position: {Position}");
-		}
-		else if (isHmaRising && Position < 0)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-			LogInfo($"Exit short: HMA started rising. Position: {Position}");
-		}
-
-		// Update HMA value for next iteration
-		_prevHmaValue = _hmaValue;
 	}
 }

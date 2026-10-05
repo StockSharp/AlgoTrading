@@ -5697,6 +5697,83 @@ public abstract partial class StrategyTests
 		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && sarExits > 0, "The fixture must trade both sides and exit on a SAR flip.");
 	}
 
+	[TestMethod]
+	[TestCategory("Shard04")]
+	[DataRow(9, 14, 30.0, 70.0, 2.0, 14, false)]
+	[DataRow(14, 10, 40.0, 60.0, 0.3, 10, true)]
+	public async Task S0159_HullTurnsWithRsiExtremesUntilTheHullTurnsBackOrAnAtrStop(int hullPeriod, int rsiPeriod, double oversold, double overbought, double stopAtr, int atrPeriod, bool secondary)
+	{
+		var hull = new HullMovingAverage { Length = hullPeriod };
+		var rsi = new RelativeStrengthIndex { Length = rsiPeriod };
+		var atr = new AverageTrueRange { Length = atrPeriod };
+		decimal? previousHull = null, beforePreviousHull = null;
+		var stopPrice = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var turnExits = 0;
+		var stopExits = 0;
+		var violations = new List<string>();
+		await Replay("0159_Hull_MA_RSI", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(9, strategy.Parameters["HmaPeriod"].Value);
+			AreEqual(14, strategy.Parameters["RsiPeriod"].Value);
+			AreEqual(30m, Convert.ToDecimal(strategy.Parameters["RsiOversold"].Value));
+			AreEqual(70m, Convert.ToDecimal(strategy.Parameters["RsiOverbought"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossAtr"].Value));
+			AreEqual(14, strategy.Parameters["AtrPeriod"].Value);
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "HmaPeriod", hullPeriod);
+			SetParam(strategy, "RsiPeriod", rsiPeriod);
+			SetParam(strategy, "RsiOversold", oversold);
+			SetParam(strategy, "RsiOverbought", overbought);
+			SetParam(strategy, "StopLossAtr", stopAtr);
+			SetParam(strategy, "AtrPeriod", atrPeriod);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var h = hull.Process(candle);
+				var r = rsi.Process(candle);
+				var a = atr.Process(candle);
+				// The strategy only sees candles once no bound indicator returns an empty value.
+				if (h.IsEmpty || r.IsEmpty || a.IsEmpty) return;
+				if (!h.IsFormed || !r.IsFormed || !a.IsFormed) return;
+				var value = h.GetValue<decimal>();
+				var last = previousHull;
+				var beforeLast = beforePreviousHull;
+				beforePreviousHull = last;
+				previousHull = value;
+				if (last is not decimal l1 || beforeLast is not decimal l2) return;
+				var level = r.GetValue<decimal>();
+				var range = a.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var rising = value > l1;
+				var falling = value < l1;
+				var position = strategy.Position;
+				if (rising && l1 < l2 && level < (decimal)oversold && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; stopPrice = close - (decimal)stopAtr * range; }
+				else if (falling && l1 > l2 && level > (decimal)overbought && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; stopPrice = close + (decimal)stopAtr * range; }
+				else if (position > 0m && (falling || close <= stopPrice)) { expectedSide = Sides.Sell; expectedVolume = position; if (falling) turnExits++; else stopExits++; }
+				else if (position < 0m && (rising || close >= stopPrice)) { expectedSide = Sides.Buy; expectedVolume = -position; if (rising) turnExits++; else stopExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a Hull turn with an RSI extreme, or close when the Hull average turns back or at the ATR stop.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && turnExits > 0, "The fixture must trade both sides and exit when the Hull average turns back.");
+		if (secondary) IsTrue(stopExits > 0, "TON must close a position at the ATR stop.");
+	}
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

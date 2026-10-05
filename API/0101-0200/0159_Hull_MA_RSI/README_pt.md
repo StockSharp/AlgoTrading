@@ -1,7 +1,7 @@
 # Estratégia Hull MA RSI
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
-Implementação da estratégia Hull Moving Average + RSI. Comprar quando a HMA está subindo e o RSI está abaixo de 30 (sobrevendido). Vender quando a HMA está caindo e o RSI está acima de 70 (sobrecomprado).
+Implementação da estratégia Hull Moving Average + RSI. Comprar quando a HMA vira para cima e o RSI está abaixo de RsiOversold. Vender quando a HMA vira para baixo e o RSI está acima de RsiOverbought.
 
 Os testes indicam um retorno anual médio de cerca de 64%. Funciona melhor no mercado de câmbio.
 
@@ -17,14 +17,16 @@ Adequada para traders de swing de curto prazo que buscam sinais antecipados. Sto
 - **Comprado/Vendido**: Ambos
 - **Critérios de saída**:
   - Mudança de direção da Hull MA
-- **Stops**: Baseados em ATR usando `StopLoss`
+- **Stops**: Baseados em ATR usando `StopLossAtr`
 - **Valores padrão**:
   - `HmaPeriod` = 9
   - `RsiPeriod` = 14
   - `RsiOversold` = 30m
   - `RsiOverbought` = 70m
-  - `StopLoss` = new Unit(2, UnitTypes.Absolute)
+  - `StopLossAtr` = 2
+  - `AtrPeriod` = 14
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    A HMA vira para cima quando sobe depois de cair e para baixo quando cai depois de subir. O stop fica a StopLossAtr ATR (AtrPeriod) do fechamento de entrada e é verificado nos fechamentos dos candles. Um sinal de entrada contra uma posição aberta a inverte.
 - **Filtros**:
   - Categoria: Reversão à média
   - Direção: Ambos
