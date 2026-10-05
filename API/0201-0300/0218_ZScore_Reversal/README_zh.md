@@ -20,8 +20,9 @@
 - **止损**: 百分比止损
 - **默认值**:
   - `LookbackPeriod` = 20
-  - `ZScoreThreshold` = 2.0m
-  - `StopLossPercent` = 2m
+  - `ZScoreThreshold` = 2
+  - `StopLossPercent` = 2
+    Z-Score = (收盘价 - SMA) / StdDev，简单移动平均与收盘价标准差均基于同样的LookbackPeriod根K线。止损为入场价的固定StopLossPercent百分比，在K线之间同样监控。与持仓方向相反的入场信号会反转持仓。
   - `CandleType` = TimeSpan.FromMinutes(10)
 - **过滤器**:
   - 类别: Mean Reversion

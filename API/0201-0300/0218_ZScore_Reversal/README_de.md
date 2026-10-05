@@ -20,8 +20,9 @@ Diese Technik ist für Mean-Reversion-Trader attraktiv, die objektive Einstiegsn
 - **Stops**: Ja, prozentualer Stop-Loss.
 - **Standardwerte**:
   - `LookbackPeriod` = 20
-  - `ZScoreThreshold` = 2.0m
-  - `StopLossPercent` = 2m
+  - `ZScoreThreshold` = 2
+  - `StopLossPercent` = 2
+    Der Z-Score ist (Schluss - SMA) / StdDev, mit dem einfachen gleitenden Durchschnitt und der Standardabweichung der Schlusskurse über dieselben LookbackPeriod Kerzen. Der Stop liegt bei festen StopLossPercent vom Einstiegspreis und wird auch zwischen den Kerzen überwacht. Ein Einstiegssignal gegen eine offene Position dreht sie.
   - `CandleType` = TimeSpan.FromMinutes(10)
 - **Filter**:
   - Kategorie: Mean Reversion

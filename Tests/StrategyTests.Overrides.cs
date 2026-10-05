@@ -8537,6 +8537,66 @@ public abstract partial class StrategyTests
 		if (stopPercent < 1) IsTrue(stopExits > 0, "A tight spread stop must be hit.");
 	}
 
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(20, 2.0, false)]
+	[DataRow(30, 1.5, true)]
+	public async Task S0218_ZScoreExtremesUntilTheZScoreCrossesZero(int period, double threshold, bool secondary)
+	{
+		var ma = new SimpleMovingAverage { Length = period };
+		var stdev = new StandardDeviation { Length = period };
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var zeroExits = 0;
+		var violations = new List<string>();
+		await Replay("0218_ZScore_Reversal", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["LookbackPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["ZScoreThreshold"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(10).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "LookbackPeriod", period);
+			SetParam(strategy, "ZScoreThreshold", threshold);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var m = ma.Process(candle);
+				var d = stdev.Process(candle);
+				if (!m.IsFormed || !d.IsFormed) return;
+				var deviation = d.GetValue<decimal>();
+				if (deviation == 0m) return;
+				var z = (candle.ClosePrice - m.GetValue<decimal>()) / deviation;
+				var position = strategy.Position;
+				if (z < -(decimal)threshold && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (z > (decimal)threshold && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && z > 0m) { expectedSide = Sides.Sell; expectedVolume = position; zeroExits++; }
+				else if (position < 0m && z < 0m) { expectedSide = Sides.Buy; expectedVolume = -position; zeroExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a Z-Score beyond the threshold, or close once the Z-Score crosses zero.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && zeroExits > 0, "The fixture must trade both sides and exit at zero.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0218_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0218_ZScore_Reversal", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(10));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

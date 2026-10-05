@@ -20,8 +20,9 @@ This technique is attractive for mean reversion traders who prefer objective ent
 - **Stops**: Yes, percent stop-loss.
 - **Default Values**:
   - `LookbackPeriod` = 20
-  - `ZScoreThreshold` = 2.0m
-  - `StopLossPercent` = 2m
+  - `ZScoreThreshold` = 2
+  - `StopLossPercent` = 2
+    The Z-Score is (close - SMA) / StdDev, with the simple moving average and the standard deviation of closes over the same LookbackPeriod candles. The stop is a fixed StopLossPercent of the entry price, watched between candles as well. An entry signal against an open position reverses it.
   - `CandleType` = TimeSpan.FromMinutes(10)
 - **Filters**:
   - Category: Mean Reversion

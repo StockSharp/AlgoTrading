@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -12,12 +9,12 @@ using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
-	
+
 /// <summary>
-/// Strategy that trades based on Z-Score (normalized price deviation from the mean).
-/// Enters long when Z-Score is below a negative threshold (price significantly below mean).
-/// Enters short when Z-Score is above a positive threshold (price significantly above mean).
-/// Exits when Z-Score returns to zero (price returns to mean).
+/// ZScore Reversal strategy.
+/// The Z-Score is the distance of the close from the LookbackPeriod simple moving average in standard deviations over the same candles.
+/// A Z-Score below minus ZScoreThreshold goes long and one above ZScoreThreshold goes short, reversing an opposite position.
+/// A long closes once the Z-Score crosses above zero and a short once it crosses below, and a percent stop limits the loss.
 /// </summary>
 public class ZScoreReversalStrategy : Strategy
 {
@@ -25,48 +22,43 @@ public class ZScoreReversalStrategy : Strategy
 	private readonly StrategyParam<decimal> _zScoreThreshold;
 	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
-	
-	private SimpleMovingAverage _ma;
-	private StandardDeviation _stdDev;
-	
-	private decimal _lastZScore;
-	
+
 	/// <summary>
-	/// Period for calculating mean and standard deviation.
+	/// Period of the moving average and the standard deviation.
 	/// </summary>
 	public int LookbackPeriod
 	{
 		get => _lookbackPeriod.Value;
 		set => _lookbackPeriod.Value = value;
 	}
-	
+
 	/// <summary>
-	/// Z-Score threshold for entry signals.
+	/// Z-Score distance from zero that opens a position.
 	/// </summary>
 	public decimal ZScoreThreshold
 	{
 		get => _zScoreThreshold.Value;
 		set => _zScoreThreshold.Value = value;
 	}
-	
+
 	/// <summary>
-	/// Stop-loss percentage parameter.
+	/// Stop loss percentage from entry price.
 	/// </summary>
 	public decimal StopLossPercent
 	{
 		get => _stopLossPercent.Value;
 		set => _stopLossPercent.Value = value;
 	}
-	
+
 	/// <summary>
-	/// Candle type parameter.
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
-	
+
 	/// <summary>
 	/// Constructor.
 	/// </summary>
@@ -74,40 +66,24 @@ public class ZScoreReversalStrategy : Strategy
 	{
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Lookback Period", "Period for calculating mean and standard deviation", "Parameters")
-			
-			.SetOptimize(10, 40, 5);
-			
-		_zScoreThreshold = Param(nameof(ZScoreThreshold), 2.0m)
+			.SetDisplay("Lookback Period", "Period of the moving average and the standard deviation", "Indicators");
+
+		_zScoreThreshold = Param(nameof(ZScoreThreshold), 2m)
 			.SetGreaterThanZero()
-			.SetDisplay("Z-Score Threshold", "Z-Score threshold for entry signals", "Parameters")
-			
-			.SetOptimize(1.5m, 3.0m, 0.5m);
-			
+			.SetDisplay("Z-Score Threshold", "Z-Score distance from zero that opens a position", "Indicators");
+
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop-loss %", "Stop-loss as percentage of entry price", "Risk Management")
-			
-			.SetOptimize(1m, 3m, 0.5m);
-			
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(10).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
-	
+
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
-	}
-	
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_ma = null;
-		_stdDev = null;
-		_lastZScore = default;
 	}
 
 	/// <inheritdoc />
@@ -115,89 +91,69 @@ public class ZScoreReversalStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-// Initialize indicators
-		_ma = new() { Length = LookbackPeriod };
-		_stdDev = new() { Length = LookbackPeriod };
-		
-		// Create candles subscription
+		var ma = new SimpleMovingAverage { Length = LookbackPeriod };
+		var stdev = new StandardDeviation { Length = LookbackPeriod };
+
 		var subscription = SubscribeCandles(CandleType);
-		
-		// Bind indicators to subscription
 		subscription
-			.Bind(_ma, _stdDev, ProcessCandle)
+			.BindEx(ma, stdev, ProcessCandle)
 			.Start();
-		
-		// Enable position protection with stop-loss
-		StartProtection(
-			takeProfit: new Unit(0, UnitTypes.Absolute), // No take-profit
-			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent) // Stop-loss as percentage
-		);
-		
-		// Setup chart if available
+
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _ma);
+			DrawIndicator(area, ma);
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, stdev);
+			}
 		}
 	}
-	
-	private void ProcessCandle(ICandleMessage candle, decimal maValue, decimal stdDevValue)
+
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
 	{
-		// Skip unfinished candles
+		// The high-level handler activates native protection before this callback, also between signal bars.
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue maValue, IIndicatorValue stdDevValue)
+	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Skip if strategy is not ready to trade
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-		
-		// Skip if standard deviation is zero (avoid division by zero)
-		if (stdDevValue == 0)
+		if (!maValue.IsFormed || !stdDevValue.IsFormed)
 			return;
 
-		// Calculate Z-Score: (Price - Mean) / StdDev
-		decimal zScore = (candle.ClosePrice - maValue) / stdDevValue;
-		
-		LogInfo($"Current Z-Score: {zScore:F4}, Mean: {maValue:F4}, StdDev: {stdDevValue:F4}");
-		
-		// Trading logic
-		if (zScore < -ZScoreThreshold)
-		{
-			// Long signal: Z-Score is below negative threshold
-			if (Position <= 0)
-			{
-				BuyMarket(Volume + Math.Abs(Position));
-				LogInfo($"Long Entry: Z-Score({zScore:F4}) < -{ZScoreThreshold:F4}");
-			}
-		}
-		else if (zScore > ZScoreThreshold)
-		{
-			// Short signal: Z-Score is above positive threshold
-			if (Position >= 0)
-			{
-				SellMarket(Volume + Math.Abs(Position));
-				LogInfo($"Short Entry: Z-Score({zScore:F4}) > {ZScoreThreshold:F4}");
-			}
-		}
-		else if ((zScore > 0 && Position > 0) || (zScore < 0 && Position < 0))
-		{
-			// Exit signals: Z-Score crossed zero line
-			if (Position > 0 && _lastZScore < 0 && zScore > 0)
-			{
-				SellMarket(Math.Abs(Position));
-				LogInfo($"Exit Long: Z-Score crossed zero from negative to positive");
-			}
-			else if (Position < 0 && _lastZScore > 0 && zScore < 0)
-			{
-				BuyMarket(Math.Abs(Position));
-				LogInfo($"Exit Short: Z-Score crossed zero from positive to negative");
-			}
-		}
-		
-		// Store current Z-Score for next calculation
-		_lastZScore = zScore;
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		var deviation = stdDevValue.GetValue<decimal>();
+
+		if (deviation == 0)
+			return;
+
+		var zScore = (candle.ClosePrice - maValue.GetValue<decimal>()) / deviation;
+
+		if (zScore < -ZScoreThreshold && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (zScore > ZScoreThreshold && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
+		else if (Position > 0 && zScore > 0)
+			SellMarket(Position);
+		else if (Position < 0 && zScore < 0)
+			BuyMarket(-Position);
 	}
 }
-	

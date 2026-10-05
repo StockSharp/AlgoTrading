@@ -20,8 +20,9 @@ Z-Scoreが負の閾値を下回ると、市場が売られすぎであること�
 - **ストップ**: あり、パーセンテージストップロス。
 - **デフォルト値**:
   - `LookbackPeriod` = 20
-  - `ZScoreThreshold` = 2.0m
-  - `StopLossPercent` = 2m
+  - `ZScoreThreshold` = 2
+  - `StopLossPercent` = 2
+    Z-Scoreは(終値 - SMA) / StdDevで、単純移動平均と終値の標準偏差は同じLookbackPeriod本で計算します。ストップはエントリー価格の固定StopLossPercentで、ローソク足の間も監視されます。 保有ポジションと逆方向のエントリーシグナルはドテンになります。
   - `CandleType` = TimeSpan.FromMinutes(10)
 - **フィルター**:
   - カテゴリ: 平均回帰
