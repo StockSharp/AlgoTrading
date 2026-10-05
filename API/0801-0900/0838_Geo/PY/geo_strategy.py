@@ -2,69 +2,62 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
-clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan
+from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+
 
 class geo_strategy(Strategy):
     """
-    EMA crossover strategy.
-    Buys when fast EMA crosses above slow EMA, sells when it crosses below.
+    Geo strategy.
+    The candle is split at its close into the part above the low and the part below the high. When the lower part divided by the upper
+    part is within Tolerance percent of the golden ratio the close sits at the upper golden section and the strategy goes long; when the
+    upper part divided by the lower part is within tolerance it goes short. The opposite condition reverses the position.
     """
+
+    PHI = Decimal(1.6180339887)
 
     def __init__(self):
         super(geo_strategy, self).__init__()
-        self._fast_period = self.Param("FastPeriod", 120) \
-            .SetDisplay("Fast Period", "Fast EMA period", "General")
-        self._slow_period = self.Param("SlowPeriod", 450) \
-            .SetDisplay("Slow Period", "Slow EMA period", "General")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
-            .SetDisplay("Candle Type", "Candle timeframe", "General")
-
-        self._prev_fast = 0.0
-        self._prev_slow = 0.0
+        self._tolerance = self.Param("Tolerance", 1.0).SetNotNegative().SetDisplay("Tolerance", "Allowed deviation from the golden ratio in percent", "Trading")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles to use", "General")
 
     @property
     def candle_type(self):
         return self._candle_type.Value
 
-    def OnReseted(self):
-        super(geo_strategy, self).OnReseted()
-        self._prev_fast = 0.0
-        self._prev_slow = 0.0
-
     def OnStarted2(self, time):
         super(geo_strategy, self).OnStarted2(time)
 
-        fast_ema = ExponentialMovingAverage()
-        fast_ema.Length = self._fast_period.Value
-        slow_ema = ExponentialMovingAverage()
-        slow_ema.Length = self._slow_period.Value
-
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(fast_ema, slow_ema, self._process_candle).Start()
+        subscription.Bind(self._process_candle).Start()
 
-    def _process_candle(self, candle, fast_val, slow_val):
+        area = self.CreateChartArea()
+        if area is not None:
+            self.DrawCandles(area, subscription)
+            self.DrawOwnTrades(area)
+
+    def _process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
 
-        fast = float(fast_val)
-        slow = float(slow_val)
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
-        if self._prev_fast != 0.0 and self._prev_slow != 0.0:
-            if self._prev_fast <= self._prev_slow and fast > slow:
-                if self.Position <= 0:
-                    self.BuyMarket()
-            elif self._prev_fast >= self._prev_slow and fast < slow:
-                if self.Position >= 0:
-                    self.SellMarket()
+        lower_part = candle.ClosePrice - candle.LowPrice
+        upper_part = candle.HighPrice - candle.ClosePrice
 
-        self._prev_fast = fast
-        self._prev_slow = slow
+        if lower_part <= 0 or upper_part <= 0:
+            return
+
+        allowed = self.PHI * Decimal(self._tolerance.Value) / Decimal(100)
+
+        if abs(lower_part / upper_part - self.PHI) <= allowed and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+        elif abs(upper_part / lower_part - self.PHI) <= allowed and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
 
     def CreateClone(self):
         return geo_strategy()
