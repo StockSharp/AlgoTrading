@@ -3217,6 +3217,80 @@ public abstract partial class StrategyTests
 	public Task S0112_PercentStopWorksBetweenFinishedBars()
 		=> CheckPercentStopBetweenBars("0112_CCI_Failure_Swing", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
 
+	private async Task CheckAbandonedBaby(string key, bool bullish, double stopPercent, bool secondary)
+	{
+		var candles = new List<ICandleMessage>();
+		var stop = 0m;
+		Sides? expectedSide = null;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = 0;
+		var violations = new List<string>();
+		var k = (decimal)stopPercent / 100m;
+		static decimal Top(ICandleMessage c) => Math.Max(c.OpenPrice, c.ClosePrice);
+		static decimal Bottom(ICandleMessage c) => Math.Min(c.OpenPrice, c.ClosePrice);
+		await Replay(key, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(10m, Convert.ToDecimal(strategy.Parameters["DojiBodyPercent"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "StopLossPercent", stopPercent);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				candles.Add(candle);
+				if (candles.Count > 3) candles.RemoveAt(0);
+				var position = strategy.Position;
+				if (position != 0m)
+				{
+					IsTrue(bullish ? position > 0m : position < 0m, "The strategy trades one direction only.");
+					if (bullish ? candle.ClosePrice <= stop : candle.ClosePrice >= stop) expectedSide = bullish ? Sides.Sell : Sides.Buy;
+				}
+				else if (candles.Count == 3)
+				{
+					var (first, doji, third) = (candles[0], candles[1], candles[2]);
+					var isDoji = Math.Abs(doji.ClosePrice - doji.OpenPrice) <= (doji.HighPrice - doji.LowPrice) / 10m;
+					var pattern = bullish
+						? first.ClosePrice < first.OpenPrice && isDoji && Top(doji) < Bottom(first) && third.ClosePrice > third.OpenPrice && Bottom(third) > Top(doji)
+						: first.ClosePrice > first.OpenPrice && isDoji && Bottom(doji) > Top(first) && third.ClosePrice < third.OpenPrice && Top(third) < Bottom(doji);
+					if (pattern)
+					{
+						expectedSide = bullish ? Sides.Buy : Sides.Sell;
+						stop = bullish ? doji.LowPrice * (1 - k) : doji.HighPrice * (1 + k);
+						entries++;
+					}
+				}
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side}, expected {expectedSide}. Every order must enter on an abandoned baby with body gaps while flat, or close the position on a close past the stop beyond the doji.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries > 0, "The fixture must contain the pattern.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard00")]
+	[DataRow(0.0, false)]
+	[DataRow(0.0, true)]
+	public Task S0113_LongOnlyBodyGapAbandonedBabiesWithStopBelowTheDoji(double stopPercent, bool secondary)
+		=> CheckAbandonedBaby("0113_Bullish_Abandoned_Baby", true, stopPercent, secondary);
+
+	[TestMethod]
+	[TestCategory("Shard01")]
+	[DataRow(0.0, false)]
+	[DataRow(0.0, true)]
+	public Task S0114_ShortOnlyBodyGapAbandonedBabiesWithStopAboveTheDoji(double stopPercent, bool secondary)
+		=> CheckAbandonedBaby("0114_Bearish_Abandoned_Baby", false, stopPercent, secondary);
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

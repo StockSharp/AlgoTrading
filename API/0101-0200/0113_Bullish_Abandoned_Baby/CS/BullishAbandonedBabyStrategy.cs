@@ -11,30 +11,36 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on Bullish Abandoned Baby candlestick pattern.
-/// Detects a bearish candle followed by a small-body candle near lows,
-/// then a bullish confirmation candle. Uses SMA for trend filter.
-/// Also detects the bearish mirror pattern for short entries.
+/// Bullish Abandoned Baby strategy.
+/// While flat it buys after a bearish candle, a doji whose body gaps below the first body, and a bullish candle whose body gaps above the doji.
+/// The stop lies StopLossPercent below the doji's low, and a close beyond it closes the position.
 /// </summary>
 public class BullishAbandonedBabyStrategy : Strategy
 {
+	private readonly StrategyParam<decimal> _dojiBodyPercent;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _maPeriod;
-	private readonly StrategyParam<int> _cooldownBars;
 
-	private SimpleMovingAverage _ma;
+	private readonly List<ICandleMessage> _candles = [];
+	private decimal _stopPrice;
 
-	private decimal _prev2Open;
-	private decimal _prev2Close;
-	private decimal _prev2High;
-	private decimal _prev2Low;
-	private decimal _prev1Open;
-	private decimal _prev1Close;
-	private decimal _prev1High;
-	private decimal _prev1Low;
-	private decimal _prevMa;
-	private int _candleCount;
-	private int _cooldown;
+	/// <summary>
+	/// Largest body of the doji, in percent of its range.
+	/// </summary>
+	public decimal DojiBodyPercent
+	{
+		get => _dojiBodyPercent.Value;
+		set => _dojiBodyPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Distance of the stop beyond the pattern, in percent.
+	/// </summary>
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
+	}
 
 	/// <summary>
 	/// Candle type.
@@ -46,38 +52,20 @@ public class BullishAbandonedBabyStrategy : Strategy
 	}
 
 	/// <summary>
-	/// MA period for trend filter.
-	/// </summary>
-	public int MaPeriod
-	{
-		get => _maPeriod.Value;
-		set => _maPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Cooldown bars.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
 	/// Constructor.
 	/// </summary>
 	public BullishAbandonedBabyStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Candle timeframe", "General");
+		_dojiBodyPercent = Param(nameof(DojiBodyPercent), 10m)
+			.SetNotNegative()
+			.SetDisplay("Doji Body %", "Largest body of the doji, in percent of its range", "Pattern");
 
-		_maPeriod = Param(nameof(MaPeriod), 20)
-			.SetDisplay("MA Period", "SMA period for exit", "Indicators")
-			.SetRange(10, 50);
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Distance of the stop beyond the pattern, in percent", "Risk");
 
-		_cooldownBars = Param(nameof(CooldownBars), 400)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "General")
-			.SetRange(10, 3000);
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -90,18 +78,8 @@ public class BullishAbandonedBabyStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_ma = default;
-		_prev2Open = 0;
-		_prev2Close = 0;
-		_prev2High = 0;
-		_prev2Low = 0;
-		_prev1Open = 0;
-		_prev1Close = 0;
-		_prev1High = 0;
-		_prev1Low = 0;
-		_prevMa = 0;
-		_candleCount = 0;
-		_cooldown = 0;
+		_candles.Clear();
+		_stopPrice = default;
 	}
 
 	/// <inheritdoc />
@@ -109,113 +87,54 @@ public class BullishAbandonedBabyStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_ma = new SimpleMovingAverage { Length = MaPeriod };
+		_candles.Clear();
+		_stopPrice = default;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_ma, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _ma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal ma)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		_candles.Add(candle);
+
+		if (_candles.Count > 3)
+			_candles.RemoveAt(0);
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		_candleCount++;
-
-		var close = candle.ClosePrice;
-		var open = candle.OpenPrice;
-		var high = candle.HighPrice;
-		var low = candle.LowPrice;
-
-		if (_cooldown > 0)
+		if (Position > 0)
 		{
-			_cooldown--;
-			// Shift candles even during cooldown
-			_prev2Open = _prev1Open;
-			_prev2Close = _prev1Close;
-			_prev2High = _prev1High;
-			_prev2Low = _prev1Low;
-			_prev1Open = open;
-			_prev1Close = close;
-			_prev1High = high;
-			_prev1Low = low;
-			_prevMa = ma;
+			if (candle.ClosePrice <= _stopPrice)
+				SellMarket(Position);
+
 			return;
 		}
 
-		// Exit logic: MA cross
-		if (Position > 0 && close < ma && _prevMa > 0 && _prev1Close >= _prevMa)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position < 0 && close > ma && _prevMa > 0 && _prev1Close <= _prevMa)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
+		if (Position != 0 || _candles.Count < 3)
+			return;
 
-		// Entry logic
-		if (Position == 0 && _candleCount >= 3 && _prev2Close != 0)
-		{
-			var prev2Body = Math.Abs(_prev2Close - _prev2Open);
-			var prev1Body = Math.Abs(_prev1Close - _prev1Open);
-			var currBody = Math.Abs(close - open);
-			var prev2Range = _prev2High - _prev2Low;
+		var c0 = _candles[0];
+		var c1 = _candles[1];
+		var c2 = _candles[2];
 
-			// Small body (doji-like) for middle candle
-			var isSmallBody = prev1Body < prev2Body * 0.4m && prev2Range > 0;
+		if (!(c0.ClosePrice < c0.OpenPrice && Math.Abs(c1.ClosePrice - c1.OpenPrice) <= (c1.HighPrice - c1.LowPrice) * DojiBodyPercent / 100m && Math.Max(c1.OpenPrice, c1.ClosePrice) < Math.Min(c0.OpenPrice, c0.ClosePrice) && c2.ClosePrice > c2.OpenPrice && Math.Min(c2.OpenPrice, c2.ClosePrice) > Math.Max(c1.OpenPrice, c1.ClosePrice)))
+			return;
 
-			// Bullish abandoned baby (relaxed):
-			// 1. First candle is bearish
-			// 2. Middle candle has small body and closes near/below first candle low
-			// 3. Current candle is bullish
-			var firstBearish = _prev2Close < _prev2Open;
-			var middleNearLow = _prev1Close <= _prev2Low + prev2Range * 0.3m;
-			var currentBullish = close > open;
-
-			// Bearish abandoned baby (relaxed):
-			// 1. First candle is bullish
-			// 2. Middle candle has small body and closes near/above first candle high
-			// 3. Current candle is bearish
-			var firstBullish = _prev2Close > _prev2Open;
-			var middleNearHigh = _prev1Close >= _prev2High - prev2Range * 0.3m;
-			var currentBearish = close < open;
-
-			if (isSmallBody && firstBearish && middleNearLow && currentBullish && close > ma)
-			{
-				BuyMarket();
-				_cooldown = CooldownBars;
-			}
-			else if (isSmallBody && firstBullish && middleNearHigh && currentBearish && close < ma)
-			{
-				SellMarket();
-				_cooldown = CooldownBars;
-			}
-		}
-
-		// Shift candle history
-		_prev2Open = _prev1Open;
-		_prev2Close = _prev1Close;
-		_prev2High = _prev1High;
-		_prev2Low = _prev1Low;
-		_prev1Open = open;
-		_prev1Close = close;
-		_prev1High = high;
-		_prev1Low = low;
-		_prevMa = ma;
+		BuyMarket(Volume);
+		_stopPrice = c1.LowPrice * (1 - StopLossPercent / 100m);
 	}
 }

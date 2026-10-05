@@ -18,7 +18,9 @@ O risco é limitado com um stop logo acima da máxima do doji, caso o preço se 
 - **Stops**: Sim, baseado em percentual
 - **Valores padrão**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `DojiBodyPercent` = 10
+  - `StopLossPercent` = 2
+    O mercado negocia 24 horas, então as faixas das velas quase nunca deixam gaps (o mês de exemplo tem no máximo um padrão de baixa assim); os gaps são medidos entre os corpos das velas. O corpo do doji é no máximo DojiBodyPercent da sua faixa. A estratégia só vende, no fechamento da terceira vela; o stop fica StopLossPercent acima da máxima do doji e a posição fecha quando uma vela fecha acima dele.
 - **Filtros**:
   - Categoria: Padrão
   - Direção: Ambos

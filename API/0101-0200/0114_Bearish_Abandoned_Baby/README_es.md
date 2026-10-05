@@ -18,7 +18,9 @@ El riesgo está limitado con un stop justo por encima del máximo del doji en ca
 - **Stops**: Sí, basado en porcentaje
 - **Valores predeterminados**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `DojiBodyPercent` = 10
+  - `StopLossPercent` = 2
+    El mercado opera las 24 horas, así que los rangos de las velas casi nunca dejan huecos (el mes de muestra tiene como mucho un patrón bajista así); los huecos se miden entre los cuerpos de las velas. El cuerpo del doji es como mucho DojiBodyPercent de su rango. La estrategia solo vende, al cierre de la tercera vela; el stop se coloca StopLossPercent por encima del máximo del doji y la posición se cierra cuando una vela cierra por encima.
 - **Filtros**:
   - Categoría: Patrón
   - Dirección: Ambos

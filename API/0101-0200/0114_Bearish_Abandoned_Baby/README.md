@@ -18,7 +18,9 @@ Risk is limited with a stop just above the doji high in case price recovers.
 - **Stops**: Yes, percent based
 - **Default Values**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `DojiBodyPercent` = 10
+  - `StopLossPercent` = 2
+    The market trades around the clock, so candle ranges almost never gap (the sample month has at most one such bearish pattern); the gaps are measured between candle bodies. The doji's body is at most DojiBodyPercent of its range. The strategy only sells, at the close of the third candle; the stop lies StopLossPercent above the doji high and the position closes when a candle closes above it.
 - **Filters**:
   - Category: Pattern
   - Direction: Both
