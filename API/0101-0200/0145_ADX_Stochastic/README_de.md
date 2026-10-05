@@ -7,7 +7,7 @@ Tests zeigen eine durchschnittliche jährliche Rendite von etwa 172%. Sie funkti
 
 ADX hebt die Trendstärke hervor, während Stochastic Pullbacks identifiziert. Long- oder Short-Signale erscheinen, wenn sich der Impuls dreht, solange ADX hoch bleibt.
 
-Es eignet sich für Trader, die Trendfolge mit Oszillator-Timing kombinieren. Schützende ATR-Stops helfen, Drawdowns zu kontrollieren.
+Es eignet sich für Trader, die Trendfolge mit Oszillator-Timing kombinieren. Ein schützender prozentualer Stop hilft, Drawdowns zu kontrollieren.
 
 ## Details
 
@@ -23,11 +23,11 @@ Es eignet sich für Trader, die Trendfolge mit Oszillator-Timing kombinieren. Sc
   - `AdxThreshold` = 25m
   - `StochPeriod` = 14
   - `StochK` = 3
-  - `StochD` = 3
   - `StochOversold` = 20m
   - `StochOverbought` = 80m
   - `StopLossPercent` = 2.0m
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    Bullish bedeutet +DI über -DI, bärisch -DI über +DI. StochK in den Regeln ist %K: die Stochastik über StochPeriod Kerzen, geglättet über StochK Kerzen; %D spielt keine Rolle und hat daher keine Einstellung. Ein Einstieg gegen eine offene Position dreht sie.
 - **Filter**:
   - Kategorie: Mean Reversion
   - Richtung: Beide

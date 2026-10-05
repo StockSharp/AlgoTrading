@@ -7,7 +7,7 @@ Las pruebas indican un retorno anual promedio de aproximadamente 172%. Funciona 
 
 El ADX resalta la fuerza de la tendencia mientras el Stochastic identifica retrocesos. Las señales largas o cortas aparecen cuando el momentum gira mientras el ADX permanece alto.
 
-Es adecuado para traders que combinan el seguimiento de tendencia con el timing del oscilador. Los stops protectores basados en ATR ayudan a controlar los drawdowns.
+Es adecuado para traders que combinan el seguimiento de tendencia con el timing del oscilador. Un stop protector porcentual ayuda a controlar los drawdowns.
 
 ## Detalles
 
@@ -23,11 +23,11 @@ Es adecuado para traders que combinan el seguimiento de tendencia con el timing 
   - `AdxThreshold` = 25m
   - `StochPeriod` = 14
   - `StochK` = 3
-  - `StochD` = 3
   - `StochOversold` = 20m
   - `StochOverbought` = 80m
   - `StopLossPercent` = 2.0m
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    Alcista significa +DI por encima de -DI y bajista -DI por encima de +DI. StochK en las reglas es %K: el estocástico de StochPeriod velas suavizado en StochK velas; %D no interviene, por lo que no tiene ajuste. Una entrada contra una posición abierta la invierte.
 - **Filtros**:
   - Categoría: Reversión a la media
   - Dirección: Ambos

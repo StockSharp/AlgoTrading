@@ -4733,6 +4733,72 @@ public abstract partial class StrategyTests
 		if (secondary) IsTrue(stopExits > 0, "TON must close a position at the ATR stop.");
 	}
 
+	[TestMethod]
+	[TestCategory("Shard06")]
+	[DataRow(14, 25.0, 14, 3, 20.0, 80.0, false)]
+	[DataRow(10, 20.0, 9, 3, 25.0, 75.0, true)]
+	public async Task S0145_StochasticExtremesWithTheDirectionalTrendWhileAdxIsStrong(int adxPeriod, double threshold, int stochPeriod, int stochK, double oversold, double overbought, bool secondary)
+	{
+		var adx = new AverageDirectionalIndex { Length = adxPeriod };
+		var stochastic = new StochasticOscillator { K = { Length = stochPeriod }, D = { Length = stochK } };
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var weakExits = 0;
+		var violations = new List<string>();
+		await Replay("0145_ADX_Stochastic", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(14, strategy.Parameters["AdxPeriod"].Value);
+			AreEqual(25m, Convert.ToDecimal(strategy.Parameters["AdxThreshold"].Value));
+			AreEqual(14, strategy.Parameters["StochPeriod"].Value);
+			AreEqual(3, strategy.Parameters["StochK"].Value);
+			AreEqual(20m, Convert.ToDecimal(strategy.Parameters["StochOversold"].Value));
+			AreEqual(80m, Convert.ToDecimal(strategy.Parameters["StochOverbought"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "AdxPeriod", adxPeriod);
+			SetParam(strategy, "AdxThreshold", threshold);
+			SetParam(strategy, "StochPeriod", stochPeriod);
+			SetParam(strategy, "StochK", stochK);
+			SetParam(strategy, "StochOversold", oversold);
+			SetParam(strategy, "StochOverbought", overbought);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var a = adx.Process(candle);
+				var st = stochastic.Process(candle);
+				if (!a.IsFormed || a is not AverageDirectionalIndexValue { MovingAverage: decimal strength } typed || typed.Dx.Plus is not decimal plus || typed.Dx.Minus is not decimal minus) return;
+				if (st is not IStochasticOscillatorValue { IsFormed: true, D: decimal k }) return;
+				var strong = strength > (decimal)threshold;
+				var position = strategy.Position;
+				if (strong && k < (decimal)oversold && plus > minus && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (strong && k > (decimal)overbought && minus > plus && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position != 0m && strength < (decimal)threshold) { expectedSide = position > 0m ? Sides.Sell : Sides.Buy; expectedVolume = Math.Abs(position); weakExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a stochastic extreme with the DI trend under a strong ADX, or close when ADX weakens.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && weakExits > 0, "The fixture must trade both sides and exit when ADX weakens.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard06")]
+	public Task S0145_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0145_ADX_Stochastic", TimeSpan.FromDays(31));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";
