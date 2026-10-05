@@ -11,28 +11,27 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Volume slope mean reversion strategy.
-/// Trades reversion of extreme volume-ratio slope values.
+/// Volume slope mean reversion.
+/// The slope of the smoothed volume is compared with its average: buys when the slope is far below the average
+/// and starts turning up, sells when it is far above and starts turning down.
+/// Exits when the slope returns to its average.
 /// </summary>
 public class VolumeSlopeMeanReversionStrategy : Strategy
 {
 	private readonly StrategyParam<int> _volumeMaPeriod;
-	private readonly StrategyParam<int> _slopeLookback;
-	private readonly StrategyParam<decimal> _thresholdMultiplier;
+	private readonly StrategyParam<int> _lookbackPeriod;
+	private readonly StrategyParam<decimal> _deviationMultiplier;
 	private readonly StrategyParam<decimal> _stopLossPercent;
-	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage _volumeAverage;
-	private decimal _previousVolumeRatio;
-	private decimal[] _slopeHistory;
-	private int _currentIndex;
-	private int _filledCount;
-	private int _cooldown;
-	private bool _isInitialized;
+	private SimpleMovingAverage _volumeMa;
+	private SimpleMovingAverage _slopeAverage;
+	private StandardDeviation _slopeStdDev;
+	private decimal? _prevVolume;
+	private decimal? _prevSlope;
 
 	/// <summary>
-	/// Volume moving average period.
+	/// Period of the volume moving average.
 	/// </summary>
 	public int VolumeMaPeriod
 	{
@@ -41,39 +40,30 @@ public class VolumeSlopeMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Lookback used to estimate slope mean and standard deviation.
+	/// Lookback period for slope statistics.
 	/// </summary>
-	public int SlopeLookback
+	public int LookbackPeriod
 	{
-		get => _slopeLookback.Value;
-		set => _slopeLookback.Value = value;
+		get => _lookbackPeriod.Value;
+		set => _lookbackPeriod.Value = value;
 	}
 
 	/// <summary>
-	/// Standard deviation multiplier for entry threshold.
+	/// Standard deviation multiplier for extreme slope.
 	/// </summary>
-	public decimal ThresholdMultiplier
+	public decimal DeviationMultiplier
 	{
-		get => _thresholdMultiplier.Value;
-		set => _thresholdMultiplier.Value = value;
+		get => _deviationMultiplier.Value;
+		set => _deviationMultiplier.Value = value;
 	}
 
 	/// <summary>
-	/// Stop loss percentage.
+	/// Stop-loss percentage.
 	/// </summary>
 	public decimal StopLossPercent
 	{
 		get => _stopLossPercent.Value;
 		set => _stopLossPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Bars to wait between orders.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
 	}
 
 	/// <summary>
@@ -86,29 +76,25 @@ public class VolumeSlopeMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initializes a new instance of <see cref="VolumeSlopeMeanReversionStrategy"/>.
+	/// Initialize <see cref="VolumeSlopeMeanReversionStrategy"/>.
 	/// </summary>
 	public VolumeSlopeMeanReversionStrategy()
 	{
 		_volumeMaPeriod = Param(nameof(VolumeMaPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Volume MA Period", "Period for the volume moving average", "Indicator Parameters");
+			.SetDisplay("Volume MA Period", "Period of the volume moving average", "Indicators");
 
-		_slopeLookback = Param(nameof(SlopeLookback), 20)
+		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Slope Lookback", "Period for slope statistics", "Strategy Parameters");
+			.SetDisplay("Lookback Period", "Period for slope statistics", "Strategy");
 
-		_thresholdMultiplier = Param(nameof(ThresholdMultiplier), 1.5m)
+		_deviationMultiplier = Param(nameof(DeviationMultiplier), 2.0m)
 			.SetGreaterThanZero()
-			.SetDisplay("Threshold Multiplier", "Standard deviation multiplier for entries", "Strategy Parameters");
+			.SetDisplay("Deviation Multiplier", "Standard deviation multiplier for extreme slope", "Strategy");
 
-		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management");
-
-		_cooldownBars = Param(nameof(CooldownBars), 1200)
-			.SetRange(1, 5000)
-			.SetDisplay("Cooldown Bars", "Bars to wait between orders", "Risk Management");
+		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop-loss percentage", "Risk Management");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -124,14 +110,11 @@ public class VolumeSlopeMeanReversionStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_volumeAverage = null;
-		_previousVolumeRatio = default;
-		_slopeHistory = new decimal[SlopeLookback];
-		_currentIndex = default;
-		_filledCount = default;
-		_cooldown = default;
-		_isInitialized = default;
+		_volumeMa = null;
+		_slopeAverage = null;
+		_slopeStdDev = null;
+		_prevVolume = null;
+		_prevSlope = null;
 	}
 
 	/// <inheritdoc />
@@ -139,128 +122,75 @@ public class VolumeSlopeMeanReversionStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_volumeAverage = new SimpleMovingAverage
-		{
-			Length = VolumeMaPeriod,
-			Source = Level1Fields.Volume,
-		};
-
-		_slopeHistory = new decimal[SlopeLookback];
-		_currentIndex = 0;
-		_filledCount = 0;
-		_cooldown = 0;
+		_volumeMa = new SimpleMovingAverage { Length = VolumeMaPeriod };
+		_slopeAverage = new SimpleMovingAverage { Length = LookbackPeriod };
+		_slopeStdDev = new StandardDeviation { Length = LookbackPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_volumeAverage, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
 
-		StartProtection(new(), new Unit(StopLossPercent, UnitTypes.Percent));
+		StartProtection(
+			takeProfit: null,
+			stopLoss: StopLossPercent > 0 ? new Unit(StopLossPercent, UnitTypes.Percent) : null
+		);
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _volumeAverage);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal averageVolume)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_volumeAverage.IsFormed || averageVolume <= 0)
+		var volume = _volumeMa.Process(candle.TotalVolume, candle.ServerTime, true).ToDecimal();
+
+		if (!_volumeMa.IsFormed)
 			return;
 
-		var volumeRatio = candle.TotalVolume / averageVolume;
-
-		if (!_isInitialized)
+		if (_prevVolume is not decimal prevVolume)
 		{
-			_previousVolumeRatio = volumeRatio;
-			_isInitialized = true;
+			_prevVolume = volume;
 			return;
 		}
 
-		var slope = volumeRatio - _previousVolumeRatio;
-		_previousVolumeRatio = volumeRatio;
+		_prevVolume = volume;
 
-		_slopeHistory[_currentIndex] = slope;
-		_currentIndex = (_currentIndex + 1) % SlopeLookback;
+		var slope = volume - prevVolume;
+		var avgSlope = _slopeAverage.Process(slope, candle.ServerTime, true).ToDecimal();
+		var stdSlope = _slopeStdDev.Process(slope, candle.ServerTime, true).ToDecimal();
 
-		if (_filledCount < SlopeLookback)
-			_filledCount++;
+		var prevSlope = _prevSlope;
+		_prevSlope = slope;
 
-		if (_filledCount < SlopeLookback)
+		if (!_slopeAverage.IsFormed || !_slopeStdDev.IsFormed || prevSlope is not decimal prev)
 			return;
-
-		CalculateStatistics(out var averageSlope, out var slopeStdDev);
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (slopeStdDev <= 0)
-			return;
-
-		if (_cooldown > 0)
+		// Extreme reading that has started to turn back toward the average.
+		if (slope < avgSlope - DeviationMultiplier * stdSlope && slope > prev && Position <= 0)
 		{
-			_cooldown--;
-			return;
+			BuyMarket(Volume + Math.Abs(Position));
 		}
-
-		var lowerThreshold = averageSlope - ThresholdMultiplier * slopeStdDev;
-		var upperThreshold = averageSlope + ThresholdMultiplier * slopeStdDev;
-		var isBullishCandle = candle.ClosePrice >= candle.OpenPrice;
-		var isBearishCandle = candle.ClosePrice <= candle.OpenPrice;
-
-		if (Position == 0)
+		else if (slope > avgSlope + DeviationMultiplier * stdSlope && slope < prev && Position >= 0)
 		{
-			if (slope <= lowerThreshold && isBullishCandle)
-			{
-				BuyMarket();
-				_cooldown = CooldownBars;
-			}
-			else if (slope >= upperThreshold && isBearishCandle)
-			{
-				SellMarket();
-				_cooldown = CooldownBars;
-			}
+			SellMarket(Volume + Math.Abs(Position));
 		}
-		else if (Position > 0)
+		else if (Position > 0 && slope >= avgSlope)
 		{
-			if (slope >= averageSlope || isBearishCandle)
-			{
-				SellMarket(Math.Abs(Position));
-				_cooldown = CooldownBars;
-			}
+			SellMarket(Position);
 		}
-		else if (Position < 0)
+		else if (Position < 0 && slope <= avgSlope)
 		{
-			if (slope <= averageSlope || isBullishCandle)
-			{
-				BuyMarket(Math.Abs(Position));
-				_cooldown = CooldownBars;
-			}
+			BuyMarket(-Position);
 		}
-	}
-
-	private void CalculateStatistics(out decimal averageSlope, out decimal slopeStdDev)
-	{
-		averageSlope = 0m;
-		var sumSquaredDiffs = 0m;
-
-		for (var i = 0; i < SlopeLookback; i++)
-			averageSlope += _slopeHistory[i];
-
-		averageSlope /= SlopeLookback;
-
-		for (var i = 0; i < SlopeLookback; i++)
-		{
-			var diff = _slopeHistory[i] - averageSlope;
-			sumSquaredDiffs += diff * diff;
-		}
-
-		slopeStdDev = (decimal)Math.Sqrt((double)(sumSquaredDiffs / SlopeLookback));
 	}
 }
