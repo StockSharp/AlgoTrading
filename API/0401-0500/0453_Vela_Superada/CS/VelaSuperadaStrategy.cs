@@ -12,65 +12,116 @@ using StockSharp.Messages;
 
 /// <summary>
 /// Vela Superada Strategy.
-/// Trades on candle pattern reversals with EMA, RSI and MACD filters.
-/// Buys on bullish reversal pattern above EMA with rising MACD.
-/// Sells on bearish reversal pattern below EMA with falling MACD.
+/// A bearish candle followed by a bullish one that closes above the prior open, with both closes above the EMA, RSI below 65
+/// and a rising MACD line, is a long signal. The mirrored pattern below the EMA with RSI above 35 and a falling MACD line is
+/// a short signal. ShowLong and ShowShort enable each side; an opposite signal closes or reverses the position. A trailing
+/// SlPercent stop and a TpPercent take profit protect the trade.
 /// </summary>
 public class VelaSuperadaStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _emaLength;
 	private readonly StrategyParam<int> _rsiLength;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<bool> _showLong;
+	private readonly StrategyParam<bool> _showShort;
+	private readonly StrategyParam<decimal> _tpPercent;
+	private readonly StrategyParam<decimal> _slPercent;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private ExponentialMovingAverage _ema;
-	private RelativeStrengthIndex _rsi;
-	private MovingAverageConvergenceDivergence _macd;
+	private ICandleMessage _prevCandle;
+	private decimal? _prevMacd;
 
-	private decimal _prevClose;
-	private decimal _prevOpen;
-	private decimal _prevMacd;
-	private int _cooldownRemaining;
-
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
+	/// <summary>
+	/// EMA period.
+	/// </summary>
 	public int EmaLength
 	{
 		get => _emaLength.Value;
 		set => _emaLength.Value = value;
 	}
 
+	/// <summary>
+	/// RSI period.
+	/// </summary>
 	public int RsiLength
 	{
 		get => _rsiLength.Value;
 		set => _rsiLength.Value = value;
 	}
 
-	public int CooldownBars
+	/// <summary>
+	/// Allow long trades.
+	/// </summary>
+	public bool ShowLong
 	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
+		get => _showLong.Value;
+		set => _showLong.Value = value;
 	}
 
+	/// <summary>
+	/// Allow short trades.
+	/// </summary>
+	public bool ShowShort
+	{
+		get => _showShort.Value;
+		set => _showShort.Value = value;
+	}
+
+	/// <summary>
+	/// Take profit percentage from entry price.
+	/// </summary>
+	public decimal TpPercent
+	{
+		get => _tpPercent.Value;
+		set => _tpPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Trailing stop loss percentage.
+	/// </summary>
+	public decimal SlPercent
+	{
+		get => _slPercent.Value;
+		set => _slPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
+	/// </summary>
 	public VelaSuperadaStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
 		_emaLength = Param(nameof(EmaLength), 10)
 			.SetGreaterThanZero()
-			.SetDisplay("EMA Length", "EMA period", "Moving Averages");
+			.SetDisplay("EMA Length", "EMA period", "Indicators");
 
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("RSI Length", "RSI period", "RSI");
+			.SetDisplay("RSI Length", "RSI period", "Indicators");
 
-		_cooldownBars = Param(nameof(CooldownBars), 10)
-			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk");
+		_showLong = Param(nameof(ShowLong), true)
+			.SetDisplay("Long Trades", "Allow long trades", "Trading");
+
+		_showShort = Param(nameof(ShowShort), false)
+			.SetDisplay("Short Trades", "Allow short trades", "Trading");
+
+		_tpPercent = Param(nameof(TpPercent), 1.2m)
+			.SetNotNegative()
+			.SetDisplay("TP %", "Take profit percentage from entry price", "Risk");
+
+		_slPercent = Param(nameof(SlPercent), 1.8m)
+			.SetNotNegative()
+			.SetDisplay("SL %", "Trailing stop loss percentage", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -81,14 +132,8 @@ public class VelaSuperadaStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_ema = null;
-		_rsi = null;
-		_macd = null;
-		_prevClose = 0;
-		_prevOpen = 0;
-		_prevMacd = 0;
-		_cooldownRemaining = 0;
+		_prevCandle = null;
+		_prevMacd = null;
 	}
 
 	/// <inheritdoc />
@@ -96,101 +141,85 @@ public class VelaSuperadaStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_ema = new ExponentialMovingAverage { Length = EmaLength };
-		_rsi = new RelativeStrengthIndex { Length = RsiLength };
-		_macd = new MovingAverageConvergenceDivergence();
+		_prevCandle = null;
+		_prevMacd = null;
+
+		var ema = new ExponentialMovingAverage { Length = EmaLength };
+		var rsi = new RelativeStrengthIndex { Length = RsiLength };
+		var macd = new MovingAverageConvergenceDivergence();
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_ema, _rsi, _macd, OnProcess)
+			.BindEx(ema, rsi, macd, ProcessCandle)
 			.Start();
+
+		StartProtection(
+			TpPercent > 0m ? new Unit(TpPercent, UnitTypes.Percent) : new Unit(),
+			SlPercent > 0m ? new Unit(SlPercent, UnitTypes.Percent) : new Unit(),
+			isStopTrailing: true,
+			useMarketOrders: true);
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _ema);
+			DrawIndicator(area, ema);
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, rsi);
+				DrawIndicator(oscillators, macd);
+			}
 		}
 	}
 
-	private void OnProcess(ICandleMessage candle, decimal emaVal, decimal rsiVal, decimal macdVal)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue emaValue, IIndicatorValue rsiValue, IIndicatorValue macdValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_ema.IsFormed || !_rsi.IsFormed || !_macd.IsFormed)
-		{
-			_prevClose = candle.ClosePrice;
-			_prevOpen = candle.OpenPrice;
-			_prevMacd = macdVal;
+		var prevCandle = _prevCandle;
+		_prevCandle = candle;
+
+		if (!macdValue.IsFormed)
 			return;
-		}
+
+		var macd = macdValue.GetValue<decimal>();
+		var prevMacd = _prevMacd;
+		_prevMacd = macd;
+
+		if (prevCandle == null || prevMacd is not decimal previousMacd || !emaValue.IsFormed || !rsiValue.IsFormed)
+			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_prevClose = candle.ClosePrice;
-			_prevOpen = candle.OpenPrice;
-			_prevMacd = macdVal;
 			return;
-		}
 
-		if (_cooldownRemaining > 0)
-		{
-			_cooldownRemaining--;
-			_prevClose = candle.ClosePrice;
-			_prevOpen = candle.OpenPrice;
-			_prevMacd = macdVal;
-			return;
-		}
+		var ema = emaValue.GetValue<decimal>();
+		var rsi = rsiValue.GetValue<decimal>();
+		var close = candle.ClosePrice;
+		var prevClose = prevCandle.ClosePrice;
 
-		if (_prevClose == 0)
-		{
-			_prevClose = candle.ClosePrice;
-			_prevOpen = candle.OpenPrice;
-			_prevMacd = macdVal;
-			return;
-		}
+		var longSignal = prevCandle.ClosePrice < prevCandle.OpenPrice && close > candle.OpenPrice && close > prevCandle.OpenPrice
+			&& close > ema && prevClose > ema && rsi < 65m && macd > previousMacd;
 
-		// Candle pattern detection
-		var bullishReversal = _prevClose < _prevOpen && candle.ClosePrice > candle.OpenPrice; // Red->Green
-		var bearishReversal = _prevClose > _prevOpen && candle.ClosePrice < candle.OpenPrice; // Green->Red
+		var shortSignal = prevCandle.ClosePrice > prevCandle.OpenPrice && close < candle.OpenPrice && close < prevCandle.OpenPrice
+			&& close < ema && prevClose < ema && rsi > 35m && macd < previousMacd;
 
-		// MACD momentum
-		var macdRising = macdVal > _prevMacd;
-		var macdFalling = macdVal < _prevMacd;
-
-		// Buy: bullish reversal + above EMA + RSI not overbought + MACD rising
-		if (bullishReversal && candle.ClosePrice > emaVal && rsiVal < 65 && macdRising && Position <= 0)
+		if (longSignal)
 		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-			BuyMarket(Volume);
-			_cooldownRemaining = CooldownBars;
+			if (ShowLong && Position <= 0)
+				BuyMarket(Volume + Math.Abs(Position));
+			else if (Position < 0)
+				BuyMarket(-Position);
 		}
-		// Sell: bearish reversal + below EMA + RSI not oversold + MACD falling
-		else if (bearishReversal && candle.ClosePrice < emaVal && rsiVal > 35 && macdFalling && Position >= 0)
+		else if (shortSignal)
 		{
-			if (Position > 0)
-				SellMarket(Math.Abs(Position));
-			SellMarket(Volume);
-			_cooldownRemaining = CooldownBars;
+			if (ShowShort && Position >= 0)
+				SellMarket(Volume + Math.Abs(Position));
+			else if (Position > 0)
+				SellMarket(Position);
 		}
-		// Exit long: bearish reversal below EMA
-		else if (Position > 0 && bearishReversal && candle.ClosePrice < emaVal)
-		{
-			SellMarket(Math.Abs(Position));
-			_cooldownRemaining = CooldownBars;
-		}
-		// Exit short: bullish reversal above EMA
-		else if (Position < 0 && bullishReversal && candle.ClosePrice > emaVal)
-		{
-			BuyMarket(Math.Abs(Position));
-			_cooldownRemaining = CooldownBars;
-		}
-
-		_prevClose = candle.ClosePrice;
-		_prevOpen = candle.OpenPrice;
-		_prevMacd = macdVal;
 	}
 }
