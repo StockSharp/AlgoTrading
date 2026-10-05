@@ -5,138 +5,101 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan, Math
+from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import StochasticOscillator, KeltnerChannels, AverageTrueRange
+from StockSharp.Algo.Indicators import StochasticOscillator, ExponentialMovingAverage, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
 
 class stochastic_keltner_strategy(Strategy):
     """
-    Strategy based on Stochastic Oscillator and Keltner Channels indicators
+    Stochastic Keltner strategy.
+    The Keltner Channel is the EmaPeriod EMA plus and minus KeltnerMultiplier times the AtrPeriod ATR; %K is the stochastic over StochPeriod
+    candles smoothed over StochK candles. %K below StochOversold with a close below the lower band goes long and %K above StochOverbought
+    with a close above the upper band goes short, reversing an opposite position. A position closes once price returns to the middle band.
+    The stop lies AtrMultiplier ATR from the entry close and is checked on candle closes.
     """
 
     def __init__(self):
         super(stochastic_keltner_strategy, self).__init__()
-
-        self._stochPeriod = self.Param("StochPeriod", 14) \
-            .SetRange(5, 30) \
-            .SetDisplay("Stoch Period", "Period for Stochastic Oscillator", "Stochastic")
-
-        self._stochK = self.Param("StochK", 3) \
-            .SetRange(1, 10) \
-            .SetDisplay("Stoch %K", "Stochastic %K smoothing period", "Stochastic")
-
-        self._stochD = self.Param("StochD", 3) \
-            .SetRange(1, 10) \
-            .SetDisplay("Stoch %D", "Stochastic %D smoothing period", "Stochastic")
-
-        self._emaPeriod = self.Param("EmaPeriod", 20) \
-            .SetRange(10, 50) \
-            .SetDisplay("EMA Period", "EMA period for Keltner Channel", "Keltner")
-
-        self._keltnerMultiplier = self.Param("KeltnerMultiplier", 2.0) \
-            .SetRange(1.0, 4.0) \
-            .SetDisplay("K Multiplier", "Multiplier for Keltner Channel", "Keltner")
-
-        self._atrPeriod = self.Param("AtrPeriod", 14) \
-            .SetRange(7, 28) \
-            .SetDisplay("ATR Period", "ATR period for Keltner Channel and stop-loss", "Risk Management")
-
-        self._atrMultiplier = self.Param("AtrMultiplier", 2.0) \
-            .SetRange(1.0, 4.0) \
-            .SetDisplay("ATR Multiplier", "Multiplier for ATR-based stop-loss", "Risk Management")
-
-        self._cooldownBars = self.Param("CooldownBars", 40) \
-            .SetRange(1, 200) \
-            .SetDisplay("Cooldown Bars", "Bars between entries", "General")
-
-        self._candleType = self.Param("CandleType", tf(15)) \
-            .SetDisplay("Candle Type", "Type of candles to use", "General")
-
-        self._prev_stoch_k = 50.0
-        self._cooldown = 0
+        self._stoch_period = self.Param("StochPeriod", 14).SetGreaterThanZero().SetDisplay("Stochastic Period", "Lookback period of the raw stochastic", "Stochastic")
+        self._stoch_k = self.Param("StochK", 3).SetGreaterThanZero().SetDisplay("Stochastic %K", "Smoothing period of %K", "Stochastic")
+        self._stoch_oversold = self.Param("StochOversold", 20.0).SetDisplay("Stochastic Oversold", "%K level for longs", "Stochastic")
+        self._stoch_overbought = self.Param("StochOverbought", 80.0).SetDisplay("Stochastic Overbought", "%K level for shorts", "Stochastic")
+        self._ema_period = self.Param("EmaPeriod", 20).SetGreaterThanZero().SetDisplay("EMA Period", "Period of the channel EMA", "Keltner")
+        self._keltner_multiplier = self.Param("KeltnerMultiplier", 2.0).SetGreaterThanZero().SetDisplay("Keltner Multiplier", "ATR multiplier of the channel width", "Keltner")
+        self._atr_period = self.Param("AtrPeriod", 14).SetGreaterThanZero().SetDisplay("ATR Period", "Period of the channel and stop ATR", "Keltner")
+        self._atr_multiplier = self.Param("AtrMultiplier", 2.0).SetNotNegative().SetDisplay("ATR Multiplier", "Stop distance from the entry in ATRs", "Risk")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._reset_state()
 
     @property
-    def CandleType(self):
-        return self._candleType.Value
+    def candle_type(self):
+        return self._candle_type.Value
+
+    def _reset_state(self):
+        self._stop_price = Decimal(0)
 
     def OnReseted(self):
         super(stochastic_keltner_strategy, self).OnReseted()
-        self._prev_stoch_k = 50.0
-        self._cooldown = 0
+        self._reset_state()
 
     def OnStarted2(self, time):
         super(stochastic_keltner_strategy, self).OnStarted2(time)
-        self._prev_stoch_k = 50.0
-        self._cooldown = 0
+
+        self._reset_state()
 
         stochastic = StochasticOscillator()
-        stochastic.K.Length = self._stochPeriod.Value
-        stochastic.D.Length = self._stochD.Value
-
-        keltner = KeltnerChannels()
-        keltner.Length = self._emaPeriod.Value
-
+        stochastic.K.Length = self._stoch_period.Value
+        stochastic.D.Length = self._stoch_k.Value
+        ema = ExponentialMovingAverage()
+        ema.Length = self._ema_period.Value
         atr = AverageTrueRange()
-        atr.Length = self._atrPeriod.Value
+        atr.Length = self._atr_period.Value
 
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription.BindEx(keltner, stochastic, atr, self.ProcessIndicators).Start()
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.BindEx(stochastic, ema, atr, self._process_candle).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, keltner)
-            self.DrawIndicator(area, stochastic)
+            self.DrawIndicator(area, ema)
             self.DrawOwnTrades(area)
+            oscillators = self.CreateChartArea()
+            if oscillators is not None:
+                self.DrawIndicator(oscillators, stochastic)
 
-    def ProcessIndicators(self, candle, keltner_value, stoch_value, atr_value):
+    def _process_candle(self, candle, stochastic_value, ema_value, atr_value):
         if candle.State != CandleStates.Finished:
+            return
+
+        if not stochastic_value.IsFormed or not ema_value.IsFormed or not atr_value.IsFormed:
+            return
+        # The smoothed %K is the moving average the core oscillator exposes as D.
+        if stochastic_value.D is None:
             return
 
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        price = float(candle.ClosePrice)
+        k = stochastic_value.D
+        middle = ema_value.GetValue[Decimal](None)
+        atr = atr_value.GetValue[Decimal](None)
+        multiplier = Decimal(self._keltner_multiplier.Value)
+        upper = middle + multiplier * atr
+        lower = middle - multiplier * atr
+        close = candle.ClosePrice
 
-        upper = keltner_value.Upper
-        lower = keltner_value.Lower
-        if upper is None or lower is None:
-            return
-
-        upper_band = float(upper)
-        lower_band = float(lower)
-
-        stoch_k_val = stoch_value.K
-        if stoch_k_val is None:
-            return
-
-        stoch_k = float(stoch_k_val)
-
-        crossed_below_20 = self._prev_stoch_k >= 20 and stoch_k < 20
-        crossed_above_80 = self._prev_stoch_k <= 80 and stoch_k > 80
-        self._prev_stoch_k = stoch_k
-
-        if self._cooldown > 0:
-            self._cooldown -= 1
-
-        cooldown_val = int(self._cooldownBars.Value)
-
-        if self._cooldown == 0 and crossed_below_20 and price <= lower_band * 1.001 and self.Position <= 0:
-            volume = self.Volume + abs(self.Position)
-            self.BuyMarket(volume)
-            self._cooldown = cooldown_val
-        elif self._cooldown == 0 and crossed_above_80 and price >= upper_band * 0.999 and self.Position >= 0:
-            volume = self.Volume + abs(self.Position)
-            self.SellMarket(volume)
-            self._cooldown = cooldown_val
-        elif self.Position > 0 and crossed_above_80:
+        stop_atr = Decimal(self._atr_multiplier.Value)
+        if k < Decimal(self._stoch_oversold.Value) and close < lower and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+            self._stop_price = close - stop_atr * atr
+        elif k > Decimal(self._stoch_overbought.Value) and close > upper and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
+            self._stop_price = close + stop_atr * atr
+        elif self.Position > 0 and (close >= middle or (stop_atr > 0 and close <= self._stop_price)):
             self.SellMarket(self.Position)
-            self._cooldown = cooldown_val
-        elif self.Position < 0 and crossed_below_20:
-            self.BuyMarket(abs(self.Position))
-            self._cooldown = cooldown_val
+        elif self.Position < 0 and (close <= middle or (stop_atr > 0 and close >= self._stop_price)):
+            self.BuyMarket(-self.Position)
 
     def CreateClone(self):
         return stochastic_keltner_strategy()
