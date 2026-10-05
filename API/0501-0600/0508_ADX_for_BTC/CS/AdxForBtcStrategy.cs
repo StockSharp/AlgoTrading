@@ -11,57 +11,100 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// ADX based long-only strategy for BTC.
-/// Enters when ADX crosses above entry level, exits when ADX crosses below exit level.
+/// ADX for BTC strategy.
+/// Long only: buys when ADX(14) crosses above EntryLevel while, with SmaFilter enabled, the close is above SMA(SmaLength), and closes
+/// the long when ADX crosses below ExitLevel.
 /// </summary>
 public class AdxForBtcStrategy : Strategy
 {
+	private const int _adxLength = 14;
+
 	private readonly StrategyParam<decimal> _entryLevel;
 	private readonly StrategyParam<decimal> _exitLevel;
+	private readonly StrategyParam<bool> _smaFilter;
 	private readonly StrategyParam<int> _smaLength;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
 
-	private decimal _prevAdx;
-	private int _cooldownRemaining;
+	private decimal? _prevAdx;
 
-	public decimal EntryLevel { get => _entryLevel.Value; set => _entryLevel.Value = value; }
-	public decimal ExitLevel { get => _exitLevel.Value; set => _exitLevel.Value = value; }
-	public int SmaLength { get => _smaLength.Value; set => _smaLength.Value = value; }
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
+	/// <summary>
+	/// ADX level whose upward cross opens a long.
+	/// </summary>
+	public decimal EntryLevel
+	{
+		get => _entryLevel.Value;
+		set => _entryLevel.Value = value;
+	}
 
+	/// <summary>
+	/// ADX level whose downward cross closes the long.
+	/// </summary>
+	public decimal ExitLevel
+	{
+		get => _exitLevel.Value;
+		set => _exitLevel.Value = value;
+	}
+
+	/// <summary>
+	/// Require the close above the SMA.
+	/// </summary>
+	public bool SmaFilter
+	{
+		get => _smaFilter.Value;
+		set => _smaFilter.Value = value;
+	}
+
+	/// <summary>
+	/// SMA period of the trend filter.
+	/// </summary>
+	public int SmaLength
+	{
+		get => _smaLength.Value;
+		set => _smaLength.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
+	/// </summary>
 	public AdxForBtcStrategy()
 	{
 		_entryLevel = Param(nameof(EntryLevel), 14m)
-			.SetGreaterThanZero()
-			.SetDisplay("Entry Level", "ADX threshold for entry", "Strategy");
+			.SetDisplay("Entry Level", "ADX level whose upward cross opens a long", "ADX");
 
 		_exitLevel = Param(nameof(ExitLevel), 45m)
-			.SetGreaterThanZero()
-			.SetDisplay("Exit Level", "ADX threshold for exit", "Strategy");
+			.SetDisplay("Exit Level", "ADX level whose downward cross closes the long", "ADX");
+
+		_smaFilter = Param(nameof(SmaFilter), true)
+			.SetDisplay("SMA Filter", "Require the close above the SMA", "Filters");
 
 		_smaLength = Param(nameof(SmaLength), 200)
 			.SetGreaterThanZero()
-			.SetDisplay("SMA Length", "Length for trend SMA", "Strategy");
+			.SetDisplay("SMA Length", "SMA period of the trend filter", "Filters");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
-
-		_cooldownBars = Param(nameof(CooldownBars), 10)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "Risk");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> [(Security, CandleType)];
+	{
+		return [(Security, CandleType)];
+	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevAdx = 0m;
-		_cooldownRemaining = 0;
+		_prevAdx = null;
 	}
 
 	/// <inheritdoc />
@@ -69,7 +112,9 @@ public class AdxForBtcStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var adx = new AverageDirectionalIndex { Length = 14 };
+		_prevAdx = null;
+
+		var adx = new AverageDirectionalIndex { Length = _adxLength };
 		var sma = new SimpleMovingAverage { Length = SmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -83,6 +128,10 @@ public class AdxForBtcStrategy : Strategy
 			DrawCandles(area, subscription);
 			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+				DrawIndicator(oscillators, adx);
 		}
 	}
 
@@ -91,52 +140,23 @@ public class AdxForBtcStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		if (!adxValue.IsFormed || ((IAverageDirectionalIndexValue)adxValue).MovingAverage is not decimal adx)
+			return;
+
+		var prevAdx = _prevAdx;
+		_prevAdx = adx;
+
+		if (!smaValue.IsFormed || prevAdx is not decimal prev)
+			return;
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var adxTyped = (IAverageDirectionalIndexValue)adxValue;
-		if (adxTyped.MovingAverage is not decimal adxMa ||
-			adxTyped.Dx.Plus is not decimal diPlus ||
-			adxTyped.Dx.Minus is not decimal diMinus)
-			return;
+		var trendOk = !SmaFilter || candle.ClosePrice > smaValue.ToDecimal();
 
-		var smaVal = smaValue.ToDecimal();
-
-		if (_cooldownRemaining > 0)
-		{
-			_cooldownRemaining--;
-			_prevAdx = adxMa;
-			return;
-		}
-
-		// Enter long when ADX crosses above entry level with +DI > -DI and price above SMA
-		if (_prevAdx > 0 && _prevAdx <= EntryLevel && adxMa > EntryLevel && diPlus > diMinus && candle.ClosePrice > smaVal && Position <= 0)
-		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
+		if (Position == 0 && prev <= EntryLevel && adx > EntryLevel && trendOk)
 			BuyMarket(Volume);
-			_cooldownRemaining = CooldownBars;
-		}
-		// Enter short when ADX crosses above entry level with -DI > +DI and price below SMA
-		else if (_prevAdx > 0 && _prevAdx <= EntryLevel && adxMa > EntryLevel && diMinus > diPlus && candle.ClosePrice < smaVal && Position >= 0)
-		{
-			if (Position > 0)
-				SellMarket(Math.Abs(Position));
-			SellMarket(Volume);
-			_cooldownRemaining = CooldownBars;
-		}
-		// Exit when ADX drops below exit level
-		else if (Position > 0 && adxMa < ExitLevel && _prevAdx >= ExitLevel)
-		{
-			SellMarket(Math.Abs(Position));
-			_cooldownRemaining = CooldownBars;
-		}
-		else if (Position < 0 && adxMa < ExitLevel && _prevAdx >= ExitLevel)
-		{
-			BuyMarket(Math.Abs(Position));
-			_cooldownRemaining = CooldownBars;
-		}
-
-		_prevAdx = adxMa;
+		else if (Position > 0 && prev >= ExitLevel && adx < ExitLevel)
+			SellMarket(Position);
 	}
 }

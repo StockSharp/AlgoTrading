@@ -6,30 +6,29 @@ clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 clr.AddReference("StockSharp.BusinessEntities")
 
-from System import TimeSpan, Math
+from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import AverageDirectionalIndex, SimpleMovingAverage, IndicatorHelper
+from StockSharp.Algo.Indicators import AverageDirectionalIndex, SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+
+ADX_LENGTH = 14
 
 
 class adx_for_btc_strategy(Strategy):
+    """
+    ADX for BTC strategy.
+    Long only: buys when ADX(14) crosses above EntryLevel while, with SmaFilter enabled, the close is above SMA(SmaLength), and closes
+    the long when ADX crosses below ExitLevel.
+    """
+
     def __init__(self):
         super(adx_for_btc_strategy, self).__init__()
-        self._entry_level = self.Param("EntryLevel", 14.0) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Entry Level", "ADX threshold for entry", "Strategy")
-        self._exit_level = self.Param("ExitLevel", 45.0) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Exit Level", "ADX threshold for exit", "Strategy")
-        self._sma_length = self.Param("SmaLength", 200) \
-            .SetGreaterThanZero() \
-            .SetDisplay("SMA Length", "Length for trend SMA", "Strategy")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
-            .SetDisplay("Candle Type", "Type of candles", "General")
-        self._cooldown_bars = self.Param("CooldownBars", 10) \
-            .SetDisplay("Cooldown Bars", "Bars between trades", "Risk")
-        self._prev_adx = 0.0
-        self._cooldown_remaining = 0
+        self._entry_level = self.Param("EntryLevel", 14.0).SetDisplay("Entry Level", "ADX level whose upward cross opens a long", "ADX")
+        self._exit_level = self.Param("ExitLevel", 45.0).SetDisplay("Exit Level", "ADX level whose downward cross closes the long", "ADX")
+        self._sma_filter = self.Param("SmaFilter", True).SetDisplay("SMA Filter", "Require the close above the SMA", "Filters")
+        self._sma_length = self.Param("SmaLength", 200).SetGreaterThanZero().SetDisplay("SMA Length", "SMA period of the trend filter", "Filters")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._prev_adx = None
 
     @property
     def candle_type(self):
@@ -37,73 +36,55 @@ class adx_for_btc_strategy(Strategy):
 
     def OnReseted(self):
         super(adx_for_btc_strategy, self).OnReseted()
-        self._prev_adx = 0.0
-        self._cooldown_remaining = 0
+        self._prev_adx = None
 
     def OnStarted2(self, time):
         super(adx_for_btc_strategy, self).OnStarted2(time)
+
+        self._prev_adx = None
+
         adx = AverageDirectionalIndex()
-        adx.Length = 14
+        adx.Length = ADX_LENGTH
         sma = SimpleMovingAverage()
-        sma.Length = int(self._sma_length.Value)
+        sma.Length = self._sma_length.Value
 
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.BindEx(adx, sma, self._on_process).Start()
+        subscription.BindEx(adx, sma, self._process_candle).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
             self.DrawIndicator(area, sma)
             self.DrawOwnTrades(area)
+            oscillators = self.CreateChartArea()
+            if oscillators is not None:
+                self.DrawIndicator(oscillators, adx)
 
-    def _on_process(self, candle, adx_value, sma_value):
+    def _process_candle(self, candle, adx_value, sma_value):
         if candle.State != CandleStates.Finished:
+            return
+
+        if not adx_value.IsFormed or adx_value.MovingAverage is None:
+            return
+
+        adx = adx_value.MovingAverage
+        prev = self._prev_adx
+        self._prev_adx = adx
+
+        if not sma_value.IsFormed or prev is None:
             return
 
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        adx_ma = adx_value.MovingAverage
-        if adx_ma is None:
-            return
-        dx = adx_value.Dx
-        di_plus_val = dx.Plus
-        di_minus_val = dx.Minus
-        if di_plus_val is None or di_minus_val is None:
-            return
+        entry = Decimal(self._entry_level.Value)
+        exit_level = Decimal(self._exit_level.Value)
+        trend_ok = not self._sma_filter.Value or candle.ClosePrice > sma_value.GetValue[Decimal](None)
 
-        adx_v = float(adx_ma)
-        di_plus = float(di_plus_val)
-        di_minus = float(di_minus_val)
-        sma_v = float(IndicatorHelper.ToDecimal(sma_value))
-        close = float(candle.ClosePrice)
-        entry = float(self._entry_level.Value)
-        exit_lv = float(self._exit_level.Value)
-        cooldown = int(self._cooldown_bars.Value)
-
-        if self._cooldown_remaining > 0:
-            self._cooldown_remaining -= 1
-            self._prev_adx = adx_v
-            return
-
-        if self._prev_adx > 0 and self._prev_adx <= entry and adx_v > entry and di_plus > di_minus and close > sma_v and self.Position <= 0:
-            if self.Position < 0:
-                self.BuyMarket(Math.Abs(self.Position))
+        if self.Position == 0 and prev <= entry and adx > entry and trend_ok:
             self.BuyMarket(self.Volume)
-            self._cooldown_remaining = cooldown
-        elif self._prev_adx > 0 and self._prev_adx <= entry and adx_v > entry and di_minus > di_plus and close < sma_v and self.Position >= 0:
-            if self.Position > 0:
-                self.SellMarket(Math.Abs(self.Position))
-            self.SellMarket(self.Volume)
-            self._cooldown_remaining = cooldown
-        elif self.Position > 0 and adx_v < exit_lv and self._prev_adx >= exit_lv:
-            self.SellMarket(Math.Abs(self.Position))
-            self._cooldown_remaining = cooldown
-        elif self.Position < 0 and adx_v < exit_lv and self._prev_adx >= exit_lv:
-            self.BuyMarket(Math.Abs(self.Position))
-            self._cooldown_remaining = cooldown
-
-        self._prev_adx = adx_v
+        elif self.Position > 0 and prev >= exit_level and adx < exit_level:
+            self.SellMarket(self.Position)
 
     def CreateClone(self):
         return adx_for_btc_strategy()
