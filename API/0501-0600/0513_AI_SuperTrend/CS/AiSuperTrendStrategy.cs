@@ -11,57 +11,132 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// AI SuperTrend Strategy - trades SuperTrend signals combined with WMA trend filter.
+/// AI SuperTrend strategy.
+/// Goes long when the SuperTrend flips up while the WMA of price is above the WMA of the SuperTrend line, and short on the
+/// mirrored setup, reversing an opposite position. A position is closed when the SuperTrend turns against it or when price
+/// hits an ATR trailing stop that follows the close at AtrFactor times ATR.
 /// </summary>
 public class AiSuperTrendStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<decimal> _atrFactor;
-	private readonly StrategyParam<int> _wmaLength;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<int> _priceWmaLength;
+	private readonly StrategyParam<int> _superWmaLength;
+	private readonly StrategyParam<bool> _enableLong;
+	private readonly StrategyParam<bool> _enableShort;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private bool _prevIsUpTrend;
-	private bool _isInitialized;
-	private int _cooldownRemaining;
+	private WeightedMovingAverage _superWma;
+	private bool? _prevIsUpTrend;
+	private decimal _trailingStop;
 
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-	public int AtrPeriod { get => _atrPeriod.Value; set => _atrPeriod.Value = value; }
-	public decimal AtrFactor { get => _atrFactor.Value; set => _atrFactor.Value = value; }
-	public int WmaLength { get => _wmaLength.Value; set => _wmaLength.Value = value; }
-	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
+	/// <summary>
+	/// ATR period of the SuperTrend and the trailing stop.
+	/// </summary>
+	public int AtrPeriod
+	{
+		get => _atrPeriod.Value;
+		set => _atrPeriod.Value = value;
+	}
 
+	/// <summary>
+	/// ATR multiplier of the SuperTrend and the trailing stop.
+	/// </summary>
+	public decimal AtrFactor
+	{
+		get => _atrFactor.Value;
+		set => _atrFactor.Value = value;
+	}
+
+	/// <summary>
+	/// Period of the price WMA.
+	/// </summary>
+	public int PriceWmaLength
+	{
+		get => _priceWmaLength.Value;
+		set => _priceWmaLength.Value = value;
+	}
+
+	/// <summary>
+	/// Period of the WMA of the SuperTrend line.
+	/// </summary>
+	public int SuperWmaLength
+	{
+		get => _superWmaLength.Value;
+		set => _superWmaLength.Value = value;
+	}
+
+	/// <summary>
+	/// Allow long entries.
+	/// </summary>
+	public bool EnableLong
+	{
+		get => _enableLong.Value;
+		set => _enableLong.Value = value;
+	}
+
+	/// <summary>
+	/// Allow short entries.
+	/// </summary>
+	public bool EnableShort
+	{
+		get => _enableShort.Value;
+		set => _enableShort.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
+	/// </summary>
 	public AiSuperTrendStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
 		_atrPeriod = Param(nameof(AtrPeriod), 10)
 			.SetGreaterThanZero()
-			.SetDisplay("ATR Period", "ATR period for SuperTrend", "SuperTrend");
+			.SetDisplay("ATR Period", "ATR period of the SuperTrend and the trailing stop", "SuperTrend");
 
 		_atrFactor = Param(nameof(AtrFactor), 3m)
-			.SetDisplay("ATR Factor", "ATR factor for SuperTrend", "SuperTrend");
-
-		_wmaLength = Param(nameof(WmaLength), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("WMA Length", "WMA length for trend filter", "AI");
+			.SetDisplay("ATR Factor", "ATR multiplier of the SuperTrend and the trailing stop", "SuperTrend");
 
-		_cooldownBars = Param(nameof(CooldownBars), 10)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "Risk");
+		_priceWmaLength = Param(nameof(PriceWmaLength), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("Price WMA Length", "Period of the price WMA", "Filter");
+
+		_superWmaLength = Param(nameof(SuperWmaLength), 100)
+			.SetGreaterThanZero()
+			.SetDisplay("SuperTrend WMA Length", "Period of the WMA of the SuperTrend line", "Filter");
+
+		_enableLong = Param(nameof(EnableLong), true)
+			.SetDisplay("Enable Long", "Allow long entries", "Trading");
+
+		_enableShort = Param(nameof(EnableShort), true)
+			.SetDisplay("Enable Short", "Allow short entries", "Trading");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> [(Security, CandleType)];
+	{
+		return [(Security, CandleType)];
+	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevIsUpTrend = false;
-		_isInitialized = false;
-		_cooldownRemaining = 0;
+		_superWma = null;
+		_prevIsUpTrend = null;
+		_trailingStop = 0m;
 	}
 
 	/// <inheritdoc />
@@ -69,12 +144,17 @@ public class AiSuperTrendStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
+		_prevIsUpTrend = null;
+		_trailingStop = 0m;
+
 		var superTrend = new SuperTrend { Length = AtrPeriod, Multiplier = AtrFactor };
-		var wma = new WeightedMovingAverage { Length = WmaLength };
+		var priceWma = new WeightedMovingAverage { Length = PriceWmaLength };
+		var atr = new AverageTrueRange { Length = AtrPeriod };
+		_superWma = new WeightedMovingAverage { Length = SuperWmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(superTrend, wma, ProcessCandle)
+			.BindEx(superTrend, priceWma, atr, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -82,54 +162,62 @@ public class AiSuperTrendStrategy : Strategy
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, superTrend);
-			DrawIndicator(area, wma);
+			DrawIndicator(area, priceWma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stValue, IIndicatorValue wmaValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue superTrendValue, IIndicatorValue priceWmaValue, IIndicatorValue atrValue)
 	{
 		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (!superTrendValue.IsFormed || superTrendValue is not SuperTrendIndicatorValue st)
+			return;
+
+		var superWma = _superWma.Process(st.ToDecimal(), candle.ServerTime, true).ToDecimal();
+
+		var isUpTrend = st.IsUpTrend;
+		var prevIsUpTrend = _prevIsUpTrend;
+		_prevIsUpTrend = isUpTrend;
+
+		if (prevIsUpTrend is not bool prevUp || !priceWmaValue.IsFormed || !atrValue.IsFormed || !_superWma.IsFormed)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var stTyped = (SuperTrendIndicatorValue)stValue;
-		var isUpTrend = stTyped.IsUpTrend;
-		var wma = wmaValue.ToDecimal();
+		var priceWma = priceWmaValue.ToDecimal();
+		var atr = atrValue.ToDecimal();
+		var close = candle.ClosePrice;
+		var distance = AtrFactor * atr;
 
-		if (!_isInitialized)
-		{
-			_prevIsUpTrend = isUpTrend;
-			_isInitialized = true;
-			return;
-		}
+		var flipUp = !prevUp && isUpTrend;
+		var flipDown = prevUp && !isUpTrend;
 
-		if (_cooldownRemaining > 0)
+		if (EnableLong && flipUp && priceWma > superWma && Position <= 0)
 		{
-			_cooldownRemaining--;
-			_prevIsUpTrend = isUpTrend;
-			return;
+			BuyMarket(Volume + Math.Abs(Position));
+			_trailingStop = close - distance;
 		}
-
-		// Long: SuperTrend flips to uptrend + price above WMA
-		if (!_prevIsUpTrend && isUpTrend && candle.ClosePrice > wma && Position <= 0)
+		else if (EnableShort && flipDown && priceWma < superWma && Position >= 0)
 		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-			BuyMarket(Volume);
-			_cooldownRemaining = CooldownBars;
+			SellMarket(Volume + Math.Abs(Position));
+			_trailingStop = close + distance;
 		}
-		// Short: SuperTrend flips to downtrend + price below WMA
-		else if (_prevIsUpTrend && !isUpTrend && candle.ClosePrice < wma && Position >= 0)
+		else if (Position > 0)
 		{
-			if (Position > 0)
-				SellMarket(Math.Abs(Position));
-			SellMarket(Volume);
-			_cooldownRemaining = CooldownBars;
+			if (candle.LowPrice <= _trailingStop || !isUpTrend)
+				SellMarket(Position);
+			else
+				_trailingStop = Math.Max(_trailingStop, close - distance);
 		}
-
-		_prevIsUpTrend = isUpTrend;
+		else if (Position < 0)
+		{
+			if (candle.HighPrice >= _trailingStop || isUpTrend)
+				BuyMarket(-Position);
+			else
+				_trailingStop = Math.Min(_trailingStop, close + distance);
+		}
 	}
 }
