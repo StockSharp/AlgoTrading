@@ -12,61 +12,136 @@ using StockSharp.Messages;
 
 /// <summary>
 /// SMC Order Block Zones Strategy.
-/// Uses BB as order block zones and SMA as equilibrium.
-/// Buys in discount zone (below SMA near lower BB).
-/// Sells in premium zone (above SMA near upper BB).
+/// The swing high of SwingHighLength bars is the premium zone, the swing low of SwingLowLength bars the discount zone and
+/// their midpoint the equilibrium. The bullish order block is the lowest low and the bearish order block the highest high of
+/// the previous OrderBlockLength bars. A long opens when the close is between the discount zone and the equilibrium, above
+/// the SMA, and the candle touched the bullish order block; a short mirrors this between the equilibrium and the premium zone
+/// below the SMA after touching the bearish order block. An opposite signal closes or reverses the position and a percent stop
+/// limits the loss.
 /// </summary>
 public class SmcOrderBlockZonesStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _swingHighLength;
+	private readonly StrategyParam<int> _swingLowLength;
 	private readonly StrategyParam<int> _smaLength;
-	private readonly StrategyParam<int> _bbLength;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<int> _orderBlockLength;
+	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<bool> _allowLong;
+	private readonly StrategyParam<bool> _allowShort;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage _sma;
-	private BollingerBands _bb;
+	private Highest _swingHigh;
+	private Lowest _swingLow;
+	private Highest _blockHigh;
+	private Lowest _blockLow;
+	private decimal? _prevBlockHigh;
+	private decimal? _prevBlockLow;
 
-	private int _cooldownRemaining;
-
-	public DataType CandleType
+	/// <summary>
+	/// Bars of the swing high.
+	/// </summary>
+	public int SwingHighLength
 	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
+		get => _swingHighLength.Value;
+		set => _swingHighLength.Value = value;
 	}
 
+	/// <summary>
+	/// Bars of the swing low.
+	/// </summary>
+	public int SwingLowLength
+	{
+		get => _swingLowLength.Value;
+		set => _swingLowLength.Value = value;
+	}
+
+	/// <summary>
+	/// SMA period of the trend filter.
+	/// </summary>
 	public int SmaLength
 	{
 		get => _smaLength.Value;
 		set => _smaLength.Value = value;
 	}
 
-	public int BbLength
+	/// <summary>
+	/// Bars searched for order blocks.
+	/// </summary>
+	public int OrderBlockLength
 	{
-		get => _bbLength.Value;
-		set => _bbLength.Value = value;
+		get => _orderBlockLength.Value;
+		set => _orderBlockLength.Value = value;
 	}
 
-	public int CooldownBars
+	/// <summary>
+	/// Stop loss percentage from entry price.
+	/// </summary>
+	public decimal StopLossPercent
 	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
 	}
 
+	/// <summary>
+	/// Allow long trades.
+	/// </summary>
+	public bool AllowLong
+	{
+		get => _allowLong.Value;
+		set => _allowLong.Value = value;
+	}
+
+	/// <summary>
+	/// Allow short trades.
+	/// </summary>
+	public bool AllowShort
+	{
+		get => _allowShort.Value;
+		set => _allowShort.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
+	/// </summary>
 	public SmcOrderBlockZonesStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
+		_swingHighLength = Param(nameof(SwingHighLength), 8)
+			.SetGreaterThanZero()
+			.SetDisplay("Swing High Length", "Bars of the swing high", "Zones");
+
+		_swingLowLength = Param(nameof(SwingLowLength), 8)
+			.SetGreaterThanZero()
+			.SetDisplay("Swing Low Length", "Bars of the swing low", "Zones");
 
 		_smaLength = Param(nameof(SmaLength), 50)
 			.SetGreaterThanZero()
-			.SetDisplay("SMA Length", "Equilibrium SMA period", "Indicators");
+			.SetDisplay("SMA Length", "SMA period of the trend filter", "Indicators");
 
-		_bbLength = Param(nameof(BbLength), 20)
+		_orderBlockLength = Param(nameof(OrderBlockLength), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("BB Length", "Bollinger Bands period", "Indicators");
+			.SetDisplay("Order Block Length", "Bars searched for order blocks", "Zones");
 
-		_cooldownBars = Param(nameof(CooldownBars), 10)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "Risk");
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
+
+		_allowLong = Param(nameof(AllowLong), true)
+			.SetDisplay("Allow Long", "Allow long trades", "Trading");
+
+		_allowShort = Param(nameof(AllowShort), true)
+			.SetDisplay("Allow Short", "Allow short trades", "Trading");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -77,10 +152,8 @@ public class SmcOrderBlockZonesStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_sma = null;
-		_bb = null;
-		_cooldownRemaining = 0;
+		_prevBlockHigh = null;
+		_prevBlockLow = null;
 	}
 
 	/// <inheritdoc />
@@ -88,79 +161,94 @@ public class SmcOrderBlockZonesStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_sma = new SimpleMovingAverage { Length = SmaLength };
-		_bb = new BollingerBands { Length = BbLength, Width = 2m };
+		_prevBlockHigh = null;
+		_prevBlockLow = null;
+
+		var sma = new SimpleMovingAverage { Length = SmaLength };
+		_swingHigh = new Highest { Length = SwingHighLength };
+		_swingLow = new Lowest { Length = SwingLowLength };
+		_blockHigh = new Highest { Length = OrderBlockLength };
+		_blockLow = new Lowest { Length = OrderBlockLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_sma, _bb, OnProcess)
+			.BindEx(sma, ProcessCandle)
 			.Start();
+
+		if (StopLossPercent > 0m)
+		{
+			StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+			// The stop has to see prices between candles, not only at their close.
+			foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+			{
+				var quotes = new Subscription(DataType.Level1, Security);
+				quotes.MarketData.BuildField = field;
+				SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+			}
+		}
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _sma);
-			DrawIndicator(area, _bb);
+			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void OnProcess(ICandleMessage candle, IIndicatorValue smaValue, IIndicatorValue bbValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// The high-level handler activates native protection before this callback, also between signal bars.
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue smaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_sma.IsFormed || !_bb.IsFormed)
-			return;
+		var time = candle.OpenTime;
+		var premium = _swingHigh.Process(candle.HighPrice, time, true).ToDecimal();
+		var discount = _swingLow.Process(candle.LowPrice, time, true).ToDecimal();
 
-		if (smaValue.IsEmpty || bbValue.IsEmpty)
-			return;
+		// Order blocks are taken from the candles before this one so the current candle can touch them.
+		var bullishBlock = _prevBlockLow;
+		var bearishBlock = _prevBlockHigh;
+		var blockHigh = _blockHigh.Process(candle.HighPrice, time, true).ToDecimal();
+		var blockLow = _blockLow.Process(candle.LowPrice, time, true).ToDecimal();
 
-		var sma = smaValue.ToDecimal();
-		var bb = (BollingerBandsValue)bbValue;
-		if (bb.UpBand is not decimal upper || bb.LowBand is not decimal lower)
+		if (_blockHigh.IsFormed && _blockLow.IsFormed)
+		{
+			_prevBlockHigh = blockHigh;
+			_prevBlockLow = blockLow;
+		}
+
+		if (!smaValue.IsFormed || !_swingHigh.IsFormed || !_swingLow.IsFormed || bullishBlock is not decimal bullBlock || bearishBlock is not decimal bearBlock)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (_cooldownRemaining > 0)
-		{
-			_cooldownRemaining--;
-			return;
-		}
+		var sma = smaValue.GetValue<decimal>();
+		var close = candle.ClosePrice;
+		var equilibrium = (premium + discount) / 2m;
 
-		var price = candle.ClosePrice;
-		var equilibrium = sma;
+		var longSignal = close < equilibrium && close > discount && close > sma && candle.LowPrice <= bullBlock;
+		var shortSignal = close > equilibrium && close < premium && close < sma && candle.HighPrice >= bearBlock;
 
-		// Discount zone: below SMA, near lower BB -> buy
-		if (price < equilibrium && price <= lower && Position <= 0)
+		if (longSignal)
 		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-			BuyMarket(Volume);
-			_cooldownRemaining = CooldownBars;
+			if (AllowLong && Position <= 0)
+				BuyMarket(Volume + Math.Abs(Position));
+			else if (Position < 0)
+				BuyMarket(-Position);
 		}
-		// Premium zone: above SMA, near upper BB -> sell
-		else if (price > equilibrium && price >= upper && Position >= 0)
+		else if (shortSignal)
 		{
-			if (Position > 0)
-				SellMarket(Math.Abs(Position));
-			SellMarket(Volume);
-			_cooldownRemaining = CooldownBars;
-		}
-		// Exit long: price returns above equilibrium
-		else if (Position > 0 && price > equilibrium)
-		{
-			SellMarket(Math.Abs(Position));
-			_cooldownRemaining = CooldownBars;
-		}
-		// Exit short: price returns below equilibrium
-		else if (Position < 0 && price < equilibrium)
-		{
-			BuyMarket(Math.Abs(Position));
-			_cooldownRemaining = CooldownBars;
+			if (AllowShort && Position >= 0)
+				SellMarket(Volume + Math.Abs(Position));
+			else if (Position > 0)
+				SellMarket(Position);
 		}
 	}
 }
