@@ -7,7 +7,7 @@ Tests zeigen eine durchschnittliche Jahresrendite von etwa 100%. Die Strategie f
 
 Der MACD zeigt die größere Momentumverschiebung an, während der Williams %R kurzfristige Umkehrungen präzise lokalisiert. Beide Signale müssen übereinstimmen, um einen Trade zu initiieren.
 
-Gut für diejenigen, die Trend- und Gegentrend-Signale kombinieren. Stops hängen von einem ATR-Faktor ab.
+Gut für diejenigen, die Trend- und Gegentrend-Signale kombinieren. Stops sind ein fester Prozentsatz des Einstiegspreises.
 
 ## Details
 
@@ -22,8 +22,11 @@ Gut für diejenigen, die Trend- und Gegentrend-Signale kombinieren. Stops hänge
   - `MacdSlow` = 26
   - `MacdSignal` = 9
   - `WilliamsRPeriod` = 14
-  - `StopLossPercent` = 2.0m
+  - `WilliamsROversold` = -80
+  - `WilliamsROverbought` = -20
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    Die Werte -80 und -20 in den Regeln sind die Standardwerte von WilliamsROversold und WilliamsROverbought. Ein Long schließt, wenn MACD die Signallinie nach unten kreuzt, ein Short, wenn er sie nach oben kreuzt. Ein Einstiegssignal gegen eine offene Position dreht sie.
 - **Filter**:
   - Kategorie: Mean Reversion
   - Richtung: Beide
