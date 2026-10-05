@@ -24,7 +24,9 @@ Useful for volatility surges accompanied by strong trends. Stop size is driven b
   - `AdxPeriod` = 14
   - `AdxThreshold` = 25m
   - `AtrMultiplier` = 2.0m
+  - `AtrPeriod` = 14
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    As the entry criteria show, a band break under strong ADX is faded: the position bets on the return to the middle band (the moving average of the bands), where it closes. The stop lies AtrMultiplier ATRs (AtrPeriod) from the entry close and is checked on candle closes. An entry signal against an open position reverses it.
 - **Filters**:
   - Category: Mean reversion
   - Direction: Both

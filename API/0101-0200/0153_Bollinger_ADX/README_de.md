@@ -24,7 +24,9 @@ Nützlich bei Volatilitätsschüben, die von starken Trends begleitet werden. Di
   - `AdxPeriod` = 14
   - `AdxThreshold` = 25m
   - `AtrMultiplier` = 2.0m
+  - `AtrPeriod` = 14
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    Wie die Einstiegskriterien zeigen, wird ein Bandbruch bei starkem ADX gegengehandelt: Die Position setzt auf die Rückkehr zum Mittelband (dem gleitenden Durchschnitt der Bänder), wo sie schließt. Der Stop liegt AtrMultiplier ATR (AtrPeriod) vom Einstiegsschluss entfernt und wird auf Kerzenschlüssen geprüft. Ein Einstiegssignal gegen eine offene Position dreht sie.
 - **Filter**:
   - Kategorie: Mean Reversion
   - Richtung: Beide

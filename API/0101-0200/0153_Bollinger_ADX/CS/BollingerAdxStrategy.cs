@@ -11,34 +11,25 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy combining Bollinger Bands with manual ADX trend strength.
-/// Buys on upper band breakout with strong trend, sells on lower band breakout.
+/// Bollinger ADX strategy.
+/// A close below the lower band while ADX is above AdxThreshold goes long and a close above the upper band goes short, reversing
+/// an opposite position. The position closes when price reverts to the middle band. The stop lies AtrMultiplier ATR from the entry close
+/// and is checked on candle closes.
 /// </summary>
 public class BollingerAdxStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _bollingerPeriod;
 	private readonly StrategyParam<decimal> _bollingerDeviation;
 	private readonly StrategyParam<int> _adxPeriod;
 	private readonly StrategyParam<decimal> _adxThreshold;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _atrMultiplier;
+	private readonly StrategyParam<int> _atrPeriod;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly List<decimal> _highs = new();
-	private readonly List<decimal> _lows = new();
-	private readonly List<decimal> _closes = new();
-	private int _cooldown;
-
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	private decimal _stopPrice;
 
 	/// <summary>
-	/// Bollinger Bands period.
+	/// Period of the Bollinger Bands.
 	/// </summary>
 	public int BollingerPeriod
 	{
@@ -47,7 +38,7 @@ public class BollingerAdxStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Bollinger Bands deviation multiplier.
+	/// Standard deviation multiplier of the bands.
 	/// </summary>
 	public decimal BollingerDeviation
 	{
@@ -56,7 +47,7 @@ public class BollingerAdxStrategy : Strategy
 	}
 
 	/// <summary>
-	/// ADX period.
+	/// Period of ADX.
 	/// </summary>
 	public int AdxPeriod
 	{
@@ -65,7 +56,7 @@ public class BollingerAdxStrategy : Strategy
 	}
 
 	/// <summary>
-	/// ADX threshold for strong trend.
+	/// ADX level of a strong trend.
 	/// </summary>
 	public decimal AdxThreshold
 	{
@@ -74,39 +65,62 @@ public class BollingerAdxStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Cooldown bars between trades.
+	/// Stop distance from the entry in ATRs.
 	/// </summary>
-	public int CooldownBars
+	public decimal AtrMultiplier
 	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
+		get => _atrMultiplier.Value;
+		set => _atrMultiplier.Value = value;
 	}
 
 	/// <summary>
-	/// Initialize strategy.
+	/// Period of the stop ATR.
+	/// </summary>
+	public int AtrPeriod
+	{
+		get => _atrPeriod.Value;
+		set => _atrPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
 	/// </summary>
 	public BollingerAdxStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
-			.SetRange(10, 30)
-			.SetDisplay("Bollinger Period", "Period for Bollinger Bands", "Indicators");
+			.SetGreaterThanZero()
+			.SetDisplay("Bollinger Period", "Period of the Bollinger Bands", "Indicators");
 
-		_bollingerDeviation = Param(nameof(BollingerDeviation), 2.0m)
-			.SetDisplay("Bollinger Deviation", "Standard deviation multiplier", "Indicators");
+		_bollingerDeviation = Param(nameof(BollingerDeviation), 2m)
+			.SetGreaterThanZero()
+			.SetDisplay("Bollinger Deviation", "Standard deviation multiplier of the bands", "Indicators");
 
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
-			.SetRange(7, 21)
-			.SetDisplay("ADX Period", "Period for ADX calculation", "Indicators");
+			.SetGreaterThanZero()
+			.SetDisplay("ADX Period", "Period of ADX", "Indicators");
 
 		_adxThreshold = Param(nameof(AdxThreshold), 25m)
-			.SetDisplay("ADX Threshold", "ADX level for strong trend", "Indicators");
+			.SetDisplay("ADX Threshold", "ADX level of a strong trend", "Indicators");
 
-		_cooldownBars = Param(nameof(CooldownBars), 100)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "General")
-			.SetRange(5, 500);
+		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
+			.SetNotNegative()
+			.SetDisplay("ATR Multiplier", "Stop distance from the entry in ATRs", "Risk");
+
+		_atrPeriod = Param(nameof(AtrPeriod), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("ATR Period", "Period of the stop ATR", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -119,10 +133,7 @@ public class BollingerAdxStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_highs.Clear();
-		_lows.Clear();
-		_closes.Clear();
-		_cooldown = 0;
+		_stopPrice = default;
 	}
 
 	/// <inheritdoc />
@@ -130,126 +141,72 @@ public class BollingerAdxStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var bb = new BollingerBands
-		{
-			Length = BollingerPeriod,
-			Width = BollingerDeviation
-		};
+		_stopPrice = default;
+
+		var bollinger = new BollingerBands { Length = BollingerPeriod, Width = BollingerDeviation };
+		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
+		var atr = new AverageTrueRange { Length = AtrPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-
 		subscription
-			.BindEx(bb, ProcessCandle)
+			.BindEx(bollinger, adx, atr, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, bb);
+			DrawIndicator(area, bollinger);
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, adx);
+			}
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bbValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue, IIndicatorValue adxValue, IIndicatorValue atrValue)
 	{
 		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (!bollingerValue.IsFormed || !adxValue.IsFormed || !atrValue.IsFormed)
+			return;
+
+		var bands = (BollingerBandsValue)bollingerValue;
+
+		if (bands.UpBand is not decimal upper || bands.LowBand is not decimal lower || bands.MovingAverage is not decimal middle)
+			return;
+
+		if (adxValue is not AverageDirectionalIndexValue { MovingAverage: decimal strength })
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var high = candle.HighPrice;
-		var low = candle.LowPrice;
+		var atr = atrValue.GetValue<decimal>();
 		var close = candle.ClosePrice;
+		var strong = strength > AdxThreshold;
 
-		_highs.Add(high);
-		_lows.Add(low);
-		_closes.Add(close);
-
-		var bbTyped = (BollingerBandsValue)bbValue;
-		if (bbTyped.UpBand is not decimal upperBand || bbTyped.LowBand is not decimal lowerBand || bbTyped.MovingAverage is not decimal middleBand)
-			return;
-
-		var adxPeriod = AdxPeriod;
-
-		// Calculate manual ADX trend strength
-		decimal trendStrength = 0;
-		if (_closes.Count >= adxPeriod + 2)
+		if (close < lower && strong && Position <= 0)
 		{
-			decimal sumTr = 0, sumDmPlus = 0, sumDmMinus = 0;
-			var count = _highs.Count;
-			for (int i = count - adxPeriod; i < count; i++)
-			{
-				var h = _highs[i];
-				var l = _lows[i];
-				var prevC = _closes[i - 1];
-				var prevH = _highs[i - 1];
-				var prevL = _lows[i - 1];
-
-				var tr = Math.Max(h - l, Math.Max(Math.Abs(h - prevC), Math.Abs(l - prevC)));
-				sumTr += tr;
-
-				var upMove = h - prevH;
-				var downMove = prevL - l;
-
-				if (upMove > downMove && upMove > 0)
-					sumDmPlus += upMove;
-				if (downMove > upMove && downMove > 0)
-					sumDmMinus += downMove;
-			}
-
-			if (sumTr > 0)
-			{
-				var diPlus = 100m * sumDmPlus / sumTr;
-				var diMinus = 100m * sumDmMinus / sumTr;
-				var diSum = diPlus + diMinus;
-				trendStrength = diSum > 0 ? 100m * Math.Abs(diPlus - diMinus) / diSum : 0;
-			}
+			BuyMarket(Volume + Math.Abs(Position));
+			_stopPrice = close - AtrMultiplier * atr;
 		}
-
-		// Trim lists
-		var maxKeep = adxPeriod * 3;
-		if (_highs.Count > maxKeep)
+		else if (close > upper && strong && Position >= 0)
 		{
-			var trim = _highs.Count - adxPeriod * 2;
-			_highs.RemoveRange(0, trim);
-			_lows.RemoveRange(0, trim);
-			_closes.RemoveRange(0, trim);
+			SellMarket(Volume + Math.Abs(Position));
+			_stopPrice = close + AtrMultiplier * atr;
 		}
-
-		var strongTrend = trendStrength > AdxThreshold;
-
-		if (_cooldown > 0)
+		else if (Position > 0 && (close >= middle || (AtrMultiplier > 0 && close <= _stopPrice)))
 		{
-			_cooldown--;
-			return;
+			SellMarket(Position);
 		}
-
-		// Buy: price above upper band + strong trend
-		if (close > upperBand && strongTrend && Position == 0)
+		else if (Position < 0 && (close <= middle || (AtrMultiplier > 0 && close >= _stopPrice)))
 		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-		// Sell: price below lower band + strong trend
-		else if (close < lowerBand && strongTrend && Position == 0)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-
-		// Exit long: price returns to middle band
-		if (Position > 0 && close < middleBand)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		// Exit short: price returns to middle band
-		else if (Position < 0 && close > middleBand)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
+			BuyMarket(-Position);
 		}
 	}
 }

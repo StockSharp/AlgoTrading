@@ -24,7 +24,9 @@ Los movimientos de precio fuera de las Bandas de Bollinger se filtran mediante A
   - `AdxPeriod` = 14
   - `AdxThreshold` = 25m
   - `AtrMultiplier` = 2.0m
+  - `AtrPeriod` = 14
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    Como muestran los criterios de entrada, la ruptura de una banda con ADX fuerte se opera en contra: la posición apuesta por el regreso a la banda media (la media móvil de las bandas), donde se cierra. El stop está a AtrMultiplier ATR (AtrPeriod) del cierre de entrada y se comprueba en los cierres de vela. Una señal de entrada contra una posición abierta la invierte.
 - **Filtros**:
   - Categoría: Reversión a la media
   - Dirección: Ambos
