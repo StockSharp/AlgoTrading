@@ -7,7 +7,7 @@ Testing indicates an average annual return of about 61%. It performs best in the
 
 Parabolic SAR supplies the trend and Stochastic refines entry on pullbacks. Signals flip when SAR changes side.
 
-A straightforward trend strategy with built-in SAR stops. ATR settings handle additional risk control.
+A straightforward trend strategy with built-in SAR stops. The SAR flip is the only exit, so no further stop setting is needed.
 
 ## Details
 
@@ -22,11 +22,11 @@ A straightforward trend strategy with built-in SAR stops. ATR settings handle ad
   - `AccelerationFactor` = 0.02m
   - `MaxAccelerationFactor` = 0.2m
   - `StochK` = 3
-  - `StochD` = 3
   - `StochPeriod` = 14
   - `StochOversold` = 20m
   - `StochOverbought` = 80m
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    StochK in the rules is %K: the stochastic over StochPeriod candles smoothed over StochK candles; %D plays no part, so it has no setting. An entry signal against an open position reverses it.
 - **Filters**:
   - Category: Mean reversion
   - Direction: Both

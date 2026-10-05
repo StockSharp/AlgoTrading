@@ -7,7 +7,7 @@ Las pruebas indican un retorno anual promedio de aproximadamente el 61%. Funcion
 
 El Parabolic SAR proporciona la tendencia y el Stochastic refina la entrada en los retrocesos. Las señales cambian cuando el SAR cambia de lado.
 
-Una estrategia de tendencia directa con stops SAR integrados. La configuración del ATR gestiona el control de riesgo adicional.
+Una estrategia de tendencia directa con stops SAR integrados. El giro del SAR es la única salida, así que no hace falta otro ajuste de stop.
 
 ## Detalles
 
@@ -22,11 +22,11 @@ Una estrategia de tendencia directa con stops SAR integrados. La configuración 
   - `AccelerationFactor` = 0.02m
   - `MaxAccelerationFactor` = 0.2m
   - `StochK` = 3
-  - `StochD` = 3
   - `StochPeriod` = 14
   - `StochOversold` = 20m
   - `StochOverbought` = 80m
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    StochK en las reglas es %K: el estocástico de StochPeriod velas suavizado en StochK velas; %D no interviene, por lo que no tiene ajuste. Una señal de entrada contra una posición abierta la invierte.
 - **Filtros**:
   - Categoría: Reversión a la media
   - Dirección: Ambos
