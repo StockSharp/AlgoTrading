@@ -12,25 +12,24 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// RSI Hook Reversal strategy.
-/// Enters long when RSI hooks up from oversold zone.
-/// Enters short when RSI hooks down from overbought zone.
-/// Exits when RSI reaches neutral zone.
-/// Uses cooldown to control trade frequency.
+/// A long opens when RSI was below the oversold level on the previous candle and turns up while the low makes a new low
+/// against the previous candle; a short opens when it was above the overbought level and turns down while the high makes a new high.
+/// The position closes when RSI turns the other way, reversing on the opposite signal, and a percent stop limits the loss.
 /// </summary>
 public class RsiHookReversalStrategy : Strategy
 {
 	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<int> _oversoldLevel;
 	private readonly StrategyParam<int> _overboughtLevel;
-	private readonly StrategyParam<int> _exitLevel;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
 
-	private decimal _prevRsi;
-	private int _cooldown;
+	private decimal? _prevValue;
+	private decimal _prevHigh;
+	private decimal _prevLow;
 
 	/// <summary>
-	/// RSI period.
+	/// Period for RSI.
 	/// </summary>
 	public int RsiPeriod
 	{
@@ -39,7 +38,7 @@ public class RsiHookReversalStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Oversold level.
+	/// RSI level of the oversold zone.
 	/// </summary>
 	public int OversoldLevel
 	{
@@ -48,7 +47,7 @@ public class RsiHookReversalStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Overbought level.
+	/// RSI level of the overbought zone.
 	/// </summary>
 	public int OverboughtLevel
 	{
@@ -57,12 +56,12 @@ public class RsiHookReversalStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Exit level (neutral zone).
+	/// Stop-loss percentage.
 	/// </summary>
-	public int ExitLevel
+	public decimal StopLossPercent
 	{
-		get => _exitLevel.Value;
-		set => _exitLevel.Value = value;
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
 	}
 
 	/// <summary>
@@ -75,41 +74,26 @@ public class RsiHookReversalStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Cooldown bars.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
 	/// Constructor.
 	/// </summary>
 	public RsiHookReversalStrategy()
 	{
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
-			.SetRange(7, 21)
-			.SetDisplay("RSI Period", "Period for RSI", "RSI");
+			.SetGreaterThanZero()
+			.SetDisplay("RSI Period", "Period for RSI", "Indicators");
 
 		_oversoldLevel = Param(nameof(OversoldLevel), 30)
-			.SetRange(20, 40)
-			.SetDisplay("Oversold", "Oversold level", "RSI");
+			.SetDisplay("Oversold Level", "RSI level of the oversold zone", "Levels");
 
 		_overboughtLevel = Param(nameof(OverboughtLevel), 70)
-			.SetRange(60, 80)
-			.SetDisplay("Overbought", "Overbought level", "RSI");
+			.SetDisplay("Overbought Level", "RSI level of the overbought zone", "Levels");
 
-		_exitLevel = Param(nameof(ExitLevel), 50)
-			.SetRange(45, 55)
-			.SetDisplay("Exit Level", "Neutral exit zone", "RSI");
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_cooldownBars = Param(nameof(CooldownBars), 500)
-			.SetRange(1, 1000)
-			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -122,8 +106,9 @@ public class RsiHookReversalStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevRsi = default;
-		_cooldown = default;
+		_prevValue = null;
+		_prevHigh = default;
+		_prevLow = default;
 	}
 
 	/// <inheritdoc />
@@ -131,72 +116,80 @@ public class RsiHookReversalStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_prevRsi = 0;
-		_cooldown = 0;
+		_prevValue = null;
+		_prevHigh = default;
+		_prevLow = default;
 
-		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
+		var oscillator = new RelativeStrengthIndex { Length = RsiPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(rsi, ProcessCandle)
+			.BindEx(oscillator, ProcessCandle)
 			.Start();
+
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, rsi);
+			DrawIndicator(area, oscillator);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
 	{
-		if (candle.State != CandleStates.Finished)
+		// The high-level handler activates native protection before this callback, also between signal bars.
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue value)
+	{
+		if (candle.State != CandleStates.Finished || !value.IsFormed || value.IsEmpty)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		var current = value.GetValue<decimal>();
+		var previous = _prevValue;
+		var prevHigh = _prevHigh;
+		var prevLow = _prevLow;
+
+		_prevValue = current;
+		_prevHigh = candle.HighPrice;
+		_prevLow = candle.LowPrice;
+
+		if (previous is not decimal last || !IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (_prevRsi == 0)
-		{
-			_prevRsi = rsiValue;
-			return;
-		}
+		var hooksUp = current > last;
+		var hooksDown = current < last;
+		var longSignal = last < OversoldLevel && hooksUp && candle.LowPrice < prevLow;
+		var shortSignal = last > OverboughtLevel && hooksDown && candle.HighPrice > prevHigh;
 
-		if (_cooldown > 0)
+		if (Position > 0)
 		{
-			_cooldown--;
-			_prevRsi = rsiValue;
-			return;
+			if (hooksDown)
+				SellMarket(shortSignal ? Volume + Position : Position);
 		}
-
-		// RSI hook up from oversold
-		var oversoldHookUp = _prevRsi < OversoldLevel && rsiValue > _prevRsi;
-		// RSI hook down from overbought
-		var overboughtHookDown = _prevRsi > OverboughtLevel && rsiValue < _prevRsi;
-
-		if (Position == 0 && oversoldHookUp)
+		else if (Position < 0)
 		{
-			BuyMarket();
-			_cooldown = CooldownBars;
+			if (hooksUp)
+				BuyMarket(longSignal ? Volume - Position : -Position);
 		}
-		else if (Position == 0 && overboughtHookDown)
+		else if (longSignal)
 		{
-			SellMarket();
-			_cooldown = CooldownBars;
+			BuyMarket(Volume);
 		}
-		else if (Position > 0 && rsiValue < ExitLevel)
+		else if (shortSignal)
 		{
-			SellMarket();
-			_cooldown = CooldownBars;
+			SellMarket(Volume);
 		}
-		else if (Position < 0 && rsiValue > ExitLevel)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-
-		_prevRsi = rsiValue;
 	}
 }

@@ -17,7 +17,10 @@ RSI Hook Reversal戦略は、RSIが極端な水準から脱するときの短期
 - **ストップ**: はい、パーセントベース
 - **デフォルト値**:
   - `CandleType` = 15分
-  - `StopLoss` = 2%
+  - `RsiPeriod` = 14
+  - `OversoldLevel` = 30
+  - `OverboughtLevel` = 70
+  - `StopLossPercent` = 2
 - **フィルター**:
   - カテゴリ: リバーサル
   - 方向: 両方

@@ -2645,6 +2645,129 @@ public abstract partial class StrategyTests
 	public Task S0091_PercentStopWorksBetweenFinishedBars()
 		=> CheckPercentStopBetweenBars(MacdHistogram, TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
 
+	private async Task CheckOscillatorHooks(string key, string periodParameter, int defaultPeriod, decimal oversold, decimal overbought, int period, bool secondary, Func<int, Func<ICandleMessage, decimal?>> oscillator, params (string Name, object Value)[] extra)
+	{
+		var compute = oscillator(period);
+		decimal? previous = null;
+		var previousHigh = 0m;
+		var previousLow = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var hookExits = 0;
+		var violations = new List<string>();
+		await Replay(key, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(defaultPeriod, strategy.Parameters[periodParameter].Value);
+			AreEqual(oversold, Convert.ToDecimal(strategy.Parameters["OversoldLevel"].Value));
+			AreEqual(overbought, Convert.ToDecimal(strategy.Parameters["OverboughtLevel"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, periodParameter, period);
+			foreach (var (name, value) in extra) SetParam(strategy, name, value);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				if (compute(candle) is not decimal current) return;
+				var last = previous;
+				var high = previousHigh;
+				var low = previousLow;
+				previous = current;
+				previousHigh = candle.HighPrice;
+				previousLow = candle.LowPrice;
+				if (last is not decimal prior) return;
+				var up = current > prior;
+				var down = current < prior;
+				var longSignal = prior < oversold && up && candle.LowPrice < low;
+				var shortSignal = prior > overbought && down && candle.HighPrice > high;
+				var position = strategy.Position;
+				if (position > 0m && down) { expectedSide = Sides.Sell; expectedVolume = shortSignal ? strategy.Volume + position : position; if (shortSignal) entries[Sides.Sell]++; else hookExits++; }
+				else if (position < 0m && up) { expectedSide = Sides.Buy; expectedVolume = longSignal ? strategy.Volume - position : -position; if (longSignal) entries[Sides.Buy]++; else hookExits++; }
+				else if (position == 0m && (longSignal || shortSignal)) { expectedSide = longSignal ? Sides.Buy : Sides.Sell; expectedVolume = strategy.Volume; entries[expectedSide.Value]++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a hook out of an extreme zone with a new price extreme, or close the position when the oscillator turns the other way.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] + entries[Sides.Sell] > 1, "The fixture must trade hooks.");
+		IsTrue(hookExits > 0, "The fixture must exit when the oscillator turns back.");
+	}
+
+	private static Func<int, Func<ICandleMessage, decimal?>> Single(Func<int, IIndicator> create)
+		=> period =>
+		{
+			var indicator = create(period);
+			return candle =>
+			{
+				var value = indicator.Process(candle);
+				return value.IsFormed && !value.IsEmpty ? value.GetValue<decimal>() : null;
+			};
+		};
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	[DataRow(14, false)]
+	[DataRow(7, true)]
+	public Task S0092_RsiHooksOutOfExtremesOnNewPriceExtremes(int period, bool secondary)
+		=> CheckOscillatorHooks("0092_RSI_Hook_Reversal", "RsiPeriod", 14, 30m, 70m, period, secondary, Single(p => new RelativeStrengthIndex { Length = p }));
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public Task S0092_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0092_RSI_Hook_Reversal", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
+
+	[TestMethod]
+	[TestCategory("Shard06")]
+	[DataRow(14, false)]
+	[DataRow(7, true)]
+	public Task S0093_StochasticHooksOutOfExtremesOnNewPriceExtremes(int period, bool secondary)
+		=> CheckOscillatorHooks("0093_Stochastic_Hook_Reversal", "KPeriod", 14, 20m, 80m, period, secondary, p =>
+		{
+			var stochastic = new StochasticOscillator { K = { Length = p }, D = { Length = 3 } };
+			return candle => stochastic.Process(candle) is IStochasticOscillatorValue { IsFormed: true, K: decimal k } ? k : null;
+		});
+
+	[TestMethod]
+	[TestCategory("Shard06")]
+	public Task S0093_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0093_Stochastic_Hook_Reversal", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(20, false)]
+	[DataRow(10, true)]
+	public Task S0094_CciHooksOutOfExtremesOnNewPriceExtremes(int period, bool secondary)
+		=> CheckOscillatorHooks("0094_CCI_Hook_Reversal", "CciPeriod", 20, -100m, 100m, period, secondary, Single(p => new CommodityChannelIndex { Length = p }));
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0094_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0094_CCI_Hook_Reversal", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
+
+	[TestMethod]
+	[TestCategory("Shard00")]
+	[DataRow(14, false)]
+	[DataRow(7, true)]
+	public Task S0095_WilliamsRHooksOutOfExtremesOnNewPriceExtremes(int period, bool secondary)
+		=> CheckOscillatorHooks("0095_Williams_R_Hook_Reversal", "WillRPeriod", 14, -80m, -20m, period, secondary, Single(p => new WilliamsR { Length = p }));
+
+	[TestMethod]
+	[TestCategory("Shard00")]
+	public Task S0095_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0095_Williams_R_Hook_Reversal", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

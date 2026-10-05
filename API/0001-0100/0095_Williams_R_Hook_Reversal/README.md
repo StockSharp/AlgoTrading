@@ -18,7 +18,10 @@ A tight percent stop controls risk and trades exit once %R hooks in the opposite
 - **Stops**: Yes, percent based
 - **Default Values**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `WillRPeriod` = 14
+  - `OversoldLevel` = -80
+  - `OverboughtLevel` = -20
+  - `StopLossPercent` = 2
 - **Filters**:
   - Category: Reversal
   - Direction: Both

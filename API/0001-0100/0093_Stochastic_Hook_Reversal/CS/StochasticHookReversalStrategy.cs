@@ -12,10 +12,9 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Stochastic Hook Reversal strategy.
-/// Enters long when %K hooks up from oversold zone.
-/// Enters short when %K hooks down from overbought zone.
-/// Exits when %K reaches neutral zone.
-/// Uses cooldown to control trade frequency.
+/// A long opens when %K was below the oversold level on the previous candle and turns up while the low makes a new low
+/// against the previous candle; a short opens when it was above the overbought level and turns down while the high makes a new high.
+/// The position closes when %K turns the other way, reversing on the opposite signal, and a percent stop limits the loss.
 /// </summary>
 public class StochasticHookReversalStrategy : Strategy
 {
@@ -23,15 +22,15 @@ public class StochasticHookReversalStrategy : Strategy
 	private readonly StrategyParam<int> _dPeriod;
 	private readonly StrategyParam<int> _oversoldLevel;
 	private readonly StrategyParam<int> _overboughtLevel;
-	private readonly StrategyParam<int> _exitLevel;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
 
-	private decimal? _prevK;
-	private int _cooldown;
+	private decimal? _prevValue;
+	private decimal _prevHigh;
+	private decimal _prevLow;
 
 	/// <summary>
-	/// %K period.
+	/// Period for %K.
 	/// </summary>
 	public int KPeriod
 	{
@@ -40,7 +39,7 @@ public class StochasticHookReversalStrategy : Strategy
 	}
 
 	/// <summary>
-	/// %D period.
+	/// Period for %D.
 	/// </summary>
 	public int DPeriod
 	{
@@ -49,7 +48,7 @@ public class StochasticHookReversalStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Oversold level.
+	/// %K level of the oversold zone.
 	/// </summary>
 	public int OversoldLevel
 	{
@@ -58,7 +57,7 @@ public class StochasticHookReversalStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Overbought level.
+	/// %K level of the overbought zone.
 	/// </summary>
 	public int OverboughtLevel
 	{
@@ -67,12 +66,12 @@ public class StochasticHookReversalStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Exit level (neutral zone).
+	/// Stop-loss percentage.
 	/// </summary>
-	public int ExitLevel
+	public decimal StopLossPercent
 	{
-		get => _exitLevel.Value;
-		set => _exitLevel.Value = value;
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
 	}
 
 	/// <summary>
@@ -85,45 +84,30 @@ public class StochasticHookReversalStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Cooldown bars.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
 	/// Constructor.
 	/// </summary>
 	public StochasticHookReversalStrategy()
 	{
 		_kPeriod = Param(nameof(KPeriod), 14)
-			.SetRange(7, 21)
-			.SetDisplay("K Period", "%K period", "Stochastic");
+			.SetGreaterThanZero()
+			.SetDisplay("K Period", "Period for %K", "Indicators");
 
 		_dPeriod = Param(nameof(DPeriod), 3)
-			.SetRange(1, 5)
-			.SetDisplay("D Period", "%D period", "Stochastic");
+			.SetGreaterThanZero()
+			.SetDisplay("D Period", "Period for %D", "Indicators");
 
 		_oversoldLevel = Param(nameof(OversoldLevel), 20)
-			.SetRange(10, 30)
-			.SetDisplay("Oversold", "Oversold level", "Stochastic");
+			.SetDisplay("Oversold Level", "%K level of the oversold zone", "Levels");
 
 		_overboughtLevel = Param(nameof(OverboughtLevel), 80)
-			.SetRange(70, 90)
-			.SetDisplay("Overbought", "Overbought level", "Stochastic");
+			.SetDisplay("Overbought Level", "%K level of the overbought zone", "Levels");
 
-		_exitLevel = Param(nameof(ExitLevel), 50)
-			.SetRange(45, 55)
-			.SetDisplay("Exit Level", "Neutral exit zone", "Stochastic");
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_cooldownBars = Param(nameof(CooldownBars), 500)
-			.SetRange(1, 1000)
-			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -136,8 +120,9 @@ public class StochasticHookReversalStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevK = null;
-		_cooldown = default;
+		_prevValue = null;
+		_prevHigh = default;
+		_prevLow = default;
 	}
 
 	/// <inheritdoc />
@@ -145,10 +130,11 @@ public class StochasticHookReversalStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_prevK = null;
-		_cooldown = 0;
+		_prevValue = null;
+		_prevHigh = default;
+		_prevLow = default;
 
-		var stochastic = new StochasticOscillator
+		var oscillator = new StochasticOscillator
 		{
 			K = { Length = KPeriod },
 			D = { Length = DPeriod },
@@ -156,70 +142,72 @@ public class StochasticHookReversalStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(stochastic, ProcessCandle)
+			.BindEx(oscillator, ProcessCandle)
 			.Start();
+
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, stochastic);
+			DrawIndicator(area, oscillator);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochIv)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
 	{
-		if (candle.State != CandleStates.Finished)
+		// The high-level handler activates native protection before this callback, also between signal bars.
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue value)
+	{
+		if (candle.State != CandleStates.Finished || !value.IsFormed || value.IsEmpty || value is not IStochasticOscillatorValue { K: decimal k })
 			return;
 
-		if (!stochIv.IsFormed)
+		var current = k;
+		var previous = _prevValue;
+		var prevHigh = _prevHigh;
+		var prevLow = _prevLow;
+
+		_prevValue = current;
+		_prevHigh = candle.HighPrice;
+		_prevLow = candle.LowPrice;
+
+		if (previous is not decimal last || !IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var sv = (IStochasticOscillatorValue)stochIv;
+		var hooksUp = current > last;
+		var hooksDown = current < last;
+		var longSignal = last < OversoldLevel && hooksUp && candle.LowPrice < prevLow;
+		var shortSignal = last > OverboughtLevel && hooksDown && candle.HighPrice > prevHigh;
 
-		if (sv.K is not decimal kValue)
-			return;
-
-		if (_prevK == null)
+		if (Position > 0)
 		{
-			_prevK = kValue;
-			return;
+			if (hooksDown)
+				SellMarket(shortSignal ? Volume + Position : Position);
 		}
-
-		if (_cooldown > 0)
+		else if (Position < 0)
 		{
-			_cooldown--;
-			_prevK = kValue;
-			return;
+			if (hooksUp)
+				BuyMarket(longSignal ? Volume - Position : -Position);
 		}
-
-		// Hook up from oversold
-		var oversoldHookUp = _prevK < OversoldLevel && kValue > _prevK;
-		// Hook down from overbought
-		var overboughtHookDown = _prevK > OverboughtLevel && kValue < _prevK;
-
-		if (Position == 0 && oversoldHookUp)
+		else if (longSignal)
 		{
-			BuyMarket();
-			_cooldown = CooldownBars;
+			BuyMarket(Volume);
 		}
-		else if (Position == 0 && overboughtHookDown)
+		else if (shortSignal)
 		{
-			SellMarket();
-			_cooldown = CooldownBars;
+			SellMarket(Volume);
 		}
-		else if (Position > 0 && kValue < ExitLevel)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position < 0 && kValue > ExitLevel)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-
-		_prevK = kValue;
 	}
 }

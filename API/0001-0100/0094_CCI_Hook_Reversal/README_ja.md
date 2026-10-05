@@ -17,7 +17,10 @@ CCIが売られすぎから上向きに転じ、価格がまだ小幅の新安�
 - **ストップ**: はい、パーセントベース
 - **デフォルト値**:
   - `CandleType` = 15分
-  - `StopLoss` = 2%
+  - `CciPeriod` = 20
+  - `OversoldLevel` = -100
+  - `OverboughtLevel` = 100
+  - `StopLossPercent` = 2
 - **フィルター**:
   - カテゴリ: リバーサル
   - 方向: 両方

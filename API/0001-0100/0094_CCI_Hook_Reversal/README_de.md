@@ -17,7 +17,10 @@ Jeder Trade trägt einen kleinen festen Stop und wird beendet, wenn der CCI in d
 - **Stops**: Ja, prozentbasiert
 - **Standardwerte**:
   - `CandleType` = 15 Minuten
-  - `StopLoss` = 2%
+  - `CciPeriod` = 20
+  - `OversoldLevel` = -100
+  - `OverboughtLevel` = 100
+  - `StopLossPercent` = 2
 - **Filter**:
   - Kategorie: Umkehr
   - Richtung: Beide

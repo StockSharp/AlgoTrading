@@ -17,7 +17,10 @@ Ein enger prozentualer Stop kontrolliert das Risiko, und Trades werden beendet, 
 - **Stops**: Ja, prozentbasiert
 - **Standardwerte**:
   - `CandleType` = 15 Minuten
-  - `StopLoss` = 2%
+  - `WillRPeriod` = 14
+  - `OversoldLevel` = -80
+  - `OverboughtLevel` = -20
+  - `StopLossPercent` = 2
 - **Filter**:
   - Kategorie: Umkehr
   - Richtung: Beide

@@ -17,7 +17,11 @@ Stochastic Hook Reversal戦略は、%Kラインが買われすぎまたは売ら
 - **ストップ**: はい、パーセントベース
 - **デフォルト値**:
   - `CandleType` = 15分
-  - `StopLoss` = 2%
+  - `KPeriod` = 14
+  - `DPeriod` = 3
+  - `OversoldLevel` = 20
+  - `OverboughtLevel` = 80
+  - `StopLossPercent` = 2
 - **フィルター**:
   - カテゴリ: リバーサル
   - 方向: 両方

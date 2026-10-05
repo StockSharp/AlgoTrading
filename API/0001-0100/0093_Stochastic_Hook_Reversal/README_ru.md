@@ -17,7 +17,11 @@
 - **Стопы**: да, на процентной основе
 - **Значения по умолчанию**:
   - `CandleType` = 15 минут
-  - `StopLoss` = 2%
+  - `KPeriod` = 14
+  - `DPeriod` = 3
+  - `OversoldLevel` = 20
+  - `OverboughtLevel` = 80
+  - `StopLossPercent` = 2
 - **Фильтры**:
   - Категория: Разворот
   - Направление: Оба
