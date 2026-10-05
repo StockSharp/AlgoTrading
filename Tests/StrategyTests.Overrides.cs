@@ -2998,6 +2998,102 @@ public abstract partial class StrategyTests
 		if (secondary) IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && stopExits > 0, "TON must trade rejections on both sides and stop out.");
 	}
 
+	private async Task CheckOneSidedLevelPattern(string key, string periodParameter, bool longOnly, int period, double stopPercent, bool secondary,
+		Func<ICandleMessage, decimal, decimal, bool> signal, Func<ICandleMessage, decimal, decimal, decimal, decimal> stopOf)
+	{
+		var candles = new List<(decimal High, decimal Low)>();
+		var stop = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = 0;
+		var stopExits = 0;
+		var violations = new List<string>();
+		var k = (decimal)stopPercent / 100m;
+		await Replay(key, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters[periodParameter].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, periodParameter, period);
+			SetParam(strategy, "StopLossPercent", stopPercent);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var ready = candles.Count == period;
+				var high = ready ? candles.Max(c => c.High) : 0m;
+				var low = ready ? candles.Min(c => c.Low) : 0m;
+				candles.Add((candle.HighPrice, candle.LowPrice));
+				if (candles.Count > period) candles.RemoveAt(0);
+				var position = strategy.Position;
+				if (position != 0m)
+				{
+					IsTrue(longOnly ? position > 0m : position < 0m, "The strategy trades one direction only.");
+					if (longOnly ? candle.ClosePrice <= stop : candle.ClosePrice >= stop)
+					{
+						expectedSide = longOnly ? Sides.Sell : Sides.Buy;
+						expectedVolume = Math.Abs(position);
+						stopExits++;
+					}
+				}
+				else if (ready && signal(candle, high, low))
+				{
+					expectedSide = longOnly ? Sides.Buy : Sides.Sell;
+					expectedVolume = strategy.Volume;
+					stop = stopOf(candle, high, low, k);
+					entries++;
+				}
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must enter on the documented break of the previous candles' level while flat, or close the position on a close past the stop.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries > 0, "The fixture must enter.");
+		if (secondary) IsTrue(entries > 1 && stopExits > 0, $"TON must enter repeatedly and stop out (entries {entries}, stop exits {stopExits}).");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard01")]
+	[DataRow(20, 0.1, false)]
+	[DataRow(10, 0.05, true)]
+	public Task S0106_LongOnlySpringsBackAboveSupport(int period, double stopPercent, bool secondary)
+		=> CheckOneSidedLevelPattern("0106_Spring_Reversal", "LookbackPeriod", true, period, stopPercent, secondary,
+			(c, high, low) => c.LowPrice < low && c.ClosePrice > low && c.ClosePrice > c.OpenPrice, (c, high, low, k) => c.LowPrice * (1 - k));
+
+	[TestMethod]
+	[TestCategory("Shard02")]
+	[DataRow(20, 0.1, false)]
+	[DataRow(10, 0.05, true)]
+	public Task S0107_ShortOnlyUpthrustsBackBelowResistance(int period, double stopPercent, bool secondary)
+		=> CheckOneSidedLevelPattern("0107_Upthrust_Reversal", "LookbackPeriod", false, period, stopPercent, secondary,
+			(c, high, low) => c.HighPrice > high && c.ClosePrice < high && c.ClosePrice < c.OpenPrice, (c, high, low, k) => c.HighPrice * (1 + k));
+
+	[TestMethod]
+	[TestCategory("Shard03")]
+	[DataRow(20, 0.0, false)]
+	[DataRow(10, 0.0, true)]
+	public Task S0108_LongOnlyBreakoutsAboveTheRangeWithStopBelowTheBase(int period, double stopPercent, bool secondary)
+		=> CheckOneSidedLevelPattern("0108_Wyckoff_Accumulation", "RangePeriod", true, period, stopPercent, secondary,
+			(c, high, low) => c.ClosePrice > high, (c, high, low, k) => low * (1 - k));
+
+	[TestMethod]
+	[TestCategory("Shard04")]
+	[DataRow(20, 0.0, false)]
+	[DataRow(10, 0.0, true)]
+	public Task S0109_ShortOnlyBreakdownsBelowTheRangeWithStopAboveTheTop(int period, double stopPercent, bool secondary)
+		=> CheckOneSidedLevelPattern("0109_Wyckoff_Distribution", "RangePeriod", false, period, stopPercent, secondary,
+			(c, high, low) => c.ClosePrice < low, (c, high, low, k) => high * (1 + k));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

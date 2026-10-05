@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using Ecng.Common;
 
@@ -11,49 +12,21 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on Wyckoff Distribution pattern.
-/// Detects narrowing ranges near extremes (distribution/accumulation),
-/// then enters on upthrust/spring confirmation with MA filter.
-/// Uses bar-based cooldown to control trade frequency.
+/// Wyckoff Distribution strategy.
+/// The distribution range is the highest high and lowest low of the previous RangePeriod candles. A close below the range sells while flat.
+/// The stop lies StopLossPercent above the top of the range, and a close above it closes the position.
 /// </summary>
 public class WyckoffDistributionStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _rangePeriod;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage _ma;
-	private Highest _highest;
-	private Lowest _lowest;
-
-	private decimal _prevMa;
-	private decimal _prevClose;
-	private int _narrowCount;
-	private int _barsSinceEntry;
-	private decimal _entryPrice;
-	private int _holdBars;
+	private readonly List<(decimal High, decimal Low)> _candles = [];
+	private decimal _stopPrice;
 
 	/// <summary>
-	/// Candle type and timeframe.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// MA period.
-	/// </summary>
-	public int MaPeriod
-	{
-		get => _maPeriod.Value;
-		set => _maPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Highest/Lowest period.
+	/// Number of previous candles that form the level.
 	/// </summary>
 	public int RangePeriod
 	{
@@ -62,12 +35,21 @@ public class WyckoffDistributionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Cooldown bars between trades.
+	/// Distance of the stop beyond the level, in percent.
 	/// </summary>
-	public int CooldownBars
+	public decimal StopLossPercent
 	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
 	/// <summary>
@@ -75,20 +57,16 @@ public class WyckoffDistributionStrategy : Strategy
 	/// </summary>
 	public WyckoffDistributionStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Candle timeframe", "General");
-
-		_maPeriod = Param(nameof(MaPeriod), 20)
-			.SetDisplay("MA Period", "SMA period", "Indicators")
-			.SetRange(10, 50);
-
 		_rangePeriod = Param(nameof(RangePeriod), 20)
-			.SetDisplay("Range Period", "Highest/Lowest period", "Indicators")
-			.SetRange(10, 50);
+			.SetGreaterThanZero()
+			.SetDisplay("RangePeriod", "Number of previous candles that form the level", "Pattern");
 
-		_cooldownBars = Param(nameof(CooldownBars), 800)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "General")
-			.SetRange(10, 2000);
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Distance of the stop beyond the level, in percent", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -101,15 +79,8 @@ public class WyckoffDistributionStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_ma = default;
-		_highest = default;
-		_lowest = default;
-		_prevMa = 0;
-		_prevClose = 0;
-		_narrowCount = 0;
-		_barsSinceEntry = 0;
-		_entryPrice = 0;
-		_holdBars = 0;
+		_candles.Clear();
+		_stopPrice = default;
 	}
 
 	/// <inheritdoc />
@@ -117,105 +88,54 @@ public class WyckoffDistributionStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_barsSinceEntry = CooldownBars; // allow immediate first trade
-
-		_ma = new SimpleMovingAverage { Length = MaPeriod };
-		_highest = new Highest { Length = RangePeriod };
-		_lowest = new Lowest { Length = RangePeriod };
+		_candles.Clear();
+		_stopPrice = default;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_ma, _highest, _lowest, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _ma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal ma, decimal highest, decimal lowest)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		// The level is formed by the candles before this one.
+		var ready = _candles.Count == RangePeriod;
+		var high = ready ? _candles.Max(c => c.High) : 0m;
+		var low = ready ? _candles.Min(c => c.Low) : 0m;
+
+		_candles.Add((candle.HighPrice, candle.LowPrice));
+
+		if (_candles.Count > RangePeriod)
+			_candles.RemoveAt(0);
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		var close = candle.ClosePrice;
-		var range = highest - lowest;
 
-		if (range <= 0 || _prevMa == 0)
+		if (Position < 0)
 		{
-			_prevMa = ma;
-			_prevClose = close;
+			if (close >= _stopPrice)
+				BuyMarket(-Position);
+
 			return;
 		}
 
-		_barsSinceEntry++;
+		if (Position != 0 || !ready || !(close < low))
+			return;
 
-		var candleRange = candle.HighPrice - candle.LowPrice;
-		var isNarrow = candleRange < range * 0.35m;
-
-		// Track consecutive narrow-range candles
-		if (isNarrow)
-			_narrowCount++;
-		else
-			_narrowCount = 0;
-
-		// Exit logic: hold for minimum bars, then exit on MA cross
-		if (Position != 0 && _holdBars > 0)
-		{
-			_holdBars--;
-		}
-
-		if (Position > 0 && _holdBars == 0)
-		{
-			if (close < ma)
-			{
-				SellMarket();
-				_barsSinceEntry = 0;
-			}
-		}
-		else if (Position < 0 && _holdBars == 0)
-		{
-			if (close > ma)
-			{
-				BuyMarket();
-				_barsSinceEntry = 0;
-			}
-		}
-
-		// Entry logic: only when no position and sufficient cooldown
-		if (Position == 0 && _barsSinceEntry >= CooldownBars && _narrowCount >= 2)
-		{
-			var nearTop = close > lowest + range * 0.55m;
-			var nearBottom = close < highest - range * 0.55m;
-
-			// Upthrust (short): price near top after consolidation, bearish candle below MA
-			if (nearTop && close < candle.OpenPrice && close < ma)
-			{
-				SellMarket();
-				_entryPrice = close;
-				_barsSinceEntry = 0;
-				_narrowCount = 0;
-				_holdBars = 20;
-			}
-			// Spring (long): price near bottom after consolidation, bullish candle above MA
-			else if (nearBottom && close > candle.OpenPrice && close > ma)
-			{
-				BuyMarket();
-				_entryPrice = close;
-				_barsSinceEntry = 0;
-				_narrowCount = 0;
-				_holdBars = 20;
-			}
-		}
-
-		_prevMa = ma;
-		_prevClose = close;
+		SellMarket(Volume);
+		_stopPrice = high * (1 + StopLossPercent / 100m);
 	}
 }

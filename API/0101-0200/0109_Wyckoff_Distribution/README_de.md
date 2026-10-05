@@ -18,7 +18,9 @@ Ein Stop knapp über der Range schützt vor falschen Ausbrüchen, und Positionen
 - **Stops**: Ja, prozentbasiert
 - **Standardwerte**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `RangePeriod` = 20
+  - `StopLossPercent` = 2
+    Die Distributionsspanne ist das höchste Hoch und tiefste Tief der vorherigen RangePeriod Kerzen. Die Strategie verkauft nur, bei einem Schluss unter der Spanne; der Stop liegt StopLossPercent über der Oberseite der Struktur, und die Position schließt, wenn eine Kerze darüber schließt.
 - **Filter**:
   - Kategorie: Trendfolge
   - Richtung: Beide

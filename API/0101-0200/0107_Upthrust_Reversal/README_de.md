@@ -18,7 +18,9 @@ Ein Stop knapp über dem Upthrust-Hoch verwaltet das Risiko, und Positionen werd
 - **Stops**: Ja, prozentbasiert
 - **Standardwerte**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `LookbackPeriod` = 20
+  - `StopLossPercent` = 2
+    Der Widerstand ist das höchste Hoch der vorherigen LookbackPeriod Kerzen. Die Strategie verkauft nur: eine bärische Kerze, die den Widerstand überschreitet und wieder darunter schließt. Der Stop liegt StopLossPercent über dem Upthrust-Hoch, und die Position schließt, wenn eine Kerze darüber schließt.
 - **Filter**:
   - Kategorie: Umkehr
   - Richtung: Beide

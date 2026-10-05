@@ -18,7 +18,9 @@ Um stop logo acima da máxima do upthrust gerencia o risco e as posições são 
 - **Stops**: Sim, baseado em percentual
 - **Valores padrão**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `LookbackPeriod` = 20
+  - `StopLossPercent` = 2
+    A resistência é a máxima mais alta das LookbackPeriod velas anteriores. A estratégia só vende: uma vela de baixa que rompe a resistência e fecha de volta abaixo dela. O stop fica StopLossPercent acima da máxima do upthrust e a posição fecha quando uma vela fecha acima dele.
 - **Filtros**:
   - Categoria: Reversão
   - Direção: Ambos

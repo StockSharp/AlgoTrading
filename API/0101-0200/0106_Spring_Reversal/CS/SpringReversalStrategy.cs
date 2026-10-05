@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using Ecng.Common;
 
@@ -11,25 +12,21 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Spring Reversal strategy (Wyckoff).
-/// Enters long when price dips below recent support then closes back above it.
-/// Enters short when price spikes above recent resistance then closes back below it.
-/// Uses SMA for exit confirmation.
-/// Uses cooldown to control trade frequency.
+/// Spring Reversal strategy.
+/// Support is the lowest low of the previous LookbackPeriod candles. A bullish candle that breaks below support and closes back above it
+/// is a spring and buys while flat. The stop lies StopLossPercent below the spring low, and a close below it closes the position.
 /// </summary>
 public class SpringReversalStrategy : Strategy
 {
 	private readonly StrategyParam<int> _lookbackPeriod;
-	private readonly StrategyParam<int> _maPeriod;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
 
-	private readonly List<decimal> _lows = new();
-	private readonly List<decimal> _highs = new();
-	private int _cooldown;
+	private readonly List<(decimal High, decimal Low)> _candles = [];
+	private decimal _stopPrice;
 
 	/// <summary>
-	/// Lookback period.
+	/// Number of previous candles that form the level.
 	/// </summary>
 	public int LookbackPeriod
 	{
@@ -38,12 +35,12 @@ public class SpringReversalStrategy : Strategy
 	}
 
 	/// <summary>
-	/// MA period for exit.
+	/// Distance of the stop beyond the level, in percent.
 	/// </summary>
-	public int MaPeriod
+	public decimal StopLossPercent
 	{
-		get => _maPeriod.Value;
-		set => _maPeriod.Value = value;
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
 	}
 
 	/// <summary>
@@ -56,33 +53,20 @@ public class SpringReversalStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Cooldown bars.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
 	/// Constructor.
 	/// </summary>
 	public SpringReversalStrategy()
 	{
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
-			.SetRange(5, 50)
-			.SetDisplay("Lookback", "Period for support/resistance", "Range");
+			.SetGreaterThanZero()
+			.SetDisplay("LookbackPeriod", "Number of previous candles that form the level", "Pattern");
 
-		_maPeriod = Param(nameof(MaPeriod), 20)
-			.SetRange(5, 50)
-			.SetDisplay("MA Period", "Period for SMA exit", "Indicators");
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Distance of the stop beyond the level, in percent", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_cooldownBars = Param(nameof(CooldownBars), 500)
-			.SetRange(1, 1000)
-			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -95,9 +79,8 @@ public class SpringReversalStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_lows.Clear();
-		_highs.Clear();
-		_cooldown = default;
+		_candles.Clear();
+		_stopPrice = default;
 	}
 
 	/// <inheritdoc />
@@ -105,86 +88,54 @@ public class SpringReversalStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_lows.Clear();
-		_highs.Clear();
-		_cooldown = 0;
-
-		var sma = new SimpleMovingAverage { Length = MaPeriod };
+		_candles.Clear();
+		_stopPrice = default;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(sma, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		// The level is formed by the candles before this one.
+		var ready = _candles.Count == LookbackPeriod;
+		var high = ready ? _candles.Max(c => c.High) : 0m;
+		var low = ready ? _candles.Min(c => c.Low) : 0m;
+
+		_candles.Add((candle.HighPrice, candle.LowPrice));
+
+		if (_candles.Count > LookbackPeriod)
+			_candles.RemoveAt(0);
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Maintain rolling window of lows and highs
-		_lows.Add(candle.LowPrice);
-		_highs.Add(candle.HighPrice);
-		if (_lows.Count > LookbackPeriod + 1)
-		{
-			_lows.RemoveAt(0);
-			_highs.RemoveAt(0);
-		}
+		var close = candle.ClosePrice;
 
-		if (_lows.Count < LookbackPeriod + 1)
-			return;
-
-		if (_cooldown > 0)
+		if (Position > 0)
 		{
-			_cooldown--;
+			if (close <= _stopPrice)
+				SellMarket(Position);
+
 			return;
 		}
 
-		// Find support (lowest low) and resistance (highest high) of previous N bars
-		decimal support = decimal.MaxValue;
-		decimal resistance = decimal.MinValue;
-		for (int i = 0; i < _lows.Count - 1; i++)
-		{
-			if (_lows[i] < support) support = _lows[i];
-			if (_highs[i] > resistance) resistance = _highs[i];
-		}
+		if (Position != 0 || !ready || !(candle.LowPrice < low && close > low && close > candle.OpenPrice))
+			return;
 
-		// Spring: price dips below support but closes above it (bullish)
-		var isSpring = candle.LowPrice < support && candle.ClosePrice > support && candle.ClosePrice > candle.OpenPrice;
-
-		// Upthrust: price spikes above resistance but closes below it (bearish)
-		var isUpthrust = candle.HighPrice > resistance && candle.ClosePrice < resistance && candle.ClosePrice < candle.OpenPrice;
-
-		if (Position == 0 && isSpring)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position == 0 && isUpthrust)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position > 0 && candle.ClosePrice < smaValue)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position < 0 && candle.ClosePrice > smaValue)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
+		BuyMarket(Volume);
+		_stopPrice = candle.LowPrice * (1 - StopLossPercent / 100m);
 	}
 }

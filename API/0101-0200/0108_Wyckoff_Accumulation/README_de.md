@@ -18,7 +18,9 @@ Ein schützender Stop liegt knapp unterhalb der Basis, um Verluste zu begrenzen,
 - **Stops**: Ja, prozentbasiert
 - **Standardwerte**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `RangePeriod` = 20
+  - `StopLossPercent` = 2
+    Die Akkumulationsspanne ist das höchste Hoch und tiefste Tief der vorherigen RangePeriod Kerzen. Die Strategie kauft nur, bei einem Schluss über der Spanne; der Stop liegt StopLossPercent unter der Basis, und die Position schließt, wenn eine Kerze darunter schließt.
 - **Filter**:
   - Kategorie: Trendfolge
   - Richtung: Beide

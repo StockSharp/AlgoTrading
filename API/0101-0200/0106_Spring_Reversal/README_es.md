@@ -18,7 +18,9 @@ Un stop justo por debajo del mínimo del spring limita la pérdida, y la posici�
 - **Stops**: Sí, basados en porcentaje
 - **Valores predeterminados**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `LookbackPeriod` = 20
+  - `StopLossPercent` = 2
+    El soporte es el mínimo más bajo de las LookbackPeriod velas anteriores. La estrategia solo compra: una vela alcista que perfora el soporte y cierra de nuevo por encima. El stop se coloca StopLossPercent por debajo del mínimo del spring y la posición se cierra cuando una vela cierra por debajo.
 - **Filtros**:
   - Categoría: Reversión
   - Dirección: Ambos
