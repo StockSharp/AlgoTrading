@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using Ecng.Common;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -11,31 +11,73 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// CupFinderStrategy using EMA crossover for trend timing.
-/// Enters long on golden cross, short on death cross.
+/// Cup Finder strategy.
+/// The previous Lookback candles are split into thirds. A cup has rims (highest highs of the outer thirds) within WidthPercent
+/// of each other and a middle third that stays below the lower rim; a close above the higher rim buys. An inverted cup has
+/// troughs (lowest lows of the outer thirds) within WidthPercent of each other and a middle third that stays above the higher
+/// trough; a close below the lower trough sells short. An opposite breakout reverses the position and a percent stop limits the loss.
 /// </summary>
 public class CupFinderStrategy : Strategy
 {
-	private readonly StrategyParam<int> _fastEmaPeriod;
-	private readonly StrategyParam<int> _slowEmaPeriod;
+	private readonly StrategyParam<int> _lookback;
+	private readonly StrategyParam<decimal> _widthPercent;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevFastEma;
-	private decimal _prevSlowEma;
+	private readonly Queue<(decimal high, decimal low)> _bars = new();
 
-	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
-	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	/// <summary>
+	/// Candles the cup is searched in.
+	/// </summary>
+	public int Lookback
+	{
+		get => _lookback.Value;
+		set => _lookback.Value = value;
+	}
 
+	/// <summary>
+	/// Maximum difference between the two rims in percent.
+	/// </summary>
+	public decimal WidthPercent
+	{
+		get => _widthPercent.Value;
+		set => _widthPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Stop loss percentage from entry price.
+	/// </summary>
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
+	/// </summary>
 	public CupFinderStrategy()
 	{
-		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
-			.SetGreaterThanZero()
-			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_lookback = Param(nameof(Lookback), 150)
+			.SetRange(3, 10000)
+			.SetDisplay("Lookback", "Candles the cup is searched in", "Pattern");
 
-		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
-			.SetGreaterThanZero()
-			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+		_widthPercent = Param(nameof(WidthPercent), 5m)
+			.SetNotNegative()
+			.SetDisplay("Width %", "Maximum difference between the two rims in percent", "Pattern");
+
+		_stopLossPercent = Param(nameof(StopLossPercent), 1m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -51,8 +93,7 @@ public class CupFinderStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevFastEma = 0m;
-		_prevSlowEma = 0m;
+		_bars.Clear();
 	}
 
 	/// <inheritdoc />
@@ -60,46 +101,66 @@ public class CupFinderStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
-		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
+		_bars.Clear();
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(fastEma, slowEma, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
+
+		StartProtection(new Unit(), StopLossPercent > 0 ? new Unit(StopLossPercent, UnitTypes.Percent) : new Unit(), useMarketOrders: true);
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, fastEma);
-			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_prevFastEma == 0m || _prevSlowEma == 0m)
+		var ready = _bars.Count >= Lookback;
+		var bullish = false;
+		var bearish = false;
+
+		if (ready)
 		{
-			_prevFastEma = fastEmaValue;
-			_prevSlowEma = slowEmaValue;
+			var bars = _bars.ToArray();
+			var third = bars.Length / 3;
+			var left = bars.Take(third).ToArray();
+			var middle = bars.Skip(third).Take(bars.Length - 2 * third).ToArray();
+			var right = bars.Skip(bars.Length - third).ToArray();
+
+			var leftRim = left.Max(b => b.high);
+			var rightRim = right.Max(b => b.high);
+			var middleHigh = middle.Max(b => b.high);
+			var rim = Math.Max(leftRim, rightRim);
+			var isCup = rim > 0 && (rim - Math.Min(leftRim, rightRim)) / rim * 100m <= WidthPercent && middleHigh < Math.Min(leftRim, rightRim);
+			bullish = isCup && candle.ClosePrice > rim;
+
+			var leftTrough = left.Min(b => b.low);
+			var rightTrough = right.Min(b => b.low);
+			var middleLow = middle.Min(b => b.low);
+			var trough = Math.Min(leftTrough, rightTrough);
+			var higherTrough = Math.Max(leftTrough, rightTrough);
+			var isInverted = higherTrough > 0 && (higherTrough - trough) / higherTrough * 100m <= WidthPercent && middleLow > higherTrough;
+			bearish = isInverted && candle.ClosePrice < trough;
+		}
+
+		_bars.Enqueue((candle.HighPrice, candle.LowPrice));
+		while (_bars.Count > Lookback)
+			_bars.Dequeue();
+
+		if (!ready || !IsFormedAndOnlineAndAllowTrading())
 			return;
-		}
 
-		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
-		{
-			BuyMarket();
-		}
-		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
-		{
-			SellMarket();
-		}
-
-		_prevFastEma = fastEmaValue;
-		_prevSlowEma = slowEmaValue;
+		if (bullish && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (bearish && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
 	}
 }
