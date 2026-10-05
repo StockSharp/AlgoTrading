@@ -20,10 +20,11 @@ Como o sistema aguarda rompimentos além da volatilidade normal, é adequado par
 - **Stops**: Sim, via trailing stop Supertrend.
 - **Valores padrão**:
   - `BollingerPeriod` = 20
-  - `BollingerDeviation` = 2.0m
+  - `BollingerDeviation` = 2
   - `SupertrendPeriod` = 10
-  - `SupertrendMultiplier` = 3.0m
+  - `SupertrendMultiplier` = 3
   - `CandleType` = TimeSpan.FromMinutes(15)
+    Uma compra é encerrada quando o preço fecha abaixo da linha Supertrend e uma venda quando fecha acima. Um sinal de entrada contra uma posição aberta a inverte.
 - **Filtros**:
   - Categoria: Tendência
   - Direção: Ambos

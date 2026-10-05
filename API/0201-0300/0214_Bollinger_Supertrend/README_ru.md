@@ -20,10 +20,11 @@
 - **Стопы**: да, через трейлинг Supertrend.
 - **Значения по умолчанию**:
   - `BollingerPeriod` = 20
-  - `BollingerDeviation` = 2.0m
+  - `BollingerDeviation` = 2
   - `SupertrendPeriod` = 10
-  - `SupertrendMultiplier` = 3.0m
+  - `SupertrendMultiplier` = 3
   - `CandleType` = TimeSpan.FromMinutes(15)
+    Лонг закрывается, когда цена закрывается ниже линии Supertrend, шорт — когда выше. Сигнал на вход против открытой позиции разворачивает её.
 - **Фильтры**:
   - Категория: Тренд
   - Направление: Оба

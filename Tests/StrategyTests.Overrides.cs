@@ -8271,6 +8271,63 @@ public abstract partial class StrategyTests
 	public Task S0213_PercentStopWorksBetweenFinishedBars()
 		=> CheckPercentStopBetweenBars("0213_MA_Parabolic_SAR", TimeSpan.FromDays(31));
 
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(20, 2.0, 10, 3.0, false)]
+	[DataRow(14, 1.5, 7, 2.0, true)]
+	public async Task S0214_BandBreakoutsOnTheSupertrendSideWithTheSupertrendAsTrailingExit(int period, double width, int supertrendPeriod, double multiplier, bool secondary)
+	{
+		var bollinger = new BollingerBands { Length = period, Width = (decimal)width };
+		var supertrend = new SuperTrend { Length = supertrendPeriod, Multiplier = (decimal)multiplier };
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var trailExits = 0;
+		var violations = new List<string>();
+		await Replay("0214_Bollinger_Supertrend", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["BollingerPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["BollingerDeviation"].Value));
+			AreEqual(10, strategy.Parameters["SupertrendPeriod"].Value);
+			AreEqual(3m, Convert.ToDecimal(strategy.Parameters["SupertrendMultiplier"].Value));
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "BollingerPeriod", period);
+			SetParam(strategy, "BollingerDeviation", width);
+			SetParam(strategy, "SupertrendPeriod", supertrendPeriod);
+			SetParam(strategy, "SupertrendMultiplier", multiplier);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var b = (BollingerBandsValue)bollinger.Process(candle);
+				var t = supertrend.Process(candle);
+				if (!b.IsFormed || b.UpBand is not decimal upper || b.LowBand is not decimal lower) return;
+				if (t is not SuperTrendIndicatorValue { IsFormed: true } trend) return;
+				var line = trend.Value;
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (close > upper && close > line && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (close < lower && close < line && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && close < line) { expectedSide = Sides.Sell; expectedVolume = position; trailExits++; }
+				else if (position < 0m && close > line) { expectedSide = Sides.Buy; expectedVolume = -position; trailExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a close beyond a Bollinger band on the Supertrend side, or close when price crosses the Supertrend.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && trailExits > 0, "The fixture must trade both sides and exit at the Supertrend.");
+	}
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

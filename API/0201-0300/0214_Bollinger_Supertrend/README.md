@@ -20,10 +20,11 @@ Because the system waits for breakouts beyond normal volatility, it suits trader
 - **Stops**: Yes, via Supertrend trailing stop.
 - **Default Values**:
   - `BollingerPeriod` = 20
-  - `BollingerDeviation` = 2.0m
+  - `BollingerDeviation` = 2
   - `SupertrendPeriod` = 10
-  - `SupertrendMultiplier` = 3.0m
+  - `SupertrendMultiplier` = 3
   - `CandleType` = TimeSpan.FromMinutes(15)
+    A long closes when price closes below the Supertrend line and a short when it closes above it. An entry signal against an open position reverses it.
 - **Filters**:
   - Category: Trend
   - Direction: Both

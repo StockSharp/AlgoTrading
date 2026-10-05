@@ -20,10 +20,11 @@
 - **ストップ**: はい、Supertrendトレーリングストップを使用。
 - **デフォルト値**:
   - `BollingerPeriod` = 20
-  - `BollingerDeviation` = 2.0m
+  - `BollingerDeviation` = 2
   - `SupertrendPeriod` = 10
-  - `SupertrendMultiplier` = 3.0m
+  - `SupertrendMultiplier` = 3
   - `CandleType` = TimeSpan.FromMinutes(15)
+    ロングは価格がSupertrendラインの下で引けたとき、ショートは上で引けたときに決済します。 保有ポジションと逆方向のエントリーシグナルはドテンになります。
 - **フィルター**:
   - カテゴリ: トレンド
   - 方向: 両方
