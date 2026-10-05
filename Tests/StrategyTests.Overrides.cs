@@ -7591,6 +7591,67 @@ public abstract partial class StrategyTests
 	public Task S0203_PercentStopWorksBetweenFinishedBars()
 		=> CheckPercentStopBetweenBars("0203_Keltner_Williams_R", TimeSpan.FromDays(31));
 
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(0.02, 0.2, 20, -100.0, 100.0, false)]
+	[DataRow(0.03, 0.3, 14, -80.0, 80.0, true)]
+	public async Task S0204_CciPullbacksOnTheSarSideWithTheSarAsTrailingExit(double af, double maxAf, int cciPeriod, double oversold, double overbought, bool secondary)
+	{
+		var sar = new ParabolicSar { Acceleration = (decimal)af, AccelerationMax = (decimal)maxAf };
+		var cci = new CommodityChannelIndex { Length = cciPeriod };
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var sarExits = 0;
+		var violations = new List<string>();
+		await Replay("0204_Parabolic_SAR_CCI", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(0.02m, Convert.ToDecimal(strategy.Parameters["SarAccelerationFactor"].Value));
+			AreEqual(0.2m, Convert.ToDecimal(strategy.Parameters["SarMaxAccelerationFactor"].Value));
+			AreEqual(20, strategy.Parameters["CciPeriod"].Value);
+			AreEqual(-100m, Convert.ToDecimal(strategy.Parameters["CciOversold"].Value));
+			AreEqual(100m, Convert.ToDecimal(strategy.Parameters["CciOverbought"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "SarAccelerationFactor", af);
+			SetParam(strategy, "SarMaxAccelerationFactor", maxAf);
+			SetParam(strategy, "CciPeriod", cciPeriod);
+			SetParam(strategy, "CciOversold", oversold);
+			SetParam(strategy, "CciOverbought", overbought);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var s = sar.Process(candle);
+				var r = cci.Process(candle);
+				if (!s.IsFormed || s.IsEmpty || !r.IsFormed) return;
+				var level = s.GetValue<decimal>();
+				var value = r.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (close > level && value < (decimal)oversold && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (close < level && value > (decimal)overbought && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && close < level) { expectedSide = Sides.Sell; expectedVolume = position; sarExits++; }
+				else if (position < 0m && close > level) { expectedSide = Sides.Buy; expectedVolume = -position; sarExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a CCI pullback on the SAR side, or close when price crosses the SAR.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] + entries[Sides.Sell] > 1 && sarExits > 0, "The fixture must enter and exit at the SAR.");
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "The fixture must trade both sides.");
+	}
+
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

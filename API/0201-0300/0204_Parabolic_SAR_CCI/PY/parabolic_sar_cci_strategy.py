@@ -5,105 +5,76 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan, Math
+from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import ParabolicSar, CommodityChannelIndex
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
 
 class parabolic_sar_cci_strategy(Strategy):
-    """Strategy based on Parabolic SAR and CCI indicators"""
+    """
+    Parabolic SAR CCI strategy.
+    A close above the Parabolic SAR with CCI below CciOversold buys the dip in the uptrend and a close below the SAR with CCI above
+    CciOverbought sells the rally in the downtrend,
+    reversing an opposite position. The SAR is the trailing stop: a long closes when price closes below it and a short when price closes above it.
+    """
 
     def __init__(self):
         super(parabolic_sar_cci_strategy, self).__init__()
-
-        self._sar_acceleration_factor = self.Param("SarAccelerationFactor", 0.02) \
-            .SetRange(0.01, 0.05) \
-            .SetDisplay("SAR AF", "Parabolic SAR acceleration factor", "Indicators")
-
-        self._sar_max_acceleration_factor = self.Param("SarMaxAccelerationFactor", 0.2) \
-            .SetRange(0.1, 0.5) \
-            .SetDisplay("SAR Max AF", "Parabolic SAR maximum acceleration factor", "Indicators")
-
-        self._cci_period = self.Param("CciPeriod", 20) \
-            .SetRange(10, 50) \
-            .SetDisplay("CCI Period", "Period for CCI indicator", "Indicators")
-
-        self._cooldown_bars = self.Param("CooldownBars", 50) \
-            .SetRange(1, 200) \
-            .SetDisplay("Cooldown Bars", "Bars between trades", "General")
-
-        self._candle_type = self.Param("CandleType", tf(15)) \
-            .SetDisplay("Candle Type", "Type of candles to use", "General")
-
-        self._cooldown = 0
-        self._prev_cci = 0.0
+        self._sar_acceleration_factor = self.Param("SarAccelerationFactor", 0.02).SetGreaterThanZero().SetDisplay("SAR Acceleration", "Initial acceleration factor of the SAR", "SAR")
+        self._sar_max_acceleration_factor = self.Param("SarMaxAccelerationFactor", 0.2).SetGreaterThanZero().SetDisplay("SAR Max Acceleration", "Maximum acceleration factor of the SAR", "SAR")
+        self._cci_period = self.Param("CciPeriod", 20).SetGreaterThanZero().SetDisplay("CCI Period", "Period of CCI", "CCI")
+        self._cci_oversold = self.Param("CciOversold", -100.0).SetDisplay("CCI Oversold", "CCI level for longs", "CCI")
+        self._cci_overbought = self.Param("CciOverbought", 100.0).SetDisplay("CCI Overbought", "CCI level for shorts", "CCI")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles to use", "General")
 
     @property
-    def CandleType(self):
+    def candle_type(self):
         return self._candle_type.Value
-
-    def OnReseted(self):
-        super(parabolic_sar_cci_strategy, self).OnReseted()
-        self._cooldown = 0
-        self._prev_cci = 0.0
 
     def OnStarted2(self, time):
         super(parabolic_sar_cci_strategy, self).OnStarted2(time)
-        self._cooldown = 0
-        self._prev_cci = 0.0
 
-        parabolic_sar = ParabolicSar()
-        parabolic_sar.Acceleration = self._sar_acceleration_factor.Value
-        parabolic_sar.AccelerationMax = self._sar_max_acceleration_factor.Value
-
+        sar = ParabolicSar()
+        sar.Acceleration = Decimal(self._sar_acceleration_factor.Value)
+        sar.AccelerationMax = Decimal(self._sar_max_acceleration_factor.Value)
         cci = CommodityChannelIndex()
         cci.Length = self._cci_period.Value
 
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(parabolic_sar, cci, self.ProcessCandle).Start()
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.BindEx(sar, cci, self._process_candle).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, parabolic_sar)
-            self.DrawIndicator(area, cci)
+            self.DrawIndicator(area, sar)
             self.DrawOwnTrades(area)
+            oscillators = self.CreateChartArea()
+            if oscillators is not None:
+                self.DrawIndicator(oscillators, cci)
 
-    def ProcessCandle(self, candle, sar_value, cci_value):
+    def _process_candle(self, candle, sar_value, cci_value):
         if candle.State != CandleStates.Finished:
             return
+
+        # The first SAR value is formed but empty.
+        if not sar_value.IsFormed or sar_value.IsEmpty or not cci_value.IsFormed:
+            return
+
+        sar = sar_value.GetValue[Decimal](None)
+        cci = cci_value.GetValue[Decimal](None)
+        close = candle.ClosePrice
 
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        price = float(candle.ClosePrice)
-        sar = float(sar_value)
-        cci = float(cci_value)
-
-        crossed_up = self._prev_cci <= 100 and cci > 100
-        crossed_down = self._prev_cci >= -100 and cci < -100
-        self._prev_cci = cci
-
-        if self._cooldown > 0:
-            self._cooldown -= 1
-
-        cooldown_val = int(self._cooldown_bars.Value)
-
-        if self._cooldown == 0 and price > sar and crossed_up and self.Position <= 0:
-            volume = self.Volume + abs(self.Position)
-            self.BuyMarket(volume)
-            self._cooldown = cooldown_val
-        elif self._cooldown == 0 and price < sar and crossed_down and self.Position >= 0:
-            volume = self.Volume + abs(self.Position)
-            self.SellMarket(volume)
-            self._cooldown = cooldown_val
-        elif self.Position > 0 and price < sar and cci < 0:
+        if close > sar and cci < Decimal(self._cci_oversold.Value) and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+        elif close < sar and cci > Decimal(self._cci_overbought.Value) and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
+        elif self.Position > 0 and close < sar:
             self.SellMarket(self.Position)
-            self._cooldown = cooldown_val
-        elif self.Position < 0 and price > sar and cci > 0:
-            self.BuyMarket(abs(self.Position))
-            self._cooldown = cooldown_val
+        elif self.Position < 0 and close > sar:
+            self.BuyMarket(-self.Position)
 
     def CreateClone(self):
         return parabolic_sar_cci_strategy()

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,20 +11,22 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on Parabolic SAR and CCI indicators
+/// Parabolic SAR CCI strategy.
+/// A close above the Parabolic SAR with CCI below CciOversold buys the dip in the uptrend and a close below the SAR with CCI above
+/// CciOverbought sells the rally in the downtrend,
+/// reversing an opposite position. The SAR is the trailing stop: a long closes when price closes below it and a short when price closes above it.
 /// </summary>
 public class ParabolicSarCciStrategy : Strategy
 {
 	private readonly StrategyParam<decimal> _sarAccelerationFactor;
 	private readonly StrategyParam<decimal> _sarMaxAccelerationFactor;
 	private readonly StrategyParam<int> _cciPeriod;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _cciOversold;
+	private readonly StrategyParam<decimal> _cciOverbought;
 	private readonly StrategyParam<DataType> _candleType;
-	private int _cooldown;
-	private decimal _prevCci;
 
 	/// <summary>
-	/// Parabolic SAR acceleration factor
+	/// Initial acceleration factor of the SAR.
 	/// </summary>
 	public decimal SarAccelerationFactor
 	{
@@ -36,7 +35,7 @@ public class ParabolicSarCciStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Parabolic SAR maximum acceleration factor
+	/// Maximum acceleration factor of the SAR.
 	/// </summary>
 	public decimal SarMaxAccelerationFactor
 	{
@@ -45,7 +44,7 @@ public class ParabolicSarCciStrategy : Strategy
 	}
 
 	/// <summary>
-	/// CCI period
+	/// Period of CCI.
 	/// </summary>
 	public int CciPeriod
 	{
@@ -54,16 +53,25 @@ public class ParabolicSarCciStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Bars to wait between trades.
+	/// CCI level for longs.
 	/// </summary>
-	public int CooldownBars
+	public decimal CciOversold
 	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
+		get => _cciOversold.Value;
+		set => _cciOversold.Value = value;
 	}
 
 	/// <summary>
-	/// Candle type for strategy
+	/// CCI level for shorts.
+	/// </summary>
+	public decimal CciOverbought
+	{
+		get => _cciOverbought.Value;
+		set => _cciOverbought.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -72,126 +80,93 @@ public class ParabolicSarCciStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Constructor
+	/// Constructor.
 	/// </summary>
 	public ParabolicSarCciStrategy()
 	{
 		_sarAccelerationFactor = Param(nameof(SarAccelerationFactor), 0.02m)
-			.SetRange(0.01m, 0.05m)
-			.SetDisplay("SAR AF", "Parabolic SAR acceleration factor", "Indicators")
-			;
+			.SetGreaterThanZero()
+			.SetDisplay("SAR Acceleration", "Initial acceleration factor of the SAR", "SAR");
 
 		_sarMaxAccelerationFactor = Param(nameof(SarMaxAccelerationFactor), 0.2m)
-			.SetRange(0.1m, 0.5m)
-			.SetDisplay("SAR Max AF", "Parabolic SAR maximum acceleration factor", "Indicators")
-			;
+			.SetGreaterThanZero()
+			.SetDisplay("SAR Max Acceleration", "Maximum acceleration factor of the SAR", "SAR");
 
 		_cciPeriod = Param(nameof(CciPeriod), 20)
-			.SetRange(10, 50)
-			.SetDisplay("CCI Period", "Period for CCI indicator", "Indicators")
-			;
+			.SetGreaterThanZero()
+			.SetDisplay("CCI Period", "Period of CCI", "CCI");
 
-		_cooldownBars = Param(nameof(CooldownBars), 50)
-			.SetRange(1, 200)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "General");
+		_cciOversold = Param(nameof(CciOversold), -100m)
+			.SetDisplay("CCI Oversold", "CCI level for longs", "CCI");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_cciOverbought = Param(nameof(CciOverbought), 100m)
+			.SetDisplay("CCI Overbought", "CCI level for shorts", "CCI");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
-			public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-			{
-					return [(Security, CandleType)];
-			}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		base.OnReseted();
-		_cooldown = 0;
-		_prevCci = 0m;
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
-		protected override void OnStarted2(DateTime time)
-		{
-				base.OnStarted2(time);
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
-		// Initialize indicators
-		var parabolicSar = new ParabolicSar
+		var sar = new ParabolicSar
 		{
 			Acceleration = SarAccelerationFactor,
-			AccelerationMax = SarMaxAccelerationFactor
+			AccelerationMax = SarMaxAccelerationFactor,
 		};
-
 		var cci = new CommodityChannelIndex { Length = CciPeriod };
 
-		// Create subscription and bind indicators
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(parabolicSar, cci, ProcessCandle)
+			.BindEx(sar, cci, ProcessCandle)
 			.Start();
 
-		// Setup chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, parabolicSar);
-			DrawIndicator(area, cci);
+			DrawIndicator(area, sar);
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, cci);
+			}
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal sarValue, decimal cciValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue sarValue, IIndicatorValue cciValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
+		// The first SAR value is formed but empty.
+		if (!sarValue.IsFormed || sarValue.IsEmpty || !cciValue.IsFormed)
+			return;
+
+		var sar = sarValue.GetValue<decimal>();
+		var cci = cciValue.GetValue<decimal>();
+		var close = candle.ClosePrice;
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var price = candle.ClosePrice;
-		var crossedUp = _prevCci <= 100m && cciValue > 100m;
-		var crossedDown = _prevCci >= -100m && cciValue < -100m;
-		_prevCci = cciValue;
-
-		if (_cooldown > 0)
-			_cooldown--;
-
-		// Trading logic:
-		// Long: Price > SAR && CCI < -100 (trend up with oversold conditions)
-		// Short: Price < SAR && CCI > 100 (trend down with overbought conditions)
-		
-		if (_cooldown == 0 && price > sarValue && crossedUp && Position <= 0)
-		{
-			// Buy signal - trend up with oversold CCI
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-			_cooldown = CooldownBars;
-		}
-		else if (_cooldown == 0 && price < sarValue && crossedDown && Position >= 0)
-		{
-			// Sell signal - trend down with overbought CCI
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
-			_cooldown = CooldownBars;
-		}
-		// Exit conditions based on SAR breakout (dynamic stop-loss)
-		else if (Position > 0 && price < sarValue && cciValue < 0m)
-		{
-			// Exit long position when price drops below SAR
+		if (close > sar && cci < CciOversold && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (close < sar && cci > CciOverbought && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
+		else if (Position > 0 && close < sar)
 			SellMarket(Position);
-			_cooldown = CooldownBars;
-		}
-		else if (Position < 0 && price > sarValue && cciValue > 0m)
-		{
-			// Exit short position when price rises above SAR
-			BuyMarket(Math.Abs(Position));
-			_cooldown = CooldownBars;
-		}
+		else if (Position < 0 && close > sar)
+			BuyMarket(-Position);
 	}
 }
