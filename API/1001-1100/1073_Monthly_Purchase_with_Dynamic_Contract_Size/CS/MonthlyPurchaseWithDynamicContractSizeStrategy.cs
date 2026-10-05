@@ -1,12 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -14,7 +10,9 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Buys a percentage of equity on a specific day each month.
+/// Monthly purchase strategy with dynamic contract size.
+/// From StartDate on, buys on the candle whose day of month equals BuyDay. The size is PercentOfEquity of the
+/// current portfolio value divided by the close price. Positions are never closed; the equity drawdown is only tracked.
 /// </summary>
 public class MonthlyPurchaseWithDynamicContractSizeStrategy : Strategy
 {
@@ -23,11 +21,12 @@ public class MonthlyPurchaseWithDynamicContractSizeStrategy : Strategy
 	private readonly StrategyParam<decimal> _percentOfEquity;
 	private readonly StrategyParam<int> _buyDay;
 
-	private decimal? _highestEquity;
-	private DateTimeOffset? _lastBuyTime;
+	private DateTime? _lastBuyDate;
+	private decimal _peakEquity;
+	private decimal _maxDrawdown;
 
 	/// <summary>
-	/// Candle type for strategy.
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -36,7 +35,7 @@ public class MonthlyPurchaseWithDynamicContractSizeStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Start date after which purchases are allowed.
+	/// Purchases are allowed from this date on.
 	/// </summary>
 	public DateTimeOffset StartDate
 	{
@@ -45,7 +44,7 @@ public class MonthlyPurchaseWithDynamicContractSizeStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Percentage of equity used for each purchase.
+	/// Fraction of equity spent on each purchase.
 	/// </summary>
 	public decimal PercentOfEquity
 	{
@@ -63,23 +62,28 @@ public class MonthlyPurchaseWithDynamicContractSizeStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="MonthlyPurchaseWithDynamicContractSizeStrategy"/>.
+	/// Largest equity drawdown seen so far, for information only.
+	/// </summary>
+	public decimal MaxDrawdown => _maxDrawdown;
+
+	/// <summary>
+	/// Constructor.
 	/// </summary>
 	public MonthlyPurchaseWithDynamicContractSizeStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles for strategy", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		_startDate = Param(nameof(StartDate), new DateTimeOffset(2010, 1, 1, 0, 0, 0, TimeSpan.Zero))
-			.SetDisplay("Start Date", "Purchases start from this date", "Strategy");
+			.SetDisplay("Start Date", "Purchases are allowed from this date on", "General");
 
 		_percentOfEquity = Param(nameof(PercentOfEquity), 0.03m)
-			.SetRange(0.01m, 10m)
-			.SetDisplay("Percent of Equity", "Percentage of equity per purchase", "Strategy");
+			.SetGreaterThanZero()
+			.SetDisplay("Percent of Equity", "Fraction of equity spent on each purchase", "Trading");
 
 		_buyDay = Param(nameof(BuyDay), 1)
 			.SetRange(1, 31)
-			.SetDisplay("Buy Day", "Day of month to buy", "Strategy");
+			.SetDisplay("Buy Day", "Day of the month to buy", "Trading");
 	}
 
 	/// <inheritdoc />
@@ -92,9 +96,9 @@ public class MonthlyPurchaseWithDynamicContractSizeStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_highestEquity = null;
-		_lastBuyTime = null;
+		_lastBuyDate = null;
+		_peakEquity = 0m;
+		_maxDrawdown = 0m;
 	}
 
 	/// <inheritdoc />
@@ -102,8 +106,14 @@ public class MonthlyPurchaseWithDynamicContractSizeStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
+		_lastBuyDate = null;
+		_peakEquity = 0m;
+		_maxDrawdown = 0m;
+
 		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(ProcessCandle).Start();
+		subscription
+			.Bind(ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -118,32 +128,32 @@ public class MonthlyPurchaseWithDynamicContractSizeStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		var equity = Portfolio?.CurrentValue ?? 0m;
+		if (equity > _peakEquity)
+			_peakEquity = equity;
+		if (_peakEquity > 0m)
+			_maxDrawdown = Math.Max(_maxDrawdown, (_peakEquity - equity) / _peakEquity);
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var equity = Portfolio.CurrentValue ?? 0m;
-		if (_highestEquity == null || equity > _highestEquity)
-			_highestEquity = equity;
-
-		var isAfterStart = candle.OpenTime >= StartDate;
-		if (!isAfterStart)
+		var openTime = candle.OpenTime;
+		if (openTime < StartDate.UtcDateTime || openTime.Day != BuyDay || _lastBuyDate == openTime.Date)
 			return;
 
-		var currentDay = candle.OpenTime.Day;
-		var lastMonth = _lastBuyTime?.Month;
-		var lastYear = _lastBuyTime?.Year;
+		var close = candle.ClosePrice;
+		if (close <= 0m || equity <= 0m)
+			return;
 
-		if (currentDay >= BuyDay && (lastMonth != candle.OpenTime.Month || lastYear != candle.OpenTime.Year))
-		{
-			var effectiveEquity = equity > candle.ClosePrice ? equity : candle.ClosePrice;
-			var contracts = (int)(effectiveEquity * PercentOfEquity / candle.ClosePrice);
-			if (contracts <= 0)
-				contracts = 1;
-			if (contracts > 0)
-			{
-				BuyMarket(contracts);
-				_lastBuyTime = candle.OpenTime;
-			}
-		}
+		var step = Security?.VolumeStep ?? 1m;
+		if (step <= 0m)
+			step = 1m;
+
+		var volume = Math.Floor(equity * PercentOfEquity / close / step) * step;
+		if (volume <= 0m)
+			return;
+
+		BuyMarket(volume);
+		_lastBuyDate = openTime.Date;
 	}
 }
