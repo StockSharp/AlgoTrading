@@ -20,6 +20,7 @@ Supertrend提供经波动调整的趋势路径，ADX确认动量。当两项指�
   - `AdxPeriod` = 14
   - `AdxThreshold` = 25m
   - `CandleType` = TimeSpan.FromMinutes(15).TimeFrame()
+    与持仓方向相反的入场信号会反转持仓。
 - **过滤器**:
   - 类别: Trend
   - 方向: 双向

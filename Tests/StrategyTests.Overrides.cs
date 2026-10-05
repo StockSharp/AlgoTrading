@@ -7114,6 +7114,62 @@ public abstract partial class StrategyTests
 	public Task S0190_PercentStopWorksBetweenFinishedBars()
 		=> CheckPercentStopBetweenBars("0190_VWAP_ADX", TimeSpan.FromDays(31));
 
+	[TestMethod]
+	[TestCategory("Shard03")]
+	[DataRow(10, 3.0, 14, 25.0, false)]
+	[DataRow(7, 2.0, 10, 20.0, true)]
+	public async Task S0193_SupertrendSideUnderStrongAdxUntilSupertrendFlips(int period, double multiplier, int adxPeriod, double threshold, bool secondary)
+	{
+		var supertrend = new SuperTrend { Length = period, Multiplier = (decimal)multiplier };
+		var adx = new AverageDirectionalIndex { Length = adxPeriod };
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var flipExits = 0;
+		var violations = new List<string>();
+		await Replay("0193_Supertrend_ADX", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(10, strategy.Parameters["SupertrendPeriod"].Value);
+			AreEqual(3m, Convert.ToDecimal(strategy.Parameters["SupertrendMultiplier"].Value));
+			AreEqual(14, strategy.Parameters["AdxPeriod"].Value);
+			AreEqual(25m, Convert.ToDecimal(strategy.Parameters["AdxThreshold"].Value));
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "SupertrendPeriod", period);
+			SetParam(strategy, "SupertrendMultiplier", multiplier);
+			SetParam(strategy, "AdxPeriod", adxPeriod);
+			SetParam(strategy, "AdxThreshold", threshold);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var st = supertrend.Process(candle);
+				var a = adx.Process(candle);
+				if (st is not SuperTrendIndicatorValue { IsFormed: true } trend || !a.IsFormed || a is not AverageDirectionalIndexValue { MovingAverage: decimal strength }) return;
+				var close = candle.ClosePrice;
+				var strong = strength > (decimal)threshold;
+				var position = strategy.Position;
+				if (close > trend.Value && strong && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (close < trend.Value && strong && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && !trend.IsUpTrend) { expectedSide = Sides.Sell; expectedVolume = position; flipExits++; }
+				else if (position < 0m && trend.IsUpTrend) { expectedSide = Sides.Buy; expectedVolume = -position; flipExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow the Supertrend side under strong ADX, or close when Supertrend flips.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && flipExits > 0, "The fixture must trade both sides and exit when Supertrend flips.");
+	}
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

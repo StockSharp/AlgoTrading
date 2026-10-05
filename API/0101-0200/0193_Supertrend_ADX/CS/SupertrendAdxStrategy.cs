@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,15 +11,10 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on Supertrend indicator and ADX for trend strength confirmation.
-/// 
-/// Entry criteria:
-/// Long: Price > Supertrend && ADX > 25 (uptrend with strong movement)
-/// Short: Price < Supertrend && ADX > 25 (downtrend with strong movement)
-/// 
-/// Exit criteria:
-/// Long: Price < Supertrend (price falls below Supertrend)
-/// Short: Price > Supertrend (price rises above Supertrend)
+/// Supertrend ADX strategy.
+/// A close above the Supertrend line while ADX is above AdxThreshold goes long and a close below it while ADX is above the threshold goes short,
+/// reversing an opposite position. The Supertrend line is the trailing stop: a long closes when price closes below it, as Supertrend flips
+/// down, and a short when price closes above it.
 /// </summary>
 public class SupertrendAdxStrategy : Strategy
 {
@@ -30,15 +22,10 @@ public class SupertrendAdxStrategy : Strategy
 	private readonly StrategyParam<decimal> _supertrendMultiplier;
 	private readonly StrategyParam<int> _adxPeriod;
 	private readonly StrategyParam<decimal> _adxThreshold;
-	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _lastSupertrend;
-	private bool _isAboveSupertrend;
-	private int _cooldown;
-
 	/// <summary>
-	/// Period for Supertrend calculation.
+	/// ATR period of Supertrend.
 	/// </summary>
 	public int SupertrendPeriod
 	{
@@ -47,7 +34,7 @@ public class SupertrendAdxStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Multiplier for Supertrend calculation.
+	/// ATR multiplier of Supertrend.
 	/// </summary>
 	public decimal SupertrendMultiplier
 	{
@@ -56,7 +43,7 @@ public class SupertrendAdxStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Period for ADX calculation.
+	/// Period of ADX.
 	/// </summary>
 	public int AdxPeriod
 	{
@@ -65,7 +52,7 @@ public class SupertrendAdxStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Threshold for ADX to confirm trend strength.
+	/// ADX level of a strong trend.
 	/// </summary>
 	public decimal AdxThreshold
 	{
@@ -74,16 +61,7 @@ public class SupertrendAdxStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Bars to wait between trades.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
-	/// Type of candles to use.
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -98,33 +76,20 @@ public class SupertrendAdxStrategy : Strategy
 	{
 		_supertrendPeriod = Param(nameof(SupertrendPeriod), 10)
 			.SetGreaterThanZero()
-			.SetDisplay("Supertrend Period", "Period for ATR calculation in Supertrend", "Indicators")
-			
-			.SetOptimize(5, 20, 5);
+			.SetDisplay("Supertrend Period", "ATR period of Supertrend", "Supertrend");
 
-		_supertrendMultiplier = Param(nameof(SupertrendMultiplier), 3.0m)
+		_supertrendMultiplier = Param(nameof(SupertrendMultiplier), 3m)
 			.SetGreaterThanZero()
-			.SetDisplay("Supertrend Multiplier", "Multiplier for ATR in Supertrend", "Indicators")
-			
-			.SetOptimize(1.0m, 5.0m, 1.0m);
+			.SetDisplay("Supertrend Multiplier", "ATR multiplier of Supertrend", "Supertrend");
 
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("ADX Period", "Period for ADX calculation", "Indicators")
-			
-			.SetOptimize(7, 21, 7);
+			.SetDisplay("ADX Period", "Period of ADX", "ADX");
 
-		_adxThreshold = Param(nameof(AdxThreshold), 30m)
-			.SetGreaterThanZero()
-			.SetDisplay("ADX Threshold", "Minimum ADX value to confirm trend strength", "Indicators")
-			
-			.SetOptimize(20m, 30m, 5m);
+		_adxThreshold = Param(nameof(AdxThreshold), 25m)
+			.SetDisplay("ADX Threshold", "ADX level of a strong trend", "ADX");
 
-		_cooldownBars = Param(nameof(CooldownBars), 50)
-			.SetRange(1, 100)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "General");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -135,26 +100,16 @@ public class SupertrendAdxStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_lastSupertrend = 0;
-		_isAboveSupertrend = false;
-		_cooldown = 0;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
 		var supertrend = new SuperTrend { Length = SupertrendPeriod, Multiplier = SupertrendMultiplier };
-		var dummyEma = new ExponentialMovingAverage { Length = 10 };
+		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(supertrend, dummyEma, ProcessCandle)
+			.BindEx(supertrend, adx, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -163,37 +118,41 @@ public class SupertrendAdxStrategy : Strategy
 			DrawCandles(area, subscription);
 			DrawIndicator(area, supertrend);
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, adx);
+			}
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stVal, IIndicatorValue dummyVal)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue supertrendValue, IIndicatorValue adxValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (stVal is not SuperTrendIndicatorValue st)
+		if (!supertrendValue.IsFormed || !adxValue.IsFormed || supertrendValue is not SuperTrendIndicatorValue trend)
 			return;
-		var isUpTrend = st.IsUpTrend;
-		var trendChanged = isUpTrend != _isAboveSupertrend && _lastSupertrend > 0;
 
-		if (_cooldown > 0)
-			_cooldown--;
+		if (adxValue is not AverageDirectionalIndexValue { MovingAverage: decimal strength })
+			return;
 
-		if (_cooldown == 0 && trendChanged)
-		{
-			if (isUpTrend && Position <= 0)
-			{
-				BuyMarket();
-				_cooldown = CooldownBars;
-			}
-			else if (!isUpTrend && Position >= 0)
-			{
-				SellMarket();
-				_cooldown = CooldownBars;
-			}
-		}
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
 
-		_lastSupertrend = 1;
-		_isAboveSupertrend = isUpTrend;
+		var line = trend.Value;
+		var isUpTrend = trend.IsUpTrend;
+		var close = candle.ClosePrice;
+		var strong = strength > AdxThreshold;
+
+		if (close > line && strong && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (close < line && strong && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
+		else if (Position > 0 && !isUpTrend)
+			SellMarket(Position);
+		else if (Position < 0 && isUpTrend)
+			BuyMarket(-Position);
 	}
 }

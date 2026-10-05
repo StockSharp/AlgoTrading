@@ -23,6 +23,7 @@ Supetrendがボラティリティ調整済みのパスを提供し、ADXが動�
   - `AdxPeriod` = 14
   - `AdxThreshold` = 25m
   - `CandleType` = TimeSpan.FromMinutes(15).TimeFrame()
+    保有ポジションと逆方向のエントリーシグナルはドテンになります。
 - **フィルター**:
   - カテゴリ: トレンド
   - 方向: 両方

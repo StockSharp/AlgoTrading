@@ -23,6 +23,7 @@ Für jene, die starke Trends mit Trailing Stops reiten wollen. ATR bestimmt die 
   - `AdxPeriod` = 14
   - `AdxThreshold` = 25m
   - `CandleType` = TimeSpan.FromMinutes(15).TimeFrame()
+    Ein Einstiegssignal gegen eine offene Position dreht sie.
 - **Filter**:
   - Kategorie: Trend
   - Richtung: Beide
