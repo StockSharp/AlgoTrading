@@ -12,45 +12,34 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Average Force strategy.
-/// Uses EMA crossover as trend signal with cooldown between trades.
+/// The raw force is the position of the close inside the highest high and lowest low of the last Period candles, centred on zero
+/// ((close - lowest) / (highest - lowest) - 0.5), and the Average Force is its SMA over Smooth candles. A positive Average
+/// Force holds a long and a negative one holds a short, so the position reverses whenever it crosses zero.
 /// </summary>
 public class AverageForceStrategy : Strategy
 {
-	private readonly StrategyParam<int> _fastLength;
-	private readonly StrategyParam<int> _slowLength;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<int> _period;
+	private readonly StrategyParam<int> _smooth;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevFast;
-	private decimal _prevSlow;
-	private int _barIndex;
-	private int _lastTradeBar;
+	private SimpleMovingAverage _forceAverage;
 
 	/// <summary>
-	/// Fast EMA period.
+	/// Lookback of the highest high and lowest low.
 	/// </summary>
-	public int FastLength
+	public int Period
 	{
-		get => _fastLength.Value;
-		set => _fastLength.Value = value;
+		get => _period.Value;
+		set => _period.Value = value;
 	}
 
 	/// <summary>
-	/// Slow EMA period.
+	/// SMA period of the force.
 	/// </summary>
-	public int SlowLength
+	public int Smooth
 	{
-		get => _slowLength.Value;
-		set => _slowLength.Value = value;
-	}
-
-	/// <summary>
-	/// Cooldown bars between trades.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
+		get => _smooth.Value;
+		set => _smooth.Value = value;
 	}
 
 	/// <summary>
@@ -67,19 +56,16 @@ public class AverageForceStrategy : Strategy
 	/// </summary>
 	public AverageForceStrategy()
 	{
-		_fastLength = Param(nameof(FastLength), 18)
+		_period = Param(nameof(Period), 18)
 			.SetGreaterThanZero()
-			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+			.SetDisplay("Period", "Lookback of the highest high and lowest low", "Indicator");
 
-		_slowLength = Param(nameof(SlowLength), 50)
+		_smooth = Param(nameof(Smooth), 6)
 			.SetGreaterThanZero()
-			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
-
-		_cooldownBars = Param(nameof(CooldownBars), 350)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "Trading");
+			.SetDisplay("Smooth", "SMA period of the force", "Indicator");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -92,10 +78,7 @@ public class AverageForceStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevFast = 0;
-		_prevSlow = 0;
-		_barIndex = 0;
-		_lastTradeBar = 0;
+		_forceAverage = null;
 	}
 
 	/// <inheritdoc />
@@ -103,48 +86,41 @@ public class AverageForceStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var fastEma = new ExponentialMovingAverage { Length = FastLength };
-		var slowEma = new ExponentialMovingAverage { Length = SlowLength };
+		var highest = new Highest { Length = Period };
+		var lowest = new Lowest { Length = Period };
+		_forceAverage = new SimpleMovingAverage { Length = Smooth };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(fastEma, slowEma, ProcessCandle)
+			.Bind(highest, lowest, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, fastEma);
-			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue)
+	private void ProcessCandle(ICandleMessage candle, decimal highest, decimal lowest)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		_barIndex++;
+		var range = highest - lowest;
+		var force = range > 0m ? (candle.ClosePrice - lowest) / range - 0.5m : 0m;
+		var averageForce = _forceAverage.Process(force, candle.ServerTime, true).ToDecimal();
 
-		var cooldownOk = _barIndex - _lastTradeBar > CooldownBars;
+		if (!_forceAverage.IsFormed)
+			return;
 
-		var crossUp = _prevFast > 0 && _prevFast <= _prevSlow && fastValue > slowValue;
-		var crossDown = _prevFast > 0 && _prevFast >= _prevSlow && fastValue < slowValue;
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
 
-		if (crossUp && Position <= 0 && cooldownOk)
-		{
-			BuyMarket();
-			_lastTradeBar = _barIndex;
-		}
-		else if (crossDown && Position >= 0 && cooldownOk)
-		{
-			SellMarket();
-			_lastTradeBar = _barIndex;
-		}
-
-		_prevFast = fastValue;
-		_prevSlow = slowValue;
+		if (averageForce > 0m && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (averageForce < 0m && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
 	}
 }
