@@ -12,8 +12,8 @@ Un enfoque flexible para quienes buscan señales suaves. Los stops basados en AT
 ## Detalles
 
 - **Criterios de entrada**:
-  - Largo: `HullMA turning up && StochK < 20`
-  - Corto: `HullMA turning down && StochK > 80`
+  - Largo: `HullMA turning up && StochK < StochOversold`
+  - Corto: `HullMA turning down && StochK > StochOverbought`
 - **Largo/Corto**: Ambos
 - **Criterios de salida**:
   - Cambio de dirección del Hull MA
@@ -22,9 +22,12 @@ Un enfoque flexible para quienes buscan señales suaves. Los stops basados en AT
   - `HmaPeriod` = 9
   - `StochPeriod` = 14
   - `StochK` = 3
-  - `StochD` = 3
+  - `StochOversold` = 20
+  - `StochOverbought` = 80
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
-  - `StopLossAtr` = 2m
+  - `StopLossAtr` = 2
+  - `AtrPeriod` = 14
+    La HMA gira al alza cuando sube después de bajar y a la baja cuando baja después de subir; un largo se cierra cuando baja y un corto cuando sube. %K es el estocástico de StochPeriod velas suavizado en StochK velas, y %D no interviene. El stop está a StopLossAtr ATR (AtrPeriod) del cierre de entrada y se comprueba en los cierres de vela. Una señal de entrada contra una posición abierta la invierte.
 - **Filtros**:
   - Categoría: Reversión a la media
   - Dirección: Ambos

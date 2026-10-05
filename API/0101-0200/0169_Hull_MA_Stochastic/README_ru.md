@@ -12,8 +12,8 @@ Hull MA быстро показывает направление тренда. �
 ## Подробности
 
 - **Условия входа**:
-  - Длинная: `HullMA turning up && StochK < 20`
-  - Короткая: `HullMA turning down && StochK > 80`
+  - Длинная: `HullMA turning up && StochK < StochOversold`
+  - Короткая: `HullMA turning down && StochK > StochOverbought`
 - **Long/Short**: Оба
 - **Условия выхода**:
   - изменение направления Hull MA
@@ -22,9 +22,12 @@ Hull MA быстро показывает направление тренда. �
   - `HmaPeriod` = 9
   - `StochPeriod` = 14
   - `StochK` = 3
-  - `StochD` = 3
+  - `StochOversold` = 20
+  - `StochOverbought` = 80
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
-  - `StopLossAtr` = 2m
+  - `StopLossAtr` = 2
+  - `AtrPeriod` = 14
+    HMA разворачивается вверх, когда растёт после снижения, и вниз, когда снижается после роста; лонг закрывается при её снижении, шорт — при росте. %K — стохастик за StochPeriod свечей, сглаженный за StochK свечей, линия %D не участвует. Стоп стоит в StopLossAtr ATR (AtrPeriod) от цены закрытия при входе и проверяется по закрытиям свечей. Сигнал на вход против открытой позиции разворачивает её.
 - **Фильтры**:
   - Категория: Mean reversion
   - Направление: Оба

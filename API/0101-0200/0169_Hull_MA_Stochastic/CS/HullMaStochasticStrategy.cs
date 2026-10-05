@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,30 +11,29 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Hull Moving Average + Stochastic Oscillator strategy.
-/// Strategy enters when HMA trend direction changes with Stochastic confirming oversold/overbought conditions.
+/// Hull MA Stochastic strategy.
+/// The Hull average turns up when it rises after falling and turns down when it falls after rising. A turn up with %K below StochOversold
+/// goes long and a turn down with %K above StochOverbought goes short, reversing an opposite position. A long closes when the Hull average
+/// falls and a short when it rises. %K is the stochastic over StochPeriod candles
+/// smoothed over StochK candles. The stop lies StopLossAtr ATR from the entry close and is checked on candle closes.
 /// </summary>
 public class HullMaStochasticStrategy : Strategy
 {
 	private readonly StrategyParam<int> _hmaPeriod;
 	private readonly StrategyParam<int> _stochPeriod;
 	private readonly StrategyParam<int> _stochK;
-	private readonly StrategyParam<int> _stochD;
+	private readonly StrategyParam<decimal> _stochOversold;
+	private readonly StrategyParam<decimal> _stochOverbought;
+	private readonly StrategyParam<decimal> _stopLossAtr;
+	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
-	private readonly StrategyParam<decimal> _stopLossPercent;
 
-	// Indicators
-	private HullMovingAverage _hma;
-	private StochasticOscillator _stochastic;
-	private AverageTrueRange _atr;
-	private int _cooldown;
-
-	// Previous HMA value for trend detection
-	private decimal _prevHmaValue;
+	private decimal? _prevHull;
+	private decimal? _prevPrevHull;
+	private decimal _stopPrice;
 
 	/// <summary>
-	/// Hull Moving Average period.
+	/// Period of the Hull moving average.
 	/// </summary>
 	public int HmaPeriod
 	{
@@ -46,7 +42,7 @@ public class HullMaStochasticStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stochastic period.
+	/// Lookback period of the raw stochastic.
 	/// </summary>
 	public int StochPeriod
 	{
@@ -55,7 +51,7 @@ public class HullMaStochasticStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stochastic %K period.
+	/// Smoothing period of %K.
 	/// </summary>
 	public int StochK
 	{
@@ -64,12 +60,39 @@ public class HullMaStochasticStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stochastic %D period.
+	/// %K level for longs.
 	/// </summary>
-	public int StochD
+	public decimal StochOversold
 	{
-		get => _stochD.Value;
-		set => _stochD.Value = value;
+		get => _stochOversold.Value;
+		set => _stochOversold.Value = value;
+	}
+
+	/// <summary>
+	/// %K level for shorts.
+	/// </summary>
+	public decimal StochOverbought
+	{
+		get => _stochOverbought.Value;
+		set => _stochOverbought.Value = value;
+	}
+
+	/// <summary>
+	/// Stop distance from the entry in ATRs.
+	/// </summary>
+	public decimal StopLossAtr
+	{
+		get => _stopLossAtr.Value;
+		set => _stopLossAtr.Value = value;
+	}
+
+	/// <summary>
+	/// Period of the stop ATR.
+	/// </summary>
+	public int AtrPeriod
+	{
+		get => _atrPeriod.Value;
+		set => _atrPeriod.Value = value;
 	}
 
 	/// <summary>
@@ -82,64 +105,38 @@ public class HullMaStochasticStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Bars to wait between trades.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
-	/// Stop-loss percentage.
-	/// </summary>
-	public decimal StopLossPercent
-	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
-	}
-
-	/// <summary>
 	/// Constructor.
 	/// </summary>
 	public HullMaStochasticStrategy()
 	{
 		_hmaPeriod = Param(nameof(HmaPeriod), 9)
 			.SetGreaterThanZero()
-			.SetDisplay("HMA Period", "Hull Moving Average period", "Indicators")
-			
-			.SetOptimize(4, 30, 2);
+			.SetDisplay("HMA Period", "Period of the Hull moving average", "Indicators");
 
 		_stochPeriod = Param(nameof(StochPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("Stochastic Period", "Stochastic oscillator period", "Indicators")
-			
-			.SetOptimize(5, 30, 5);
+			.SetDisplay("Stochastic Period", "Lookback period of the raw stochastic", "Stochastic");
 
 		_stochK = Param(nameof(StochK), 3)
 			.SetGreaterThanZero()
-			.SetDisplay("Stochastic %K", "Stochastic %K period", "Indicators")
-			
-			.SetOptimize(1, 10, 1);
+			.SetDisplay("Stochastic %K", "Smoothing period of %K", "Stochastic");
 
-		_stochD = Param(nameof(StochD), 3)
+		_stochOversold = Param(nameof(StochOversold), 20m)
+			.SetDisplay("Stochastic Oversold", "%K level for longs", "Stochastic");
+
+		_stochOverbought = Param(nameof(StochOverbought), 80m)
+			.SetDisplay("Stochastic Overbought", "%K level for shorts", "Stochastic");
+
+		_stopLossAtr = Param(nameof(StopLossAtr), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss ATR", "Stop distance from the entry in ATRs", "Risk");
+
+		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("Stochastic %D", "Stochastic %D period", "Indicators")
-			
-			.SetOptimize(1, 10, 1);
+			.SetDisplay("ATR Period", "Period of the stop ATR", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_cooldownBars = Param(nameof(CooldownBars), 90)
-			.SetRange(5, 500)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "General");
-
-		_stopLossPercent = Param(nameof(StopLossPercent), 1.0m)
-			.SetNotNegative()
-			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
-			
-			.SetOptimize(0.5m, 2.0m, 0.5m);
 	}
 
 	/// <inheritdoc />
@@ -152,127 +149,96 @@ public class HullMaStochasticStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_hma = null;
-		_stochastic = null;
-		_atr = null;
-		_prevHmaValue = 0;
-		_cooldown = 0;
+		_prevHull = null;
+		_prevPrevHull = null;
+		_stopPrice = default;
 	}
 
-/// <inheritdoc />
-protected override void OnStarted2(DateTime time)
-{
-	base.OnStarted2(time);
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
-	// Create indicators
-	_hma = new HullMovingAverage { Length = HmaPeriod };
+		_prevHull = null;
+		_prevPrevHull = null;
+		_stopPrice = default;
 
-		_stochastic = new StochasticOscillator
+		var hull = new HullMovingAverage { Length = HmaPeriod };
+		// The D line of the core oscillator is the smoothed %K.
+		var stochastic = new StochasticOscillator
 		{
-			K = { Length = StochK },
-			D = { Length = StochD },
+			K = { Length = StochPeriod },
+			D = { Length = StochK },
 		};
+		var atr = new AverageTrueRange { Length = AtrPeriod };
 
-		_atr = new AverageTrueRange { Length = 14 };
-
-		// Subscribe to candles and bind indicators
 		var subscription = SubscribeCandles(CandleType);
-		
 		subscription
-			.BindEx(_hma, _stochastic, _atr, ProcessCandle)
+			.BindEx(hull, stochastic, atr, ProcessCandle)
 			.Start();
 
-		// Setup chart
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _hma);
-			
-			var secondArea = CreateChartArea();
-			if (secondArea != null)
-			{
-				DrawIndicator(secondArea, _stochastic);
-			}
-			
+			DrawIndicator(area, hull);
 			DrawOwnTrades(area);
-		}
 
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, stochastic);
+			}
+		}
 	}
 
-	private void ProcessCandle(
-		ICandleMessage candle, 
-		IIndicatorValue hmaValue, 
-		IIndicatorValue stochValue, 
-		IIndicatorValue atrValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue hullValue, IIndicatorValue stochasticValue, IIndicatorValue atrValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
+		if (!hullValue.IsFormed || !stochasticValue.IsFormed || !atrValue.IsFormed)
+			return;
+
+		if (stochasticValue is not IStochasticOscillatorValue { D: decimal k })
+			return;
+
+		var hull = hullValue.GetValue<decimal>();
+		var prevHull = _prevHull;
+		var prevPrevHull = _prevPrevHull;
+		_prevPrevHull = prevHull;
+		_prevHull = hull;
+
+		if (prevHull is not decimal last || prevPrevHull is not decimal beforeLast)
+			return;
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Get indicator values
-		decimal hma = hmaValue.ToDecimal();
-		
-		var stochTyped = (StochasticOscillatorValue)stochValue;
+		var atr = atrValue.GetValue<decimal>();
+		var close = candle.ClosePrice;
+		var rising = hull > last;
+		var falling = hull < last;
+		var turnsUp = rising && last < beforeLast;
+		var turnsDown = falling && last > beforeLast;
 
-		if (stochTyped.K is not decimal stochK)
-			return;
-
-		decimal atr = atrValue.ToDecimal();
-
-		// Skip first candle after initialization
-		if (_prevHmaValue == 0)
+		if (turnsUp && k < StochOversold && Position <= 0)
 		{
-			_prevHmaValue = hma;
-			return;
+			BuyMarket(Volume + Math.Abs(Position));
+			_stopPrice = close - StopLossAtr * atr;
 		}
-
-		// Detect HMA trend direction
-		bool hmaIncreasing = hma > _prevHmaValue;
-		bool hmaDecreasing = hma < _prevHmaValue;
-
-		if (_cooldown > 0)
+		else if (turnsDown && k > StochOverbought && Position >= 0)
 		{
-			_cooldown--;
-			_prevHmaValue = hma;
-			return;
+			SellMarket(Volume + Math.Abs(Position));
+			_stopPrice = close + StopLossAtr * atr;
 		}
-
-		// Trading logic:
-		// Buy/short by HMA slope with a light stochastic filter.
-		if (hmaIncreasing && stochK > 50 && Position == 0)
+		else if (Position > 0 && (falling || (StopLossAtr > 0 && close <= _stopPrice)))
 		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-			LogInfo($"Long entry: Price={candle.ClosePrice}, HMA={hma}, Prev HMA={_prevHmaValue}, Stochastic %K={stochK}");
+			SellMarket(Position);
 		}
-		// Sell when HMA is decreasing and stochastic confirms bearish momentum.
-		else if (hmaDecreasing && stochK < 50 && Position == 0)
+		else if (Position < 0 && (rising || (StopLossAtr > 0 && close >= _stopPrice)))
 		{
-			SellMarket();
-			_cooldown = CooldownBars;
-			LogInfo($"Short entry: Price={candle.ClosePrice}, HMA={hma}, Prev HMA={_prevHmaValue}, Stochastic %K={stochK}");
+			BuyMarket(-Position);
 		}
-		// Exit when HMA trend changes direction
-		else if (Position > 0 && hmaDecreasing)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-			LogInfo($"Long exit: Price={candle.ClosePrice}, HMA={hma}, Prev HMA={_prevHmaValue}");
-		}
-		else if (Position < 0 && hmaIncreasing)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-			LogInfo($"Short exit: Price={candle.ClosePrice}, HMA={hma}, Prev HMA={_prevHmaValue}");
-		}
-
-		// Save current HMA value for next candle
-		_prevHmaValue = hma;
 	}
 }

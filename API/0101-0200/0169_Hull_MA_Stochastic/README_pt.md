@@ -12,8 +12,8 @@ Uma abordagem flexível para quem deseja sinais suaves. Stops baseados em ATR li
 ## Detalhes
 
 - **Critérios de entrada**:
-  - Comprado: `HullMA turning up && StochK < 20`
-  - Vendido: `HullMA turning down && StochK > 80`
+  - Comprado: `HullMA turning up && StochK < StochOversold`
+  - Vendido: `HullMA turning down && StochK > StochOverbought`
 - **Comprado/Vendido**: Ambos
 - **Critérios de saída**:
   - Mudança de direção do Hull MA
@@ -22,9 +22,12 @@ Uma abordagem flexível para quem deseja sinais suaves. Stops baseados em ATR li
   - `HmaPeriod` = 9
   - `StochPeriod` = 14
   - `StochK` = 3
-  - `StochD` = 3
+  - `StochOversold` = 20
+  - `StochOverbought` = 80
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
-  - `StopLossAtr` = 2m
+  - `StopLossAtr` = 2
+  - `AtrPeriod` = 14
+    A HMA vira para cima quando sobe depois de cair e para baixo quando cai depois de subir; uma compra é encerrada quando ela cai e uma venda quando sobe. %K é o estocástico de StochPeriod candles suavizado em StochK candles, e o %D não participa. O stop fica a StopLossAtr ATR (AtrPeriod) do fechamento de entrada e é verificado nos fechamentos dos candles. Um sinal de entrada contra uma posição aberta a inverte.
 - **Filtros**:
   - Categoria: Reversão à média
   - Direção: Ambos
