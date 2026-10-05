@@ -2180,6 +2180,86 @@ public abstract partial class StrategyTests
 	public Task S0083_PercentStopWorksBetweenFinishedBars()
 		=> CheckPercentStopBetweenBars(AdxWeakening, TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
 
+	private const string AtrExhaustion = "0084_ATR_Exhaustion";
+
+	[TestMethod]
+	[TestCategory("Shard06")]
+	[DataRow(14, 20, 1.5, 20, false)]
+	[DataRow(7, 10, 1.2, 10, true)]
+	public async Task S0084_AtrSpikesWithCandlesAgainstThePriorMove(int atrPeriod, int averagePeriod, double multiplier, int maPeriod, bool secondary)
+	{
+		var atr = new AverageTrueRange { Length = atrPeriod };
+		var sma = new SimpleMovingAverage { Length = maPeriod };
+		var atrs = new Queue<decimal>();
+		decimal? previousMa = null;
+		Sides? expectedSide = null;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var spikesWithTheMove = 0;
+		var nativeStop = typeof(Strategy).GetField("_isStopTrailing", BindingFlags.Instance | BindingFlags.NonPublic);
+		var violations = new List<string>();
+		await Replay(AtrExhaustion, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(14, strategy.Parameters["AtrPeriod"].Value);
+			AreEqual(20, strategy.Parameters["AtrAvgPeriod"].Value);
+			AreEqual(1.5m, Convert.ToDecimal(strategy.Parameters["AtrMultiplier"].Value));
+			AreEqual(20, strategy.Parameters["MaPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "AtrPeriod", atrPeriod);
+			SetParam(strategy, "AtrAvgPeriod", averagePeriod);
+			SetParam(strategy, "AtrMultiplier", multiplier);
+			SetParam(strategy, "MaPeriod", maPeriod);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var a = atr.Process(candle);
+				var m = sma.Process(candle);
+				if (!a.IsFormed) return;
+				var value = a.GetValue<decimal>();
+				atrs.Enqueue(value);
+				if (atrs.Count > averagePeriod) atrs.Dequeue();
+				if (!m.IsFormed) return;
+				var ma = m.GetValue<decimal>();
+				var last = previousMa;
+				previousMa = ma;
+				if (atrs.Count < averagePeriod || last is not decimal lastMa || strategy.Position != 0m) return;
+				if (value <= atrs.Average() * (decimal)multiplier) return;
+				var close = candle.ClosePrice;
+				if (close > candle.OpenPrice && ma < lastMa) expectedSide = Sides.Buy;
+				else if (close < candle.OpenPrice && ma > lastMa) expectedSide = Sides.Sell;
+				else if (close != candle.OpenPrice) spikesWithTheMove++;
+				if (expectedSide is Sides side) { entries[side]++; expectedOrders++; }
+			};
+			strategy.OrderRegistering += order =>
+			{
+				if (strategy.Position != 0m)
+				{
+					// Only the trailing protection may close a position.
+					IsTrue((bool)nativeStop.GetValue(strategy), "The percent stop must trail.");
+					return;
+				}
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != strategy.Volume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide}. Every entry must follow an ATR spike above its average with a candle against the prior move of the price average.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] + entries[Sides.Sell] > 1, "The fixture must fade ATR spikes.");
+		if (secondary) IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "TON must fade spikes on both sides.");
+		IsTrue(spikesWithTheMove > 0, "The fixture must contain spikes with candles in the direction of the prior move that are not traded.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard06")]
+	public Task S0084_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars(AtrExhaustion, TimeSpan.FromDays(31));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";
