@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,7 +11,10 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on Keltner Channels and Williams %R indicators
+/// Keltner Williams R strategy.
+/// The Keltner Channel is the EmaPeriod EMA plus and minus KeltnerMultiplier times the AtrPeriod ATR. A close below the lower band with
+/// Williams %R below WilliamsROversold goes long and a close above the upper band with %R above WilliamsROverbought goes short, reversing
+/// an opposite position. A long closes once price returns to the middle band and a short likewise, and a percent stop limits the loss.
 /// </summary>
 public class KeltnerWilliamsRStrategy : Strategy
 {
@@ -22,13 +22,13 @@ public class KeltnerWilliamsRStrategy : Strategy
 	private readonly StrategyParam<decimal> _keltnerMultiplier;
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<int> _williamsRPeriod;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _williamsROversold;
+	private readonly StrategyParam<decimal> _williamsROverbought;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
-	private decimal _prevWilliamsR;
-	private int _cooldown;
 
 	/// <summary>
-	/// EMA period for Keltner Channel
+	/// Period of the channel EMA.
 	/// </summary>
 	public int EmaPeriod
 	{
@@ -37,7 +37,7 @@ public class KeltnerWilliamsRStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Keltner Channel multiplier (k)
+	/// ATR multiplier of the channel width.
 	/// </summary>
 	public decimal KeltnerMultiplier
 	{
@@ -46,7 +46,7 @@ public class KeltnerWilliamsRStrategy : Strategy
 	}
 
 	/// <summary>
-	/// ATR period for Keltner Channel
+	/// Period of the channel ATR.
 	/// </summary>
 	public int AtrPeriod
 	{
@@ -55,7 +55,7 @@ public class KeltnerWilliamsRStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Williams %R period
+	/// Period of Williams %R.
 	/// </summary>
 	public int WilliamsRPeriod
 	{
@@ -64,16 +64,34 @@ public class KeltnerWilliamsRStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Bars to wait between trades.
+	/// Williams %R level for longs.
 	/// </summary>
-	public int CooldownBars
+	public decimal WilliamsROversold
 	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
+		get => _williamsROversold.Value;
+		set => _williamsROversold.Value = value;
 	}
 
 	/// <summary>
-	/// Candle type for strategy
+	/// Williams %R level for shorts.
+	/// </summary>
+	public decimal WilliamsROverbought
+	{
+		get => _williamsROverbought.Value;
+		set => _williamsROverbought.Value = value;
+	}
+
+	/// <summary>
+	/// Stop loss percentage from entry price.
+	/// </summary>
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -82,122 +100,115 @@ public class KeltnerWilliamsRStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Constructor
+	/// Constructor.
 	/// </summary>
 	public KeltnerWilliamsRStrategy()
 	{
 		_emaPeriod = Param(nameof(EmaPeriod), 20)
-			.SetRange(10, 50)
-			.SetDisplay("EMA Period", "EMA period for Keltner Channel", "Indicators")
-			;
+			.SetGreaterThanZero()
+			.SetDisplay("EMA Period", "Period of the channel EMA", "Keltner");
 
 		_keltnerMultiplier = Param(nameof(KeltnerMultiplier), 2m)
-			.SetRange(1m, 4m)
-			.SetDisplay("K Multiplier", "Multiplier for Keltner Channel", "Indicators")
-			;
+			.SetGreaterThanZero()
+			.SetDisplay("Keltner Multiplier", "ATR multiplier of the channel width", "Keltner");
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
-			.SetRange(7, 28)
-			.SetDisplay("ATR Period", "ATR period for Keltner Channel", "Indicators")
-			;
+			.SetGreaterThanZero()
+			.SetDisplay("ATR Period", "Period of the channel ATR", "Keltner");
 
 		_williamsRPeriod = Param(nameof(WilliamsRPeriod), 14)
-			.SetRange(5, 30)
-			.SetDisplay("Williams %R Period", "Period for Williams %R indicator", "Indicators")
-			;
+			.SetGreaterThanZero()
+			.SetDisplay("Williams %R Period", "Period of Williams %R", "Williams %R");
 
-		_cooldownBars = Param(nameof(CooldownBars), 40)
-			.SetRange(1, 200)
-			.SetDisplay("Cooldown Bars", "Bars between entries", "General");
+		_williamsROversold = Param(nameof(WilliamsROversold), -80m)
+			.SetDisplay("Williams %R Oversold", "Williams %R level for longs", "Williams %R");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_williamsROverbought = Param(nameof(WilliamsROverbought), -20m)
+			.SetDisplay("Williams %R Overbought", "Williams %R level for shorts", "Williams %R");
+
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
-			public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-			{
-					return [(Security, CandleType)];
-			}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		base.OnReseted();
-		_prevWilliamsR = 0m;
-		_cooldown = 0;
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
-		protected override void OnStarted2(DateTime time)
-		{
-				base.OnStarted2(time);
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
-		// Initialize indicators
-		var keltner = new KeltnerChannels
-		{
-			Length = EmaPeriod,
-			Multiplier = KeltnerMultiplier
-		};
+		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
+		var atr = new AverageTrueRange { Length = AtrPeriod };
+		var williams = new WilliamsR { Length = WilliamsRPeriod };
 
-		var williamsR = new WilliamsR { Length = WilliamsRPeriod };
-
-		// Create subscription and bind indicators
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(keltner, williamsR, ProcessIndicators)
+			.BindEx(ema, atr, williams, ProcessCandle)
 			.Start();
-		
-		// Setup chart visualization if available
+
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, keltner);
-			DrawIndicator(area, williamsR);
+			DrawIndicator(area, ema);
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, williams);
+			}
 		}
 	}
 
-	private void ProcessIndicators(ICandleMessage candle, IIndicatorValue keltnerValue, IIndicatorValue williamsRValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
 	{
-		// Skip unfinished candles
+		// The high-level handler activates native protection before this callback, also between signal bars.
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue emaValue, IIndicatorValue atrValue, IIndicatorValue williamsValue)
+	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
+		if (!emaValue.IsFormed || !atrValue.IsFormed || !williamsValue.IsFormed)
+			return;
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var keltnerTyped = (KeltnerChannelsValue)keltnerValue;
-		var upper = keltnerTyped.Upper;
-		var lower = keltnerTyped.Lower;
-		var middle = keltnerTyped.Middle;
+		var middle = emaValue.GetValue<decimal>();
+		var atr = atrValue.GetValue<decimal>();
+		var williams = williamsValue.GetValue<decimal>();
+		var upper = middle + KeltnerMultiplier * atr;
+		var lower = middle - KeltnerMultiplier * atr;
+		var close = candle.ClosePrice;
 
-		var williamsR = williamsRValue.ToDecimal();
-		var crossedIntoOversold = _prevWilliamsR > -80m && williamsR <= -80m;
-		var crossedIntoOverbought = _prevWilliamsR < -20m && williamsR >= -20m;
-		_prevWilliamsR = williamsR;
-
-		var price = candle.ClosePrice;
-		if (_cooldown > 0)
-			_cooldown--;
-
-		// Trading logic:
-		// Long: Price < lower Keltner band && Williams %R < -80 (oversold at lower band)
-		// Short: Price > upper Keltner band && Williams %R > -20 (overbought at upper band)
-		
-		if (_cooldown == 0 && price <= lower * 1.001m && crossedIntoOversold && Position <= 0)
-		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-			_cooldown = CooldownBars;
-		}
-		else if (_cooldown == 0 && price >= upper * 0.999m && crossedIntoOverbought && Position >= 0)
-		{
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
-			_cooldown = CooldownBars;
-		}
+		if (close < lower && williams < WilliamsROversold && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (close > upper && williams > WilliamsROverbought && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
+		else if (Position > 0 && close >= middle)
+			SellMarket(Position);
+		else if (Position < 0 && close <= middle)
+			BuyMarket(-Position);
 	}
 }

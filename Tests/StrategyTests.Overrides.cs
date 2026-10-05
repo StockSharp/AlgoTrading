@@ -7518,6 +7518,79 @@ public abstract partial class StrategyTests
 	public Task S0202_PercentStopWorksBetweenFinishedBars()
 		=> CheckPercentStopBetweenBars("0202_Donchian_CCI", TimeSpan.FromDays(31));
 
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(20, 2.0, 14, 14, -80.0, -20.0, false)]
+	[DataRow(14, 1.5, 10, 10, -85.0, -15.0, true)]
+	public async Task S0203_KeltnerBandFadesWithWilliamsRUntilTheMiddleBand(int emaPeriod, double multiplier, int atrPeriod, int williamsPeriod, double oversold, double overbought, bool secondary)
+	{
+		var ema = new ExponentialMovingAverage { Length = emaPeriod };
+		var atr = new AverageTrueRange { Length = atrPeriod };
+		var williams = new WilliamsR { Length = williamsPeriod };
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var middleExits = 0;
+		var violations = new List<string>();
+		await Replay("0203_Keltner_Williams_R", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["EmaPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["KeltnerMultiplier"].Value));
+			AreEqual(14, strategy.Parameters["AtrPeriod"].Value);
+			AreEqual(14, strategy.Parameters["WilliamsRPeriod"].Value);
+			AreEqual(-80m, Convert.ToDecimal(strategy.Parameters["WilliamsROversold"].Value));
+			AreEqual(-20m, Convert.ToDecimal(strategy.Parameters["WilliamsROverbought"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "EmaPeriod", emaPeriod);
+			SetParam(strategy, "KeltnerMultiplier", multiplier);
+			SetParam(strategy, "AtrPeriod", atrPeriod);
+			SetParam(strategy, "WilliamsRPeriod", williamsPeriod);
+			SetParam(strategy, "WilliamsROversold", oversold);
+			SetParam(strategy, "WilliamsROverbought", overbought);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var e = ema.Process(candle);
+				var a = atr.Process(candle);
+				var w = williams.Process(candle);
+				if (!e.IsFormed || !a.IsFormed || !w.IsFormed) return;
+				var middle = e.GetValue<decimal>();
+				var range = a.GetValue<decimal>();
+				var r = w.GetValue<decimal>();
+				var upper = middle + (decimal)multiplier * range;
+				var lower = middle - (decimal)multiplier * range;
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (close < lower && r < (decimal)oversold && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (close > upper && r > (decimal)overbought && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && close >= middle) { expectedSide = Sides.Sell; expectedVolume = position; middleExits++; }
+				else if (position < 0m && close <= middle) { expectedSide = Sides.Buy; expectedVolume = -position; middleExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must fade a close beyond a Keltner band with Williams %R at an extreme, or close at the middle band.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && middleExits > 0, "The fixture must trade both sides and exit at the middle band.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0203_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0203_Keltner_Williams_R", TimeSpan.FromDays(31));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

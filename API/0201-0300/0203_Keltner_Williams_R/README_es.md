@@ -2,15 +2,15 @@
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Esta estrategia usa los indicadores Keltner Williams R para generar señales.
-La entrada larga ocurre cuando Price < lower Keltner band && Williams %R < -80 (sobreventa en la banda inferior). La entrada corta ocurre cuando Price > upper Keltner band && Williams %R > -20 (sobrecompra en la banda superior).
+La entrada larga ocurre cuando Price < lower Keltner band && Williams %R < WilliamsROversold (sobreventa en la banda inferior). La entrada corta ocurre cuando Price > upper Keltner band && Williams %R > WilliamsROverbought (sobrecompra en la banda superior).
 Es adecuada para los operadores que buscan oportunidades en mercados mixtos.
 
 Las pruebas indican un rendimiento anual promedio de aproximadamente 46%. Funciona mejor en el mercado de acciones.
 
 ## Detalles
 - **Criterios de entrada**:
-  - **Largo**: Price < lower Keltner band && Williams %R < -80 (sobreventa en la banda inferior)
-  - **Corto**: Price > upper Keltner band && Williams %R > -20 (sobrecompra en la banda superior)
+  - **Largo**: Price < lower Keltner band && Williams %R < WilliamsROversold (sobreventa en la banda inferior)
+  - **Corto**: Price > upper Keltner band && Williams %R > WilliamsROverbought (sobrecompra en la banda superior)
 - **Largo/Corto**: Ambos lados.
 - **Criterios de salida**:
   - **Largo**: Salir de la posición larga cuando el precio regresa a la banda media
@@ -21,6 +21,10 @@ Las pruebas indican un rendimiento anual promedio de aproximadamente 46%. Funcio
   - `KeltnerMultiplier` = 2m
   - `AtrPeriod` = 14
   - `WilliamsRPeriod` = 14
+  - `WilliamsROversold` = -80
+  - `WilliamsROverbought` = -20
+  - `StopLossPercent` = 2
+    Las bandas son la EMA de EmaPeriod más y menos KeltnerMultiplier veces el ATR de AtrPeriod, y la banda media es la propia EMA. -80 y -20 son los valores por defecto de los niveles de Williams %R que citan las reglas. El stop es un StopLossPercent fijo del precio de entrada, vigilado también entre velas. Una señal de entrada contra una posición abierta la invierte.
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **Filtros**:
   - Categoría: Mixto
