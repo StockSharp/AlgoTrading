@@ -18,7 +18,7 @@ Average Directional Indexはトレンドの強さを測定します。ADXが低�
 - **デフォルト値**:
   - `AdxPeriod` = 14
   - `MaPeriod` = 20
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
   - `CandleType` = 15 minute
 - **フィルター**:
   - カテゴリ: トレンドフォロー

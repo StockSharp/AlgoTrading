@@ -2110,6 +2110,76 @@ public abstract partial class StrategyTests
 		IsTrue(trendSpikes > 0, "The fixture must contain spikes in the direction of the trend that are not traded.");
 	}
 
+	private const string AdxWeakening = "0083_ADX_Weakening";
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	[DataRow(14, 20, false)]
+	[DataRow(7, 10, true)]
+	public async Task S0083_FallingAdxOnTheSideOfTheAverageHeldUntilAdxRises(int adxPeriod, int maPeriod, bool secondary)
+	{
+		var adx = new AverageDirectionalIndex { Length = adxPeriod };
+		var sma = new SimpleMovingAverage { Length = maPeriod };
+		decimal? previousAdx = null;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var risingExits = 0;
+		var violations = new List<string>();
+		await Replay(AdxWeakening, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(14, strategy.Parameters["AdxPeriod"].Value);
+			AreEqual(20, strategy.Parameters["MaPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "AdxPeriod", adxPeriod);
+			SetParam(strategy, "MaPeriod", maPeriod);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var m = sma.Process(candle);
+				var a = adx.Process(candle);
+				if (!m.IsFormed || !a.IsFormed || a is not AverageDirectionalIndexValue { MovingAverage: decimal strength }) return;
+				var last = previousAdx;
+				previousAdx = strength;
+				if (last is not decimal lastStrength) return;
+				var close = candle.ClosePrice;
+				var ma = m.GetValue<decimal>();
+				var position = strategy.Position;
+				if (position > 0m && strength > lastStrength) { expectedSide = Sides.Sell; expectedVolume = position; risingExits++; }
+				else if (position < 0m && strength > lastStrength) { expectedSide = Sides.Buy; expectedVolume = -position; risingExits++; }
+				else if (position == 0m && strength < lastStrength && close != ma)
+				{
+					expectedSide = close > ma ? Sides.Buy : Sides.Sell;
+					expectedVolume = strategy.Volume;
+					entries[expectedSide.Value]++;
+				}
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a falling ADX on the side of the average while flat, or close the position when ADX rises.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "The fixture must enter on both sides.");
+		IsTrue(risingExits > 0, "The fixture must exit when ADX rises.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public Task S0083_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars(AdxWeakening, TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

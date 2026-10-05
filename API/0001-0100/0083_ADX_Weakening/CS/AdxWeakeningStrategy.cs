@@ -12,20 +12,17 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// ADX Weakening strategy.
-/// Enters when ADX is decreasing (trend weakening) using price vs SMA for direction.
-/// ADX weakening + price above SMA = buy (reversal up expected).
-/// ADX weakening + price below SMA = sell (reversal down expected).
-/// Exits on SMA cross.
+/// While flat, a fall of ADX from the previous candle buys when the close is above the SMA and sells when it is below.
+/// The position is held until ADX rises again or the percent stop is hit.
 /// </summary>
 public class AdxWeakeningStrategy : Strategy
 {
 	private readonly StrategyParam<int> _adxPeriod;
 	private readonly StrategyParam<int> _maPeriod;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
 
-	private decimal _prevAdx;
-	private int _cooldown;
+	private decimal? _prevAdx;
 
 	/// <summary>
 	/// ADX period.
@@ -37,12 +34,21 @@ public class AdxWeakeningStrategy : Strategy
 	}
 
 	/// <summary>
-	/// MA Period.
+	/// SMA period.
 	/// </summary>
-	public int MAPeriod
+	public int MaPeriod
 	{
 		get => _maPeriod.Value;
 		set => _maPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Stop-loss percentage.
+	/// </summary>
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
 	}
 
 	/// <summary>
@@ -55,33 +61,24 @@ public class AdxWeakeningStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Cooldown bars.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
 	/// Constructor.
 	/// </summary>
 	public AdxWeakeningStrategy()
 	{
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
-			.SetRange(7, 28)
+			.SetGreaterThanZero()
 			.SetDisplay("ADX Period", "Period for ADX", "Indicators");
 
-		_maPeriod = Param(nameof(MAPeriod), 20)
+		_maPeriod = Param(nameof(MaPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Period for SMA", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
 
-		_cooldownBars = Param(nameof(CooldownBars), 500)
-			.SetRange(1, 1000)
-			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -94,8 +91,7 @@ public class AdxWeakeningStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevAdx = default;
-		_cooldown = default;
+		_prevAdx = null;
 	}
 
 	/// <inheritdoc />
@@ -103,16 +99,25 @@ public class AdxWeakeningStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_prevAdx = 0;
-		_cooldown = 0;
+		_prevAdx = null;
 
-		var sma = new SimpleMovingAverage { Length = MAPeriod };
+		var sma = new SimpleMovingAverage { Length = MaPeriod };
 		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.BindEx(sma, adx, ProcessCandle)
 			.Start();
+
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -124,59 +129,44 @@ public class AdxWeakeningStrategy : Strategy
 		}
 	}
 
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// The high-level handler activates native protection before this callback, also between signal bars.
+	}
+
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue smaIv, IIndicatorValue adxIv)
 	{
-		if (candle.State != CandleStates.Finished)
+		if (candle.State != CandleStates.Finished || !adxIv.IsFormed || !smaIv.IsFormed)
 			return;
 
-		if (!adxIv.IsFormed || !smaIv.IsFormed)
+		if (adxIv is not AverageDirectionalIndexValue { MovingAverage: decimal adx })
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		var prevAdx = _prevAdx;
+		_prevAdx = adx;
+
+		if (prevAdx is not decimal lastAdx || !IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var smaValue = smaIv.ToDecimal();
-		var adxTyped = (AverageDirectionalIndexValue)adxIv;
+		var sma = smaIv.GetValue<decimal>();
+		var close = candle.ClosePrice;
 
-		if (adxTyped.MovingAverage is not decimal adxValue)
-			return;
-
-		if (_prevAdx == 0)
+		if (Position > 0)
 		{
-			_prevAdx = adxValue;
-			return;
+			if (adx > lastAdx)
+				SellMarket(Position);
 		}
-
-		if (_cooldown > 0)
+		else if (Position < 0)
 		{
-			_cooldown--;
-			_prevAdx = adxValue;
-			return;
+			if (adx > lastAdx)
+				BuyMarket(-Position);
 		}
-
-		var isWeakening = adxValue < _prevAdx;
-
-		if (Position == 0 && isWeakening && candle.ClosePrice > smaValue)
+		else if (adx < lastAdx)
 		{
-			BuyMarket();
-			_cooldown = CooldownBars;
+			if (close > sma)
+				BuyMarket(Volume);
+			else if (close < sma)
+				SellMarket(Volume);
 		}
-		else if (Position == 0 && isWeakening && candle.ClosePrice < smaValue)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position > 0 && candle.ClosePrice < smaValue)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position < 0 && candle.ClosePrice > smaValue)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-
-		_prevAdx = adxValue;
 	}
 }

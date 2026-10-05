@@ -18,7 +18,7 @@ Como a abordagem antecipa uma desaceleração em vez de uma reversão completa, 
 - **Valores padrão**:
   - `AdxPeriod` = 14
   - `MaPeriod` = 20
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
   - `CandleType` = 15 minute
 - **Filtros**:
   - Categoria: Seguidor de tendência

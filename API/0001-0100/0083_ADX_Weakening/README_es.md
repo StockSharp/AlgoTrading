@@ -18,7 +18,7 @@ Dado que el enfoque anticipa una desaceleración en lugar de una reversión comp
 - **Valores predeterminados**:
   - `AdxPeriod` = 14
   - `MaPeriod` = 20
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
   - `CandleType` = 15 minute
 - **Filtros**:
   - Categoría: Seguimiento de tendencia
