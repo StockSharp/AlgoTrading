@@ -17,7 +17,9 @@ Um stop baseado em percentual define o risco, e as posições fecham quando o mo
 - **Stops**: Sim, baseado em percentual
 - **Valores padrão**:
   - `CandleType` = 15 minutos
-  - `StopLoss` = 2%
+  - `MinGapPercent` = 0.02
+    Um gap é uma abertura a pelo menos MinGapPercent do fechamento da vela anterior; o mercado negocia 24 horas, então os gaps são medidos entre velas consecutivas. O gap é fechado quando a mesma vela volta a esse fechamento, e o sinal oposto inverte a posição.
+  - `StopLossPercent` = 2
 - **Filtros**:
   - Categoria: Padrão
   - Direção: Ambos

@@ -2861,6 +2861,63 @@ public abstract partial class StrategyTests
 			c => c[0].ClosePrice > c[0].OpenPrice && c[1].ClosePrice < c[1].OpenPrice && Math.Abs(c[0].HighPrice - c[1].HighPrice) <= c[0].HighPrice * (decimal)tolerance / 100m,
 			stopPercent, secondary, ("TolerancePercent", tolerance));
 
+	private const string GapFill = "0098_Gap_Fill_Reversal";
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	[DataRow(0.02, false)]
+	[DataRow(0.05, true)]
+	public async Task S0098_FilledGapsBetweenCandlesReverseAgainstTheGap(double minGap, bool secondary)
+	{
+		decimal? previousClose = null;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var unfilledGaps = 0;
+		var violations = new List<string>();
+		await Replay(GapFill, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(0.02m, Convert.ToDecimal(strategy.Parameters["MinGapPercent"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "MinGapPercent", minGap);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var last = previousClose;
+				previousClose = candle.ClosePrice;
+				if (last is not decimal prior) return;
+				var gap = (candle.OpenPrice - prior) / prior * 100m;
+				var position = strategy.Position;
+				if (gap >= (decimal)minGap && candle.LowPrice <= prior && position >= 0m) expectedSide = Sides.Sell;
+				else if (-gap >= (decimal)minGap && candle.HighPrice >= prior && position <= 0m) expectedSide = Sides.Buy;
+				else if (Math.Abs(gap) >= (decimal)minGap && (gap > 0m ? candle.LowPrice > prior : candle.HighPrice < prior)) unfilledGaps++;
+				if (expectedSide is Sides side) { expectedVolume = strategy.Volume + Math.Abs(position); entries[side]++; expectedOrders++; }
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must turn against a gap the same candle filled.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "The fixture must fade filled gaps on both sides.");
+		IsTrue(unfilledGaps > 0, "The fixture must contain gaps that are not filled and not traded.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public Task S0098_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars(GapFill, TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";
