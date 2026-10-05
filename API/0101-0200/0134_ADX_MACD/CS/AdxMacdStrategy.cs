@@ -11,30 +11,25 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy combining ADX and MACD indicators.
-/// Enters on MACD crossover when ADX indicates strong trend.
+/// ADX MACD strategy.
+/// While flat, a MACD cross above its signal line goes long and a cross below goes short, but only while ADX is rising.
+/// The position closes once ADX weakens below its previous value or MACD returns to the other side of its signal line,
+/// and a percent stop limits the loss.
 /// </summary>
 public class AdxMacdStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _adxPeriod;
-	private readonly StrategyParam<decimal> _adxThreshold;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<int> _macdFast;
+	private readonly StrategyParam<int> _macdSlow;
+	private readonly StrategyParam<int> _macdSignal;
+	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _adxValue;
-	private int _cooldown;
-
-	/// <summary>
-	/// Data type for candles.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	private bool? _prevAbove;
+	private decimal? _prevAdx;
 
 	/// <summary>
-	/// Period for ADX calculation.
+	/// Period of ADX.
 	/// </summary>
 	public int AdxPeriod
 	{
@@ -43,41 +38,77 @@ public class AdxMacdStrategy : Strategy
 	}
 
 	/// <summary>
-	/// ADX threshold for trend strength.
+	/// Fast EMA period of MACD.
 	/// </summary>
-	public decimal AdxThreshold
+	public int MacdFast
 	{
-		get => _adxThreshold.Value;
-		set => _adxThreshold.Value = value;
+		get => _macdFast.Value;
+		set => _macdFast.Value = value;
 	}
 
 	/// <summary>
-	/// Cooldown bars between trades.
+	/// Slow EMA period of MACD.
 	/// </summary>
-	public int CooldownBars
+	public int MacdSlow
 	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
+		get => _macdSlow.Value;
+		set => _macdSlow.Value = value;
 	}
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="AdxMacdStrategy"/>.
+	/// Signal line period of MACD.
+	/// </summary>
+	public int MacdSignal
+	{
+		get => _macdSignal.Value;
+		set => _macdSignal.Value = value;
+	}
+
+	/// <summary>
+	/// Stop loss percentage from entry price.
+	/// </summary>
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
 	/// </summary>
 	public AdxMacdStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
-			.SetRange(5, 30)
-			.SetDisplay("ADX Period", "Period for ADX calculation", "ADX Settings");
+			.SetGreaterThanZero()
+			.SetDisplay("ADX Period", "Period of ADX", "ADX");
 
-		_adxThreshold = Param(nameof(AdxThreshold), 25m)
-			.SetDisplay("ADX Threshold", "ADX threshold for trend strength", "ADX Settings");
+		_macdFast = Param(nameof(MacdFast), 12)
+			.SetGreaterThanZero()
+			.SetDisplay("MACD Fast", "Fast EMA period of MACD", "MACD");
 
-		_cooldownBars = Param(nameof(CooldownBars), 100)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "General")
-			.SetRange(5, 500);
+		_macdSlow = Param(nameof(MacdSlow), 26)
+			.SetGreaterThanZero()
+			.SetDisplay("MACD Slow", "Slow EMA period of MACD", "MACD");
+
+		_macdSignal = Param(nameof(MacdSignal), 9)
+			.SetGreaterThanZero()
+			.SetDisplay("MACD Signal", "Signal line period of MACD", "MACD");
+
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -90,8 +121,8 @@ public class AdxMacdStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_adxValue = 0;
-		_cooldown = 0;
+		_prevAbove = null;
+		_prevAdx = null;
 	}
 
 	/// <inheritdoc />
@@ -99,18 +130,34 @@ public class AdxMacdStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
+		_prevAbove = null;
+		_prevAdx = null;
+
 		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
-		var macd = new MovingAverageConvergenceDivergenceSignal();
+		var macd = new MovingAverageConvergenceDivergenceSignal
+		{
+			Macd =
+			{
+				ShortMa = { Length = MacdFast },
+				LongMa = { Length = MacdSlow },
+			},
+			SignalMa = { Length = MacdSignal }
+		};
 
 		var subscription = SubscribeCandles(CandleType);
-
-		// Bind ADX with BindEx (composite indicator)
-		subscription.BindEx(adx, OnAdx);
-
-		// Bind MACD for main logic
 		subscription
-			.BindEx(macd, ProcessCandle)
+			.BindEx(adx, macd, ProcessCandle)
 			.Start();
+
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -118,66 +165,66 @@ public class AdxMacdStrategy : Strategy
 			DrawCandles(area, subscription);
 			DrawOwnTrades(area);
 
-			var adxArea = CreateChartArea();
-			if (adxArea != null)
-				DrawIndicator(adxArea, adx);
-
-			var macdArea = CreateChartArea();
-			if (macdArea != null)
-				DrawIndicator(macdArea, macd);
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, adx);
+				DrawIndicator(oscillators, macd);
+			}
 		}
 	}
 
-	private void OnAdx(ICandleMessage candle, IIndicatorValue adxValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
 	{
-		var typed = (AverageDirectionalIndexValue)adxValue;
-		if (typed.MovingAverage is decimal adx)
-			_adxValue = adx;
+		// The high-level handler activates native protection before this callback, also between signal bars.
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue adxValue, IIndicatorValue macdValue)
 	{
 		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (!adxValue.IsFormed || !macdValue.IsFormed)
+			return;
+
+		if (adxValue is not AverageDirectionalIndexValue { MovingAverage: decimal strength })
+			return;
+
+		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
+
+		if (macdTyped.Macd is not decimal macd || macdTyped.Signal is not decimal signal)
+			return;
+
+		var isAbove = macd > signal;
+		var wasAbove = _prevAbove;
+		var prevAdx = _prevAdx;
+		_prevAbove = isAbove;
+		_prevAdx = strength;
+
+		if (wasAbove is not bool was || prevAdx is not decimal lastStrength)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
-		if (macdTyped.Macd is not decimal macdLine || macdTyped.Signal is not decimal signalLine)
-			return;
+		var rising = strength > lastStrength;
 
-		if (_cooldown > 0)
+		if (Position > 0)
 		{
-			_cooldown--;
-			return;
+			if (!rising || !isAbove)
+				SellMarket(Position);
 		}
-
-		var strongTrend = _adxValue > AdxThreshold;
-
-		// Entry: strong trend + MACD bullish = buy
-		if (strongTrend && macdLine > signalLine && Position == 0)
+		else if (Position < 0)
 		{
-			BuyMarket();
-			_cooldown = CooldownBars;
+			if (!rising || isAbove)
+				BuyMarket(-Position);
 		}
-		// Entry: strong trend + MACD bearish = sell
-		else if (strongTrend && macdLine < signalLine && Position == 0)
+		else if (rising && was != isAbove)
 		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-
-		// Exit on MACD crossover against position
-		if (Position > 0 && macdLine < signalLine)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position < 0 && macdLine > signalLine)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
+			if (isAbove)
+				BuyMarket(Volume);
+			else
+				SellMarket(Volume);
 		}
 	}
 }

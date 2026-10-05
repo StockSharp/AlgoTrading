@@ -16,7 +16,12 @@
 - **止损**：是，按百分比
 - **默认值**:
   - `CandleType` = 15分钟
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `AdxPeriod` = 14
+  - `MacdFast` = 12
+  - `MacdSlow` = 26
+  - `MacdSignal` = 9
+    空仓时，MACD上穿信号线做多、下穿做空，但仅在ADX高于前一值时入场。ADX低于前一值或MACD回到信号线另一侧时平仓。
 - **过滤器**:
   - 类别：趋势跟随
   - 方向：双向

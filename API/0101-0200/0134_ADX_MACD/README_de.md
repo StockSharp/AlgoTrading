@@ -18,7 +18,12 @@ Ein moderater prozentualer Stop begrenzt Verluste in seitwärts laufenden Märkt
 - **Stops**: Ja, prozentbasiert
 - **Standardwerte**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `AdxPeriod` = 14
+  - `MacdFast` = 12
+  - `MacdSlow` = 26
+  - `MacdSignal` = 9
+    Ohne Position eröffnet ein MACD-Kreuzen über die Signallinie einen Long und darunter einen Short, aber nur solange ADX über seinem vorherigen Wert liegt. Die Position schließt, sobald ADX unter seinen vorherigen Wert fällt oder MACD auf die andere Seite der Signallinie zurückkehrt.
 - **Filter**:
   - Kategorie: Trendfolge
   - Richtung: Beide

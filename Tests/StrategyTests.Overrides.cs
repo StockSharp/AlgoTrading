@@ -3984,6 +3984,90 @@ public abstract partial class StrategyTests
 	public Task S0133_PercentStopWorksBetweenFinishedBars()
 		=> CheckPercentStopBetweenBars("0133_MA_Volume", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
 
+	[TestMethod]
+	[TestCategory("Shard03")]
+	[DataRow(14, 12, 26, 9, false)]
+	[DataRow(10, 8, 21, 5, true)]
+	public async Task S0134_MacdCrossesWhileAdxRisesUntilAdxWeakensOrMacdFlips(int adxPeriod, int fast, int slow, int signalPeriod, bool secondary)
+	{
+		var adx = new AverageDirectionalIndex { Length = adxPeriod };
+		var macd = new MovingAverageConvergenceDivergenceSignal { Macd = { ShortMa = { Length = fast }, LongMa = { Length = slow } }, SignalMa = { Length = signalPeriod } };
+		bool? previousAbove = null;
+		decimal? previousAdx = null;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var weakeningExits = 0;
+		var flipExits = 0;
+		var crossesWithFallingAdx = 0;
+		var violations = new List<string>();
+		await Replay("0134_ADX_MACD", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(14, strategy.Parameters["AdxPeriod"].Value);
+			AreEqual(12, strategy.Parameters["MacdFast"].Value);
+			AreEqual(26, strategy.Parameters["MacdSlow"].Value);
+			AreEqual(9, strategy.Parameters["MacdSignal"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "AdxPeriod", adxPeriod);
+			SetParam(strategy, "MacdFast", fast);
+			SetParam(strategy, "MacdSlow", slow);
+			SetParam(strategy, "MacdSignal", signalPeriod);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var a = adx.Process(candle);
+				var m = (MovingAverageConvergenceDivergenceSignalValue)macd.Process(candle);
+				if (!a.IsFormed || !m.IsFormed || a is not AverageDirectionalIndexValue { MovingAverage: decimal strength } || m.Macd is not decimal line || m.Signal is not decimal sig) return;
+				var above = line > sig;
+				var was = previousAbove;
+				var last = previousAdx;
+				previousAbove = above;
+				previousAdx = strength;
+				if (was is not bool wasAbove || last is not decimal lastStrength) return;
+				var rising = strength > lastStrength;
+				var position = strategy.Position;
+				if (position != 0m)
+				{
+					var flipped = position > 0m ? !above : above;
+					if (rising && !flipped) return;
+					if (!rising) weakeningExits++; else flipExits++;
+					expectedSide = position > 0m ? Sides.Sell : Sides.Buy;
+					expectedVolume = Math.Abs(position);
+				}
+				else if (wasAbove != above)
+				{
+					if (!rising) { crossesWithFallingAdx++; return; }
+					expectedSide = above ? Sides.Buy : Sides.Sell;
+					expectedVolume = strategy.Volume;
+					entries[expectedSide.Value]++;
+				}
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a MACD cross with rising ADX while flat, or close the position when ADX weakens or MACD flips.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "The fixture must trade both sides.");
+		IsTrue(weakeningExits > 0 && crossesWithFallingAdx > 0, "The fixture must exit on weakening ADX and skip crosses while ADX falls.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard03")]
+	public Task S0134_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0134_ADX_MACD", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

@@ -18,7 +18,12 @@ Um stop percentual moderado contém as perdas durante mercados instáveis.
 - **Stops**: Sim, baseado em percentual
 - **Valores padrão**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `AdxPeriod` = 14
+  - `MacdFast` = 12
+  - `MacdSlow` = 26
+  - `MacdSignal` = 9
+    Sem posição, um cruzamento do MACD acima da linha de sinal abre uma compra e abaixo uma venda, mas apenas enquanto o ADX está acima do valor anterior. A posição é encerrada quando o ADX cai abaixo do valor anterior ou o MACD volta para o outro lado da linha de sinal.
 - **Filtros**:
   - Categoria: Seguidor de tendência
   - Direção: Ambos

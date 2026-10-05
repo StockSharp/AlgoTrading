@@ -18,7 +18,12 @@ A modest percent stop contains losses during choppy markets.
 - **Stops**: Yes, percent based
 - **Default Values**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `AdxPeriod` = 14
+  - `MacdFast` = 12
+  - `MacdSlow` = 26
+  - `MacdSignal` = 9
+    While flat, a MACD cross above its signal line goes long and a cross below goes short, but only while ADX is above its previous value. The position closes once ADX falls below its previous value or MACD returns to the other side of the signal line.
 - **Filters**:
   - Category: Trend following
   - Direction: Both
