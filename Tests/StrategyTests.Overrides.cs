@@ -5493,6 +5493,79 @@ public abstract partial class StrategyTests
 	public Task S0155_PercentStopWorksBetweenFinishedBars()
 		=> CheckPercentStopBetweenBars("0155_VWAP_Volume", TimeSpan.FromDays(31));
 
+	[TestMethod]
+	[TestCategory("Shard01")]
+	[DataRow(20, 14, 70.0, 30.0, false)]
+	[DataRow(30, 10, 65.0, 35.0, true)]
+	public async Task S0156_ChannelBreakoutsNotOverextendedByRsiUntilTheBreakoutFails(int period, int rsiPeriod, double overbought, double oversold, bool secondary)
+	{
+		var donchian = new DonchianChannels { Length = period };
+		var rsi = new RelativeStrengthIndex { Length = rsiPeriod };
+		decimal? previousUpper = null, previousLower = null;
+		var breakoutLevel = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var failures = 0;
+		var overextended = 0;
+		var violations = new List<string>();
+		await Replay("0156_Donchian_RSI", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["DonchianPeriod"].Value);
+			AreEqual(14, strategy.Parameters["RsiPeriod"].Value);
+			AreEqual(70m, Convert.ToDecimal(strategy.Parameters["RsiOverboughtLevel"].Value));
+			AreEqual(30m, Convert.ToDecimal(strategy.Parameters["RsiOversoldLevel"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "DonchianPeriod", period);
+			SetParam(strategy, "RsiPeriod", rsiPeriod);
+			SetParam(strategy, "RsiOverboughtLevel", overbought);
+			SetParam(strategy, "RsiOversoldLevel", oversold);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var d = donchian.Process(candle);
+				var r = rsi.Process(candle);
+				// The strategy only sees candles once no bound indicator returns an empty value.
+				if (d.IsEmpty || r.IsEmpty) return;
+				var upper = previousUpper;
+				var lower = previousLower;
+				if (d.IsFormed && d is IDonchianChannelsValue { UpperBand: decimal u, LowerBand: decimal l }) { previousUpper = u; previousLower = l; }
+				if (!r.IsFormed || upper is not decimal high || lower is not decimal low) return;
+				var value = r.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if ((close > high && value >= (decimal)overbought) || (close < low && value <= (decimal)oversold)) overextended++;
+				if (close > high && value < (decimal)overbought && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; breakoutLevel = high; }
+				else if (close < low && value > (decimal)oversold && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; breakoutLevel = low; }
+				else if (position > 0m && close < breakoutLevel) { expectedSide = Sides.Sell; expectedVolume = position; failures++; }
+				else if (position < 0m && close > breakoutLevel) { expectedSide = Sides.Buy; expectedVolume = -position; failures++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a channel breakout that RSI does not show as overextended, or close when the breakout fails.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && failures > 0, "The fixture must trade both sides and close failed breakouts.");
+		IsTrue(overextended > 0, "The fixture must contain overextended breakouts that are not traded.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard01")]
+	public Task S0156_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0156_Donchian_RSI", TimeSpan.FromDays(31));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

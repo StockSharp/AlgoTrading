@@ -7,13 +7,13 @@ Donchian Channels と RSI インジケーターを組み合わせた戦略。RSI
 
 Donchian Channels はブレイクアウトレベルを特定し、RSI はモメンタムがその動きを支持しているかを確認します。ブレイクアウトが RSI の方向と一致したときにポジションを建てます。
 
-フェイクアウトではなく持続的なブレイクアウトを期待するトレーダーに最適です。ATR ストップでリスクを限定します。
+フェイクアウトではなく持続的なブレイクアウトを期待するトレーダーに最適です。パーセントストップでリスクを限定します。
 
 ## 詳細
 
 - **エントリー条件**:
-  - ロング: `Close > DonchianHigh && RSI < RsiOversoldLevel`
-  - ショート: `Close < DonchianLow && RSI > RsiOverboughtLevel`
+  - ロング: `Close > DonchianHigh && RSI < RsiOverboughtLevel`
+  - ショート: `Close < DonchianLow && RSI > RsiOversoldLevel`
 - **ロング/ショート**: 両方
 - **エグジット条件**:
   - ブレイクアウトの失敗または反対のシグナル
@@ -25,6 +25,7 @@ Donchian Channels はブレイクアウトレベルを特定し、RSI はモメ�
   - `RsiOversoldLevel` = 30m
   - `StopLossPercent` = 2.0m
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    RSIがRsiOverboughtLevel未満（ロング）またはRsiOversoldLevel超（ショート）である限り、ブレイクアウトは行き過ぎではありません。チャネルは直前DonchianPeriod本で構成します。価格が突破した水準の反対側に戻って引けたらブレイク失敗としてポジションを閉じます。 保有ポジションと逆方向のエントリーシグナルはドテンになります。
 - **フィルター**:
   - カテゴリ: ブレイクアウト
   - 方向: 両方
