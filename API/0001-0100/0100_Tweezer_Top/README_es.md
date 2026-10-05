@@ -17,7 +17,9 @@ Un stop ajustado por encima de los máximos gemelos mantiene el riesgo bajo cont
 - **Stops**: Sí, basado en porcentaje
 - **Valores predeterminados**:
   - `CandleType` = 15 minutos
-  - `StopLoss` = 2%
+  - `TolerancePercent` = 0.1
+  - `StopLossPercent` = 2
+    La estrategia solo vende. El stop se coloca StopLossPercent por encima del máximo más alto del patrón y la posición se cierra cuando una vela cierra por encima.
 - **Filtros**:
   - Categoría: Patrón
   - Dirección: Ambos

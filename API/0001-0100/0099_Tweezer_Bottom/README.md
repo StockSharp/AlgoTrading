@@ -18,7 +18,9 @@ Stops are placed just beneath the common low to manage risk, and the position ex
 - **Stops**: Yes, percent based
 - **Default Values**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `TolerancePercent` = 0.1
+  - `StopLossPercent` = 2
+    The strategy only buys. The stop lies StopLossPercent below the lowest low of the pattern and the position closes when a candle closes below it.
 - **Filters**:
   - Category: Pattern
   - Direction: Both

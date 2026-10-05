@@ -2768,6 +2768,99 @@ public abstract partial class StrategyTests
 	public Task S0095_PercentStopWorksBetweenFinishedBars()
 		=> CheckPercentStopBetweenBars("0095_Williams_R_Hook_Reversal", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
 
+	private async Task CheckOneSidedPatternWithStopBeyond(string key, int count, bool longOnly, Func<ICandleMessage[], bool> pattern, double stopPercent, bool secondary, params (string Name, object Value)[] extra)
+	{
+		var candles = new List<ICandleMessage>();
+		var stop = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = 0;
+		var stopExits = 0;
+		var violations = new List<string>();
+		var k = (decimal)stopPercent / 100m;
+		await Replay(key, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "StopLossPercent", stopPercent);
+			foreach (var (name, value) in extra) SetParam(strategy, name, value);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				candles.Add(candle);
+				if (candles.Count > count) candles.RemoveAt(0);
+				var position = strategy.Position;
+				if (position != 0m)
+				{
+					IsTrue(longOnly ? position > 0m : position < 0m, "The strategy trades one direction only.");
+					if (longOnly ? candle.ClosePrice <= stop : candle.ClosePrice >= stop)
+					{
+						expectedSide = longOnly ? Sides.Sell : Sides.Buy;
+						expectedVolume = Math.Abs(position);
+						stopExits++;
+					}
+				}
+				else if (candles.Count == count && pattern([.. candles]))
+				{
+					expectedSide = longOnly ? Sides.Buy : Sides.Sell;
+					expectedVolume = strategy.Volume;
+					stop = longOnly ? candles.Min(c => c.LowPrice) * (1 - k) : candles.Max(c => c.HighPrice) * (1 + k);
+					entries++;
+				}
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must enter on the pattern while flat, or close the position on a close beyond the stop set past the pattern.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries > 0, "The fixture must enter on the pattern.");
+		if (secondary) IsTrue(entries > 1 && stopExits > 0, $"TON must enter repeatedly and stop out (entries {entries}, stop exits {stopExits}).");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard01")]
+	[DataRow(0.1, false)]
+	[DataRow(0.05, true)]
+	public Task S0096_LongOnlyThreeWhiteSoldiersWithStopBelowThePattern(double stopPercent, bool secondary)
+		=> CheckOneSidedPatternWithStopBeyond("0096_Three_White_Soldiers", 3, true,
+			c => c.All(x => x.ClosePrice > x.OpenPrice) && c[1].ClosePrice > c[0].ClosePrice && c[2].ClosePrice > c[1].ClosePrice, stopPercent, secondary);
+
+	[TestMethod]
+	[TestCategory("Shard02")]
+	[DataRow(0.1, false)]
+	[DataRow(0.05, true)]
+	public Task S0097_ShortOnlyThreeBlackCrowsWithStopAboveThePattern(double stopPercent, bool secondary)
+		=> CheckOneSidedPatternWithStopBeyond("0097_Three_Black_Crows", 3, false,
+			c => c.All(x => x.ClosePrice < x.OpenPrice) && c[1].ClosePrice < c[0].ClosePrice && c[2].ClosePrice < c[1].ClosePrice, stopPercent, secondary);
+
+	[TestMethod]
+	[TestCategory("Shard03")]
+	[DataRow(0.1, 0.1, false)]
+	[DataRow(0.05, 0.2, true)]
+	public Task S0099_LongOnlyTweezerBottomsWithStopBelowTheLows(double stopPercent, double tolerance, bool secondary)
+		=> CheckOneSidedPatternWithStopBeyond("0099_Tweezer_Bottom", 2, true,
+			c => c[0].ClosePrice < c[0].OpenPrice && c[1].ClosePrice > c[1].OpenPrice && Math.Abs(c[0].LowPrice - c[1].LowPrice) <= c[0].LowPrice * (decimal)tolerance / 100m,
+			stopPercent, secondary, ("TolerancePercent", tolerance));
+
+	[TestMethod]
+	[TestCategory("Shard04")]
+	[DataRow(0.1, 0.1, false)]
+	[DataRow(0.05, 0.2, true)]
+	public Task S0100_ShortOnlyTweezerTopsWithStopAboveTheHighs(double stopPercent, double tolerance, bool secondary)
+		=> CheckOneSidedPatternWithStopBeyond("0100_Tweezer_Top", 2, false,
+			c => c[0].ClosePrice > c[0].OpenPrice && c[1].ClosePrice < c[1].OpenPrice && Math.Abs(c[0].HighPrice - c[1].HighPrice) <= c[0].HighPrice * (decimal)tolerance / 100m,
+			stopPercent, secondary, ("TolerancePercent", tolerance));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

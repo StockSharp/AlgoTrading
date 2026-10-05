@@ -17,7 +17,9 @@ Um stop ajustado acima das máximas gêmeas mantém o risco sob controle, e a op
 - **Stops**: Sim, baseado em percentual
 - **Valores padrão**:
   - `CandleType` = 15 minutos
-  - `StopLoss` = 2%
+  - `TolerancePercent` = 0.1
+  - `StopLossPercent` = 2
+    A estratégia só vende. O stop fica StopLossPercent acima da máxima mais alta do padrão e a posição fecha quando uma vela fecha acima dele.
 - **Filtros**:
   - Categoria: Padrão
   - Direção: Ambos

@@ -12,23 +12,20 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Tweezer Top strategy.
-/// Enters short on Tweezer Top (bullish then bearish with matching highs).
-/// Enters long on Tweezer Bottom (bearish then bullish with matching lows).
-/// Uses SMA for exit confirmation.
-/// Uses cooldown to control trade frequency.
+/// While flat it sells after a bullish candle followed by a bearish one whose high is within TolerancePercent of the first high.
+/// The stop lies StopLossPercent above the pattern's highest high, and a close beyond it closes the position.
 /// </summary>
 public class TweezerTopStrategy : Strategy
 {
 	private readonly StrategyParam<decimal> _tolerancePercent;
-	private readonly StrategyParam<int> _maLength;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
 
-	private ICandleMessage _prevCandle;
-	private int _cooldown;
+	private readonly List<ICandleMessage> _candles = [];
+	private decimal _stopPrice;
 
 	/// <summary>
-	/// Tolerance for matching highs/lows.
+	/// How close the two extremes must be, in percent of the first.
 	/// </summary>
 	public decimal TolerancePercent
 	{
@@ -37,12 +34,12 @@ public class TweezerTopStrategy : Strategy
 	}
 
 	/// <summary>
-	/// MA period for exit.
+	/// Distance of the stop beyond the pattern, in percent.
 	/// </summary>
-	public int MaLength
+	public decimal StopLossPercent
 	{
-		get => _maLength.Value;
-		set => _maLength.Value = value;
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
 	}
 
 	/// <summary>
@@ -55,33 +52,20 @@ public class TweezerTopStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Cooldown bars.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
 	/// Constructor.
 	/// </summary>
 	public TweezerTopStrategy()
 	{
 		_tolerancePercent = Param(nameof(TolerancePercent), 0.1m)
-			.SetRange(0.05m, 1m)
-			.SetDisplay("Tolerance %", "Max diff between highs/lows", "Pattern");
+			.SetNotNegative()
+			.SetDisplay("Tolerance %", "How close the two extremes must be, in percent of the first", "Pattern");
 
-		_maLength = Param(nameof(MaLength), 20)
-			.SetRange(10, 50)
-			.SetDisplay("MA Length", "Period of SMA for exit", "Indicators");
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Distance of the stop beyond the pattern, in percent", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_cooldownBars = Param(nameof(CooldownBars), 500)
-			.SetRange(1, 1000)
-			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -94,8 +78,8 @@ public class TweezerTopStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevCandle = null;
-		_cooldown = default;
+		_candles.Clear();
+		_stopPrice = default;
 	}
 
 	/// <inheritdoc />
@@ -103,82 +87,53 @@ public class TweezerTopStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_prevCandle = null;
-		_cooldown = 0;
-
-		var sma = new SimpleMovingAverage { Length = MaLength };
+		_candles.Clear();
+		_stopPrice = default;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(sma, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		_candles.Add(candle);
+
+		if (_candles.Count > 2)
+			_candles.RemoveAt(0);
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (_prevCandle == null)
+		if (Position < 0)
 		{
-			_prevCandle = candle;
+			if (candle.ClosePrice >= _stopPrice)
+				BuyMarket(-Position);
+
 			return;
 		}
 
-		if (_cooldown > 0)
-		{
-			_cooldown--;
-			_prevCandle = candle;
+		if (Position != 0 || _candles.Count < 2)
 			return;
-		}
 
-		var highTolerance = _prevCandle.HighPrice * (TolerancePercent / 100m);
-		var lowTolerance = _prevCandle.LowPrice * (TolerancePercent / 100m);
+		var c0 = _candles[0];
+		var c1 = _candles[1];
 
-		// Tweezer Top: prev bullish, current bearish, matching highs
-		var isTweezerTop =
-			_prevCandle.ClosePrice > _prevCandle.OpenPrice &&
-			candle.ClosePrice < candle.OpenPrice &&
-			Math.Abs(_prevCandle.HighPrice - candle.HighPrice) <= highTolerance;
+		if (!(c0.ClosePrice > c0.OpenPrice && c1.ClosePrice < c1.OpenPrice && Math.Abs(c0.HighPrice - c1.HighPrice) <= c0.HighPrice * TolerancePercent / 100m))
+			return;
 
-		// Tweezer Bottom: prev bearish, current bullish, matching lows
-		var isTweezerBottom =
-			_prevCandle.ClosePrice < _prevCandle.OpenPrice &&
-			candle.ClosePrice > candle.OpenPrice &&
-			Math.Abs(_prevCandle.LowPrice - candle.LowPrice) <= lowTolerance;
-
-		if (Position == 0 && isTweezerTop)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position == 0 && isTweezerBottom)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position < 0 && candle.ClosePrice > smaValue)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position > 0 && candle.ClosePrice < smaValue)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-
-		_prevCandle = candle;
+		SellMarket(Volume);
+		_stopPrice = Math.Max(c0.HighPrice, c1.HighPrice) * (1 + StopLossPercent / 100m);
 	}
 }
