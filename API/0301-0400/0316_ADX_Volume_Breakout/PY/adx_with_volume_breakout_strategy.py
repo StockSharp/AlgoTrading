@@ -5,15 +5,18 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import AverageDirectionalIndex, SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 from indicator_extensions import *
 
+
 class adx_with_volume_breakout_strategy(Strategy):
     """
-    Strategy based on ADX with a volume breakout confirmation.
+    ADX trend strength with a volume breakout confirmation.
+    Enters in the direction of the dominant directional index when ADX is above AdxThreshold
+    and volume exceeds its average by VolumeThresholdFactor. The opposite signal reverses the position.
     """
 
     def __init__(self):
@@ -22,43 +25,40 @@ class adx_with_volume_breakout_strategy(Strategy):
         self._adx_period = self.Param("AdxPeriod", 14) \
             .SetGreaterThanZero() \
             .SetDisplay("ADX Period", "Period for ADX calculation", "Indicators")
-
         self._adx_threshold = self.Param("AdxThreshold", 25.0) \
             .SetGreaterThanZero() \
             .SetDisplay("ADX Threshold", "Threshold for strong trend identification", "Indicators")
-
         self._volume_avg_period = self.Param("VolumeAvgPeriod", 20) \
             .SetGreaterThanZero() \
             .SetDisplay("Volume Avg Period", "Period for volume moving average", "Indicators")
-
-        self._signal_cooldown_bars = self.Param("SignalCooldownBars", 15) \
+        self._volume_threshold_factor = self.Param("VolumeThresholdFactor", 2.0) \
             .SetGreaterThanZero() \
-            .SetDisplay("Signal Cooldown", "Bars to wait between signals", "Trading")
-
+            .SetDisplay("Volume Factor", "Volume must exceed its average by this factor", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
-        self._cooldown_remaining = 0
+        self._volume_sma = None
 
     @property
-    def candle_type(self):
+    def CandleType(self):
         return self._candle_type.Value
+
+    def GetWorkingSecurities(self):
+        return [(self.Security, self.CandleType)]
 
     def OnReseted(self):
         super(adx_with_volume_breakout_strategy, self).OnReseted()
-        self._cooldown_remaining = 0
+        self._volume_sma = None
 
     def OnStarted2(self, time):
         super(adx_with_volume_breakout_strategy, self).OnStarted2(time)
 
         adx = AverageDirectionalIndex()
-        adx.Length = int(self._adx_period.Value)
-
+        adx.Length = self._adx_period.Value
         self._volume_sma = SimpleMovingAverage()
-        self._volume_sma.Length = int(self._volume_avg_period.Value)
-        self._cooldown_remaining = 0
+        self._volume_sma.Length = self._volume_avg_period.Value
 
-        subscription = self.SubscribeCandles(self.candle_type)
+        subscription = self.SubscribeCandles(self.CandleType)
         subscription.BindEx(adx, self._process_candle).Start()
 
         area = self.CreateChartArea()
@@ -66,65 +66,46 @@ class adx_with_volume_breakout_strategy(Strategy):
             self.DrawCandles(area, subscription)
             self.DrawOwnTrades(area)
 
-        self.StartProtection(
-            Unit(2, UnitTypes.Percent),
-            Unit(1, UnitTypes.Percent)
-        )
+            adx_area = self.CreateChartArea()
+            if adx_area is not None:
+                self.DrawIndicator(adx_area, adx)
 
     def _process_candle(self, candle, adx_value):
         if candle.State != CandleStates.Finished:
             return
 
-        if not adx_value.IsFinal:
+        # The average is taken over previous bars so the current bar's volume is compared with history.
+        volume_average = float(get_current_value(self._volume_sma))
+        volume_formed = self._volume_sma.IsFormed
+        process_float(self._volume_sma, candle.TotalVolume, candle.ServerTime, True)
+
+        if not volume_formed or not adx_value.IsFormed:
             return
 
-        if self._cooldown_remaining > 0:
-            self._cooldown_remaining -= 1
-
-        volume_avg_result = process_float(self._volume_sma, candle.TotalVolume, candle.ServerTime, True)
-
-        adx_typed = adx_value
-
-        adx_ma = adx_typed.MovingAverage
+        adx_ma = adx_value.MovingAverage
         if adx_ma is None:
             return
 
-        dx = adx_typed.Dx
-        if dx is None:
+        dx = adx_value.Dx
+        if dx.Plus is None or dx.Minus is None:
             return
 
-        plus_di = dx.Plus
-        minus_di = dx.Minus
-        if plus_di is None or minus_di is None:
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        adx_val = float(adx_ma)
-        plus_di_val = float(plus_di)
-        minus_di_val = float(minus_di)
+        adx = float(adx_ma)
+        plus_di = float(dx.Plus)
+        minus_di = float(dx.Minus)
+        volume = float(candle.TotalVolume)
 
-        volume_average = float(volume_avg_result) if volume_avg_result.IsFormed else 0.0
-
-        threshold = float(self._adx_threshold.Value)
-        is_strong_trend = adx_val > threshold
-        is_volume_breakout = volume_average <= 0.0 or float(candle.TotalVolume) >= volume_average
-        is_bullish = plus_di_val > minus_di_val
-        is_bearish = minus_di_val > plus_di_val
-
-        if self._cooldown_remaining > 0:
+        if adx <= float(self._adx_threshold.Value) or \
+                volume <= volume_average * float(self._volume_threshold_factor.Value):
             return
 
-        if not is_strong_trend or not is_volume_breakout:
-            return
-
-        cd = int(self._signal_cooldown_bars.Value)
-
-        if self.Position == 0:
-            if is_bullish:
-                self.BuyMarket()
-                self._cooldown_remaining = cd
-            elif is_bearish:
-                self.SellMarket()
-                self._cooldown_remaining = cd
+        if plus_di > minus_di and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+        elif minus_di > plus_di and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
 
     def CreateClone(self):
         return adx_with_volume_breakout_strategy()
