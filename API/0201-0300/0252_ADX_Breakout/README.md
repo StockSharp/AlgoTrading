@@ -18,9 +18,10 @@ This system fits momentum traders seeking early breakouts. Trades close as the A
 - **Default Values**:
   - `ADXPeriod` = 14
   - `AvgPeriod` = 20
-  - `Multiplier` = 0.1m
+  - `Multiplier` = 0.1
   - `CandleType` = TimeSpan.FromMinutes(5)
-  - `StopLoss` = 2.0m
+  - `StopLossPercent` = 2
+    Avg and StdDev are the average and the standard deviation of the last AvgPeriod ADX values, the current one included. The stop is a fixed StopLossPercent of the entry price, watched between candles as well; 0 disables it. The band is the average plus Multiplier standard deviations: ADX above it on a rising candle goes long and on a falling candle goes short, and a position closes once ADX falls back below its average. An entry signal against an open position reverses it.
 - **Filters**:
   - Category: Breakout
   - Direction: Both
