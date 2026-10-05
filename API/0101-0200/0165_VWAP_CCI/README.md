@@ -7,7 +7,7 @@ Testing indicates an average annual return of about 82%. It performs best in the
 
 VWAP acts as a value benchmark, and CCI highlights momentum moves away from it. Entries favor strong CCI readings relative to VWAP.
 
-Designed for day traders focusing on VWAP interaction. ATR stops help maintain discipline.
+Designed for day traders focusing on VWAP interaction. A percent stop helps maintain discipline.
 
 ## Details
 
@@ -17,13 +17,14 @@ Designed for day traders focusing on VWAP interaction. ATR stops help maintain d
 - **Long/Short**: Both
 - **Exit Criteria**:
   - Price crosses back through VWAP
-- **Stops**: Percent-based using `StopLoss`
+- **Stops**: Percent-based using `StopLossPercent`
 - **Default Values**:
   - `CciPeriod` = 20
   - `CciOversold` = -100m
   - `CciOverbought` = 100m
-  - `StopLoss` = new Unit(2, UnitTypes.Percent)
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    The market trades around the clock, so the session VWAP restarts each UTC day and weighs the typical price of each candle by its volume. An entry signal against an open position reverses it.
 - **Filters**:
   - Category: Mean reversion
   - Direction: Both

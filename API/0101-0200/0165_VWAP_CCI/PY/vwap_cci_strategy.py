@@ -4,165 +4,108 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
-from StockSharp.Algo.Indicators import VolumeWeightedMovingAverage, CommodityChannelIndex
+from System import TimeSpan, Decimal
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, Level1Fields
+from StockSharp.BusinessEntities import Subscription
+from StockSharp.Algo.Indicators import CommodityChannelIndex
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
 
 class vwap_cci_strategy(Strategy):
     """
-    Implementation of strategy - VWAP + CCI.
-    Buy when price is below VWAP and CCI is below -20 (oversold).
-    Sell when price is above VWAP and CCI is above 20 (overbought).
+    VWAP CCI strategy.
+    The market trades around the clock, so the session VWAP restarts with each UTC day and weighs each candle's typical price by its volume.
+    A close below VWAP with CCI below CciOversold goes long and a close above VWAP with CCI above CciOverbought goes short, reversing
+    an opposite position. A long closes when price crosses back above VWAP and a short when it crosses back below,
+    and a percent stop limits the loss.
     """
 
     def __init__(self):
         super(vwap_cci_strategy, self).__init__()
-
-        self._cci_period = self.Param("CciPeriod", 20) \
-            .SetGreaterThanZero() \
-            .SetDisplay("CCI Period", "Period for Commodity Channel Index", "CCI Parameters")
-
-        self._cci_oversold = self.Param("CciOversold", -20.0) \
-            .SetDisplay("CCI Oversold", "CCI level to consider market oversold", "CCI Parameters")
-
-        self._cci_overbought = self.Param("CciOverbought", 20.0) \
-            .SetDisplay("CCI Overbought", "CCI level to consider market overbought", "CCI Parameters")
-
-        self._cooldown_bars = self.Param("CooldownBars", 120) \
-            .SetRange(5, 500) \
-            .SetDisplay("Cooldown Bars", "Bars between trades", "General")
-
-        self._stop_loss = self.Param("StopLoss", Unit(2, UnitTypes.Percent)) \
-            .SetDisplay("Stop Loss", "Stop loss percent or value", "Risk Management")
-
-        self._candle_type = self.Param("CandleType", tf(5)) \
-            .SetDisplay("Candle Type", "Candle type for strategy", "General")
-
-        self._cooldown = 0
+        self._cci_period = self.Param("CciPeriod", 20).SetGreaterThanZero().SetDisplay("CCI Period", "Period of CCI", "CCI")
+        self._cci_oversold = self.Param("CciOversold", -100.0).SetDisplay("CCI Oversold", "CCI level for longs", "CCI")
+        self._cci_overbought = self.Param("CciOverbought", 100.0).SetDisplay("CCI Overbought", "CCI level for shorts", "CCI")
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0).SetNotNegative().SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._reset_state()
 
     @property
-    def CciPeriod(self):
-        return self._cci_period.Value
-
-    @CciPeriod.setter
-    def CciPeriod(self, value):
-        self._cci_period.Value = value
-
-    @property
-    def CciOversold(self):
-        return self._cci_oversold.Value
-
-    @CciOversold.setter
-    def CciOversold(self, value):
-        self._cci_oversold.Value = value
-
-    @property
-    def CciOverbought(self):
-        return self._cci_overbought.Value
-
-    @CciOverbought.setter
-    def CciOverbought(self, value):
-        self._cci_overbought.Value = value
-
-    @property
-    def CooldownBars(self):
-        return self._cooldown_bars.Value
-
-    @CooldownBars.setter
-    def CooldownBars(self, value):
-        self._cooldown_bars.Value = value
-
-    @property
-    def StopLoss(self):
-        return self._stop_loss.Value
-
-    @StopLoss.setter
-    def StopLoss(self, value):
-        self._stop_loss.Value = value
-
-    @property
-    def CandleType(self):
+    def candle_type(self):
         return self._candle_type.Value
 
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candle_type.Value = value
+    def _reset_state(self):
+        self._day = None
+        self._cumulative_price_volume = Decimal(0)
+        self._cumulative_volume = Decimal(0)
 
     def OnReseted(self):
         super(vwap_cci_strategy, self).OnReseted()
-        self._cooldown = 0
+        self._reset_state()
 
     def OnStarted2(self, time):
         super(vwap_cci_strategy, self).OnStarted2(time)
 
-        # Create indicators
-        vwap = VolumeWeightedMovingAverage()
+        self._reset_state()
+
         cci = CommodityChannelIndex()
-        cci.Length = self.CciPeriod
+        cci.Length = self._cci_period.Value
 
-        # Setup candle subscription
-        subscription = self.SubscribeCandles(self.CandleType)
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.BindEx(cci, self._process_candle).Start()
 
-        # Bind indicators to candles
-        subscription.Bind(vwap, cci, self.ProcessCandle).Start()
+        self.StartProtection(Unit(), Unit(Decimal(self._stop_loss_percent.Value), UnitTypes.Percent), useMarketOrders=True, isLocalStop=True)
 
-        # Setup chart visualization if available
+        # The stop has to see prices between candles, not only at their close.
+        for field in (Level1Fields.BestBidPrice, Level1Fields.BestAskPrice):
+            quotes = Subscription(DataType.Level1, self.Security)
+            quotes.MarketData.BuildField = field
+            self.SubscribeLevel1(quotes).Bind(self._observe_protection_quote).Start()
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, vwap)
-
-            cci_area = self.CreateChartArea()
-            if cci_area is not None:
-                self.DrawIndicator(cci_area, cci)
-
             self.DrawOwnTrades(area)
+            oscillators = self.CreateChartArea()
+            if oscillators is not None:
+                self.DrawIndicator(oscillators, cci)
 
-    def ProcessCandle(self, candle, vwap_value, cci_value):
+    def _observe_protection_quote(self, quote):
+        # The high-level handler activates native protection before the callback, including between bars.
+        pass
+
+    def _process_candle(self, candle, cci_value):
         if candle.State != CandleStates.Finished:
+            return
+
+        day = candle.OpenTime.Date
+        if self._day is None or self._day != day:
+            self._day = day
+            self._cumulative_price_volume = Decimal(0)
+            self._cumulative_volume = Decimal(0)
+
+        typical_price = (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / Decimal(3)
+        self._cumulative_price_volume += typical_price * candle.TotalVolume
+        self._cumulative_volume += candle.TotalVolume
+
+        if not cci_value.IsFormed or self._cumulative_volume <= 0:
             return
 
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        # Current price
-        price = float(candle.ClosePrice)
-        vwap_val = float(vwap_value)
+        vwap = self._cumulative_price_volume / self._cumulative_volume
+        cci = cci_value.GetValue[Decimal](None)
+        close = candle.ClosePrice
 
-        # Determine if price is above or below VWAP
-        isPriceAboveVWAP = price > vwap_val
-
-        if self._cooldown > 0:
-            self._cooldown -= 1
-            return
-
-        # Trading rules - with tolerance bands like CS
-        belowVwap = price <= vwap_val * 1.001
-        aboveVwap = price >= vwap_val * 0.999
-
-        if belowVwap and cci_value <= self.CciOversold and self.Position == 0:
-            # Buy signal - price below VWAP and CCI oversold
-            self.BuyMarket()
-            self._cooldown = self.CooldownBars
-
-        elif aboveVwap and cci_value >= self.CciOverbought and self.Position == 0:
-            # Sell signal - price above VWAP and CCI overbought
-            self.SellMarket()
-            self._cooldown = self.CooldownBars
-
-        # Exit conditions
-        elif isPriceAboveVWAP and self.Position > 0:
-            # Exit long position when price crosses above VWAP
-            self.SellMarket()
-            self._cooldown = self.CooldownBars
-
-        elif not isPriceAboveVWAP and self.Position < 0:
-            # Exit short position when price crosses below VWAP
-            self.BuyMarket()
-            self._cooldown = self.CooldownBars
+        if close < vwap and cci < Decimal(self._cci_oversold.Value) and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+        elif close > vwap and cci > Decimal(self._cci_overbought.Value) and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
+        elif self.Position > 0 and close > vwap:
+            self.SellMarket(self.Position)
+        elif self.Position < 0 and close < vwap:
+            self.BuyMarket(-self.Position)
 
     def CreateClone(self):
         return vwap_cci_strategy()
