@@ -5,110 +5,116 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import SimpleMovingAverage, StandardDeviation
+from System import TimeSpan, Decimal
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from StockSharp.Algo.Indicators import SimpleMovingAverage, StandardDeviation, Highest, Lowest, ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 
 
 class iron_bot_statistical_trend_filter_strategy(Strategy):
+    """
+    Iron Bot statistical trend filter strategy.
+    The highest high and lowest low of the last AnalysisWindow candles define a range. The trend line sits at its middle, the high
+    trend level HighTrendLimit of the range below the top and the low trend level LowTrendLimit of the range below the top. A close
+    crossing above the high trend level (and so above the trend line) with a non-negative Z-score of the close goes long, a close
+    crossing below the low trend level (and the trend line) with a non-positive Z-score goes short, reversing an opposite position.
+    A stop at SlRatio and a take profit at the TP ratio picked by TakeProfitLevel, both fractions of the entry price, close trades.
+    """
+
     def __init__(self):
         super(iron_bot_statistical_trend_filter_strategy, self).__init__()
-        self._z_length = self.Param("ZLength", 40) \
-            .SetDisplay("Z Length", "Length for Z-score", "General")
-        self._analysis_window = self.Param("AnalysisWindow", 44) \
-            .SetDisplay("Analysis Window", "Lookback for trend", "General")
-        self._high_trend_limit = self.Param("HighTrendLimit", 0.236) \
-            .SetDisplay("Fibo High", "High trend Fibonacci", "General")
-        self._low_trend_limit = self.Param("LowTrendLimit", 0.786) \
-            .SetDisplay("Fibo Low", "Low trend Fibonacci", "General")
-        self._sl_ratio = self.Param("SlRatio", 0.008) \
-            .SetDisplay("Stop %", "Stop loss percent", "Risk")
-        self._tp1_ratio = self.Param("Tp1Ratio", 0.0075) \
-            .SetDisplay("TP1 %", "Take profit level", "Risk")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
-            .SetDisplay("Candle Type", "Type of candles", "General")
-        self._entry_price = 0.0
-        self._highest_high = 0.0
-        self._lowest_low = 999999999.0
-        self._bar_count = 0
+        self._z_length = self.Param("ZLength", 40).SetGreaterThanZero().SetDisplay("Z Length", "Length of the Z-score mean and deviation", "Indicators")
+        self._analysis_window = self.Param("AnalysisWindow", 44).SetGreaterThanZero().SetDisplay("Analysis Window", "Candles the trend range spans", "Indicators")
+        self._high_trend_limit = self.Param("HighTrendLimit", 0.236).SetDisplay("High Trend Limit", "Fibonacci fraction below the top for the high trend level", "Indicators")
+        self._low_trend_limit = self.Param("LowTrendLimit", 0.786).SetDisplay("Low Trend Limit", "Fibonacci fraction below the top for the low trend level", "Indicators")
+        self._ema_length = self.Param("EmaLength", 200).SetGreaterThanZero().SetDisplay("EMA Length", "EMA length shown on the chart", "Indicators")
+        self._sl_ratio = self.Param("SlRatio", 0.008).SetNotNegative().SetDisplay("SL Ratio", "Stop loss as a fraction of the entry price", "Risk")
+        self._tp1_ratio = self.Param("Tp1Ratio", 0.0075).SetNotNegative().SetDisplay("TP1 Ratio", "First take profit as a fraction of the entry price", "Risk")
+        self._tp2_ratio = self.Param("Tp2Ratio", 0.011).SetNotNegative().SetDisplay("TP2 Ratio", "Second take profit as a fraction of the entry price", "Risk")
+        self._tp3_ratio = self.Param("Tp3Ratio", 0.015).SetNotNegative().SetDisplay("TP3 Ratio", "Third take profit as a fraction of the entry price", "Risk")
+        self._tp4_ratio = self.Param("Tp4Ratio", 0.02).SetNotNegative().SetDisplay("TP4 Ratio", "Fourth take profit as a fraction of the entry price", "Risk")
+        self._take_profit_level = self.Param("TakeProfitLevel", 1).SetRange(1, 4).SetDisplay("Take Profit Level", "Which take profit ratio (1-4) closes the trade", "Risk")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._prev_close = None
 
     @property
     def candle_type(self):
         return self._candle_type.Value
 
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
-
     def OnReseted(self):
         super(iron_bot_statistical_trend_filter_strategy, self).OnReseted()
-        self._entry_price = 0.0
-        self._highest_high = 0.0
-        self._lowest_low = 999999999.0
-        self._bar_count = 0
+        self._prev_close = None
 
     def OnStarted2(self, time):
         super(iron_bot_statistical_trend_filter_strategy, self).OnStarted2(time)
-        sma = SimpleMovingAverage()
-        sma.Length = self._z_length.Value
-        std = StandardDeviation()
-        std.Length = self._z_length.Value
+
+        self._prev_close = None
+
+        mean = SimpleMovingAverage()
+        mean.Length = self._z_length.Value
+        deviation = StandardDeviation()
+        deviation.Length = self._z_length.Value
+        highest = Highest()
+        highest.Length = self._analysis_window.Value
+        lowest = Lowest()
+        lowest.Length = self._analysis_window.Value
+        ema = ExponentialMovingAverage()
+        ema.Length = self._ema_length.Value
+
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(sma, std, self.OnProcess).Start()
+        subscription.Bind(mean, deviation, highest, lowest, ema, self._process_candle).Start()
+
+        level = self._take_profit_level.Value
+        if level == 2:
+            take_ratio = float(self._tp2_ratio.Value)
+        elif level == 3:
+            take_ratio = float(self._tp3_ratio.Value)
+        elif level == 4:
+            take_ratio = float(self._tp4_ratio.Value)
+        else:
+            take_ratio = float(self._tp1_ratio.Value)
+        sl_ratio = float(self._sl_ratio.Value)
+
+        take = Unit(Decimal(take_ratio * 100.0), UnitTypes.Percent) if take_ratio > 0 else Unit()
+        stop = Unit(Decimal(sl_ratio * 100.0), UnitTypes.Percent) if sl_ratio > 0 else Unit()
+        self.StartProtection(take, stop, useMarketOrders=True)
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, sma)
+            self.DrawIndicator(area, highest)
+            self.DrawIndicator(area, lowest)
+            self.DrawIndicator(area, ema)
             self.DrawOwnTrades(area)
 
-    def OnProcess(self, candle, sma_val, std_val):
+    def _process_candle(self, candle, mean_value, deviation_value, highest_value, lowest_value, ema_value):
         if candle.State != CandleStates.Finished:
             return
-        self._bar_count += 1
-        high = float(candle.HighPrice)
-        low = float(candle.LowPrice)
-        close = float(candle.ClosePrice)
-        if high > self._highest_high:
-            self._highest_high = high
-        if low < self._lowest_low:
-            self._lowest_low = low
-        aw = self._analysis_window.Value
-        if self._bar_count < aw:
+
+        prev = self._prev_close
+        close = candle.ClosePrice
+        self._prev_close = close
+
+        if prev is None or not self.IsFormedAndOnlineAndAllowTrading():
             return
-        sma_v = float(sma_val)
-        std_v = float(std_val)
-        z_score = 0.0 if std_v == 0 else (close - sma_v) / std_v
-        rng = self._highest_high - self._lowest_low
+
+        rng = highest_value - lowest_value
         if rng <= 0:
             return
-        ht = float(self._high_trend_limit.Value)
-        lt = float(self._low_trend_limit.Value)
-        high_trend_level = self._highest_high - rng * ht
-        trend_line = self._highest_high - rng * 0.5
-        low_trend_level = self._highest_high - rng * lt
-        sl = float(self._sl_ratio.Value)
-        tp = float(self._tp1_ratio.Value)
-        if self.Position > 0:
-            pnl = (close - self._entry_price) / self._entry_price if self._entry_price > 0 else 0
-            if pnl <= -sl or pnl >= tp:
-                self.SellMarket()
-                self._entry_price = 0.0
-            return
-        elif self.Position < 0:
-            pnl = (self._entry_price - close) / self._entry_price if self._entry_price > 0 else 0
-            if pnl <= -sl or pnl >= tp:
-                self.BuyMarket()
-                self._entry_price = 0.0
-            return
-        can_long = close >= trend_line and close >= high_trend_level and z_score >= 0
-        can_short = close <= trend_line and close <= low_trend_level and z_score <= 0
-        if can_long:
-            self.BuyMarket()
-            self._entry_price = close
-        elif can_short:
-            self.SellMarket()
-            self._entry_price = close
+
+        z_score = Decimal(0) if deviation_value == 0 else (close - mean_value) / deviation_value
+
+        high_trend_level = highest_value - rng * Decimal(self._high_trend_limit.Value)
+        trend_line = highest_value - rng * Decimal(0.5)
+        low_trend_level = highest_value - rng * Decimal(self._low_trend_limit.Value)
+
+        cross_up = close > trend_line and close > high_trend_level and (prev <= trend_line or prev <= high_trend_level)
+        cross_down = close < trend_line and close < low_trend_level and (prev >= trend_line or prev >= low_trend_level)
+
+        if cross_up and z_score >= 0 and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+        elif cross_down and z_score <= 0 and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
 
     def CreateClone(self):
         return iron_bot_statistical_trend_filter_strategy()
