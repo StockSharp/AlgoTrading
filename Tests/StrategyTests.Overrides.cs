@@ -9158,6 +9158,69 @@ public abstract partial class StrategyTests
 	public Task S0227_PercentStopWorksBetweenFinishedBars()
 		=> CheckPercentStopBetweenBars("0227_Hurst_Exponent_Trend", TimeSpan.FromDays(31));
 
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(100, 20, 0.7, false)]
+	[DataRow(60, 30, 0.75, true)]
+	public async Task S0228_FadesAcrossTheAverageWhileHurstRevertsUntilTheAverageOrHurstRises(int hurstPeriod, int maPeriod, double threshold, bool secondary)
+	{
+		var hurst = new HurstExponent { Length = hurstPeriod };
+		var sma = new SimpleMovingAverage { Length = maPeriod };
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var fadeExits = 0;
+		var violations = new List<string>();
+		await Replay("0228_Hurst_Exponent_Reversion", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(100, strategy.Parameters["HurstPeriod"].Value);
+			AreEqual(20, strategy.Parameters["AveragePeriod"].Value);
+			AreEqual(0.7m, Convert.ToDecimal(strategy.Parameters["HurstThreshold"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "HurstPeriod", hurstPeriod);
+			SetParam(strategy, "AveragePeriod", maPeriod);
+			SetParam(strategy, "HurstThreshold", threshold);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var h = hurst.Process(candle);
+				var m = sma.Process(candle);
+				if (!h.IsFormed || !m.IsFormed) return;
+				var exponent = h.GetValue<decimal>();
+				var mean = m.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var reverting = exponent < (decimal)threshold;
+				var position = strategy.Position;
+				if (reverting && close < mean && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (reverting && close > mean && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && (close >= mean || exponent > (decimal)threshold)) { expectedSide = Sides.Sell; expectedVolume = position; fadeExits++; }
+				else if (position < 0m && (close <= mean || exponent > (decimal)threshold)) { expectedSide = Sides.Buy; expectedVolume = -position; fadeExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must fade the close's side of the average while Hurst reverts, or close once price is back at the average or Hurst rises.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && fadeExits > 0, "The fixture must trade both sides and exit.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0228_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0228_Hurst_Exponent_Reversion", TimeSpan.FromDays(31));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";
