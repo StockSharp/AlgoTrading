@@ -20,8 +20,10 @@ El método es ideal para traders neutrales al mercado cómodos balanceando la ex
 - **Stops**: Sí, stop-loss porcentual sobre el diferencial.
 - **Valores predeterminados**:
   - `LookbackPeriod` = 20
-  - `StopLossPercent` = 2m
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(15)
+  - `SecondSecurity` — obligatorio, sin valor por defecto
+    Asset1 es el Security de la estrategia y Asset2 es SecondSecurity; MA1 y MA2 son las medias móviles simples de sus últimos LookbackPeriod cierres en velas de la misma hora. Un largo compra Asset1 y vende Asset2, un corto hace lo contrario, cada pata por Volume, y una señal contraria invierte ambas patas. El stop cierra ambas patas cuando el spread, Asset1 menos Asset2, se mueve en contra un StopLossPercent de su valor de entrada, comprobado al cierre de las velas; 0 lo desactiva.
 - **Filtros**:
   - Categoría: Arbitraje
   - Dirección: Ambos

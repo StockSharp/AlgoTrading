@@ -20,8 +20,10 @@
 - **ストップ**: あり、スプレッドに対するパーセンテージストップロス。
 - **デフォルト値**:
   - `LookbackPeriod` = 20
-  - `StopLossPercent` = 2m
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(15)
+  - `SecondSecurity` — 必須、既定値なし
+    Asset1は戦略のSecurity、Asset2はSecondSecurityで、MA1とMA2は同時刻のローソク足における直近LookbackPeriod本の終値の単純移動平均です。ロングはAsset1を買いAsset2を売り、ショートはその逆で、各レッグはVolumeで取引され、逆のシグナルで両レッグがドテンします。ストップはスプレッド（Asset1 − Asset2）がエントリー時の値のStopLossPercentだけ不利に動いたときに両レッグを閉じ、ローソク足の終値で確認されます。0で無効になります。
 - **フィルター**:
   - カテゴリ: アービトラージ
   - 方向: 両方

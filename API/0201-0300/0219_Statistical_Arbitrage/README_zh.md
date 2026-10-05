@@ -20,8 +20,10 @@
 - **止损**: 对价差使用百分比止损
 - **默认值**:
   - `LookbackPeriod` = 20
-  - `StopLossPercent` = 2m
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(15)
+  - `SecondSecurity` — 必填，无默认值
+    Asset1为策略主品种（Security），Asset2为SecondSecurity；MA1和MA2为两者在同一时间K线上最近LookbackPeriod个收盘价的简单移动平均。做多即买入Asset1并卖出Asset2，做空相反，每条腿交易Volume数量，相反信号会同时反转两条腿。当价差（Asset1减Asset2）朝不利方向移动入场价差的StopLossPercent百分比时止损平掉两条腿，按K线收盘检查；设为0则关闭。
 - **过滤器**:
   - 类别: Arbitrage
   - 方向: 双向

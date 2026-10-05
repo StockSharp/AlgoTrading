@@ -20,8 +20,10 @@ Die Methode ist ideal für marktneutrale Trader, die mit der Balance von Exponie
 - **Stops**: Ja, prozentualer Stop-Loss auf Spread.
 - **Standardwerte**:
   - `LookbackPeriod` = 20
-  - `StopLossPercent` = 2m
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(15)
+  - `SecondSecurity` — erforderlich, ohne Standardwert
+    Asset1 ist das Security der Strategie und Asset2 ist SecondSecurity; MA1 und MA2 sind die einfachen gleitenden Durchschnitte ihrer letzten LookbackPeriod Schlusskurse auf Kerzen derselben Zeit. Ein Long kauft Asset1 und verkauft Asset2, ein Short umgekehrt, jedes Bein mit Volume, ein Gegensignal dreht beide Beine. Der Stop schließt beide Beine, sobald sich der Spread, Asset1 minus Asset2, um StopLossPercent seines Einstiegswerts gegen das Paar bewegt, geprüft bei Kerzenschluss; 0 schaltet ihn ab.
 - **Filter**:
   - Kategorie: Arbitrage
   - Richtung: Beide

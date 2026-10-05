@@ -1,238 +1,163 @@
 import clr
 
 clr.AddReference("StockSharp.Messages")
-clr.AddReference("StockSharp.BusinessEntities")
 clr.AddReference("StockSharp.Algo")
-clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, ICandleMessage
-from StockSharp.Algo.Indicators import SimpleMovingAverage
-from StockSharp.Algo.Strategies import Strategy
+from System import TimeSpan, Decimal
+from StockSharp.Messages import DataType, CandleStates
 from StockSharp.BusinessEntities import Security
-from datatype_extensions import *
-from indicator_extensions import *
+from StockSharp.Algo.Strategies import Strategy
 
 class statistical_arbitrage_strategy(Strategy):
     """
-    Statistical Arbitrage strategy that trades pairs of securities based on their relative mean reversion.
-    Enters when one asset is below its mean while the other is above its mean.
+    Statistical arbitrage strategy.
+    Each instrument is compared with the simple moving average of its last LookbackPeriod closes on candles of the same time. The first
+    instrument below its average while the second is above its own buys the first and sells the second, the mirror does the opposite,
+    reversing an opposite pair. Both legs close once the first instrument closes back across its average, or once the spread, the first
+    close minus the second, moves StopLossPercent of its entry value against the pair.
     """
 
     def __init__(self):
         super(statistical_arbitrage_strategy, self).__init__()
-
-        # Initialize strategy parameters
-        self._lookback_period = self.Param("LookbackPeriod", 20) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Lookback Period", "Period for calculating moving averages", "Parameters") \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 30, 5)
-
-        self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Stop-loss %", "Stop-loss as percentage of entry price", "Risk Management") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.0, 3.0, 0.5)
-
-        self._candle_type = self.Param("CandleType", tf(15)) \
-            .SetDisplay("Candle Type", "Type of candles to use", "General")
-
-        self._second_security = self.Param[Security]("SecondSecurity", None) \
-            .SetDisplay("Second Security", "Second security in the pair", "General") \
-            .SetRequired()
-
-        # State variables
-        self._first_ma = None
-        self._second_ma = None
-        self._last_first_price = 0
-        self._last_second_price = 0
-        self._entry_spread = 0
-        self._second_ma_value = 0
+        self._lookback_period = self.Param("LookbackPeriod", 20).SetGreaterThanZero().SetDisplay("Lookback Period", "Closes each moving average spans", "Parameters")
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0).SetNotNegative().SetDisplay("Stop-loss %", "Adverse spread move in percent of the entry spread", "Risk Management")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._second_security = self.Param[Security]("SecondSecurity", None).SetDisplay("Second Security", "Second security in the pair", "General").SetRequired()
+        self._reset_state()
 
     @property
-    def LookbackPeriod(self):
-        return self._lookback_period.Value
-
-    @LookbackPeriod.setter
-    def LookbackPeriod(self, value):
-        self._lookback_period.Value = value
-
-    @property
-    def StopLossPercent(self):
-        return self._stop_loss_percent.Value
-
-    @StopLossPercent.setter
-    def StopLossPercent(self, value):
-        self._stop_loss_percent.Value = value
-
-    @property
-    def CandleType(self):
+    def candle_type(self):
         return self._candle_type.Value
 
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candle_type.Value = value
-
     @property
-    def SecondSecurity(self):
+    def second_security(self):
         return self._second_security.Value
 
-    @SecondSecurity.setter
-    def SecondSecurity(self, value):
+    @second_security.setter
+    def second_security(self, value):
         self._second_security.Value = value
 
+    def _reset_state(self):
+        self._first_closes = {}
+        self._second_closes = {}
+        self._first_history = []
+        self._second_history = []
+        # 1 while long the spread, -1 while short it, 0 while flat.
+        self._side = 0
+        self._entry_spread = Decimal(0)
+
     def GetWorkingSecurities(self):
-        """!! REQUIRED !! Returns securities for strategy."""
-        return [
-            (self.Security, self.CandleType),
-            (self.SecondSecurity, self.CandleType)
-        ]
+        return [(self.Security, self.candle_type), (self.second_security, self.candle_type)]
 
     def OnReseted(self):
-        """Resets internal state when strategy is reset."""
         super(statistical_arbitrage_strategy, self).OnReseted()
-        self._first_ma = None
-        self._second_ma = None
-        self._last_first_price = 0
-        self._last_second_price = 0
-        self._entry_spread = 0
-        self._second_ma_value = 0
+        self._reset_state()
 
     def OnStarted2(self, time):
-        """
-        Called when the strategy starts. Sets up indicators, subscriptions, and charting.
-
-        :param time: The time when the strategy started.
-        """
         super(statistical_arbitrage_strategy, self).OnStarted2(time)
 
-        if self.SecondSecurity is None:
+        if self.second_security is None:
             raise Exception("Second security is not specified.")
 
-        # Initialize indicators
-        self._first_ma = SimpleMovingAverage()
-        self._first_ma.Length = self.LookbackPeriod
-        self._second_ma = SimpleMovingAverage()
-        self._second_ma.Length = self.LookbackPeriod
+        self._reset_state()
 
-        # Create subscriptions for both securities
-        first_security_subscription = self.SubscribeCandles(self.CandleType)
-        second_security_subscription = self.SubscribeCandles(self.CandleType, security=self.SecondSecurity)
+        first_subscription = self.SubscribeCandles(self.candle_type)
+        first_subscription.Bind(self._process_first_candle).Start()
 
-        # Bind to first security candles
-        first_security_subscription.Bind(self._first_ma, self.ProcessFirstSecurityCandle).Start()
+        second_subscription = self.SubscribeCandles(self.candle_type, security=self.second_security)
+        second_subscription.Bind(self._process_second_candle).Start()
 
-        # Bind to second security candles
-        second_security_subscription.Bind(self.ProcessSecondSecurityCandle).Start()
-
-        # Enable position protection with stop-loss
-        self.StartProtection(
-            takeProfit=Unit(0, UnitTypes.Absolute),
-            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
-        )
-        # Setup chart if available
         area = self.CreateChartArea()
         if area is not None:
-            self.DrawCandles(area, first_security_subscription)
-            self.DrawIndicator(area, self._first_ma)
+            self.DrawCandles(area, first_subscription)
             self.DrawOwnTrades(area)
 
-    def ProcessFirstSecurityCandle(self, candle, first_ma_value):
-        """
-        Process candle of the first security.
+    def _process_first_candle(self, candle):
+        self._process_candle(candle, self._first_closes)
 
-        :param candle: The candle message.
-        :param first_ma_value: The moving average value for the first security.
-        """
-        # Skip unfinished candles
+    def _process_second_candle(self, candle):
+        self._process_candle(candle, self._second_closes)
+
+    def _process_candle(self, candle, closes):
         if candle.State != CandleStates.Finished:
             return
 
-        # Skip if strategy is not ready to trade
+        time = candle.OpenTime
+        closes[time] = candle.ClosePrice
 
-        # Store current price
-        self._last_first_price = float(candle.ClosePrice)
-
-        # Skip if we don't have both prices or if indicators aren't formed
-        if self._last_second_price == 0 or not self._first_ma.IsFormed or not self._second_ma.IsFormed:
+        # The spread needs both instruments' candles of the same time, whichever arrives last.
+        if time not in self._first_closes or time not in self._second_closes:
             return
 
-        # Get last second MA value stored earlier
-        second_ma_value = self._second_ma_value
+        first = self._first_closes[time]
+        second = self._second_closes[time]
 
-        # Trading logic
-        is_first_below_ma = self._last_first_price < first_ma_value
-        is_second_above_ma = self._last_second_price > second_ma_value
-        is_first_above_ma = self._last_first_price > first_ma_value
-        is_second_below_ma = self._last_second_price < second_ma_value
+        for stale in [t for t in self._first_closes if t <= time]:
+            del self._first_closes[stale]
+        for stale in [t for t in self._second_closes if t <= time]:
+            del self._second_closes[stale]
 
-        current_spread = self._last_first_price - self._last_second_price
+        period = self._lookback_period.Value
 
-        # Long signal: First asset below MA, Second asset above MA
-        if is_first_below_ma and is_second_above_ma:
-            # If we're not already in a long position
-            if self.Position <= 0:
-                self.BuyMarket(self.Volume + Math.Abs(self.Position))
-                self._entry_spread = current_spread
-                self.LogInfo(
-                    "Long Signal: {0}({1:F4}) < MA({2:F4}) && {3}({4:F4}) > MA({5:F4})".format(
-                        self.Security.Code, self._last_first_price, first_ma_value,
-                        self.SecondSecurity.Code, self._last_second_price, second_ma_value))
-                # Note: In a real implementation, you would also place a sell order
-                # for the second security here, using a different strategy instance or connector
-        # Short signal: First asset above MA, Second asset below MA
-        elif is_first_above_ma and is_second_below_ma:
-            # If we're not already in a short position
-            if self.Position >= 0:
-                self.SellMarket(self.Volume + Math.Abs(self.Position))
-                self._entry_spread = current_spread
-                self.LogInfo(
-                    "Short Signal: {0}({1:F4}) > MA({2:F4}) && {3}({4:F4}) < MA({5:F4})".format(
-                        self.Security.Code, self._last_first_price, first_ma_value,
-                        self.SecondSecurity.Code, self._last_second_price, second_ma_value))
-                # Note: In a real implementation, you would also place a buy order
-                # for the second security here, using a different strategy instance or connector
-        # Exit signals
-        elif (self.Position > 0 and is_first_above_ma) or (self.Position < 0 and is_first_below_ma):
-            # Exit position when first asset crosses its moving average
-            if self.Position > 0:
-                self.SellMarket(Math.Abs(self.Position))
-                self.LogInfo(
-                    "Exit Long: {0}({1:F4}) > MA({2:F4})".format(
-                        self.Security.Code, self._last_first_price, first_ma_value))
-            elif self.Position < 0:
-                self.BuyMarket(Math.Abs(self.Position))
-                self.LogInfo(
-                    "Exit Short: {0}({1:F4}) < MA({2:F4})".format(
-                        self.Security.Code, self._last_first_price, first_ma_value))
+        self._first_history.append(first)
+        self._second_history.append(second)
+        if len(self._first_history) > period:
+            self._first_history.pop(0)
+            self._second_history.pop(0)
 
-    def ProcessSecondSecurityCandle(self, candle):
-        """
-        Process candle of the second security.
-
-        :param candle: The second security candle message.
-        """
-        # Skip unfinished candles
-        if candle.State != CandleStates.Finished:
+        if len(self._first_history) < period:
             return
 
-        # Store current price
-        self._last_second_price = float(candle.ClosePrice)
+        first_total = Decimal(0)
+        second_total = Decimal(0)
+        for value in self._first_history:
+            first_total += value
+        for value in self._second_history:
+            second_total += value
+        first_average = first_total / Decimal(period)
+        second_average = second_total / Decimal(period)
+        spread = first - second
 
-        # Process through MA indicator and remember the result
-        self._second_ma_value = float(
-            process_float(
-                self._second_ma,
-                candle.ClosePrice,
-                candle.ServerTime,
-                candle.State == CandleStates.Finished,
-            )
-        )
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
+        stop_percent = Decimal(self._stop_loss_percent.Value)
+        stop_distance = abs(self._entry_spread) * stop_percent / Decimal(100)
+
+        if first < first_average and second > second_average and self._side <= 0:
+            self._move_legs(1)
+            self._entry_spread = spread
+        elif first > first_average and second < second_average and self._side >= 0:
+            self._move_legs(-1)
+            self._entry_spread = spread
+        elif self._side > 0 and (first > first_average or (stop_percent > 0 and spread <= self._entry_spread - stop_distance)):
+            self._move_legs(0)
+        elif self._side < 0 and (first < first_average or (stop_percent > 0 and spread >= self._entry_spread + stop_distance)):
+            self._move_legs(0)
+
+    def _move_legs(self, side):
+        self._side = side
+
+        # Long the spread holds the first instrument and is short the second, each by Volume.
+        first_change = Decimal(side) * self.Volume - self.Position
+
+        if first_change > 0:
+            self.BuyMarket(first_change)
+        elif first_change < 0:
+            self.SellMarket(-first_change)
+
+        second_position = self.GetPositionValue(self.second_security, self.Portfolio)
+        if second_position is None:
+            second_position = Decimal(0)
+
+        second_change = Decimal(-side) * self.Volume - second_position
+
+        if second_change > 0:
+            self.BuyMarket(second_change, self.second_security)
+        elif second_change < 0:
+            self.SellMarket(-second_change, self.second_security)
 
     def CreateClone(self):
-        """
-        !! REQUIRED!! Creates a new instance of the strategy.
-        """
         return statistical_arbitrage_strategy()
