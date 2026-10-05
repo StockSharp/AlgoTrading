@@ -17,7 +17,7 @@ El método es simple pero efectivo durante oscilaciones irregulares cuando los g
 - **Stops**: Sí, basado en porcentaje.
 - **Valores predeterminados**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
 - **Filtros**:
   - Categoría: Reversión
   - Dirección: Ambos

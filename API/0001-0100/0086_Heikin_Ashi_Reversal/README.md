@@ -17,7 +17,7 @@ The method is simple yet effective during choppy swings when traditional candles
 - **Stops**: Yes, percentage based.
 - **Default Values**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
 - **Filters**:
   - Category: Reversal
   - Direction: Both

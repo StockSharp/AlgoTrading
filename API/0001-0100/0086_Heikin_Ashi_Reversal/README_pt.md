@@ -17,7 +17,7 @@ O método é simples mas eficaz durante oscilações instáveis quando os gráfi
 - **Stops**: Sim, baseado em percentual.
 - **Valores padrão**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
 - **Filtros**:
   - Categoria: Reversão
   - Direção: Ambos

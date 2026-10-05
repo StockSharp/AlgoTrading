@@ -2337,6 +2337,67 @@ public abstract partial class StrategyTests
 		IsTrue(crossExits + stopExits > 0, "The fixture must close positions.");
 	}
 
+	private const string HeikinFlip = "0086_Heikin_Ashi_Reversal";
+
+	[TestMethod]
+	[TestCategory("Shard00")]
+	[DataRow(false)]
+	[DataRow(true)]
+	public async Task S0086_HeikinAshiColorFlipsReverseThePosition(bool secondary)
+	{
+		decimal? haOpen = null;
+		var haClose = 0m;
+		bool? bullish = null;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var reversals = 0;
+		var violations = new List<string>();
+		await Replay(HeikinFlip, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var close = (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m;
+				var open = haOpen is decimal previousOpen ? (previousOpen + haClose) / 2m : (candle.OpenPrice + candle.ClosePrice) / 2m;
+				haOpen = open;
+				haClose = close;
+				if (close == open) return;
+				var before = bullish;
+				bullish = close > open;
+				if (before is not bool wasBullish || wasBullish == bullish) return;
+				var position = strategy.Position;
+				if (bullish == true && position <= 0m) expectedSide = Sides.Buy;
+				else if (bullish == false && position >= 0m) expectedSide = Sides.Sell;
+				else return;
+				expectedVolume = strategy.Volume + Math.Abs(position);
+				if (position != 0m) reversals++;
+				expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must reverse to the new color of a Heikin-Ashi flip.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(reversals > 10, "The fixture must reverse repeatedly.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard00")]
+	public Task S0086_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars(HeikinFlip, TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

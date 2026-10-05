@@ -12,29 +12,25 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Heikin Ashi Reversal strategy.
-/// Computes Heikin-Ashi candles from regular candles.
-/// Enters long when HA switches from bearish to bullish.
-/// Enters short when HA switches from bullish to bearish.
-/// Uses SMA for exit confirmation.
+/// Computes Heikin-Ashi candles from regular candles. A bullish Heikin-Ashi candle after bearish ones turns the position long,
+/// a bearish one after bullish ones turns it short; a percent stop limits the loss.
 /// </summary>
 public class HeikinAshiReversalStrategy : Strategy
 {
-	private readonly StrategyParam<int> _maPeriod;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
 
-	private decimal _haOpen;
+	private decimal? _haOpen;
 	private decimal _haClose;
 	private bool? _prevBullish;
-	private int _cooldown;
 
 	/// <summary>
-	/// MA Period.
+	/// Stop-loss percentage.
 	/// </summary>
-	public int MAPeriod
+	public decimal StopLossPercent
 	{
-		get => _maPeriod.Value;
-		set => _maPeriod.Value = value;
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
 	}
 
 	/// <summary>
@@ -47,29 +43,16 @@ public class HeikinAshiReversalStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Cooldown bars.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
 	/// Constructor.
 	/// </summary>
 	public HeikinAshiReversalStrategy()
 	{
-		_maPeriod = Param(nameof(MAPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("MA Period", "Period for SMA", "Indicators");
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_cooldownBars = Param(nameof(CooldownBars), 500)
-			.SetRange(1, 1000)
-			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -82,10 +65,9 @@ public class HeikinAshiReversalStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_haOpen = default;
+		_haOpen = null;
 		_haClose = default;
 		_prevBullish = null;
-		_cooldown = default;
 	}
 
 	/// <inheritdoc />
@@ -93,95 +75,65 @@ public class HeikinAshiReversalStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_haOpen = 0;
-		_haClose = 0;
+		_haOpen = null;
+		_haClose = default;
 		_prevBullish = null;
-		_cooldown = 0;
-
-		var sma = new SimpleMovingAverage { Length = MAPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(sma, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
+
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// The high-level handler activates native protection before this callback, also between signal bars.
+	}
+
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Compute Heikin-Ashi values
-		var newHaClose = (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4;
+		var haClose = (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4;
+		var haOpen = _haOpen is decimal prevOpen
+			? (prevOpen + _haClose) / 2
+			: (candle.OpenPrice + candle.ClosePrice) / 2;
 
-		decimal newHaOpen;
-		if (_haOpen == 0)
-		{
-			// First candle
-			newHaOpen = (candle.OpenPrice + candle.ClosePrice) / 2;
-		}
-		else
-		{
-			newHaOpen = (_haOpen + _haClose) / 2;
-		}
+		_haOpen = haOpen;
+		_haClose = haClose;
 
-		_haOpen = newHaOpen;
-		_haClose = newHaClose;
-
-		var isBullish = newHaClose > newHaOpen;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_prevBullish = isBullish;
+		// A Heikin-Ashi candle without a body keeps the previous color.
+		if (haClose == haOpen)
 			return;
-		}
 
-		if (_prevBullish == null)
-		{
-			_prevBullish = isBullish;
-			return;
-		}
-
-		if (_cooldown > 0)
-		{
-			_cooldown--;
-			_prevBullish = isBullish;
-			return;
-		}
-
-		// Reversal detection
-		var bullishReversal = _prevBullish == false && isBullish;
-		var bearishReversal = _prevBullish == true && !isBullish;
-
-		if (Position == 0 && bullishReversal)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position == 0 && bearishReversal)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position > 0 && candle.ClosePrice < smaValue)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position < 0 && candle.ClosePrice > smaValue)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-
+		var isBullish = haClose > haOpen;
+		var wasBullish = _prevBullish;
 		_prevBullish = isBullish;
+
+		if (wasBullish is not bool previous || previous == isBullish || !IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (isBullish && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (!isBullish && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
 	}
 }
