@@ -2,179 +2,146 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
-clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan
+from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import Highest, Lowest
 from StockSharp.Algo.Strategies import Strategy
 
 
 class long_only_opening_range_breakout_with_pivot_points_strategy(Strategy):
+    """
+    Long-only opening range breakout with daily pivot points.
+    The opening range is the high of the first RangeMinutes after SessionStart (UTC). After the range closes, a close above the
+    range high goes long when the R1 pivot of the previous day sits above that high, at most MaxTradesPerDay times a day.
+    The initial stop is a percentage below entry or the previous candle low. It trails up to the pivot P, R1 and R2 when price reaches
+    R1, R2 and R3, and at every daily close it is raised to StopLossPercent below that close.
+    InitialSlType: Percentage or PreviousLow.
+    """
+
     def __init__(self):
         super(long_only_opening_range_breakout_with_pivot_points_strategy, self).__init__()
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
-            .SetDisplay("Candle Type", "Working candle type", "General")
-        self._range_bars = self.Param("RangeBars", 20) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Range Bars", "Lookback bars for channel", "General")
-        self._stop_loss_percent = self.Param("StopLossPercent", 3.0) \
-            .SetDisplay("Stop Loss %", "Initial stop loss percent", "Risk")
-        self._pivot_length = self.Param("PivotLength", 20) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Pivot Length", "Bars for pivot calculation", "Indicators")
-        self._entry_price = 0.0
-        self._sl0 = 0.0
-        self._trail_stop = 0.0
-        self._cooldown = 0
-        self._prev_ready = False
-        self._prev_highest = 0.0
-        self._prev_lowest = 0.0
-        self._r1 = 0.0
-        self._r2 = 0.0
-        self._s1 = 0.0
-        self._s2 = 0.0
-        self._pivot_high = 0.0
-        self._pivot_low = 0.0
-        self._pivot_close = 0.0
-        self._pivot_bar_count = 0
+        self._range_minutes = self.Param("RangeMinutes", 15).SetGreaterThanZero().SetDisplay("Range Minutes", "Length of the opening range in minutes", "Session")
+        self._session_start = self.Param("SessionStart", TimeSpan(9, 30, 0)).SetDisplay("Session Start", "Session start time (UTC)", "Session")
+        self._max_trades_per_day = self.Param("MaxTradesPerDay", 1).SetGreaterThanZero().SetDisplay("Max Trades Per Day", "Maximum entries per day", "Session")
+        self._stop_loss_percent = self.Param("StopLossPercent", 3.0).SetNotNegative().SetDisplay("Stop Loss %", "Stop loss percentage", "Risk")
+        self._initial_sl_type = self.Param("InitialSlType", "Percentage").SetDisplay("Initial SL Type", "Initial stop loss type", "Risk")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._reset_state()
 
     @property
     def candle_type(self):
         return self._candle_type.Value
 
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
+    def _reset_state(self):
+        self._current_day = None
+        self._day_high = Decimal(0)
+        self._day_low = Decimal(0)
+        self._day_close = Decimal(0)
+        self._range_high = None
+        self._trades_today = 0
+        self._pivot = None
+        self._r1 = Decimal(0)
+        self._r2 = Decimal(0)
+        self._r3 = Decimal(0)
+        self._prev_low = None
+        self._stop_price = None
 
     def OnReseted(self):
         super(long_only_opening_range_breakout_with_pivot_points_strategy, self).OnReseted()
-        self._entry_price = 0.0
-        self._sl0 = 0.0
-        self._trail_stop = 0.0
-        self._cooldown = 0
-        self._prev_ready = False
-        self._prev_highest = 0.0
-        self._prev_lowest = 0.0
-        self._r1 = 0.0
-        self._r2 = 0.0
-        self._s1 = 0.0
-        self._s2 = 0.0
-        self._pivot_high = 0.0
-        self._pivot_low = 0.0
-        self._pivot_close = 0.0
-        self._pivot_bar_count = 0
+        self._reset_state()
 
     def OnStarted2(self, time):
         super(long_only_opening_range_breakout_with_pivot_points_strategy, self).OnStarted2(time)
-        self._entry_price = 0.0
-        self._sl0 = 0.0
-        self._trail_stop = 0.0
-        self._cooldown = 0
-        self._prev_ready = False
-        self._prev_highest = 0.0
-        self._prev_lowest = 0.0
-        self._r1 = 0.0
-        self._r2 = 0.0
-        self._s1 = 0.0
-        self._s2 = 0.0
-        self._pivot_high = 0.0
-        self._pivot_low = 0.0
-        self._pivot_close = 0.0
-        self._pivot_bar_count = 0
-        self._highest = Highest()
-        self._highest.Length = self._range_bars.Value
-        self._lowest = Lowest()
-        self._lowest.Length = self._range_bars.Value
+
+        self._reset_state()
+
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(self._highest, self._lowest, self.OnProcess).Start()
+        subscription.Bind(self._process_candle).Start()
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, self._highest)
-            self.DrawIndicator(area, self._lowest)
             self.DrawOwnTrades(area)
 
-    def OnProcess(self, candle, highest_val, lowest_val):
+    def _process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
-        if not self._highest.IsFormed or not self._lowest.IsFormed:
-            return
-        hv = float(highest_val)
-        lv = float(lowest_val)
-        high = float(candle.HighPrice)
-        low = float(candle.LowPrice)
-        close = float(candle.ClosePrice)
-        self._pivot_bar_count += 1
-        if self._pivot_high == 0.0:
-            self._pivot_high = high
+
+        open_time = candle.OpenTime
+        day = open_time.Date
+
+        if self._current_day is None or self._current_day != day:
+            if self._current_day is not None:
+                self._start_new_day()
+            self._current_day = day
+            self._day_high = candle.HighPrice
+            self._day_low = candle.LowPrice
         else:
-            self._pivot_high = max(self._pivot_high, high)
-        if self._pivot_low == 0.0:
-            self._pivot_low = low
-        else:
-            self._pivot_low = min(self._pivot_low, low)
-        self._pivot_close = close
-        if self._pivot_bar_count >= self._pivot_length.Value:
-            pivot = (self._pivot_high + self._pivot_low + self._pivot_close) / 3.0
-            self._r1 = pivot + pivot - self._pivot_low
-            self._r2 = pivot + (self._pivot_high - self._pivot_low)
-            self._s1 = pivot + pivot - self._pivot_high
-            self._s2 = pivot - (self._pivot_high - self._pivot_low)
-            self._pivot_high = 0.0
-            self._pivot_low = 0.0
-            self._pivot_bar_count = 0
-        if self._cooldown > 0:
-            self._cooldown -= 1
-            self._prev_highest = hv
-            self._prev_lowest = lv
-            self._prev_ready = True
+            self._day_high = max(self._day_high, candle.HighPrice)
+            self._day_low = min(self._day_low, candle.LowPrice)
+
+        self._day_close = candle.ClosePrice
+
+        prev_low = self._prev_low
+        self._prev_low = candle.LowPrice
+
+        time_of_day = open_time.TimeOfDay
+        session_start = self._session_start.Value
+        range_end = session_start + TimeSpan.FromMinutes(self._range_minutes.Value)
+
+        if time_of_day >= session_start and time_of_day < range_end:
+            self._range_high = candle.HighPrice if self._range_high is None else max(self._range_high, candle.HighPrice)
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
-        sl_pct = float(self._stop_loss_percent.Value) / 100.0
-        if self._prev_ready and self.Position <= 0 and close > self._prev_highest and self._r1 > 0.0:
-            if self.Position < 0:
-                self.BuyMarket()
-            self._entry_price = close
-            self._sl0 = self._entry_price * (1.0 - sl_pct)
-            self._trail_stop = 0.0
-            self.BuyMarket()
-            self._cooldown = 40
-        elif self._prev_ready and self.Position >= 0 and close < self._prev_lowest and self._s1 > 0.0:
-            if self.Position > 0:
-                self.SellMarket()
-            self._entry_price = close
-            self._sl0 = self._entry_price * (1.0 + sl_pct)
-            self._trail_stop = 0.0
-            self.SellMarket()
-            self._cooldown = 40
-        if self.Position > 0 and self._r1 > 0.0:
-            if high > self._r2:
-                self._trail_stop = max(self._trail_stop, self._r1)
-            elif high > self._r1:
-                self._trail_stop = max(self._trail_stop, hv)
-            sl = max(self._sl0, self._trail_stop)
-            if low <= sl:
-                self.SellMarket()
-                self._cooldown = 40
-        if self.Position < 0 and self._s1 > 0.0:
-            if low < self._s2:
-                if self._trail_stop == 0.0:
-                    self._trail_stop = self._s1
-                else:
-                    self._trail_stop = min(self._trail_stop, self._s1)
-            elif low < self._s1:
-                if self._trail_stop == 0.0:
-                    self._trail_stop = lv
-                else:
-                    self._trail_stop = min(self._trail_stop, lv)
-            sl = min(self._sl0, self._trail_stop) if self._trail_stop > 0.0 else self._sl0
-            if high >= sl:
-                self.BuyMarket()
-                self._cooldown = 40
-        self._prev_highest = hv
-        self._prev_lowest = lv
-        self._prev_ready = True
+
+        if self.Position > 0:
+            if self._pivot is not None and self._stop_price is not None:
+                level = self._stop_price
+                if candle.HighPrice > self._r3:
+                    level = self._r2
+                elif candle.HighPrice > self._r2:
+                    level = self._r1
+                elif candle.HighPrice > self._r1:
+                    level = self._pivot
+                self._stop_price = max(self._stop_price, level)
+
+            if self._stop_price is not None and candle.LowPrice <= self._stop_price:
+                self.SellMarket(self.Position)
+                self._stop_price = None
+            return
+
+        if self.Position != 0 or time_of_day < range_end or self._trades_today >= self._max_trades_per_day.Value:
+            return
+
+        if self._range_high is None or self._pivot is None:
+            return
+
+        if candle.ClosePrice <= self._range_high or self._r1 <= self._range_high:
+            return
+
+        self.BuyMarket(self.Volume)
+        self._trades_today += 1
+
+        if str(self._initial_sl_type.Value) == "PreviousLow" and prev_low is not None:
+            self._stop_price = prev_low
+        else:
+            self._stop_price = candle.ClosePrice * (Decimal(1) - Decimal(self._stop_loss_percent.Value) / Decimal(100))
+
+    def _start_new_day(self):
+        pivot = (self._day_high + self._day_low + self._day_close) / Decimal(3)
+        self._pivot = pivot
+        self._r1 = Decimal(2) * pivot - self._day_low
+        self._r2 = pivot + (self._day_high - self._day_low)
+        self._r3 = self._day_high + Decimal(2) * (pivot - self._day_low)
+
+        # The stop also trails the daily close.
+        if self.Position > 0 and self._stop_price is not None:
+            self._stop_price = max(self._stop_price, self._day_close * (Decimal(1) - Decimal(self._stop_loss_percent.Value) / Decimal(100)))
+
+        self._range_high = None
+        self._trades_today = 0
 
     def CreateClone(self):
         return long_only_opening_range_breakout_with_pivot_points_strategy()

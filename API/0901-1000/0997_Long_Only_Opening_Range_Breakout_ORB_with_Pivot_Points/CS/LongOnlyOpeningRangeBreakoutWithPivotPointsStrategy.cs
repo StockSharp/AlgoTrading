@@ -11,69 +11,129 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Opening range breakout with pivot point trailing stop.
-/// Uses a rolling high/low channel for breakout entry and pivot-based trailing stop for exits.
+/// Long-only opening range breakout with daily pivot points.
+/// The opening range is the high of the first RangeMinutes after SessionStart (UTC). After the range closes, a close above the
+/// range high goes long when the R1 pivot of the previous day sits above that high, at most MaxTradesPerDay times a day.
+/// The initial stop is a percentage below entry or the previous candle low. It trails up to the pivot P, R1 and R2 when price reaches
+/// R1, R2 and R3, and at every daily close it is raised to StopLossPercent below that close.
 /// </summary>
 public class LongOnlyOpeningRangeBreakoutWithPivotPointsStrategy : Strategy
 {
+	/// <summary>
+	/// Initial stop loss types.
+	/// </summary>
 	public enum SlTypes
 	{
+		/// <summary>
+		/// Percentage below the entry price.
+		/// </summary>
 		Percentage,
+
+		/// <summary>
+		/// Low of the candle before the entry candle.
+		/// </summary>
 		PreviousLow
 	}
 
-	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _rangeBars;
+	private readonly StrategyParam<int> _rangeMinutes;
+	private readonly StrategyParam<TimeSpan> _sessionStart;
+	private readonly StrategyParam<int> _maxTradesPerDay;
 	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<SlTypes> _initialSlType;
-	private readonly StrategyParam<int> _pivotLength;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private Highest _highest;
-	private Lowest _lowest;
-	private decimal _entryPrice;
-	private decimal _sl0;
-	private decimal _trailStop;
-	private int _cooldown;
-	private bool _prevReady;
-	private decimal _prevHighest;
-	private decimal _prevLowest;
-
-	// Pivot levels
+	private DateTime? _currentDay;
+	private decimal _dayHigh;
+	private decimal _dayLow;
+	private decimal _dayClose;
+	private decimal? _rangeHigh;
+	private int _tradesToday;
+	private decimal? _pivot;
 	private decimal _r1;
 	private decimal _r2;
-	private decimal _s1;
-	private decimal _s2;
+	private decimal _r3;
+	private decimal? _prevLow;
+	private decimal? _stopPrice;
 
-	// For pivot calc
-	private decimal _pivotHigh;
-	private decimal _pivotLow;
-	private decimal _pivotClose;
-	private int _pivotBarCount;
+	/// <summary>
+	/// Length of the opening range in minutes.
+	/// </summary>
+	public int RangeMinutes
+	{
+		get => _rangeMinutes.Value;
+		set => _rangeMinutes.Value = value;
+	}
 
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-	public int RangeBars { get => _rangeBars.Value; set => _rangeBars.Value = value; }
-	public decimal StopLossPercent { get => _stopLossPercent.Value; set => _stopLossPercent.Value = value; }
-	public SlTypes InitialSlType { get => _initialSlType.Value; set => _initialSlType.Value = value; }
-	public int PivotLength { get => _pivotLength.Value; set => _pivotLength.Value = value; }
+	/// <summary>
+	/// Session start time (UTC).
+	/// </summary>
+	public TimeSpan SessionStart
+	{
+		get => _sessionStart.Value;
+		set => _sessionStart.Value = value;
+	}
 
+	/// <summary>
+	/// Maximum entries per day.
+	/// </summary>
+	public int MaxTradesPerDay
+	{
+		get => _maxTradesPerDay.Value;
+		set => _maxTradesPerDay.Value = value;
+	}
+
+	/// <summary>
+	/// Stop loss percentage.
+	/// </summary>
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Initial stop loss type.
+	/// </summary>
+	public SlTypes InitialSlType
+	{
+		get => _initialSlType.Value;
+		set => _initialSlType.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
+	/// </summary>
 	public LongOnlyOpeningRangeBreakoutWithPivotPointsStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
-			.SetDisplay("Candle Type", "Working candle type", "General");
-
-		_rangeBars = Param(nameof(RangeBars), 20)
+		_rangeMinutes = Param(nameof(RangeMinutes), 15)
 			.SetGreaterThanZero()
-			.SetDisplay("Range Bars", "Lookback bars for channel", "General");
+			.SetDisplay("Range Minutes", "Length of the opening range in minutes", "Session");
+
+		_sessionStart = Param(nameof(SessionStart), new TimeSpan(9, 30, 0))
+			.SetDisplay("Session Start", "Session start time (UTC)", "Session");
+
+		_maxTradesPerDay = Param(nameof(MaxTradesPerDay), 1)
+			.SetGreaterThanZero()
+			.SetDisplay("Max Trades Per Day", "Maximum entries per day", "Session");
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 3m)
-			.SetDisplay("Stop Loss %", "Initial stop loss percent", "Risk");
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
 
 		_initialSlType = Param(nameof(InitialSlType), SlTypes.Percentage)
 			.SetDisplay("Initial SL Type", "Initial stop loss type", "Risk");
 
-		_pivotLength = Param(nameof(PivotLength), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("Pivot Length", "Bars for pivot calculation", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -86,22 +146,23 @@ public class LongOnlyOpeningRangeBreakoutWithPivotPointsStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		ResetState();
+	}
 
-		_entryPrice = default;
-		_sl0 = default;
-		_trailStop = default;
-		_cooldown = default;
-		_prevReady = false;
-		_prevHighest = default;
-		_prevLowest = default;
-		_r1 = default;
-		_r2 = default;
-		_s1 = default;
-		_s2 = default;
-		_pivotHigh = default;
-		_pivotLow = default;
-		_pivotClose = default;
-		_pivotBarCount = default;
+	private void ResetState()
+	{
+		_currentDay = null;
+		_dayHigh = 0m;
+		_dayLow = 0m;
+		_dayClose = 0m;
+		_rangeHigh = null;
+		_tradesToday = 0;
+		_pivot = null;
+		_r1 = 0m;
+		_r2 = 0m;
+		_r3 = 0m;
+		_prevLow = null;
+		_stopPrice = null;
 	}
 
 	/// <inheritdoc />
@@ -109,122 +170,115 @@ public class LongOnlyOpeningRangeBreakoutWithPivotPointsStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_highest = new Highest { Length = RangeBars };
-		_lowest = new Lowest { Length = RangeBars };
+		ResetState();
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_highest, _lowest, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _highest);
-			DrawIndicator(area, _lowest);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal highestValue, decimal lowestValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_highest.IsFormed || !_lowest.IsFormed)
+		var openTime = candle.OpenTime;
+		var day = openTime.Date;
+
+		if (_currentDay != day)
+		{
+			if (_currentDay != null)
+				StartNewDay();
+
+			_currentDay = day;
+			_dayHigh = candle.HighPrice;
+			_dayLow = candle.LowPrice;
+		}
+		else
+		{
+			_dayHigh = Math.Max(_dayHigh, candle.HighPrice);
+			_dayLow = Math.Min(_dayLow, candle.LowPrice);
+		}
+
+		_dayClose = candle.ClosePrice;
+
+		var prevLow = _prevLow;
+		_prevLow = candle.LowPrice;
+
+		var timeOfDay = openTime.TimeOfDay;
+		var rangeEnd = SessionStart + TimeSpan.FromMinutes(RangeMinutes);
+
+		if (timeOfDay >= SessionStart && timeOfDay < rangeEnd)
+		{
+			_rangeHigh = _rangeHigh is decimal h ? Math.Max(h, candle.HighPrice) : candle.HighPrice;
+		}
+
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Update pivot levels every PivotLength bars
-		_pivotBarCount++;
-		_pivotHigh = _pivotHigh == 0 ? candle.HighPrice : Math.Max(_pivotHigh, candle.HighPrice);
-		_pivotLow = _pivotLow == 0 ? candle.LowPrice : Math.Min(_pivotLow, candle.LowPrice);
-		_pivotClose = candle.ClosePrice;
-
-		if (_pivotBarCount >= PivotLength)
+		if (Position > 0)
 		{
-			var pivot = (_pivotHigh + _pivotLow + _pivotClose) / 3m;
+			if (_pivot is decimal pivot && _stopPrice is decimal current)
+			{
+				var level = current;
 
-			_r1 = pivot + pivot - _pivotLow;
-			_r2 = pivot + (_pivotHigh - _pivotLow);
-			_s1 = pivot + pivot - _pivotHigh;
-			_s2 = pivot - (_pivotHigh - _pivotLow);
+				if (candle.HighPrice > _r3)
+					level = _r2;
+				else if (candle.HighPrice > _r2)
+					level = _r1;
+				else if (candle.HighPrice > _r1)
+					level = pivot;
 
-			_pivotHigh = 0;
-			_pivotLow = 0;
-			_pivotBarCount = 0;
-		}
+				_stopPrice = Math.Max(current, level);
+			}
 
-		if (_cooldown > 0)
-		{
-			_cooldown--;
-			_prevHighest = highestValue;
-			_prevLowest = lowestValue;
-			_prevReady = true;
+			if (_stopPrice is decimal stop && candle.LowPrice <= stop)
+			{
+				SellMarket(Position);
+				_stopPrice = null;
+			}
+
 			return;
 		}
 
-		// Long breakout entry
-		if (_prevReady && Position <= 0 && candle.ClosePrice > _prevHighest && _r1 > 0)
-		{
-			if (Position < 0)
-				BuyMarket();
+		if (Position != 0 || timeOfDay < rangeEnd || _tradesToday >= MaxTradesPerDay)
+			return;
 
-			_entryPrice = candle.ClosePrice;
-			_sl0 = _entryPrice * (1m - StopLossPercent / 100m);
-			_trailStop = 0m;
-			BuyMarket();
-			_cooldown = 40;
-		}
-		// Short breakdown entry
-		else if (_prevReady && Position >= 0 && candle.ClosePrice < _prevLowest && _s1 > 0)
-		{
-			if (Position > 0)
-				SellMarket();
+		if (_rangeHigh is not decimal rangeHigh || _pivot is null)
+			return;
 
-			_entryPrice = candle.ClosePrice;
-			_sl0 = _entryPrice * (1m + StopLossPercent / 100m);
-			_trailStop = 0m;
-			SellMarket();
-			_cooldown = 40;
-		}
+		if (candle.ClosePrice <= rangeHigh || _r1 <= rangeHigh)
+			return;
 
-		// Trailing stop for long position
-		if (Position > 0 && _r1 > 0)
-		{
-			if (candle.HighPrice > _r2)
-				_trailStop = Math.Max(_trailStop, _r1);
-			else if (candle.HighPrice > _r1)
-				_trailStop = Math.Max(_trailStop, highestValue);
+		BuyMarket(Volume);
+		_tradesToday++;
 
-			var sl = Math.Max(_sl0, _trailStop);
+		_stopPrice = InitialSlType == SlTypes.PreviousLow && prevLow is decimal low
+			? low
+			: candle.ClosePrice * (1m - StopLossPercent / 100m);
+	}
 
-			if (candle.LowPrice <= sl)
-			{
-				SellMarket();
-				_cooldown = 40;
-			}
-		}
+	private void StartNewDay()
+	{
+		var pivot = (_dayHigh + _dayLow + _dayClose) / 3m;
+		_pivot = pivot;
+		_r1 = 2m * pivot - _dayLow;
+		_r2 = pivot + (_dayHigh - _dayLow);
+		_r3 = _dayHigh + 2m * (pivot - _dayLow);
 
-		// Trailing stop for short position
-		if (Position < 0 && _s1 > 0)
-		{
-			if (candle.LowPrice < _s2)
-				_trailStop = _trailStop == 0 ? _s1 : Math.Min(_trailStop, _s1);
-			else if (candle.LowPrice < _s1)
-				_trailStop = _trailStop == 0 ? lowestValue : Math.Min(_trailStop, lowestValue);
+		// The stop also trails the daily close.
+		if (Position > 0 && _stopPrice is decimal stop)
+			_stopPrice = Math.Max(stop, _dayClose * (1m - StopLossPercent / 100m));
 
-			var sl = _trailStop > 0 ? Math.Min(_sl0, _trailStop) : _sl0;
-
-			if (candle.HighPrice >= sl)
-			{
-				BuyMarket();
-				_cooldown = 40;
-			}
-		}
-
-		_prevHighest = highestValue;
-		_prevLowest = lowestValue;
-		_prevReady = true;
+		_rangeHigh = null;
+		_tradesToday = 0;
 	}
 }
