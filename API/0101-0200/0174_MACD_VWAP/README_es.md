@@ -7,7 +7,7 @@ Las pruebas indican un retorno anual promedio de aproximadamente 109%. Funciona 
 
 El impulso MACD se mide en relación con la línea VWAP. Las operaciones largas buscan fortaleza del MACD por debajo del VWAP, mientras que las cortas se forman por encima de él.
 
-Ideal para operadores de momentum intradía que usan referencias ponderadas por volumen. Los stops basados en ATR gestionan el riesgo.
+Ideal para operadores de momentum intradía que usan referencias ponderadas por volumen. Un stop porcentual gestiona el riesgo.
 
 ## Detalles
 
@@ -21,8 +21,9 @@ Ideal para operadores de momentum intradía que usan referencias ponderadas por 
   - `MacdFast` = 12
   - `MacdSlow` = 26
   - `MacdSignal` = 9
-  - `StopLossPercent` = 2.0m
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    El mercado opera las 24 horas, por lo que el VWAP de la sesión se reinicia cada día UTC y pondera el precio típico de cada vela por su volumen. Un largo se cierra cuando el MACD cruza por debajo de la línea de señal y un corto cuando la cruza por encima. Una señal de entrada contra una posición abierta la invierte.
 - **Filtros**:
   - Categoría: Reversión a la media
   - Dirección: Ambos
