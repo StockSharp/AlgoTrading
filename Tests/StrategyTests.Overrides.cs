@@ -4799,6 +4799,91 @@ public abstract partial class StrategyTests
 	public Task S0145_PercentStopWorksBetweenFinishedBars()
 		=> CheckPercentStopBetweenBars("0145_ADX_Stochastic", TimeSpan.FromDays(31));
 
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(12, 26, 9, 20, 1.5, false)]
+	[DataRow(8, 21, 5, 10, 1.2, true)]
+	public async Task S0146_MacdCrossesWithVolumeReverseAndUnconfirmedCrossesClose(int fast, int slow, int signalPeriod, int volumePeriod, double multiplier, bool secondary)
+	{
+		var macd = new MovingAverageConvergenceDivergenceSignal { Macd = { ShortMa = { Length = fast }, LongMa = { Length = slow } }, SignalMa = { Length = signalPeriod } };
+		var volumes = new List<decimal>();
+		bool? previousAbove = null;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var reversals = 0;
+		var plainExits = 0;
+		var violations = new List<string>();
+		await Replay("0146_MACD_Volume", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(12, strategy.Parameters["MacdFast"].Value);
+			AreEqual(26, strategy.Parameters["MacdSlow"].Value);
+			AreEqual(9, strategy.Parameters["MacdSignal"].Value);
+			AreEqual(20, strategy.Parameters["VolumePeriod"].Value);
+			AreEqual(1.5m, Convert.ToDecimal(strategy.Parameters["VolumeMultiplier"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "MacdFast", fast);
+			SetParam(strategy, "MacdSlow", slow);
+			SetParam(strategy, "MacdSignal", signalPeriod);
+			SetParam(strategy, "VolumePeriod", volumePeriod);
+			SetParam(strategy, "VolumeMultiplier", multiplier);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var m = (MovingAverageConvergenceDivergenceSignalValue)macd.Process(candle);
+				// The strategy only sees candles once the bound indicator returns a value.
+				if (m.IsEmpty) return;
+				decimal? average = volumes.Count == volumePeriod ? volumes.Average() : null;
+				volumes.Add(candle.TotalVolume);
+				if (volumes.Count > volumePeriod) volumes.RemoveAt(0);
+				if (!m.IsFormed || m.Macd is not decimal line || m.Signal is not decimal sig) return;
+				var above = line > sig;
+				var was = previousAbove;
+				previousAbove = above;
+				if (was is not bool wasAbove || wasAbove == above) return;
+				var confirmed = average is decimal avg && candle.TotalVolume > avg * (decimal)multiplier;
+				var position = strategy.Position;
+				var direction = above ? 1m : -1m;
+				if (confirmed && position * direction <= 0m)
+				{
+					expectedVolume = strategy.Volume + Math.Abs(position);
+					entries[above ? Sides.Buy : Sides.Sell]++;
+					if (position != 0m) reversals++;
+				}
+				else if (position * direction < 0m)
+				{
+					expectedVolume = Math.Abs(position);
+					plainExits++;
+				}
+				else return;
+				expectedSide = above ? Sides.Buy : Sides.Sell;
+				expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a MACD cross: entering or reversing on a volume surge, closing without it.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "The fixture must trade both sides.");
+		IsTrue(plainExits > 0, "The fixture must close on unconfirmed opposite crosses.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0146_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0146_MACD_Volume", TimeSpan.FromDays(31), setup: (s, _) => SetParam(s, "VolumeMultiplier", 1m));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

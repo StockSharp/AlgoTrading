@@ -7,7 +7,7 @@ Las pruebas indican un retorno anual promedio de aproximadamente 175%. Funciona 
 
 Los cruces del MACD se filtran por un aumento de volumen para confirmar el momentum. Las señales de compra vienen en cruces alcistas con volumen en expansión; las de venta hacen lo contrario.
 
-Los traders de momentum que observan picos de volumen pueden encontrarlo valioso. El riesgo se limita usando un stop de ATR.
+Los traders de momentum que observan picos de volumen pueden encontrarlo valioso. El riesgo se limita usando un stop porcentual.
 
 ## Detalles
 
@@ -26,6 +26,7 @@ Los traders de momentum que observan picos de volumen pueden encontrarlo valioso
   - `VolumeMultiplier` = 1.5m
   - `StopLossPercent` = 2.0m
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    AvgVolume es el volumen medio de las VolumePeriod velas anteriores. Cada cruce del MACD cierra la posición contraria, así que un cruce con pico de volumen invierte la posición y uno sin él solo la cierra.
 - **Filtros**:
   - Categoría: Ruptura
   - Dirección: Ambos

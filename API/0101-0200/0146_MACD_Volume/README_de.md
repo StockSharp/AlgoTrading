@@ -7,7 +7,7 @@ Tests zeigen eine durchschnittliche jährliche Rendite von etwa 175%. Sie funkti
 
 MACD-Kreuzungen werden durch einen Volumenanstieg zur Bestätigung des Impulses gefiltert. Kaufsignale entstehen bei bullischen Kreuzungen mit wachsendem Volumen; Verkäufe das Gegenteil.
 
-Momentum-Trader, die auf Volumspitzen achten, können es wertvoll finden. Das Risiko wird mit einem ATR-Stop begrenzt.
+Momentum-Trader, die auf Volumspitzen achten, können es wertvoll finden. Das Risiko wird mit einem prozentualen Stop begrenzt.
 
 ## Details
 
@@ -26,6 +26,7 @@ Momentum-Trader, die auf Volumspitzen achten, können es wertvoll finden. Das Ri
   - `VolumeMultiplier` = 1.5m
   - `StopLossPercent` = 2.0m
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    AvgVolume ist das durchschnittliche Volumen der vorherigen VolumePeriod Kerzen. Jedes MACD-Kreuzen schließt eine Gegenposition, ein Kreuzen mit Volumenspitze dreht die Position also, eines ohne schließt nur.
 - **Filter**:
   - Kategorie: Ausbruch
   - Richtung: Beide
