@@ -1,10 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,122 +12,112 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that trades on volume breakouts.
-/// When volume rises significantly above its average, it enters position in the direction determined by price.
+/// Volume Breakout strategy.
+/// The bands lie Multiplier standard deviations around the average of the last AvgPeriod volume values, the current one included.
+/// volume above the upper band on a rising candle goes long and on a falling candle goes short, reversing an opposite position.
+/// A position closes once volume falls back below its average, and a percent stop limits the loss.
 /// </summary>
 public class VolumeBreakoutStrategy : Strategy
 {
 	private readonly StrategyParam<int> _avgPeriod;
 	private readonly StrategyParam<decimal> _multiplier;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _stopLoss;
-	
-	private SimpleMovingAverage _volumeAverage;
-	private SimpleMovingAverage _volumeStdDev;
-	private decimal _lastAvgVolume;
-	private decimal _lastStdDev;
-	
+
+	private readonly Queue<decimal> _values = [];
+
 	/// <summary>
-	/// Period for volume average calculation.
+	/// Values of volume the average and the standard deviation span.
 	/// </summary>
 	public int AvgPeriod
 	{
 		get => _avgPeriod.Value;
 		set => _avgPeriod.Value = value;
 	}
-	
+
 	/// <summary>
-	/// Standard deviation multiplier for breakout detection.
+	/// Standard deviations between the average and a band.
 	/// </summary>
 	public decimal Multiplier
 	{
 		get => _multiplier.Value;
 		set => _multiplier.Value = value;
 	}
-	
+
 	/// <summary>
-	/// Candle type for strategy.
+	/// Stop loss percentage from entry price.
+	/// </summary>
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
-	
+
 	/// <summary>
-	/// Stop-loss percentage.
-	/// </summary>
-	public decimal StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-	
-	/// <summary>
-	/// Initialize <see cref="VolumeBreakoutStrategy"/>.
+	/// Constructor.
 	/// </summary>
 	public VolumeBreakoutStrategy()
 	{
 		_avgPeriod = Param(nameof(AvgPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Average Period", "Period for volume average calculation", "Indicators")
-			
-			.SetOptimize(10, 50, 5);
-		
-		_multiplier = Param(nameof(Multiplier), 2.0m)
+			.SetDisplay("Average Period", "Values of volume the average and the standard deviation span", "Indicators");
+
+		_multiplier = Param(nameof(Multiplier), 2m)
 			.SetGreaterThanZero()
-			.SetDisplay("Multiplier", "Standard deviation multiplier for breakout detection", "Indicators")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
-		
+			.SetDisplay("Multiplier", "Standard deviations between the average and a band", "Indicators");
+
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-		
-		_stopLoss = Param(nameof(StopLoss), 2.0m)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss %", "Stop Loss percentage", "Risk Management")
-			
-			.SetOptimize(1.0m, 5.0m, 0.5m);
 	}
-	
+
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
-	
+
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_lastAvgVolume = 0;
-		_lastStdDev = 0;
+		_values.Clear();
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		
-		
-		// Create indicators for volume analysis
-		_volumeAverage = new SMA { Length = AvgPeriod };
-		_volumeStdDev = new SMA { Length = AvgPeriod };
-		
-		// Create subscription
+
+		_values.Clear();
+
 		var subscription = SubscribeCandles(CandleType);
-		
-		// Bind candles to processing method
 		subscription
 			.Bind(ProcessCandle)
 			.Start();
-			
-		// Enable stop loss protection
-		StartProtection(
-			takeProfit: new Unit(3, UnitTypes.Percent),
-			stopLoss: new Unit(StopLoss, UnitTypes.Percent));
-		
-		// Create chart area for visualization
+
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -137,51 +125,41 @@ public class VolumeBreakoutStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 	}
-	
+
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// The high-level handler activates native protection before this callback, also between signal bars.
+	}
+
 	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
-			
-		// Calculate volume indicators
-		var volume = candle.TotalVolume;
-		
-		// Calculate volume average
-		var avgValue = _volumeAverage.Process(new DecimalIndicatorValue(_volumeAverage, volume, candle.ServerTime) { IsFinal = true });
-		var avgVolume = avgValue.ToDecimal();
 
-		// Calculate standard deviation approximation
-		var deviation = Math.Abs(volume - avgVolume);
-		var stdDevValue = _volumeStdDev.Process(new DecimalIndicatorValue(_volumeStdDev, deviation, candle.ServerTime) { IsFinal = true });
-		var stdDev = stdDevValue.ToDecimal();
+		var value = candle.TotalVolume;
 
-		// Skip the first N candles until we have enough data
-		if (!_volumeAverage.IsFormed || !_volumeStdDev.IsFormed)
-		{
-			_lastAvgVolume = avgVolume;
-			_lastStdDev = stdDev;
+		_values.Enqueue(value);
+
+		if (_values.Count > AvgPeriod)
+			_values.Dequeue();
+
+		if (_values.Count < AvgPeriod)
 			return;
-		}
 
-		// Volume breakout detection (volume increases significantly above its average)
-		if (volume > avgVolume + Multiplier * stdDev && Position == 0)
-		{
-			// Determine direction based on price movement
-			var bullish = candle.ClosePrice > candle.OpenPrice;
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
 
-			// Trade in the direction of price movement
-			if (bullish)
-			{
-				BuyMarket();
-			}
-			else
-			{
-				SellMarket();
-			}
-		}
+		var mean = _values.Average();
+		var deviation = (decimal)Math.Sqrt((double)_values.Average(v => (v - mean) * (v - mean)));
+		var upper = mean + Multiplier * deviation;
 
-		// Update last values
-		_lastAvgVolume = avgVolume;
-		_lastStdDev = stdDev;
+		if (value > upper && candle.ClosePrice > candle.OpenPrice && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (value > upper && candle.ClosePrice < candle.OpenPrice && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
+		else if (Position > 0 && value < mean)
+			SellMarket(Position);
+		else if (Position < 0 && value < mean)
+			BuyMarket(-Position);
 	}
 }

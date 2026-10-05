@@ -17,9 +17,10 @@ This system fits momentum traders seeking early breakouts. Trades close as the V
 - **Stops**: Yes.
 - **Default Values**:
   - `AvgPeriod` = 20
-  - `Multiplier` = 2.0m
+  - `Multiplier` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
-  - `StopLoss` = 2.0m
+  - `StopLossPercent` = 2
+    Avg and StdDev are the average and the standard deviation of the last AvgPeriod volume values, the current one included. The stop is a fixed StopLossPercent of the entry price, watched between candles as well; 0 disables it. The band is the average plus Multiplier standard deviations: volume above it on a rising candle goes long and on a falling candle goes short, and a position closes once volume falls back below its average. An entry signal against an open position reverses it.
 - **Filters**:
   - Category: Breakout
   - Direction: Both

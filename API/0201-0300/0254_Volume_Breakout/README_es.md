@@ -17,9 +17,10 @@ Este sistema se adapta a traders de momentum que buscan rupturas tempranas. Las 
 - **Stops**: Sí.
 - **Valores predeterminados**:
   - `AvgPeriod` = 20
-  - `Multiplier` = 2.0m
+  - `Multiplier` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
-  - `StopLoss` = 2.0m
+  - `StopLossPercent` = 2
+    Avg y StdDev son la media y la desviación estándar de los últimos AvgPeriod valores de volumen, incluido el actual. El stop es un StopLossPercent fijo del precio de entrada, vigilado también entre velas; 0 lo desactiva. La banda es la media más Multiplier desviaciones estándar: el volumen por encima de ella en una vela alcista abre un largo y en una vela bajista un corto, y la posición se cierra cuando el volumen vuelve por debajo de su media. Una señal de entrada contra una posición abierta la invierte.
 - **Filtros**:
   - Categoría: Ruptura
   - Dirección: Ambos

@@ -17,9 +17,10 @@
 - **ストップ**: あり。
 - **デフォルト値**:
   - `AvgPeriod` = 20
-  - `Multiplier` = 2.0m
+  - `Multiplier` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
-  - `StopLoss` = 2.0m
+  - `StopLossPercent` = 2
+    AvgとStdDevは現在値を含む直近AvgPeriod個の出来高の平均と標準偏差です。 ストップはエントリー価格の固定StopLossPercentで、ローソク足の間も監視されます。0で無効になります。 バンドは平均に標準偏差のMultiplier倍を加えた値です。出来高が陽線でバンドを上回ればロング、陰線ならショートを建て、出来高が平均を下回ったらポジションを閉じます。 保有ポジションと逆方向のエントリーシグナルはドテンになります。
 - **フィルター**:
   - カテゴリ: ブレイクアウト
   - 方向: 両方

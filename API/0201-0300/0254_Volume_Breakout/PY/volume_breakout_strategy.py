@@ -4,162 +4,101 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, UnitTypes, Unit, CandleStates
-from StockSharp.Algo.Indicators import SimpleMovingAverage
+from System import TimeSpan, Decimal, Math
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, Level1Fields
+from StockSharp.BusinessEntities import Subscription
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class volume_breakout_strategy(Strategy):
     """
-    Strategy that trades on volume breakouts.
-    When volume rises significantly above its average, it enters position in the direction determined by price.
+    Volume Breakout strategy.
+    The bands lie Multiplier standard deviations around the average of the last AvgPeriod volume values, the current one included.
+    volume above the upper band on a rising candle goes long and on a falling candle goes short, reversing an opposite position.
+    A position closes once volume falls back below its average, and a percent stop limits the loss.
     """
 
     def __init__(self):
         super(volume_breakout_strategy, self).__init__()
-
-        # Initialize VolumeBreakoutStrategy.
-        self._avg_period = self.Param("AvgPeriod", 20) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Average Period", "Period for volume average calculation", "Indicators") \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 50, 5)
-
-        self._multiplier = self.Param("Multiplier", 2.0) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Multiplier", "Standard deviation multiplier for breakout detection", "Indicators") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.0, 3.0, 0.5)
-
-        self._candle_type = self.Param("CandleType", tf(5)) \
-            .SetDisplay("Candle Type", "Type of candles to use", "General")
-
-        self._stop_loss = self.Param("StopLoss", 2.0) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Stop Loss %", "Stop Loss percentage", "Risk Management") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.0, 5.0, 0.5)
-
-        self._volume_average = None
-        self._volume_std_dev = None
-        self._last_avg_volume = 0
-        self._last_std_dev = 0
-
-    @property
-    def avg_period(self):
-        """Period for volume average calculation."""
-        return self._avg_period.Value
-
-    @avg_period.setter
-    def avg_period(self, value):
-        self._avg_period.Value = value
-
-    @property
-    def multiplier(self):
-        """Standard deviation multiplier for breakout detection."""
-        return self._multiplier.Value
-
-    @multiplier.setter
-    def multiplier(self, value):
-        self._multiplier.Value = value
+        self._avg_period = self.Param("AvgPeriod", 20).SetGreaterThanZero().SetDisplay("Average Period", "Values of volume the average and the standard deviation span", "Indicators")
+        self._multiplier = self.Param("Multiplier", 2.0).SetGreaterThanZero().SetDisplay("Multiplier", "Standard deviations between the average and a band", "Indicators")
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0).SetNotNegative().SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._reset_state()
 
     @property
     def candle_type(self):
-        """Candle type for strategy."""
         return self._candle_type.Value
 
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
-
-    @property
-    def stop_loss(self):
-        """Stop-loss percentage."""
-        return self._stop_loss.Value
-
-    @stop_loss.setter
-    def stop_loss(self, value):
-        self._stop_loss.Value = value
-
-    def GetWorkingSecurities(self):
-        return [(self.Security, self.candle_type)]
-
+    def _reset_state(self):
+        self._values = []
 
     def OnReseted(self):
-        """
-        Resets internal state when strategy is reset.
-        """
         super(volume_breakout_strategy, self).OnReseted()
-        self._last_avg_volume = 0
-        self._last_std_dev = 0
+        self._reset_state()
 
     def OnStarted2(self, time):
         super(volume_breakout_strategy, self).OnStarted2(time)
 
+        self._reset_state()
 
-        # Create indicators for volume analysis
-        self._volume_average = SimpleMovingAverage()
-        self._volume_average.Length = self.avg_period
-        self._volume_std_dev = SimpleMovingAverage()
-        self._volume_std_dev.Length = self.avg_period
-
-        # Create subscription
         subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(self._process_candle).Start()
 
-        # Bind candles to processing method
-        subscription.Bind(self.ProcessCandle).Start()
+        self.StartProtection(Unit(), Unit(Decimal(self._stop_loss_percent.Value), UnitTypes.Percent), useMarketOrders=True, isLocalStop=True)
 
-        # Enable stop loss protection
-        self.StartProtection(
-            takeProfit=Unit(3, UnitTypes.Percent),
-            stopLoss=Unit(self.stop_loss, UnitTypes.Percent)
-        )
-        # Create chart area for visualization
+        # The stop has to see prices between candles, not only at their close.
+        for field in (Level1Fields.BestBidPrice, Level1Fields.BestAskPrice):
+            quotes = Subscription(DataType.Level1, self.Security)
+            quotes.MarketData.BuildField = field
+            self.SubscribeLevel1(quotes).Bind(self._observe_protection_quote).Start()
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle):
+    def _observe_protection_quote(self, quote):
+        # The high-level handler activates native protection before the callback, including between bars.
+        pass
+
+    def _process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
 
-        # Calculate volume indicators
-        volume = float(candle.TotalVolume)
+        value = candle.TotalVolume
 
-        # Calculate volume average
-        avg_value = process_float(self._volume_average, volume, candle.ServerTime, candle.State == CandleStates.Finished)
-        avg_volume = float(avg_value)
+        period = self._avg_period.Value
+        self._values.append(value)
+        if len(self._values) > period:
+            self._values.pop(0)
 
-        # Calculate standard deviation approximation
-        deviation = Math.Abs(volume - avg_volume)
-        std_dev_value = process_float(self._volume_std_dev, deviation, candle.ServerTime, candle.State == CandleStates.Finished)
-        std_dev = float(std_dev_value)
-
-        # Skip the first N candles until we have enough data
-        if not self._volume_average.IsFormed or not self._volume_std_dev.IsFormed:
-            self._last_avg_volume = avg_volume
-            self._last_std_dev = std_dev
+        if len(self._values) < period:
             return
 
-        # Volume breakout detection (volume increases significantly above its average)
-        if volume > avg_volume + float(self.multiplier) * std_dev and self.Position == 0:
-            # Determine direction based on price movement
-            bullish = candle.ClosePrice > candle.OpenPrice
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
-            # Trade in the direction of price movement
-            if bullish:
-                self.BuyMarket()
-            else:
-                self.SellMarket()
+        total = Decimal(0)
+        for item in self._values:
+            total += item
+        mean = total / Decimal(period)
+        squares = Decimal(0)
+        for item in self._values:
+            squares += (item - mean) * (item - mean)
+        deviation = Decimal(Math.Sqrt(Decimal.ToDouble(squares / Decimal(period))))
+        multiplier = Decimal(self._multiplier.Value)
+        upper = mean + multiplier * deviation
 
-        # Update last values
-        self._last_avg_volume = avg_volume
-        self._last_std_dev = std_dev
+        if value > upper and candle.ClosePrice > candle.OpenPrice and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+        elif value > upper and candle.ClosePrice < candle.OpenPrice and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
+        elif self.Position > 0 and value < mean:
+            self.SellMarket(self.Position)
+        elif self.Position < 0 and value < mean:
+            self.BuyMarket(-self.Position)
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return volume_breakout_strategy()

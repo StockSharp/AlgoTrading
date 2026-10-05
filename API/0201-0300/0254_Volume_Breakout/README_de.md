@@ -17,9 +17,10 @@ Dieses System eignet sich für Momentum-Trader, die frühe Ausbrüche suchen. Tr
 - **Stops**: Ja.
 - **Standardwerte**:
   - `AvgPeriod` = 20
-  - `Multiplier` = 2.0m
+  - `Multiplier` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
-  - `StopLoss` = 2.0m
+  - `StopLossPercent` = 2
+    Avg und StdDev sind Mittelwert und Standardabweichung der letzten AvgPeriod Werte von Volumen einschließlich des aktuellen. Der Stop liegt bei festen StopLossPercent vom Einstiegspreis und wird auch zwischen den Kerzen überwacht; 0 schaltet ihn ab. Das Band ist der Mittelwert plus Multiplier Standardabweichungen: das Volumen darüber bei einer steigenden Kerze eröffnet einen Long, bei einer fallenden einen Short; die Position schließt, sobald das Volumen wieder unter seinen Mittelwert fällt. Ein Einstiegssignal gegen eine offene Position dreht sie.
 - **Filter**:
   - Kategorie: Ausbruch
   - Richtung: Beide
