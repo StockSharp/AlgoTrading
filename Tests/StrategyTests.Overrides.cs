@@ -3094,6 +3094,129 @@ public abstract partial class StrategyTests
 		=> CheckOneSidedLevelPattern("0109_Wyckoff_Distribution", "RangePeriod", false, period, stopPercent, secondary,
 			(c, high, low) => c.ClosePrice < low, (c, high, low, k) => high * (1 + k));
 
+	private enum SwingTrigger { LevelCross, SignalCross, Turn }
+
+	private async Task CheckFailureSwing(string key, string periodParameter, int defaultPeriod, int period, decimal oversold, decimal overbought, SwingTrigger trigger, bool secondary,
+		Func<int, Func<ICandleMessage, (decimal Value, decimal Signal)?>> oscillator)
+	{
+		var compute = oscillator(period);
+		decimal? last = null, beforeLast = null, lastTrough = null, lastPeak = null, armedLong = null, armedShort = null, prevSignal = null;
+		var exitLevel = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = 0;
+		var exits = 0;
+		var violations = new List<string>();
+		await Replay(key, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(defaultPeriod, strategy.Parameters[periodParameter].Value);
+			AreEqual(oversold, Convert.ToDecimal(strategy.Parameters["OversoldLevel"].Value));
+			AreEqual(overbought, Convert.ToDecimal(strategy.Parameters["OverboughtLevel"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, periodParameter, period);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				if (compute(candle) is not { } point) return;
+				var current = point.Value;
+				if (last is decimal l)
+				{
+					if (beforeLast is decimal b)
+					{
+						if (l < b && l < current && l < oversold) { armedLong = lastTrough is decimal t && l > t ? l : null; lastTrough = l; }
+						else if (l > b && l > current && l > overbought) { armedShort = lastPeak is decimal pk && l < pk ? l : null; lastPeak = l; }
+					}
+					var (longTrigger, shortTrigger) = trigger switch
+					{
+						SwingTrigger.LevelCross => (l <= oversold && current > oversold, l >= overbought && current < overbought),
+						SwingTrigger.SignalCross => (last <= prevSignal && current > point.Signal, last >= prevSignal && current < point.Signal),
+						_ => (current > l, current < l),
+					};
+					var longSwing = longTrigger ? armedLong : null;
+					var shortSwing = shortTrigger ? armedShort : null;
+					if (longTrigger) armedLong = null;
+					if (shortTrigger) armedShort = null;
+					var position = strategy.Position;
+					bool exitLong, exitShort;
+					if (trigger == SwingTrigger.LevelCross) { exitLong = l <= overbought && current > overbought; exitShort = l >= oversold && current < oversold; }
+					else { exitLong = current < exitLevel; exitShort = current > exitLevel; }
+					if (position > 0m && exitLong) { expectedSide = Sides.Sell; expectedVolume = position; exits++; }
+					else if (position < 0m && exitShort) { expectedSide = Sides.Buy; expectedVolume = -position; exits++; }
+					else if (position == 0m && longSwing is decimal ls) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume; exitLevel = ls; entries++; }
+					else if (position == 0m && shortSwing is decimal ss) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume; exitLevel = ss; entries++; }
+					if (expectedSide is not null) expectedOrders++;
+				}
+				beforeLast = last;
+				last = current;
+				prevSignal = point.Signal;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a failure swing in an extreme zone, or close the position on the documented exit.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries > 0 && exits > 0, $"The fixture must trade failure swings (entries {entries}, exits {exits}).");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	[DataRow(14, false)]
+	[DataRow(7, true)]
+	public Task S0110_RsiFailureSwingsCrossingBackThroughTheZone(int period, bool secondary)
+		=> CheckFailureSwing("0110_RSI_Failure_Swing", "RsiPeriod", 14, period, 30m, 70m, SwingTrigger.LevelCross, secondary, p =>
+		{
+			var rsi = new RelativeStrengthIndex { Length = p };
+			return candle => rsi.Process(candle) is { IsFormed: true, IsEmpty: false } v ? (v.GetValue<decimal>(), 0m) : null;
+		});
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public Task S0110_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0110_RSI_Failure_Swing", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15), setup: (s, _) => SetParam(s, "RsiPeriod", 5));
+
+	[TestMethod]
+	[TestCategory("Shard06")]
+	[DataRow(14, false)]
+	[DataRow(7, true)]
+	public Task S0111_StochasticFailureSwingsConfirmedByTheSignalCross(int period, bool secondary)
+		=> CheckFailureSwing("0111_Stochastic_Failure_Swing", "KPeriod", 14, period, 20m, 80m, SwingTrigger.SignalCross, secondary, p =>
+		{
+			var stochastic = new StochasticOscillator { K = { Length = p }, D = { Length = 3 } };
+			return candle => stochastic.Process(candle) is IStochasticOscillatorValue { IsFormed: true, K: decimal k, D: decimal d } ? (k, d) : null;
+		});
+
+	[TestMethod]
+	[TestCategory("Shard06")]
+	public Task S0111_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0111_Stochastic_Failure_Swing", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(20, false)]
+	[DataRow(10, true)]
+	public Task S0112_CciFailureSwingsTurningAwayFromTheZone(int period, bool secondary)
+		=> CheckFailureSwing("0112_CCI_Failure_Swing", "CciPeriod", 20, period, -100m, 100m, SwingTrigger.Turn, secondary, p =>
+		{
+			var cci = new CommodityChannelIndex { Length = p };
+			return candle => cci.Process(candle) is { IsFormed: true, IsEmpty: false } v ? (v.GetValue<decimal>(), 0m) : null;
+		});
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0112_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0112_CCI_Failure_Swing", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

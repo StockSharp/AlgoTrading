@@ -17,7 +17,10 @@ CCI Failure Swing основана на индексе товарного кан
 - **Стопы**: да, процентные
 - **Значения по умолчанию**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `CciPeriod` = 20
+  - `OversoldLevel` = -100
+  - `OverboughtLevel` = 100
+  - `StopLossPercent` = 2
 - **Фильтры**:
   - Категория: Разворот
   - Направление: обе

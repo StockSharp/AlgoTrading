@@ -11,35 +11,30 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that trades based on CCI Failure Swing pattern.
-/// A failure swing occurs when CCI reverses direction without crossing through centerline.
-/// Uses cooldown to control trade frequency.
+/// CCI Failure Swing strategy.
+/// A trough of CCI below OversoldLevel that is higher than the previous such trough arms a long, which opens as CCI turns up from it;
+/// peaks above OverboughtLevel arm shorts the same way. A position closes when CCI crosses back through the swing that armed it,
+/// and a percent stop limits the loss.
 /// </summary>
 public class CciFailureSwingStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _cciPeriod;
 	private readonly StrategyParam<decimal> _oversoldLevel;
 	private readonly StrategyParam<decimal> _overboughtLevel;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private CommodityChannelIndex _cci;
-
-	private decimal _prevCci;
-	private decimal _prevPrevCci;
-	private int _cooldown;
-
-	/// <summary>
-	/// Candle type and timeframe.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	// The last two values, the last trough and peak in the extreme zones, and the swings that arm an entry.
+	private decimal? _last;
+	private decimal? _beforeLast;
+	private decimal? _lastTrough;
+	private decimal? _lastPeak;
+	private decimal? _armedLong;
+	private decimal? _armedShort;
+	private decimal _exitLevel;
 
 	/// <summary>
-	/// CCI period.
+	/// Period for CCI.
 	/// </summary>
 	public int CciPeriod
 	{
@@ -48,7 +43,7 @@ public class CciFailureSwingStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Oversold level.
+	/// CCI level below which troughs count.
 	/// </summary>
 	public decimal OversoldLevel
 	{
@@ -57,7 +52,7 @@ public class CciFailureSwingStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Overbought level.
+	/// CCI level above which peaks count.
 	/// </summary>
 	public decimal OverboughtLevel
 	{
@@ -66,12 +61,21 @@ public class CciFailureSwingStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Cooldown bars between trades.
+	/// Stop-loss percentage.
 	/// </summary>
-	public int CooldownBars
+	public decimal StopLossPercent
 	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
 	/// <summary>
@@ -79,24 +83,22 @@ public class CciFailureSwingStrategy : Strategy
 	/// </summary>
 	public CciFailureSwingStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Candle timeframe", "General");
-
 		_cciPeriod = Param(nameof(CciPeriod), 20)
-			.SetDisplay("CCI Period", "Period for CCI", "CCI Settings")
-			.SetRange(5, 50);
+			.SetGreaterThanZero()
+			.SetDisplay("CCI Period", "Period for CCI", "Indicators");
 
-		_oversoldLevel = Param(nameof(OversoldLevel), -50m)
-			.SetDisplay("Oversold Level", "CCI oversold threshold", "CCI Settings")
-			.SetRange(-200m, -20m);
+		_oversoldLevel = Param(nameof(OversoldLevel), -100m)
+			.SetDisplay("Oversold Level", "CCI level below which troughs count", "Levels");
 
-		_overboughtLevel = Param(nameof(OverboughtLevel), 50m)
-			.SetDisplay("Overbought Level", "CCI overbought threshold", "CCI Settings")
-			.SetRange(20m, 200m);
+		_overboughtLevel = Param(nameof(OverboughtLevel), 100m)
+			.SetDisplay("Overbought Level", "CCI level above which peaks count", "Levels");
 
-		_cooldownBars = Param(nameof(CooldownBars), 350)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "General")
-			.SetRange(10, 2000);
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -109,10 +111,18 @@ public class CciFailureSwingStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_cci = default;
-		_prevCci = 0;
-		_prevPrevCci = 0;
-		_cooldown = 0;
+		ResetState();
+	}
+
+	private void ResetState()
+	{
+		_last = null;
+		_beforeLast = null;
+		_lastTrough = null;
+		_lastPeak = null;
+		_armedLong = null;
+		_armedShort = null;
+		_exitLevel = default;
 	}
 
 	/// <inheritdoc />
@@ -120,91 +130,99 @@ public class CciFailureSwingStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_cci = new CommodityChannelIndex { Length = CciPeriod };
+		ResetState();
+
+		var oscillator = new CommodityChannelIndex { Length = CciPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_cci, ProcessCandle)
+			.BindEx(oscillator, ProcessCandle)
 			.Start();
+
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _cci);
+			DrawIndicator(area, oscillator);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal cciValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
 	{
-		if (candle.State != CandleStates.Finished)
+		// The high-level handler activates native protection before this callback, also between signal bars.
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue value)
+	{
+		if (candle.State != CandleStates.Finished || !value.IsFormed || value.IsEmpty)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		// Need at least 2 previous CCI values
-		if (_prevCci == 0 || _prevPrevCci == 0)
+		var current = value.GetValue<decimal>();
+		if (_last is decimal last)
 		{
-			_prevPrevCci = _prevCci;
-			_prevCci = cciValue;
-			return;
-		}
-
-		if (_cooldown > 0)
-		{
-			_cooldown--;
-			_prevPrevCci = _prevCci;
-			_prevCci = cciValue;
-			return;
-		}
-
-		// Bullish Failure Swing: CCI was oversold, rose, pulled back but stayed above prior low
-		var isBullish = _prevPrevCci < OversoldLevel &&
-			_prevCci > _prevPrevCci &&
-			cciValue < _prevCci &&
-			cciValue > _prevPrevCci;
-
-		// Bearish Failure Swing: CCI was overbought, fell, bounced but stayed below prior high
-		var isBearish = _prevPrevCci > OverboughtLevel &&
-			_prevCci < _prevPrevCci &&
-			cciValue > _prevCci &&
-			cciValue < _prevPrevCci;
-
-		if (Position == 0)
-		{
-			if (isBullish)
+			// The previous value is a trough or a peak once the current one turns away from it.
+			if (_beforeLast is decimal beforeLast)
 			{
-				BuyMarket();
-				_cooldown = CooldownBars;
+				if (last < beforeLast && last < current && last < OversoldLevel)
+				{
+					_armedLong = _lastTrough is decimal trough && last > trough ? last : null;
+					_lastTrough = last;
+				}
+				else if (last > beforeLast && last > current && last > OverboughtLevel)
+				{
+					_armedShort = _lastPeak is decimal peak && last < peak ? last : null;
+					_lastPeak = last;
+				}
 			}
-			else if (isBearish)
+
+			var longTrigger = current > last;
+			var shortTrigger = current < last;
+			var armedLong = longTrigger ? _armedLong : null;
+			var armedShort = shortTrigger ? _armedShort : null;
+
+			if (longTrigger)
+				_armedLong = null;
+
+			if (shortTrigger)
+				_armedShort = null;
+
+			if (IsFormedAndOnlineAndAllowTrading())
 			{
-				SellMarket();
-				_cooldown = CooldownBars;
-			}
-		}
-		else if (Position > 0)
-		{
-			// Exit long when CCI crosses above overbought
-			if (cciValue > OverboughtLevel)
-			{
-				SellMarket();
-				_cooldown = CooldownBars;
-			}
-		}
-		else if (Position < 0)
-		{
-			// Exit short when CCI crosses below oversold
-			if (cciValue < OversoldLevel)
-			{
-				BuyMarket();
-				_cooldown = CooldownBars;
+				if (Position > 0)
+				{
+					if (current < _exitLevel)
+						SellMarket(Position);
+				}
+				else if (Position < 0)
+				{
+					if (current > _exitLevel)
+						BuyMarket(-Position);
+				}
+				else if (armedLong is decimal longSwing)
+				{
+					BuyMarket(Volume);
+					_exitLevel = longSwing;
+				}
+				else if (armedShort is decimal shortSwing)
+				{
+					SellMarket(Volume);
+					_exitLevel = shortSwing;
+				}
 			}
 		}
 
-		_prevPrevCci = _prevCci;
-		_prevCci = cciValue;
+		_beforeLast = _last;
+		_last = current;
 	}
 }
