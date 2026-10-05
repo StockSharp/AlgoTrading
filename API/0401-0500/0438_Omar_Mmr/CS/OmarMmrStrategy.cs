@@ -1,5 +1,3 @@
-namespace StockSharp.Samples.Strategies;
-
 using System;
 using System.Collections.Generic;
 
@@ -10,35 +8,127 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
+namespace StockSharp.Samples.Strategies;
+
 /// <summary>
-/// Omar MMR Strategy.
-/// Uses RSI, triple EMA alignment, and MACD signal crossover for entries.
-/// Buys when price > EMA C, EMA A > EMA B, MACD crosses above signal, RSI in range.
-/// Sells when EMA alignment reverses or MACD crosses below signal.
+/// Omar MMR strategy (long only).
+/// Buys when the close is above EMA C, EMA A is above EMA B, the MACD line crosses above its signal line and RSI is
+/// between 29 and 70. Positions are closed only by the percent take-profit and stop-loss.
 /// </summary>
 public class OmarMmrStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleTypeParam;
+	private const decimal _rsiLower = 29m;
+	private const decimal _rsiUpper = 70m;
+
 	private readonly StrategyParam<int> _rsiLength;
 	private readonly StrategyParam<int> _emaALength;
 	private readonly StrategyParam<int> _emaBLength;
 	private readonly StrategyParam<int> _emaCLength;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<int> _macdFastLength;
+	private readonly StrategyParam<int> _macdSlowLength;
+	private readonly StrategyParam<int> _macdSignalLength;
+	private readonly StrategyParam<decimal> _takeProfitPercent;
+	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private RelativeStrengthIndex _rsi;
-	private ExponentialMovingAverage _emaA;
-	private ExponentialMovingAverage _emaB;
-	private ExponentialMovingAverage _emaC;
+	private decimal? _prevMacd;
+	private decimal? _prevSignal;
 
-	private decimal _prevEmaA;
-	private decimal _prevEmaB;
-	private int _cooldownRemaining;
+	/// <summary>
+	/// RSI period.
+	/// </summary>
+	public int RsiLength
+	{
+		get => _rsiLength.Value;
+		set => _rsiLength.Value = value;
+	}
 
+	/// <summary>
+	/// EMA A period.
+	/// </summary>
+	public int EmaALength
+	{
+		get => _emaALength.Value;
+		set => _emaALength.Value = value;
+	}
+
+	/// <summary>
+	/// EMA B period.
+	/// </summary>
+	public int EmaBLength
+	{
+		get => _emaBLength.Value;
+		set => _emaBLength.Value = value;
+	}
+
+	/// <summary>
+	/// EMA C period.
+	/// </summary>
+	public int EmaCLength
+	{
+		get => _emaCLength.Value;
+		set => _emaCLength.Value = value;
+	}
+
+	/// <summary>
+	/// MACD fast EMA period.
+	/// </summary>
+	public int MacdFastLength
+	{
+		get => _macdFastLength.Value;
+		set => _macdFastLength.Value = value;
+	}
+
+	/// <summary>
+	/// MACD slow EMA period.
+	/// </summary>
+	public int MacdSlowLength
+	{
+		get => _macdSlowLength.Value;
+		set => _macdSlowLength.Value = value;
+	}
+
+	/// <summary>
+	/// MACD signal line period.
+	/// </summary>
+	public int MacdSignalLength
+	{
+		get => _macdSignalLength.Value;
+		set => _macdSignalLength.Value = value;
+	}
+
+	/// <summary>
+	/// Take-profit percentage. 0 disables it.
+	/// </summary>
+	public decimal TakeProfitPercent
+	{
+		get => _takeProfitPercent.Value;
+		set => _takeProfitPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Stop-loss percentage. 0 disables it.
+	/// </summary>
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type for strategy calculation.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
+	/// </summary>
 	public OmarMmrStrategy()
 	{
-		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
-			.SetDisplay("Candle type", "Candle type for strategy calculation.", "General");
-
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "RSI period", "RSI");
@@ -55,44 +145,28 @@ public class OmarMmrStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("EMA C Length", "Slow EMA period", "Moving Averages");
 
-		_cooldownBars = Param(nameof(CooldownBars), 15)
-			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk");
-	}
+		_macdFastLength = Param(nameof(MacdFastLength), 12)
+			.SetGreaterThanZero()
+			.SetDisplay("MACD Fast", "MACD fast EMA period", "MACD");
 
-	public DataType CandleType
-	{
-		get => _candleTypeParam.Value;
-		set => _candleTypeParam.Value = value;
-	}
+		_macdSlowLength = Param(nameof(MacdSlowLength), 26)
+			.SetGreaterThanZero()
+			.SetDisplay("MACD Slow", "MACD slow EMA period", "MACD");
 
-	public int RsiLength
-	{
-		get => _rsiLength.Value;
-		set => _rsiLength.Value = value;
-	}
+		_macdSignalLength = Param(nameof(MacdSignalLength), 9)
+			.SetGreaterThanZero()
+			.SetDisplay("MACD Signal", "MACD signal line period", "MACD");
 
-	public int EmaALength
-	{
-		get => _emaALength.Value;
-		set => _emaALength.Value = value;
-	}
+		_takeProfitPercent = Param(nameof(TakeProfitPercent), 1.5m)
+			.SetNotNegative()
+			.SetDisplay("Take Profit %", "Take-profit percentage", "Risk");
 
-	public int EmaBLength
-	{
-		get => _emaBLength.Value;
-		set => _emaBLength.Value = value;
-	}
+		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop-loss percentage", "Risk");
 
-	public int EmaCLength
-	{
-		get => _emaCLength.Value;
-		set => _emaCLength.Value = value;
-	}
-
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+			.SetDisplay("Candle type", "Candle type for strategy calculation", "General");
 	}
 
 	/// <inheritdoc />
@@ -104,13 +178,8 @@ public class OmarMmrStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_rsi = null;
-		_emaA = null;
-		_emaB = null;
-		_emaC = null;
-		_prevEmaA = 0;
-		_prevEmaB = 0;
-		_cooldownRemaining = 0;
+		_prevMacd = null;
+		_prevSignal = null;
 	}
 
 	/// <inheritdoc />
@@ -118,103 +187,91 @@ public class OmarMmrStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_rsi = new RelativeStrengthIndex { Length = RsiLength };
-		_emaA = new ExponentialMovingAverage { Length = EmaALength };
-		_emaB = new ExponentialMovingAverage { Length = EmaBLength };
-		_emaC = new ExponentialMovingAverage { Length = EmaCLength };
+		_prevMacd = null;
+		_prevSignal = null;
+
+		var rsi = new RelativeStrengthIndex { Length = RsiLength };
+		var emaA = new ExponentialMovingAverage { Length = EmaALength };
+		var emaB = new ExponentialMovingAverage { Length = EmaBLength };
+		var emaC = new ExponentialMovingAverage { Length = EmaCLength };
+		var macd = new MovingAverageConvergenceDivergenceSignal
+		{
+			Macd =
+			{
+				ShortMa = { Length = MacdFastLength },
+				LongMa = { Length = MacdSlowLength },
+			},
+			SignalMa = { Length = MacdSignalLength },
+		};
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_rsi, _emaA, _emaB, _emaC, OnProcess)
+			.BindEx(rsi, emaA, emaB, emaC, macd, ProcessCandle)
 			.Start();
+
+		StartProtection(
+			TakeProfitPercent > 0 ? new Unit(TakeProfitPercent, UnitTypes.Percent) : new Unit(),
+			StopLossPercent > 0 ? new Unit(StopLossPercent, UnitTypes.Percent) : new Unit(),
+			useMarketOrders: true);
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _emaA);
-			DrawIndicator(area, _emaB);
-			DrawIndicator(area, _emaC);
+			DrawIndicator(area, emaA);
+			DrawIndicator(area, emaB);
+			DrawIndicator(area, emaC);
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, macd);
+				DrawIndicator(oscillators, rsi);
+			}
 		}
 	}
 
-	private void OnProcess(ICandleMessage candle, decimal rsiVal, decimal emaA, decimal emaB, decimal emaC)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue rsiValue, IIndicatorValue emaAValue, IIndicatorValue emaBValue, IIndicatorValue emaCValue, IIndicatorValue macdValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_rsi.IsFormed || !_emaA.IsFormed || !_emaB.IsFormed || !_emaC.IsFormed)
-		{
-			_prevEmaA = emaA;
-			_prevEmaB = emaB;
+		if (!macdValue.IsFormed)
 			return;
-		}
+
+		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
+		if (macdTyped.Macd is not decimal macd || macdTyped.Signal is not decimal signal)
+			return;
+
+		var prevMacd = _prevMacd;
+		var prevSignal = _prevSignal;
+		_prevMacd = macd;
+		_prevSignal = signal;
+
+		if (!rsiValue.IsFormed || !emaAValue.IsFormed || !emaBValue.IsFormed || !emaCValue.IsFormed)
+			return;
+
+		if (prevMacd is not decimal lastMacd || prevSignal is not decimal lastSignal)
+			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_prevEmaA = emaA;
-			_prevEmaB = emaB;
 			return;
-		}
 
-		if (_cooldownRemaining > 0)
+		var rsi = rsiValue.ToDecimal();
+		var emaA = emaAValue.ToDecimal();
+		var emaB = emaBValue.ToDecimal();
+		var emaC = emaCValue.ToDecimal();
+
+		var macdCrossUp = lastMacd <= lastSignal && macd > signal;
+
+		if (Position == 0
+			&& candle.ClosePrice > emaC
+			&& emaA > emaB
+			&& macdCrossUp
+			&& rsi > _rsiLower && rsi < _rsiUpper)
 		{
-			_cooldownRemaining--;
-			_prevEmaA = emaA;
-			_prevEmaB = emaB;
-			return;
-		}
-
-		if (_prevEmaA == 0 || _prevEmaB == 0)
-		{
-			_prevEmaA = emaA;
-			_prevEmaB = emaB;
-			return;
-		}
-
-		// EMA alignment
-		var bullishAlignment = emaA > emaB && candle.ClosePrice > emaC;
-		var bearishAlignment = emaA < emaB && candle.ClosePrice < emaC;
-
-		// EMA A/B crossover
-		var emaCrossUp = emaA > emaB && _prevEmaA <= _prevEmaB;
-		var emaCrossDown = emaA < emaB && _prevEmaA >= _prevEmaB;
-
-		// RSI filter
-		var rsiInBuyRange = rsiVal > 30 && rsiVal < 70;
-		var rsiInSellRange = rsiVal > 30 && rsiVal < 70;
-
-		// Buy: bullish EMA alignment + EMA cross up + RSI in range
-		if (bullishAlignment && emaCrossUp && rsiInBuyRange && Position <= 0)
-		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
 			BuyMarket(Volume);
-			_cooldownRemaining = CooldownBars;
 		}
-		// Sell: bearish EMA alignment + EMA cross down + RSI in range
-		else if (bearishAlignment && emaCrossDown && rsiInSellRange && Position >= 0)
-		{
-			if (Position > 0)
-				SellMarket(Math.Abs(Position));
-			SellMarket(Volume);
-			_cooldownRemaining = CooldownBars;
-		}
-		// Exit long: EMA A crosses below EMA B
-		else if (Position > 0 && emaCrossDown)
-		{
-			SellMarket(Math.Abs(Position));
-			_cooldownRemaining = CooldownBars;
-		}
-		// Exit short: EMA A crosses above EMA B
-		else if (Position < 0 && emaCrossUp)
-		{
-			BuyMarket(Math.Abs(Position));
-			_cooldownRemaining = CooldownBars;
-		}
-
-		_prevEmaA = emaA;
-		_prevEmaB = emaB;
 	}
 }
