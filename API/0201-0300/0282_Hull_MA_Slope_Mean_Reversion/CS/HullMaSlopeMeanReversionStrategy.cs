@@ -11,25 +11,24 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Hull moving average slope mean reversion strategy.
-/// Trades reversions from extreme Hull MA slopes and exits when the slope returns to its recent average.
+/// Hull Moving Average slope mean reversion.
+/// Buys when the slope is far below its average and starts turning up, sells when it is far above
+/// and starts turning down. Exits when the slope returns to its average or the ATR stop is hit.
 /// </summary>
 public class HullMaSlopeMeanReversionStrategy : Strategy
 {
 	private readonly StrategyParam<int> _hullPeriod;
 	private readonly StrategyParam<int> _lookbackPeriod;
 	private readonly StrategyParam<decimal> _deviationMultiplier;
-	private readonly StrategyParam<decimal> _stopLossPercent;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<int> _atrPeriod;
+	private readonly StrategyParam<decimal> _atrMultiplier;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private HullMovingAverage _hullMa;
-	private decimal _prevHullValue;
-	private decimal[] _slopeHistory;
-	private int _currentIndex;
-	private int _filledCount;
-	private int _cooldown;
-	private bool _isInitialized;
+	private SimpleMovingAverage _slopeAverage;
+	private StandardDeviation _slopeStdDev;
+	private decimal? _prevHull;
+	private decimal? _prevSlope;
+	private decimal _stopPrice;
 
 	/// <summary>
 	/// Hull Moving Average period.
@@ -50,7 +49,7 @@ public class HullMaSlopeMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Deviation multiplier for mean reversion detection.
+	/// Standard deviation multiplier for extreme slope.
 	/// </summary>
 	public decimal DeviationMultiplier
 	{
@@ -59,21 +58,21 @@ public class HullMaSlopeMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop loss percentage.
+	/// ATR period for the stop.
 	/// </summary>
-	public decimal StopLossPercent
+	public int AtrPeriod
 	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
+		get => _atrPeriod.Value;
+		set => _atrPeriod.Value = value;
 	}
 
 	/// <summary>
-	/// Cooldown bars between orders.
+	/// Stop-loss distance in ATR multiples.
 	/// </summary>
-	public int CooldownBars
+	public decimal AtrMultiplier
 	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
+		get => _atrMultiplier.Value;
+		set => _atrMultiplier.Value = value;
 	}
 
 	/// <summary>
@@ -86,35 +85,32 @@ public class HullMaSlopeMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initializes a new instance of <see cref="HullMaSlopeMeanReversionStrategy"/>.
+	/// Initialize <see cref="HullMaSlopeMeanReversionStrategy"/>.
 	/// </summary>
 	public HullMaSlopeMeanReversionStrategy()
 	{
 		_hullPeriod = Param(nameof(HullPeriod), 9)
 			.SetGreaterThanZero()
-			.SetDisplay("Hull MA Period", "Hull Moving Average period", "Hull MA")
-			.SetOptimize(5, 20, 1);
+			.SetDisplay("Hull Period", "Period of Hull Moving Average", "Indicators");
 
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Lookback Period", "Lookback period for slope statistics", "Strategy Parameters")
-			.SetOptimize(10, 50, 5);
+			.SetDisplay("Lookback Period", "Period for slope statistics", "Strategy");
 
-		_deviationMultiplier = Param(nameof(DeviationMultiplier), 2m)
+		_deviationMultiplier = Param(nameof(DeviationMultiplier), 2.0m)
 			.SetGreaterThanZero()
-			.SetDisplay("Deviation Multiplier", "Deviation multiplier for mean reversion detection", "Strategy Parameters")
-			.SetOptimize(1m, 3m, 0.5m);
+			.SetDisplay("Deviation Multiplier", "Standard deviation multiplier for extreme slope", "Strategy");
 
-		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management");
+			.SetDisplay("ATR Period", "ATR period for the stop", "Risk Management");
 
-		_cooldownBars = Param(nameof(CooldownBars), 1200)
-			.SetRange(1, 5000)
-			.SetDisplay("Cooldown Bars", "Bars to wait between orders", "Risk Management");
+		_atrMultiplier = Param(nameof(AtrMultiplier), 2.0m)
+			.SetNotNegative()
+			.SetDisplay("ATR Multiplier", "Stop-loss distance in ATR multiples", "Risk Management");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Candle type for strategy", "General");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -127,13 +123,11 @@ public class HullMaSlopeMeanReversionStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_hullMa = null;
-		_prevHullValue = default;
-		_slopeHistory = new decimal[LookbackPeriod];
-		_currentIndex = default;
-		_filledCount = default;
-		_cooldown = default;
-		_isInitialized = default;
+		_slopeAverage = null;
+		_slopeStdDev = null;
+		_prevHull = null;
+		_prevSlope = null;
+		_stopPrice = 0m;
 	}
 
 	/// <inheritdoc />
@@ -141,108 +135,95 @@ public class HullMaSlopeMeanReversionStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_hullMa = new HullMovingAverage { Length = HullPeriod };
-		_slopeHistory = new decimal[LookbackPeriod];
-		_currentIndex = 0;
-		_filledCount = 0;
-		_cooldown = 0;
+		var hull = new HullMovingAverage { Length = HullPeriod };
+		var atr = new AverageTrueRange { Length = AtrPeriod };
+		_slopeAverage = new SimpleMovingAverage { Length = LookbackPeriod };
+		_slopeStdDev = new StandardDeviation { Length = LookbackPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_hullMa, ProcessCandle)
+			.Bind(hull, atr, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _hullMa);
+			DrawIndicator(area, hull);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection(new(), new Unit(StopLossPercent, UnitTypes.Percent));
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal hullValue)
+	private void ProcessCandle(ICandleMessage candle, decimal hullValue, decimal atrValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_hullMa.IsFormed)
-			return;
-
-		if (!_isInitialized)
+		if (_prevHull is not decimal prevHull)
 		{
-			_prevHullValue = hullValue;
-			_isInitialized = true;
+			_prevHull = hullValue;
 			return;
 		}
 
-		if (_prevHullValue == 0)
+		_prevHull = hullValue;
+
+		var slope = hullValue - prevHull;
+		var avgSlope = _slopeAverage.Process(slope, candle.ServerTime, true).ToDecimal();
+		var stdSlope = _slopeStdDev.Process(slope, candle.ServerTime, true).ToDecimal();
+
+		var prevSlope = _prevSlope;
+		_prevSlope = slope;
+
+		if (!_slopeAverage.IsFormed || !_slopeStdDev.IsFormed || prevSlope is not decimal prev)
 			return;
-
-		var slope = (hullValue - _prevHullValue) / _prevHullValue * 100m;
-		_prevHullValue = hullValue;
-
-		_slopeHistory[_currentIndex] = slope;
-		_currentIndex = (_currentIndex + 1) % LookbackPeriod;
-
-		if (_filledCount < LookbackPeriod)
-			_filledCount++;
-
-		if (_filledCount < LookbackPeriod)
-			return;
-
-		var avgSlope = 0m;
-		var sumSq = 0m;
-
-		for (var i = 0; i < LookbackPeriod; i++)
-			avgSlope += _slopeHistory[i];
-
-		avgSlope /= LookbackPeriod;
-
-		for (var i = 0; i < LookbackPeriod; i++)
-		{
-			var diff = _slopeHistory[i] - avgSlope;
-			sumSq += diff * diff;
-		}
-
-		var stdSlope = (decimal)Math.Sqrt((double)(sumSq / LookbackPeriod));
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (_cooldown > 0)
-		{
-			_cooldown--;
+		if (CheckStop(candle))
 			return;
+
+		var close = candle.ClosePrice;
+		var stopDistance = AtrMultiplier * atrValue;
+
+		// Extreme reading that has started to turn back toward the average.
+		if (slope < avgSlope - DeviationMultiplier * stdSlope && slope > prev && Position <= 0)
+		{
+			BuyMarket(Volume + Math.Abs(Position));
+			_stopPrice = stopDistance > 0 ? close - stopDistance : 0m;
+		}
+		else if (slope > avgSlope + DeviationMultiplier * stdSlope && slope < prev && Position >= 0)
+		{
+			SellMarket(Volume + Math.Abs(Position));
+			_stopPrice = stopDistance > 0 ? close + stopDistance : 0m;
+		}
+		else if ((Position > 0 && slope >= avgSlope) || (Position < 0 && slope <= avgSlope))
+		{
+			ExitPosition();
+		}
+	}
+
+	private bool CheckStop(ICandleMessage candle)
+	{
+		if (_stopPrice == 0m)
+			return false;
+
+		if ((Position > 0 && candle.LowPrice <= _stopPrice) || (Position < 0 && candle.HighPrice >= _stopPrice))
+		{
+			ExitPosition();
+			return true;
 		}
 
-		var highThreshold = avgSlope + stdSlope * DeviationMultiplier;
-		var lowThreshold = avgSlope - stdSlope * DeviationMultiplier;
+		return false;
+	}
 
-		if (Position == 0)
-		{
-			if (slope < lowThreshold)
-			{
-				BuyMarket();
-				_cooldown = CooldownBars;
-			}
-			else if (slope > highThreshold)
-			{
-				SellMarket();
-				_cooldown = CooldownBars;
-			}
-		}
-		else if (Position > 0 && slope >= avgSlope)
-		{
-			SellMarket(Math.Abs(Position));
-			_cooldown = CooldownBars;
-		}
-		else if (Position < 0 && slope <= avgSlope)
-		{
-			BuyMarket(Math.Abs(Position));
-			_cooldown = CooldownBars;
-		}
+	private void ExitPosition()
+	{
+		if (Position > 0)
+			SellMarket(Position);
+		else if (Position < 0)
+			BuyMarket(-Position);
+
+		_stopPrice = 0m;
 	}
 }

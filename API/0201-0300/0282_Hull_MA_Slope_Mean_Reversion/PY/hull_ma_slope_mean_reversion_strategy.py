@@ -5,16 +5,18 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-import math
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
-from StockSharp.Algo.Indicators import HullMovingAverage
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import HullMovingAverage, AverageTrueRange, SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
+
 
 class hull_ma_slope_mean_reversion_strategy(Strategy):
     """
-    Hull moving average slope mean reversion strategy.
-    Trades reversions from extreme Hull MA slopes and exits when the slope returns to its recent average.
+    Hull Moving Average slope mean reversion.
+    Buys when the slope is far below its average and starts turning up, sells when it is far above
+    and starts turning down. Exits when the slope returns to its average or the ATR stop is hit.
     """
 
     def __init__(self):
@@ -22,137 +24,125 @@ class hull_ma_slope_mean_reversion_strategy(Strategy):
 
         self._hull_period = self.Param("HullPeriod", 9) \
             .SetGreaterThanZero() \
-            .SetDisplay("Hull MA Period", "Hull Moving Average period", "Hull MA")
-
+            .SetDisplay("Hull Period", "Period of Hull Moving Average", "Indicators")
         self._lookback_period = self.Param("LookbackPeriod", 20) \
             .SetGreaterThanZero() \
-            .SetDisplay("Lookback Period", "Lookback period for slope statistics", "Strategy Parameters")
-
+            .SetDisplay("Lookback Period", "Period for slope statistics", "Strategy")
         self._deviation_multiplier = self.Param("DeviationMultiplier", 2.0) \
             .SetGreaterThanZero() \
-            .SetDisplay("Deviation Multiplier", "Deviation multiplier for mean reversion detection", "Strategy Parameters")
-
-        self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
+            .SetDisplay("Deviation Multiplier", "Standard deviation multiplier for extreme slope", "Strategy")
+        self._atr_period = self.Param("AtrPeriod", 14) \
             .SetGreaterThanZero() \
-            .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
-
-        self._cooldown_bars = self.Param("CooldownBars", 1200) \
-            .SetDisplay("Cooldown Bars", "Bars to wait between orders", "Risk Management")
-
+            .SetDisplay("ATR Period", "ATR period for the stop", "Risk Management")
+        self._atr_multiplier = self.Param("AtrMultiplier", 2.0) \
+            .SetNotNegative() \
+            .SetDisplay("ATR Multiplier", "Stop-loss distance in ATR multiples", "Risk Management")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
-            .SetDisplay("Candle Type", "Candle type for strategy", "General")
+            .SetDisplay("Candle Type", "Type of candles to use", "General")
 
-        self._hull_ma = None
-        self._prev_hull_value = 0.0
-        self._slope_history = None
-        self._current_index = 0
-        self._filled_count = 0
-        self._cooldown = 0
-        self._is_initialized = False
+        self._slope_average = None
+        self._slope_std_dev = None
+        self._prev_hull = None
+        self._prev_slope = None
+        self._stop_price = 0.0
 
     @property
-    def candle_type(self):
+    def CandleType(self):
         return self._candle_type.Value
+
+    def GetWorkingSecurities(self):
+        return [(self.Security, self.CandleType)]
 
     def OnReseted(self):
         super(hull_ma_slope_mean_reversion_strategy, self).OnReseted()
-        self._hull_ma = None
-        self._prev_hull_value = 0.0
-        lb = int(self._lookback_period.Value)
-        self._slope_history = [0.0] * lb
-        self._current_index = 0
-        self._filled_count = 0
-        self._cooldown = 0
-        self._is_initialized = False
+        self._slope_average = None
+        self._slope_std_dev = None
+        self._prev_hull = None
+        self._prev_slope = None
+        self._stop_price = 0.0
 
     def OnStarted2(self, time):
         super(hull_ma_slope_mean_reversion_strategy, self).OnStarted2(time)
 
-        lb = int(self._lookback_period.Value)
-        self._slope_history = [0.0] * lb
-        self._current_index = 0
-        self._filled_count = 0
-        self._cooldown = 0
+        hull = HullMovingAverage()
+        hull.Length = self._hull_period.Value
+        atr = AverageTrueRange()
+        atr.Length = self._atr_period.Value
+        self._slope_average = SimpleMovingAverage()
+        self._slope_average.Length = self._lookback_period.Value
+        self._slope_std_dev = StandardDeviation()
+        self._slope_std_dev.Length = self._lookback_period.Value
 
-        self._hull_ma = HullMovingAverage()
-        self._hull_ma.Length = int(self._hull_period.Value)
-
-        subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(self._hull_ma, self._process_candle).Start()
+        subscription = self.SubscribeCandles(self.CandleType)
+        subscription.Bind(hull, atr, self._process_candle).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, self._hull_ma)
+            self.DrawIndicator(area, hull)
             self.DrawOwnTrades(area)
 
-        self.StartProtection(Unit(), Unit(self._stop_loss_percent.Value, UnitTypes.Percent))
-
-    def _process_candle(self, candle, hull_value):
+    def _process_candle(self, candle, hull_value, atr_value):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self._hull_ma.IsFormed:
+        hull_value = float(hull_value)
+        atr_value = float(atr_value)
+
+        if self._prev_hull is None:
+            self._prev_hull = hull_value
             return
 
-        hv = float(hull_value)
+        slope = hull_value - self._prev_hull
+        self._prev_hull = hull_value
 
-        if not self._is_initialized:
-            self._prev_hull_value = hv
-            self._is_initialized = True
+        avg_slope = float(process_float(self._slope_average, slope, candle.ServerTime, True))
+        std_slope = float(process_float(self._slope_std_dev, slope, candle.ServerTime, True))
+
+        prev = self._prev_slope
+        self._prev_slope = slope
+
+        if not self._slope_average.IsFormed or not self._slope_std_dev.IsFormed or prev is None:
             return
-
-        if self._prev_hull_value == 0:
-            return
-
-        slope = (hv - self._prev_hull_value) / self._prev_hull_value * 100.0
-        self._prev_hull_value = hv
-
-        lb = int(self._lookback_period.Value)
-        self._slope_history[self._current_index] = slope
-        self._current_index = (self._current_index + 1) % lb
-
-        if self._filled_count < lb:
-            self._filled_count += 1
-
-        if self._filled_count < lb:
-            return
-
-        avg_slope = 0.0
-        for i in range(lb):
-            avg_slope += self._slope_history[i]
-        avg_slope /= float(lb)
-
-        sum_sq = 0.0
-        for i in range(lb):
-            diff = self._slope_history[i] - avg_slope
-            sum_sq += diff * diff
-        std_slope = math.sqrt(sum_sq / float(lb))
 
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        if self._cooldown > 0:
-            self._cooldown -= 1
+        if self._check_stop(candle):
             return
 
-        dm = float(self._deviation_multiplier.Value)
-        high_threshold = avg_slope + std_slope * dm
-        low_threshold = avg_slope - std_slope * dm
+        close = float(candle.ClosePrice)
+        k = float(self._deviation_multiplier.Value)
+        stop_distance = float(self._atr_multiplier.Value) * atr_value
 
-        if self.Position == 0:
-            if slope < low_threshold:
-                self.BuyMarket()
-                self._cooldown = int(self._cooldown_bars.Value)
-            elif slope > high_threshold:
-                self.SellMarket()
-                self._cooldown = int(self._cooldown_bars.Value)
-        elif self.Position > 0 and slope >= avg_slope:
-            self.SellMarket(Math.Abs(self.Position))
-            self._cooldown = int(self._cooldown_bars.Value)
-        elif self.Position < 0 and slope <= avg_slope:
-            self.BuyMarket(Math.Abs(self.Position))
-            self._cooldown = int(self._cooldown_bars.Value)
+        # Extreme reading that has started to turn back toward the average.
+        if slope < avg_slope - k * std_slope and slope > prev and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+            self._stop_price = close - stop_distance if stop_distance > 0 else 0.0
+        elif slope > avg_slope + k * std_slope and slope < prev and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
+            self._stop_price = close + stop_distance if stop_distance > 0 else 0.0
+        elif (self.Position > 0 and slope >= avg_slope) or (self.Position < 0 and slope <= avg_slope):
+            self._exit_position()
+
+    def _check_stop(self, candle):
+        if self._stop_price == 0.0:
+            return False
+
+        if (self.Position > 0 and float(candle.LowPrice) <= self._stop_price) or \
+                (self.Position < 0 and float(candle.HighPrice) >= self._stop_price):
+            self._exit_position()
+            return True
+
+        return False
+
+    def _exit_position(self):
+        if self.Position > 0:
+            self.SellMarket(self.Position)
+        elif self.Position < 0:
+            self.BuyMarket(-self.Position)
+
+        self._stop_price = 0.0
 
     def CreateClone(self):
         return hull_ma_slope_mean_reversion_strategy()
