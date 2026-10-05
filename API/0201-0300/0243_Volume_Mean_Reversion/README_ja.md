@@ -20,9 +20,10 @@
 - **ストップ**: あり、パーセントストップロス。
 - **デフォルト値**:
   - `AveragePeriod` = 20
-  - `DeviationMultiplier` = 2m
+  - `DeviationMultiplier` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
-  - `StopLossPercent` = 2m
+  - `StopLossPercent` = 2
+    AvgとStdDevは現在値を含む直近AveragePeriod個の出来高の平均と標準偏差です。MAは直近AveragePeriod本の終値の単純移動平均です。 ストップはエントリー価格の固定StopLossPercentで、ローソク足の間も監視されます。0で無効になります。 保有ポジションと逆方向のエントリーシグナルはドテンになります。
 - **フィルター**:
   - カテゴリ: 平均回帰
   - 方向: 両方

@@ -9912,6 +9912,79 @@ public abstract partial class StrategyTests
 	public Task S0242_PercentStopWorksBetweenFinishedBars()
 		=> CheckPercentStopBetweenBars("0242_Volatility_Mean_Reversion", TimeSpan.FromDays(31));
 
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(20, 2.0, false)]
+	[DataRow(30, 1.0, true)]
+	public async Task S0243_VolumeBeyondItsDeviationBandsAgainstTheAverageUntilItsMean(int period, double multiplier, bool secondary)
+	{
+		
+		var sma = new SimpleMovingAverage { Length = period };
+		var values = new Queue<decimal>();
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var meanExits = 0;
+		var violations = new List<string>();
+		await Replay("0243_Volume_Mean_Reversion", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+
+			AreEqual(20, strategy.Parameters["AveragePeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["DeviationMultiplier"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+
+			SetParam(strategy, "AveragePeriod", period);
+			SetParam(strategy, "DeviationMultiplier", multiplier);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				// The strategy is not called while a bound value is empty.
+				var m = sma.Process(candle);
+				if (m.IsEmpty) return;
+				var x = candle.TotalVolume;
+				values.Enqueue(x);
+				if (values.Count > period) values.Dequeue();
+				if (values.Count < period) return;
+				if (!m.IsFormed) return;
+				var average = m.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var mean = values.Average();
+				var deviation = (decimal)Math.Sqrt((double)values.Average(v => (v - mean) * (v - mean)));
+				var upper = mean + (decimal)multiplier * deviation;
+				var lower = mean - (decimal)multiplier * deviation;
+				var position = strategy.Position;
+				if (x < lower && close < average && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (x > upper && close > average && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && x > mean) { expectedSide = Sides.Sell; expectedVolume = position; meanExits++; }
+				else if (position < 0m && x < mean) { expectedSide = Sides.Buy; expectedVolume = -position; meanExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow the indicator beyond a deviation band around its average, or close once it is back at the average.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] + entries[Sides.Sell] > 0 && meanExits > 0, "The fixture must trade and exit at the average.");
+		// The lower band of a skewed series sits below zero by default, so only the narrower fixture reaches it.
+		if (secondary) IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "The narrower fixture must trade both sides.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0243_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0243_Volume_Mean_Reversion", TimeSpan.FromDays(31));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

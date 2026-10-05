@@ -20,9 +20,10 @@ Die Strategie eignet sich für Trader, die auf Erschöpfung nach Volumenspitzen 
 - **Stops**: Ja, prozentualer Stop-Loss.
 - **Standardwerte**:
   - `AveragePeriod` = 20
-  - `DeviationMultiplier` = 2m
+  - `DeviationMultiplier` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
-  - `StopLossPercent` = 2m
+  - `StopLossPercent` = 2
+    Avg und StdDev sind Mittelwert und Standardabweichung der letzten AveragePeriod Werte von Volumen einschließlich des aktuellen, MA ist der einfache gleitende Durchschnitt der letzten AveragePeriod Schlusskurse. Der Stop liegt bei festen StopLossPercent vom Einstiegspreis und wird auch zwischen den Kerzen überwacht; 0 schaltet ihn ab. Ein Einstiegssignal gegen eine offene Position dreht sie.
 - **Filter**:
   - Kategorie: Mean Reversion
   - Richtung: Beide

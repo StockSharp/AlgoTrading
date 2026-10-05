@@ -20,9 +20,10 @@
 - **Стопы**: да, процентный стоп‑лосс.
 - **Значения по умолчанию**:
   - `AveragePeriod` = 20
-  - `DeviationMultiplier` = 2m
+  - `DeviationMultiplier` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
-  - `StopLossPercent` = 2m
+  - `StopLossPercent` = 2
+    Avg и StdDev — среднее и стандартное отклонение последних AveragePeriod значений объёма, включая текущее, MA — простая скользящая средняя последних AveragePeriod цен закрытия. Стоп — фиксированный StopLossPercent от цены входа, он отслеживается и между свечами; 0 отключает его. Сигнал на вход против открытой позиции разворачивает её.
 - **Фильтры**:
   - Категория: Mean Reversion
   - Направление: оба
