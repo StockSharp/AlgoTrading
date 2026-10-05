@@ -3291,6 +3291,79 @@ public abstract partial class StrategyTests
 	public Task S0114_ShortOnlyBodyGapAbandonedBabiesWithStopAboveTheDoji(double stopPercent, bool secondary)
 		=> CheckAbandonedBaby("0114_Bearish_Abandoned_Baby", false, stopPercent, secondary);
 
+	private const string VolumeClimax = "0115_Volume_Climax_Reversal";
+
+	[TestMethod]
+	[TestCategory("Shard02")]
+	[DataRow(20, 2.0, false)]
+	[DataRow(10, 1.5, true)]
+	public async Task S0115_RetracementsAfterTrendClimaxesWithContinuationAndVolumeExits(int period, double multiplier, bool secondary)
+	{
+		var sma = new SimpleMovingAverage { Length = period };
+		var volumes = new List<decimal>();
+		var climax = 0;
+		var climaxExtreme = 0m;
+		var exitLevel = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var exits = 0;
+		var violations = new List<string>();
+		await Replay(VolumeClimax, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["MaPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["VolumeMultiplier"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "MaPeriod", period);
+			SetParam(strategy, "VolumeMultiplier", multiplier);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				decimal? average = volumes.Count == period ? volumes.Average() : null;
+				volumes.Add(candle.TotalVolume);
+				if (volumes.Count > period) volumes.RemoveAt(0);
+				var previousClimax = climax;
+				var previousExtreme = climaxExtreme;
+				climax = 0;
+				var m = sma.Process(candle);
+				if (average is not decimal avg || !m.IsFormed) return;
+				var ma = m.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var spike = candle.TotalVolume > avg * (decimal)multiplier;
+				if (spike && close > candle.OpenPrice && close > ma) { climax = 1; climaxExtreme = candle.HighPrice; }
+				else if (spike && close < candle.OpenPrice && close < ma) { climax = -1; climaxExtreme = candle.LowPrice; }
+				var position = strategy.Position;
+				if (position < 0m && (close > exitLevel || spike)) { expectedSide = Sides.Buy; expectedVolume = -position; exits++; }
+				else if (position > 0m && (close < exitLevel || spike)) { expectedSide = Sides.Sell; expectedVolume = position; exits++; }
+				else if (position == 0m && previousClimax == 1 && close < candle.OpenPrice) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume; exitLevel = previousExtreme; entries[Sides.Sell]++; }
+				else if (position == 0m && previousClimax == -1 && close > candle.OpenPrice) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume; exitLevel = previousExtreme; entries[Sides.Buy]++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must fade the retracement after a trend climax while flat, or close the position on continuation past the climax or a new volume spike.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] + entries[Sides.Sell] > 1 && exits > 0, "The fixture must fade climaxes and exit.");
+		if (secondary) IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "TON must fade climaxes on both sides.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard02")]
+	public Task S0115_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars(VolumeClimax, TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15), setup: (s, _) => SetParam(s, "VolumeMultiplier", 1.2m));
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";

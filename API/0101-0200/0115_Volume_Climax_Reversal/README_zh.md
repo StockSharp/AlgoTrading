@@ -16,7 +16,10 @@
 - **止损**：是，按百分比
 - **默认值**:
   - `CandleType` = 15分钟
-  - `StopLoss` = 2%
+  - `MaPeriod` = 20
+  - `VolumeMultiplier` = 2
+  - `StopLossPercent` = 2
+    高潮K线是顺势收盘（阳线在 MaPeriod 周期SMA上方，阴线在其下方）、且成交量超过前 MaPeriod 根K线平均成交量 VolumeMultiplier 倍的K线。下一根反向收盘的K线开始逆势交易。当收盘价越过高潮K线极值、成交量再次放大或触及百分比止损时平仓。
 - **过滤器**:
   - 类别：成交量
   - 方向：双向
