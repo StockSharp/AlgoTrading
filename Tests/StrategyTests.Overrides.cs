@@ -2260,6 +2260,83 @@ public abstract partial class StrategyTests
 	public Task S0084_PercentStopWorksBetweenFinishedBars()
 		=> CheckPercentStopBetweenBars(AtrExhaustion, TimeSpan.FromDays(31));
 
+	private const string TenkanKijun = "0085_Ichimoku_Tenkan";
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(9, 26, 52, false)]
+	[DataRow(5, 13, 26, true)]
+	public async Task S0085_TenkanKijunCrossesBeyondTheCloudWithKijunStops(int tenkanPeriod, int kijunPeriod, int spanPeriod, bool secondary)
+	{
+		var ichimoku = new Ichimoku
+		{
+			Tenkan = { Length = tenkanPeriod },
+			Kijun = { Length = kijunPeriod },
+			SenkouB = { Length = spanPeriod },
+		};
+		bool? tenkanAbove = null;
+		var stop = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var crossExits = 0;
+		var stopExits = 0;
+		var violations = new List<string>();
+		await Replay(TenkanKijun, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(9, strategy.Parameters["TenkanPeriod"].Value);
+			AreEqual(26, strategy.Parameters["KijunPeriod"].Value);
+			AreEqual(52, strategy.Parameters["SenkouSpanBPeriod"].Value);
+			AreEqual(TimeSpan.FromMinutes(30).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "TenkanPeriod", tenkanPeriod);
+			SetParam(strategy, "KijunPeriod", kijunPeriod);
+			SetParam(strategy, "SenkouSpanBPeriod", spanPeriod);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				if (ichimoku.Process(candle) is not IIchimokuValue { Tenkan: decimal tenkan, Kijun: decimal kijun, SenkouA: decimal a, SenkouB: decimal b }) return;
+				var before = tenkanAbove;
+				if (tenkan != kijun) tenkanAbove = tenkan > kijun;
+				if (before is not bool wasAbove) return;
+				var up = !wasAbove && tenkan > kijun;
+				var down = wasAbove && tenkan < kijun;
+				var close = candle.ClosePrice;
+				var top = Math.Max(a, b);
+				var bottom = Math.Min(a, b);
+				var position = strategy.Position;
+				void Enter(Sides side, decimal volume) { expectedSide = side; expectedVolume = volume; stop = kijun; entries[side]++; }
+				if (position > 0m)
+				{
+					if (down && close < bottom) Enter(Sides.Sell, strategy.Volume + position);
+					else if (down || close <= stop) { expectedSide = Sides.Sell; expectedVolume = position; if (down) crossExits++; else stopExits++; }
+				}
+				else if (position < 0m)
+				{
+					if (up && close > top) Enter(Sides.Buy, strategy.Volume - position);
+					else if (up || close >= stop) { expectedSide = Sides.Buy; expectedVolume = -position; if (up) crossExits++; else stopExits++; }
+				}
+				else if (up && close > top) Enter(Sides.Buy, strategy.Volume);
+				else if (down && close < bottom) Enter(Sides.Sell, strategy.Volume);
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a Tenkan/Kijun cross beyond the cloud, or close the position on the opposite cross or at the Kijun stop.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] + entries[Sides.Sell] > 1, "The fixture must trade crosses beyond the cloud.");
+		IsTrue(crossExits + stopExits > 0, "The fixture must close positions.");
+	}
+
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";
 	private const string Cci = "0019_CCI_Breakout";
