@@ -3,7 +3,6 @@ using System.Collections.Generic;
 
 using Ecng.Common;
 
-using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -12,26 +11,25 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Breakout strategy that trades in the direction of a rising or falling adaptive moving average when price extends beyond an ATR buffer.
+/// Adaptive EMA (Kaufman) breakout with trend confirmation.
+/// Buys when price closes above a rising adaptive EMA and sells when it closes below a falling one.
+/// Positions are reversed on the opposite signal and protected by an ATR-multiple stop.
 /// </summary>
 public class AdaptiveEmaBreakoutStrategy : Strategy
 {
+	private const int _atrPeriod = 14;
+
 	private readonly StrategyParam<int> _fast;
 	private readonly StrategyParam<int> _slow;
 	private readonly StrategyParam<int> _lookback;
-	private readonly StrategyParam<decimal> _breakoutAtrMultiplier;
-	private readonly StrategyParam<decimal> _stopLossPercent;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopMultiplier;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private KaufmanAdaptiveMovingAverage _adaptiveEma;
-	private AverageTrueRange _atr;
-	private decimal _previousAdaptiveEmaValue;
-	private bool _isInitialized;
-	private int _cooldown;
+	private decimal? _prevAdaptiveEma;
+	private decimal _stopPrice;
 
 	/// <summary>
-	/// Fast period for KAMA smoothing.
+	/// Fast smoothing period of the adaptive EMA.
 	/// </summary>
 	public int Fast
 	{
@@ -40,7 +38,7 @@ public class AdaptiveEmaBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Slow period for KAMA smoothing.
+	/// Slow smoothing period of the adaptive EMA.
 	/// </summary>
 	public int Slow
 	{
@@ -49,7 +47,7 @@ public class AdaptiveEmaBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Main lookback period for KAMA.
+	/// Efficiency ratio lookback of the adaptive EMA.
 	/// </summary>
 	public int Lookback
 	{
@@ -58,30 +56,12 @@ public class AdaptiveEmaBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Minimum ATR multiple required above or below KAMA for entry.
+	/// Stop-loss distance in ATR multiples.
 	/// </summary>
-	public decimal BreakoutAtrMultiplier
+	public decimal StopMultiplier
 	{
-		get => _breakoutAtrMultiplier.Value;
-		set => _breakoutAtrMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss percentage.
-	/// </summary>
-	public decimal StopLossPercent
-	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Bars to wait after each order.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
+		get => _stopMultiplier.Value;
+		set => _stopMultiplier.Value = value;
 	}
 
 	/// <summary>
@@ -94,55 +74,42 @@ public class AdaptiveEmaBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initializes strategy parameters.
+	/// Initialize <see cref="AdaptiveEmaBreakoutStrategy"/>.
 	/// </summary>
 	public AdaptiveEmaBreakoutStrategy()
 	{
 		_fast = Param(nameof(Fast), 2)
-			.SetRange(1, 20)
-			.SetDisplay("Fast Period", "Fast period for KAMA smoothing", "KAMA");
+			.SetGreaterThanZero()
+			.SetDisplay("Fast Period", "Fast smoothing period of the adaptive EMA", "Indicators");
 
 		_slow = Param(nameof(Slow), 30)
-			.SetRange(5, 100)
-			.SetDisplay("Slow Period", "Slow period for KAMA smoothing", "KAMA");
+			.SetGreaterThanZero()
+			.SetDisplay("Slow Period", "Slow smoothing period of the adaptive EMA", "Indicators");
 
 		_lookback = Param(nameof(Lookback), 10)
-			.SetRange(2, 100)
-			.SetDisplay("Lookback", "Main lookback period for KAMA", "KAMA");
+			.SetGreaterThanZero()
+			.SetDisplay("Lookback", "Efficiency ratio lookback of the adaptive EMA", "Indicators");
 
-		_breakoutAtrMultiplier = Param(nameof(BreakoutAtrMultiplier), 0.75m)
-			.SetRange(0.1m, 5m)
-			.SetDisplay("Breakout ATR", "ATR multiple required for entry", "Signals");
-
-		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-			.SetRange(0.5m, 10m)
-			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
-
-		_cooldownBars = Param(nameof(CooldownBars), 72)
-			.SetRange(1, 500)
-			.SetDisplay("Cooldown Bars", "Bars to wait after each order", "Risk");
+		_stopMultiplier = Param(nameof(StopMultiplier), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Multiplier", "Stop-loss distance in ATR multiples", "Risk Management");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles for the strategy", "General");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		if (Security != null)
-			yield return (Security, CandleType);
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_adaptiveEma = null;
-		_atr = null;
-		_previousAdaptiveEmaValue = 0m;
-		_isInitialized = false;
-		_cooldown = 0;
+		_prevAdaptiveEma = null;
+		_stopPrice = 0m;
 	}
 
 	/// <inheritdoc />
@@ -150,35 +117,26 @@ public class AdaptiveEmaBreakoutStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		if (Security == null)
-			throw new InvalidOperationException("Security is not specified.");
-
-		_adaptiveEma = new KaufmanAdaptiveMovingAverage
+		var adaptiveEma = new KaufmanAdaptiveMovingAverage
 		{
 			Length = Lookback,
 			FastSCPeriod = Fast,
 			SlowSCPeriod = Slow,
 		};
-		_atr = new AverageTrueRange { Length = 14 };
-		_cooldown = 0;
-		_isInitialized = false;
+		var atr = new AverageTrueRange { Length = _atrPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-
 		subscription
-			.Bind(_adaptiveEma, _atr, ProcessCandle)
+			.Bind(adaptiveEma, atr, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
-
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _adaptiveEma);
+			DrawIndicator(area, adaptiveEma);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection(new Unit(0, UnitTypes.Absolute), new Unit(StopLossPercent, UnitTypes.Percent), false);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal adaptiveEmaValue, decimal atrValue)
@@ -186,61 +144,49 @@ public class AdaptiveEmaBreakoutStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_adaptiveEma.IsFormed || !_atr.IsFormed)
+		var prevAdaptiveEma = _prevAdaptiveEma;
+		_prevAdaptiveEma = adaptiveEmaValue;
+
+		if (prevAdaptiveEma is not decimal prev)
 			return;
 
-		if (ProcessState != ProcessStates.Started)
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (!_isInitialized)
-		{
-			_previousAdaptiveEmaValue = adaptiveEmaValue;
-			_isInitialized = true;
+		if (CheckStop(candle))
 			return;
+
+		var close = candle.ClosePrice;
+		var stopDistance = StopMultiplier * atrValue;
+
+		if (close > adaptiveEmaValue && adaptiveEmaValue > prev && Position <= 0)
+		{
+			BuyMarket(Volume + Math.Abs(Position));
+			_stopPrice = stopDistance > 0 ? close - stopDistance : 0m;
+		}
+		else if (close < adaptiveEmaValue && adaptiveEmaValue < prev && Position >= 0)
+		{
+			SellMarket(Volume + Math.Abs(Position));
+			_stopPrice = stopDistance > 0 ? close + stopDistance : 0m;
+		}
+	}
+
+	private bool CheckStop(ICandleMessage candle)
+	{
+		if (_stopPrice == 0m)
+			return false;
+
+		if ((Position > 0 && candle.LowPrice <= _stopPrice) || (Position < 0 && candle.HighPrice >= _stopPrice))
+		{
+			if (Position > 0)
+				SellMarket(Position);
+			else
+				BuyMarket(-Position);
+
+			_stopPrice = 0m;
+			return true;
 		}
 
-		if (_cooldown > 0)
-		{
-			_cooldown--;
-			_previousAdaptiveEmaValue = adaptiveEmaValue;
-			return;
-		}
-
-		var isTrendUp = adaptiveEmaValue > _previousAdaptiveEmaValue;
-		var isTrendDown = adaptiveEmaValue < _previousAdaptiveEmaValue;
-		var breakoutDistance = candle.ClosePrice - adaptiveEmaValue;
-		var requiredDistance = atrValue * BreakoutAtrMultiplier;
-
-		if (Position == 0)
-		{
-			if (isTrendUp && breakoutDistance >= requiredDistance)
-			{
-				BuyMarket();
-				_cooldown = CooldownBars;
-			}
-			else if (isTrendDown && breakoutDistance <= -requiredDistance)
-			{
-				SellMarket();
-				_cooldown = CooldownBars;
-			}
-		}
-		else if (Position > 0)
-		{
-			if (candle.ClosePrice <= adaptiveEmaValue || isTrendDown)
-			{
-				SellMarket(Math.Abs(Position));
-				_cooldown = CooldownBars;
-			}
-		}
-		else if (Position < 0)
-		{
-			if (candle.ClosePrice >= adaptiveEmaValue || isTrendUp)
-			{
-				BuyMarket(Math.Abs(Position));
-				_cooldown = CooldownBars;
-			}
-		}
-
-		_previousAdaptiveEmaValue = adaptiveEmaValue;
+		return false;
 	}
 }
