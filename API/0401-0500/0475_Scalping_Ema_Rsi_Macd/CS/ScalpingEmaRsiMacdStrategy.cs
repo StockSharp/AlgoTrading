@@ -11,10 +11,11 @@ using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 /// <summary>
-/// 30-minute scalping strategy based on EMA crossover with RSI, MACD and ATR filter.
-/// Buys on bullish EMA cross in uptrend with RSI/MACD confirmation.
-/// Sells on bearish EMA cross in downtrend with RSI/MACD confirmation.
-/// Uses ATR-based stop-loss and take-profit exits.
+/// Scalping EMA RSI MACD Strategy.
+/// A long opens when the fast EMA crosses above the slow EMA with the close above the trend EMA, RSI between RsiOversold and
+/// RsiOverbought, the MACD line above its signal and volume above VolumeThreshold times its VolumeMaLength average; a short
+/// mirrors this. The stop is AtrMultiplier ATRs from the entry and the target RiskReward times that distance. An opposite
+/// signal reverses the position.
 /// </summary>
 public class ScalpingEmaRsiMacdStrategy : Strategy
 {
@@ -22,68 +23,220 @@ public class ScalpingEmaRsiMacdStrategy : Strategy
 	private readonly StrategyParam<int> _slowEmaLength;
 	private readonly StrategyParam<int> _trendEmaLength;
 	private readonly StrategyParam<int> _rsiLength;
-	private readonly StrategyParam<int> _rsiOverbought;
-	private readonly StrategyParam<int> _rsiOversold;
+	private readonly StrategyParam<decimal> _rsiOverbought;
+	private readonly StrategyParam<decimal> _rsiOversold;
+	private readonly StrategyParam<int> _macdFast;
+	private readonly StrategyParam<int> _macdSlow;
+	private readonly StrategyParam<int> _macdSignal;
 	private readonly StrategyParam<int> _atrLength;
 	private readonly StrategyParam<decimal> _atrMultiplier;
 	private readonly StrategyParam<decimal> _riskReward;
+	private readonly StrategyParam<int> _volumeMaLength;
+	private readonly StrategyParam<decimal> _volumeThreshold;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
 
-	private decimal _prevFastEma;
-	private decimal _prevSlowEma;
-	private decimal _prevMacd;
-	private decimal _stopPrice;
-	private decimal _takeProfitPrice;
-	private decimal _entryPrice;
-	private int _cooldownRemaining;
+	private SimpleMovingAverage _volumeMa;
+	private decimal? _prevFast;
+	private decimal? _prevSlow;
+	private decimal? _stopPrice;
+	private decimal? _targetPrice;
 
-	public int FastEmaLength { get => _fastEmaLength.Value; set => _fastEmaLength.Value = value; }
-	public int SlowEmaLength { get => _slowEmaLength.Value; set => _slowEmaLength.Value = value; }
-	public int TrendEmaLength { get => _trendEmaLength.Value; set => _trendEmaLength.Value = value; }
-	public int RsiLength { get => _rsiLength.Value; set => _rsiLength.Value = value; }
-	public int RsiOverbought { get => _rsiOverbought.Value; set => _rsiOverbought.Value = value; }
-	public int RsiOversold { get => _rsiOversold.Value; set => _rsiOversold.Value = value; }
-	public int AtrLength { get => _atrLength.Value; set => _atrLength.Value = value; }
-	public decimal AtrMultiplier { get => _atrMultiplier.Value; set => _atrMultiplier.Value = value; }
-	public decimal RiskReward { get => _riskReward.Value; set => _riskReward.Value = value; }
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
+	/// <summary>
+	/// Fast EMA period.
+	/// </summary>
+	public int FastEmaLength
+	{
+		get => _fastEmaLength.Value;
+		set => _fastEmaLength.Value = value;
+	}
 
+	/// <summary>
+	/// Slow EMA period.
+	/// </summary>
+	public int SlowEmaLength
+	{
+		get => _slowEmaLength.Value;
+		set => _slowEmaLength.Value = value;
+	}
+
+	/// <summary>
+	/// Trend EMA period.
+	/// </summary>
+	public int TrendEmaLength
+	{
+		get => _trendEmaLength.Value;
+		set => _trendEmaLength.Value = value;
+	}
+
+	/// <summary>
+	/// RSI period.
+	/// </summary>
+	public int RsiLength
+	{
+		get => _rsiLength.Value;
+		set => _rsiLength.Value = value;
+	}
+
+	/// <summary>
+	/// Upper RSI bound for entries.
+	/// </summary>
+	public decimal RsiOverbought
+	{
+		get => _rsiOverbought.Value;
+		set => _rsiOverbought.Value = value;
+	}
+
+	/// <summary>
+	/// Lower RSI bound for entries.
+	/// </summary>
+	public decimal RsiOversold
+	{
+		get => _rsiOversold.Value;
+		set => _rsiOversold.Value = value;
+	}
+
+	/// <summary>
+	/// MACD fast EMA period.
+	/// </summary>
+	public int MacdFast
+	{
+		get => _macdFast.Value;
+		set => _macdFast.Value = value;
+	}
+
+	/// <summary>
+	/// MACD slow EMA period.
+	/// </summary>
+	public int MacdSlow
+	{
+		get => _macdSlow.Value;
+		set => _macdSlow.Value = value;
+	}
+
+	/// <summary>
+	/// MACD signal line period.
+	/// </summary>
+	public int MacdSignal
+	{
+		get => _macdSignal.Value;
+		set => _macdSignal.Value = value;
+	}
+
+	/// <summary>
+	/// ATR period.
+	/// </summary>
+	public int AtrLength
+	{
+		get => _atrLength.Value;
+		set => _atrLength.Value = value;
+	}
+
+	/// <summary>
+	/// ATR multiplier of the stop distance.
+	/// </summary>
+	public decimal AtrMultiplier
+	{
+		get => _atrMultiplier.Value;
+		set => _atrMultiplier.Value = value;
+	}
+
+	/// <summary>
+	/// Target distance as a multiple of the stop distance.
+	/// </summary>
+	public decimal RiskReward
+	{
+		get => _riskReward.Value;
+		set => _riskReward.Value = value;
+	}
+
+	/// <summary>
+	/// Period of the volume average.
+	/// </summary>
+	public int VolumeMaLength
+	{
+		get => _volumeMaLength.Value;
+		set => _volumeMaLength.Value = value;
+	}
+
+	/// <summary>
+	/// Volume multiple of its average required for entries.
+	/// </summary>
+	public decimal VolumeThreshold
+	{
+		get => _volumeThreshold.Value;
+		set => _volumeThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
+	/// </summary>
 	public ScalpingEmaRsiMacdStrategy()
 	{
 		_fastEmaLength = Param(nameof(FastEmaLength), 12)
-			.SetDisplay("Fast EMA Length", "Length for fast EMA", "Indicators");
+			.SetGreaterThanZero()
+			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
 
 		_slowEmaLength = Param(nameof(SlowEmaLength), 26)
-			.SetDisplay("Slow EMA Length", "Length for slow EMA", "Indicators");
+			.SetGreaterThanZero()
+			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
 		_trendEmaLength = Param(nameof(TrendEmaLength), 55)
-			.SetDisplay("Trend EMA Length", "Length for trend EMA", "Indicators");
+			.SetGreaterThanZero()
+			.SetDisplay("Trend EMA", "Trend EMA period", "Indicators");
 
 		_rsiLength = Param(nameof(RsiLength), 14)
-			.SetDisplay("RSI Length", "Length for RSI", "Indicators");
+			.SetGreaterThanZero()
+			.SetDisplay("RSI Length", "RSI period", "Indicators");
 
-		_rsiOverbought = Param(nameof(RsiOverbought), 65)
-			.SetDisplay("RSI Overbought", "Upper RSI bound", "Indicators");
+		_rsiOverbought = Param(nameof(RsiOverbought), 65m)
+			.SetDisplay("RSI Overbought", "Upper RSI bound for entries", "Indicators");
 
-		_rsiOversold = Param(nameof(RsiOversold), 35)
-			.SetDisplay("RSI Oversold", "Lower RSI bound", "Indicators");
+		_rsiOversold = Param(nameof(RsiOversold), 35m)
+			.SetDisplay("RSI Oversold", "Lower RSI bound for entries", "Indicators");
+
+		_macdFast = Param(nameof(MacdFast), 12)
+			.SetGreaterThanZero()
+			.SetDisplay("MACD Fast", "MACD fast EMA period", "MACD");
+
+		_macdSlow = Param(nameof(MacdSlow), 26)
+			.SetGreaterThanZero()
+			.SetDisplay("MACD Slow", "MACD slow EMA period", "MACD");
+
+		_macdSignal = Param(nameof(MacdSignal), 9)
+			.SetGreaterThanZero()
+			.SetDisplay("MACD Signal", "MACD signal line period", "MACD");
 
 		_atrLength = Param(nameof(AtrLength), 14)
-			.SetDisplay("ATR Length", "Length for ATR", "Indicators");
+			.SetGreaterThanZero()
+			.SetDisplay("ATR Length", "ATR period", "Risk");
 
-		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
-			.SetDisplay("ATR Multiplier", "Multiplier for stop-loss", "Risk");
+		_atrMultiplier = Param(nameof(AtrMultiplier), 2.0m)
+			.SetGreaterThanZero()
+			.SetDisplay("ATR Multiplier", "ATR multiplier of the stop distance", "Risk");
 
-		_riskReward = Param(nameof(RiskReward), 2m)
-			.SetDisplay("Risk Reward", "Take profit multiplier", "Risk");
+		_riskReward = Param(nameof(RiskReward), 2.0m)
+			.SetGreaterThanZero()
+			.SetDisplay("Risk Reward", "Target distance as a multiple of the stop distance", "Risk");
+
+		_volumeMaLength = Param(nameof(VolumeMaLength), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("Volume MA Length", "Period of the volume average", "Volume");
+
+		_volumeThreshold = Param(nameof(VolumeThreshold), 1.3m)
+			.SetGreaterThanZero()
+			.SetDisplay("Volume Threshold", "Volume multiple of its average required for entries", "Volume");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
-
-		_cooldownBars = Param(nameof(CooldownBars), 10)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "Risk");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -94,14 +247,15 @@ public class ScalpingEmaRsiMacdStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		ResetState();
+	}
 
-		_prevFastEma = 0;
-		_prevSlowEma = 0;
-		_prevMacd = 0;
-		_stopPrice = 0;
-		_takeProfitPrice = 0;
-		_entryPrice = 0;
-		_cooldownRemaining = 0;
+	private void ResetState()
+	{
+		_prevFast = null;
+		_prevSlow = null;
+		_stopPrice = null;
+		_targetPrice = null;
 	}
 
 	/// <inheritdoc />
@@ -109,18 +263,27 @@ public class ScalpingEmaRsiMacdStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
+		ResetState();
+
 		var fastEma = new ExponentialMovingAverage { Length = FastEmaLength };
 		var slowEma = new ExponentialMovingAverage { Length = SlowEmaLength };
 		var trendEma = new ExponentialMovingAverage { Length = TrendEmaLength };
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
-		var macd = new MovingAverageConvergenceDivergence();
-		macd.ShortMa.Length = FastEmaLength;
-		macd.LongMa.Length = SlowEmaLength;
+		var macd = new MovingAverageConvergenceDivergenceSignal
+		{
+			Macd =
+			{
+				ShortMa = { Length = MacdFast },
+				LongMa = { Length = MacdSlow },
+			},
+			SignalMa = { Length = MacdSignal },
+		};
 		var atr = new AverageTrueRange { Length = AtrLength };
+		_volumeMa = new SimpleMovingAverage { Length = VolumeMaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(fastEma, slowEma, trendEma, rsi, macd, atr, ProcessCandle)
+			.BindEx(fastEma, slowEma, trendEma, rsi, macd, atr, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -129,103 +292,84 @@ public class ScalpingEmaRsiMacdStrategy : Strategy
 			DrawCandles(area, subscription);
 			DrawIndicator(area, fastEma);
 			DrawIndicator(area, slowEma);
+			DrawIndicator(area, trendEma);
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+				DrawIndicator(oscillators, macd);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fastEma, decimal slowEma, decimal trendEma, decimal rsi, decimal macd, decimal atr)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue fastValue, IIndicatorValue slowValue, IIndicatorValue trendValue, IIndicatorValue rsiValue, IIndicatorValue macdValue, IIndicatorValue atrValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		var volumeAverage = _volumeMa.Process(candle.TotalVolume, candle.OpenTime, true).ToDecimal();
+
+		if (!fastValue.IsFormed || !slowValue.IsFormed)
+			return;
+
+		var fast = fastValue.GetValue<decimal>();
+		var slow = slowValue.GetValue<decimal>();
+		var prevFast = _prevFast;
+		var prevSlow = _prevSlow;
+		_prevFast = fast;
+		_prevSlow = slow;
+
 		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		// Protective exits are checked first: the stop or the target of the open position.
+		if (Position > 0 && ((_stopPrice is decimal longStop && candle.LowPrice <= longStop) || (_targetPrice is decimal longTarget && candle.HighPrice >= longTarget)))
 		{
-			_prevFastEma = fastEma;
-			_prevSlowEma = slowEma;
-			_prevMacd = macd;
+			SellMarket(Position);
+			_stopPrice = null;
+			_targetPrice = null;
 			return;
 		}
 
+		if (Position < 0 && ((_stopPrice is decimal shortStop && candle.HighPrice >= shortStop) || (_targetPrice is decimal shortTarget && candle.LowPrice <= shortTarget)))
+		{
+			BuyMarket(-Position);
+			_stopPrice = null;
+			_targetPrice = null;
+			return;
+		}
+
+		if (prevFast is not decimal pf || prevSlow is not decimal ps || !_volumeMa.IsFormed)
+			return;
+
+		if (!trendValue.IsFormed || !rsiValue.IsFormed || !atrValue.IsFormed || !macdValue.IsFormed)
+			return;
+
+		if (macdValue is not IMovingAverageConvergenceDivergenceSignalValue { Macd: decimal macdLine, Signal: decimal signalLine })
+			return;
+
+		var trend = trendValue.GetValue<decimal>();
+		var rsi = rsiValue.GetValue<decimal>();
+		var atr = atrValue.GetValue<decimal>();
 		var close = candle.ClosePrice;
 
-		// Check stop-loss and take-profit exits first
-		if (Position > 0 && _stopPrice > 0)
+		var rsiInBounds = rsi > RsiOversold && rsi < RsiOverbought;
+		var highVolume = candle.TotalVolume > volumeAverage * VolumeThreshold;
+		var stopDistance = atr * AtrMultiplier;
+
+		var longSignal = pf <= ps && fast > slow && close > trend && rsiInBounds && macdLine > signalLine && highVolume;
+		var shortSignal = pf >= ps && fast < slow && close < trend && rsiInBounds && macdLine < signalLine && highVolume;
+
+		if (longSignal && Position <= 0)
 		{
-			if (candle.LowPrice <= _stopPrice || candle.HighPrice >= _takeProfitPrice)
-			{
-				SellMarket(Math.Abs(Position));
-				_stopPrice = 0;
-				_takeProfitPrice = 0;
-				_cooldownRemaining = CooldownBars;
-				_prevFastEma = fastEma;
-				_prevSlowEma = slowEma;
-				_prevMacd = macd;
-				return;
-			}
+			BuyMarket(Volume + Math.Abs(Position));
+			_stopPrice = close - stopDistance;
+			_targetPrice = close + stopDistance * RiskReward;
 		}
-		else if (Position < 0 && _stopPrice > 0)
+		else if (shortSignal && Position >= 0)
 		{
-			if (candle.HighPrice >= _stopPrice || candle.LowPrice <= _takeProfitPrice)
-			{
-				BuyMarket(Math.Abs(Position));
-				_stopPrice = 0;
-				_takeProfitPrice = 0;
-				_cooldownRemaining = CooldownBars;
-				_prevFastEma = fastEma;
-				_prevSlowEma = slowEma;
-				_prevMacd = macd;
-				return;
-			}
+			SellMarket(Volume + Math.Abs(Position));
+			_stopPrice = close + stopDistance;
+			_targetPrice = close - stopDistance * RiskReward;
 		}
-
-		if (_cooldownRemaining > 0)
-		{
-			_cooldownRemaining--;
-			_prevFastEma = fastEma;
-			_prevSlowEma = slowEma;
-			_prevMacd = macd;
-			return;
-		}
-
-		// Trend detection
-		var upTrend = close > trendEma && fastEma > slowEma;
-		var downTrend = close < trendEma && fastEma < slowEma;
-
-		// EMA crossover detection
-		var bullCross = _prevFastEma > 0 && _prevFastEma <= _prevSlowEma && fastEma > slowEma;
-		var bearCross = _prevFastEma > 0 && _prevFastEma >= _prevSlowEma && fastEma < slowEma;
-
-		// MACD momentum
-		var macdRising = macd > _prevMacd;
-		var macdFalling = macd < _prevMacd;
-
-		// Entry conditions
-		var longCondition = bullCross && upTrend && rsi > 40m && rsi < RsiOverbought && macdRising;
-		var shortCondition = bearCross && downTrend && rsi < 60m && rsi > RsiOversold && macdFalling;
-
-		if (longCondition && Position <= 0)
-		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-			BuyMarket(Volume);
-			_entryPrice = close;
-			_stopPrice = close - atr * AtrMultiplier;
-			_takeProfitPrice = close + (close - _stopPrice) * RiskReward;
-			_cooldownRemaining = CooldownBars;
-		}
-		else if (shortCondition && Position >= 0)
-		{
-			if (Position > 0)
-				SellMarket(Math.Abs(Position));
-			SellMarket(Volume);
-			_entryPrice = close;
-			_stopPrice = close + atr * AtrMultiplier;
-			_takeProfitPrice = close - (_stopPrice - close) * RiskReward;
-			_cooldownRemaining = CooldownBars;
-		}
-
-		_prevFastEma = fastEma;
-		_prevSlowEma = slowEma;
-		_prevMacd = macd;
 	}
 }

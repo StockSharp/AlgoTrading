@@ -5,177 +5,159 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan, Math
+from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import (ExponentialMovingAverage, RelativeStrengthIndex,
-                                         MovingAverageConvergenceDivergence, AverageTrueRange)
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, RelativeStrengthIndex, MovingAverageConvergenceDivergenceSignal, AverageTrueRange, SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 
 class scalping_ema_rsi_macd_strategy(Strategy):
-    """Scalping EMA RSI MACD Strategy."""
+    """
+    Scalping EMA RSI MACD Strategy.
+    A long opens when the fast EMA crosses above the slow EMA with the close above the trend EMA, RSI between RsiOversold and
+    RsiOverbought, the MACD line above its signal and volume above VolumeThreshold times its VolumeMaLength average; a short
+    mirrors this. The stop is AtrMultiplier ATRs from the entry and the target RiskReward times that distance. An opposite
+    signal reverses the position.
+    """
 
     def __init__(self):
         super(scalping_ema_rsi_macd_strategy, self).__init__()
-
-        self._fast_ema_length = self.Param("FastEmaLength", 12) \
-            .SetDisplay("Fast EMA Length", "Length for fast EMA", "Indicators")
-        self._slow_ema_length = self.Param("SlowEmaLength", 26) \
-            .SetDisplay("Slow EMA Length", "Length for slow EMA", "Indicators")
-        self._trend_ema_length = self.Param("TrendEmaLength", 55) \
-            .SetDisplay("Trend EMA Length", "Length for trend EMA", "Indicators")
-        self._rsi_length = self.Param("RsiLength", 14) \
-            .SetDisplay("RSI Length", "Length for RSI", "Indicators")
-        self._rsi_overbought = self.Param("RsiOverbought", 65) \
-            .SetDisplay("RSI Overbought", "Upper RSI bound", "Indicators")
-        self._rsi_oversold = self.Param("RsiOversold", 35) \
-            .SetDisplay("RSI Oversold", "Lower RSI bound", "Indicators")
-        self._atr_length = self.Param("AtrLength", 14) \
-            .SetDisplay("ATR Length", "Length for ATR", "Indicators")
-        self._atr_multiplier = self.Param("AtrMultiplier", 2.0) \
-            .SetDisplay("ATR Multiplier", "Multiplier for stop-loss", "Risk")
-        self._risk_reward = self.Param("RiskReward", 2.0) \
-            .SetDisplay("Risk Reward", "Take profit multiplier", "Risk")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
-            .SetDisplay("Candle Type", "Type of candles", "General")
-        self._cooldown_bars = self.Param("CooldownBars", 10) \
-            .SetDisplay("Cooldown Bars", "Bars between trades", "Risk")
-
-        self._prev_fast_ema = 0.0
-        self._prev_slow_ema = 0.0
-        self._prev_macd = 0.0
-        self._stop_price = 0.0
-        self._take_profit_price = 0.0
-        self._entry_price = 0.0
-        self._cooldown_remaining = 0
+        self._fast_ema_length = self.Param("FastEmaLength", 12).SetGreaterThanZero().SetDisplay("Fast EMA", "Fast EMA period", "Indicators")
+        self._slow_ema_length = self.Param("SlowEmaLength", 26).SetGreaterThanZero().SetDisplay("Slow EMA", "Slow EMA period", "Indicators")
+        self._trend_ema_length = self.Param("TrendEmaLength", 55).SetGreaterThanZero().SetDisplay("Trend EMA", "Trend EMA period", "Indicators")
+        self._rsi_length = self.Param("RsiLength", 14).SetGreaterThanZero().SetDisplay("RSI Length", "RSI period", "Indicators")
+        self._rsi_overbought = self.Param("RsiOverbought", 65.0).SetDisplay("RSI Overbought", "Upper RSI bound for entries", "Indicators")
+        self._rsi_oversold = self.Param("RsiOversold", 35.0).SetDisplay("RSI Oversold", "Lower RSI bound for entries", "Indicators")
+        self._macd_fast = self.Param("MacdFast", 12).SetGreaterThanZero().SetDisplay("MACD Fast", "MACD fast EMA period", "MACD")
+        self._macd_slow = self.Param("MacdSlow", 26).SetGreaterThanZero().SetDisplay("MACD Slow", "MACD slow EMA period", "MACD")
+        self._macd_signal = self.Param("MacdSignal", 9).SetGreaterThanZero().SetDisplay("MACD Signal", "MACD signal line period", "MACD")
+        self._atr_length = self.Param("AtrLength", 14).SetGreaterThanZero().SetDisplay("ATR Length", "ATR period", "Risk")
+        self._atr_multiplier = self.Param("AtrMultiplier", 2.0).SetGreaterThanZero().SetDisplay("ATR Multiplier", "ATR multiplier of the stop distance", "Risk")
+        self._risk_reward = self.Param("RiskReward", 2.0).SetGreaterThanZero().SetDisplay("Risk Reward", "Target distance as a multiple of the stop distance", "Risk")
+        self._volume_ma_length = self.Param("VolumeMaLength", 20).SetGreaterThanZero().SetDisplay("Volume MA Length", "Period of the volume average", "Volume")
+        self._volume_threshold = self.Param("VolumeThreshold", 1.3).SetGreaterThanZero().SetDisplay("Volume Threshold", "Volume multiple of its average required for entries", "Volume")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._volume_ma = None
+        self._reset_state()
 
     @property
     def candle_type(self):
         return self._candle_type.Value
 
+    def _reset_state(self):
+        self._prev_fast = None
+        self._prev_slow = None
+        self._stop_price = None
+        self._target_price = None
+
     def OnReseted(self):
         super(scalping_ema_rsi_macd_strategy, self).OnReseted()
-        self._prev_fast_ema = 0.0
-        self._prev_slow_ema = 0.0
-        self._prev_macd = 0.0
-        self._stop_price = 0.0
-        self._take_profit_price = 0.0
-        self._entry_price = 0.0
-        self._cooldown_remaining = 0
+        self._reset_state()
 
     def OnStarted2(self, time):
         super(scalping_ema_rsi_macd_strategy, self).OnStarted2(time)
 
+        self._reset_state()
+
         fast_ema = ExponentialMovingAverage()
-        fast_ema.Length = int(self._fast_ema_length.Value)
+        fast_ema.Length = self._fast_ema_length.Value
         slow_ema = ExponentialMovingAverage()
-        slow_ema.Length = int(self._slow_ema_length.Value)
+        slow_ema.Length = self._slow_ema_length.Value
         trend_ema = ExponentialMovingAverage()
-        trend_ema.Length = int(self._trend_ema_length.Value)
+        trend_ema.Length = self._trend_ema_length.Value
         rsi = RelativeStrengthIndex()
-        rsi.Length = int(self._rsi_length.Value)
-        macd = MovingAverageConvergenceDivergence()
-        macd.ShortMa.Length = int(self._fast_ema_length.Value)
-        macd.LongMa.Length = int(self._slow_ema_length.Value)
+        rsi.Length = self._rsi_length.Value
+        macd = MovingAverageConvergenceDivergenceSignal()
+        macd.Macd.ShortMa.Length = self._macd_fast.Value
+        macd.Macd.LongMa.Length = self._macd_slow.Value
+        macd.SignalMa.Length = self._macd_signal.Value
         atr = AverageTrueRange()
-        atr.Length = int(self._atr_length.Value)
+        atr.Length = self._atr_length.Value
+        self._volume_ma = SimpleMovingAverage()
+        self._volume_ma.Length = self._volume_ma_length.Value
 
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(fast_ema, slow_ema, trend_ema, rsi, macd, atr, self._on_process).Start()
+        subscription.BindEx(fast_ema, slow_ema, trend_ema, rsi, macd, atr, self._process_candle).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
             self.DrawIndicator(area, fast_ema)
             self.DrawIndicator(area, slow_ema)
+            self.DrawIndicator(area, trend_ema)
             self.DrawOwnTrades(area)
+            oscillators = self.CreateChartArea()
+            if oscillators is not None:
+                self.DrawIndicator(oscillators, macd)
 
-    def _on_process(self, candle, fast_ema, slow_ema, trend_ema, rsi, macd, atr):
+    def _process_candle(self, candle, fast_value, slow_value, trend_value, rsi_value, macd_value, atr_value):
         if candle.State != CandleStates.Finished:
             return
 
+        volume_average = float(process_float(self._volume_ma, candle.TotalVolume, candle.OpenTime, True).GetValue[Decimal](None))
+
+        if not fast_value.IsFormed or not slow_value.IsFormed:
+            return
+
+        fast = float(fast_value.GetValue[Decimal](None))
+        slow = float(slow_value.GetValue[Decimal](None))
+        prev_fast = self._prev_fast
+        prev_slow = self._prev_slow
+        self._prev_fast = fast
+        self._prev_slow = slow
+
         if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_fast_ema = float(fast_ema)
-            self._prev_slow_ema = float(slow_ema)
-            self._prev_macd = float(macd)
             return
 
+        high = float(candle.HighPrice)
+        low = float(candle.LowPrice)
+
+        # Protective exits are checked first: the stop or the target of the open position.
+        if self.Position > 0 and ((self._stop_price is not None and low <= self._stop_price) or (self._target_price is not None and high >= self._target_price)):
+            self.SellMarket(self.Position)
+            self._stop_price = None
+            self._target_price = None
+            return
+
+        if self.Position < 0 and ((self._stop_price is not None and high >= self._stop_price) or (self._target_price is not None and low <= self._target_price)):
+            self.BuyMarket(-self.Position)
+            self._stop_price = None
+            self._target_price = None
+            return
+
+        if prev_fast is None or prev_slow is None or not self._volume_ma.IsFormed:
+            return
+
+        if not trend_value.IsFormed or not rsi_value.IsFormed or not atr_value.IsFormed or not macd_value.IsFormed:
+            return
+
+        if macd_value.Macd is None or macd_value.Signal is None:
+            return
+
+        macd_line = float(macd_value.Macd)
+        signal_line = float(macd_value.Signal)
+        trend = float(trend_value.GetValue[Decimal](None))
+        rsi = float(rsi_value.GetValue[Decimal](None))
+        atr = float(atr_value.GetValue[Decimal](None))
         close = float(candle.ClosePrice)
-        fast_v = float(fast_ema)
-        slow_v = float(slow_ema)
-        trend_v = float(trend_ema)
-        rsi_v = float(rsi)
-        macd_v = float(macd)
-        atr_v = float(atr)
-        cooldown = int(self._cooldown_bars.Value)
 
-        # Check stop-loss and take-profit exits first
-        if self.Position > 0 and self._stop_price > 0:
-            if float(candle.LowPrice) <= self._stop_price or float(candle.HighPrice) >= self._take_profit_price:
-                self.SellMarket(Math.Abs(self.Position))
-                self._stop_price = 0.0
-                self._take_profit_price = 0.0
-                self._cooldown_remaining = cooldown
-                self._prev_fast_ema = fast_v
-                self._prev_slow_ema = slow_v
-                self._prev_macd = macd_v
-                return
-        elif self.Position < 0 and self._stop_price > 0:
-            if float(candle.HighPrice) >= self._stop_price or float(candle.LowPrice) <= self._take_profit_price:
-                self.BuyMarket(Math.Abs(self.Position))
-                self._stop_price = 0.0
-                self._take_profit_price = 0.0
-                self._cooldown_remaining = cooldown
-                self._prev_fast_ema = fast_v
-                self._prev_slow_ema = slow_v
-                self._prev_macd = macd_v
-                return
+        rsi_in_bounds = float(self._rsi_oversold.Value) < rsi < float(self._rsi_overbought.Value)
+        high_volume = float(candle.TotalVolume) > volume_average * float(self._volume_threshold.Value)
+        stop_distance = atr * float(self._atr_multiplier.Value)
+        risk_reward = float(self._risk_reward.Value)
 
-        if self._cooldown_remaining > 0:
-            self._cooldown_remaining -= 1
-            self._prev_fast_ema = fast_v
-            self._prev_slow_ema = slow_v
-            self._prev_macd = macd_v
-            return
+        long_signal = prev_fast <= prev_slow and fast > slow and close > trend and rsi_in_bounds and macd_line > signal_line and high_volume
+        short_signal = prev_fast >= prev_slow and fast < slow and close < trend and rsi_in_bounds and macd_line < signal_line and high_volume
 
-        up_trend = close > trend_v and fast_v > slow_v
-        down_trend = close < trend_v and fast_v < slow_v
-
-        bull_cross = self._prev_fast_ema > 0 and self._prev_fast_ema <= self._prev_slow_ema and fast_v > slow_v
-        bear_cross = self._prev_fast_ema > 0 and self._prev_fast_ema >= self._prev_slow_ema and fast_v < slow_v
-
-        macd_rising = macd_v > self._prev_macd
-        macd_falling = macd_v < self._prev_macd
-
-        rsi_ob = float(self._rsi_overbought.Value)
-        rsi_os = float(self._rsi_oversold.Value)
-
-        long_condition = bull_cross and up_trend and rsi_v > 40 and rsi_v < rsi_ob and macd_rising
-        short_condition = bear_cross and down_trend and rsi_v < 60 and rsi_v > rsi_os and macd_falling
-
-        atr_mult = float(self._atr_multiplier.Value)
-        rr = float(self._risk_reward.Value)
-
-        if long_condition and self.Position <= 0:
-            if self.Position < 0:
-                self.BuyMarket(Math.Abs(self.Position))
-            self.BuyMarket(self.Volume)
-            self._entry_price = close
-            self._stop_price = close - atr_v * atr_mult
-            self._take_profit_price = close + (close - self._stop_price) * rr
-            self._cooldown_remaining = cooldown
-        elif short_condition and self.Position >= 0:
-            if self.Position > 0:
-                self.SellMarket(Math.Abs(self.Position))
-            self.SellMarket(self.Volume)
-            self._entry_price = close
-            self._stop_price = close + atr_v * atr_mult
-            self._take_profit_price = close - (self._stop_price - close) * rr
-            self._cooldown_remaining = cooldown
-
-        self._prev_fast_ema = fast_v
-        self._prev_slow_ema = slow_v
-        self._prev_macd = macd_v
+        if long_signal and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+            self._stop_price = close - stop_distance
+            self._target_price = close + stop_distance * risk_reward
+        elif short_signal and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
+            self._stop_price = close + stop_distance
+            self._target_price = close - stop_distance * risk_reward
 
     def CreateClone(self):
         return scalping_ema_rsi_macd_strategy()
