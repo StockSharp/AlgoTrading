@@ -1,124 +1,194 @@
-
 using System;
 using System.Collections.Generic;
 
 using Ecng.Common;
+
+using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-using StockSharp.Algo.Indicators;
 
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// LANZ Strategy 5.0 - trades with EMA filter and consecutive candles.
+/// LANZ Strategy 5.0.
+/// Three consecutive bullish candles closing above the EmaPeriod EMA go long; with EnableSell, three bearish candles below it go short,
+/// reversing an opposite position. Entries are allowed only between StartHour and EndHour (UTC, the window may cross midnight), at most
+/// MaxTrades per day and at least MinDistancePips price steps away from the previous entry. A fixed stop and target in price steps protect
+/// each position, and any open position is closed once the window ends.
 /// </summary>
 public class Lanz50Strategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _emaPeriod;
 	private readonly StrategyParam<int> _maxTrades;
-	private readonly StrategyParam<decimal> _minDistance;
+	private readonly StrategyParam<decimal> _minDistancePips;
 	private readonly StrategyParam<decimal> _stopLossPips;
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<int> _startHour;
-	private readonly StrategyParam<int> _startMinute;
 	private readonly StrategyParam<int> _endHour;
-	private readonly StrategyParam<int> _endMinute;
 	private readonly StrategyParam<bool> _enableBuy;
 	private readonly StrategyParam<bool> _enableSell;
-	private readonly StrategyParam<int> _maxEntriesOverall;
+	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal? _lastEntryPrice;
-	private int _dailyCounter;
-	private DateTime _lastDay;
-	private decimal _pipSize;
-	private ICandleMessage _prev1;
-	private ICandleMessage _prev2;
-	private bool _hadPosition;
-	private int _entriesOverall;
-	private readonly TimeZoneInfo _nyZone = TimeZoneInfo.FindSystemTimeZoneById("America/New_York");
+	private int _dailyTrades;
+	private DateTime _currentDay;
+	private int _bullishCount;
+	private int _bearishCount;
 
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-	public int EmaPeriod { get => _emaPeriod.Value; set => _emaPeriod.Value = value; }
-	public int MaxTrades { get => _maxTrades.Value; set => _maxTrades.Value = value; }
-	public decimal MinDistancePips { get => _minDistance.Value; set => _minDistance.Value = value; }
-	public decimal StopLossPips { get => _stopLossPips.Value; set => _stopLossPips.Value = value; }
-	public decimal TakeProfitPips { get => _takeProfitPips.Value; set => _takeProfitPips.Value = value; }
-	public int StartHour { get => _startHour.Value; set => _startHour.Value = value; }
-	public int StartMinute { get => _startMinute.Value; set => _startMinute.Value = value; }
-	public int EndHour { get => _endHour.Value; set => _endHour.Value = value; }
-	public int EndMinute { get => _endMinute.Value; set => _endMinute.Value = value; }
-	public bool EnableBuy { get => _enableBuy.Value; set => _enableBuy.Value = value; }
-	public bool EnableSell { get => _enableSell.Value; set => _enableSell.Value = value; }
-	public int MaxEntriesOverall { get => _maxEntriesOverall.Value; set => _maxEntriesOverall.Value = value; }
+	/// <summary>
+	/// EMA trend filter period.
+	/// </summary>
+	public int EmaPeriod
+	{
+		get => _emaPeriod.Value;
+		set => _emaPeriod.Value = value;
+	}
 
+	/// <summary>
+	/// Maximum entries per day.
+	/// </summary>
+	public int MaxTrades
+	{
+		get => _maxTrades.Value;
+		set => _maxTrades.Value = value;
+	}
+
+	/// <summary>
+	/// Minimum distance from the previous entry in price steps.
+	/// </summary>
+	public decimal MinDistancePips
+	{
+		get => _minDistancePips.Value;
+		set => _minDistancePips.Value = value;
+	}
+
+	/// <summary>
+	/// Stop loss in price steps.
+	/// </summary>
+	public decimal StopLossPips
+	{
+		get => _stopLossPips.Value;
+		set => _stopLossPips.Value = value;
+	}
+
+	/// <summary>
+	/// Take profit in price steps.
+	/// </summary>
+	public decimal TakeProfitPips
+	{
+		get => _takeProfitPips.Value;
+		set => _takeProfitPips.Value = value;
+	}
+
+	/// <summary>
+	/// Hour (UTC) the trading window opens.
+	/// </summary>
+	public int StartHour
+	{
+		get => _startHour.Value;
+		set => _startHour.Value = value;
+	}
+
+	/// <summary>
+	/// Hour (UTC) the trading window closes and positions are closed.
+	/// </summary>
+	public int EndHour
+	{
+		get => _endHour.Value;
+		set => _endHour.Value = value;
+	}
+
+	/// <summary>
+	/// Allow long entries.
+	/// </summary>
+	public bool EnableBuy
+	{
+		get => _enableBuy.Value;
+		set => _enableBuy.Value = value;
+	}
+
+	/// <summary>
+	/// Allow short entries.
+	/// </summary>
+	public bool EnableSell
+	{
+		get => _enableSell.Value;
+		set => _enableSell.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Initialize <see cref="Lanz50Strategy"/>.
+	/// </summary>
 	public Lanz50Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
 		_emaPeriod = Param(nameof(EmaPeriod), 200)
 			.SetGreaterThanZero()
-			.SetDisplay("EMA Period", "EMA filter period", "Indicators")
-			;
+			.SetDisplay("EMA Period", "EMA trend filter period", "Indicators");
 
 		_maxTrades = Param(nameof(MaxTrades), 99)
-			.SetDisplay("Max Trades", "Maximum trades per day", "Risk")
-			.SetRange(1, 99);
+			.SetGreaterThanZero()
+			.SetDisplay("Max Trades", "Maximum entries per day", "Risk");
 
-		_minDistance = Param(nameof(MinDistancePips), 25m)
-			.SetDisplay("Min Distance", "Minimum distance between entries in pips", "Risk")
-			.SetNotNegative();
+		_minDistancePips = Param(nameof(MinDistancePips), 25m)
+			.SetNotNegative()
+			.SetDisplay("Min Distance", "Minimum distance from the previous entry in price steps", "Risk");
 
 		_stopLossPips = Param(nameof(StopLossPips), 40m)
-			.SetDisplay("Stop Loss (pips)", "Stop loss distance in pips", "Risk")
-			.SetNotNegative();
+			.SetNotNegative()
+			.SetDisplay("Stop Loss", "Stop loss in price steps", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 120m)
-			.SetDisplay("Take Profit (pips)", "Take profit distance in pips", "Risk")
-			.SetNotNegative();
+			.SetNotNegative()
+			.SetDisplay("Take Profit", "Take profit in price steps", "Risk");
 
 		_startHour = Param(nameof(StartHour), 19)
-			.SetDisplay("Start Hour", "Operational start hour NY time", "Time");
-
-		_startMinute = Param(nameof(StartMinute), 0)
-			.SetDisplay("Start Minute", "Operational start minute NY time", "Time");
+			.SetRange(0, 23)
+			.SetDisplay("Start Hour", "Hour (UTC) the trading window opens", "Time");
 
 		_endHour = Param(nameof(EndHour), 15)
-			.SetDisplay("End Hour", "Operational end hour NY time", "Time");
-
-		_endMinute = Param(nameof(EndMinute), 0)
-			.SetDisplay("End Minute", "Operational end minute NY time", "Time");
+			.SetRange(0, 23)
+			.SetDisplay("End Hour", "Hour (UTC) the trading window closes and positions are closed", "Time");
 
 		_enableBuy = Param(nameof(EnableBuy), true)
-			.SetDisplay("Enable Buy", "Allow long trades", "Mode");
+			.SetDisplay("Enable Buy", "Allow long entries", "Mode");
 
 		_enableSell = Param(nameof(EnableSell), false)
-			.SetDisplay("Enable Sell", "Allow short trades", "Mode");
+			.SetDisplay("Enable Sell", "Allow short entries", "Mode");
 
-		_maxEntriesOverall = Param(nameof(MaxEntriesOverall), 45)
-			.SetDisplay("Max Entries Overall", "Maximum entries per run", "Risk")
-			.SetRange(1, 1000);
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> [(Security, CandleType)];
+	{
+		return [(Security, CandleType)];
+	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		ResetState();
+	}
 
+	private void ResetState()
+	{
 		_lastEntryPrice = null;
-		_dailyCounter = 0;
-		_lastDay = default;
-		_prev1 = null;
-		_prev2 = null;
-		_hadPosition = false;
-		_entriesOverall = 0;
-		_pipSize = 0m;
+		_dailyTrades = 0;
+		_currentDay = default;
+		_bullishCount = 0;
+		_bearishCount = 0;
 	}
 
 	/// <inheritdoc />
@@ -126,15 +196,20 @@ public class Lanz50Strategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_pipSize = (Security?.PriceStep ?? 1m) * 10m;
-		_entriesOverall = 0;
+		ResetState();
 
-		var ema = new EMA { Length = EmaPeriod };
+		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(ema, ProcessCandle)
 			.Start();
+
+		var step = Security?.PriceStep ?? 1m;
+		StartProtection(
+			TakeProfitPips > 0m ? new Unit(TakeProfitPips * step, UnitTypes.Absolute) : new Unit(),
+			StopLossPips > 0m ? new Unit(StopLossPips * step, UnitTypes.Absolute) : new Unit(),
+			useMarketOrders: true);
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -150,79 +225,54 @@ public class Lanz50Strategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		_bullishCount = candle.ClosePrice > candle.OpenPrice ? _bullishCount + 1 : 0;
+		_bearishCount = candle.ClosePrice < candle.OpenPrice ? _bearishCount + 1 : 0;
+
+		var time = candle.OpenTime;
+		if (time.Date != _currentDay)
+		{
+			_currentDay = time.Date;
+			_dailyTrades = 0;
+		}
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var nyTime = TimeZoneInfo.ConvertTime(candle.OpenTime, _nyZone);
-		var today = nyTime.Date;
+		var hour = time.Hour;
+		var inWindow = StartHour <= EndHour
+			? hour >= StartHour && hour < EndHour
+			: hour >= StartHour || hour < EndHour;
 
-		if (today != _lastDay)
+		if (!inWindow)
 		{
-			_dailyCounter = 0;
-			_lastDay = today;
+			if (Position > 0)
+				SellMarket(Position);
+			else if (Position < 0)
+				BuyMarket(-Position);
+
+			return;
 		}
 
-		if (_hadPosition && Position == 0)
+		if (_dailyTrades >= MaxTrades)
+			return;
+
+		var close = candle.ClosePrice;
+		var step = Security.PriceStep ?? 1m;
+
+		if (_lastEntryPrice is decimal lastEntry && Math.Abs(close - lastEntry) < MinDistancePips * step)
+			return;
+
+		if (EnableBuy && _bullishCount >= 3 && close > emaValue && Position <= 0)
 		{
-			_lastEntryPrice = null;
-			_hadPosition = false;
+			BuyMarket(Volume + Math.Abs(Position));
+			_dailyTrades++;
+			_lastEntryPrice = close;
 		}
-
-		var start = new TimeSpan(StartHour, StartMinute, 0);
-		var end = new TimeSpan(EndHour, EndMinute, 0);
-		var cur = nyTime.TimeOfDay;
-		var sameDay = end > start;
-		var isWithinHours = sameDay ? cur >= start && cur <= end : cur >= start || cur <= end;
-		var isCloseTime = cur.Hours == EndHour && cur.Minutes == EndMinute;
-
-		if (isCloseTime)
+		else if (EnableSell && _bearishCount >= 3 && close < emaValue && Position >= 0)
 		{
-			CloseAll();
-			_lastEntryPrice = null;
-			_hadPosition = false;
+			SellMarket(Volume + Math.Abs(Position));
+			_dailyTrades++;
+			_lastEntryPrice = close;
 		}
-
-		var distanceOk = _lastEntryPrice == null || Math.Abs(candle.ClosePrice - _lastEntryPrice.Value) >= MinDistancePips * _pipSize;
-		var canOpen = _entriesOverall < MaxEntriesOverall && _dailyCounter < MaxTrades && isWithinHours && distanceOk;
-
-		var bullish1 = candle.ClosePrice > candle.OpenPrice;
-		var bullish2 = _prev1?.ClosePrice > _prev1?.OpenPrice;
-		var bullish3 = _prev2?.ClosePrice > _prev2?.OpenPrice;
-		var bearish1 = candle.ClosePrice < candle.OpenPrice;
-		var bearish2 = _prev1?.ClosePrice < _prev1?.OpenPrice;
-		var bearish3 = _prev2?.ClosePrice < _prev2?.OpenPrice;
-
-		var buySignal = EnableBuy && candle.ClosePrice > emaValue && bullish1 && bullish2 == true && bullish3 == true;
-		var sellSignal = EnableSell && candle.ClosePrice < emaValue && bearish1 && bearish2 == true && bearish3 == true;
-
-		if (buySignal && canOpen && Position <= 0)
-		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-			_dailyCounter++;
-			_entriesOverall++;
-			_lastEntryPrice = candle.ClosePrice;
-			_hadPosition = true;
-		}
-		else if (sellSignal && canOpen && Position >= 0)
-		{
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
-			_dailyCounter++;
-			_entriesOverall++;
-			_lastEntryPrice = candle.ClosePrice;
-			_hadPosition = true;
-		}
-
-		_prev2 = _prev1;
-		_prev1 = candle;
-	}
-
-	private void CloseAll()
-	{
-		if (Position > 0)
-			SellMarket(Math.Abs(Position));
-		else if (Position < 0)
-			BuyMarket(Math.Abs(Position));
 	}
 }
