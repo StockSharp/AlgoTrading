@@ -16,8 +16,8 @@ class macd_multi_timeframe_expert_strategy(Strategy):
     def __init__(self):
         super(macd_multi_timeframe_expert_strategy, self).__init__()
         self._order_volume = self.Param("OrderVolume", 0.1)
-        self._stop_loss_points = self.Param("StopLossPoints", 1500.0)
-        self._take_profit_points = self.Param("TakeProfitPoints", 2500.0)
+        self._stop_loss_points = self.Param("StopLossPoints", 200.0)
+        self._take_profit_points = self.Param("TakeProfitPoints", 400.0)
         self._fast_period = self.Param("FastPeriod", 12)
         self._slow_period = self.Param("SlowPeriod", 26)
         self._signal_period = self.Param("SignalPeriod", 9)

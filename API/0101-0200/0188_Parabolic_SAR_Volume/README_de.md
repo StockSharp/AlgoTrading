@@ -7,7 +7,7 @@ Tests zeigen eine durchschnittliche jährliche Rendite von etwa 151%. Sie funkti
 
 Parabolic SAR identifiziert Trendwechsel und höheres Volumen validiert das Signal. Trades beginnen, wenn der SAR-Wechsel mit zunehmendem Volumen einhergeht.
 
-Nützlich für Trader, die volumenbasierte Bewegungen verfolgen. Der SAR-Trail und ein ATR-Faktor schützen vor großen Verlusten.
+Nützlich für Trader, die volumenbasierte Bewegungen verfolgen. Der SAR-Trail schützt vor großen Verlusten.
 
 ## Details
 
@@ -22,6 +22,7 @@ Nützlich für Trader, die volumenbasierte Bewegungen verfolgen. Der SAR-Trail u
   - `MaxAcceleration` = 0.2m
   - `VolumePeriod` = 20
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    AvgVolume ist das durchschnittliche Volumen der vorherigen VolumePeriod Kerzen. Ein Long schließt, wenn der SAR über den Kurs wechselt, ein Short, wenn er darunter wechselt. Ein Einstiegssignal gegen eine offene Position dreht sie.
 - **Filter**:
   - Kategorie: Ausbruch
   - Richtung: Beide

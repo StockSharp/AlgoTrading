@@ -8,7 +8,7 @@ Tests zeigen eine durchschnittliche Jahresrendite von etwa 187%. Die Strategie f
 
 Diese Strategie kombiniert Ichimoku-Cloud-Signale mit ADX, um starke Trends zu filtern. Trades erfolgen, wenn der Preis die Wolke nach oben oder unten durchbricht und ADX dies bestätigt.
 
-Sie bevorzugt Trader, die strukturierte Trend-Setups bevorzugen. ATR-definierte Stops schützen vor ungünstigen Kursschwankungen.
+Sie bevorzugt Trader, die strukturierte Trend-Setups bevorzugen. Die Wolke selbst dient als Stop gegen ungünstige Kursschwankungen.
 
 ## Details
 
@@ -26,6 +26,7 @@ Sie bevorzugt Trader, die strukturierte Trend-Setups bevorzugen. ATR-definierte 
   - `AdxPeriod` = 14
   - `AdxThreshold` = 25m
   - `CandleType` = TimeSpan.FromMinutes(15).TimeFrame()
+    Ein Long schließt, wenn der Kurs unter der Wolke schließt, ein Short, wenn er darüber schließt. Ein Einstiegssignal gegen eine offene Position dreht sie.
 - **Filter**:
   - Kategorie: Trend
   - Richtung: Beide

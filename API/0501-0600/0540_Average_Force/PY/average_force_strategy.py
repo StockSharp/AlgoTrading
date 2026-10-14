@@ -7,95 +7,81 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage
+from StockSharp.Algo.Indicators import Highest, Lowest, SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 
 class average_force_strategy(Strategy):
+    """
+    Average Force strategy.
+    The raw force is the position of the close inside the highest high and lowest low of the last Period candles, centred on zero
+    ((close - lowest) / (highest - lowest) - 0.5), and the Average Force is its SMA over Smooth candles. A positive Average
+    Force holds a long and a negative one holds a short, so the position reverses whenever it crosses zero.
+    """
+
     def __init__(self):
         super(average_force_strategy, self).__init__()
-        self._fast_length = self.Param("FastLength", 18) \
-            .SetDisplay("Fast EMA", "Fast EMA period", "Indicators")
-        self._slow_length = self.Param("SlowLength", 50) \
-            .SetDisplay("Slow EMA", "Slow EMA period", "Indicators")
-        self._cooldown_bars = self.Param("CooldownBars", 350) \
-            .SetDisplay("Cooldown Bars", "Bars between trades", "Trading")
+        self._period = self.Param("Period", 18) \
+            .SetGreaterThanZero() \
+            .SetDisplay("Period", "Lookback of the highest high and lowest low", "Indicator")
+        self._smooth = self.Param("Smooth", 6) \
+            .SetGreaterThanZero() \
+            .SetDisplay("Smooth", "SMA period of the force", "Indicator")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
-            .SetDisplay("Candle Type", "Type of candles", "General")
-        self._prev_fast = 0.0
-        self._prev_slow = 0.0
-        self._bar_index = 0
-        self._last_trade_bar = 0
+            .SetDisplay("Candle Type", "Type of candles to use", "General")
+
+        self._force_average = None
 
     @property
-    def fast_length(self):
-        return self._fast_length.Value
-    @fast_length.setter
-    def fast_length(self, value):
-        self._fast_length.Value = value
-
-    @property
-    def slow_length(self):
-        return self._slow_length.Value
-    @slow_length.setter
-    def slow_length(self, value):
-        self._slow_length.Value = value
-
-    @property
-    def cooldown_bars(self):
-        return self._cooldown_bars.Value
-    @cooldown_bars.setter
-    def cooldown_bars(self, value):
-        self._cooldown_bars.Value = value
-
-    @property
-    def candle_type(self):
+    def CandleType(self):
         return self._candle_type.Value
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
+
+    def GetWorkingSecurities(self):
+        return [(self.Security, self.CandleType)]
 
     def OnReseted(self):
         super(average_force_strategy, self).OnReseted()
-        self._prev_fast = 0.0
-        self._prev_slow = 0.0
-        self._bar_index = 0
-        self._last_trade_bar = 0
+        self._force_average = None
 
     def OnStarted2(self, time):
         super(average_force_strategy, self).OnStarted2(time)
-        fast_ema = ExponentialMovingAverage()
-        fast_ema.Length = self.fast_length
-        slow_ema = ExponentialMovingAverage()
-        slow_ema.Length = self.slow_length
-        subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(fast_ema, slow_ema, self.OnProcess).Start()
+
+        highest = Highest()
+        highest.Length = self._period.Value
+        lowest = Lowest()
+        lowest.Length = self._period.Value
+        self._force_average = SimpleMovingAverage()
+        self._force_average.Length = self._smooth.Value
+
+        subscription = self.SubscribeCandles(self.CandleType)
+        subscription.Bind(highest, lowest, self._process_candle).Start()
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, fast_ema)
-            self.DrawIndicator(area, slow_ema)
             self.DrawOwnTrades(area)
 
-    def OnProcess(self, candle, fast_value, slow_value):
+    def _process_candle(self, candle, highest_value, lowest_value):
         if candle.State != CandleStates.Finished:
             return
 
-        self._bar_index += 1
-        cooldown_ok = self._bar_index - self._last_trade_bar > self.cooldown_bars
+        highest = float(highest_value)
+        lowest = float(lowest_value)
+        value_range = highest - lowest
+        force = (float(candle.ClosePrice) - lowest) / value_range - 0.5 if value_range > 0 else 0.0
+        average_force = float(to_decimal(process_float(self._force_average, force, candle.ServerTime, True)))
 
-        cross_up = self._prev_fast > 0 and self._prev_fast <= self._prev_slow and fast_value > slow_value
-        cross_down = self._prev_fast > 0 and self._prev_fast >= self._prev_slow and fast_value < slow_value
+        if not self._force_average.IsFormed:
+            return
 
-        if cross_up and self.Position <= 0 and cooldown_ok:
-            self.BuyMarket()
-            self._last_trade_bar = self._bar_index
-        elif cross_down and self.Position >= 0 and cooldown_ok:
-            self.SellMarket()
-            self._last_trade_bar = self._bar_index
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
-        self._prev_fast = float(fast_value)
-        self._prev_slow = float(slow_value)
+        if average_force > 0 and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+        elif average_force < 0 and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
 
     def CreateClone(self):
         return average_force_strategy()

@@ -51,19 +51,19 @@ class alligator_trend_strategy(Strategy):
         self._enable_short = self.Param("EnableShort", True) \
             .SetDisplay("Enable Short", "Allow short entries", "Trading")
 
-        self._stop_loss_pips = self.Param("StopLossPips", 500.0) \
+        self._stop_loss_pips = self.Param("StopLossPips", 45.0) \
             .SetDisplay("Stop Loss", "Stop-loss distance in pips", "Risk")
 
-        self._take_profit_pips = self.Param("TakeProfitPips", 2000.0) \
+        self._take_profit_pips = self.Param("TakeProfitPips", 145.0) \
             .SetDisplay("Take Profit", "Take-profit distance in pips", "Risk")
 
-        self._zero_level_pips = self.Param("ZeroLevelPips", 300.0) \
+        self._zero_level_pips = self.Param("ZeroLevelPips", 30.0) \
             .SetDisplay("Zero Level", "Distance to move stop to break-even", "Risk")
 
-        self._trailing_stop_pips = self.Param("TrailingStopPips", 500.0) \
+        self._trailing_stop_pips = self.Param("TrailingStopPips", 50.0) \
             .SetDisplay("Trailing Stop", "Trailing stop distance in pips", "Risk")
 
-        self._trailing_step_pips = self.Param("TrailingStepPips", 100.0) \
+        self._trailing_step_pips = self.Param("TrailingStepPips", 10.0) \
             .SetDisplay("Trailing Step", "Minimum trailing stop increment in pips", "Risk")
 
         self._jaw_buffer = []

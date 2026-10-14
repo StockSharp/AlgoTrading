@@ -18,11 +18,11 @@ class mustang_algo_channel_strategy(Strategy):
             .SetDisplay("RSI Period", "Period for RSI calculation", "Parameters")
         self._ema_len = self.Param("EmaLen", 10) \
             .SetDisplay("EMA Length", "EMA smoothing period", "Parameters")
-        self._upper_bound = self.Param("UpperBound", 60) \
+        self._upper_bound = self.Param("UpperBound", 55) \
             .SetDisplay("Upper Bound", "Overbought threshold", "Signals")
-        self._lower_bound = self.Param("LowerBound", 40) \
+        self._lower_bound = self.Param("LowerBound", 48) \
             .SetDisplay("Lower Bound", "Oversold threshold", "Signals")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromDays(1))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
         self._prev_rsi = 0.0
         self._prev_ema = 0.0

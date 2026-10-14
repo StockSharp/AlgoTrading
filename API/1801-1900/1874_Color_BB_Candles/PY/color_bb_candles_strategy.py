@@ -20,7 +20,7 @@ class color_bb_candles_strategy(Strategy):
         super(color_bb_candles_strategy, self).__init__()
         self._bollinger_period = self.Param("BollingerPeriod", 100) \
             .SetDisplay("Bollinger Period", "Length of Bollinger Bands", "General")
-        self._bollinger_deviation = self.Param("BollingerDeviation", 1.5) \
+        self._bollinger_deviation = self.Param("BollingerDeviation", 1.0) \
             .SetDisplay("Bollinger Deviation", "Width of Bollinger Bands", "General")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
             .SetDisplay("Candle Type", "Type of candles", "General")

@@ -54,10 +54,10 @@ public class MartingailExpertStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "RSI period", "Indicators");
 
-		_buyLevel = Param(nameof(BuyLevel), 35m)
+		_buyLevel = Param(nameof(BuyLevel), 20m)
 			.SetDisplay("Buy Level", "RSI level for longs", "Logic");
 
-		_sellLevel = Param(nameof(SellLevel), 65m)
+		_sellLevel = Param(nameof(SellLevel), 55m)
 			.SetDisplay("Sell Level", "RSI level for shorts", "Logic");
 	}
 

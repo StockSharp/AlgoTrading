@@ -18,7 +18,8 @@ A percent stop above the pattern high caps the risk and the trade exits if price
 - **Stops**: Yes, percent based
 - **Default Values**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+    The strategy only sells. The stop lies StopLossPercent above the highest high of the pattern and the position closes when a candle closes above it.
 - **Filters**:
   - Category: Pattern
   - Direction: Both

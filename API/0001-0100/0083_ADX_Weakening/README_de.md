@@ -18,7 +18,7 @@ Da der Ansatz eine Verlangsamung und keine vollständige Umkehr erwartet, werden
 - **Standardwerte**:
   - `AdxPeriod` = 14
   - `MaPeriod` = 20
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
   - `CandleType` = 15 minute
 - **Filter**:
   - Kategorie: Trendfolge

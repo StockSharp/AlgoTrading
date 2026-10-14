@@ -18,7 +18,9 @@ Las posiciones se cierran rápidamente si el impulso se detiene, manteniendo peq
 - **Stops**: Sí, basado en porcentaje
 - **Valores predeterminados**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `VolumePeriod` = 20
+    El mercado opera las 24 horas, por lo que la sesión es el día UTC. La primera vela del día es el impulso de apertura cuando su volumen supera la media de las VolumePeriod velas anteriores; la estrategia entra en su dirección al cierre. La primera vela que cierra en contra de la posición la cierra, y el stop porcentual sigue al precio.
 - **Filtros**:
   - Categoría: Intradía
   - Dirección: Ambos

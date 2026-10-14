@@ -58,16 +58,16 @@ public class ColorSchaffTrendCycleStrategy : Strategy
 
 	public ColorSchaffTrendCycleStrategy()
 	{
-		_fastPeriod = Param(nameof(FastPeriod), 12)
+		_fastPeriod = Param(nameof(FastPeriod), 23)
 			.SetDisplay("Fast EMA", "Fast EMA period", "Indicator");
 
-		_slowPeriod = Param(nameof(SlowPeriod), 26)
+		_slowPeriod = Param(nameof(SlowPeriod), 50)
 			.SetDisplay("Slow EMA", "Slow EMA period", "Indicator");
 
 		_highLevel = Param(nameof(HighLevel), 60m)
 			.SetDisplay("High Level", "Overbought level", "Indicator");
 
-		_lowLevel = Param(nameof(LowLevel), 40m)
+		_lowLevel = Param(nameof(LowLevel), -60m)
 			.SetDisplay("Low Level", "Oversold level", "Indicator");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())

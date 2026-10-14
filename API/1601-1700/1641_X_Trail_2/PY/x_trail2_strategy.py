@@ -14,11 +14,11 @@ from StockSharp.Algo.Strategies import Strategy
 class x_trail2_strategy(Strategy):
     def __init__(self):
         super(x_trail2_strategy, self).__init__()
-        self._ma1_length = self.Param("Ma1Length", 10) \
+        self._ma1_length = self.Param("Ma1Length", 1) \
             .SetDisplay("MA1 Length", "Length of the fast MA", "Moving Averages")
-        self._ma2_length = self.Param("Ma2Length", 30) \
+        self._ma2_length = self.Param("Ma2Length", 14) \
             .SetDisplay("MA2 Length", "Length of the slow MA", "Moving Averages")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
             .SetDisplay("Candle Type", "Type of candles to process", "General")
         self._prev_fast = 0.0
         self._prev_slow = 0.0

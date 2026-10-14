@@ -18,7 +18,9 @@ A tight stop above the twin highs keeps risk in check and the trade exits if pri
 - **Stops**: Yes, percent based
 - **Default Values**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `TolerancePercent` = 0.1
+  - `StopLossPercent` = 2
+    The strategy only sells. The stop lies StopLossPercent above the highest high of the pattern and the position closes when a candle closes above it.
 - **Filters**:
   - Category: Pattern
   - Direction: Both

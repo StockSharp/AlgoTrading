@@ -33,7 +33,7 @@ class zscore_volume_filter_strategy(Strategy):
         self._volume_factor = self.Param("VolumeFactor", 1.2) \
             .SetDisplay("Volume Factor", "Minimum multiple of average volume required for entry", "Signals")
 
-        self._stop_loss_percent = self.Param("StopLossPercent", 3.0) \
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
             .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk")
 
         self._cooldown_bars = self.Param("CooldownBars", 100) \

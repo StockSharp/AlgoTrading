@@ -13,7 +13,7 @@ class ima_expert_strategy(Strategy):
         super(ima_expert_strategy, self).__init__()
         self._sma_period = self.Param("SmaPeriod", 5).SetDisplay("SMA Period", "Length of moving average", "Parameters")
         self._signal_level = self.Param("SignalLevel", 0.5).SetDisplay("Signal Level", "IMA change threshold", "Parameters")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))).SetDisplay("Candle Type", "Timeframe for calculations", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Timeframe for calculations", "General")
         self._previous_ima = None
     @property
     def sma_period(self): return self._sma_period.Value

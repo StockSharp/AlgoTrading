@@ -32,7 +32,7 @@ class omni_trend_strategy(Strategy):
         self._money_risk = self.Param("MoneyRisk", 0.15) \
             .SetGreaterThanZero() \
             .SetDisplay("Money Risk", "Offset factor used to position trend bands", "Indicators")
-        self._signal_bar = self.Param("SignalBar", 0) \
+        self._signal_bar = self.Param("SignalBar", 1) \
             .SetDisplay("Signal Bar", "Delay in bars before acting on a signal", "Trading")
         self._enable_buy_open = self.Param("EnableBuyOpen", True) \
             .SetDisplay("Enable Long Entries", "Allow opening long positions", "Trading")
@@ -42,9 +42,9 @@ class omni_trend_strategy(Strategy):
             .SetDisplay("Enable Long Exits", "Allow closing long positions", "Trading")
         self._enable_sell_close = self.Param("EnableSellClose", True) \
             .SetDisplay("Enable Short Exits", "Allow closing short positions", "Trading")
-        self._stop_loss_points = self.Param("StopLossPoints", 0) \
+        self._stop_loss_points = self.Param("StopLossPoints", 1000) \
             .SetDisplay("Stop Loss (points)", "Protective stop distance expressed in price steps", "Risk")
-        self._take_profit_points = self.Param("TakeProfitPoints", 0) \
+        self._take_profit_points = self.Param("TakeProfitPoints", 2000) \
             .SetDisplay("Take Profit (points)", "Profit target distance expressed in price steps", "Risk")
 
         self.Volume = 1

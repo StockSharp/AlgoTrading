@@ -17,7 +17,9 @@ Os stops são colocados logo abaixo da mínima comum para gerenciar o risco, e a
 - **Stops**: Sim, baseado em percentual
 - **Valores padrão**:
   - `CandleType` = 15 minutos
-  - `StopLoss` = 2%
+  - `TolerancePercent` = 0.1
+  - `StopLossPercent` = 2
+    A estratégia só compra. O stop fica StopLossPercent abaixo da mínima mais baixa do padrão e a posição fecha quando uma vela fecha abaixo dele.
 - **Filtros**:
   - Categoria: Padrão
   - Direção: Ambos

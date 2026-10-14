@@ -16,15 +16,17 @@ Bollinger Bands はボラティリティの限界をマッピングし、CCI は
   - ショート: `Close > UpperBand && CCI > CciOverbought`
 - **ロング/ショート**: 両方
 - **エグジット条件**: 価格が中間バンドに戻る
-- **ストップ**: `StopLoss` を使用した ATR ベース
+- **ストップ**: `StopLossAtr` を使用した ATR ベース
 - **デフォルト値**:
   - `BollingerPeriod` = 20
   - `BollingerDeviation` = 2.0m
   - `CciPeriod` = 20
   - `CciOversold` = -100m
   - `CciOverbought` = 100m
-  - `StopLoss` = new Unit(2, UnitTypes.Absolute)
+  - `StopLossAtr` = 2
+  - `AtrPeriod` = 14
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    ストップはエントリー時の終値からStopLossAtr倍のATR（AtrPeriod）の位置にあり、足の終値で判定します。 保有ポジションと逆方向のエントリーシグナルはドテンになります。
 - **フィルター**:
   - カテゴリ: 平均回帰
   - 方向: 両方

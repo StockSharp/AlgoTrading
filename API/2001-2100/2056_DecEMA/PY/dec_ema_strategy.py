@@ -20,7 +20,7 @@ class dec_ema_strategy(Strategy):
             .SetDisplay("Base EMA Period", "Length for initial EMA", "Parameters")
         self._length = self.Param("Length", 15) \
             .SetDisplay("Smoothing Length", "Smoothing length for DecEMA", "Parameters")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(8))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
 
         self._prev = 0.0

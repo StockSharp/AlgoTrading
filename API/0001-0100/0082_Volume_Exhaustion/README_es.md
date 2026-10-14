@@ -20,6 +20,7 @@ La operación generalmente se cierra mediante el stop-loss, ya que la estrategia
   - `VolumeMultiplier` = 2.0
   - `MAPeriod` = 20
   - `AtrMultiplier` = 2 ATR
+    La tendencia es la dirección de la media móvil respecto a la vela anterior. El stop empieza a AtrMultiplier ATR (periodo 14) del cierre de entrada y sigue a cada cierre posterior a esa distancia; se comprueba al cierre de las velas.
   - `CandleType` = 5 minute
 - **Filtros**:
   - Categoría: Reversión

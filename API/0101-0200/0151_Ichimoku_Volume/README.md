@@ -7,7 +7,7 @@ Testing indicates an average annual return of about 40%. It performs best in the
 
 Ichimoku components define the directional bias while surging volume confirms interest. Trades open when price aligns with the cloud and volume picks up.
 
-It fits traders who like to follow cloud breakouts with participation. Risk is restricted by an ATR-based stop.
+It fits traders who like to follow cloud breakouts with participation. Risk is restricted by a percent stop.
 
 ## Details
 
@@ -17,14 +17,15 @@ It fits traders who like to follow cloud breakouts with participation. Risk is r
 - **Long/Short**: Both
 - **Exit Criteria**:
   - Cloud breakout in opposite direction
-- **Stops**: Percent-based using `StopLoss`
+- **Stops**: Percent-based using `StopLossPercent`
 - **Default Values**:
   - `TenkanPeriod` = 9
   - `KijunPeriod` = 26
   - `SenkouSpanPeriod` = 52
   - `VolumeAvgPeriod` = 20
-  - `StopLoss` = new Unit(2, UnitTypes.Percent)
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    AvgVolume is the average volume of the previous VolumeAvgPeriod candles. A long closes when price closes below the cloud and a short when it closes above it. An entry signal against an open position reverses it.
 - **Filters**:
   - Category: Breakout
   - Direction: Both

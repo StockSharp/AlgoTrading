@@ -18,7 +18,11 @@ Las operaciones emplean un pequeño stop porcentual y se cierran cuando el stoch
 - **Stops**: Sí, basados en porcentaje
 - **Valores predeterminados**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `KPeriod` = 14
+  - `DPeriod` = 3
+  - `OversoldLevel` = 20
+  - `OverboughtLevel` = 80
+  - `StopLossPercent` = 2
 - **Filtros**:
   - Categoría: Reversión
   - Dirección: Ambos

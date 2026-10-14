@@ -20,7 +20,8 @@ Diese Technik eignet sich für Intraday-Trader, die von Momentum-Schüben profit
 - **Stops**: Ja, Stop-Loss bei `Multiplier * ATR` vom Einstieg.
 - **Standardwerte**:
   - `Period` = 20
-  - `Multiplier` = 2.0m
+  - `Multiplier` = 2
+    Der Stop liegt Multiplier mal die ATR über Period vom Einstiegsschluss entfernt und wird bei Kerzenschluss geprüft. Ein Einstiegssignal gegen eine offene Position dreht sie.
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **Filter**:
   - Kategorie: Ausbruch

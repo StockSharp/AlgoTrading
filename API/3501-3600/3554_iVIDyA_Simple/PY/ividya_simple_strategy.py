@@ -14,9 +14,9 @@ class ividya_simple_strategy(Strategy):
     def __init__(self):
         super(ividya_simple_strategy, self).__init__()
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(60)))
-        self._cmo_period = self.Param("CmoPeriod", 20)
-        self._ema_period = self.Param("EmaPeriod", 30)
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5)))
+        self._cmo_period = self.Param("CmoPeriod", 15)
+        self._ema_period = self.Param("EmaPeriod", 12)
 
         self._prev_vidya = 0.0
         self._prev_close = 0.0

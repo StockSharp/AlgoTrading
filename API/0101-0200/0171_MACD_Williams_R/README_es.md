@@ -7,7 +7,7 @@ Las pruebas indican un rendimiento anual promedio de aproximadamente 100%. Funci
 
 El MACD indica el cambio de impulso más amplio, mientras que el Williams %R identifica con precisión las reversiones a corto plazo. Ambas señales deben alinearse para iniciar una operación.
 
-Adecuado para quienes combinan señales de tendencia y contratendencia. Los stops dependen de un factor ATR.
+Adecuado para quienes combinan señales de tendencia y contratendencia. Los stops son un porcentaje fijo del precio de entrada.
 
 ## Detalles
 
@@ -22,8 +22,11 @@ Adecuado para quienes combinan señales de tendencia y contratendencia. Los stop
   - `MacdSlow` = 26
   - `MacdSignal` = 9
   - `WilliamsRPeriod` = 14
-  - `StopLossPercent` = 2.0m
+  - `WilliamsROversold` = -80
+  - `WilliamsROverbought` = -20
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    Los valores -80 y -20 de las reglas son los predeterminados de WilliamsROversold y WilliamsROverbought. Un largo se cierra cuando el MACD cruza por debajo de la línea de señal y un corto cuando la cruza por encima. Una señal de entrada contra una posición abierta la invierte.
 - **Filtros**:
   - Categoría: Reversión a la media
   - Dirección: Ambos

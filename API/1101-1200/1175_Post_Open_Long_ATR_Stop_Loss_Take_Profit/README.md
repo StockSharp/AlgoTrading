@@ -24,6 +24,11 @@ The strategy enters a long position during market open after a breakout from res
   - `ATR Length` = 14
   - `ATR SL Mult` = 2.0
   - `ATR TP Mult` = 4.0
+  - `SessionStart` = 09:30 UTC
+  - `SessionDuration` = TimeSpan.FromHours(1)
+  - `ResistancePeriod` = 5
+  - `BasisProximity` = 1
+  - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
 - **Filters**:
   - Category: Trend following
   - Direction: Long
@@ -35,3 +40,11 @@ The strategy enters a long position during market open after a breakout from res
   - Neural networks: No
   - Divergence: No
   - Risk level: Medium
+
+## Calculation and execution
+
+Signals use finished candles after all indicators are formed. Resistance is the maximum high of the previous `ResistancePeriod` candles, excluding the current candle; entry requires `Close > resistance`. The opening window uses UTC candle-open time: start inclusive, end exclusive, wrapping across midnight when necessary. Configure `SessionStart` for the instrument's opening time.
+
+Bollinger basis is the current-inclusive close SMA; deviation is the population standard deviation. Proximity requires `abs(Close - basis) <= (UpperBand - basis) * BasisProximity`. Both `short EMA > long EMA` and `Close > short EMA` are required. No pullback means `Close >= Open` on the signal candle. RSI and ADX must be strictly above their thresholds.
+
+Buy `Volume` only from a flat position with no outstanding order. Entry Wilder ATR freezes the stop and take distances. Native local protection places them below/above the actual fill price (volume-weighted for partial fills), watches Level1 best-bid and candle prices, and closes the entire remaining long. Exits remain active outside the opening window. Later ATR changes do not move these levels. There are no shorts, EMA-cross exits or cooldown.

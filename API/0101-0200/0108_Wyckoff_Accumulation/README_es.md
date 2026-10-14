@@ -18,7 +18,9 @@ Un stop de protección se coloca justo por debajo de la base para limitar pérdi
 - **Stops**: Sí, basados en porcentaje
 - **Valores predeterminados**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `RangePeriod` = 20
+  - `StopLossPercent` = 2
+    El rango de acumulación es el máximo más alto y el mínimo más bajo de las RangePeriod velas anteriores. La estrategia solo compra, con un cierre por encima del rango; el stop se coloca StopLossPercent por debajo de la base y la posición se cierra cuando una vela cierra por debajo.
 - **Filtros**:
   - Categoría: Seguimiento de tendencia
   - Dirección: Ambos

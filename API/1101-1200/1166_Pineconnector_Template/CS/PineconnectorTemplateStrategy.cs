@@ -1,21 +1,18 @@
+namespace StockSharp.Samples.Strategies;
+
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-namespace StockSharp.Samples.Strategies;
-
 /// <summary>
 /// Template strategy demonstrating how to connect any indicator and trade on its signals.
-/// Uses two simple moving averages as an example indicator.
+/// Uses two exponential moving averages as an example indicator.
 /// </summary>
 public class PineconnectorTemplateStrategy : Strategy
 {
@@ -88,8 +85,6 @@ public class PineconnectorTemplateStrategy : Strategy
 		var prevF = 0m;
 		var prevS = 0m;
 		var init = false;
-		var lastSignal = DateTimeOffset.MinValue;
-		var cooldown = TimeSpan.FromMinutes(360);
 
 		var subscription = SubscribeCandles(CandleType);
 
@@ -110,19 +105,10 @@ public class PineconnectorTemplateStrategy : Strategy
 					return;
 				}
 
-				if (candle.OpenTime - lastSignal >= cooldown)
-				{
-					if (prevF <= prevS && f > s && Position <= 0)
-					{
-						BuyMarket();
-						lastSignal = candle.OpenTime;
-					}
-					else if (prevF >= prevS && f < s && Position >= 0)
-					{
-						SellMarket();
-						lastSignal = candle.OpenTime;
-					}
-				}
+				if (prevF <= prevS && f > s && Position <= 0)
+					BuyMarket(Volume + Math.Abs(Position));
+				else if (prevF >= prevS && f < s && Position >= 0)
+					SellMarket(Volume + Math.Abs(Position));
 
 				prevF = f;
 				prevS = s;

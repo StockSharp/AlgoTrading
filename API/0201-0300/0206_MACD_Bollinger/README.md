@@ -21,9 +21,10 @@ Testing indicates an average annual return of about 55%. It performs best in the
   - `MacdSlow` = 26
   - `MacdSignal` = 9
   - `BollingerPeriod` = 20
-  - `BollingerDeviation` = 2.0m
+  - `BollingerDeviation` = 2
   - `AtrPeriod` = 14
-  - `AtrMultiplier` = 2m
+  - `AtrMultiplier` = 2
+    A position closes once the candle closes back at the middle band. The stop lies AtrMultiplier times the AtrPeriod ATR from the entry close and is checked on candle closes; 0 disables it. An entry signal against an open position reverses it.
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **Filters**:
   - Category: Mixed

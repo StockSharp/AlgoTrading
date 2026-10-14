@@ -17,7 +17,7 @@ Die Methode ist einfach, aber effektiv bei unruhigen Schwankungen, wenn traditio
 - **Stops**: Ja, prozentbasiert.
 - **Standardwerte**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
 - **Filter**:
   - Kategorie: Umkehr
   - Richtung: Beide

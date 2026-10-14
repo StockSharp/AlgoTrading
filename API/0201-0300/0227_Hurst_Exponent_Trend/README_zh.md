@@ -21,7 +21,9 @@
 - **默认值**:
   - `HurstPeriod` = 100
   - `MaPeriod` = 20
-  - `HurstThreshold` = 0.55m
+  - `HurstThreshold` = 0.55
+  - `StopLossPercent` = 2
+    MA为MaPeriod周期简单移动平均。止损为入场价的固定StopLossPercent百分比，在K线之间同样监控；设为0则关闭。与持仓方向相反的入场信号会反转持仓。
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **过滤器**:
   - 类别: Trend

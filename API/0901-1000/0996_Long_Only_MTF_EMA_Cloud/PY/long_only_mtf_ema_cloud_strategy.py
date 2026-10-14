@@ -14,19 +14,19 @@ from StockSharp.Algo.Strategies import Strategy
 class long_only_mtf_ema_cloud_strategy(Strategy):
     def __init__(self):
         super(long_only_mtf_ema_cloud_strategy, self).__init__()
-        self._short_length = self.Param("ShortLength", 25) \
+        self._short_length = self.Param("ShortLength", 21) \
             .SetGreaterThanZero() \
             .SetDisplay("Short EMA", "Short EMA period", "Indicators")
-        self._long_length = self.Param("LongLength", 65) \
+        self._long_length = self.Param("LongLength", 50) \
             .SetGreaterThanZero() \
             .SetDisplay("Long EMA", "Long EMA period", "Indicators")
-        self._stop_loss_percent = self.Param("StopLossPercent", 7.0) \
+        self._stop_loss_percent = self.Param("StopLossPercent", 1.0) \
             .SetGreaterThanZero() \
             .SetDisplay("Stop Loss %", "Stop loss percent", "Risk")
-        self._take_profit_percent = self.Param("TakeProfitPercent", 12.0) \
+        self._take_profit_percent = self.Param("TakeProfitPercent", 2.0) \
             .SetGreaterThanZero() \
             .SetDisplay("Take Profit %", "Take profit percent", "Risk")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(10))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
             .SetDisplay("Candle Type", "Candles", "General")
         self._prev_short = 0.0
         self._prev_long = 0.0

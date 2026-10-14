@@ -15,7 +15,7 @@ class separate_trade_strategy(Strategy):
     def __init__(self):
         super(separate_trade_strategy, self).__init__()
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
             .SetDisplay("Candle Type", "Timeframe", "General")
         self._fast_period = self.Param("FastPeriod", 14) \
             .SetDisplay("Fast Period", "Fast EMA period", "Indicators")

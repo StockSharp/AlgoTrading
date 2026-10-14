@@ -24,6 +24,11 @@ A estratégia entra em uma posição comprada durante a abertura do mercado apó
   - `ATR Length` = 14
   - `ATR SL Mult` = 2.0
   - `ATR TP Mult` = 4.0
+  - `SessionStart` = 09:30 UTC
+  - `SessionDuration` = TimeSpan.FromHours(1)
+  - `ResistancePeriod` = 5
+  - `BasisProximity` = 1
+  - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
 - **Filtros**:
   - Categoria: Seguidor de tendência
   - Direção: Long
@@ -35,3 +40,11 @@ A estratégia entra em uma posição comprada durante a abertura do mercado apó
   - Redes neurais: Não
   - Divergência: Não
   - Nível de risco: Médio
+
+## Cálculo e execução
+
+Sinais usam velas concluídas após todos os indicadores se formarem. Resistência é o maior high das `ResistancePeriod` velas anteriores, excluindo a atual; entrada exige `Close > resistance`. A janela usa horário UTC de abertura da vela: início incluído, fim excluído, com passagem pela meia-noite. Configure `SessionStart` para a abertura do instrumento.
+
+A base Bollinger é a SMA dos fechamentos incluindo a vela atual; desvio populacional. Proximidade: `abs(Close - basis) <= (UpperBand - basis) * BasisProximity`. Exige-se `EMA curta > EMA longa` e `Close > EMA curta`. Sem retração significa `Close >= Open` na vela de sinal. RSI e ADX devem superar estritamente seus limites.
+
+Compra `Volume` apenas sem posição ou ordem pendente. Wilder ATR de entrada fixa as distâncias SL e TP. A proteção local nativa define os níveis abaixo/acima do preço real de execução (ponderado por volume para execuções parciais), observa best bid Level1 e preços de velas e fecha toda a posição comprada restante. Saídas continuam ativas fora da janela. Mudanças posteriores de ATR não movem os níveis. Sem posições vendidas, saídas por cruzamento EMA ou espera.

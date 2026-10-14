@@ -45,11 +45,11 @@ public class CciMacdScalperStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for scalping", "General");
 
-		_emaPeriod = Param(nameof(EmaPeriod), 21)
+		_emaPeriod = Param(nameof(EmaPeriod), 34)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "EMA trend filter period", "Indicators");
 
-		_cciPeriod = Param(nameof(CciPeriod), 14)
+		_cciPeriod = Param(nameof(CciPeriod), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("CCI Period", "CCI period for zero-line crosses", "Indicators");
 	}

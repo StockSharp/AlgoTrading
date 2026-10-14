@@ -41,11 +41,11 @@ public class MartinGaleScalpingStrategy : Strategy
 
 	public MartinGaleScalpingStrategy()
 	{
-		_fastLength = Param(nameof(FastLength), 10)
+		_fastLength = Param(nameof(FastLength), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast SMA Length", "Length for fast SMA", "General");
 
-		_slowLength = Param(nameof(SlowLength), 20)
+		_slowLength = Param(nameof(SlowLength), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow SMA Length", "Length for slow SMA", "General");
 
@@ -63,7 +63,7 @@ public class MartinGaleScalpingStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candles", "General");
 
-		_maxPyramids = Param(nameof(MaxPyramids), 2)
+		_maxPyramids = Param(nameof(MaxPyramids), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Pyramids", "Maximum pyramid entries", "General");
 	}

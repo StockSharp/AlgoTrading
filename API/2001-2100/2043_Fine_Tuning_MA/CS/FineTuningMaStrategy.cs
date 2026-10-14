@@ -31,7 +31,7 @@ public class FineTuningMaStrategy : Strategy
 
 	public FineTuningMaStrategy()
 	{
-		_maLength = Param(nameof(MaLength), 20)
+		_maLength = Param(nameof(MaLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Length", "Length of the moving average", "Parameters");
 

@@ -20,11 +20,11 @@ This approach is best suited for traders who prefer systematic trend following w
 - **Stops**: Yes, dynamic via Parabolic SAR and optional fixed stop.
 - **Default Values**:
   - `MaPeriod` = 20
-  - `SarStep` = 0.02m
-  - `SarMaxStep` = 0.2m
+  - `SarStep` = 0.02
+  - `SarMaxStep` = 0.2
   - `CandleType` = TimeSpan.FromMinutes(5)
-  - `TakeValue` = new Unit(0, UnitTypes.Absolute)
-  - `StopValue` = new Unit(2, UnitTypes.Percent)
+  - `StopLossPercent` = 2
+    An entry needs both conditions on a candle close, whichever of the SAR flip and the MA cross comes last. The optional fixed stop is StopLossPercent of the entry price, watched between candles as well; 0 disables it. The rules name no profit target, so the zero TakeValue is gone. An entry signal against an open position reverses it.
 - **Filters**:
   - Category: Trend
   - Direction: Both

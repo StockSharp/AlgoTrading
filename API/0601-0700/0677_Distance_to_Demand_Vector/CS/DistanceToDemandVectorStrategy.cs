@@ -11,31 +11,44 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// DistanceToDemandVectorStrategy using EMA crossover for trend timing.
-/// Enters long on golden cross, short on death cross.
+/// Distance to demand vector strategy.
+/// The long vector is the lowest low and the short vector the highest high of the last Length candles.
+/// When the distance from the close to the long vector rises above the distance to the short vector the strategy goes long,
+/// and when it falls below it goes short, reversing an opposite position.
 /// </summary>
 public class DistanceToDemandVectorStrategy : Strategy
 {
-	private readonly StrategyParam<int> _fastEmaPeriod;
-	private readonly StrategyParam<int> _slowEmaPeriod;
+	private readonly StrategyParam<int> _length;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevFastEma;
-	private decimal _prevSlowEma;
+	private decimal? _prevDiff;
 
-	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
-	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	/// <summary>
+	/// Candles that define the demand vectors.
+	/// </summary>
+	public int Length
+	{
+		get => _length.Value;
+		set => _length.Value = value;
+	}
 
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
+	/// </summary>
 	public DistanceToDemandVectorStrategy()
 	{
-		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+		_length = Param(nameof(Length), 100)
 			.SetGreaterThanZero()
-			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
-
-		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
-			.SetGreaterThanZero()
-			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+			.SetDisplay("Length", "Candles that define the demand vectors", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -51,8 +64,7 @@ public class DistanceToDemandVectorStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevFastEma = 0m;
-		_prevSlowEma = 0m;
+		_prevDiff = null;
 	}
 
 	/// <inheritdoc />
@@ -60,46 +72,51 @@ public class DistanceToDemandVectorStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
-		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
+		_prevDiff = null;
+
+		var highest = new Highest { Length = Length };
+		var lowest = new Lowest { Length = Length };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(fastEma, slowEma, ProcessCandle)
+			.BindEx(highest, lowest, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, fastEma);
-			DrawIndicator(area, slowEma);
+			DrawIndicator(area, highest);
+			DrawIndicator(area, lowest);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue highestValue, IIndicatorValue lowestValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_prevFastEma == 0m || _prevSlowEma == 0m)
-		{
-			_prevFastEma = fastEmaValue;
-			_prevSlowEma = slowEmaValue;
+		if (!highestValue.IsFormed || !lowestValue.IsFormed)
 			return;
-		}
 
-		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
-		{
-			BuyMarket();
-		}
-		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
-		{
-			SellMarket();
-		}
+		var close = candle.ClosePrice;
+		var distanceToLong = close - lowestValue.GetValue<decimal>();
+		var distanceToShort = highestValue.GetValue<decimal>() - close;
+		var diff = distanceToLong - distanceToShort;
 
-		_prevFastEma = fastEmaValue;
-		_prevSlowEma = slowEmaValue;
+		var prev = _prevDiff;
+		_prevDiff = diff;
+
+		if (prev is not decimal prevDiff)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (prevDiff <= 0m && diff > 0m && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (prevDiff >= 0m && diff < 0m && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
 	}
 }

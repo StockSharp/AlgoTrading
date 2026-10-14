@@ -19,9 +19,10 @@ Tests zeigen eine durchschnittliche Jahresrendite von etwa 64%. Sie funktioniert
 - **Standardwerte**:
   - `VolumeAvgPeriod` = 20
   - `SupertrendPeriod` = 10
-  - `SupertrendMultiplier` = 3m
+  - `SupertrendMultiplier` = 3
   - `CandleType` = TimeSpan.FromMinutes(5)
-  - `StopLossPercent` = 2.0m
+  - `StopLossPercent` = 2
+    Avg(Volume) ist das durchschnittliche Volumen der vorherigen VolumeAvgPeriod Kerzen. Ein Long schließt, sobald der Supertrend nach unten dreht, ein Short, sobald er nach oben dreht; der Stop liegt bei festen StopLossPercent vom Einstiegspreis und wird auch zwischen den Kerzen überwacht. Ein Einstiegssignal gegen eine offene Position dreht sie.
 - **Filter**:
   - Kategorie: Trend
   - Richtung: Beide

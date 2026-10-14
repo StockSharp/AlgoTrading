@@ -35,7 +35,7 @@ public class SrBreakoutStrategy : Strategy
 
 	public SrBreakoutStrategy()
 	{
-		_lookbackLength = Param(nameof(LookbackLength), 20)
+		_lookbackLength = Param(nameof(LookbackLength), 26)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback", "Number of candles for Donchian channel", "Indicators");
 

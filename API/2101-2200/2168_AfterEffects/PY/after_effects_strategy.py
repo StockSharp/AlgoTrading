@@ -15,11 +15,11 @@ class after_effects_strategy(Strategy):
         super(after_effects_strategy, self).__init__()
         self._stop_loss = self.Param("StopLoss", 500.0) \
             .SetDisplay("Stop Loss", "Stop Loss distance", "General")
-        self._period = self.Param("Period", 8) \
+        self._period = self.Param("Period", 3) \
             .SetDisplay("Bar Period", "Period of bars for signal", "General")
         self._random = self.Param("Random", False) \
             .SetDisplay("Random Range", "Invert signal", "General")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
             .SetDisplay("Candle Type", "Candle Type", "General")
         self._p_queue = []
         self._two_p_queue = []

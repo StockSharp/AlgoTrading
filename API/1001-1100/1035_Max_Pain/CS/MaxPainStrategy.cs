@@ -28,7 +28,7 @@ public class MaxPainStrategy : Strategy
 
 	public MaxPainStrategy()
 	{
-		_lookbackPeriod = Param(nameof(LookbackPeriod), 20);
+		_lookbackPeriod = Param(nameof(LookbackPeriod), 70);
 		_holdPeriods = Param(nameof(HoldPeriods), 8);
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());
 	}

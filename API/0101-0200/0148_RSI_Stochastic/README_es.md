@@ -7,7 +7,7 @@ Las pruebas indican un retorno anual promedio de aproximadamente 181%. Funciona 
 
 El RSI proporciona una visión más amplia del momentum, mientras que el Stochastic da señales más rápidas cerca de los extremos. Las operaciones cambian cuando el oscilador cruza niveles dentro del contexto del RSI.
 
-Ideal para traders ágiles que prefieren configuraciones de osciladores. La estrategia se apoya en un stop de ATR para contener el riesgo.
+Ideal para traders ágiles que prefieren configuraciones de osciladores. La estrategia se apoya en un stop porcentual para contener el riesgo.
 
 ## Detalles
 
@@ -25,11 +25,11 @@ Ideal para traders ágiles que prefieren configuraciones de osciladores. La estr
   - `RsiOverbought` = 70m
   - `StochPeriod` = 14
   - `StochK` = 3
-  - `StochD` = 3
   - `StochOversold` = 20m
   - `StochOverbought` = 80m
   - `StopLossPercent` = 2.0m
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    StochK en las reglas es %K: el estocástico de StochPeriod velas suavizado en StochK velas; %D no interviene, por lo que no tiene ajuste. Una señal de entrada contra una posición abierta la invierte.
 - **Filtros**:
   - Categoría: Reversión a la media
   - Dirección: Ambos

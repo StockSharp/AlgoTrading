@@ -7,7 +7,7 @@ Las pruebas indican un retorno anual promedio de aproximadamente 187%. Funciona 
 
 El VWAP marca el nivel de negociación promedio y el Stochastic muestra condiciones de sobrecompra o sobreventa. Los largos se activan por debajo del VWAP con un oscilador en alza, los cortos por encima del VWAP con uno en caída.
 
-Los traders intradía que observan niveles de valor intradía pueden beneficiarse de este estilo. Los stops se colocan usando un múltiplo de ATR.
+Los traders intradía que observan niveles de valor intradía pueden beneficiarse de este estilo. Los stops se colocan a un porcentaje fijo del precio de entrada.
 
 ## Detalles
 
@@ -22,11 +22,11 @@ Los traders intradía que observan niveles de valor intradía pueden beneficiars
 - **Valores predeterminados**:
   - `StochPeriod` = 14
   - `StochKPeriod` = 3
-  - `StochDPeriod` = 3
   - `OverboughtLevel` = 80m
   - `OversoldLevel` = 20m
   - `StopLossPercent` = 2m
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    El mercado opera las 24 horas, por lo que el VWAP de la sesión se reinicia cada día UTC y pondera el precio típico de cada vela por su volumen. StochK en las reglas es %K: el estocástico de StochPeriod velas suavizado en StochKPeriod velas; %D no interviene, por lo que no tiene ajuste. Una señal de entrada contra una posición abierta la invierte.
 - **Filtros**:
   - Categoría: Reversión a la media
   - Dirección: Ambos

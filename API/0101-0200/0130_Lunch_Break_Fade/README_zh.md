@@ -16,7 +16,10 @@
 - **止损**：是，按百分比
 - **默认值**:
   - `CandleType` = 15分钟
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `LunchHour` = 12
+  - `LunchEndHour` = 14
+    市场全天候交易，因此交易时段按UTC自然日计算。 在LunchHour结束的K线收盘时，策略逆着自当日开盘以来的走势入场，并在LunchEndHour平仓。
 - **过滤器**:
   - 类别：日内
   - 方向：双向

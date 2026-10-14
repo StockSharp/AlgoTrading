@@ -14,7 +14,7 @@ from StockSharp.Algo.Strategies import Strategy
 class volatility_momentum_breakout_strategy(Strategy):
     def __init__(self):
         super(volatility_momentum_breakout_strategy, self).__init__()
-        self._lookback = self.Param("Lookback", 40) \
+        self._lookback = self.Param("Lookback", 20) \
             .SetDisplay("Lookback", "Breakout lookback", "General")
         self._ema_length = self.Param("EmaLength", 50) \
             .SetDisplay("EMA Length", "EMA trend filter", "General")

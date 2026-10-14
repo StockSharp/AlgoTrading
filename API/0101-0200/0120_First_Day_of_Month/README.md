@@ -18,7 +18,8 @@ A small stop protects against downside surprises if the expected strength fails 
 - **Stops**: Yes, percent based
 - **Default Values**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+    Days are UTC days, since the market trades around the clock; entries happen at the close of the day's first candle. The long opens on the month's first candle and closes at the last candle of that first day.
 - **Filters**:
   - Category: Seasonality
   - Direction: Both

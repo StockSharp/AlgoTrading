@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
@@ -12,9 +13,9 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Strategy based on Gann Swing Breakout technique.
-/// Uses Donchian channel breakouts with SMA trend filter.
-/// Enters long when price breaks above channel high and is above SMA.
-/// Enters short when price breaks below channel low and is below SMA.
+/// A swing high is a candle whose high exceeds the highs of SwingLookback candles on each side, a swing low the reverse.
+/// A close above the latest swing high while above the SMA opens a long position, a close below the latest swing low
+/// while below the SMA a short one. A position stays open until the opposing swing is breached.
 /// </summary>
 public class GannSwingBreakoutStrategy : Strategy
 {
@@ -22,10 +23,9 @@ public class GannSwingBreakoutStrategy : Strategy
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevChannelHigh;
-	private decimal _prevChannelLow;
-	private bool _hasPrevValues;
-	private int _candlesSinceLastTrade;
+	private readonly List<(decimal High, decimal Low)> _window = [];
+	private decimal? _swingHigh;
+	private decimal? _swingLow;
 
 	/// <summary>
 	/// Number of bars to identify swing points.
@@ -59,15 +59,17 @@ public class GannSwingBreakoutStrategy : Strategy
 	/// </summary>
 	public GannSwingBreakoutStrategy()
 	{
-		_swingLookback = Param(nameof(SwingLookback), 40)
+		_swingLookback = Param(nameof(SwingLookback), 5)
+			.SetGreaterThanZero()
 			.SetDisplay("Swing Lookback", "Lookback period for swing high/low", "Trading parameters")
 			.SetOptimize(20, 60, 10);
 
-		_maPeriod = Param(nameof(MaPeriod), 60)
+		_maPeriod = Param(nameof(MaPeriod), 20)
+			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Period for trend filter MA", "Indicators")
 			.SetOptimize(40, 80, 10);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -81,10 +83,9 @@ public class GannSwingBreakoutStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevChannelHigh = default;
-		_prevChannelLow = default;
-		_hasPrevValues = default;
-		_candlesSinceLastTrade = default;
+		_window.Clear();
+		_swingHigh = null;
+		_swingLow = null;
 	}
 
 	/// <inheritdoc />
@@ -92,12 +93,15 @@ public class GannSwingBreakoutStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var donchian = new DonchianChannels { Length = SwingLookback };
+		_window.Clear();
+		_swingHigh = null;
+		_swingLow = null;
+
 		var ma = new SimpleMovingAverage { Length = MaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(donchian, ma, ProcessCandle)
+			.BindEx(ma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -109,56 +113,60 @@ public class GannSwingBreakoutStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue donchianValue, IIndicatorValue maValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue maValue)
 	{
 		if (candle.State != CandleStates.Finished)
+			return;
+
+		UpdateSwings(candle);
+
+		if (!maValue.IsFormed || _swingHigh is not decimal swingHigh || _swingLow is not decimal swingLow)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (maValue is not { IsEmpty: false })
-			return;
-
 		var ma = maValue.GetValue<decimal>();
-		if (ma == 0)
-			return;
+		var close = candle.ClosePrice;
 
-		// Extract Donchian channel values
-		var dcValue = (IDonchianChannelsValue)donchianValue;
-		if (dcValue.UpperBand is not decimal channelHigh ||
-			dcValue.LowerBand is not decimal channelLow)
-			return;
-
-		if (channelHigh == 0 || channelLow == 0)
-			return;
-
-		if (!_hasPrevValues)
+		if (close > swingHigh && close > ma && Position <= 0)
 		{
-			_hasPrevValues = true;
-			_prevChannelHigh = channelHigh;
-			_prevChannelLow = channelLow;
+			BuyMarket(Volume + Math.Abs(Position));
+		}
+		else if (close < swingLow && close < ma && Position >= 0)
+		{
+			SellMarket(Volume + Math.Abs(Position));
+		}
+		else if (Position > 0 && close < swingLow)
+		{
+			SellMarket(Position);
+		}
+		else if (Position < 0 && close > swingHigh)
+		{
+			BuyMarket(-Position);
+		}
+	}
+
+	private void UpdateSwings(ICandleMessage candle)
+	{
+		// A pivot is confirmed once SwingLookback candles have closed after it.
+		_window.Add((candle.HighPrice, candle.LowPrice));
+
+		var size = 2 * SwingLookback + 1;
+
+		if (_window.Count > size)
+			_window.RemoveAt(0);
+
+		if (_window.Count < size)
 			return;
-		}
 
-		_candlesSinceLastTrade++;
+		var pivot = _window[SwingLookback];
+		var others = _window.Where((_, index) => index != SwingLookback).ToArray();
 
-		// Breakout above previous channel high + above MA = buy
-		if (_candlesSinceLastTrade >= 10 && candle.ClosePrice > _prevChannelHigh && candle.ClosePrice > ma && Position <= 0)
-		{
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-			_candlesSinceLastTrade = 0;
-		}
-		// Breakout below previous channel low + below MA = sell
-		else if (_candlesSinceLastTrade >= 10 && candle.ClosePrice < _prevChannelLow && candle.ClosePrice < ma && Position >= 0)
-		{
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
-			_candlesSinceLastTrade = 0;
-		}
+		if (others.All(c => pivot.High > c.High))
+			_swingHigh = pivot.High;
 
-		_prevChannelHigh = channelHigh;
-		_prevChannelLow = channelLow;
+		if (others.All(c => pivot.Low < c.Low))
+			_swingLow = pivot.Low;
 	}
 }

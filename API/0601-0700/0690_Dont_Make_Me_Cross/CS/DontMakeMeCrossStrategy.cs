@@ -11,31 +11,71 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// DontMakeMeCrossStrategy using EMA crossover for trend timing.
-/// Enters long on golden cross, short on death cross.
+/// Dont Make Me Cross strategy.
+/// Both EMAs are shifted vertically by ShiftAmount. A cross of the shifted short EMA above the shifted long EMA goes long,
+/// a cross below goes short, and the opposite cross reverses the position.
 /// </summary>
 public class DontMakeMeCrossStrategy : Strategy
 {
-	private readonly StrategyParam<int> _fastEmaPeriod;
-	private readonly StrategyParam<int> _slowEmaPeriod;
+	private readonly StrategyParam<int> _shortEmaLength;
+	private readonly StrategyParam<int> _longEmaLength;
+	private readonly StrategyParam<decimal> _shiftAmount;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevFastEma;
-	private decimal _prevSlowEma;
+	private decimal? _prevShort;
+	private decimal? _prevLong;
 
-	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
-	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	/// <summary>
+	/// Short EMA period.
+	/// </summary>
+	public int ShortEmaLength
+	{
+		get => _shortEmaLength.Value;
+		set => _shortEmaLength.Value = value;
+	}
 
+	/// <summary>
+	/// Long EMA period.
+	/// </summary>
+	public int LongEmaLength
+	{
+		get => _longEmaLength.Value;
+		set => _longEmaLength.Value = value;
+	}
+
+	/// <summary>
+	/// Vertical shift added to both EMAs.
+	/// </summary>
+	public decimal ShiftAmount
+	{
+		get => _shiftAmount.Value;
+		set => _shiftAmount.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
+	/// </summary>
 	public DontMakeMeCrossStrategy()
 	{
-		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+		_shortEmaLength = Param(nameof(ShortEmaLength), 9)
 			.SetGreaterThanZero()
-			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+			.SetDisplay("Short EMA", "Short EMA period", "Indicators");
 
-		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+		_longEmaLength = Param(nameof(LongEmaLength), 21)
 			.SetGreaterThanZero()
-			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+			.SetDisplay("Long EMA", "Long EMA period", "Indicators");
+
+		_shiftAmount = Param(nameof(ShiftAmount), -50m)
+			.SetDisplay("Shift Amount", "Vertical shift added to both EMAs", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -51,8 +91,8 @@ public class DontMakeMeCrossStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevFastEma = 0m;
-		_prevSlowEma = 0m;
+		_prevShort = null;
+		_prevLong = null;
 	}
 
 	/// <inheritdoc />
@@ -60,46 +100,56 @@ public class DontMakeMeCrossStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
-		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
+		_prevShort = null;
+		_prevLong = null;
+
+		var shortEma = new ExponentialMovingAverage { Length = ShortEmaLength };
+		var longEma = new ExponentialMovingAverage { Length = LongEmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(fastEma, slowEma, ProcessCandle)
+			.BindEx(shortEma, longEma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, fastEma);
-			DrawIndicator(area, slowEma);
+			DrawIndicator(area, shortEma);
+			DrawIndicator(area, longEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue shortValue, IIndicatorValue longValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_prevFastEma == 0m || _prevSlowEma == 0m)
-		{
-			_prevFastEma = fastEmaValue;
-			_prevSlowEma = slowEmaValue;
+		if (!shortValue.IsFormed || !longValue.IsFormed)
 			return;
-		}
 
-		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
-		{
-			BuyMarket();
-		}
-		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
-		{
-			SellMarket();
-		}
+		var shortEma = shortValue.GetValue<decimal>() + ShiftAmount;
+		var longEma = longValue.GetValue<decimal>() + ShiftAmount;
 
-		_prevFastEma = fastEmaValue;
-		_prevSlowEma = slowEmaValue;
+		var prevShort = _prevShort;
+		var prevLong = _prevLong;
+
+		_prevShort = shortEma;
+		_prevLong = longEma;
+
+		if (prevShort is not decimal ps || prevLong is not decimal pl)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		var crossUp = ps <= pl && shortEma > longEma;
+		var crossDown = ps >= pl && shortEma < longEma;
+
+		if (crossUp && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (crossDown && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
 	}
 }

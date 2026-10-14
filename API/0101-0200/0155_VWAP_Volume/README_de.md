@@ -7,7 +7,7 @@ Tests zeigen eine durchschnittliche jährliche Rendite von etwa 52%. Am besten g
 
 Diese Strategie nutzt den VWAP zur Bewertung des fairen Wertes und erfordert eine Volumenbestätigung vor dem Trade. Die Idee ist, sich Bewegungen anzuschließen, die durch starke Marktteilnahme unterstützt werden.
 
-Intraday-Trader, die sich auf Volumenkennzahlen konzentrieren, können diese Methode anwenden. Verluste werden durch einen ATR-basierten Stop begrenzt.
+Intraday-Trader, die sich auf Volumenkennzahlen konzentrieren, können diese Methode anwenden. Verluste werden durch einen prozentualen Stop begrenzt.
 
 ## Details
 
@@ -23,6 +23,7 @@ Intraday-Trader, die sich auf Volumenkennzahlen konzentrieren, können diese Met
   - `VolumeThreshold` = 1.5m
   - `StopLossPercent` = 2.0m
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    Der Markt handelt rund um die Uhr, daher beginnt der Sitzungs-VWAP mit jedem UTC-Tag neu und gewichtet den typischen Preis jeder Kerze mit ihrem Volumen. AvgVolume ist das durchschnittliche Volumen der vorherigen VolumePeriod Kerzen. Ein Einstiegssignal gegen eine offene Position dreht sie.
 - **Filter**:
   - Kategorie: Mean Reversion
   - Richtung: Beide

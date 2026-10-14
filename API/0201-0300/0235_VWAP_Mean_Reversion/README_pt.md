@@ -19,9 +19,10 @@ A abordagem é projetada para traders intradiários que esperam que os preços o
   - **Vendido**: Sair quando close <= VWAP
 - **Stops**: Sim, stop baseado em ATR.
 - **Valores padrão**:
-  - `K` = 2.0m
+  - `K` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
   - `AtrPeriod` = 14
+    O mercado negocia 24 horas, por isso o VWAP da sessão reinicia a cada dia UTC e pondera o preço típico de cada candle pelo seu volume. O stop fica a K vezes o ATR de AtrPeriod do fechamento de entrada e é verificado no fechamento dos candles. Um sinal de entrada contra uma posição aberta a inverte.
 - **Filtros**:
   - Categoria: Mean reversion
   - Direção: Ambos

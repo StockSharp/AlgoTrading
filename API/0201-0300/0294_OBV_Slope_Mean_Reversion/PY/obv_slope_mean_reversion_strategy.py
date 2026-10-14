@@ -5,164 +5,125 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-import math
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
-from StockSharp.Algo.Indicators import OnBalanceVolume, ExponentialMovingAverage
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from StockSharp.Algo.Indicators import OnBalanceVolume, SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
+
 
 class obv_slope_mean_reversion_strategy(Strategy):
     """
-    OBV slope mean reversion strategy.
-    Trades reversion of extreme OBV slope values with an EMA direction filter.
+    On-Balance Volume slope mean reversion.
+    The slope of the smoothed OBV is compared with its average: buys when the slope is far below the average
+    and starts turning up, sells when it is far above and starts turning down.
+    Exits when the slope returns to its average.
     """
 
     def __init__(self):
         super(obv_slope_mean_reversion_strategy, self).__init__()
 
+        self._obv_sma_period = self.Param("ObvSmaPeriod", 20) \
+            .SetGreaterThanZero() \
+            .SetDisplay("OBV SMA Period", "Period of the OBV moving average", "Indicators")
         self._lookback_period = self.Param("LookbackPeriod", 20) \
             .SetGreaterThanZero() \
-            .SetDisplay("Lookback Period", "Period for OBV slope statistics", "Strategy Parameters")
-
-        self._threshold_multiplier = self.Param("ThresholdMultiplier", 1.5) \
+            .SetDisplay("Lookback Period", "Period for slope statistics", "Strategy")
+        self._deviation_multiplier = self.Param("DeviationMultiplier", 2.0) \
             .SetGreaterThanZero() \
-            .SetDisplay("Threshold Multiplier", "Standard deviation multiplier for entries", "Strategy Parameters")
-
+            .SetDisplay("Deviation Multiplier", "Standard deviation multiplier for extreme slope", "Strategy")
         self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
-
-        self._ema_period = self.Param("EmaPeriod", 20) \
-            .SetGreaterThanZero() \
-            .SetDisplay("EMA Period", "Period for EMA direction filter", "Indicator Parameters")
-
-        self._cooldown_bars = self.Param("CooldownBars", 1200) \
-            .SetDisplay("Cooldown Bars", "Bars to wait between orders", "Risk Management")
-
+            .SetNotNegative() \
+            .SetDisplay("Stop Loss %", "Stop-loss percentage", "Risk Management")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
-        self._obv = None
-        self._ema = None
-        self._previous_obv_value = 0.0
-        self._slope_history = None
-        self._current_index = 0
-        self._filled_count = 0
-        self._cooldown = 0
-        self._is_initialized = False
+        self._obv_sma = None
+        self._slope_average = None
+        self._slope_std_dev = None
+        self._prev_obv = None
+        self._prev_slope = None
 
     @property
-    def candle_type(self):
+    def CandleType(self):
         return self._candle_type.Value
+
+    def GetWorkingSecurities(self):
+        return [(self.Security, self.CandleType)]
 
     def OnReseted(self):
         super(obv_slope_mean_reversion_strategy, self).OnReseted()
-        self._obv = None
-        self._ema = None
-        self._previous_obv_value = 0.0
-        lb = int(self._lookback_period.Value)
-        self._slope_history = [0.0] * lb
-        self._current_index = 0
-        self._filled_count = 0
-        self._cooldown = 0
-        self._is_initialized = False
+        self._obv_sma = None
+        self._slope_average = None
+        self._slope_std_dev = None
+        self._prev_obv = None
+        self._prev_slope = None
 
     def OnStarted2(self, time):
         super(obv_slope_mean_reversion_strategy, self).OnStarted2(time)
 
-        lb = int(self._lookback_period.Value)
-        self._slope_history = [0.0] * lb
-        self._current_index = 0
-        self._filled_count = 0
-        self._cooldown = 0
+        obv = OnBalanceVolume()
+        self._obv_sma = SimpleMovingAverage()
+        self._obv_sma.Length = self._obv_sma_period.Value
+        self._slope_average = SimpleMovingAverage()
+        self._slope_average.Length = self._lookback_period.Value
+        self._slope_std_dev = StandardDeviation()
+        self._slope_std_dev.Length = self._lookback_period.Value
 
-        self._obv = OnBalanceVolume()
-        self._ema = ExponentialMovingAverage()
-        self._ema.Length = int(self._ema_period.Value)
+        subscription = self.SubscribeCandles(self.CandleType)
+        subscription.Bind(obv, self._process_candle).Start()
 
-        subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(self._obv, self._ema, self._process_candle).Start()
-
-        self.StartProtection(Unit(), Unit(self._stop_loss_percent.Value, UnitTypes.Percent))
+        stop = float(self._stop_loss_percent.Value)
+        self.StartProtection(None, Unit(stop, UnitTypes.Percent) if stop > 0 else None)
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, self._ema)
-            self.DrawIndicator(area, self._obv)
             self.DrawOwnTrades(area)
 
-    def _process_candle(self, candle, obv_value, ema_value):
+            obv_area = self.CreateChartArea()
+            if obv_area is not None:
+                self.DrawIndicator(obv_area, obv)
+
+    def _process_candle(self, candle, obv_value):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self._obv.IsFormed or not self._ema.IsFormed:
+        smoothed = float(process_float(self._obv_sma, obv_value, candle.ServerTime, True))
+
+        if not self._obv_sma.IsFormed:
             return
 
-        ov = float(obv_value)
-        ev = float(ema_value)
-
-        if not self._is_initialized:
-            self._previous_obv_value = ov
-            self._is_initialized = True
+        if self._prev_obv is None:
+            self._prev_obv = smoothed
             return
 
-        slope = ov - self._previous_obv_value
-        self._previous_obv_value = ov
+        slope = smoothed - self._prev_obv
+        self._prev_obv = smoothed
 
-        lb = int(self._lookback_period.Value)
-        self._slope_history[self._current_index] = slope
-        self._current_index = (self._current_index + 1) % lb
+        avg_slope = float(process_float(self._slope_average, slope, candle.ServerTime, True))
+        std_slope = float(process_float(self._slope_std_dev, slope, candle.ServerTime, True))
 
-        if self._filled_count < lb:
-            self._filled_count += 1
+        prev = self._prev_slope
+        self._prev_slope = slope
 
-        if self._filled_count < lb:
+        if not self._slope_average.IsFormed or not self._slope_std_dev.IsFormed or prev is None:
             return
-
-        avg_slope = 0.0
-        for i in range(lb):
-            avg_slope += self._slope_history[i]
-        avg_slope /= float(lb)
-
-        sum_sq = 0.0
-        for i in range(lb):
-            diff = self._slope_history[i] - avg_slope
-            sum_sq += diff * diff
-        std_slope = math.sqrt(sum_sq / float(lb))
 
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        if std_slope <= 0:
-            return
+        k = float(self._deviation_multiplier.Value)
 
-        if self._cooldown > 0:
-            self._cooldown -= 1
-            return
-
-        tm = float(self._threshold_multiplier.Value)
-        lower_threshold = avg_slope - tm * std_slope
-        upper_threshold = avg_slope + tm * std_slope
-        close_price = float(candle.ClosePrice)
-        price_above_ema = close_price >= ev
-        price_below_ema = close_price <= ev
-
-        if self.Position == 0:
-            if slope <= lower_threshold and price_above_ema:
-                self.BuyMarket()
-                self._cooldown = int(self._cooldown_bars.Value)
-            elif slope >= upper_threshold and price_below_ema:
-                self.SellMarket()
-                self._cooldown = int(self._cooldown_bars.Value)
-        elif self.Position > 0:
-            if slope >= avg_slope or price_below_ema:
-                self.SellMarket(Math.Abs(self.Position))
-                self._cooldown = int(self._cooldown_bars.Value)
-        elif self.Position < 0:
-            if slope <= avg_slope or price_above_ema:
-                self.BuyMarket(Math.Abs(self.Position))
-                self._cooldown = int(self._cooldown_bars.Value)
+        # Extreme reading that has started to turn back toward the average.
+        if slope < avg_slope - k * std_slope and slope > prev and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+        elif slope > avg_slope + k * std_slope and slope < prev and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
+        elif self.Position > 0 and slope >= avg_slope:
+            self.SellMarket(self.Position)
+        elif self.Position < 0 and slope <= avg_slope:
+            self.BuyMarket(-self.Position)
 
     def CreateClone(self):
         return obv_slope_mean_reversion_strategy()

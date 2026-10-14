@@ -7,7 +7,7 @@ MACD と Williams %R インジケーターに基づく戦略。MACD > Signal か
 
 MACD はより大きなモメンタムの転換を示し、Williams %R は短期的な反転を正確に特定します。両方のシグナルが一致する必要があります。
 
-トレンドとカウンタートレンドの両方のシグナルを組み合わせたい人に適しています。ストップは ATR 係数に依存します。
+トレンドとカウンタートレンドの両方のシグナルを組み合わせたい人に適しています。ストップはエントリー価格の一定割合です。
 
 ## 詳細
 
@@ -22,8 +22,11 @@ MACD はより大きなモメンタムの転換を示し、Williams %R は短期
   - `MacdSlow` = 26
   - `MacdSignal` = 9
   - `WilliamsRPeriod` = 14
-  - `StopLossPercent` = 2.0m
+  - `WilliamsROversold` = -80
+  - `WilliamsROverbought` = -20
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    ルール中の-80と-20はWilliamsROversoldとWilliamsROverboughtの既定値です。ロングはMACDがシグナル線を下抜けたとき、ショートは上抜けたときに決済します。 保有ポジションと逆方向のエントリーシグナルはドテンになります。
 - **フィルター**:
   - カテゴリ: 平均回帰
   - 方向: 両方

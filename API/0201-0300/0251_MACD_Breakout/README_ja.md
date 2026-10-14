@@ -20,9 +20,10 @@ MACDブレイクアウト戦略はMACDの突然の拡大を観察します。読
   - `SlowEmaPeriod` = 26
   - `SignalPeriod` = 9
   - `SmaPeriod` = 20
-  - `DeviationMultiplier` = 2.0m
-  - `StopLossPercent` = 2.0m
+  - `DeviationMultiplier` = 2
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
+    AvgとStdDevは現在値を含む直近SmaPeriod個のMACDラインの平均と標準偏差です。 ストップはエントリー価格の固定StopLossPercentで、ローソク足の間も監視されます。0で無効になります。 バンドは平均に標準偏差のDeviationMultiplier倍を加減した値です。MACDラインが上側バンドを上回ればロング、下側バンドを下回ればショートを建て、MACDラインが平均を下回ればロングを、上回ればショートを閉じます。 保有ポジションと逆方向のエントリーシグナルはドテンになります。
 - **フィルター**:
   - カテゴリ: ブレイクアウト
   - 方向: 両方

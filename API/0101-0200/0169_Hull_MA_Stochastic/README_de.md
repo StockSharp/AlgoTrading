@@ -12,8 +12,8 @@ Ein flexibler Ansatz für Trader, die glatte Signale bevorzugen. ATR-basierte St
 ## Details
 
 - **Einstiegskriterien**:
-  - Long: `HullMA turning up && StochK < 20`
-  - Short: `HullMA turning down && StochK > 80`
+  - Long: `HullMA turning up && StochK < StochOversold`
+  - Short: `HullMA turning down && StochK > StochOverbought`
 - **Long/Short**: Beide
 - **Ausstiegskriterien**:
   - Hull MA Richtungswechsel
@@ -22,9 +22,12 @@ Ein flexibler Ansatz für Trader, die glatte Signale bevorzugen. ATR-basierte St
   - `HmaPeriod` = 9
   - `StochPeriod` = 14
   - `StochK` = 3
-  - `StochD` = 3
+  - `StochOversold` = 20
+  - `StochOverbought` = 80
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
-  - `StopLossAtr` = 2m
+  - `StopLossAtr` = 2
+  - `AtrPeriod` = 14
+    Der HMA dreht nach oben, wenn er nach einem Rückgang steigt, und nach unten, wenn er nach einem Anstieg fällt; ein Long schließt, wenn er fällt, ein Short, wenn er steigt. %K ist die Stochastik über StochPeriod Kerzen, geglättet über StochK Kerzen, %D spielt keine Rolle. Der Stop liegt StopLossAtr ATR (AtrPeriod) vom Einstiegsschluss entfernt und wird auf Kerzenschlüssen geprüft. Ein Einstiegssignal gegen eine offene Position dreht sie.
 - **Filter**:
   - Kategorie: Mean Reversion
   - Richtung: Beide

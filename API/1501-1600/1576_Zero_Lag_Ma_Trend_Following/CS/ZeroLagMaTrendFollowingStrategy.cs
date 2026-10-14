@@ -43,7 +43,7 @@ public class ZeroLagMaTrendFollowingStrategy : Strategy
 		_length = Param(nameof(Length), 34).SetDisplay("Length", "MA length", "Indicators");
 		_atrPeriod = Param(nameof(AtrPeriod), 14).SetDisplay("ATR Period", "ATR length", "Indicators");
 		_riskReward = Param(nameof(RiskReward), 2m).SetDisplay("Risk/Reward", "Take profit ratio", "Risk");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()

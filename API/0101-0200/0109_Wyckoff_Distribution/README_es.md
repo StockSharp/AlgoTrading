@@ -18,7 +18,9 @@ Un stop justo por encima del rango protege contra falsos rompimientos, y las pos
 - **Stops**: Sí, basados en porcentaje
 - **Valores predeterminados**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `RangePeriod` = 20
+  - `StopLossPercent` = 2
+    El rango de distribución es el máximo más alto y el mínimo más bajo de las RangePeriod velas anteriores. La estrategia solo vende, con un cierre por debajo del rango; el stop se coloca StopLossPercent por encima del techo de la estructura y la posición se cierra cuando una vela cierra por encima.
 - **Filtros**:
   - Categoría: Seguimiento de tendencia
   - Dirección: Ambos

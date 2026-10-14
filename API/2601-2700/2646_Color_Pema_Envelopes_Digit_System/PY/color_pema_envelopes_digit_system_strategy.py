@@ -41,9 +41,9 @@ class color_pema_envelopes_digit_system_strategy(Strategy):
             .SetDisplay("Allow Buy Close", "Allow closing long positions on opposite signal", "Logic")
         self._allow_sell_close = self.Param("AllowSellClose", True) \
             .SetDisplay("Allow Sell Close", "Allow closing short positions on opposite signal", "Logic")
-        self._stop_loss_points = self.Param("StopLossPoints", 10.0) \
+        self._stop_loss_points = self.Param("StopLossPoints", 1000.0) \
             .SetDisplay("Stop Loss Points", "Distance for protective stop", "Risk")
-        self._take_profit_points = self.Param("TakeProfitPoints", 20.0) \
+        self._take_profit_points = self.Param("TakeProfitPoints", 2000.0) \
             .SetDisplay("Take Profit Points", "Distance for profit target", "Risk")
 
         # PEMA state

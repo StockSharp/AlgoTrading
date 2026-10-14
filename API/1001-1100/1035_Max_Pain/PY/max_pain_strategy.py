@@ -13,7 +13,7 @@ from StockSharp.Algo.Strategies import Strategy
 class max_pain_strategy(Strategy):
     def __init__(self):
         super(max_pain_strategy, self).__init__()
-        self._lookback_period = self.Param("LookbackPeriod", 20) \
+        self._lookback_period = self.Param("LookbackPeriod", 70) \
             .SetDisplay("Lookback Period", "Volume average lookback", "General")
         self._hold_periods = self.Param("HoldPeriods", 8) \
             .SetDisplay("Hold Periods", "Bars to hold", "General")

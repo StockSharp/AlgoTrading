@@ -32,14 +32,14 @@ public class PfeExtremesStrategy : Strategy
 
 	public PfeExtremesStrategy()
 	{
-		_pfePeriod = Param(nameof(PfePeriod), 9)
+		_pfePeriod = Param(nameof(PfePeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("PFE Period", "Number of bars for PFE calculation", "Indicator");
 
-		_upLevel = Param(nameof(UpLevel), 20m)
+		_upLevel = Param(nameof(UpLevel), 0.5m)
 			.SetDisplay("Upper Level", "PFE value to trigger long entries", "Signal");
 
-		_downLevel = Param(nameof(DownLevel), -20m)
+		_downLevel = Param(nameof(DownLevel), -0.5m)
 			.SetDisplay("Lower Level", "PFE value to trigger short entries", "Signal");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())

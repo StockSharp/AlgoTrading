@@ -19,9 +19,10 @@ Las pruebas indican un rendimiento anual promedio de aproximadamente 64%. Funcio
 - **Valores predeterminados**:
   - `VolumeAvgPeriod` = 20
   - `SupertrendPeriod` = 10
-  - `SupertrendMultiplier` = 3m
+  - `SupertrendMultiplier` = 3
   - `CandleType` = TimeSpan.FromMinutes(5)
-  - `StopLossPercent` = 2.0m
+  - `StopLossPercent` = 2
+    Avg(Volume) es el volumen medio de las VolumeAvgPeriod velas anteriores. Un largo se cierra en cuanto el Supertrend gira a la baja y un corto cuando gira al alza; el stop es un StopLossPercent fijo del precio de entrada, vigilado también entre velas. Una señal de entrada contra una posición abierta la invierte.
 - **Filtros**:
   - Categoría: Tendencia
   - Dirección: Ambos

@@ -18,7 +18,9 @@ Stops liegen knapp unterhalb des Doji-Tiefs, um Verluste gering zu halten, falls
 - **Stops**: Ja, prozentbasiert
 - **Standardwerte**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `DojiBodyPercent` = 10
+  - `StopLossPercent` = 2
+    Der Markt handelt rund um die Uhr, daher haben Kerzenspannen fast nie Lücken (im Beispielmonat gibt es kein solches bullisches Muster); die Lücken werden zwischen den Kerzenkörpern gemessen. Der Körper des Doji beträgt höchstens DojiBodyPercent seiner Spanne. Die Strategie kauft nur, zum Schluss der dritten Kerze; der Stop liegt StopLossPercent unter dem Doji-Tief, und die Position schließt, wenn eine Kerze darunter schließt.
 - **Filter**:
   - Kategorie: Muster
   - Richtung: Beide

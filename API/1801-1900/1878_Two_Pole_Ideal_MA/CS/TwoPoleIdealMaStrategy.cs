@@ -83,7 +83,7 @@ public class TwoPoleIdealMaStrategy : Strategy
 	{
 		_fastPeriod = Param(nameof(FastPeriod), 10).SetDisplay("Fast Period", "Fast MA length", "Indicators");
 		_slowPeriod = Param(nameof(SlowPeriod), 30).SetDisplay("Slow Period", "Slow MA length", "Indicators");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General");
 		_minSpreadPercent = Param(nameof(MinSpreadPercent), 0.001m).SetDisplay("Minimum Spread %", "Minimum normalized spread between fast and slow averages", "Filters");
 		_cooldownBars = Param(nameof(CooldownBars), 4).SetDisplay("Cooldown Bars", "Completed candles to wait after a position change", "Trading");
 	}

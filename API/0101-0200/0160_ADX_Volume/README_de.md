@@ -12,17 +12,19 @@ Ideal zum Erfassen energischer Ausbrüche. Ein ATR-basierter Stop hält das Risi
 ## Details
 
 - **Einstiegskriterien**:
-  - Long: `ADX > AdxThreshold && Volume > AvgVolume`
-  - Short: `ADX > AdxThreshold && Volume > AvgVolume`
+  - Long: `ADX > AdxThreshold && Volume > AvgVolume && +DI > -DI`
+  - Short: `ADX > AdxThreshold && Volume > AvgVolume && -DI > +DI`
 - **Long/Short**: Beide
 - **Ausstiegskriterien**: Trend schwächt sich unter den Schwellenwert ab
-- **Stops**: ATR-basiert mit `StopLoss`
+- **Stops**: ATR-basiert mit `StopLossAtr`
 - **Standardwerte**:
   - `AdxPeriod` = 14
   - `AdxThreshold` = 25m
   - `VolumeAvgPeriod` = 20
-  - `StopLoss` = new Unit(2, UnitTypes.Absolute)
+  - `StopLossAtr` = 2
+  - `AtrPeriod` = 14
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    AvgVolume ist das durchschnittliche Volumen der vorherigen VolumeAvgPeriod Kerzen. Der Stop liegt StopLossAtr ATR (AtrPeriod) vom Einstiegsschluss entfernt und wird auf Kerzenschlüssen geprüft. Ein Einstiegssignal gegen eine offene Position dreht sie.
 - **Filter**:
   - Kategorie: Ausbruch
   - Richtung: Beide

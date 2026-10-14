@@ -20,7 +20,7 @@ class zero_lag_ma_trend_following_strategy(Strategy):
             .SetDisplay("ATR Period", "ATR length", "Indicators")
         self._risk_reward_param = self.Param("RiskReward", 2.0) \
             .SetDisplay("Risk/Reward", "Take profit ratio", "Risk")
-        self._candle_type_param = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
+        self._candle_type_param = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Candle timeframe", "General")
         self._prev_zlma = 0.0
         self._prev_ema = 0.0

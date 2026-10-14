@@ -97,7 +97,7 @@ public class HullMaWithVolumeSpikeStrategy : Strategy
 			.SetRange(2, 100)
 			.SetDisplay("Volume Avg Period", "Period for volume statistics", "Indicators");
 
-		_volumeThresholdFactor = Param(nameof(VolumeThresholdFactor), 1.8m)
+		_volumeThresholdFactor = Param(nameof(VolumeThresholdFactor), 2m)
 			.SetRange(0.1m, 10m)
 			.SetDisplay("Volume Threshold Factor", "Multiplier for volume spike detection", "Signals");
 

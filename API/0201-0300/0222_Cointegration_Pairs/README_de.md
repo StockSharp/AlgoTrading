@@ -15,15 +15,18 @@ Kointegrations-Paarhandel eignet sich für statistische Arbitrageure, die komfor
   - **Short**: Residualer Z-Score > EntryThreshold
 - **Long/Short**: Beide Seiten.
 - **Ausstiegskriterien**:
-  - **Long**: Ausstieg, wenn |Z-Score| < 0.5
-  - **Short**: Ausstieg, wenn |Z-Score| < 0.5
+  - **Long**: Ausstieg, wenn |Z-Score| < ExitThreshold
+  - **Short**: Ausstieg, wenn |Z-Score| < ExitThreshold
 - **Stops**: Ja, prozentualer Stop-Loss.
 - **Standardwerte**:
   - `Period` = 20
-  - `EntryThreshold` = 2.0m
-  - `Beta` = 1.0m
-  - `StopLossPercent` = 2.0m
+  - `EntryThreshold` = 2
+  - `ExitThreshold` = 0.5
+  - `Beta` = 1
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
+  - `Asset2` — erforderlich, ohne Standardwert
+    Das Residuum ist der Schlusskurs des Security der Strategie minus Beta mal der Schlusskurs von Asset2 auf Kerzen derselben Zeit; sein Z-Score nutzt Mittelwert und Standardabweichung der letzten Period Residuen. 0.5 ist der Standard-Ausstiegswert, den die Regeln nennen. Das erste Bein handelt Volume, Asset2 Beta mal Volume; ein Gegensignal dreht beide Beine. Der Stop schließt beide Beine, sobald sich das Residuum um StopLossPercent seines Einstiegswerts gegen das Paar bewegt, geprüft bei Kerzenschluss; 0 schaltet ihn ab.
 - **Filter**:
   - Kategorie: Arbitrage
   - Richtung: Beide

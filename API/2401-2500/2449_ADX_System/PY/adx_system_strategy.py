@@ -15,10 +15,10 @@ class adx_system_strategy(Strategy):
     def __init__(self):
         super(adx_system_strategy, self).__init__()
 
-        self._adx_period = self.Param("AdxPeriod", 10)
-        self._take_profit = self.Param("TakeProfit", 150.0)
-        self._stop_loss = self.Param("StopLoss", 250.0)
-        self._trailing_stop = self.Param("TrailingStop", 120.0)
+        self._adx_period = self.Param("AdxPeriod", 14)
+        self._take_profit = self.Param("TakeProfit", 15.0)
+        self._stop_loss = self.Param("StopLoss", 100.0)
+        self._trailing_stop = self.Param("TrailingStop", 20.0)
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5)))
 
         self._prev_adx = 0.0

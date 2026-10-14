@@ -1,10 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,29 +12,23 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that trades on Williams %R breakouts.
-/// When Williams %R crosses above the overbought level or below the oversold level,
-/// it enters position in the corresponding direction. Exits when Williams %R
-/// crosses back through its moving average.
+/// Williams R Breakout strategy.
+/// The bands lie Multiplier standard deviations around the average of the last AvgPeriod %R values, the current one included.
+/// %R above the upper band goes long and %R below the lower band goes short,
+/// reversing an opposite position. A long closes once %R is back below its average and a short once it is back above it, and a percent stop limits the loss.
 /// </summary>
 public class WilliamsRBreakoutStrategy : Strategy
 {
 	private readonly StrategyParam<int> _williamsRPeriod;
 	private readonly StrategyParam<int> _avgPeriod;
-	private readonly StrategyParam<decimal> _overboughtLevel;
-	private readonly StrategyParam<decimal> _oversoldLevel;
+	private readonly StrategyParam<decimal> _multiplier;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _stopLoss;
 
-	private WilliamsR _williamsR;
-	private SimpleMovingAverage _williamsRAverage;
-	private bool _prevInitialized;
-	private decimal _prevWilliamsRValue;
-	private decimal _prevWilliamsRAvgValue;
-	private int _cooldown;
+	private readonly Queue<decimal> _values = [];
 
 	/// <summary>
-	/// Williams %R period.
+	/// Period of Williams %R.
 	/// </summary>
 	public int WilliamsRPeriod
 	{
@@ -45,7 +37,7 @@ public class WilliamsRBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Period for Williams %R average calculation.
+	/// Values of %R the average and the standard deviation span.
 	/// </summary>
 	public int AvgPeriod
 	{
@@ -54,25 +46,25 @@ public class WilliamsRBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Overbought level for Williams %R (e.g. -10).
+	/// Standard deviations between the average and a band.
 	/// </summary>
-	public decimal OverboughtLevel
+	public decimal Multiplier
 	{
-		get => _overboughtLevel.Value;
-		set => _overboughtLevel.Value = value;
+		get => _multiplier.Value;
+		set => _multiplier.Value = value;
 	}
 
 	/// <summary>
-	/// Oversold level for Williams %R (e.g. -90).
+	/// Stop loss percentage from entry price.
 	/// </summary>
-	public decimal OversoldLevel
+	public decimal StopLossPercent
 	{
-		get => _oversoldLevel.Value;
-		set => _oversoldLevel.Value = value;
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
 	}
 
 	/// <summary>
-	/// Candle type for strategy.
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -81,42 +73,28 @@ public class WilliamsRBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop-loss percentage.
-	/// </summary>
-	public decimal StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize <see cref="WilliamsRBreakoutStrategy"/>.
+	/// Constructor.
 	/// </summary>
 	public WilliamsRBreakoutStrategy()
 	{
 		_williamsRPeriod = Param(nameof(WilliamsRPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("Williams %R Period", "Period for Williams %R indicator", "Indicators")
-			.SetOptimize(10, 30, 2);
+			.SetDisplay("Williams %R Period", "Period of Williams %R", "Indicators");
 
 		_avgPeriod = Param(nameof(AvgPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Average Period", "Period for Williams %R average calculation", "Indicators")
-			.SetOptimize(10, 50, 5);
+			.SetDisplay("Average Period", "Values of %R the average and the standard deviation span", "Indicators");
 
-		_overboughtLevel = Param(nameof(OverboughtLevel), -10m)
-			.SetDisplay("Overbought Level", "Williams %R overbought threshold", "Indicators");
+		_multiplier = Param(nameof(Multiplier), 2m)
+			.SetGreaterThanZero()
+			.SetDisplay("Multiplier", "Standard deviations between the average and a band", "Indicators");
 
-		_oversoldLevel = Param(nameof(OversoldLevel), -90m)
-			.SetDisplay("Oversold Level", "Williams %R oversold threshold", "Indicators");
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_stopLoss = Param(nameof(StopLoss), 2.0m)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss %", "Stop Loss percentage", "Risk Management")
-			.SetOptimize(1.0m, 5.0m, 0.5m);
 	}
 
 	/// <inheritdoc />
@@ -129,11 +107,7 @@ public class WilliamsRBreakoutStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_prevInitialized = false;
-		_prevWilliamsRValue = 0;
-		_prevWilliamsRAvgValue = 0;
-		_cooldown = 0;
+		_values.Clear();
 	}
 
 	/// <inheritdoc />
@@ -141,97 +115,77 @@ public class WilliamsRBreakoutStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
-		_williamsR = new WilliamsR { Length = WilliamsRPeriod };
-		_williamsRAverage = new SimpleMovingAverage { Length = AvgPeriod };
+		_values.Clear();
 
-		// Create subscription and bind Williams %R
+		var williams = new WilliamsR { Length = WilliamsRPeriod };
+
 		var subscription = SubscribeCandles(CandleType);
-
 		subscription
-			.Bind(_williamsR, ProcessCandle)
+			.BindEx(williams, ProcessCandle)
 			.Start();
 
-		// Enable stop loss protection
-		StartProtection(
-			takeProfit: new Unit(0, UnitTypes.Absolute),
-			stopLoss: new Unit(StopLoss, UnitTypes.Percent)
-		);
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
 
-		// Create chart area for visualization
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _williamsR);
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, williams);
+			}
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal wrValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// The high-level handler activates native protection before this callback, also between signal bars.
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue williamsValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Feed WR value through SMA to get the average (must set IsFinal for buffer to accumulate)
-		var input = new DecimalIndicatorValue(_williamsRAverage, wrValue, candle.ServerTime) { IsFinal = true };
-		var avgResult = _williamsRAverage.Process(input);
+		if (!williamsValue.IsFormed)
+			return;
 
-		if (!_williamsRAverage.IsFormed)
+		var value = williamsValue.GetValue<decimal>();
+
+		_values.Enqueue(value);
+
+		if (_values.Count > AvgPeriod)
+			_values.Dequeue();
+
+		if (_values.Count < AvgPeriod)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var currentWilliamsRAvg = avgResult.ToDecimal();
+		var mean = _values.Average();
+		var deviation = (decimal)Math.Sqrt((double)_values.Average(v => (v - mean) * (v - mean)));
+		var upper = mean + Multiplier * deviation;
+		var lower = mean - Multiplier * deviation;
 
-		if (!_prevInitialized)
-		{
-			_prevWilliamsRValue = wrValue;
-			_prevWilliamsRAvgValue = currentWilliamsRAvg;
-			_prevInitialized = true;
-			return;
-		}
-
-		// Cooldown between trades (minimum bars between signals)
-		if (_cooldown > 0)
-		{
-			_cooldown--;
-			_prevWilliamsRValue = wrValue;
-			_prevWilliamsRAvgValue = currentWilliamsRAvg;
-			return;
-		}
-
-		const int cooldownBars = 100;
-
-		// Williams %R breakout detection using crossover of extreme levels
-		// Williams %R crossing above overbought level from below = bullish breakout
-		if (_prevWilliamsRValue <= OverboughtLevel && wrValue > OverboughtLevel && Position <= 0)
-		{
+		if (value > upper && Position <= 0)
 			BuyMarket(Volume + Math.Abs(Position));
-			_cooldown = cooldownBars;
-		}
-		// Williams %R crossing below oversold level from above = bearish breakout
-		else if (_prevWilliamsRValue >= OversoldLevel && wrValue < OversoldLevel && Position >= 0)
-		{
+		else if (value < lower && Position >= 0)
 			SellMarket(Volume + Math.Abs(Position));
-			_cooldown = cooldownBars;
-		}
-		// Exit long when Williams %R drops below the midpoint (-50)
-		else if (Position > 0 && _prevWilliamsRValue >= -50m && wrValue < -50m)
-		{
-			SellMarket(Math.Abs(Position));
-			_cooldown = cooldownBars;
-		}
-		// Exit short when Williams %R rises above the midpoint (-50)
-		else if (Position < 0 && _prevWilliamsRValue <= -50m && wrValue > -50m)
-		{
-			BuyMarket(Math.Abs(Position));
-			_cooldown = cooldownBars;
-		}
-
-		// Update previous values
-		_prevWilliamsRValue = wrValue;
-		_prevWilliamsRAvgValue = currentWilliamsRAvg;
+		else if (Position > 0 && value < mean)
+			SellMarket(Position);
+		else if (Position < 0 && value > mean)
+			BuyMarket(-Position);
 	}
 }

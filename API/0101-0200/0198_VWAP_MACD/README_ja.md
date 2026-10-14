@@ -7,7 +7,7 @@ VWAPとMACDに基づく戦略。価格がVWAPより上でMACD > シグナルの�
 
 VWAPはイントラデイの価値を導き、MACDのクロスオーバーはモメンタムの転換を示します。MACDがVWAPレベル付近で転換するときにトレードが開始されます。
 
-短期モメンタムトレーダーに適しています。ATRストップルールにより過大なリスクを防ぎます。
+短期モメンタムトレーダーに適しています。パーセントストップにより過大なリスクを防ぎます。
 
 ## 詳細
 
@@ -21,8 +21,9 @@ VWAPはイントラデイの価値を導き、MACDのクロスオーバーはモ
   - `MacdFastPeriod` = 12
   - `MacdSlowPeriod` = 26
   - `MacdSignalPeriod` = 9
-  - `StopLossPercent` = 2m
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    市場は24時間取引のため、セッションVWAPはUTCの毎日リセットされ、各足の典型価格を出来高で加重します。 保有ポジションと逆方向のエントリーシグナルはドテンになります。
 - **フィルター**:
   - カテゴリ: 平均回帰
   - 方向: 両方

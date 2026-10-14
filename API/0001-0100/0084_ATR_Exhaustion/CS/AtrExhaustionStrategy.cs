@@ -12,20 +12,21 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// ATR Exhaustion strategy.
-/// Enters when ATR spikes (current ATR significantly higher than previous ATR).
-/// ATR spike + bullish candle = buy.
-/// ATR spike + bearish candle = sell.
-/// Exits on SMA cross.
+/// An ATR spike is an ATR above AtrMultiplier times its own AtrAvgPeriod moving average. While flat, a bullish candle on a spike
+/// buys when the price moving average has been falling and a bearish one sells when it has been rising.
+/// The only exit is a trailing percent stop.
 /// </summary>
 public class AtrExhaustionStrategy : Strategy
 {
 	private readonly StrategyParam<int> _atrPeriod;
+	private readonly StrategyParam<int> _atrAvgPeriod;
+	private readonly StrategyParam<decimal> _atrMultiplier;
 	private readonly StrategyParam<int> _maPeriod;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
 
-	private decimal _prevAtr;
-	private int _cooldown;
+	private SimpleMovingAverage _atrAverage;
+	private decimal? _prevMa;
 
 	/// <summary>
 	/// ATR period.
@@ -37,12 +38,39 @@ public class AtrExhaustionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// MA Period.
+	/// Period of the moving average of ATR.
 	/// </summary>
-	public int MAPeriod
+	public int AtrAvgPeriod
+	{
+		get => _atrAvgPeriod.Value;
+		set => _atrAvgPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// How many times its average ATR must exceed to count as a spike.
+	/// </summary>
+	public decimal AtrMultiplier
+	{
+		get => _atrMultiplier.Value;
+		set => _atrMultiplier.Value = value;
+	}
+
+	/// <summary>
+	/// Period of the price moving average that defines the prior move.
+	/// </summary>
+	public int MaPeriod
 	{
 		get => _maPeriod.Value;
 		set => _maPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Trailing stop-loss percentage.
+	/// </summary>
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
 	}
 
 	/// <summary>
@@ -55,33 +83,32 @@ public class AtrExhaustionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Cooldown bars.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
 	/// Constructor.
 	/// </summary>
 	public AtrExhaustionStrategy()
 	{
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
-			.SetRange(7, 21)
+			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "Period for ATR", "Indicators");
 
-		_maPeriod = Param(nameof(MAPeriod), 20)
+		_atrAvgPeriod = Param(nameof(AtrAvgPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("MA Period", "Period for SMA", "Indicators");
+			.SetDisplay("ATR Average Period", "Period of the moving average of ATR", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_atrMultiplier = Param(nameof(AtrMultiplier), 1.5m)
+			.SetGreaterThanZero()
+			.SetDisplay("ATR Multiplier", "How many times its average ATR must exceed", "Indicators");
+
+		_maPeriod = Param(nameof(MaPeriod), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("MA Period", "Price moving average that defines the prior move", "Indicators");
+
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Trailing stop loss percentage", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_cooldownBars = Param(nameof(CooldownBars), 500)
-			.SetRange(1, 1000)
-			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -94,8 +121,8 @@ public class AtrExhaustionStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevAtr = default;
-		_cooldown = default;
+		_atrAverage = null;
+		_prevMa = null;
 	}
 
 	/// <inheritdoc />
@@ -103,16 +130,26 @@ public class AtrExhaustionStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_prevAtr = 0;
-		_cooldown = 0;
+		_atrAverage = new SimpleMovingAverage { Length = AtrAvgPeriod };
+		_prevMa = null;
 
-		var sma = new SimpleMovingAverage { Length = MAPeriod };
+		var sma = new SimpleMovingAverage { Length = MaPeriod };
 		var atr = new AverageTrueRange { Length = AtrPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(sma, atr, ProcessCandle)
+			.BindEx(sma, atr, ProcessCandle)
 			.Start();
+
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), isStopTrailing: true, useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -124,57 +161,37 @@ public class AtrExhaustionStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal smaValue, decimal atrValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
 	{
-		if (candle.State != CandleStates.Finished)
+		// The high-level handler activates native protection before this callback, also between signal bars.
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue smaValue, IIndicatorValue atrValue)
+	{
+		if (candle.State != CandleStates.Finished || !atrValue.IsFormed)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_prevAtr = atrValue;
+		var atr = atrValue.GetValue<decimal>();
+		var atrAverage = _atrAverage.Process(atr, candle.OpenTime, true);
+
+		if (!smaValue.IsFormed)
 			return;
-		}
 
-		if (_prevAtr == 0)
-		{
-			_prevAtr = atrValue;
+		var ma = smaValue.GetValue<decimal>();
+		var prevMa = _prevMa;
+		_prevMa = ma;
+
+		if (!_atrAverage.IsFormed || prevMa is not decimal lastMa || Position != 0 || !IsFormedAndOnlineAndAllowTrading())
 			return;
-		}
 
-		if (_cooldown > 0)
-		{
-			_cooldown--;
-			_prevAtr = atrValue;
+		if (atr <= atrAverage.GetValue<decimal>() * AtrMultiplier)
 			return;
-		}
 
-		// ATR spike: current ATR significantly higher than previous
-		var atrSpike = _prevAtr > 0 && atrValue > _prevAtr * 1.3m;
+		var close = candle.ClosePrice;
 
-		var isBullish = candle.ClosePrice > candle.OpenPrice;
-		var isBearish = candle.ClosePrice < candle.OpenPrice;
-
-		if (Position == 0 && atrSpike && isBullish)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position == 0 && atrSpike && isBearish)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position > 0 && candle.ClosePrice < smaValue)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position < 0 && candle.ClosePrice > smaValue)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-
-		_prevAtr = atrValue;
+		if (close > candle.OpenPrice && ma < lastMa)
+			BuyMarket(Volume);
+		else if (close < candle.OpenPrice && ma > lastMa)
+			SellMarket(Volume);
 	}
 }

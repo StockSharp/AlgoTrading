@@ -44,10 +44,10 @@ public class RsiExpertStrategy : Strategy
 		_levelDown = Param(nameof(LevelDown), 30m)
 			.SetDisplay("RSI Oversold", "Lower RSI level triggering a long", "Indicators");
 
-		_takeProfitPercent = Param(nameof(TakeProfitPercent), 3m)
+		_takeProfitPercent = Param(nameof(TakeProfitPercent), 0m)
 			.SetDisplay("Take Profit %", "Take profit percentage", "Risk");
 
-		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+		_stopLossPercent = Param(nameof(StopLossPercent), 0m)
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())

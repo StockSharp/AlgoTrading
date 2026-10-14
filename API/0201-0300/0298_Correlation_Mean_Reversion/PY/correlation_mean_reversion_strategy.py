@@ -30,10 +30,10 @@ class correlation_mean_reversion_strategy(Strategy):
         self._correlation_period = self.Param("CorrelationPeriod", 20) \
             .SetDisplay("Correlation Period", "Rolling period for the correlation indicator", "Indicators")
 
-        self._lookback_period = self.Param("LookbackPeriod", 30) \
+        self._lookback_period = self.Param("LookbackPeriod", 20) \
             .SetDisplay("Lookback Period", "Lookback period for correlation statistics", "Indicators")
 
-        self._deviation_threshold = self.Param("DeviationThreshold", 1.1) \
+        self._deviation_threshold = self.Param("DeviationThreshold", 2.0) \
             .SetDisplay("Deviation Threshold", "Absolute Z-score required for entry", "Signals")
 
         self._exit_threshold = self.Param("ExitThreshold", 0.15) \

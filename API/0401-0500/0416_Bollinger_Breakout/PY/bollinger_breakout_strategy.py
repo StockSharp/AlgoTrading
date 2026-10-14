@@ -4,147 +4,136 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
-clr.AddReference("StockSharp.BusinessEntities")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import BollingerBands, RelativeStrengthIndex, ExponentialMovingAverage, IndicatorHelper
+from System import TimeSpan, Decimal
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from StockSharp.Algo.Indicators import BollingerBands, RelativeStrengthIndex, ExponentialMovingAverage, Aroon
 from StockSharp.Algo.Strategies import Strategy
 
 
 class bollinger_breakout_strategy(Strategy):
-    """Bollinger Breakout Strategy with RSI and MA filters."""
+    """
+    Bollinger Breakout strategy.
+    Goes long when a candle closes above the upper band and short when it closes below the lower band, provided every
+    enabled filter agrees: RSI beyond its long/short momentum level, Aroon up/down dominance in the trade direction and
+    price on the trade side of the moving average. A long closes when price touches the lower band and a short when it
+    touches the upper band; an optional percent stop-loss caps the risk.
+    """
 
     def __init__(self):
         super(bollinger_breakout_strategy, self).__init__()
-
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
-            .SetDisplay("Candle type", "Candle type for strategy calculation.", "General")
         self._bb_length = self.Param("BBLength", 20) \
-            .SetDisplay("BB Length", "Bollinger Bands period", "Bollinger Bands")
+            .SetGreaterThanZero() \
+            .SetDisplay("BB Period", "Bollinger Bands period", "Bollinger Bands")
         self._bb_multiplier = self.Param("BBMultiplier", 1.5) \
-            .SetDisplay("BB StdDev", "Standard deviation multiplier", "Bollinger Bands")
+            .SetGreaterThanZero() \
+            .SetDisplay("BB StdDev", "Bollinger Bands standard deviation multiplier", "Bollinger Bands")
+        self._use_rsi = self.Param("UseRSI", True) \
+            .SetDisplay("Use RSI", "Require RSI confirmation", "RSI Filter")
         self._rsi_length = self.Param("RSILength", 14) \
+            .SetGreaterThanZero() \
             .SetDisplay("RSI Length", "RSI period", "RSI Filter")
-        self._rsi_oversold = self.Param("RSIOversold", 45) \
-            .SetDisplay("RSI Oversold", "RSI oversold level", "RSI Filter")
-        self._rsi_overbought = self.Param("RSIOverbought", 55) \
-            .SetDisplay("RSI Overbought", "RSI overbought level", "RSI Filter")
+        self._rsi_long_level = self.Param("RSILongLevel", 55.0) \
+            .SetDisplay("RSI Long Level", "RSI level above which longs are allowed", "RSI Filter")
+        self._rsi_short_level = self.Param("RSIShortLevel", 45.0) \
+            .SetDisplay("RSI Short Level", "RSI level below which shorts are allowed", "RSI Filter")
+        self._use_aroon = self.Param("UseAroon", False) \
+            .SetDisplay("Use Aroon", "Require Aroon confirmation", "Aroon Filter")
+        self._aroon_length = self.Param("AroonLength", 14) \
+            .SetGreaterThanZero() \
+            .SetDisplay("Aroon Length", "Aroon period", "Aroon Filter")
+        self._use_ma = self.Param("UseMA", True) \
+            .SetDisplay("Use MA", "Require price on the trade side of the moving average", "Moving Average")
         self._ma_length = self.Param("MALength", 50) \
-            .SetDisplay("MA Length", "Moving Average period", "Moving Average")
-        self._candle_percent = self.Param("CandlePercent", 0.3) \
-            .SetDisplay("Candle %", "Candle body penetration percentage", "Strategy")
-        self._cooldown_bars = self.Param("CooldownBars", 15) \
-            .SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk")
-
-        self._bollinger = None
-        self._rsi = None
-        self._ma = None
-        self._entry_price = None
-        self._cooldown_remaining = 0
+            .SetGreaterThanZero() \
+            .SetDisplay("MA Length", "Moving average period", "Moving Average")
+        self._use_sl = self.Param("UseSL", True) \
+            .SetDisplay("Use Stop Loss", "Enable the percent stop-loss", "Risk")
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
+            .SetGreaterThanZero() \
+            .SetDisplay("Stop Loss %", "Stop-loss percentage from the entry price", "Risk")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
+            .SetDisplay("Candle type", "Candle type for strategy calculation", "General")
 
     @property
-    def candle_type(self):
+    def CandleType(self):
         return self._candle_type.Value
 
-    def OnReseted(self):
-        super(bollinger_breakout_strategy, self).OnReseted()
-        self._bollinger = None
-        self._rsi = None
-        self._ma = None
-        self._entry_price = None
-        self._cooldown_remaining = 0
+    def GetWorkingSecurities(self):
+        return [(self.Security, self.CandleType)]
 
     def OnStarted2(self, time):
         super(bollinger_breakout_strategy, self).OnStarted2(time)
 
-        self._bollinger = BollingerBands()
-        self._bollinger.Length = int(self._bb_length.Value)
-        self._bollinger.Width = float(self._bb_multiplier.Value)
+        bollinger = BollingerBands()
+        bollinger.Length = self._bb_length.Value
+        bollinger.Width = Decimal(self._bb_multiplier.Value)
+        rsi = RelativeStrengthIndex()
+        rsi.Length = self._rsi_length.Value
+        aroon = Aroon()
+        aroon.Length = self._aroon_length.Value
+        ma = ExponentialMovingAverage()
+        ma.Length = self._ma_length.Value
 
-        self._rsi = RelativeStrengthIndex()
-        self._rsi.Length = int(self._rsi_length.Value)
+        subscription = self.SubscribeCandles(self.CandleType)
+        subscription.BindEx(bollinger, rsi, aroon, ma, self._process_candle).Start()
 
-        self._ma = ExponentialMovingAverage()
-        self._ma.Length = int(self._ma_length.Value)
-
-        subscription = self.SubscribeCandles(self.candle_type)
-        subscription.BindEx(self._bollinger, self._rsi, self._ma, self._on_process).Start()
+        if self._use_sl.Value:
+            self.StartProtection(Unit(), Unit(Decimal(self._stop_loss_percent.Value), UnitTypes.Percent), useMarketOrders=True)
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, self._bollinger)
-            self.DrawIndicator(area, self._ma)
+            self.DrawIndicator(area, bollinger)
+            self.DrawIndicator(area, ma)
             self.DrawOwnTrades(area)
 
-    def _on_process(self, candle, bb_value, rsi_value, ma_value):
+    def _process_candle(self, candle, bollinger_value, rsi_value, aroon_value, ma_value):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self._bollinger.IsFormed or not self._rsi.IsFormed or not self._ma.IsFormed:
+        if not bollinger_value.IsFormed or not rsi_value.IsFormed or not aroon_value.IsFormed or not ma_value.IsFormed:
             return
 
-        if bb_value.UpBand is None or bb_value.LowBand is None or bb_value.MovingAverage is None:
-            return
-        if rsi_value.IsEmpty or ma_value.IsEmpty:
+        if bollinger_value.UpBand is None or bollinger_value.LowBand is None:
             return
 
-        rsi = float(IndicatorHelper.ToDecimal(rsi_value))
-        ma_val = float(IndicatorHelper.ToDecimal(ma_value))
+        if aroon_value.Up is None or aroon_value.Down is None:
+            return
 
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        if self._cooldown_remaining > 0:
-            self._cooldown_remaining -= 1
-            return
-
+        upper = float(bollinger_value.UpBand)
+        lower = float(bollinger_value.LowBand)
+        aroon_up = float(aroon_value.Up)
+        aroon_down = float(aroon_value.Down)
+        rsi = float(rsi_value.GetValue[Decimal](None))
+        ma = float(ma_value.GetValue[Decimal](None))
         close = float(candle.ClosePrice)
-        opn = float(candle.OpenPrice)
-        high = float(candle.HighPrice)
-        low = float(candle.LowPrice)
 
-        upper = float(bb_value.UpBand)
-        lower = float(bb_value.LowBand)
-        middle = float(bb_value.MovingAverage)
+        use_rsi = self._use_rsi.Value
+        use_aroon = self._use_aroon.Value
+        use_ma = self._use_ma.Value
 
-        candle_size = high - low
-        if candle_size <= 0:
-            return
+        long_signal = close > upper \
+            and (not use_rsi or rsi > float(self._rsi_long_level.Value)) \
+            and (not use_aroon or aroon_up > aroon_down) \
+            and (not use_ma or close > ma)
 
-        candle_pct = float(self._candle_percent.Value)
-        cooldown = int(self._cooldown_bars.Value)
+        short_signal = close < lower \
+            and (not use_rsi or rsi < float(self._rsi_short_level.Value)) \
+            and (not use_aroon or aroon_down > aroon_up) \
+            and (not use_ma or close < ma)
 
-        buy_zone = candle_size * candle_pct + low
-        sell_zone = high - candle_size * candle_pct
-
-        buy_signal = buy_zone < lower and close < opn and rsi < float(self._rsi_oversold.Value) and close > ma_val
-        sell_signal = sell_zone > upper and close > opn and rsi > float(self._rsi_overbought.Value) and close < ma_val
-
-        if self.Position > 0 and close >= middle:
-            self.SellMarket(Math.Abs(self.Position))
-            self._entry_price = None
-            self._cooldown_remaining = cooldown
-            return
-        elif self.Position < 0 and close <= middle:
-            self.BuyMarket(Math.Abs(self.Position))
-            self._entry_price = None
-            self._cooldown_remaining = cooldown
-            return
-
-        if buy_signal and self.Position <= 0:
-            if self.Position < 0:
-                self.BuyMarket(Math.Abs(self.Position))
-            self.BuyMarket(self.Volume)
-            self._entry_price = close
-            self._cooldown_remaining = cooldown
-        elif sell_signal and self.Position >= 0:
-            if self.Position > 0:
-                self.SellMarket(Math.Abs(self.Position))
-            self.SellMarket(self.Volume)
-            self._entry_price = close
-            self._cooldown_remaining = cooldown
+        if long_signal and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+        elif short_signal and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
+        elif self.Position > 0 and float(candle.LowPrice) <= lower:
+            self.SellMarket(self.Position)
+        elif self.Position < 0 and float(candle.HighPrice) >= upper:
+            self.BuyMarket(-self.Position)
 
     def CreateClone(self):
         return bollinger_breakout_strategy()

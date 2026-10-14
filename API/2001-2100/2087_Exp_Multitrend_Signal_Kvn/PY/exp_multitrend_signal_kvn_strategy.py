@@ -4,6 +4,7 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
+clr.AddReference("StockSharp.BusinessEntities")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -14,9 +15,9 @@ from StockSharp.Algo.Strategies import Strategy
 class exp_multitrend_signal_kvn_strategy(Strategy):
     def __init__(self):
         super(exp_multitrend_signal_kvn_strategy, self).__init__()
-        self._k = self.Param("K", 10.0) \
+        self._k = self.Param("K", 48.0) \
             .SetDisplay("K", "Percent of swing used for channel width", "Indicator")
-        self._k_period = self.Param("KPeriod", 20) \
+        self._k_period = self.Param("KPeriod", 150) \
             .SetDisplay("K Period", "Base period for swing calculation", "Indicator")
         self._stop_loss_pct = self.Param("StopLossPct", 2.0) \
             .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk")

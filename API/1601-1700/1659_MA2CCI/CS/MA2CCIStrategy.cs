@@ -37,15 +37,15 @@ public class MA2CCIStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
-		_fastMaPeriod = Param(nameof(FastMaPeriod), 10)
+		_fastMaPeriod = Param(nameof(FastMaPeriod), 4)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MA", "Fast moving average period", "Parameters");
 
-		_slowMaPeriod = Param(nameof(SlowMaPeriod), 20)
+		_slowMaPeriod = Param(nameof(SlowMaPeriod), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA", "Slow moving average period", "Parameters");
 
-		_cciPeriod = Param(nameof(CciPeriod), 14)
+		_cciPeriod = Param(nameof(CciPeriod), 4)
 			.SetGreaterThanZero()
 			.SetDisplay("CCI Period", "Commodity Channel Index period", "Parameters");
 	}

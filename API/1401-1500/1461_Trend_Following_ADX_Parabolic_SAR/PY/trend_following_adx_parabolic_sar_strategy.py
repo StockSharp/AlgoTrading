@@ -15,7 +15,7 @@ class trend_following_adx_parabolic_sar_strategy(Strategy):
     def __init__(self):
         super(trend_following_adx_parabolic_sar_strategy, self).__init__()
         self._slow_length = self.Param("SlowLength", 40)             .SetDisplay("Slow Length", "Slow EMA period", "General")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5)))             .SetDisplay("Candle Type", "Candle type", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1)))             .SetDisplay("Candle Type", "Candle type", "General")
 
     @property
     def slow_length(self):

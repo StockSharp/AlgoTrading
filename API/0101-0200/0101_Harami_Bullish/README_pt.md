@@ -17,7 +17,8 @@ Um stop percentual abaixo do padrão fornece proteção, e a operação encerra 
 - **Stops**: Sim, baseado em percentual
 - **Valores padrão**:
   - `CandleType` = 15 minutos
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+    A estratégia só compra. O stop fica StopLossPercent abaixo da mínima mais baixa do padrão e a posição fecha quando uma vela fecha abaixo dele.
 - **Filtros**:
   - Categoria: Padrão
   - Direção: Ambos

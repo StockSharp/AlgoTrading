@@ -17,13 +17,13 @@ class eugene_candle_pattern_strategy(Strategy):
 
     def __init__(self):
         super(eugene_candle_pattern_strategy, self).__init__()
-        self._sl = self.Param("StopLossPoints", 500) \
+        self._sl = self.Param("StopLossPoints", 0) \
             .SetDisplay("Stop Loss (points)", "Stop loss in price steps", "Risk")
-        self._tp = self.Param("TakeProfitPoints", 800) \
+        self._tp = self.Param("TakeProfitPoints", 0) \
             .SetDisplay("Take Profit (points)", "Take profit in price steps", "Risk")
         self._inv = self.Param("InvertSignals", False) \
             .SetDisplay("Invert Signals", "Swap buy and sell signals", "General")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
         self._cooldown_bars = self.Param("CooldownBars", 4) \
             .SetDisplay("Cooldown Bars", "Bars to wait after position change", "Trading")

@@ -18,7 +18,9 @@ Os stops são baseados em um percentual além dos extremos do gap para gerenciar
 - **Stops**: Sim, baseado em percentual
 - **Valores padrão**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `MinGapPercent` = 0.01
+    O mercado negocia 24 horas, por isso a sessão é o dia UTC. O gap é a distância entre o último fechamento do dia anterior e a primeira abertura do dia. Um gap de pelo menos MinGapPercent é operado contra no fechamento do primeiro candle; o stop fica StopLossPercent além da máxima (venda) ou da mínima (compra) desse candle e é verificado nos fechamentos, e a posição é encerrada no último candle do dia.
 - **Filtros**:
   - Categoria: Gap
   - Direção: Ambos

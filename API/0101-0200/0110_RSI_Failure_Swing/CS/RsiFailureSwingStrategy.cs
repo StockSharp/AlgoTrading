@@ -11,35 +11,30 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that trades based on RSI Failure Swing pattern.
-/// A failure swing occurs when RSI reverses direction without crossing through centerline.
-/// Uses cooldown to control trade frequency.
+/// RSI Failure Swing strategy.
+/// A trough of RSI below OversoldLevel that is higher than the previous such trough arms a long, which opens when RSI then crosses
+/// back above OversoldLevel; peaks above OverboughtLevel arm shorts the same way. A long closes when RSI crosses above OverboughtLevel,
+/// a short when it crosses below OversoldLevel, and a percent stop limits the loss.
 /// </summary>
 public class RsiFailureSwingStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<decimal> _oversoldLevel;
 	private readonly StrategyParam<decimal> _overboughtLevel;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private RelativeStrengthIndex _rsi;
-
-	private decimal _prevRsi;
-	private decimal _prevPrevRsi;
-	private int _cooldown;
-
-	/// <summary>
-	/// Candle type and timeframe.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	// The last two values, the last trough and peak in the extreme zones, and the swings that arm an entry.
+	private decimal? _last;
+	private decimal? _beforeLast;
+	private decimal? _lastTrough;
+	private decimal? _lastPeak;
+	private decimal? _armedLong;
+	private decimal? _armedShort;
+	private decimal _exitLevel;
 
 	/// <summary>
-	/// RSI period.
+	/// Period for RSI.
 	/// </summary>
 	public int RsiPeriod
 	{
@@ -48,7 +43,7 @@ public class RsiFailureSwingStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Oversold level.
+	/// RSI level below which troughs count.
 	/// </summary>
 	public decimal OversoldLevel
 	{
@@ -57,7 +52,7 @@ public class RsiFailureSwingStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Overbought level.
+	/// RSI level above which peaks count.
 	/// </summary>
 	public decimal OverboughtLevel
 	{
@@ -66,12 +61,21 @@ public class RsiFailureSwingStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Cooldown bars between trades.
+	/// Stop-loss percentage.
 	/// </summary>
-	public int CooldownBars
+	public decimal StopLossPercent
 	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
 	/// <summary>
@@ -79,24 +83,22 @@ public class RsiFailureSwingStrategy : Strategy
 	/// </summary>
 	public RsiFailureSwingStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Candle timeframe", "General");
-
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
-			.SetDisplay("RSI Period", "Period for RSI", "RSI Settings")
-			.SetRange(2, 50);
+			.SetGreaterThanZero()
+			.SetDisplay("RSI Period", "Period for RSI", "Indicators");
 
-		_oversoldLevel = Param(nameof(OversoldLevel), 40m)
-			.SetDisplay("Oversold Level", "RSI oversold threshold", "RSI Settings")
-			.SetRange(10m, 45m);
+		_oversoldLevel = Param(nameof(OversoldLevel), 30m)
+			.SetDisplay("Oversold Level", "RSI level below which troughs count", "Levels");
 
-		_overboughtLevel = Param(nameof(OverboughtLevel), 60m)
-			.SetDisplay("Overbought Level", "RSI overbought threshold", "RSI Settings")
-			.SetRange(55m, 90m);
+		_overboughtLevel = Param(nameof(OverboughtLevel), 70m)
+			.SetDisplay("Overbought Level", "RSI level above which peaks count", "Levels");
 
-		_cooldownBars = Param(nameof(CooldownBars), 400)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "General")
-			.SetRange(10, 2000);
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -109,10 +111,18 @@ public class RsiFailureSwingStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_rsi = default;
-		_prevRsi = 0;
-		_prevPrevRsi = 0;
-		_cooldown = 0;
+		ResetState();
+	}
+
+	private void ResetState()
+	{
+		_last = null;
+		_beforeLast = null;
+		_lastTrough = null;
+		_lastPeak = null;
+		_armedLong = null;
+		_armedShort = null;
+		_exitLevel = default;
 	}
 
 	/// <inheritdoc />
@@ -120,91 +130,99 @@ public class RsiFailureSwingStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
+		ResetState();
+
+		var oscillator = new RelativeStrengthIndex { Length = RsiPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_rsi, ProcessCandle)
+			.BindEx(oscillator, ProcessCandle)
 			.Start();
+
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _rsi);
+			DrawIndicator(area, oscillator);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
 	{
-		if (candle.State != CandleStates.Finished)
+		// The high-level handler activates native protection before this callback, also between signal bars.
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue value)
+	{
+		if (candle.State != CandleStates.Finished || !value.IsFormed || value.IsEmpty)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		// Need at least 2 previous RSI values
-		if (_prevRsi == 0 || _prevPrevRsi == 0)
+		var current = value.GetValue<decimal>();
+		if (_last is decimal last)
 		{
-			_prevPrevRsi = _prevRsi;
-			_prevRsi = rsiValue;
-			return;
-		}
-
-		if (_cooldown > 0)
-		{
-			_cooldown--;
-			_prevPrevRsi = _prevRsi;
-			_prevRsi = rsiValue;
-			return;
-		}
-
-		// Bullish Failure Swing: RSI was oversold, rose, pulled back but stayed above prior low
-		var isBullish = _prevPrevRsi < OversoldLevel &&
-			_prevRsi > _prevPrevRsi &&
-			rsiValue < _prevRsi &&
-			rsiValue > _prevPrevRsi;
-
-		// Bearish Failure Swing: RSI was overbought, fell, bounced but stayed below prior high
-		var isBearish = _prevPrevRsi > OverboughtLevel &&
-			_prevRsi < _prevPrevRsi &&
-			rsiValue > _prevRsi &&
-			rsiValue < _prevPrevRsi;
-
-		if (Position == 0)
-		{
-			if (isBullish)
+			// The previous value is a trough or a peak once the current one turns away from it.
+			if (_beforeLast is decimal beforeLast)
 			{
-				BuyMarket();
-				_cooldown = CooldownBars;
+				if (last < beforeLast && last < current && last < OversoldLevel)
+				{
+					_armedLong = _lastTrough is decimal trough && last > trough ? last : null;
+					_lastTrough = last;
+				}
+				else if (last > beforeLast && last > current && last > OverboughtLevel)
+				{
+					_armedShort = _lastPeak is decimal peak && last < peak ? last : null;
+					_lastPeak = last;
+				}
 			}
-			else if (isBearish)
+
+			var longTrigger = last <= OversoldLevel && current > OversoldLevel;
+			var shortTrigger = last >= OverboughtLevel && current < OverboughtLevel;
+			var armedLong = longTrigger ? _armedLong : null;
+			var armedShort = shortTrigger ? _armedShort : null;
+
+			if (longTrigger)
+				_armedLong = null;
+
+			if (shortTrigger)
+				_armedShort = null;
+
+			if (IsFormedAndOnlineAndAllowTrading())
 			{
-				SellMarket();
-				_cooldown = CooldownBars;
-			}
-		}
-		else if (Position > 0)
-		{
-			// Exit long when RSI crosses above overbought or reverses from peak
-			if (rsiValue > OverboughtLevel || (rsiValue < 45 && _prevRsi > 45))
-			{
-				SellMarket();
-				_cooldown = CooldownBars;
-			}
-		}
-		else if (Position < 0)
-		{
-			// Exit short when RSI crosses below oversold or reverses from trough
-			if (rsiValue < OversoldLevel || (rsiValue > 55 && _prevRsi < 55))
-			{
-				BuyMarket();
-				_cooldown = CooldownBars;
+				if (Position > 0)
+				{
+					if (last <= OverboughtLevel && current > OverboughtLevel)
+						SellMarket(Position);
+				}
+				else if (Position < 0)
+				{
+					if (last >= OversoldLevel && current < OversoldLevel)
+						BuyMarket(-Position);
+				}
+				else if (armedLong is decimal longSwing)
+				{
+					BuyMarket(Volume);
+					_exitLevel = longSwing;
+				}
+				else if (armedShort is decimal shortSwing)
+				{
+					SellMarket(Volume);
+					_exitLevel = shortSwing;
+				}
 			}
 		}
 
-		_prevPrevRsi = _prevRsi;
-		_prevRsi = rsiValue;
+		_beforeLast = _last;
+		_last = current;
 	}
 }

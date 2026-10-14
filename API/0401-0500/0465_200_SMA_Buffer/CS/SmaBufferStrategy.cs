@@ -62,14 +62,14 @@ public class SmaBufferStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_smaLength = Param(nameof(SmaLength), 100)
+		_smaLength = Param(nameof(SmaLength), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("SMA Length", "Period of the moving average", "Parameters");
 
-		_entryPercent = Param(nameof(EntryPercent), 2m)
+		_entryPercent = Param(nameof(EntryPercent), 5m)
 			.SetDisplay("Entry %", "Percent above/below SMA to enter", "Parameters");
 
-		_exitPercent = Param(nameof(ExitPercent), 1m)
+		_exitPercent = Param(nameof(ExitPercent), 3m)
 			.SetDisplay("Exit %", "Percent toward SMA to exit", "Parameters");
 
 		_cooldownBars = Param(nameof(CooldownBars), 10)

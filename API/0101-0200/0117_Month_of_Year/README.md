@@ -18,7 +18,8 @@ Stops are used to protect capital if the usual seasonal behavior fails to appear
 - **Stops**: Yes, percent based
 - **Default Values**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+    Days are UTC days, since the market trades around the clock; entries happen at the close of the day's first candle. November through April are bought and May through October sold short, the classic seasonal split with strong winter months and a weak September; the position opens on the month's first candle and closes at its last.
 - **Filters**:
   - Category: Seasonality
   - Direction: Both

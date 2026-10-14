@@ -55,7 +55,7 @@ public class VolatilityPulseWithDynamicExitStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Momentum Length", "Momentum lookback", "Parameters");
 
-		_volThreshold = Param(nameof(VolThreshold), 1.2m)
+		_volThreshold = Param(nameof(VolThreshold), 0.5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Vol Threshold", "StdDev expansion multiplier", "Parameters");
 

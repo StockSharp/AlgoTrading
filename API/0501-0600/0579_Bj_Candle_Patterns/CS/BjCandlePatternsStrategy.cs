@@ -3,7 +3,6 @@ using System.Collections.Generic;
 
 using Ecng.Common;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -11,33 +10,44 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on candlestick patterns using EMA crossover for trend detection.
-/// Enters long on golden cross, short on death cross.
+/// Bj Candle Patterns strategy.
+/// A doji has a body of at most DojiThreshold of its high-low range. A Dragonfly Doji also has an upper wick of at most
+/// DojiThreshold of the range (a long lower wick) and goes long; a Gravestone Doji has a lower wick of at most DojiThreshold of the
+/// range (a long upper wick) and goes short. The opposite pattern reverses the position.
 /// </summary>
 public class BjCandlePatternsStrategy : Strategy
 {
-	private readonly StrategyParam<int> _fastEmaPeriod;
-	private readonly StrategyParam<int> _slowEmaPeriod;
+	private readonly StrategyParam<decimal> _dojiThreshold;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevFastEma;
-	private decimal _prevSlowEma;
+	/// <summary>
+	/// Maximum body and short-wick size as a fraction of the candle range.
+	/// </summary>
+	public decimal DojiThreshold
+	{
+		get => _dojiThreshold.Value;
+		set => _dojiThreshold.Value = value;
+	}
 
-	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
-	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
 
+	/// <summary>
+	/// Constructor.
+	/// </summary>
 	public BjCandlePatternsStrategy()
 	{
-		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
-			.SetGreaterThanZero()
-			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_dojiThreshold = Param(nameof(DojiThreshold), 0.1m)
+			.SetRange(0m, 1m)
+			.SetDisplay("Doji Threshold", "Maximum body and short-wick size as a fraction of the range", "Patterns");
 
-		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
-			.SetGreaterThanZero()
-			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -48,58 +58,48 @@ public class BjCandlePatternsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_prevFastEma = 0m;
-		_prevSlowEma = 0m;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
-		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
-
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(fastEma, slowEma, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, fastEma);
-			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_prevFastEma == 0m || _prevSlowEma == 0m)
-		{
-			_prevFastEma = fastEmaValue;
-			_prevSlowEma = slowEmaValue;
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
-		}
 
-		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
-		{
-			BuyMarket();
-		}
-		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
-		{
-			SellMarket();
-		}
+		var range = candle.HighPrice - candle.LowPrice;
+		if (range <= 0)
+			return;
 
-		_prevFastEma = fastEmaValue;
-		_prevSlowEma = slowEmaValue;
+		var bodyTop = Math.Max(candle.OpenPrice, candle.ClosePrice);
+		var bodyBottom = Math.Min(candle.OpenPrice, candle.ClosePrice);
+		var limit = DojiThreshold * range;
+
+		if (bodyTop - bodyBottom > limit)
+			return;
+
+		var dragonfly = candle.HighPrice - bodyTop <= limit;
+		var gravestone = bodyBottom - candle.LowPrice <= limit;
+
+		if (dragonfly && !gravestone && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (gravestone && !dragonfly && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
 	}
 }

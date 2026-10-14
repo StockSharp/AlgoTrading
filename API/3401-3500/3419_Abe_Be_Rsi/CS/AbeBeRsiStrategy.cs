@@ -32,7 +32,7 @@ public class AbeBeRsiStrategy : Strategy
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
-		_rsiPeriod = Param(nameof(RsiPeriod), 14)
+		_rsiPeriod = Param(nameof(RsiPeriod), 11)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "RSI period", "Indicators");
 		_oversold = Param(nameof(Oversold), 40m)

@@ -78,11 +78,11 @@ public class EmaPredictionStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for calculations", "General");
 
-		_fastPeriod = Param(nameof(FastPeriod), 5)
+		_fastPeriod = Param(nameof(FastPeriod), 1)
 			.SetDisplay("Fast EMA Period", "Period of fast EMA", "Indicator")
 			.SetGreaterThanZero();
 
-		_slowPeriod = Param(nameof(SlowPeriod), 20)
+		_slowPeriod = Param(nameof(SlowPeriod), 2)
 			.SetDisplay("Slow EMA Period", "Period of slow EMA", "Indicator")
 			.SetGreaterThanZero();
 

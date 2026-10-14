@@ -8,13 +8,13 @@ Tests zeigen eine durchschnittliche jährliche Rendite von etwa 118%. Sie funkti
 
 Ichimoku skizziert den Trend und die Unterstützungsniveaus, während Stochastic den Einstieg bei Rücksetzern timed. Trades öffnen sich, wenn der Oszillator in der vorherrschenden Wolkenrichtung zurücksetzt.
 
-Trader, die strukturierte Indikatoren bevorzugen, finden es praktisch. ATR-Stops decken abrupte Umkehrungen ab.
+Trader, die strukturierte Indikatoren bevorzugen, finden es praktisch. Die Wolke selbst dient als Stop gegen abrupte Umkehrungen.
 
 ## Details
 
 - **Einstiegskriterien**:
-  - Long: `Price > Cloud && StochK < 20`
-  - Short: `Price < Cloud && StochK > 80`
+  - Long: `Price > Cloud && Tenkan > Kijun && StochK < 20`
+  - Short: `Price < Cloud && Tenkan < Kijun && StochK > 80`
 - **Long/Short**: Beide
 - **Ausstiegskriterien**:
   - Cloud-Ausbruch in entgegengesetzter Richtung
@@ -25,8 +25,10 @@ Trader, die strukturierte Indikatoren bevorzugen, finden es praktisch. ATR-Stops
   - `SenkouPeriod` = 52
   - `StochPeriod` = 14
   - `StochK` = 3
-  - `StochD` = 3
+  - `StochOversold` = 20
+  - `StochOverbought` = 80
   - `CandleType` = TimeSpan.FromMinutes(30).TimeFrame()
+    Die Werte 20 und 80 in den Regeln sind die Standardwerte von StochOversold und StochOverbought. %K ist die Stochastik über StochPeriod Kerzen, geglättet über StochK Kerzen; %D spielt keine Rolle. Ein Long schließt, wenn der Kurs unter der Wolke schließt, ein Short, wenn er darüber schließt. Ein Einstiegssignal gegen eine offene Position dreht sie.
 - **Filter**:
   - Kategorie: Mean Reversion
   - Richtung: Beide

@@ -65,7 +65,7 @@ public class MaxGainStrategy : Strategy
 	/// </summary>
 	public MaxGainStrategy()
 	{
-		_periodLength = Param(nameof(PeriodLength), 64)
+		_periodLength = Param(nameof(PeriodLength), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("Period Length", "Rolling high-low length", "General");
 

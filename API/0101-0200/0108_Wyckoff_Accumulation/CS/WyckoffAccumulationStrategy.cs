@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using Ecng.Common;
 
@@ -11,59 +12,21 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on Wyckoff Accumulation pattern.
-/// Detects a selling climax followed by sideways accumulation and a spring,
-/// then enters long on the markup phase.
+/// Wyckoff Accumulation strategy.
+/// The accumulation range is the highest high and lowest low of the previous RangePeriod candles. A close above the range buys while flat.
+/// The stop lies StopLossPercent below the base of the range, and a close below it closes the position.
 /// </summary>
 public class WyckoffAccumulationStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _rangePeriod;
-	private readonly StrategyParam<int> _sidewaysThreshold;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage _ma;
-	private Highest _highest;
-	private Lowest _lowest;
-
-	private enum WyckoffPhase
-	{
-		None,
-		Accumulation,
-		Spring,
-		Markup
-	}
-
-	private WyckoffPhase _phase;
-	private decimal _rangeHigh;
-	private decimal _rangeLow;
-	private int _narrowCount;
-	private decimal _entryPrice;
-	private decimal _prevMa;
-	private decimal _prevClose;
-	private int _cooldown;
+	private readonly List<(decimal High, decimal Low)> _candles = [];
+	private decimal _stopPrice;
 
 	/// <summary>
-	/// Candle type and timeframe.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// MA period.
-	/// </summary>
-	public int MaPeriod
-	{
-		get => _maPeriod.Value;
-		set => _maPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Highest/Lowest period for range detection.
+	/// Number of previous candles that form the level.
 	/// </summary>
 	public int RangePeriod
 	{
@@ -72,21 +35,21 @@ public class WyckoffAccumulationStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Number of narrow-range candles to confirm accumulation.
+	/// Distance of the stop beyond the level, in percent.
 	/// </summary>
-	public int SidewaysThreshold
+	public decimal StopLossPercent
 	{
-		get => _sidewaysThreshold.Value;
-		set => _sidewaysThreshold.Value = value;
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
 	}
 
 	/// <summary>
-	/// Cooldown bars between trades.
+	/// Candle type.
 	/// </summary>
-	public int CooldownBars
+	public DataType CandleType
 	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
 	/// <summary>
@@ -94,24 +57,16 @@ public class WyckoffAccumulationStrategy : Strategy
 	/// </summary>
 	public WyckoffAccumulationStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Candle timeframe", "General");
-
-		_maPeriod = Param(nameof(MaPeriod), 20)
-			.SetDisplay("MA Period", "SMA period", "Indicators")
-			.SetRange(10, 50);
-
 		_rangePeriod = Param(nameof(RangePeriod), 20)
-			.SetDisplay("Range Period", "Highest/Lowest period", "Indicators")
-			.SetRange(10, 50);
+			.SetGreaterThanZero()
+			.SetDisplay("RangePeriod", "Number of previous candles that form the level", "Pattern");
 
-		_sidewaysThreshold = Param(nameof(SidewaysThreshold), 3)
-			.SetDisplay("Sideways Threshold", "Narrow candles to confirm accumulation", "Logic")
-			.SetRange(2, 10);
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Distance of the stop beyond the level, in percent", "Risk");
 
-		_cooldownBars = Param(nameof(CooldownBars), 65)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "General")
-			.SetRange(10, 500);
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -124,17 +79,8 @@ public class WyckoffAccumulationStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_ma = default;
-		_highest = default;
-		_lowest = default;
-		_phase = WyckoffPhase.None;
-		_rangeHigh = 0;
-		_rangeLow = 0;
-		_narrowCount = 0;
-		_entryPrice = 0;
-		_prevMa = 0;
-		_prevClose = 0;
-		_cooldown = 0;
+		_candles.Clear();
+		_stopPrice = default;
 	}
 
 	/// <inheritdoc />
@@ -142,224 +88,54 @@ public class WyckoffAccumulationStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_ma = new SimpleMovingAverage { Length = MaPeriod };
-		_highest = new Highest { Length = RangePeriod };
-		_lowest = new Lowest { Length = RangePeriod };
+		_candles.Clear();
+		_stopPrice = default;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_ma, _highest, _lowest, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _ma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal ma, decimal highest, decimal lowest)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		// The level is formed by the candles before this one.
+		var ready = _candles.Count == RangePeriod;
+		var high = ready ? _candles.Max(c => c.High) : 0m;
+		var low = ready ? _candles.Min(c => c.Low) : 0m;
+
+		_candles.Add((candle.HighPrice, candle.LowPrice));
+
+		if (_candles.Count > RangePeriod)
+			_candles.RemoveAt(0);
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		var close = candle.ClosePrice;
-		var range = highest - lowest;
 
-		if (range <= 0)
-		{
-			_prevMa = ma;
-			_prevClose = close;
-			return;
-		}
-
-		if (_cooldown > 0)
-		{
-			_cooldown--;
-			_prevMa = ma;
-			_prevClose = close;
-			// Still update phase tracking for exit logic
-			if (Position > 0)
-			{
-				// Exit: price crosses below MA
-				if (close < ma && _prevClose >= _prevMa)
-				{
-					SellMarket();
-					_phase = WyckoffPhase.None;
-					_narrowCount = 0;
-					_cooldown = CooldownBars;
-				}
-			}
-			else if (Position < 0)
-			{
-				// Exit short: price crosses above MA
-				if (close > ma && _prevClose <= _prevMa)
-				{
-					BuyMarket();
-					_phase = WyckoffPhase.None;
-					_narrowCount = 0;
-					_cooldown = CooldownBars;
-				}
-			}
-			_prevMa = ma;
-			_prevClose = close;
-			return;
-		}
-
-		var candleRange = candle.HighPrice - candle.LowPrice;
-		var isNarrow = candleRange < range * 0.4m;
-		var isBullish = close > candle.OpenPrice;
-		var isBearish = close < candle.OpenPrice;
-
-		// Wyckoff accumulation detection (simplified)
-		switch (_phase)
-		{
-			case WyckoffPhase.None:
-				// Look for price near or below the range low (selling climax area)
-				if (close <= lowest + range * 0.2m && isBearish)
-				{
-					_phase = WyckoffPhase.Accumulation;
-					_rangeLow = lowest;
-					_rangeHigh = highest;
-					_narrowCount = 0;
-				}
-				// Also detect distribution (price near range high for shorts)
-				else if (close >= highest - range * 0.2m && isBullish)
-				{
-					_phase = WyckoffPhase.Accumulation;
-					_rangeLow = lowest;
-					_rangeHigh = highest;
-					_narrowCount = -1; // negative to track distribution
-				}
-				break;
-
-			case WyckoffPhase.Accumulation:
-				if (_narrowCount >= 0)
-				{
-					// Accumulation (long setup): count narrow-range candles
-					if (isNarrow)
-						_narrowCount++;
-
-					if (_narrowCount >= SidewaysThreshold)
-					{
-						_phase = WyckoffPhase.Spring;
-					}
-					// Reset if price breaks significantly above range
-					else if (close > _rangeHigh + range * 0.1m)
-					{
-						_phase = WyckoffPhase.None;
-						_narrowCount = 0;
-					}
-				}
-				else
-				{
-					// Distribution (short setup): count narrow-range candles
-					if (isNarrow)
-						_narrowCount--;
-
-					if (_narrowCount <= -SidewaysThreshold)
-					{
-						_phase = WyckoffPhase.Spring;
-					}
-					// Reset if price breaks significantly below range
-					else if (close < _rangeLow - range * 0.1m)
-					{
-						_phase = WyckoffPhase.None;
-						_narrowCount = 0;
-					}
-				}
-				break;
-
-			case WyckoffPhase.Spring:
-				if (_narrowCount > 0)
-				{
-					// Long spring: price dips below range low then closes back above
-					if (candle.LowPrice < _rangeLow && close > _rangeLow)
-					{
-						_phase = WyckoffPhase.Markup;
-					}
-					// Or: bullish candle near support with close above MA
-					else if (isBullish && close > ma && close > _rangeLow)
-					{
-						_phase = WyckoffPhase.Markup;
-					}
-				}
-				else
-				{
-					// Short spring (upthrust): price spikes above range high then closes back below
-					if (candle.HighPrice > _rangeHigh && close < _rangeHigh)
-					{
-						_phase = WyckoffPhase.Markup;
-					}
-					// Or: bearish candle near resistance with close below MA
-					else if (isBearish && close < ma && close < _rangeHigh)
-					{
-						_phase = WyckoffPhase.Markup;
-					}
-				}
-				break;
-
-			case WyckoffPhase.Markup:
-				if (Position == 0)
-				{
-					if (_narrowCount > 0)
-					{
-						// Enter long on markup
-						if (isBullish && close > ma)
-						{
-							BuyMarket();
-							_entryPrice = close;
-							_cooldown = CooldownBars;
-							_phase = WyckoffPhase.None;
-							_narrowCount = 0;
-						}
-					}
-					else
-					{
-						// Enter short on markdown
-						if (isBearish && close < ma)
-						{
-							SellMarket();
-							_entryPrice = close;
-							_cooldown = CooldownBars;
-							_phase = WyckoffPhase.None;
-							_narrowCount = 0;
-						}
-					}
-				}
-				break;
-		}
-
-		// Exit logic for open positions
 		if (Position > 0)
 		{
-			// Exit long: price crosses below MA
-			if (close < ma && _prevClose >= _prevMa)
-			{
-				SellMarket();
-				_phase = WyckoffPhase.None;
-				_narrowCount = 0;
-				_cooldown = CooldownBars;
-			}
-		}
-		else if (Position < 0)
-		{
-			// Exit short: price crosses above MA
-			if (close > ma && _prevClose <= _prevMa)
-			{
-				BuyMarket();
-				_phase = WyckoffPhase.None;
-				_narrowCount = 0;
-				_cooldown = CooldownBars;
-			}
+			if (close <= _stopPrice)
+				SellMarket(Position);
+
+			return;
 		}
 
-		_prevMa = ma;
-		_prevClose = close;
+		if (Position != 0 || !ready || !(close > high))
+			return;
+
+		BuyMarket(Volume);
+		_stopPrice = low * (1 - StopLossPercent / 100m);
 	}
 }

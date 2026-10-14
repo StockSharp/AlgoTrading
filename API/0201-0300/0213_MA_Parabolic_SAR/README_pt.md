@@ -20,11 +20,11 @@ Esta abordagem é mais adequada para traders que preferem seguimento de tendênc
 - **Stops**: Sim, dinâmico via Parabolic SAR e stop fixo opcional.
 - **Valores padrão**:
   - `MaPeriod` = 20
-  - `SarStep` = 0.02m
-  - `SarMaxStep` = 0.2m
+  - `SarStep` = 0.02
+  - `SarMaxStep` = 0.2
   - `CandleType` = TimeSpan.FromMinutes(5)
-  - `TakeValue` = new Unit(0, UnitTypes.Absolute)
-  - `StopValue` = new Unit(2, UnitTypes.Percent)
+  - `StopLossPercent` = 2
+    Uma entrada exige as duas condições no fechamento de um candle, seja a virada do SAR ou o cruzamento da MA o que vier por último. O stop fixo opcional é StopLossPercent do preço de entrada, vigiado também entre os candles; 0 o desativa. As regras não definem alvo de lucro, por isso o TakeValue zero foi removido. Um sinal de entrada contra uma posição aberta a inverte.
 - **Filtros**:
   - Categoria: Tendência
   - Direção: Ambos

@@ -26,6 +26,7 @@ SARが動的な出口も提供するため、トレーリングストップが�
   - `RsiOversold` = 30m
   - `RsiOverbought` = 70m
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    保有ポジションと逆方向のエントリーシグナルはドテンになります。
 - **フィルター**:
   - カテゴリ: 平均回帰
   - 方向: 両方

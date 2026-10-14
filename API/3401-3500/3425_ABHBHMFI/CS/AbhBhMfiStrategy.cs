@@ -31,7 +31,7 @@ public class AbhBhMfiStrategy : Strategy
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
-		_mfiPeriod = Param(nameof(MfiPeriod), 14)
+		_mfiPeriod = Param(nameof(MfiPeriod), 37)
 			.SetGreaterThanZero()
 			.SetDisplay("MFI Period", "Money Flow Index period", "Indicators");
 		_oversold = Param(nameof(Oversold), 40m)

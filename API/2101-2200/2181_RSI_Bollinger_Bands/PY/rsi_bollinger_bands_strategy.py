@@ -14,17 +14,17 @@ from StockSharp.Algo.Strategies import Strategy
 class rsi_bollinger_bands_strategy(Strategy):
     def __init__(self):
         super(rsi_bollinger_bands_strategy, self).__init__()
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
             .SetDisplay("Candle Type", "Primary timeframe", "General")
-        self._rsi_period = self.Param("RsiPeriod", 14) \
+        self._rsi_period = self.Param("RsiPeriod", 20) \
             .SetDisplay("RSI Period", "RSI calculation length", "Indicators")
         self._bollinger_period = self.Param("BollingerPeriod", 20) \
             .SetDisplay("Bollinger Period", "Bollinger bands length", "Indicators")
         self._bollinger_width = self.Param("BollingerWidth", 2.0) \
             .SetDisplay("Bollinger Width", "Band width multiplier", "Indicators")
-        self._rsi_oversold = self.Param("RsiOversold", 35.0) \
+        self._rsi_oversold = self.Param("RsiOversold", 30.0) \
             .SetDisplay("RSI Oversold", "Buy threshold", "Indicators")
-        self._rsi_overbought = self.Param("RsiOverbought", 65.0) \
+        self._rsi_overbought = self.Param("RsiOverbought", 70.0) \
             .SetDisplay("RSI Overbought", "Sell threshold", "Indicators")
 
     @property

@@ -86,7 +86,7 @@ public class SupportResistanceBreakoutStrategy : Strategy
 			.SetDisplay("Range Length", "Candles used to form support/resistance", "General")
 			.SetOptimize(20, 100, 5);
 
-		_emaPeriod = Param(nameof(EmaPeriod), 50)
+		_emaPeriod = Param(nameof(EmaPeriod), 500)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "Length of the EMA trend filter", "General")
 			.SetOptimize(20, 200, 10);

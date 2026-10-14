@@ -7,7 +7,7 @@ Os testes indicam um retorno anual médio de aproximadamente 40%. Funciona melho
 
 Os componentes do Ichimoku definem o viés direcional enquanto o aumento de volume confirma o interesse. As operações são abertas quando o preço se alinha com a nuvem e o volume aumenta.
 
-É adequado para traders que seguem rompimentos de nuvem com participação. O risco é restrito por um stop baseado em ATR.
+É adequado para traders que seguem rompimentos de nuvem com participação. O risco é restrito por um stop percentual.
 
 ## Detalhes
 
@@ -17,14 +17,15 @@ Os componentes do Ichimoku definem o viés direcional enquanto o aumento de volu
 - **Comprado/Vendido**: Ambos
 - **Critérios de saída**:
   - Rompimento da nuvem na direção oposta
-- **Stops**: Baseado em percentual usando `StopLoss`
+- **Stops**: Baseado em percentual usando `StopLossPercent`
 - **Valores padrão**:
   - `TenkanPeriod` = 9
   - `KijunPeriod` = 26
   - `SenkouSpanPeriod` = 52
   - `VolumeAvgPeriod` = 20
-  - `StopLoss` = new Unit(2, UnitTypes.Percent)
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    AvgVolume é o volume médio dos VolumeAvgPeriod candles anteriores. Uma compra é encerrada quando o preço fecha abaixo da nuvem e uma venda quando fecha acima. Um sinal de entrada contra uma posição aberta a inverte.
 - **Filtros**:
   - Categoria: Rompimento
   - Direção: Ambos

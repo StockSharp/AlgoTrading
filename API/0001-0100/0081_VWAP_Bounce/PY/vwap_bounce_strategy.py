@@ -4,28 +4,28 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import VolumeWeightedMovingAverage, SimpleMovingAverage
+from System import TimeSpan, Math, Decimal
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, Level1Fields
+from StockSharp.BusinessEntities import Subscription
 from StockSharp.Algo.Strategies import Strategy
 
 class vwap_bounce_strategy(Strategy):
     """
     VWAP Bounce strategy.
-    Enters long when price bounces off VWAP from below with a bullish candle.
-    Enters short when price bounces off VWAP from above with a bearish candle.
-    Uses SMA for exit signals.
+    The VWAP restarts every UTC day from the typical price of each candle weighted by its volume. A bullish candle closing below
+    the VWAP turns the position long and a bearish candle closing above it turns it short; a percent stop limits the loss.
     """
 
     def __init__(self):
         super(vwap_bounce_strategy, self).__init__()
-        self._ma_period = self.Param("MAPeriod", 20).SetDisplay("MA Period", "Period for SMA", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Type of candles to use", "General")
-        self._cooldown_bars = self.Param("CooldownBars", 500).SetDisplay("Cooldown Bars", "Bars to wait between trades", "General")
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0).SetNotNegative().SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles to use", "General")
 
-        self._prev_close = 0.0
-        self._cooldown = 0
+        self._day = None
+        self._price_volume = Decimal(0)
+        self._volume = Decimal(0)
 
     @property
     def candle_type(self):
@@ -33,72 +33,61 @@ class vwap_bounce_strategy(Strategy):
 
     def OnReseted(self):
         super(vwap_bounce_strategy, self).OnReseted()
-        self._prev_close = 0.0
-        self._cooldown = 0
+        self._day = None
+        self._price_volume = Decimal(0)
+        self._volume = Decimal(0)
 
     def OnStarted2(self, time):
         super(vwap_bounce_strategy, self).OnStarted2(time)
 
-        self._prev_close = 0.0
-        self._cooldown = 0
-
-        vwma = VolumeWeightedMovingAverage()
-        vwma.Length = 20
-
-        sma = SimpleMovingAverage()
-        sma.Length = self._ma_period.Value
+        self._day = None
+        self._price_volume = Decimal(0)
+        self._volume = Decimal(0)
 
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(vwma, sma, self._process_candle).Start()
+        subscription.Bind(self._process_candle).Start()
+
+        self.StartProtection(Unit(), Unit(Decimal(self._stop_loss_percent.Value), UnitTypes.Percent), useMarketOrders=True, isLocalStop=True)
+
+        # The stop has to see prices between candles, not only at their close.
+        for field in (Level1Fields.BestBidPrice, Level1Fields.BestAskPrice):
+            quotes = Subscription(DataType.Level1, self.Security)
+            quotes.MarketData.BuildField = field
+            self.SubscribeLevel1(quotes).Bind(self._observe_protection_quote).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, vwma)
-            self.DrawIndicator(area, sma)
             self.DrawOwnTrades(area)
 
-    def _process_candle(self, candle, vwma_val, sma_val):
+    def _observe_protection_quote(self, quote):
+        # The high-level handler activates native protection before the callback, including between bars.
+        pass
+
+    def _process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
 
-        close = float(candle.ClosePrice)
-        vv = float(vwma_val)
-        sv = float(sma_val)
+        day = candle.OpenTime.Date
+        if self._day is None or self._day != day:
+            self._day = day
+            self._price_volume = Decimal(0)
+            self._volume = Decimal(0)
 
-        if self._prev_close == 0:
-            self._prev_close = close
+        typical = (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / Decimal(3)
+        self._price_volume += typical * candle.TotalVolume
+        self._volume += candle.TotalVolume
+
+        if self._volume <= 0 or not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        if self._cooldown > 0:
-            self._cooldown -= 1
-            self._prev_close = close
-            return
+        vwap = self._price_volume / self._volume
+        close = candle.ClosePrice
 
-        is_bullish = candle.ClosePrice > candle.OpenPrice
-        is_bearish = candle.ClosePrice < candle.OpenPrice
-
-        cd = self._cooldown_bars.Value
-
-        # Bounce off VWAP from below (bullish): prev close was below VWAP, now above or near, bullish candle
-        bounced_up = self._prev_close < vv and close >= vv and is_bullish
-        # Bounce off VWAP from above (bearish): prev close was above VWAP, now below or near, bearish candle
-        bounced_down = self._prev_close > vv and close <= vv and is_bearish
-
-        if self.Position == 0 and bounced_up:
-            self.BuyMarket()
-            self._cooldown = cd
-        elif self.Position == 0 and bounced_down:
-            self.SellMarket()
-            self._cooldown = cd
-        elif self.Position > 0 and close < sv:
-            self.SellMarket()
-            self._cooldown = cd
-        elif self.Position < 0 and close > sv:
-            self.BuyMarket()
-            self._cooldown = cd
-
-        self._prev_close = close
+        if close > candle.OpenPrice and close < vwap and self.Position <= 0:
+            self.BuyMarket(self.Volume + Math.Abs(self.Position))
+        elif close < candle.OpenPrice and close > vwap and self.Position >= 0:
+            self.SellMarket(self.Volume + Math.Abs(self.Position))
 
     def CreateClone(self):
         return vwap_bounce_strategy()

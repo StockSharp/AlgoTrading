@@ -8,7 +8,7 @@ Las pruebas indican un rendimiento anual promedio de aproximadamente 142%. Funci
 
 Al combinar un filtro de tendencia amplio con un oscilador de momentum, la estrategia busca unirse a movimientos fuertes después de breves pausas.
 
-Los stops se ubican más allá del límite de la nube para proteger contra correcciones más profundas.
+Un stop a un porcentaje fijo del precio de entrada protege contra correcciones más profundas.
 
 ## Detalles
 
@@ -18,7 +18,14 @@ Los stops se ubican más allá del límite de la nube para proteger contra corre
 - **Stops**: Sí, basado en porcentaje
 - **Valores predeterminados**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `TenkanPeriod` = 9
+  - `KijunPeriod` = 26
+  - `SenkouSpanBPeriod` = 52
+  - `RsiPeriod` = 14
+  - `RsiOversold` = 30
+  - `RsiOverbought` = 70
+    Senkou Span A por encima de Senkou Span B es tendencia alcista y por debajo bajista. En tendencia alcista, el RSI que vuelve por encima de RsiOversold abre un largo; en tendencia bajista, el RSI que vuelve por debajo de RsiOverbought abre un corto. Una señal opuesta invierte la posición.
 - **Filtros**:
   - Categoría: Seguimiento de tendencia
   - Dirección: Ambos

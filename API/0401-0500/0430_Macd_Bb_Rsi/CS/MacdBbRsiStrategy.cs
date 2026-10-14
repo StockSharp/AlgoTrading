@@ -1,5 +1,3 @@
-namespace StockSharp.Samples.Strategies;
-
 using System;
 using System.Collections.Generic;
 
@@ -10,74 +8,121 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
+namespace StockSharp.Samples.Strategies;
+
 /// <summary>
-/// MACD + Bollinger Bands + RSI Strategy.
-/// Uses MACD for momentum, BB for volatility levels, RSI for confirmation.
-/// Buys when MACD bullish + price near lower BB + RSI oversold.
-/// Sells when MACD bearish + price near upper BB + RSI overbought.
+/// MACD + Bollinger Bands + RSI strategy.
+/// Buys a pullback when the MACD line is positive while the close is below the lower Bollinger band and RSI is under 30,
+/// and sells when the MACD line is negative while the close is above the upper band and RSI is over 70. The opposite
+/// signal reverses the position.
 /// </summary>
 public class MacdBbRsiStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleTypeParam;
+	private const decimal _rsiOversold = 30m;
+	private const decimal _rsiOverbought = 70m;
+
+	private readonly StrategyParam<int> _macdFastLength;
+	private readonly StrategyParam<int> _macdSlowLength;
+	private readonly StrategyParam<int> _macdSignalLength;
 	private readonly StrategyParam<int> _bbLength;
-	private readonly StrategyParam<decimal> _bbWidth;
+	private readonly StrategyParam<decimal> _bbMultiplier;
 	private readonly StrategyParam<int> _rsiLength;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private MovingAverageConvergenceDivergence _macd;
-	private BollingerBands _bollinger;
-	private RelativeStrengthIndex _rsi;
-	private decimal _prevMacd;
-	private int _cooldownRemaining;
-
-	public MacdBbRsiStrategy()
+	/// <summary>
+	/// MACD fast EMA period.
+	/// </summary>
+	public int MacdFastLength
 	{
-		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle type", "Candle type for strategy calculation.", "General");
-
-		_bbLength = Param(nameof(BBLength), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("BB Length", "Bollinger Bands period", "Bollinger Bands");
-
-		_bbWidth = Param(nameof(BBWidth), 1.5m)
-			.SetDisplay("BB Width", "BB standard deviation multiplier", "Bollinger Bands");
-
-		_rsiLength = Param(nameof(RSILength), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("RSI Length", "RSI period", "RSI");
-
-		_cooldownBars = Param(nameof(CooldownBars), 50)
-			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk");
+		get => _macdFastLength.Value;
+		set => _macdFastLength.Value = value;
 	}
 
-	public DataType CandleType
+	/// <summary>
+	/// MACD slow EMA period.
+	/// </summary>
+	public int MacdSlowLength
 	{
-		get => _candleTypeParam.Value;
-		set => _candleTypeParam.Value = value;
+		get => _macdSlowLength.Value;
+		set => _macdSlowLength.Value = value;
 	}
 
+	/// <summary>
+	/// MACD signal line period.
+	/// </summary>
+	public int MacdSignalLength
+	{
+		get => _macdSignalLength.Value;
+		set => _macdSignalLength.Value = value;
+	}
+
+	/// <summary>
+	/// Bollinger Bands period.
+	/// </summary>
 	public int BBLength
 	{
 		get => _bbLength.Value;
 		set => _bbLength.Value = value;
 	}
 
-	public decimal BBWidth
+	/// <summary>
+	/// Bollinger Bands standard deviation multiplier.
+	/// </summary>
+	public decimal BBMultiplier
 	{
-		get => _bbWidth.Value;
-		set => _bbWidth.Value = value;
+		get => _bbMultiplier.Value;
+		set => _bbMultiplier.Value = value;
 	}
 
+	/// <summary>
+	/// RSI period.
+	/// </summary>
 	public int RSILength
 	{
 		get => _rsiLength.Value;
 		set => _rsiLength.Value = value;
 	}
 
-	public int CooldownBars
+	/// <summary>
+	/// Candle type for strategy calculation.
+	/// </summary>
+	public DataType CandleType
 	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
+	/// </summary>
+	public MacdBbRsiStrategy()
+	{
+		_macdFastLength = Param(nameof(MacdFastLength), 12)
+			.SetGreaterThanZero()
+			.SetDisplay("MACD Fast", "MACD fast EMA period", "MACD");
+
+		_macdSlowLength = Param(nameof(MacdSlowLength), 26)
+			.SetGreaterThanZero()
+			.SetDisplay("MACD Slow", "MACD slow EMA period", "MACD");
+
+		_macdSignalLength = Param(nameof(MacdSignalLength), 9)
+			.SetGreaterThanZero()
+			.SetDisplay("MACD Signal", "MACD signal line period", "MACD");
+
+		_bbLength = Param(nameof(BBLength), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("BB Length", "Bollinger Bands period", "Bollinger Bands");
+
+		_bbMultiplier = Param(nameof(BBMultiplier), 2.0m)
+			.SetGreaterThanZero()
+			.SetDisplay("BB Multiplier", "Bollinger Bands standard deviation multiplier", "Bollinger Bands");
+
+		_rsiLength = Param(nameof(RSILength), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("RSI Length", "RSI period", "RSI");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle type", "Candle type for strategy calculation", "General");
 	}
 
 	/// <inheritdoc />
@@ -85,86 +130,70 @@ public class MacdBbRsiStrategy : Strategy
 		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_macd = null;
-		_bollinger = null;
-		_rsi = null;
-		_prevMacd = 0;
-		_cooldownRemaining = 0;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		_macd = new MovingAverageConvergenceDivergence();
-		_bollinger = new BollingerBands { Length = BBLength, Width = BBWidth };
-		_rsi = new RelativeStrengthIndex { Length = RSILength };
+		var macd = new MovingAverageConvergenceDivergenceSignal
+		{
+			Macd =
+			{
+				ShortMa = { Length = MacdFastLength },
+				LongMa = { Length = MacdSlowLength },
+			},
+			SignalMa = { Length = MacdSignalLength },
+		};
+		var bollinger = new BollingerBands { Length = BBLength, Width = BBMultiplier };
+		var rsi = new RelativeStrengthIndex { Length = RSILength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_rsi, OnProcess)
+			.BindEx(macd, bollinger, rsi, ProcessCandle)
 			.Start();
-
-		StartProtection(
-			takeProfit: new Unit(2, UnitTypes.Percent),
-			stopLoss: new Unit(1, UnitTypes.Percent)
-		);
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _bollinger);
+			DrawIndicator(area, bollinger);
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, macd);
+				DrawIndicator(oscillators, rsi);
+			}
 		}
 	}
 
-	private void OnProcess(ICandleMessage candle, decimal rsi)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue, IIndicatorValue bollingerValue, IIndicatorValue rsiValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Process MACD and BB manually
-		var macdResult = _macd.Process(candle);
-		var bbResult = _bollinger.Process(candle);
-
-		if (!_macd.IsFormed || !_bollinger.IsFormed)
+		if (!macdValue.IsFormed || !bollingerValue.IsFormed || !rsiValue.IsFormed)
 			return;
 
-		var macdVal = macdResult.ToDecimal();
-		var bb = (BollingerBandsValue)bbResult;
-		if (bb.UpBand is not decimal upper ||
-			bb.LowBand is not decimal lower ||
-			bb.MovingAverage is not decimal middle)
+		if (((MovingAverageConvergenceDivergenceSignalValue)macdValue).Macd is not decimal macdLine)
 			return;
 
-		if (_cooldownRemaining > 0)
-		{
-			_cooldownRemaining--;
-			_prevMacd = macdVal;
+		var bb = (BollingerBandsValue)bollingerValue;
+		if (bb.UpBand is not decimal upper || bb.LowBand is not decimal lower)
 			return;
-		}
 
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		var rsi = rsiValue.ToDecimal();
 		var close = candle.ClosePrice;
 
-		// Buy: price below lower BB + RSI oversold + MACD positive
-		if (close <= lower && rsi < 30 && Position == 0)
-		{
-			BuyMarket();
-			_cooldownRemaining = CooldownBars;
-		}
-		// Sell: price above upper BB + RSI overbought + MACD negative
-		else if (close >= upper && rsi > 70 && Position == 0)
-		{
-			SellMarket();
-			_cooldownRemaining = CooldownBars;
-		}
+		var longSignal = macdLine > 0 && close < lower && rsi < _rsiOversold;
+		var shortSignal = macdLine < 0 && close > upper && rsi > _rsiOverbought;
 
-		_prevMacd = macdVal;
+		if (longSignal && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (shortSignal && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
 	}
 }

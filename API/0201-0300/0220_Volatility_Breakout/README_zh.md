@@ -20,7 +20,8 @@
 - **止损**: `Multiplier*ATR`
 - **默认值**:
   - `Period` = 20
-  - `Multiplier` = 2.0m
+  - `Multiplier` = 2
+    止损距入场收盘价Multiplier倍Period周期ATR，按K线收盘检查。与持仓方向相反的入场信号会反转持仓。
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **过滤器**:
   - 类别: Breakout

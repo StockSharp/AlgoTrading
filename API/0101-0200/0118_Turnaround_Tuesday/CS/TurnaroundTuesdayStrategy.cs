@@ -11,40 +11,45 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Implementation of Turnaround Tuesday trading strategy.
-/// Buys on Tuesday if previous session declined, sells on Friday or if price crosses MA.
-/// Also goes short on Wednesday if previous session rallied.
-/// Uses half-day detection to simulate daily sessions on intraday data.
+/// Turnaround Tuesday strategy.
+/// Days are UTC days of a market that trades around the clock.
+/// When Monday closed below its open, it buys at the close of Tuesday's first candle and sells at Tuesday's last candle
+/// or once the close reaches ProfitTargetPercent above the entry; a percent stop limits the loss.
 /// </summary>
 public class TurnaroundTuesdayStrategy : Strategy
 {
-	private readonly StrategyParam<int> _maPeriod;
+	private readonly StrategyParam<decimal> _profitTargetPercent;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
 
-	private SimpleMovingAverage _ma;
-
-	private decimal _prevMa;
-	private decimal _sessionOpen;
-	private decimal _sessionClose;
-	private int _prevSessionDay;
-	private bool _prevSessionDecline;
-	private bool _prevSessionRally;
-	private int _currentSessionDay;
-	private bool _enteredThisSession;
-	private int _cooldown;
+	private DateTime? _day;
+	private decimal _dayOpen;
+	private decimal _dayClose;
+	private DateTime? _prevDay;
+	private decimal _prevDayOpen;
+	private decimal _prevDayClose;
+	private decimal _entryPrice;
 
 	/// <summary>
-	/// Moving average period.
+	/// Close once the price is this far above the entry, in percent.
 	/// </summary>
-	public int MaPeriod
+	public decimal ProfitTargetPercent
 	{
-		get => _maPeriod.Value;
-		set => _maPeriod.Value = value;
+		get => _profitTargetPercent.Value;
+		set => _profitTargetPercent.Value = value;
 	}
 
 	/// <summary>
-	/// Candle type for strategy.
+	/// Stop-loss percentage.
+	/// </summary>
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -53,29 +58,20 @@ public class TurnaroundTuesdayStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Cooldown bars between trades.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="TurnaroundTuesdayStrategy"/>.
+	/// Constructor.
 	/// </summary>
 	public TurnaroundTuesdayStrategy()
 	{
-		_maPeriod = Param(nameof(MaPeriod), 20)
+		_profitTargetPercent = Param(nameof(ProfitTargetPercent), 1m)
 			.SetGreaterThanZero()
-			.SetDisplay("MA Period", "Moving average period for trend confirmation", "Strategy");
+			.SetDisplay("Profit Target %", "Close once the price is this far above the entry, in percent", "Calendar");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles for strategy", "Strategy");
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
 
-		_cooldownBars = Param(nameof(CooldownBars), 30)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "General")
-			.SetRange(5, 500);
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -88,16 +84,13 @@ public class TurnaroundTuesdayStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_ma = default;
-		_prevMa = 0;
-		_sessionOpen = 0;
-		_sessionClose = 0;
-		_prevSessionDay = -1;
-		_prevSessionDecline = false;
-		_prevSessionRally = false;
-		_currentSessionDay = -1;
-		_enteredThisSession = false;
-		_cooldown = 0;
+		_day = null;
+		_dayOpen = default;
+		_dayClose = default;
+		_prevDay = null;
+		_prevDayOpen = default;
+		_prevDayClose = default;
+		_entryPrice = default;
 	}
 
 	/// <inheritdoc />
@@ -105,90 +98,91 @@ public class TurnaroundTuesdayStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_ma = new SimpleMovingAverage { Length = MaPeriod };
-
+		_day = null;
+		_dayOpen = default;
+		_dayClose = default;
+		_prevDay = null;
+		_prevDayOpen = default;
+		_prevDayClose = default;
+		_entryPrice = default;
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_ma, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
+
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _ma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal maValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// The high-level handler activates native protection before this callback, also between signal bars.
+	}
+
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		var day = candle.OpenTime.Date;
+		var firstOfDay = _day != day;
+
+		if (firstOfDay)
+		{
+			if (_day is DateTime previousDay)
+			{
+				_prevDay = previousDay;
+				_prevDayOpen = _dayOpen;
+				_prevDayClose = _dayClose;
+			}
+
+			_day = day;
+			_dayOpen = candle.OpenPrice;
+		}
+
+		_dayClose = candle.ClosePrice;
+		// The candle is the day's last when the next one would open on another day.
+		var frame = CandleType.Arg is TimeSpan tf ? tf : TimeSpan.Zero;
+		var lastOfDay = (candle.OpenTime + frame).Date != day;
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var close = candle.ClosePrice;
-		var dayOfYear = candle.OpenTime.DayOfYear;
-		var dayOfWeek = (int)candle.OpenTime.DayOfWeek;
-
-		// Detect new session (new calendar day)
-		if (dayOfYear != _currentSessionDay)
+		if (Position != 0)
 		{
-			// Save previous session result
-			if (_currentSessionDay >= 0 && _sessionOpen > 0)
+			if (lastOfDay || candle.ClosePrice >= _entryPrice * (1 + ProfitTargetPercent / 100m))
 			{
-				_prevSessionDecline = _sessionClose < _sessionOpen;
-				_prevSessionRally = _sessionClose > _sessionOpen;
-				_prevSessionDay = _currentSessionDay;
+				if (Position > 0)
+					SellMarket(Position);
+				else
+					BuyMarket(-Position);
 			}
 
-			_currentSessionDay = dayOfYear;
-			_sessionOpen = candle.OpenPrice;
-			_enteredThisSession = false;
-		}
-
-		_sessionClose = close;
-
-		if (_cooldown > 0)
-		{
-			_cooldown--;
-			_prevMa = maValue;
 			return;
 		}
 
-		// Entry: buy on any day if previous session declined and no position
-		if (Position == 0 && !_enteredThisSession && _prevSessionDecline && close > maValue)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-			_enteredThisSession = true;
-			_prevSessionDecline = false;
-		}
-		// Entry: sell on any day if previous session rallied and no position
-		else if (Position == 0 && !_enteredThisSession && _prevSessionRally && close < maValue)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-			_enteredThisSession = true;
-			_prevSessionRally = false;
-		}
+		if (!(firstOfDay && day.DayOfWeek == DayOfWeek.Tuesday && _prevDay == day.AddDays(-1) && _prevDayClose < _prevDayOpen))
+			return;
 
-		// Exit long if price crosses below MA
-		if (Position > 0 && _prevMa > 0 && close < maValue)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
+		if ((1) > 0)
+			BuyMarket(Volume);
+		else
+			SellMarket(Volume);
 
-		// Exit short if price crosses above MA
-		if (Position < 0 && _prevMa > 0 && close > maValue)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-
-		_prevMa = maValue;
+			_entryPrice = candle.ClosePrice;
 	}
 }

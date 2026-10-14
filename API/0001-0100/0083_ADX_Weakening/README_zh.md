@@ -18,7 +18,7 @@
 - **默认值**：
   - `AdxPeriod` = 14
   - `MaPeriod` = 20
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
   - `CandleType` = 15 分钟
 - **过滤条件**：
   - 类别: 趋势跟随

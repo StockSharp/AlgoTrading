@@ -17,7 +17,10 @@ Un stop porcentual ajustado controla el riesgo, y las operaciones se cierran una
 - **Stops**: Sí, basado en porcentaje
 - **Valores predeterminados**:
   - `CandleType` = 15 minutos
-  - `StopLoss` = 2%
+  - `WillRPeriod` = 14
+  - `OversoldLevel` = -80
+  - `OverboughtLevel` = -20
+  - `StopLossPercent` = 2
 - **Filtros**:
   - Categoría: Reversión
   - Dirección: Ambos

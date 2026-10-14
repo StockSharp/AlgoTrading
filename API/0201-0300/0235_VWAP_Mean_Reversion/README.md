@@ -19,9 +19,10 @@ The approach is designed for intraday traders who expect prices to oscillate aro
   - **Short**: Exit when close <= VWAP
 - **Stops**: Yes, ATR-based stop.
 - **Default Values**:
-  - `K` = 2.0m
+  - `K` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
   - `AtrPeriod` = 14
+    The market trades around the clock, so the session VWAP restarts each UTC day and weighs the typical price of each candle by its volume. The stop is set K times the AtrPeriod ATR from the entry close and checked on candle closes. An entry signal against an open position reverses it.
 - **Filters**:
   - Category: Mean Reversion
   - Direction: Both

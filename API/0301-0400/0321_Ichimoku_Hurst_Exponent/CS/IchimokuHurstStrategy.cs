@@ -127,7 +127,7 @@ public class IchimokuHurstStrategy : Strategy
 		
 		.SetOptimize(0.45m, 0.6m, 0.05m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		_signalCooldownBars = Param(nameof(SignalCooldownBars), 6)

@@ -15,7 +15,7 @@ class ah_hm_rsi_strategy(Strategy):
         super(ah_hm_rsi_strategy, self).__init__()
 
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5)))
-        self._rsi_period = self.Param("RsiPeriod", 14)
+        self._rsi_period = self.Param("RsiPeriod", 33)
         self._rsi_low = self.Param("RsiLow", 40.0)
         self._rsi_high = self.Param("RsiHigh", 60.0)
 

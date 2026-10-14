@@ -12,8 +12,8 @@ Hull MA はトレンドの方向を素早く示します。Stochastic はその�
 ## 詳細
 
 - **エントリー条件**:
-  - ロング: `HullMA turning up && StochK < 20`
-  - ショート: `HullMA turning down && StochK > 80`
+  - ロング: `HullMA turning up && StochK < StochOversold`
+  - ショート: `HullMA turning down && StochK > StochOverbought`
 - **ロング/ショート**: 両方
 - **エグジット条件**:
   - Hull MA の方向転換
@@ -22,9 +22,12 @@ Hull MA はトレンドの方向を素早く示します。Stochastic はその�
   - `HmaPeriod` = 9
   - `StochPeriod` = 14
   - `StochK` = 3
-  - `StochD` = 3
+  - `StochOversold` = 20
+  - `StochOverbought` = 80
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
-  - `StopLossAtr` = 2m
+  - `StopLossAtr` = 2
+  - `AtrPeriod` = 14
+    HMAは下落の後に上昇すると上向きに転じ、上昇の後に下落すると下向きに転じます。ロングはHMAの下落で、ショートは上昇で決済します。%KはStochPeriod本のストキャスティクスをStochK本で平滑化した値で、%Dは関与しません。ストップはエントリー時の終値からStopLossAtr倍のATR（AtrPeriod）の位置にあり、足の終値で判定します。 保有ポジションと逆方向のエントリーシグナルはドテンになります。
 - **フィルター**:
   - カテゴリ: 平均回帰
   - 方向: 両方

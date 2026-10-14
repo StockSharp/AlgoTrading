@@ -51,15 +51,15 @@ public class TwistedSma4hStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Slow SMA Length", "Length of the slow SMA", "SMA");
 
-		_mainSmaLength = Param(nameof(MainSmaLength), 50)
+		_mainSmaLength = Param(nameof(MainSmaLength), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("Main SMA Length", "Length of the main SMA", "SMA");
 
-		_kamaLength = Param(nameof(KamaLength), 10)
+		_kamaLength = Param(nameof(KamaLength), 25)
 			.SetGreaterThanZero()
 			.SetDisplay("KAMA Length", "Length of KAMA", "KAMA");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 

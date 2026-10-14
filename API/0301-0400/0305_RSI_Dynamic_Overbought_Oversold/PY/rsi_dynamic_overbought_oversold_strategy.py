@@ -23,10 +23,10 @@ class rsi_dynamic_overbought_oversold_strategy(Strategy):
         self._rsi_period = self.Param("RsiPeriod", 14) \
             .SetDisplay("RSI Period", "Period for RSI calculation", "Indicators")
 
-        self._moving_avg_period = self.Param("MovingAvgPeriod", 34) \
+        self._moving_avg_period = self.Param("MovingAvgPeriod", 50) \
             .SetDisplay("Average Period", "Period for moving averages and RSI volatility", "Indicators")
 
-        self._std_dev_multiplier = self.Param("StdDevMultiplier", 1.3) \
+        self._std_dev_multiplier = self.Param("StdDevMultiplier", 2.0) \
             .SetDisplay("StdDev Multiplier", "Multiplier for the dynamic RSI bands", "Signals")
 
         self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \

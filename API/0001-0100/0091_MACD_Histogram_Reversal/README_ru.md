@@ -19,7 +19,7 @@
   - `FastPeriod` = 12
   - `SlowPeriod` = 26
   - `SignalPeriod` = 9
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
   - `CandleType` = 15 минут
 - **Фильтры**:
   - Категория: Импульс

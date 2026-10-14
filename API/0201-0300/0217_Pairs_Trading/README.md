@@ -20,9 +20,11 @@ Pairs trading appeals to market neutral traders who prefer relative-value opport
 - **Stops**: Yes, percentage stop based on spread value.
 - **Default Values**:
   - `LookbackPeriod` = 20
-  - `DeviationMultiplier` = 2.0m
-  - `StopLossPercent` = 2m
+  - `DeviationMultiplier` = 2
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
+  - `SecondSecurity` — required, no default
+    The spread is the close of the strategy's Security minus the close of SecondSecurity on candles of the same time; Mean and StdDev are taken over the last LookbackPeriod spreads. Each leg trades Volume, and an opposite signal reverses both legs. The stop closes both legs once the spread moves StopLossPercent of its entry value against the pair, checked on candle closes; 0 disables it.
 - **Filters**:
   - Category: Arbitrage
   - Direction: Both

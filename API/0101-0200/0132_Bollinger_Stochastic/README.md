@@ -18,7 +18,14 @@ A percent-based stop limits risk if the mean reversion fails to occur.
 - **Stops**: Yes, percent based
 - **Default Values**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `BollingerPeriod` = 20
+  - `BollingerDeviation` = 2
+  - `StochPeriod` = 14
+  - `StochDPeriod` = 3
+  - `StochOversold` = 20
+  - `StochOverbought` = 80
+    A candle whose low touches the lower band while stochastic %K is below StochOversold goes long; a candle whose high touches the upper band while %K is above StochOverbought goes short. An opposite signal reverses the position.
 - **Filters**:
   - Category: Mean reversion
   - Direction: Both

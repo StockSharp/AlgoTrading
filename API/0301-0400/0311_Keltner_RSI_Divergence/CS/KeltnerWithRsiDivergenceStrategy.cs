@@ -108,7 +108,7 @@ public class KeltnerWithRsiDivergenceStrategy : Strategy
 			.SetRange(2, 100)
 			.SetDisplay("ATR Period", "Period for ATR calculation", "Indicators");
 
-		_atrMultiplier = Param(nameof(AtrMultiplier), 1.15m)
+		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
 			.SetRange(0.1m, 10m)
 			.SetDisplay("ATR Multiplier", "Multiplier for the Keltner band width", "Indicators");
 

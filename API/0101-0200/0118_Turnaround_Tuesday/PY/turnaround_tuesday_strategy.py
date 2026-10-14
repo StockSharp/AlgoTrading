@@ -4,129 +4,108 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import SimpleMovingAverage
+from System import TimeSpan, DateTime, DayOfWeek, Decimal
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, Level1Fields
+from StockSharp.BusinessEntities import Subscription
 from StockSharp.Algo.Strategies import Strategy
 
 class turnaround_tuesday_strategy(Strategy):
     """
-    Turnaround Tuesday trading strategy.
-    Buys if previous session declined and price above MA.
-    Sells if previous session rallied and price below MA.
-    Uses session detection via day-of-year transitions.
+    Turnaround Tuesday strategy.
+    Days are UTC days of a market that trades around the clock.
+    When Monday closed below its open, it buys at the close of Tuesday's first candle and sells at Tuesday's last candle
+    or once the close reaches ProfitTargetPercent above the entry; a percent stop limits the loss.
     """
 
     def __init__(self):
         super(turnaround_tuesday_strategy, self).__init__()
-        self._ma_period = self.Param("MaPeriod", 20).SetDisplay("MA Period", "Moving average period for trend confirmation", "Strategy")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles for strategy", "Strategy")
-        self._cooldown_bars = self.Param("CooldownBars", 30).SetDisplay("Cooldown Bars", "Bars between trades", "General")
-
-        self._prev_ma = 0.0
-        self._session_open = 0.0
-        self._session_close = 0.0
-        self._prev_session_day = -1
-        self._prev_session_decline = False
-        self._prev_session_rally = False
-        self._current_session_day = -1
-        self._entered_this_session = False
-        self._cooldown = 0
+        self._profit_target_percent = self.Param("ProfitTargetPercent", 1.0).SetGreaterThanZero().SetDisplay("Profit Target %", "Close once the price is this far above the entry, in percent", "Calendar")
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0).SetNotNegative().SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._reset_state()
 
     @property
     def candle_type(self):
         return self._candle_type.Value
 
+    def _reset_state(self):
+        self._day = None
+        self._prev_day = None
+        self._prev_day_open = Decimal(0)
+        self._prev_day_close = Decimal(0)
+        self._entry_price = Decimal(0)
+        self._day_open = Decimal(0)
+        self._day_close = Decimal(0)
+
     def OnReseted(self):
         super(turnaround_tuesday_strategy, self).OnReseted()
-        self._prev_ma = 0.0
-        self._session_open = 0.0
-        self._session_close = 0.0
-        self._prev_session_day = -1
-        self._prev_session_decline = False
-        self._prev_session_rally = False
-        self._current_session_day = -1
-        self._entered_this_session = False
-        self._cooldown = 0
+        self._reset_state()
 
     def OnStarted2(self, time):
         super(turnaround_tuesday_strategy, self).OnStarted2(time)
 
-        self._prev_ma = 0.0
-        self._session_open = 0.0
-        self._session_close = 0.0
-        self._prev_session_day = -1
-        self._prev_session_decline = False
-        self._prev_session_rally = False
-        self._current_session_day = -1
-        self._entered_this_session = False
-        self._cooldown = 0
-
-        sma = SimpleMovingAverage()
-        sma.Length = self._ma_period.Value
+        self._reset_state()
 
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(sma, self._process_candle).Start()
+        subscription.Bind(self._process_candle).Start()
+
+        self.StartProtection(Unit(), Unit(Decimal(self._stop_loss_percent.Value), UnitTypes.Percent), useMarketOrders=True, isLocalStop=True)
+
+        # The stop has to see prices between candles, not only at their close.
+        for field in (Level1Fields.BestBidPrice, Level1Fields.BestAskPrice):
+            quotes = Subscription(DataType.Level1, self.Security)
+            quotes.MarketData.BuildField = field
+            self.SubscribeLevel1(quotes).Bind(self._observe_protection_quote).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, sma)
             self.DrawOwnTrades(area)
 
-    def _process_candle(self, candle, ma_val):
+    def _observe_protection_quote(self, quote):
+        # The high-level handler activates native protection before the callback, including between bars.
+        pass
+
+    def _process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
 
-        close = float(candle.ClosePrice)
-        ma = float(ma_val)
-        day_of_year = candle.OpenTime.DayOfYear
-        cd = self._cooldown_bars.Value
+        day = candle.OpenTime.Date
+        first_of_day = self._day is None or self._day != day
+        if first_of_day:
+            if self._day is not None:
+                self._prev_day = self._day
+                self._prev_day_open = self._day_open
+                self._prev_day_close = self._day_close
+            self._day = day
+            self._day_open = candle.OpenPrice
+        self._day_close = candle.ClosePrice
 
-        # Detect new session (new calendar day)
-        if day_of_year != self._current_session_day:
-            # Save previous session result
-            if self._current_session_day >= 0 and self._session_open > 0:
-                self._prev_session_decline = self._session_close < self._session_open
-                self._prev_session_rally = self._session_close > self._session_open
-                self._prev_session_day = self._current_session_day
+        # The candle is the day's last when the next one would open on another day.
+        frame = self.candle_type.Arg
+        last_of_day = (candle.OpenTime + frame).Date != day
 
-            self._current_session_day = day_of_year
-            self._session_open = float(candle.OpenPrice)
-            self._entered_this_session = False
-
-        self._session_close = close
-
-        if self._cooldown > 0:
-            self._cooldown -= 1
-            self._prev_ma = ma
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        # Entry: buy if previous session declined and no position
-        if self.Position == 0 and not self._entered_this_session and self._prev_session_decline and close > ma:
-            self.BuyMarket()
-            self._cooldown = cd
-            self._entered_this_session = True
-            self._prev_session_decline = False
-        # Entry: sell if previous session rallied and no position
-        elif self.Position == 0 and not self._entered_this_session and self._prev_session_rally and close < ma:
-            self.SellMarket()
-            self._cooldown = cd
-            self._entered_this_session = True
-            self._prev_session_rally = False
+        if self.Position != 0:
+            if last_of_day or candle.ClosePrice >= self._entry_price * (Decimal(1) + Decimal(self._profit_target_percent.Value) / Decimal(100)):
+                if self.Position > 0:
+                    self.SellMarket(self.Position)
+                else:
+                    self.BuyMarket(-self.Position)
+            return
 
-        # Exit long if price crosses below MA
-        if self.Position > 0 and self._prev_ma > 0 and close < ma:
-            self.SellMarket()
-            self._cooldown = cd
+        if not (first_of_day and day.DayOfWeek == DayOfWeek.Tuesday and self._prev_day is not None and self._prev_day == day.AddDays(-1) and self._prev_day_close < self._prev_day_open):
+            return
 
-        # Exit short if price crosses above MA
-        if self.Position < 0 and self._prev_ma > 0 and close > ma:
-            self.BuyMarket()
-            self._cooldown = cd
-
-        self._prev_ma = ma
+        if (1) > 0:
+            self.BuyMarket(self.Volume)
+        else:
+            self.SellMarket(self.Volume)
+        self._entry_price = candle.ClosePrice
 
     def CreateClone(self):
         return turnaround_tuesday_strategy()

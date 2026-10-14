@@ -23,7 +23,7 @@ public class StopLossTakeProfitMoneyStrategy : Strategy
 
 	public StopLossTakeProfitMoneyStrategy()
 	{
-		_slowLength = Param(nameof(SlowLength), 40)
+		_slowLength = Param(nameof(SlowLength), 28)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Length", "Slow EMA period", "General");
 

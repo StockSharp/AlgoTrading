@@ -114,12 +114,12 @@ public class MacdCrossoverStrategy : Strategy
 			
 			.SetOptimize(5, 13, 2);
 
-		_lowerThreshold = Param(nameof(LowerThreshold), -100m)
+		_lowerThreshold = Param(nameof(LowerThreshold), -0.5m)
 			.SetDisplay("Lower Threshold", "Lower bound for MACD zone", "MACD Zone")
 
 			.SetOptimize(-1m, 0m, 0.1m);
 
-		_upperThreshold = Param(nameof(UpperThreshold), 100m)
+		_upperThreshold = Param(nameof(UpperThreshold), 0.5m)
 			.SetDisplay("Upper Threshold", "Upper bound for MACD zone", "MACD Zone")
 
 			.SetOptimize(0m, 1m, 0.1m);
@@ -128,7 +128,7 @@ public class MacdCrossoverStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Cooldown Bars", "Minimum bars between trade signals", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(10).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 

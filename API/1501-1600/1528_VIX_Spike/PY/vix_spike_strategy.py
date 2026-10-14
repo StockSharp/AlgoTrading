@@ -18,7 +18,7 @@ class vix_spike_strategy(Strategy):
             .SetDisplay("BB Length", "Bollinger Bands length", "Parameters")
         self._bb_width = self.Param("BbWidth", 2.0) \
             .SetDisplay("BB Width", "Bollinger Bands width multiplier", "Parameters")
-        self._exit_periods = self.Param("ExitPeriods", 15) \
+        self._exit_periods = self.Param("ExitPeriods", 10) \
             .SetDisplay("Exit Bars", "Bars to hold position", "Parameters")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles", "Parameters")

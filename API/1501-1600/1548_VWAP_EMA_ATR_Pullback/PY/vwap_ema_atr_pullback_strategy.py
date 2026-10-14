@@ -22,7 +22,7 @@ class vwap_ema_atr_pullback_strategy(Strategy):
             .SetDisplay("ATR Length", "ATR period", "Volatility")
         self._atr_multiplier = self.Param("AtrMultiplier", 1.5) \
             .SetDisplay("ATR Mult", "ATR multiplier", "Volatility")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(2))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
 
     @property

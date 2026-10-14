@@ -46,11 +46,11 @@ public class KnuxStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA Length", "Period of slow moving average", "General");
 
-		_cciPeriod = Param(nameof(CciPeriod), 20)
+		_cciPeriod = Param(nameof(CciPeriod), 40)
 			.SetGreaterThanZero()
 			.SetDisplay("CCI Period", "CCI calculation period", "General");
 
-		_wprPeriod = Param(nameof(WprPeriod), 14)
+		_wprPeriod = Param(nameof(WprPeriod), 60)
 			.SetGreaterThanZero()
 			.SetDisplay("WPR Period", "Williams %R period", "General");
 

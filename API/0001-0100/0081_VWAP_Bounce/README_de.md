@@ -17,7 +17,8 @@ Da die Methode gegen Intraday-Extreme handelt, funktioniert sie am besten in Ran
 - **Stops**: Ja, prozentbasiert.
 - **Standardwerte**:
   - `CandleType` = 5 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+    Der VWAP beginnt an jedem UTC-Tag neu und gewichtet den typischen Preis jeder Kerze mit ihrem Volumen.
 - **Filter**:
   - Kategorie: Mean Reversion
   - Richtung: Beide

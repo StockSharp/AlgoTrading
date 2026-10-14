@@ -28,7 +28,7 @@ public class CbcWsRsiStrategy : Strategy
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
-		_rsiPeriod = Param(nameof(RsiPeriod), 14)
+		_rsiPeriod = Param(nameof(RsiPeriod), 37)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "RSI period for confirmation", "Indicators");
 		_signalCooldownCandles = Param(nameof(SignalCooldownCandles), 6)

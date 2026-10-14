@@ -18,7 +18,11 @@ Um stop percentual protege contra tendências que continuam a afastar o preço d
 - **Stops**: Sim, baseado em percentual
 - **Valores padrão**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `RsiPeriod` = 14
+  - `RsiOversold` = 30
+  - `RsiOverbought` = 70
+    O mercado negocia 24 horas, por isso o VWAP da sessão reinicia a cada dia UTC e pondera o preço típico de cada candle pelo seu volume. Um fechamento abaixo do VWAP com RSI abaixo de RsiOversold abre uma compra; um fechamento acima do VWAP com RSI acima de RsiOverbought abre uma venda. Um sinal oposto inverte a posição.
 - **Filtros**:
   - Categoria: Seguidor de tendência
   - Direção: Ambos

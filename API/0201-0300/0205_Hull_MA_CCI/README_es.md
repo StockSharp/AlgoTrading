@@ -2,15 +2,15 @@
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
 Esta estrategia usa los indicadores Hull MA CCI para generar señales.
-La entrada larga ocurre cuando HMA(t) > HMA(t-1) && CCI < -100 (HMA subiendo con condiciones de sobreventa). La entrada corta ocurre cuando HMA(t) < HMA(t-1) && CCI > 100 (HMA bajando con condiciones de sobrecompra).
+La entrada larga ocurre cuando HMA(t) > HMA(t-1) && CCI < CciOversold (HMA subiendo con condiciones de sobreventa). La entrada corta ocurre cuando HMA(t) < HMA(t-1) && CCI > CciOverbought (HMA bajando con condiciones de sobrecompra).
 Es adecuada para los operadores que buscan oportunidades en mercados mixtos.
 
 Las pruebas indican un rendimiento anual promedio de aproximadamente 52%. Funciona mejor en el mercado cripto.
 
 ## Detalles
 - **Criterios de entrada**:
-  - **Largo**: HMA(t) > HMA(t-1) && CCI < -100 (HMA subiendo con condiciones de sobreventa)
-  - **Corto**: HMA(t) < HMA(t-1) && CCI > 100 (HMA bajando con condiciones de sobrecompra)
+  - **Largo**: HMA(t) > HMA(t-1) && CCI < CciOversold (HMA subiendo con condiciones de sobreventa)
+  - **Corto**: HMA(t) < HMA(t-1) && CCI > CciOverbought (HMA bajando con condiciones de sobrecompra)
 - **Largo/Corto**: Ambos lados.
 - **Criterios de salida**:
   - **Largo**: Salir de la posición larga cuando HMA comienza a bajar
@@ -19,8 +19,11 @@ Las pruebas indican un rendimiento anual promedio de aproximadamente 52%. Funcio
 - **Valores predeterminados**:
   - `HullPeriod` = 9
   - `CciPeriod` = 20
+  - `CciOversold` = -100
+  - `CciOverbought` = 100
   - `AtrPeriod` = 14
-  - `AtrMultiplier` = 2m
+  - `AtrMultiplier` = 2
+    -100 y 100 son los valores por defecto de los niveles de CCI que citan las reglas. El stop se sitúa a AtrMultiplier veces el ATR de AtrPeriod del cierre de entrada y se comprueba al cierre de las velas; 0 lo desactiva. Una señal de entrada contra una posición abierta la invierte.
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **Filtros**:
   - Categoría: Mixto

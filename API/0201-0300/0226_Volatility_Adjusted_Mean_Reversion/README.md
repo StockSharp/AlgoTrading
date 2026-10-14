@@ -20,7 +20,8 @@ The adaptive threshold makes this strategy suitable for markets with changing vo
 - **Stops**: Yes, dynamic based on ATR.
 - **Default Values**:
   - `Period` = 20
-  - `Multiplier` = 2.0m
+  - `Multiplier` = 2
+    MA, ATR and StdDev (the standard deviation of closes) all span Period candles; the threshold reduces to Multiplier times StdDev. The stop is set Multiplier times the ATR from the entry close, twice the ATR by default, and checked on candle closes. An entry signal against an open position reverses it.
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **Filters**:
   - Category: Mean Reversion

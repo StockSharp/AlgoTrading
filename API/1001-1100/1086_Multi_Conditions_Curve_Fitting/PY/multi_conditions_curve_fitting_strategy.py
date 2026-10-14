@@ -21,7 +21,7 @@ class multi_conditions_curve_fitting_strategy(Strategy):
         self._slow_length = self.Param("SlowEmaLength", 25).SetDisplay("Slow EMA", "Slow EMA", "Indicators")
         self._rsi_length = self.Param("RsiLength", 14).SetDisplay("RSI", "RSI period", "Indicators")
         self._cooldown_bars = self.Param("CooldownBars", 5).SetDisplay("Cooldown", "Min bars between entries", "Risk")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Candles", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Candles", "General")
 
         self._prev_fast = 0.0
         self._prev_slow = 0.0

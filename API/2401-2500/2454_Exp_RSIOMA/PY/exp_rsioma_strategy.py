@@ -15,7 +15,7 @@ class exp_rsioma_strategy(Strategy):
     def __init__(self):
         super(exp_rsioma_strategy, self).__init__()
 
-        self._rsi_period = self.Param("RsiPeriod", 21)
+        self._rsi_period = self.Param("RsiPeriod", 14)
         self._ema_period = self.Param("EmaPeriod", 14)
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5)))
 

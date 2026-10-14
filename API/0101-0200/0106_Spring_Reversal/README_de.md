@@ -18,7 +18,9 @@ Ein Stop knapp unter dem Spring-Tief begrenzt den Nachteil, und die Position wir
 - **Stops**: Ja, prozentbasiert
 - **Standardwerte**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `LookbackPeriod` = 20
+  - `StopLossPercent` = 2
+    Die Unterstützung ist das tiefste Tief der vorherigen LookbackPeriod Kerzen. Die Strategie kauft nur: eine bullische Kerze, die die Unterstützung unterschreitet und wieder darüber schließt. Der Stop liegt StopLossPercent unter dem Spring-Tief, und die Position schließt, wenn eine Kerze darunter schließt.
 - **Filter**:
   - Kategorie: Umkehr
   - Richtung: Beide

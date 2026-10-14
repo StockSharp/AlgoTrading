@@ -17,7 +17,10 @@ Las operaciones utilizan un stop porcentual simple para controlar el riesgo y t�
 - **Stops**: Sí, basado en porcentaje
 - **Valores predeterminados**:
   - `CandleType` = 15 minutos
-  - `StopLoss` = 2%
+  - `RsiPeriod` = 14
+  - `OversoldLevel` = 30
+  - `OverboughtLevel` = 70
+  - `StopLossPercent` = 2
 - **Filtros**:
   - Categoría: Reversión
   - Dirección: Ambos

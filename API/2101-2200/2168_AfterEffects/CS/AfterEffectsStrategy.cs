@@ -36,11 +36,11 @@ public class AfterEffectsStrategy : Strategy
 	{
 		_stopLoss = Param(nameof(StopLoss), 500m)
 			.SetDisplay("Stop Loss", "Stop Loss distance", "General");
-		_period = Param(nameof(Period), 8)
+		_period = Param(nameof(Period), 3)
 			.SetDisplay("Bar Period", "Period of bars for signal", "General");
 		_random = Param(nameof(Random), false)
 			.SetDisplay("Random Range", "Invert signal", "General");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle Type", "General");
 	}
 

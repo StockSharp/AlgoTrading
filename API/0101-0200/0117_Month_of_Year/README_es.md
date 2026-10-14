@@ -18,7 +18,8 @@ Se utilizan stops para proteger el capital si el comportamiento estacional habit
 - **Stops**: Sí, basado en porcentaje
 - **Valores predeterminados**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+    Los días son días UTC, ya que el mercado opera las 24 horas; las entradas ocurren al cierre de la primera vela del día. De noviembre a abril compra y de mayo a octubre vende en corto, la división estacional clásica con meses de invierno fuertes y un septiembre débil; la posición se abre en la primera vela del mes y se cierra en la última.
 - **Filtros**:
   - Categoría: Estacionalidad
   - Dirección: Ambos

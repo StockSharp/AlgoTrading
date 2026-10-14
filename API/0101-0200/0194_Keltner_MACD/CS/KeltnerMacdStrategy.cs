@@ -1,26 +1,21 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on Keltner Channels and MACD.
-/// Enters long when price breaks above upper Keltner Channel with MACD > Signal.
-/// Enters short when price breaks below lower Keltner Channel with MACD < Signal.
-/// Exits when MACD crosses its signal line in the opposite direction.
+/// Keltner MACD strategy.
+/// The Keltner Channel is the EmaPeriod EMA plus and minus Multiplier times the AtrPeriod ATR. A close above the upper band with MACD above
+/// its signal line goes long and a close below the lower band with MACD below the signal line goes short, reversing an opposite position.
+/// A long closes when MACD crosses below the signal line and a short when it crosses above it. The stop lies AtrMultiplier ATR from the entry
+/// close and is checked on candle closes.
 /// </summary>
 public class KeltnerMacdStrategy : Strategy
 {
@@ -30,21 +25,13 @@ public class KeltnerMacdStrategy : Strategy
 	private readonly StrategyParam<int> _macdFastPeriod;
 	private readonly StrategyParam<int> _macdSlowPeriod;
 	private readonly StrategyParam<int> _macdSignalPeriod;
-	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<decimal> _atrMultiplier;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _stopLossPercent;
 
-	private ExponentialMovingAverage _ema;
-	private AverageTrueRange _atr;
-	private MovingAverageConvergenceDivergenceSignal _macd;
-	
-	private decimal _prevMacd;
-	private decimal _prevSignal;
-	private int _cooldown;
+	private decimal _stopPrice;
 
 	/// <summary>
-	/// EMA period for Keltner Channel middle line.
+	/// Period of the channel EMA.
 	/// </summary>
 	public int EmaPeriod
 	{
@@ -53,7 +40,7 @@ public class KeltnerMacdStrategy : Strategy
 	}
 
 	/// <summary>
-	/// ATR multiplier for Keltner Channel bands.
+	/// ATR multiplier of the channel width.
 	/// </summary>
 	public decimal Multiplier
 	{
@@ -62,7 +49,7 @@ public class KeltnerMacdStrategy : Strategy
 	}
 
 	/// <summary>
-	/// ATR period for Keltner Channel bands.
+	/// Period of the channel and stop ATR.
 	/// </summary>
 	public int AtrPeriod
 	{
@@ -71,7 +58,7 @@ public class KeltnerMacdStrategy : Strategy
 	}
 
 	/// <summary>
-	/// MACD fast EMA period.
+	/// Fast EMA period of MACD.
 	/// </summary>
 	public int MacdFastPeriod
 	{
@@ -80,7 +67,7 @@ public class KeltnerMacdStrategy : Strategy
 	}
 
 	/// <summary>
-	/// MACD slow EMA period.
+	/// Slow EMA period of MACD.
 	/// </summary>
 	public int MacdSlowPeriod
 	{
@@ -89,7 +76,7 @@ public class KeltnerMacdStrategy : Strategy
 	}
 
 	/// <summary>
-	/// MACD signal line period.
+	/// Signal line period of MACD.
 	/// </summary>
 	public int MacdSignalPeriod
 	{
@@ -98,16 +85,7 @@ public class KeltnerMacdStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Bars to wait between trades.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
-	/// ATR multiplier for stop loss calculation.
+	/// Stop distance from the entry in ATRs.
 	/// </summary>
 	public decimal AtrMultiplier
 	{
@@ -116,7 +94,7 @@ public class KeltnerMacdStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Candle type for strategy.
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -125,80 +103,53 @@ public class KeltnerMacdStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop-loss percentage.
-	/// </summary>
-	public decimal StopLossPercent
-	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="KeltnerMacdStrategy"/>.
+	/// Constructor.
 	/// </summary>
 	public KeltnerMacdStrategy()
 	{
 		_emaPeriod = Param(nameof(EmaPeriod), 20)
-			.SetDisplay("EMA Period", "Period for EMA calculation in Keltner Channel", "Indicators")
-			
-			.SetOptimize(10, 30, 5);
+			.SetGreaterThanZero()
+			.SetDisplay("EMA Period", "Period of the channel EMA", "Keltner");
 
 		_multiplier = Param(nameof(Multiplier), 2m)
-			.SetDisplay("ATR Multiplier", "ATR multiplier for Keltner Channel bands", "Indicators")
-			
-			.SetOptimize(1.5m, 3m, 0.5m);
+			.SetGreaterThanZero()
+			.SetDisplay("Multiplier", "ATR multiplier of the channel width", "Keltner");
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
-			.SetDisplay("ATR Period", "Period for ATR calculation in Keltner Channel", "Indicators");
+			.SetGreaterThanZero()
+			.SetDisplay("ATR Period", "Period of the channel and stop ATR", "Keltner");
 
 		_macdFastPeriod = Param(nameof(MacdFastPeriod), 12)
-			.SetDisplay("MACD Fast Period", "Fast EMA period for MACD calculation", "Indicators")
-			;
+			.SetGreaterThanZero()
+			.SetDisplay("MACD Fast", "Fast EMA period of MACD", "MACD");
 
 		_macdSlowPeriod = Param(nameof(MacdSlowPeriod), 26)
-			.SetDisplay("MACD Slow Period", "Slow EMA period for MACD calculation", "Indicators")
-			;
+			.SetGreaterThanZero()
+			.SetDisplay("MACD Slow", "Slow EMA period of MACD", "MACD");
 
 		_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 9)
-			.SetDisplay("MACD Signal Period", "Signal line period for MACD calculation", "Indicators")
-			;
-
-		_cooldownBars = Param(nameof(CooldownBars), 20)
-			.SetRange(1, 200)
-			.SetDisplay("Cooldown Bars", "Bars between entries", "General");
+			.SetGreaterThanZero()
+			.SetDisplay("MACD Signal", "Signal line period of MACD", "MACD");
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
-			.SetDisplay("Stop Loss ATR Multiplier", "ATR multiplier for stop loss calculation", "Risk Management");
+			.SetNotNegative()
+			.SetDisplay("ATR Multiplier", "Stop distance from the entry in ATRs", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-			.SetDisplay("Candle Type", "Timeframe of data for strategy", "General");
-
-		_stopLossPercent = Param(nameof(StopLossPercent), 1.0m)
-			.SetNotNegative()
-			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
-			
-			.SetOptimize(0.5m, 2.0m, 0.5m);
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
-	public override IEnumerable<(Security, DataType)> GetWorkingSecurities()
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_ema?.Reset();
-		_atr?.Reset();
-		_macd?.Reset();
-
-		_prevMacd = 0;
-		_prevSignal = 0;
-		_cooldown = 0;
+		_stopPrice = default;
 	}
 
 	/// <inheritdoc />
@@ -206,11 +157,11 @@ public class KeltnerMacdStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
-		_ema = new EMA { Length = EmaPeriod };
-		_atr = new AverageTrueRange { Length = AtrPeriod };
+		_stopPrice = default;
 
-		_macd = new MovingAverageConvergenceDivergenceSignal
+		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
+		var atr = new AverageTrueRange { Length = AtrPeriod };
+		var macd = new MovingAverageConvergenceDivergenceSignal
 		{
 			Macd =
 			{
@@ -219,100 +170,66 @@ public class KeltnerMacdStrategy : Strategy
 			},
 			SignalMa = { Length = MacdSignalPeriod }
 		};
-		// Initialize variables
-		// Create subscription
-		var subscription = SubscribeCandles(CandleType);
 
-		// Process candles with indicators
+		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_ema, _atr, _macd, ProcessCandle)
+			.BindEx(ema, atr, macd, ProcessCandle)
 			.Start();
 
-		// Setup chart visualization
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			
-			// MACD in separate area
-			var macdArea = CreateChartArea();
-			if (macdArea != null)
-			{
-				DrawIndicator(macdArea, _macd);
-			}
-			
+			DrawIndicator(area, ema);
 			DrawOwnTrades(area);
-		}
 
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, macd);
+			}
+		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue emaValue, IIndicatorValue atrValue, IIndicatorValue macdValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var ema = emaValue.ToDecimal();
-		var atr = atrValue.ToDecimal();
-
-		// Calculate Keltner Channels
-		var upperBand = ema + Multiplier * atr;
-		var lowerBand = ema - Multiplier * atr;
+		if (!emaValue.IsFormed || !atrValue.IsFormed || !macdValue.IsFormed)
+			return;
 
 		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
 
-		// Process MACD separately to get MACD and Signal values
 		if (macdTyped.Macd is not decimal macd || macdTyped.Signal is not decimal signal)
-		{
 			return;
-		}
 
-		// Detect MACD crosses
-		bool macdCrossedAboveSignal = _prevMacd <= _prevSignal && macd > signal;
-		bool macdCrossedBelowSignal = _prevMacd >= _prevSignal && macd < signal;
-
-		// Check if strategy is ready for trading
 		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			// Store current values for next candle
-			_prevMacd = macd;
-			_prevSignal = signal;
 			return;
-		}
 
-		// Trading logic
-		if (_cooldown > 0)
-			_cooldown--;
+		var middle = emaValue.GetValue<decimal>();
+		var atr = atrValue.GetValue<decimal>();
+		var upper = middle + Multiplier * atr;
+		var lower = middle - Multiplier * atr;
+		var close = candle.ClosePrice;
 
-		if (_cooldown == 0 && candle.ClosePrice > upperBand * 1.001m && macdCrossedAboveSignal && Position <= 0)
+		if (close > upper && macd > signal && Position <= 0)
 		{
-			// Price breaks above upper Keltner Channel with bullish MACD - go long
 			BuyMarket(Volume + Math.Abs(Position));
-			_cooldown = CooldownBars;
+			_stopPrice = close - AtrMultiplier * atr;
 		}
-		else if (_cooldown == 0 && candle.ClosePrice < lowerBand * 0.999m && macdCrossedBelowSignal && Position >= 0)
+		else if (close < lower && macd < signal && Position >= 0)
 		{
-			// Price breaks below lower Keltner Channel with bearish MACD - go short
 			SellMarket(Volume + Math.Abs(Position));
-			_cooldown = CooldownBars;
+			_stopPrice = close + AtrMultiplier * atr;
 		}
-		
-		// Exit logic based on MACD crosses
-		if (Position > 0 && macdCrossedBelowSignal)
+		else if (Position > 0 && (macd < signal || (AtrMultiplier > 0 && close <= _stopPrice)))
 		{
-			// Exit long position when MACD crosses below Signal
-			ClosePosition();
-			_cooldown = CooldownBars;
+			SellMarket(Position);
 		}
-		else if (Position < 0 && macdCrossedAboveSignal)
+		else if (Position < 0 && (macd > signal || (AtrMultiplier > 0 && close >= _stopPrice)))
 		{
-			// Exit short position when MACD crosses above Signal
-			ClosePosition();
-			_cooldown = CooldownBars;
+			BuyMarket(-Position);
 		}
-
-		// Store current values for next candle
-		_prevMacd = macd;
-		_prevSignal = signal;
 	}
 }

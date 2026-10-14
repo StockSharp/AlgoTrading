@@ -31,10 +31,10 @@ class puncher_strategy(Strategy):
             .SetGreaterThanZero() \
             .SetDisplay("RSI Period", "RSI calculation length", "Indicators")
 
-        self._oversold_level = self.Param("OversoldLevel", 20.0) \
+        self._oversold_level = self.Param("OversoldLevel", 30.0) \
             .SetDisplay("Oversold Level", "Threshold for oversold detection", "Signals")
 
-        self._overbought_level = self.Param("OverboughtLevel", 80.0) \
+        self._overbought_level = self.Param("OverboughtLevel", 70.0) \
             .SetDisplay("Overbought Level", "Threshold for overbought detection", "Signals")
 
         self._stop_loss_pips = self.Param("StopLossPips", 20) \

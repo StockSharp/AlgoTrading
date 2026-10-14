@@ -1,39 +1,34 @@
-namespace StockSharp.Samples.Strategies;
-
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using Ecng.Common;
 
-using StockSharp.Algo;
-using StockSharp.Algo.Candles;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
+namespace StockSharp.Samples.Strategies;
+
 /// <summary>
-/// Williams %R Mean Reversion strategy.
-/// This strategy enters positions when Williams %R is significantly below or above its average value.
+/// Williams R Mean Reversion strategy.
+/// The bands lie DeviationMultiplier standard deviations around the average of the last AveragePeriod %R values, the current one included.
+/// %R below the lower band goes long and %R above the upper band goes short,
+/// reversing an opposite position. A long closes once %R is back above its average and a short once it is back below it, and a percent stop limits the loss.
 /// </summary>
 public class WilliamsRMeanReversionStrategy : Strategy
 {
 	private readonly StrategyParam<int> _williamsRPeriod;
 	private readonly StrategyParam<int> _averagePeriod;
 	private readonly StrategyParam<decimal> _deviationMultiplier;
-	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevWilliamsR;
-	private decimal _avgWilliamsR;
-	private decimal _stdDevWilliamsR;
-	private decimal _sumWilliamsR;
-	private decimal _sumSquaresWilliamsR;
-	private int _count;
-	private readonly Queue<decimal> _williamsRValues = [];
+	private readonly Queue<decimal> _values = [];
 
 	/// <summary>
-	/// Williams %R Period.
+	/// Period of Williams %R.
 	/// </summary>
 	public int WilliamsRPeriod
 	{
@@ -42,7 +37,7 @@ public class WilliamsRMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Period for calculating mean and standard deviation of Williams %R.
+	/// Values of %R the average and the standard deviation span.
 	/// </summary>
 	public int AveragePeriod
 	{
@@ -51,12 +46,21 @@ public class WilliamsRMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Deviation multiplier for entry signals.
+	/// Standard deviations between the average and a band.
 	/// </summary>
 	public decimal DeviationMultiplier
 	{
 		get => _deviationMultiplier.Value;
 		set => _deviationMultiplier.Value = value;
+	}
+
+	/// <summary>
+	/// Stop loss percentage from entry price.
+	/// </summary>
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
 	}
 
 	/// <summary>
@@ -69,45 +73,28 @@ public class WilliamsRMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop-loss percentage.
-	/// </summary>
-	public decimal StopLossPercent
-	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
-	}
-
-	/// <summary>
 	/// Constructor.
 	/// </summary>
 	public WilliamsRMeanReversionStrategy()
 	{
 		_williamsRPeriod = Param(nameof(WilliamsRPeriod), 14)
 			.SetGreaterThanZero()
-			
-			.SetOptimize(7, 21, 7)
-			.SetDisplay("Williams %R Period", "Period for Williams %R indicator", "Indicators");
+			.SetDisplay("Williams %R Period", "Period of Williams %R", "Indicators");
 
 		_averagePeriod = Param(nameof(AveragePeriod), 20)
 			.SetGreaterThanZero()
-			
-			.SetOptimize(10, 50, 10)
-			.SetDisplay("Average Period", "Period for calculating Williams %R average and standard deviation", "Settings");
+			.SetDisplay("Average Period", "Values of %R the average and the standard deviation span", "Indicators");
 
 		_deviationMultiplier = Param(nameof(DeviationMultiplier), 2m)
 			.SetGreaterThanZero()
-			
-			.SetOptimize(1.5m, 3m, 0.5m)
-			.SetDisplay("Deviation Multiplier", "Multiplier for standard deviation", "Settings");
+			.SetDisplay("Multiplier", "Standard deviations between the average and a band", "Indicators");
+
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-			.SetGreaterThanZero()
-			
-			.SetOptimize(1m, 3m, 0.5m)
-			.SetDisplay("Stop Loss %", "Stop loss as percentage of entry price", "Risk Management");
 	}
 
 	/// <inheritdoc />
@@ -120,136 +107,85 @@ public class WilliamsRMeanReversionStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevWilliamsR = 0;
-		_avgWilliamsR = 0;
-		_stdDevWilliamsR = 0;
-		_sumWilliamsR = 0;
-		_sumSquaresWilliamsR = 0;
-		_count = 0;
-		_williamsRValues.Clear();
+		_values.Clear();
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
-		// Reset variables
+		base.OnStarted2(time);
 
-		// Create Williams %R indicator
-		var williamsR = new WilliamsR { Length = WilliamsRPeriod };
+		_values.Clear();
 
-		// Create subscription and bind indicator
+		var williams = new WilliamsR { Length = WilliamsRPeriod };
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(williamsR, ProcessCandle)
+			.BindEx(williams, ProcessCandle)
 			.Start();
 
-		// Setup chart visualization
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, williamsR);
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, williams);
+			}
 		}
-
-		// Enable position protection
-		StartProtection(
-			takeProfit: new Unit(0m), // We'll manage exits ourselves based on Williams %R
-			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent)
-		);
-
-		base.OnStarted2(time);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue williamsRValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
 	{
-		// Skip unfinished candles
+		// The high-level handler activates native protection before this callback, also between signal bars.
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue williamsValue)
+	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
+		if (!williamsValue.IsFormed)
+			return;
+
+		var value = williamsValue.GetValue<decimal>();
+
+		_values.Enqueue(value);
+
+		if (_values.Count > AveragePeriod)
+			_values.Dequeue();
+
+		if (_values.Count < AveragePeriod)
+			return;
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Extract Williams %R value
-		var currentWilliamsR = williamsRValue.ToDecimal();
+		var mean = _values.Average();
+		var deviation = (decimal)Math.Sqrt((double)_values.Average(v => (v - mean) * (v - mean)));
+		var upper = mean + DeviationMultiplier * deviation;
+		var lower = mean - DeviationMultiplier * deviation;
 
-		// Update Williams %R statistics
-		UpdateWilliamsRStatistics(currentWilliamsR);
-
-		// Save current Williams %R for next iteration
-		_prevWilliamsR = currentWilliamsR;
-
-		// If we don't have enough data yet for statistics
-		if (_count < AveragePeriod)
-			return;
-
-		// Check for entry conditions
-		if (Position == 0)
-		{
-			// Long entry - Williams %R is significantly below its average
-			if (currentWilliamsR < _avgWilliamsR - DeviationMultiplier * _stdDevWilliamsR)
-			{
-				BuyMarket(Volume);
-				LogInfo($"Long entry: Williams %R = {currentWilliamsR}, Avg = {_avgWilliamsR}, StdDev = {_stdDevWilliamsR}");
-			}
-			// Short entry - Williams %R is significantly above its average
-			else if (currentWilliamsR > _avgWilliamsR + DeviationMultiplier * _stdDevWilliamsR)
-			{
-				SellMarket(Volume);
-				LogInfo($"Short entry: Williams %R = {currentWilliamsR}, Avg = {_avgWilliamsR}, StdDev = {_stdDevWilliamsR}");
-			}
-		}
-		// Check for exit conditions
-		else if (Position > 0) // Long position
-		{
-			if (currentWilliamsR > _avgWilliamsR)
-			{
-				ClosePosition();
-				LogInfo($"Long exit: Williams %R = {currentWilliamsR}, Avg = {_avgWilliamsR}");
-			}
-		}
-		else if (Position < 0) // Short position
-		{
-			if (currentWilliamsR < _avgWilliamsR)
-			{
-				ClosePosition();
-				LogInfo($"Short exit: Williams %R = {currentWilliamsR}, Avg = {_avgWilliamsR}");
-			}
-		}
-	}
-
-	private void UpdateWilliamsRStatistics(decimal currentWilliamsR)
-	{
-		// Add current value to the queue
-		_williamsRValues.Enqueue(currentWilliamsR);
-		_sumWilliamsR += currentWilliamsR;
-		_sumSquaresWilliamsR += currentWilliamsR * currentWilliamsR;
-		_count++;
-
-		// If queue is larger than period, remove oldest value
-		if (_williamsRValues.Count > AveragePeriod)
-		{
-			var oldestWilliamsR = _williamsRValues.Dequeue();
-			_sumWilliamsR -= oldestWilliamsR;
-			_sumSquaresWilliamsR -= oldestWilliamsR * oldestWilliamsR;
-			_count--;
-		}
-
-		// Calculate average and standard deviation
-		if (_count > 0)
-		{
-			_avgWilliamsR = _sumWilliamsR / _count;
-			
-			if (_count > 1)
-			{
-				var variance = (_sumSquaresWilliamsR - (_sumWilliamsR * _sumWilliamsR) / _count) / (_count - 1);
-				_stdDevWilliamsR = variance <= 0 ? 0 : (decimal)Math.Sqrt((double)variance);
-			}
-			else
-			{
-				_stdDevWilliamsR = 0;
-			}
-		}
+		if (value < lower && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (value > upper && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
+		else if (Position > 0 && value > mean)
+			SellMarket(Position);
+		else if (Position < 0 && value < mean)
+			BuyMarket(-Position);
 	}
 }

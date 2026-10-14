@@ -39,7 +39,7 @@ public class KolierSuperTrendStrategy : Strategy
 			.SetDisplay("ATR Multiplier", "ATR multiplier for SuperTrend", "Indicators")
 			.SetOptimize(2.0m, 4.0m, 0.5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 

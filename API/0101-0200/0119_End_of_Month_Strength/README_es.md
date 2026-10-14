@@ -18,7 +18,9 @@ Los stops se colocan por debajo del soporte reciente para protegerse contra una 
 - **Stops**: Sí, basado en porcentaje
 - **Valores predeterminados**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `DaysBeforeMonthEnd` = 3
+  - `StopLossPercent` = 2
+    Los días son días UTC, ya que el mercado opera las 24 horas; las entradas ocurren al cierre de la primera vela del día. La compra se abre en cada uno de los últimos DaysBeforeMonthEnd días del mes si no hay posición y se cierra en la primera vela del mes nuevo.
 - **Filtros**:
   - Categoría: Estacionalidad
   - Dirección: Ambos

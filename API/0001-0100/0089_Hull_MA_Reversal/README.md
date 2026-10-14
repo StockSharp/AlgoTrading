@@ -18,6 +18,7 @@ Exits rely on that protective stop, capturing a portion of the move that follows
 - **Default Values**:
   - `HmaPeriod` = 9
   - `AtrMultiplier` = 2 ATR
+    The stop lies this many ATRs (period 14) beyond the low of the entry candle for a long or its high for a short, and is checked on candle closes; a turn the other way reverses the position.
   - `CandleType` = 15 minute
 - **Filters**:
   - Category: Trend following

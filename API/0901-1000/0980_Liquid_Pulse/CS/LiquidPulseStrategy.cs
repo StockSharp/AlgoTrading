@@ -53,7 +53,7 @@ public class LiquidPulseStrategy : Strategy
 			.SetDisplay("MACD Speed", "MACD speed", "General");
 		_dailyTradeLimit = Param(nameof(DailyTradeLimit), 20)
 			.SetDisplay("Daily Trade Limit", "Max trades per day", "Risk");
-		_adxTrendThreshold = Param(nameof(AdxTrendThreshold), 20)
+		_adxTrendThreshold = Param(nameof(AdxTrendThreshold), 41)
 			.SetDisplay("ADX Trend Threshold", "Trend threshold", "Indicators");
 		_atrPeriod = Param(nameof(AtrPeriod), 9)
 			.SetDisplay("ATR Period", "ATR period", "Indicators");

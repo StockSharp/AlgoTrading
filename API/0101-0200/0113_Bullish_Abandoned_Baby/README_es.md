@@ -18,7 +18,9 @@ Los stops se ubican justo por debajo del mínimo del doji, asegurando que las p�
 - **Stops**: Sí, basado en porcentaje
 - **Valores predeterminados**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `DojiBodyPercent` = 10
+  - `StopLossPercent` = 2
+    El mercado opera las 24 horas, así que los rangos de las velas casi nunca dejan huecos (el mes de muestra no tiene ese patrón alcista); los huecos se miden entre los cuerpos de las velas. El cuerpo del doji es como mucho DojiBodyPercent de su rango. La estrategia solo compra, al cierre de la tercera vela; el stop se coloca StopLossPercent por debajo del mínimo del doji y la posición se cierra cuando una vela cierra por debajo.
 - **Filtros**:
   - Categoría: Patrón
   - Dirección: Ambos

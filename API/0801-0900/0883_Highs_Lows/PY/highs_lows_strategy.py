@@ -5,28 +5,29 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan
+from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage
+from StockSharp.Algo.Indicators import Highest, Lowest
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class highs_lows_strategy(Strategy):
     """
-    EMA crossover strategy.
-    Buys when fast EMA crosses above slow EMA, sells when it crosses below.
+    Highs Lows strategy.
+    Tracks the highest high and lowest low of the last Range candles. The candle midpoint is compared with the average of
+    these extremes, and their distance is normalized by half the range (0 at the average, 100 at an extreme). A long opens when the midpoint is
+    below the average and the normalized distance is below LowThreshold, and closes when the midpoint is above the average
+    and the normalized distance is above HighThreshold.
     """
 
     def __init__(self):
         super(highs_lows_strategy, self).__init__()
-        self._fast_period = self.Param("FastPeriod", 120) \
-            .SetDisplay("Fast Period", "Fast EMA period", "General")
-        self._slow_period = self.Param("SlowPeriod", 450) \
-            .SetDisplay("Slow Period", "Slow EMA period", "General")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
-            .SetDisplay("Candle Type", "Candle timeframe", "General")
-
-        self._prev_fast = 0.0
-        self._prev_slow = 0.0
+        self._range = self.Param("Range", 100).SetGreaterThanZero().SetDisplay("Range", "Number of candles for highest and lowest values", "Indicators")
+        self._low_threshold = self.Param("LowThreshold", 15.0).SetDisplay("Low Threshold", "Normalized distance below which a long opens", "Signals")
+        self._high_threshold = self.Param("HighThreshold", 85.0).SetDisplay("High Threshold", "Normalized distance above which the long closes", "Signals")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(240))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._highest = None
+        self._lowest = None
 
     @property
     def candle_type(self):
@@ -34,37 +35,53 @@ class highs_lows_strategy(Strategy):
 
     def OnReseted(self):
         super(highs_lows_strategy, self).OnReseted()
-        self._prev_fast = 0.0
-        self._prev_slow = 0.0
+        self._highest = None
+        self._lowest = None
 
     def OnStarted2(self, time):
         super(highs_lows_strategy, self).OnStarted2(time)
 
-        fast_ema = ExponentialMovingAverage()
-        fast_ema.Length = self._fast_period.Value
-        slow_ema = ExponentialMovingAverage()
-        slow_ema.Length = self._slow_period.Value
+        self._highest = Highest()
+        self._highest.Length = self._range.Value
+        self._lowest = Lowest()
+        self._lowest.Length = self._range.Value
 
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(fast_ema, slow_ema, self._process_candle).Start()
+        subscription.Bind(self._process_candle).Start()
 
-    def _process_candle(self, candle, fast_val, slow_val):
+        area = self.CreateChartArea()
+        if area is not None:
+            self.DrawCandles(area, subscription)
+            self.DrawIndicator(area, self._highest)
+            self.DrawIndicator(area, self._lowest)
+            self.DrawOwnTrades(area)
+
+    def _process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
 
-        fast = float(fast_val)
-        slow = float(slow_val)
+        highest = process_float(self._highest, candle.HighPrice, candle.OpenTime, True).GetValue[Decimal](None)
+        lowest = process_float(self._lowest, candle.LowPrice, candle.OpenTime, True).GetValue[Decimal](None)
 
-        if self._prev_fast != 0.0 and self._prev_slow != 0.0:
-            if self._prev_fast <= self._prev_slow and fast > slow:
-                if self.Position <= 0:
-                    self.BuyMarket()
-            elif self._prev_fast >= self._prev_slow and fast < slow:
-                if self.Position >= 0:
-                    self.SellMarket()
+        if not self._highest.IsFormed or not self._lowest.IsFormed:
+            return
 
-        self._prev_fast = fast
-        self._prev_slow = slow
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
+        width = highest - lowest
+        if width <= 0:
+            return
+
+        midpoint = (candle.HighPrice + candle.LowPrice) / Decimal(2)
+        average = (highest + lowest) / Decimal(2)
+        # Distance from the average as a percentage of the half range: 0 at the average, 100 at an extreme.
+        distance = abs(midpoint - average) / (width / Decimal(2)) * Decimal(100)
+
+        if self.Position <= 0 and midpoint < average and distance < Decimal(self._low_threshold.Value):
+            self.BuyMarket(self.Volume + abs(self.Position))
+        elif self.Position > 0 and midpoint > average and distance > Decimal(self._high_threshold.Value):
+            self.SellMarket(self.Position)
 
     def CreateClone(self):
         return highs_lows_strategy()

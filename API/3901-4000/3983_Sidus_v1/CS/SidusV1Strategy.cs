@@ -178,16 +178,16 @@ public class SidusV1Strategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period (Sell)", "RSI period used for sell signals", "Indicators");
 
-		_buyDifferenceThreshold = Param(nameof(BuyDifferenceThreshold), -100m)
+		_buyDifferenceThreshold = Param(nameof(BuyDifferenceThreshold), 63m)
 			.SetDisplay("Buy EMA Threshold", "Maximum fast-slow EMA difference to allow buy", "Trading Rules");
 
-		_buyRsiThreshold = Param(nameof(BuyRsiThreshold), 45m)
+		_buyRsiThreshold = Param(nameof(BuyRsiThreshold), 59m)
 			.SetDisplay("Buy RSI Threshold", "Maximum RSI level to allow buy", "Trading Rules");
 
-		_sellDifferenceThreshold = Param(nameof(SellDifferenceThreshold), 100m)
+		_sellDifferenceThreshold = Param(nameof(SellDifferenceThreshold), -57m)
 			.SetDisplay("Sell EMA Threshold", "Minimum fast-slow EMA difference to allow sell", "Trading Rules");
 
-		_sellRsiThreshold = Param(nameof(SellRsiThreshold), 55m)
+		_sellRsiThreshold = Param(nameof(SellRsiThreshold), 60m)
 			.SetDisplay("Sell RSI Threshold", "Minimum RSI level to allow sell", "Trading Rules");
 
 		_stopLoss = Param(nameof(StopLoss), 500m)

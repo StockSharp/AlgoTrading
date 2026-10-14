@@ -7,7 +7,7 @@ Tests zeigen eine durchschnittliche Jahresrendite von etwa 79%. Die Strategie fu
 
 Der gleitende Durchschnitt zeigt die vorherrschende Trendrichtung. Williams %R sucht nach überkauften oder überverkauften Punkten relativ zu diesem Trend.
 
-Passt zu Swing-Tradern, die auf Rücksetzer in Richtung des Durchschnitts warten. Der Stop-Loss-Abstand wird vom ATR abgeleitet.
+Passt zu Swing-Tradern, die auf Rücksetzer in Richtung des Durchschnitts warten. Der Stop-Loss-Abstand ist ein fester Prozentsatz des Einstiegspreises.
 
 ## Details
 
@@ -17,15 +17,16 @@ Passt zu Swing-Tradern, die auf Rücksetzer in Richtung des Durchschnitts warten
 - **Long/Short**: Beide
 - **Ausstiegskriterien**:
   - Williams %R kehrt zur Mitte zurück
-- **Stops**: Prozentbasiert mit `StopLoss`
+- **Stops**: Prozentbasiert mit `StopLossPercent`
 - **Standardwerte**:
   - `MaPeriod` = 20
   - `MaType` = MovingAverageTypeEnum.Simple
   - `WilliamsRPeriod` = 14
   - `WilliamsROversold` = -80m
   - `WilliamsROverbought` = -20m
-  - `StopLoss` = new Unit(2, UnitTypes.Percent)
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    MaType wählt einen einfachen, exponentiellen, gewichteten, geglätteten oder Hull-Durchschnitt. Die Mitte von Williams %R ist -50: Ein Long schließt, sobald %R wieder darauf steigt, ein Short, sobald er wieder darauf fällt. Ein Einstiegssignal gegen eine offene Position dreht sie.
 - **Filter**:
   - Kategorie: Mean Reversion
   - Richtung: Beide

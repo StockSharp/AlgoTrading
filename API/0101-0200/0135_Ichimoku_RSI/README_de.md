@@ -8,7 +8,7 @@ Tests zeigen eine durchschnittliche jährliche Rendite von etwa 142%. Die Strate
 
 Durch die Kombination eines breiten Trendfilters mit einem Momentum-Oszillator zielt die Strategie darauf ab, nach kurzen Pausen in starke Bewegungen einzusteigen.
 
-Stops werden jenseits der Cloud-Grenze gesetzt, um gegen tiefere Korrekturen zu schützen.
+Ein Stop in festem Prozentabstand vom Einstiegspreis schützt gegen tiefere Korrekturen.
 
 ## Details
 
@@ -18,7 +18,14 @@ Stops werden jenseits der Cloud-Grenze gesetzt, um gegen tiefere Korrekturen zu 
 - **Stops**: Ja, prozentbasiert
 - **Standardwerte**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `TenkanPeriod` = 9
+  - `KijunPeriod` = 26
+  - `SenkouSpanBPeriod` = 52
+  - `RsiPeriod` = 14
+  - `RsiOversold` = 30
+  - `RsiOverbought` = 70
+    Senkou Span A über Senkou Span B ist ein Aufwärtstrend, darunter ein Abwärtstrend. Im Aufwärtstrend eröffnet RSI, der wieder über RsiOversold steigt, einen Long; im Abwärtstrend RSI, der wieder unter RsiOverbought fällt, einen Short. Ein Gegensignal dreht die Position.
 - **Filter**:
   - Kategorie: Trendfolge
   - Richtung: Beide

@@ -72,10 +72,10 @@ public class DealersTradeMacdStrategy : Strategy
 		_trailingStepPoints = Param(nameof(TrailingStepPoints), 5m)
 			.SetDisplay("Trailing Step pts", "Additional distance before trailing updates", "Risk");
 
-		_maxPositions = Param(nameof(MaxPositions), 2)
+		_maxPositions = Param(nameof(MaxPositions), 5)
 			.SetDisplay("Max Positions", "Maximum concurrent entries", "Money Management");
 
-		_intervalPoints = Param(nameof(IntervalPoints), 50m)
+		_intervalPoints = Param(nameof(IntervalPoints), 15m)
 			.SetDisplay("Interval pts", "Minimum distance between new entries", "Money Management");
 
 		_secureProfit = Param(nameof(SecureProfit), 50m)

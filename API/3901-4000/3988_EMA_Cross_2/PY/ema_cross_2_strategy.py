@@ -21,11 +21,11 @@ class ema_cross_2_strategy(Strategy):
         super(ema_cross_2_strategy, self).__init__()
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
             .SetDisplay("Candle Type", "Time frame for EMA calculations", "General")
-        self._take_profit_points = self.Param("TakeProfitPoints", 500.0) \
+        self._take_profit_points = self.Param("TakeProfitPoints", 20.0) \
             .SetDisplay("Take Profit (points)", "Distance from entry to take-profit", "Risk")
-        self._stop_loss_points = self.Param("StopLossPoints", 500.0) \
+        self._stop_loss_points = self.Param("StopLossPoints", 30.0) \
             .SetDisplay("Stop Loss (points)", "Distance from entry to stop-loss", "Risk")
-        self._trailing_stop_points = self.Param("TrailingStopPoints", 500.0) \
+        self._trailing_stop_points = self.Param("TrailingStopPoints", 50.0) \
             .SetDisplay("Trailing Stop (points)", "Trailing distance after entry", "Risk")
         self._short_ema_period = self.Param("ShortEmaPeriod", 5) \
             .SetDisplay("Short EMA", "Length of the fast EMA", "Indicators")

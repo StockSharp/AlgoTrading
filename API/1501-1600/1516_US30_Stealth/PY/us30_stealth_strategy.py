@@ -14,7 +14,7 @@ from StockSharp.Algo.Strategies import Strategy
 class us30_stealth_strategy(Strategy):
     def __init__(self):
         super(us30_stealth_strategy, self).__init__()
-        self._ma_len = self.Param("MaLen", 20) \
+        self._ma_len = self.Param("MaLen", 50) \
             .SetDisplay("MA Length", "Moving average length", "General")
         self._tp_pct = self.Param("TpPct", 1.5) \
             .SetDisplay("TP %", "Take profit percent", "Risk")

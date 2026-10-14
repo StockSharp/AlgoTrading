@@ -7,7 +7,7 @@ Las pruebas indican un retorno anual promedio de aproximadamente 40%. Funciona m
 
 Los componentes de Ichimoku definen el sesgo direccional mientras que el aumento de volumen confirma el interés. Las operaciones se abren cuando el precio se alinea con la nube y el volumen aumenta.
 
-Es adecuado para traders que siguen rupturas de nubes con participación. El riesgo está limitado por un stop basado en ATR.
+Es adecuado para traders que siguen rupturas de nubes con participación. El riesgo está limitado por un stop porcentual.
 
 ## Detalles
 
@@ -17,14 +17,15 @@ Es adecuado para traders que siguen rupturas de nubes con participación. El rie
 - **Largo/Corto**: Ambos
 - **Criterios de salida**:
   - Ruptura de la nube en dirección opuesta
-- **Stops**: Basado en porcentaje usando `StopLoss`
+- **Stops**: Basado en porcentaje usando `StopLossPercent`
 - **Valores predeterminados**:
   - `TenkanPeriod` = 9
   - `KijunPeriod` = 26
   - `SenkouSpanPeriod` = 52
   - `VolumeAvgPeriod` = 20
-  - `StopLoss` = new Unit(2, UnitTypes.Percent)
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    AvgVolume es el volumen medio de las VolumeAvgPeriod velas anteriores. Un largo se cierra cuando el precio cierra por debajo de la nube y un corto cuando cierra por encima. Una señal de entrada contra una posición abierta la invierte.
 - **Filtros**:
   - Categoría: Ruptura
   - Dirección: Ambos

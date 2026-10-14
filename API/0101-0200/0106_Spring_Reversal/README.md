@@ -18,7 +18,9 @@ A stop just below the spring low limits downside, and the position is closed if 
 - **Stops**: Yes, percent based
 - **Default Values**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `LookbackPeriod` = 20
+  - `StopLossPercent` = 2
+    Support is the lowest low of the previous LookbackPeriod candles. The strategy only buys: a bullish candle that breaks below support and closes back above it. The stop lies StopLossPercent below the spring low and the position closes when a candle closes below it.
 - **Filters**:
   - Category: Reversal
   - Direction: Both

@@ -16,7 +16,7 @@ class fine_tuning_ma_strategy(Strategy):
     def __init__(self):
         super(fine_tuning_ma_strategy, self).__init__()
 
-        self._ma_length = self.Param("MaLength", 20) \
+        self._ma_length = self.Param("MaLength", 10) \
             .SetDisplay("MA Length", "Length of the moving average", "Parameters")
         self._take_profit_percent = self.Param("TakeProfitPercent", 1.0) \
             .SetDisplay("Take Profit, %", "Take profit level in percent", "Protection")

@@ -4,7 +4,7 @@
 该策略用一目均衡云确定整体趋势，并利用RSI寻找短期回调的机会。
 在上升趋势中，当RSI自超卖区回升时买入；在下降趋势中，当RSI自超买区回落时卖出。
 此方法将趋势过滤与动量振荡结合，旨在在短暂调整后跟随强势走势。
-止损置于云层边界之外，防止出现更深的回撤。
+止损设在距入场价固定百分比处，防止出现更深的回撤。
 
 测试表明年均收益约为 142%，该策略在股票市场表现最佳。
 
@@ -16,7 +16,14 @@
 - **止损**：是，按百分比
 - **默认值**:
   - `CandleType` = 15分钟
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `TenkanPeriod` = 9
+  - `KijunPeriod` = 26
+  - `SenkouSpanBPeriod` = 52
+  - `RsiPeriod` = 14
+  - `RsiOversold` = 30
+  - `RsiOverbought` = 70
+    Senkou Span A高于Senkou Span B为上升趋势，低于为下降趋势。上升趋势中RSI重新上穿RsiOversold做多；下降趋势中RSI重新下穿RsiOverbought做空。相反信号反转持仓。
 - **过滤器**:
   - 类别：趋势跟随
   - 方向：双向

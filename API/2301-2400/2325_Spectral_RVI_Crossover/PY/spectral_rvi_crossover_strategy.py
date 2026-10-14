@@ -16,7 +16,7 @@ class spectral_rvi_crossover_strategy(Strategy):
         super(spectral_rvi_crossover_strategy, self).__init__()
         self._rvi_length = self.Param("RviLength", 14) \
             .SetDisplay("RVI Length", "Length for RVI", "General")
-        self._smooth_length = self.Param("SmoothLength", 10) \
+        self._smooth_length = self.Param("SmoothLength", 20) \
             .SetDisplay("Smooth Length", "Smoothing length", "General")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")

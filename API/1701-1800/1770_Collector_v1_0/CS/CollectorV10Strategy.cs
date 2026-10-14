@@ -30,7 +30,7 @@ public class CollectorV10Strategy : Strategy
 		_lookback = Param(nameof(Lookback), 20)
 			.SetDisplay("Lookback", "Channel lookback period", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 

@@ -18,7 +18,10 @@ Um stop percentual limita a perda, e as posições são encerradas quando o RSI 
 - **Stops**: Sim, baseado em percentual
 - **Valores padrão**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `RsiPeriod` = 14
+  - `OversoldLevel` = 30
+  - `OverboughtLevel` = 70
+  - `StopLossPercent` = 2
 - **Filtros**:
   - Categoria: Reversão
   - Direção: Ambos

@@ -30,7 +30,7 @@ public class HardcoreFxStrategy : Strategy
 		_channelPeriod = Param(nameof(ChannelPeriod), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Channel Period", "Highest/Lowest lookback", "Parameters");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 

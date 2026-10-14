@@ -16,8 +16,8 @@ class five_eight_ma_cross_strategy(Strategy):
     def __init__(self):
         super(five_eight_ma_cross_strategy, self).__init__()
 
-        self._fast_length = self.Param("FastLength", 8)
-        self._slow_length = self.Param("SlowLength", 21)
+        self._fast_length = self.Param("FastLength", 5)
+        self._slow_length = self.Param("SlowLength", 8)
         self._take_profit_points = self.Param("TakeProfitPoints", 40.0)
         self._stop_loss_points = self.Param("StopLossPoints", 0.0)
         self._trailing_stop_points = self.Param("TrailingStopPoints", 0.0)

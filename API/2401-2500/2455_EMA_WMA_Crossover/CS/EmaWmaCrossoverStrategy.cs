@@ -68,12 +68,12 @@ public class EmaWmaCrossoverStrategy : Strategy
 	/// </summary>
 	public EmaWmaCrossoverStrategy()
 	{
-		_emaPeriod = Param(nameof(EmaPeriod), 34)
+		_emaPeriod = Param(nameof(EmaPeriod), 28)
 		.SetGreaterThanZero()
 		.SetDisplay("EMA Period", "EMA period length", "Indicators")
 		;
 
-		_wmaPeriod = Param(nameof(WmaPeriod), 13)
+		_wmaPeriod = Param(nameof(WmaPeriod), 8)
 		.SetGreaterThanZero()
 		.SetDisplay("WMA Period", "WMA period length", "Indicators")
 		;
@@ -90,7 +90,7 @@ public class EmaWmaCrossoverStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Risk Percent", "Percent of equity risked per trade", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 

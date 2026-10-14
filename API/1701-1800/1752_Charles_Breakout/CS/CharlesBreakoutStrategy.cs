@@ -40,7 +40,7 @@ public class CharlesBreakoutStrategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetDisplay("RSI Period", "RSI length", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for calculations", "General");
 	}
 

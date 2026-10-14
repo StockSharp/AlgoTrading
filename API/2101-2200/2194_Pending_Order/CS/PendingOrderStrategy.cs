@@ -30,10 +30,10 @@ public class PendingOrderStrategy : Strategy
 
 	public PendingOrderStrategy()
 	{
-		_distance = Param(nameof(Distance), 50m)
+		_distance = Param(nameof(Distance), 15m)
 			.SetDisplay("Distance", "Offset from prev candle range for entry", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 

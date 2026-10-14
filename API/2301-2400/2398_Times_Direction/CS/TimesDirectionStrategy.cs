@@ -41,10 +41,10 @@ public class TimesDirectionStrategy : Strategy
 		_closeHour = Param(nameof(CloseHour), 14)
 			.SetDisplay("Close Hour", "Hour of day to close position (UTC)", "General");
 
-		_stopLoss = Param(nameof(StopLoss), 500m)
+		_stopLoss = Param(nameof(StopLoss), 1000m)
 			.SetDisplay("Stop Loss", "Stop loss distance in price units", "Risk");
 
-		_takeProfit = Param(nameof(TakeProfit), 1000m)
+		_takeProfit = Param(nameof(TakeProfit), 2000m)
 			.SetDisplay("Take Profit", "Take profit distance in price units", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())

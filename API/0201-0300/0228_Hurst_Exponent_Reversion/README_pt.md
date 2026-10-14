@@ -5,23 +5,25 @@ Esta abordagem usa o Hurst Exponent para detectar quando um mercado está se com
 
 Os testes indicam um retorno anual médio de aproximadamente 121%. Funciona melhor no mercado de criptomoedas.
 
-Uma posição comprada é aberta quando o Hurst Exponent está abaixo de 0,5 e o preço fecha abaixo de uma média móvel. Uma posição vendida ocorre quando o valor Hurst está abaixo de 0,5 e o preço fecha acima da média. As posições são encerradas quando o preço retorna à linha de média ou o Hurst Exponent sobe acima do limiar.
+Uma posição comprada é aberta quando o Hurst Exponent está abaixo de HurstThreshold e o preço fecha abaixo de uma média móvel. Uma posição vendida ocorre quando o valor Hurst está abaixo de HurstThreshold e o preço fecha acima da média. As posições são encerradas quando o preço retorna à linha de média ou o Hurst Exponent sobe acima do limiar.
 
 A estratégia é adequada para traders que preferem tendências estatísticas a tendências fortes. Um stop-loss de proteção protege contra movimentos prolongados que não conseguem reverter.
 
 ## Detalhes
 - **Critérios de entrada**:
-  - **Comprado**: Hurst < 0.5 && Close < MA
-  - **Vendido**: Hurst < 0.5 && Close > MA
+  - **Comprado**: Hurst < HurstThreshold && Close < MA
+  - **Vendido**: Hurst < HurstThreshold && Close > MA
 - **Comprado/Vendido**: Ambos os lados.
 - **Critérios de saída**:
-  - **Comprado**: Sair quando Close >= MA ou Hurst > 0.5
-  - **Vendido**: Sair quando Close <= MA ou Hurst > 0.5
+  - **Comprado**: Sair quando Close >= MA ou Hurst > HurstThreshold
+  - **Vendido**: Sair quando Close <= MA ou Hurst > HurstThreshold
 - **Stops**: Sim, stop-loss percentual.
 - **Valores padrão**:
   - `HurstPeriod` = 100
   - `AveragePeriod` = 20
-  - `StopLossPercent` = 2m
+  - `HurstThreshold` = 0.7
+  - `StopLossPercent` = 2
+    As regras citam 0.5, o limite teórico da reversão à média, mas a estimativa R/S sobre 100 candles de cinco minutos nunca caiu abaixo de cerca de 0.65 no histórico de BTC e TON usado para testar os exemplos, então a regra não podia operar; HurstThreshold torna o nível um ajuste com valor padrão 0.7. MA é a média móvel simples de AveragePeriod. O stop é um StopLossPercent fixo do preço de entrada, vigiado também entre os candles; 0 o desativa. Um sinal de entrada contra uma posição aberta a inverte.
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **Filtros**:
   - Categoria: Mean reversion

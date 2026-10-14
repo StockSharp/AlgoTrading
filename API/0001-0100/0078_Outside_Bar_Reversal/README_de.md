@@ -18,6 +18,7 @@ Das Setup sucht schnelle Umkehrungen nach einem erschöpfenden Impuls und eignet
 - **Standardwerte**:
   - `CandleType` = 5 minute
   - `StopLossPercent` = 1
+    Ein Schutzstop so viele Prozent vom Einstiegskurs entfernt, der auch zwischen den Kerzen überwacht wird; die Position schließt außerdem, wenn ein Schlusskurs das gegenüberliegende Extrem des Outside Bars durchbricht.
 - **Filter**:
   - Kategorie: Muster
   - Richtung: Beide

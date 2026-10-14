@@ -17,7 +17,11 @@
 - **止损**：是，按百分比。
 - **默认值**：
   - `CandleType` = 15 分钟
-  - `StopLoss` = 2%
+  - `KPeriod` = 14
+  - `DPeriod` = 3
+  - `OversoldLevel` = 20
+  - `OverboughtLevel` = 80
+  - `StopLossPercent` = 2
 - **过滤条件**：
   - 类别: 反转
   - 方向: 双向

@@ -18,7 +18,10 @@ A percent stop keeps risk small and trades exit if the CCI crosses back through 
 - **Stops**: Yes, percent based
 - **Default Values**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `CciPeriod` = 20
+  - `OversoldLevel` = -100
+  - `OverboughtLevel` = 100
+  - `StopLossPercent` = 2
 - **Filters**:
   - Category: Reversal
   - Direction: Both

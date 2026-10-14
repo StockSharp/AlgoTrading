@@ -3,7 +3,6 @@ using System.Collections.Generic;
 
 using Ecng.Common;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -11,34 +10,74 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// ConsecutiveBearishCandleStrategy using EMA crossover for trend timing.
-/// Enters long on golden cross, short on death cross.
+/// Consecutive Bearish Candle strategy.
+/// A candle is bearish when it closes below the previous close. After Lookback bearish candles in a row inside the
+/// StartTime-EndTime window the strategy buys, and it closes the long when a candle closes above the previous candle's high.
 /// </summary>
 public class ConsecutiveBearishCandleStrategy : Strategy
 {
-	private readonly StrategyParam<int> _fastEmaPeriod;
-	private readonly StrategyParam<int> _slowEmaPeriod;
+	private readonly StrategyParam<int> _lookback;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<DateTimeOffset> _startTime;
+	private readonly StrategyParam<DateTimeOffset> _endTime;
 
-	private decimal _prevFastEma;
-	private decimal _prevSlowEma;
+	private decimal? _prevClose;
+	private decimal? _prevHigh;
+	private int _bearishCount;
 
-	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
-	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	/// <summary>
+	/// Number of consecutive bearish candles.
+	/// </summary>
+	public int Lookback
+	{
+		get => _lookback.Value;
+		set => _lookback.Value = value;
+	}
 
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Start of the trading window.
+	/// </summary>
+	public DateTimeOffset StartTime
+	{
+		get => _startTime.Value;
+		set => _startTime.Value = value;
+	}
+
+	/// <summary>
+	/// End of the trading window.
+	/// </summary>
+	public DateTimeOffset EndTime
+	{
+		get => _endTime.Value;
+		set => _endTime.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
+	/// </summary>
 	public ConsecutiveBearishCandleStrategy()
 	{
-		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+		_lookback = Param(nameof(Lookback), 3)
 			.SetGreaterThanZero()
-			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+			.SetDisplay("Lookback", "Number of consecutive bearish candles", "Signals");
 
-		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
-			.SetGreaterThanZero()
-			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_startTime = Param(nameof(StartTime), new DateTimeOffset(2014, 1, 1, 0, 0, 0, TimeSpan.Zero))
+			.SetDisplay("Start Time", "Start of the trading window", "Time");
+
+		_endTime = Param(nameof(EndTime), new DateTimeOffset(2099, 1, 1, 0, 0, 0, TimeSpan.Zero))
+			.SetDisplay("End Time", "End of the trading window", "Time");
 	}
 
 	/// <inheritdoc />
@@ -51,8 +90,14 @@ public class ConsecutiveBearishCandleStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevFastEma = 0m;
-		_prevSlowEma = 0m;
+		ResetState();
+	}
+
+	private void ResetState()
+	{
+		_prevClose = null;
+		_prevHigh = null;
+		_bearishCount = 0;
 	}
 
 	/// <inheritdoc />
@@ -60,46 +105,48 @@ public class ConsecutiveBearishCandleStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
-		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
+		ResetState();
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(fastEma, slowEma, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, fastEma);
-			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_prevFastEma == 0m || _prevSlowEma == 0m)
+		var prevClose = _prevClose;
+		var prevHigh = _prevHigh;
+		_prevClose = candle.ClosePrice;
+		_prevHigh = candle.HighPrice;
+
+		if (prevClose is not decimal lastClose || prevHigh is not decimal lastHigh)
+			return;
+
+		_bearishCount = candle.ClosePrice < lastClose ? _bearishCount + 1 : 0;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (Position > 0 && candle.ClosePrice > lastHigh)
 		{
-			_prevFastEma = fastEmaValue;
-			_prevSlowEma = slowEmaValue;
+			SellMarket(Position);
 			return;
 		}
 
-		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
-		{
-			BuyMarket();
-		}
-		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
-		{
-			SellMarket();
-		}
+		var inWindow = candle.OpenTime >= StartTime.UtcDateTime && candle.OpenTime <= EndTime.UtcDateTime;
 
-		_prevFastEma = fastEmaValue;
-		_prevSlowEma = slowEmaValue;
+		if (inWindow && _bearishCount >= Lookback && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
 	}
 }

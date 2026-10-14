@@ -7,7 +7,7 @@ Testing indicates an average annual return of about 151%. It performs best in th
 
 Parabolic SAR identifies trend shifts, and higher volume validates the signal. Trades commence when the SAR flip comes with expanding volume.
 
-Useful for traders who track volume-based moves. The SAR trail and an ATR factor guard against big losses.
+Useful for traders who track volume-based moves. The SAR trail guards against big losses.
 
 ## Details
 
@@ -22,6 +22,7 @@ Useful for traders who track volume-based moves. The SAR trail and an ATR factor
   - `MaxAcceleration` = 0.2m
   - `VolumePeriod` = 20
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    AvgVolume is the average volume of the previous VolumePeriod candles. A long closes when the SAR flips above price and a short when it flips below. An entry signal against an open position reverses it.
 - **Filters**:
   - Category: Breakout
   - Direction: Both

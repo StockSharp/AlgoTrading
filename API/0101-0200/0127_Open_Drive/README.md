@@ -18,7 +18,9 @@ Positions close quickly if the drive stalls, keeping losses small during choppy 
 - **Stops**: Yes, percent based
 - **Default Values**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `VolumePeriod` = 20
+    The market trades around the clock, so the session is the UTC day. The first candle of the day is the opening drive when its volume exceeds the average of the previous VolumePeriod candles; the strategy joins its direction at its close. The first candle that closes against the position ends it, and the percent stop trails the price.
 - **Filters**:
   - Category: Intraday
   - Direction: Both

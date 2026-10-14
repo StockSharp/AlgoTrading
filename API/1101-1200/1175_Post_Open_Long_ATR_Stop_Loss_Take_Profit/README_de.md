@@ -24,6 +24,11 @@ Die Strategie eröffnet eine Long-Position während der Marktöffnung nach einem
   - `ATR Length` = 14
   - `ATR SL Mult` = 2.0
   - `ATR TP Mult` = 4.0
+  - `SessionStart` = 09:30 UTC
+  - `SessionDuration` = TimeSpan.FromHours(1)
+  - `ResistancePeriod` = 5
+  - `BasisProximity` = 1
+  - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
 - **Filter**:
   - Kategorie: Trendfolge
   - Richtung: Long
@@ -35,3 +40,11 @@ Die Strategie eröffnet eine Long-Position während der Marktöffnung nach einem
   - Neuronale Netze: Nein
   - Divergenz: Nein
   - Risikolevel: Mittel
+
+## Berechnung und Ausführung
+
+Signale verwenden abgeschlossene Kerzen nach Bildung aller Indikatoren. Widerstand ist das höchste Hoch der vorigen `ResistancePeriod` Kerzen ohne die aktuelle; Einstieg erfordert `Close > resistance`. Das Öffnungsfenster verwendet UTC-Kerzenanfangszeiten: Beginn inklusive, Ende exklusiv, mit Mitternachtsüberlauf. `SessionStart` ist auf die Öffnungszeit des Instruments einzustellen.
+
+Bollinger-Mitte ist der Schlusskurs-SMA einschließlich der aktuellen Kerze; Abweichung ist die Populationsstandardabweichung. Nähe: `abs(Close - basis) <= (UpperBand - basis) * BasisProximity`. Erforderlich sind `kurze EMA > lange EMA` und `Close > kurze EMA`. Kein Rücksetzer bedeutet `Close >= Open` der Signalkerze. RSI und ADX müssen strikt über ihren Schwellen liegen.
+
+Kauf von `Volume` nur ohne Position und ohne offene Order. Wilder ATR der Einstiegskerze fixiert Stop- und Take-Abstände. Nativer lokaler Schutz setzt die Ebenen unter/über dem tatsächlichen Ausführungspreis (volumengewichteter Preis bei Teilausführungen), beobachtet Level1-Best-Bid und Kerzenpreise und schließt den gesamten verbleibenden Long. Ausstiege bleiben außerhalb des Öffnungsfensters aktiv. Spätere ATR-Änderungen verschieben die Ebenen nicht. Keine Shorts, EMA-Kreuzungsausstiege oder Wartefrist.

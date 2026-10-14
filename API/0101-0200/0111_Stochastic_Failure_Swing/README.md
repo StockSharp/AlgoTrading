@@ -18,7 +18,11 @@ Trades employ a small percent stop and close when the stochastic crosses back th
 - **Stops**: Yes, percent based
 - **Default Values**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `KPeriod` = 14
+  - `DPeriod` = 3
+  - `OversoldLevel` = 20
+  - `OverboughtLevel` = 80
+  - `StopLossPercent` = 2
 - **Filters**:
   - Category: Reversal
   - Direction: Both

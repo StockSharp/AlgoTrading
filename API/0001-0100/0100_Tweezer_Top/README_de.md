@@ -17,7 +17,9 @@ Ein enger Stop oberhalb der Doppelhochs hält das Risiko in Schach, und der Trad
 - **Stops**: Ja, prozentbasiert
 - **Standardwerte**:
   - `CandleType` = 15 Minuten
-  - `StopLoss` = 2%
+  - `TolerancePercent` = 0.1
+  - `StopLossPercent` = 2
+    Die Strategie verkauft nur. Der Stop liegt StopLossPercent über dem höchsten Hoch des Musters, und die Position schließt, wenn eine Kerze darüber schließt.
 - **Filter**:
   - Kategorie: Muster
   - Richtung: Beide

@@ -14,10 +14,10 @@ from StockSharp.Algo.Strategies import Strategy
 class bbsr_extreme_strategy(Strategy):
     def __init__(self):
         super(bbsr_extreme_strategy, self).__init__()
-        self._bb_period = self.Param("BollingerPeriod", 30) \
+        self._bb_period = self.Param("BollingerPeriod", 20) \
             .SetGreaterThanZero() \
             .SetDisplay("Bollinger Period", "Bollinger Bands length", "Indicators")
-        self._bb_mult = self.Param("BollingerMultiplier", 2.5) \
+        self._bb_mult = self.Param("BollingerMultiplier", 2.0) \
             .SetGreaterThanZero() \
             .SetDisplay("Bollinger Multiplier", "Standard deviation multiplier", "Indicators")
         self._ma_length = self.Param("MaLength", 7) \
@@ -32,7 +32,7 @@ class bbsr_extreme_strategy(Strategy):
         self._atr_profit_mult = self.Param("AtrProfitMultiplier", 3.0) \
             .SetGreaterThanZero() \
             .SetDisplay("ATR Profit Multiplier", "ATR multiplier for take profit", "Risk Management")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(60))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
         self._prev_lower = 0.0
         self._prev_upper = 0.0

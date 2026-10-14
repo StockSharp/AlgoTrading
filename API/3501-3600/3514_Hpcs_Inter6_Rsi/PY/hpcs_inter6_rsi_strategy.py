@@ -19,13 +19,13 @@ class hpcs_inter6_rsi_strategy(Strategy):
 
     def __init__(self):
         super(hpcs_inter6_rsi_strategy, self).__init__()
-        self._rsi_length = self.Param("RsiLength", 7) \
+        self._rsi_length = self.Param("RsiLength", 14) \
             .SetDisplay("RSI Length", "Lookback period for RSI", "Parameters")
-        self._upper_level = self.Param("UpperLevel", 65.0) \
+        self._upper_level = self.Param("UpperLevel", 70.0) \
             .SetDisplay("Upper RSI", "Upper RSI level for shorts", "Parameters")
-        self._lower_level = self.Param("LowerLevel", 35.0) \
+        self._lower_level = self.Param("LowerLevel", 30.0) \
             .SetDisplay("Lower RSI", "Lower RSI level for longs", "Parameters")
-        self._offset_in_pips = self.Param("OffsetInPips", 30.0) \
+        self._offset_in_pips = self.Param("OffsetInPips", 10.0) \
             .SetDisplay("Offset (pips)", "Target and stop distance in pips", "Risk")
         self._signal_cooldown_candles = self.Param("SignalCooldownCandles", 4) \
             .SetDisplay("Signal Cooldown", "Bars to wait between entries", "Trading")

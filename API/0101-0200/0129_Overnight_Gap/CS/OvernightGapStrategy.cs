@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using Ecng.Common;
 
@@ -11,31 +12,42 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Implementation of Overnight Gap trading strategy.
-/// Trades on gaps between current open and previous close, using MA trend filter.
+/// Overnight Gap strategy.
+/// The market trades around the clock, so the session is the UTC day.
+/// The gap is the distance between the previous UTC day's last close and the new day's first open. A gap of at least MinGapPercent
+/// is faded at the close of the day's first candle; the stop lies StopLossPercent beyond the first candle's extreme in the gap's direction,
+/// and the position closes at the day's last candle.
 /// </summary>
 public class OvernightGapStrategy : Strategy
 {
-	private readonly StrategyParam<int> _maPeriod;
+	private readonly StrategyParam<decimal> _minGapPercent;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
 
-	private SimpleMovingAverage _ma;
-
-	private decimal _prevClose;
-	private int _cooldown;
+	private DateTime? _day;
+	private decimal? _prevClose;
+	private decimal _stopPrice;
 
 	/// <summary>
-	/// Moving average period.
+	/// Smallest gap to fade, in percent.
 	/// </summary>
-	public int MaPeriod
+	public decimal MinGapPercent
 	{
-		get => _maPeriod.Value;
-		set => _maPeriod.Value = value;
+		get => _minGapPercent.Value;
+		set => _minGapPercent.Value = value;
 	}
 
 	/// <summary>
-	/// Candle type for strategy.
+	/// Distance of the stop beyond the first candle's extreme, in percent.
+	/// </summary>
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -44,29 +56,20 @@ public class OvernightGapStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Cooldown bars between trades.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="OvernightGapStrategy"/>.
+	/// Constructor.
 	/// </summary>
 	public OvernightGapStrategy()
 	{
-		_maPeriod = Param(nameof(MaPeriod), 20)
+		_minGapPercent = Param(nameof(MinGapPercent), 0.01m)
 			.SetGreaterThanZero()
-			.SetDisplay("MA Period", "Moving average period", "Strategy");
+			.SetDisplay("Min Gap %", "Smallest gap to fade, in percent", "Session");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles for strategy", "Strategy");
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Distance of the stop beyond the first candle's extreme, in percent", "Risk");
 
-		_cooldownBars = Param(nameof(CooldownBars), 30)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "General")
-			.SetRange(5, 500);
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -79,9 +82,9 @@ public class OvernightGapStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_ma = default;
-		_prevClose = 0;
-		_cooldown = 0;
+		_day = null;
+		_prevClose = null;
+		_stopPrice = default;
 	}
 
 	/// <inheritdoc />
@@ -89,74 +92,77 @@ public class OvernightGapStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_ma = new SimpleMovingAverage { Length = MaPeriod };
+		_day = null;
+		_prevClose = null;
+		_stopPrice = default;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_ma, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _ma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal maValue)
+	private void ClosePosition()
+	{
+		if (Position > 0)
+			SellMarket(Position);
+		else if (Position < 0)
+			BuyMarket(-Position);
+	}
+
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
+		var day = candle.OpenTime.Date;
+		var firstOfDay = _day != day;
+
+		if (firstOfDay)
+		{
+			_day = day;
+		}
+
+		var frame = CandleType.Arg is TimeSpan tf ? tf : TimeSpan.Zero;
+		var lastOfDay = (candle.OpenTime + frame).Date != day;
+
+		var prevClose = _prevClose;
+		_prevClose = candle.ClosePrice;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		var close = candle.ClosePrice;
-		var open = candle.OpenPrice;
 
-		if (_prevClose == 0)
+		if (Position != 0)
 		{
-			_prevClose = close;
+			if (lastOfDay || (Position > 0 ? close <= _stopPrice : close >= _stopPrice))
+				ClosePosition();
+
 			return;
 		}
 
-		if (_cooldown > 0)
-		{
-			_cooldown--;
-			_prevClose = close;
+		if (!firstOfDay || prevClose is not decimal last || last <= 0)
 			return;
-		}
 
-		// Calculate gap
-		var gap = open - _prevClose;
+		var gap = (candle.OpenPrice - last) / last * 100m;
 
-		// Gap up + above MA = Buy
-		if (gap > 0 && open > maValue && Position == 0)
+		if (gap >= MinGapPercent)
 		{
-			BuyMarket();
-			_cooldown = CooldownBars;
+			SellMarket(Volume);
+			_stopPrice = candle.HighPrice * (1 + StopLossPercent / 100m);
 		}
-		// Gap down + below MA = Sell short
-		else if (gap < 0 && open < maValue && Position == 0)
+		else if (-gap >= MinGapPercent)
 		{
-			SellMarket();
-			_cooldown = CooldownBars;
+			BuyMarket(Volume);
+			_stopPrice = candle.LowPrice * (1 - StopLossPercent / 100m);
 		}
-
-		// Exit: gap fill or MA cross
-		if (Position > 0 && close < maValue)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position < 0 && close > maValue)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-
-		_prevClose = close;
 	}
 }

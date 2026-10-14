@@ -20,9 +20,10 @@ Dieses System eignet sich für Momentum-Trader, die frühe Ausbrüche suchen. Tr
   - `SlowEmaPeriod` = 26
   - `SignalPeriod` = 9
   - `SmaPeriod` = 20
-  - `DeviationMultiplier` = 2.0m
-  - `StopLossPercent` = 2.0m
+  - `DeviationMultiplier` = 2
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
+    Avg und StdDev sind Mittelwert und Standardabweichung der letzten SmaPeriod Werte von MACD-Linie einschließlich des aktuellen. Der Stop liegt bei festen StopLossPercent vom Einstiegspreis und wird auch zwischen den Kerzen überwacht; 0 schaltet ihn ab. Die Bänder sind der Mittelwert plus und minus DeviationMultiplier Standardabweichungen: die MACD-Linie über dem oberen Band eröffnet einen Long, unter dem unteren einen Short; ein Long schließt, sobald die MACD-Linie wieder unter seinem Mittelwert liegt, ein Short, sobald er darüber liegt. Ein Einstiegssignal gegen eine offene Position dreht sie.
 - **Filter**:
   - Kategorie: Ausbruch
   - Richtung: Beide

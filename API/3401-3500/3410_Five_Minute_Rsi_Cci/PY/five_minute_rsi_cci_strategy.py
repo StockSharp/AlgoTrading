@@ -14,7 +14,7 @@ class five_minute_rsi_cci_strategy(Strategy):
     def __init__(self):
         super(five_minute_rsi_cci_strategy, self).__init__()
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30)))
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5)))
         self._rsi_period = self.Param("RsiPeriod", 14)
         self._cci_period = self.Param("CciPeriod", 14)
         self._bullish_level = self.Param("BullishLevel", 55.0)

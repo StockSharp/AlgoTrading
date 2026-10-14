@@ -7,7 +7,7 @@ Testing indicates an average annual return of about 181%. It performs best in th
 
 RSI provides a broader momentum view, while Stochastic gives faster signals near extremes. Trades flip as the oscillator crosses levels within the RSI context.
 
-Ideal for nimble traders who favor oscillator setups. The strategy relies on an ATR stop to contain risk.
+Ideal for nimble traders who favor oscillator setups. The strategy relies on a percent stop to contain risk.
 
 ## Details
 
@@ -25,11 +25,11 @@ Ideal for nimble traders who favor oscillator setups. The strategy relies on an 
   - `RsiOverbought` = 70m
   - `StochPeriod` = 14
   - `StochK` = 3
-  - `StochD` = 3
   - `StochOversold` = 20m
   - `StochOverbought` = 80m
   - `StopLossPercent` = 2.0m
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    StochK in the rules is %K: the stochastic over StochPeriod candles smoothed over StochK candles; %D plays no part, so it has no setting. An entry signal against an open position reverses it.
 - **Filters**:
   - Category: Mean reversion
   - Direction: Both

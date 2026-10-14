@@ -23,8 +23,10 @@ Este enfoque es adecuado para traders cómodos operando contra los extremos del 
   - `SlowMacdPeriod` = 26
   - `SignalPeriod` = 9
   - `AveragePeriod` = 20
-  - `DeviationMultiplier` = 2m
+  - `DeviationMultiplier` = 2
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
+    Avg y StdDev son la media y la desviación estándar de los últimos AveragePeriod valores de el histograma MACD, incluido el actual. El stop es un StopLossPercent fijo del precio de entrada, vigilado también entre velas; 0 lo desactiva. Una señal de entrada contra una posición abierta la invierte.
 - **Filtros**:
   - Categoría: Mean reversion
   - Dirección: Ambos

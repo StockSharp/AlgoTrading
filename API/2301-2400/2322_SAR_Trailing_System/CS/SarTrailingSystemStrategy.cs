@@ -34,7 +34,7 @@ public class SarTrailingSystemStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("SAR Max", "Parabolic SAR maximum acceleration", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 

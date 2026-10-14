@@ -4,118 +4,113 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from System import TimeSpan, Decimal, Math
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, Level1Fields
+from StockSharp.BusinessEntities import Subscription
 from StockSharp.Algo.Indicators import CommodityChannelIndex
 from StockSharp.Algo.Strategies import Strategy
 
 class cci_mean_reversion_strategy(Strategy):
     """
     CCI Mean Reversion strategy.
-    Enters positions when CCI is significantly below or above its average value.
+    The bands lie DeviationMultiplier standard deviations around the average of the last AveragePeriod CCI values, the current one included.
+    CCI below the lower band goes long and CCI above the upper band goes short,
+    reversing an opposite position. A long closes once CCI is back above its average and a short once it is back below it, and a percent stop limits the loss.
     """
 
     def __init__(self):
         super(cci_mean_reversion_strategy, self).__init__()
-        self._cci_period = self.Param("CciPeriod", 20) \
-            .SetDisplay("CCI Period", "Period for Commodity Channel Index", "Indicators")
-        self._average_period = self.Param("AveragePeriod", 20) \
-            .SetDisplay("Average Period", "Period for calculating CCI average and standard deviation", "Settings")
-        self._deviation_multiplier = self.Param("DeviationMultiplier", 2.0) \
-            .SetDisplay("Deviation Multiplier", "Multiplier for standard deviation", "Settings")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
-            .SetDisplay("Candle Type", "Type of candles to use", "General")
-        self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
-            .SetDisplay("Stop Loss %", "Stop loss as percentage of entry price", "Risk Management")
-
-        self._prev_cci = 0.0
-        self._avg_cci = 0.0
-        self._std_dev_cci = 0.0
-        self._sum_cci = 0.0
-        self._sum_squares_cci = 0.0
-        self._count = 0
-        self._cci_values = []
+        self._cci_period = self.Param("CciPeriod", 20).SetGreaterThanZero().SetDisplay("CCI Period", "Period of CCI", "Indicators")
+        self._average_period = self.Param("AveragePeriod", 20).SetGreaterThanZero().SetDisplay("Average Period", "Values of CCI the average and the standard deviation span", "Indicators")
+        self._deviation_multiplier = self.Param("DeviationMultiplier", 2.0).SetGreaterThanZero().SetDisplay("Multiplier", "Standard deviations between the average and a band", "Indicators")
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0).SetNotNegative().SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._reset_state()
 
     @property
     def candle_type(self):
         return self._candle_type.Value
 
+    def _reset_state(self):
+        self._values = []
+
     def OnReseted(self):
         super(cci_mean_reversion_strategy, self).OnReseted()
-        self._prev_cci = 0.0
-        self._avg_cci = 0.0
-        self._std_dev_cci = 0.0
-        self._sum_cci = 0.0
-        self._sum_squares_cci = 0.0
-        self._count = 0
-        self._cci_values = []
+        self._reset_state()
 
     def OnStarted2(self, time):
         super(cci_mean_reversion_strategy, self).OnStarted2(time)
+
+        self._reset_state()
 
         cci = CommodityChannelIndex()
         cci.Length = self._cci_period.Value
 
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.BindEx(cci, self.on_process).Start()
+        subscription.BindEx(cci, self._process_candle).Start()
+
+        self.StartProtection(Unit(), Unit(Decimal(self._stop_loss_percent.Value), UnitTypes.Percent), useMarketOrders=True, isLocalStop=True)
+
+        # The stop has to see prices between candles, not only at their close.
+        for field in (Level1Fields.BestBidPrice, Level1Fields.BestAskPrice):
+            quotes = Subscription(DataType.Level1, self.Security)
+            quotes.MarketData.BuildField = field
+            self.SubscribeLevel1(quotes).Bind(self._observe_protection_quote).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, cci)
             self.DrawOwnTrades(area)
+            oscillators = self.CreateChartArea()
+            if oscillators is not None:
+                self.DrawIndicator(oscillators, cci)
 
-        self.StartProtection(
-            takeProfit=Unit(0),
-            stopLoss=Unit(self._stop_loss_percent.Value, UnitTypes.Percent)
-        )
+    def _observe_protection_quote(self, quote):
+        # The high-level handler activates native protection before the callback, including between bars.
+        pass
 
-    def on_process(self, candle, cci_value):
+    def _process_candle(self, candle, cci_value):
         if candle.State != CandleStates.Finished:
+            return
+
+        if not cci_value.IsFormed:
+            return
+
+        value = cci_value.GetValue[Decimal](None)
+
+        period = self._average_period.Value
+        self._values.append(value)
+        if len(self._values) > period:
+            self._values.pop(0)
+
+        if len(self._values) < period:
             return
 
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        current_cci = float(cci_value)
-        self._update_cci_statistics(current_cci)
-        self._prev_cci = current_cci
+        total = Decimal(0)
+        for item in self._values:
+            total += item
+        mean = total / Decimal(period)
+        squares = Decimal(0)
+        for item in self._values:
+            squares += (item - mean) * (item - mean)
+        deviation = Decimal(Math.Sqrt(Decimal.ToDouble(squares / Decimal(period))))
+        multiplier = Decimal(self._deviation_multiplier.Value)
+        upper = mean + multiplier * deviation
+        lower = mean - multiplier * deviation
 
-        if self._count < self._average_period.Value:
-            return
-
-        if self.Position == 0:
-            if current_cci < self._avg_cci - self._deviation_multiplier.Value * self._std_dev_cci:
-                self.BuyMarket(self.Volume)
-            elif current_cci > self._avg_cci + self._deviation_multiplier.Value * self._std_dev_cci:
-                self.SellMarket(self.Volume)
-        elif self.Position > 0:
-            if current_cci > self._avg_cci:
-                self.ClosePosition()
-        elif self.Position < 0:
-            if current_cci < self._avg_cci:
-                self.ClosePosition()
-
-    def _update_cci_statistics(self, current_cci):
-        self._cci_values.append(current_cci)
-        self._sum_cci += current_cci
-        self._sum_squares_cci += current_cci * current_cci
-        self._count += 1
-
-        if len(self._cci_values) > self._average_period.Value:
-            oldest_cci = self._cci_values.pop(0)
-            self._sum_cci -= oldest_cci
-            self._sum_squares_cci -= oldest_cci * oldest_cci
-            self._count -= 1
-
-        if self._count > 0:
-            self._avg_cci = self._sum_cci / self._count
-            if self._count > 1:
-                variance = (self._sum_squares_cci - (self._sum_cci * self._sum_cci) / self._count) / (self._count - 1)
-                self._std_dev_cci = 0 if variance <= 0 else Math.Sqrt(float(variance))
-            else:
-                self._std_dev_cci = 0
+        if value < lower and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+        elif value > upper and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
+        elif self.Position > 0 and value > mean:
+            self.SellMarket(self.Position)
+        elif self.Position < 0 and value < mean:
+            self.BuyMarket(-self.Position)
 
     def CreateClone(self):
         return cci_mean_reversion_strategy()

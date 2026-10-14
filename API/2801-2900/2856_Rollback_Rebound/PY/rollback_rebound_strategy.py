@@ -16,9 +16,9 @@ class rollback_rebound_strategy(Strategy):
         super(rollback_rebound_strategy, self).__init__()
         self._sl_pips = self.Param("StopLossPips", 30.0).SetNotNegative().SetDisplay("Stop Loss (pips)", "SL distance", "Risk")
         self._tp_pips = self.Param("TakeProfitPips", 90.0).SetNotNegative().SetDisplay("Take Profit (pips)", "TP distance", "Risk")
-        self._trailing_stop_pips = self.Param("TrailingStopPips", 20.0).SetNotNegative().SetDisplay("Trailing Stop (pips)", "Trailing offset", "Risk")
+        self._trailing_stop_pips = self.Param("TrailingStopPips", 1.0).SetNotNegative().SetDisplay("Trailing Stop (pips)", "Trailing offset", "Risk")
         self._trailing_step_pips = self.Param("TrailingStepPips", 15.0).SetNotNegative().SetDisplay("Trailing Step (pips)", "Trailing step", "Risk")
-        self._rollback_pips = self.Param("RollbackRatePips", 40.0).SetNotNegative().SetDisplay("Rollback Threshold (pips)", "Pullback threshold", "Signal")
+        self._rollback_pips = self.Param("RollbackRatePips", 15.0).SetNotNegative().SetDisplay("Rollback Threshold (pips)", "Pullback threshold", "Signal")
         self._reverse_signal = self.Param("ReverseSignal", False).SetDisplay("Reverse Signal", "Invert entry logic", "Signal")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(8))).SetDisplay("Candle Type", "Candle timeframe", "General")
 

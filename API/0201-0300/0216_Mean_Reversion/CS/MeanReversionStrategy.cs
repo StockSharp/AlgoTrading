@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -12,29 +9,22 @@ using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
-	
+
 /// <summary>
-/// Statistical Mean Reversion strategy.
-/// Enters long when price falls below the mean by a specified number of standard deviations.
-/// Enters short when price rises above the mean by a specified number of standard deviations.
-/// Exits positions when price returns to the mean.
+/// Mean Reversion strategy.
+/// The bands lie DeviationMultiplier standard deviations around the MovingAveragePeriod simple moving average, both measured over the same
+/// candles. A close below the lower band goes long and a close above the upper band goes short, reversing an opposite position.
+/// A long closes once price closes above the average and a short once it closes below, and a percent stop limits the loss.
 /// </summary>
 public class MeanReversionStrategy : Strategy
 {
 	private readonly StrategyParam<int> _movingAveragePeriod;
 	private readonly StrategyParam<decimal> _deviationMultiplier;
-	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage _ma;
-	private StandardDeviation _stdDev;
-	private bool _wasBelowLower;
-	private bool _wasAboveUpper;
-	private int _cooldown;
-
 	/// <summary>
-	/// Moving average period parameter.
+	/// Period of the moving average and the standard deviation.
 	/// </summary>
 	public int MovingAveragePeriod
 	{
@@ -43,7 +33,7 @@ public class MeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Standard deviation multiplier parameter.
+	/// Standard deviations between the average and a band.
 	/// </summary>
 	public decimal DeviationMultiplier
 	{
@@ -52,16 +42,7 @@ public class MeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Bars to wait between trades.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
-	/// Stop-loss percentage parameter.
+	/// Stop loss percentage from entry price.
 	/// </summary>
 	public decimal StopLossPercent
 	{
@@ -70,7 +51,7 @@ public class MeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Candle type parameter.
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -85,25 +66,15 @@ public class MeanReversionStrategy : Strategy
 	{
 		_movingAveragePeriod = Param(nameof(MovingAveragePeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("MA Period", "Period for moving average calculation", "Indicators")
-			
-			.SetOptimize(10, 50, 5);
+			.SetDisplay("MA Period", "Period of the moving average and the standard deviation", "Indicators");
 
-		_deviationMultiplier = Param(nameof(DeviationMultiplier), 2.0m)
+		_deviationMultiplier = Param(nameof(DeviationMultiplier), 2m)
 			.SetGreaterThanZero()
-			.SetDisplay("Deviation Multiplier", "Standard deviation multiplier for entry signals", "Indicators")
-			
-			.SetOptimize(1.5m, 3.0m, 0.5m);
-
-		_cooldownBars = Param(nameof(CooldownBars), 50)
-			.SetRange(1, 200)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "General");
+			.SetDisplay("Deviation Multiplier", "Standard deviations between the average and a band", "Indicators");
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop-loss %", "Stop-loss as percentage of entry price", "Risk Management")
-			
-			.SetOptimize(1m, 3m, 0.5m);
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -116,100 +87,72 @@ public class MeanReversionStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_ma = null;
-		_stdDev = null;
-		_wasBelowLower = false;
-		_wasAboveUpper = false;
-		_cooldown = 0;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-// Initialize indicators
-		_ma = new() { Length = MovingAveragePeriod };
-		_stdDev = new() { Length = MovingAveragePeriod };
+		var ma = new SimpleMovingAverage { Length = MovingAveragePeriod };
+		var stdev = new StandardDeviation { Length = MovingAveragePeriod };
 
-		// Create candles subscription
 		var subscription = SubscribeCandles(CandleType);
-
-		// Bind indicators to subscription
 		subscription
-			.Bind(_ma, _stdDev, ProcessCandle)
+			.BindEx(ma, stdev, ProcessCandle)
 			.Start();
 
-		// Setup chart if available
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _ma);
+			DrawIndicator(area, ma);
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, stdev);
+			}
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal maValue, decimal stdDevValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
 	{
-		// Skip unfinished candles
+		// The high-level handler activates native protection before this callback, also between signal bars.
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue maValue, IIndicatorValue stdDevValue)
+	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Skip if strategy is not ready to trade
-		if (!_ma.IsFormed || !_stdDev.IsFormed)
+		if (!maValue.IsFormed || !stdDevValue.IsFormed)
 			return;
 
-		// Calculate upper and lower bands based on mean and standard deviation
-		decimal upperBand = maValue + (stdDevValue * DeviationMultiplier);
-		decimal lowerBand = maValue - (stdDevValue * DeviationMultiplier);
-		var isBelowLower = candle.ClosePrice < lowerBand;
-		var isAboveUpper = candle.ClosePrice > upperBand;
-		var crossedBelowLower = !_wasBelowLower && isBelowLower;
-		var crossedAboveUpper = !_wasAboveUpper && isAboveUpper;
-		_wasBelowLower = isBelowLower;
-		_wasAboveUpper = isAboveUpper;
-		if (_cooldown > 0)
-			_cooldown--;
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
 
-		// Trading logic
-		if (_cooldown == 0 && isBelowLower)
-		{
-			// Long signal: Price below lower band (mean - k*stdDev)
-			if (Position <= 0)
-			{
-				BuyMarket();
-				_cooldown = CooldownBars;
-			}
-		}
-		else if (_cooldown == 0 && isAboveUpper)
-		{
-			// Short signal: Price above upper band (mean + k*stdDev)
-			if (Position >= 0)
-			{
-				SellMarket();
-				_cooldown = CooldownBars;
-			}
-		}
-		else if ((Position > 0 && candle.ClosePrice > maValue) ||
-		(Position < 0 && candle.ClosePrice < maValue))
-		{
-			// Exit signals: Price returned to the mean
-			if (Position > 0)
-			{
-				SellMarket();
-				_cooldown = CooldownBars;
-			}
-			else if (Position < 0)
-			{
-				BuyMarket();
-				_cooldown = CooldownBars;
-			}
-		}
+		var ma = maValue.GetValue<decimal>();
+		var deviation = stdDevValue.GetValue<decimal>() * DeviationMultiplier;
+		var upper = ma + deviation;
+		var lower = ma - deviation;
+		var close = candle.ClosePrice;
+
+		if (close < lower && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (close > upper && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
+		else if (Position > 0 && close > ma)
+			SellMarket(Position);
+		else if (Position < 0 && close < ma)
+			BuyMarket(-Position);
 	}
 }
-	

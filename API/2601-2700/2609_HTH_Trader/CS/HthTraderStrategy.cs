@@ -92,10 +92,10 @@ public class HthTraderStrategy : Strategy
 		_tradeEnabled = Param(nameof(TradeEnabled), true)
 			.SetDisplay("Trade Enabled", "Allow the strategy to submit orders", "General");
 
-		_useProfitTarget = Param(nameof(UseProfitTarget), true)
+		_useProfitTarget = Param(nameof(UseProfitTarget), false)
 			.SetDisplay("Use Profit Target", "Close when profit target is reached", "Risk");
 
-		_useLossLimit = Param(nameof(UseLossLimit), true)
+		_useLossLimit = Param(nameof(UseLossLimit), false)
 			.SetDisplay("Use Loss Limit", "Close when loss limit is reached", "Risk");
 
 		_profitTargetPips = Param(nameof(ProfitTargetPips), 80)

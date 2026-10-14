@@ -21,10 +21,11 @@ Die Methode ist für kurzfristige Trader konzipiert, die gerne an überkauften u
 - **Standardwerte**:
   - `StochPeriod` = 14
   - `KPeriod` = 3
-  - `DPeriod` = 3
   - `AveragePeriod` = 20
-  - `Multiplier` = 2.0m
+  - `Multiplier` = 2
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
+    Avg und StdDev sind Mittelwert und Standardabweichung der letzten AveragePeriod Werte von %K einschließlich des aktuellen. Der Stop liegt bei festen StopLossPercent vom Einstiegspreis und wird auch zwischen den Kerzen überwacht; 0 schaltet ihn ab. %K ist die Stochastik über die erste Periode, geglättet über KPeriod Kerzen; %D spielt in den Regeln keine Rolle, daher entfällt DPeriod. Ein Einstiegssignal gegen eine offene Position dreht sie.
 - **Filter**:
   - Kategorie: Mean Reversion
   - Richtung: Beide

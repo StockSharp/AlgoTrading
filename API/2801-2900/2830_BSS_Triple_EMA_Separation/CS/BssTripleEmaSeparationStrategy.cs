@@ -136,7 +136,7 @@ public class BssTripleEmaSeparationStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Max Positions", "Maximum simultaneous entries per direction", "Risk");
 
-		_minimumDistance = Param(nameof(MinimumDistance), 50m)
+		_minimumDistance = Param(nameof(MinimumDistance), 0.0005m)
 			.SetGreaterThanZero()
 			.SetDisplay("Minimum Distance", "Minimum price gap between moving averages", "Signals");
 

@@ -23,6 +23,7 @@ Para aqueles que visam aproveitar tendências fortes com trailing stops. ATR det
   - `AdxPeriod` = 14
   - `AdxThreshold` = 25m
   - `CandleType` = TimeSpan.FromMinutes(15).TimeFrame()
+    Um sinal de entrada contra uma posição aberta a inverte.
 - **Filtros**:
   - Categoria: Tendência
   - Direção: Ambos

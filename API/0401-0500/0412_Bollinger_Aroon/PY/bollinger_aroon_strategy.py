@@ -25,11 +25,11 @@ class bollinger_aroon_strategy(Strategy):
             .SetDisplay("BB Period", "Bollinger Bands period", "Bollinger Bands")
         self._bb_multiplier = self.Param("BBMultiplier", 2.0) \
             .SetDisplay("BB StdDev", "Bollinger Bands standard deviation multiplier", "Bollinger Bands")
-        self._aroon_length = self.Param("AroonLength", 14) \
+        self._aroon_length = self.Param("AroonLength", 288) \
             .SetDisplay("Aroon Period", "Aroon indicator period", "Aroon")
-        self._aroon_confirmation = self.Param("AroonConfirmation", 60.0) \
+        self._aroon_confirmation = self.Param("AroonConfirmation", 90.0) \
             .SetDisplay("Aroon Confirmation", "Aroon confirmation level", "Aroon")
-        self._aroon_stop = self.Param("AroonStop", 40.0) \
+        self._aroon_stop = self.Param("AroonStop", 70.0) \
             .SetDisplay("Aroon Stop", "Aroon stop level", "Aroon")
 
         self._bollinger = None

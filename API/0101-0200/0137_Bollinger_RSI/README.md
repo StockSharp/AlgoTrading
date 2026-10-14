@@ -18,7 +18,11 @@ A tight percent stop limits exposure in case volatility expands further.
 - **Stops**: Yes, percent based
 - **Default Values**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `BollingerPeriod` = 20
+  - `BollingerDeviation` = 2
+  - `RsiPeriod` = 14
+    A close above the upper band that is higher than the previous close above that band, while RSI is lower than it was then, is a bearish divergence and goes short; the mirror below the lower band goes long, reversing an opposite position. The position closes once price closes back inside the bands or RSI crosses back over 50.
 - **Filters**:
   - Category: Mean reversion
   - Direction: Both

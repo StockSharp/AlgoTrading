@@ -19,7 +19,7 @@ class martin1_strategy(Strategy):
 
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Timeframe used to evaluate conditions", "General")
-        self._use_trading_hours = self.Param("UseTradingHours", False) \
+        self._use_trading_hours = self.Param("UseTradingHours", True) \
             .SetDisplay("Use Trading Hours", "Restrict entries to a time window", "General")
         self._start_hour = self.Param("StartHour", 2) \
             .SetDisplay("Start Hour", "Hour to start monitoring for new trades", "General")
@@ -39,10 +39,10 @@ class martin1_strategy(Strategy):
         self._initial_volume = self.Param("InitialVolume", 0.1) \
             .SetGreaterThanZero() \
             .SetDisplay("Initial Volume", "Baseline order size", "Money Management")
-        self._stop_loss_pips = self.Param("StopLossPips", 400) \
+        self._stop_loss_pips = self.Param("StopLossPips", 40) \
             .SetGreaterThanZero() \
             .SetDisplay("Stop Loss (pips)", "Distance before hedging the opposite side", "Risk")
-        self._take_profit_pips = self.Param("TakeProfitPips", 1000) \
+        self._take_profit_pips = self.Param("TakeProfitPips", 100) \
             .SetGreaterThanZero() \
             .SetDisplay("Take Profit (pips)", "Distance to pyramid in same direction", "Risk")
 

@@ -20,10 +20,10 @@ class macd_crossover_strategy(Strategy):
         self._fast_length = self.Param("FastLength", 12).SetDisplay("Fast Length", "Fast EMA period", "MACD")
         self._slow_length = self.Param("SlowLength", 26).SetDisplay("Slow Length", "Slow EMA period", "MACD")
         self._signal_length = self.Param("SignalLength", 9).SetDisplay("Signal Length", "Signal line period", "MACD")
-        self._lower_threshold = self.Param("LowerThreshold", -100.0).SetDisplay("Lower Threshold", "Lower bound for MACD zone", "Zone")
-        self._upper_threshold = self.Param("UpperThreshold", 100.0).SetDisplay("Upper Threshold", "Upper bound for MACD zone", "Zone")
+        self._lower_threshold = self.Param("LowerThreshold", -0.5).SetDisplay("Lower Threshold", "Lower bound for MACD zone", "Zone")
+        self._upper_threshold = self.Param("UpperThreshold", 0.5).SetDisplay("Upper Threshold", "Upper bound for MACD zone", "Zone")
         self._cooldown_bars = self.Param("SignalCooldownBars", 3).SetDisplay("Cooldown Bars", "Bars between signals", "Risk")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(10))).SetDisplay("Candle Type", "Timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Timeframe", "General")
 
         self._prev_above = False
         self._bars_from_signal = 9999

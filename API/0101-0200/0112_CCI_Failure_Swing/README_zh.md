@@ -16,7 +16,10 @@ CCI失败摆动侧重于当CCI在+100上方形成更低的高点或在-100下方
 - **止损**：是，按百分比
 - **默认值**:
   - `CandleType` = 15分钟
-  - `StopLoss` = 2%
+  - `CciPeriod` = 20
+  - `OversoldLevel` = -100
+  - `OverboughtLevel` = 100
+  - `StopLossPercent` = 2
 - **过滤器**:
   - 类别：反转
   - 方向：双向

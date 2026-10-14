@@ -76,10 +76,10 @@ public class AlexavD1ProfitGbpUsdStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "RSI period", "Indicators");
 
-		_rsiUpperLevel = Param(nameof(RsiUpperLevel), 65m)
+		_rsiUpperLevel = Param(nameof(RsiUpperLevel), 60m)
 			.SetDisplay("RSI Upper", "Max RSI for buy", "Filters");
 
-		_rsiLowerLevel = Param(nameof(RsiLowerLevel), 35m)
+		_rsiLowerLevel = Param(nameof(RsiLowerLevel), 39m)
 			.SetDisplay("RSI Lower", "Min RSI for sell", "Filters");
 	}
 

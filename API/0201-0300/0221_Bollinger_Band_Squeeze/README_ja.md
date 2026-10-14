@@ -20,8 +20,11 @@
 - **ストップ**: あり、通常2*ATR。
 - **デフォルト値**:
   - `BollingerPeriod` = 20
-  - `BollingerMultiplier` = 2.0m
+  - `BollingerMultiplier` = 2
   - `LookbackPeriod` = 20
+  - `AtrPeriod` = 14
+  - `AtrMultiplier` = 2
+    平均幅は現在の足を含む直近LookbackPeriod本で計算します。ロングは終値が上部バンド以下に戻ったとき、ショートは下部バンド以上に戻ったときに閉じます。ストップはエントリー時の終値からAtrPeriod本のATRのAtrMultiplier倍離れた位置に置かれ、ローソク足の終値で確認されます。0で無効になります。 保有ポジションと逆方向のエントリーシグナルはドテンになります。
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **フィルター**:
   - カテゴリ: ブレイクアウト

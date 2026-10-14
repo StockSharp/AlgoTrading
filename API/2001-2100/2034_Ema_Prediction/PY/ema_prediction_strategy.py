@@ -18,9 +18,9 @@ class ema_prediction_strategy(Strategy):
 
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Timeframe for calculations", "General")
-        self._fast_period = self.Param("FastPeriod", 5) \
+        self._fast_period = self.Param("FastPeriod", 1) \
             .SetDisplay("Fast EMA Period", "Period of fast EMA", "Indicator")
-        self._slow_period = self.Param("SlowPeriod", 20) \
+        self._slow_period = self.Param("SlowPeriod", 2) \
             .SetDisplay("Slow EMA Period", "Period of slow EMA", "Indicator")
         self._take_profit_ticks = self.Param("TakeProfitTicks", 2000.0) \
             .SetDisplay("Take Profit Ticks", "Take profit in ticks", "Risk Management")

@@ -20,8 +20,11 @@ Die Methode richtet sich an Trader, die Volatilitätsausbrüche handeln möchten
 - **Stops**: Ja, typischerweise bei 2*ATR.
 - **Standardwerte**:
   - `BollingerPeriod` = 20
-  - `BollingerMultiplier` = 2.0m
+  - `BollingerMultiplier` = 2
   - `LookbackPeriod` = 20
+  - `AtrPeriod` = 14
+  - `AtrMultiplier` = 2
+    Die durchschnittliche Breite umfasst die letzten LookbackPeriod Kerzen einschließlich der aktuellen. Ein Long schließt bei einem Schluss zurück am oder unter dem oberen Band, ein Short bei einem Schluss zurück am oder über dem unteren Band. Der Stop liegt AtrMultiplier mal die ATR über AtrPeriod vom Einstiegsschluss entfernt und wird bei Kerzenschluss geprüft; 0 schaltet ihn ab. Ein Einstiegssignal gegen eine offene Position dreht sie.
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **Filter**:
   - Kategorie: Ausbruch

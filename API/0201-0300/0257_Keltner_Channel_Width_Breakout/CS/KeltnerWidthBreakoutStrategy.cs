@@ -11,20 +11,27 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that trades on Keltner Channel width breakouts.
-/// When Keltner Channel width increases significantly above its average,
-/// it enters position in the direction determined by price movement.
+/// Keltner Channel width breakout.
+/// Enters when the channel width exceeds its average by a standard deviation multiplier,
+/// in the direction of the close relative to the channel middle (EMA).
+/// Exits when the width falls back below its average or the ATR stop is hit.
 /// </summary>
 public class KeltnerWidthBreakoutStrategy : Strategy
 {
 	private readonly StrategyParam<int> _emaPeriod;
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<decimal> _atrMultiplier;
-	private readonly StrategyParam<decimal> _widthThreshold;
+	private readonly StrategyParam<int> _avgPeriod;
+	private readonly StrategyParam<decimal> _multiplier;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _stopMultiplier;
+
+	private SimpleMovingAverage _widthAverage;
+	private StandardDeviation _widthStdDev;
+	private decimal _stopPrice;
 
 	/// <summary>
-	/// EMA period for Keltner Channel.
+	/// EMA period for the channel middle line.
 	/// </summary>
 	public int EMAPeriod
 	{
@@ -33,7 +40,7 @@ public class KeltnerWidthBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// ATR period for Keltner Channel.
+	/// ATR period for the channel bands.
 	/// </summary>
 	public int ATRPeriod
 	{
@@ -42,7 +49,7 @@ public class KeltnerWidthBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// ATR multiplier for Keltner Channel.
+	/// ATR multiplier for the channel bands.
 	/// </summary>
 	public decimal ATRMultiplier
 	{
@@ -51,12 +58,21 @@ public class KeltnerWidthBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Width threshold multiplier for breakout detection.
+	/// Period for the width average and standard deviation.
 	/// </summary>
-	public decimal WidthThreshold
+	public int AvgPeriod
 	{
-		get => _widthThreshold.Value;
-		set => _widthThreshold.Value = value;
+		get => _avgPeriod.Value;
+		set => _avgPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Standard deviation multiplier for the width breakout.
+	/// </summary>
+	public decimal Multiplier
+	{
+		get => _multiplier.Value;
+		set => _multiplier.Value = value;
 	}
 
 	/// <summary>
@@ -69,24 +85,45 @@ public class KeltnerWidthBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Stop-loss distance in ATR multiples.
+	/// </summary>
+	public int StopMultiplier
+	{
+		get => _stopMultiplier.Value;
+		set => _stopMultiplier.Value = value;
+	}
+
+	/// <summary>
 	/// Initialize <see cref="KeltnerWidthBreakoutStrategy"/>.
 	/// </summary>
 	public KeltnerWidthBreakoutStrategy()
 	{
 		_emaPeriod = Param(nameof(EMAPeriod), 20)
+			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "Period of EMA for Keltner Channel", "Indicators");
 
 		_atrPeriod = Param(nameof(ATRPeriod), 14)
+			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "Period of ATR for Keltner Channel", "Indicators");
 
 		_atrMultiplier = Param(nameof(ATRMultiplier), 2.0m)
+			.SetGreaterThanZero()
 			.SetDisplay("ATR Multiplier", "Multiplier for ATR in Keltner Channel", "Indicators");
 
-		_widthThreshold = Param(nameof(WidthThreshold), 1.2m)
-			.SetDisplay("Width Threshold", "Threshold multiplier for width breakout detection", "Trading");
+		_avgPeriod = Param(nameof(AvgPeriod), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("Average Period", "Period for width average and deviation", "Strategy");
+
+		_multiplier = Param(nameof(Multiplier), 2.0m)
+			.SetGreaterThanZero()
+			.SetDisplay("Multiplier", "Standard deviation multiplier for breakout", "Strategy");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_stopMultiplier = Param(nameof(StopMultiplier), 2)
+			.SetNotNegative()
+			.SetDisplay("Stop Multiplier", "Stop-loss distance in ATR multiples", "Risk Management");
 	}
 
 	/// <inheritdoc />
@@ -96,48 +133,27 @@ public class KeltnerWidthBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_widthAverage = null;
+		_widthStdDev = null;
+		_stopPrice = 0m;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
 		var ema = new ExponentialMovingAverage { Length = EMAPeriod };
 		var atr = new AverageTrueRange { Length = ATRPeriod };
-		var widthAverage = new SimpleMovingAverage { Length = Math.Max(5, EMAPeriod / 2) };
-
-		StartProtection(
-			takeProfit: new Unit(2, UnitTypes.Percent),
-			stopLoss: new Unit(1, UnitTypes.Percent)
-		);
+		_widthAverage = new SimpleMovingAverage { Length = AvgPeriod };
+		_widthStdDev = new StandardDeviation { Length = AvgPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-
 		subscription
-			.Bind(ema, atr, (candle, emaValue, atrValue) =>
-			{
-				if (candle.State != CandleStates.Finished || atrValue <= 0)
-					return;
-
-				// Keltner width = (EMA + ATR*k) - (EMA - ATR*k) = 2*ATR*k
-				var width = 2m * ATRMultiplier * atrValue;
-				var avgWidthValue = widthAverage.Process(new DecimalIndicatorValue(widthAverage, width, candle.ServerTime) { IsFinal = true });
-
-				if (!widthAverage.IsFormed)
-					return;
-
-				var avgWidth = avgWidthValue.ToDecimal();
-				if (avgWidth <= 0)
-					return;
-
-				// Width breakout detection
-				if (width > avgWidth * WidthThreshold && Position == 0)
-				{
-					// Determine direction based on price relative to EMA
-					if (candle.ClosePrice > emaValue)
-						BuyMarket();
-					else if (candle.ClosePrice < emaValue)
-						SellMarket();
-				}
-			})
+			.Bind(ema, atr, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -147,5 +163,78 @@ public class KeltnerWidthBreakoutStrategy : Strategy
 			DrawIndicator(area, ema);
 			DrawOwnTrades(area);
 		}
+	}
+
+	private void ProcessCandle(ICandleMessage candle, decimal emaValue, decimal atrValue)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		// Width of the channel: (EMA + k*ATR) - (EMA - k*ATR).
+		var width = 2m * ATRMultiplier * atrValue;
+		var avgWidth = _widthAverage.Process(width, candle.ServerTime, true).ToDecimal();
+		var stdWidth = _widthStdDev.Process(width, candle.ServerTime, true).ToDecimal();
+
+		if (!_widthAverage.IsFormed || !_widthStdDev.IsFormed)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (CheckStop(candle))
+			return;
+
+		var close = candle.ClosePrice;
+		var stopDistance = StopMultiplier * atrValue;
+
+		if (width > avgWidth + Multiplier * stdWidth)
+		{
+			if (close > emaValue && Position <= 0)
+			{
+				BuyMarket(Volume + Math.Abs(Position));
+				_stopPrice = StopMultiplier > 0 ? close - stopDistance : 0m;
+				return;
+			}
+
+			if (close < emaValue && Position >= 0)
+			{
+				SellMarket(Volume + Math.Abs(Position));
+				_stopPrice = StopMultiplier > 0 ? close + stopDistance : 0m;
+				return;
+			}
+		}
+
+		if (Position != 0 && width < avgWidth)
+			ExitPosition();
+	}
+
+	private bool CheckStop(ICandleMessage candle)
+	{
+		if (_stopPrice == 0m)
+			return false;
+
+		if (Position > 0 && candle.LowPrice <= _stopPrice)
+		{
+			ExitPosition();
+			return true;
+		}
+
+		if (Position < 0 && candle.HighPrice >= _stopPrice)
+		{
+			ExitPosition();
+			return true;
+		}
+
+		return false;
+	}
+
+	private void ExitPosition()
+	{
+		if (Position > 0)
+			SellMarket(Position);
+		else if (Position < 0)
+			BuyMarket(-Position);
+
+		_stopPrice = 0m;
 	}
 }

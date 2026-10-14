@@ -112,11 +112,11 @@ public class BollingerVolatilityBreakoutStrategy : Strategy
 			.SetRange(5, 50)
 			.SetDisplay("ATR Period", "Period for ATR calculation", "Indicators");
 
-		_atrDeviationMultiplier = Param(nameof(AtrDeviationMultiplier), 1.6m)
+		_atrDeviationMultiplier = Param(nameof(AtrDeviationMultiplier), 2m)
 			.SetRange(0.1m, 5m)
 			.SetDisplay("ATR Deviation Multiplier", "ATR regime threshold multiplier", "Signals");
 
-		_stopLossMultiplier = Param(nameof(StopLossMultiplier), 1.8m)
+		_stopLossMultiplier = Param(nameof(StopLossMultiplier), 2m)
 			.SetRange(0.5m, 10m)
 			.SetDisplay("Stop Loss Multiplier", "ATR multiplier used for stop distance", "Risk");
 

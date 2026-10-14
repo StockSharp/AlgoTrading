@@ -39,7 +39,7 @@ public class H4L4BreakoutStrategy : Strategy
 	/// </summary>
 	public H4L4BreakoutStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
 			.SetDisplay("Candle Type", "Working candle timeframe", "General");
 	}
 

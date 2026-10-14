@@ -72,14 +72,14 @@ public class RenkoLiveChartsPimpedStrategy : Strategy
 		_calculateBestBoxSize = Param(nameof(CalculateBestBoxSize), false)
 			.SetDisplay("Use ATR Box", "Calculate brick size from ATR", "Renko");
 
-		_atrPeriod = Param(nameof(AtrPeriod), 14)
+		_atrPeriod = Param(nameof(AtrPeriod), 24)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "ATR calculation period", "Renko");
 
 		_useAtrMa = Param(nameof(UseAtrMa), false)
 			.SetDisplay("Smooth ATR", "Apply moving average on ATR", "Renko");
 
-		_atrMaPeriod = Param(nameof(AtrMaPeriod), 10)
+		_atrMaPeriod = Param(nameof(AtrMaPeriod), 120)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR MA Period", "Moving average length for ATR", "Renko");
 

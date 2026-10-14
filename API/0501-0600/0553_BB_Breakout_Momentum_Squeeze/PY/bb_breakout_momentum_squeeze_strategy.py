@@ -16,12 +16,12 @@ class bb_breakout_momentum_squeeze_strategy(Strategy):
         super(bb_breakout_momentum_squeeze_strategy, self).__init__()
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
-        self._bb_length = self.Param("BbLength", 10) \
+        self._bb_length = self.Param("BbLength", 14) \
             .SetGreaterThanZero() \
             .SetDisplay("BB Breakout Length", "Length for Bollinger breakout calculation", "BB Breakout")
         self._bb_mult = self.Param("BbMultiplier", 1.0) \
             .SetDisplay("BB Breakout Mult", "Bollinger breakout multiplier", "BB Breakout")
-        self._threshold = self.Param("Threshold", 0.0) \
+        self._threshold = self.Param("Threshold", 50.0) \
             .SetDisplay("Threshold", "Middle line threshold", "BB Breakout")
         self._squeeze_length = self.Param("SqueezeLength", 20) \
             .SetGreaterThanZero() \

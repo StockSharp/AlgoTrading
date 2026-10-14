@@ -7,7 +7,7 @@ Testing indicates an average annual return of about 175%. It performs best in th
 
 MACD crossovers are filtered by an increase in volume to confirm momentum. Buy signals come on bullish crosses with expanding volume; sells do the opposite.
 
-Momentum traders watching for volume spikes may find it valuable. Risk is limited using an ATR stop.
+Momentum traders watching for volume spikes may find it valuable. Risk is limited using a percent stop.
 
 ## Details
 
@@ -26,6 +26,7 @@ Momentum traders watching for volume spikes may find it valuable. Risk is limite
   - `VolumeMultiplier` = 1.5m
   - `StopLossPercent` = 2.0m
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    AvgVolume is the average volume of the previous VolumePeriod candles. Every MACD cross closes a position against it, so a cross on a volume surge reverses the position and one without it only closes.
 - **Filters**:
   - Category: Breakout
   - Direction: Both

@@ -7,7 +7,7 @@ Testing indicates an average annual return of about 157%. It performs best in th
 
 VWAP acts as the session benchmark, and ADX measures conviction. Entries appear when price departs from VWAP with ADX showing strength.
 
-Fits intraday trend traders. Protective stops use ATR multiples.
+Fits intraday trend traders. Protective stops use a fixed percentage of the entry price.
 
 ## Details
 
@@ -18,9 +18,12 @@ Fits intraday trend traders. Protective stops use ATR multiples.
 - **Exit Criteria**: ADX drops below threshold
 - **Stops**: Percent-based using `StopLossPercent`
 - **Default Values**:
-  - `StopLossPercent` = 2m
+  - `StopLossPercent` = 2
   - `AdxPeriod` = 14
+  - `AdxThreshold` = 25
+  - `AdxExitThreshold` = 20
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    The market trades around the clock, so the session VWAP restarts each UTC day and weighs the typical price of each candle by its volume. The 25 and 20 in the rules are the defaults of AdxThreshold and AdxExitThreshold. An entry signal against an open position reverses it.
 - **Filters**:
   - Category: Mean reversion
   - Direction: Both

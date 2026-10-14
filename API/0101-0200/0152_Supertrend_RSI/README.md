@@ -1,7 +1,7 @@
 # Supertrend Rsi Strategy
 [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
-Implementation of strategy - Supertrend + RSI. Buy when price is above Supertrend and RSI is below 30 (oversold). Sell when price is below Supertrend and RSI is above 70 (overbought).
+Implementation of strategy - Supertrend + RSI. Buy when price is above Supertrend and RSI is below RsiOversold. Sell when price is below Supertrend and RSI is above RsiOverbought.
 
 Testing indicates an average annual return of about 43%. It performs best in the stocks market.
 
@@ -22,9 +22,10 @@ A good choice for traders relying on trailing stops. The built-in stop from Supe
   - `SupertrendPeriod` = 10
   - `SupertrendMultiplier` = 3.0m
   - `RsiPeriod` = 14
-  - `RsiOversold` = 30m
-  - `RsiOverbought` = 70m
+  - `RsiOversold` = 40
+  - `RsiOverbought` = 60
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    On five-minute candles RSI almost never reaches 30 while price is above Supertrend (or 70 below it): the March 2024 BTC archive has no such candle at all. The defaults are therefore 40 and 60, which still mark a pullback against the trend and trade on both sides. An entry signal against an open position reverses it.
 - **Filters**:
   - Category: Mean reversion
   - Direction: Both

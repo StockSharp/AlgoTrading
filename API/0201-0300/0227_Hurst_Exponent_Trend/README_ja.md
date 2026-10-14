@@ -21,7 +21,9 @@ Hurst Exponentが閾値より大きく、価格が移動平均を上回って終
 - **デフォルト値**:
   - `HurstPeriod` = 100
   - `MaPeriod` = 20
-  - `HurstThreshold` = 0.55m
+  - `HurstThreshold` = 0.55
+  - `StopLossPercent` = 2
+    MAはMaPeriod本の単純移動平均です。ストップはエントリー価格の固定StopLossPercentで、ローソク足の間も監視されます。0で無効になります。 保有ポジションと逆方向のエントリーシグナルはドテンになります。
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **フィルター**:
   - カテゴリ: トレンド

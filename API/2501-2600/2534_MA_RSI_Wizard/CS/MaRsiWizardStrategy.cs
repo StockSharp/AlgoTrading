@@ -75,7 +75,7 @@ public class MaRsiWizardStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for incoming candles", "General");
 
-		_thresholdOpen = Param(nameof(ThresholdOpen), 75)
+		_thresholdOpen = Param(nameof(ThresholdOpen), 55)
 			.SetRange(0, 100)
 			.SetDisplay("Open Threshold", "Weighted score required to open a position", "Signals")
 			;
@@ -97,7 +97,7 @@ public class MaRsiWizardStrategy : Strategy
 			.SetDisplay("Take Profit (points)", "Profit target distance expressed in price points", "Risk")
 			;
 
-		_expirationBars = Param(nameof(ExpirationBars), 24)
+		_expirationBars = Param(nameof(ExpirationBars), 4)
 			.SetDisplay("Signal Cooldown (bars)", "Bars to wait before allowing a new trade in the same direction", "Signals")
 			;
 

@@ -21,10 +21,11 @@ El método está diseñado para traders a corto plazo que les gusta operar en ex
 - **Valores predeterminados**:
   - `StochPeriod` = 14
   - `KPeriod` = 3
-  - `DPeriod` = 3
   - `AveragePeriod` = 20
-  - `Multiplier` = 2.0m
+  - `Multiplier` = 2
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
+    Avg y StdDev son la media y la desviación estándar de los últimos AveragePeriod valores de %K, incluido el actual. El stop es un StopLossPercent fijo del precio de entrada, vigilado también entre velas; 0 lo desactiva. %K es el estocástico del primer periodo suavizado en KPeriod velas; %D no interviene en las reglas, por lo que DPeriod se eliminó. Una señal de entrada contra una posición abierta la invierte.
 - **Filtros**:
   - Categoría: Mean reversion
   - Dirección: Ambos

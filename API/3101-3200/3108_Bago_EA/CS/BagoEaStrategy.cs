@@ -71,11 +71,11 @@ public class BagoEaStrategy : Strategy
 	/// </summary>
 	public BagoEaStrategy()
 	{
-		_fastPeriod = Param(nameof(FastPeriod), 12)
+		_fastPeriod = Param(nameof(FastPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast Period", "Fast EMA period", "Indicator");
 
-		_slowPeriod = Param(nameof(SlowPeriod), 50)
+		_slowPeriod = Param(nameof(SlowPeriod), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Period", "Slow EMA period", "Indicator");
 

@@ -28,9 +28,9 @@ class mamacd_novlt_strategy(Strategy):
             .SetDisplay("MACD Slow Period", "Slow EMA period for MACD", "Indicators")
         self._fast_signal_ema_period = self.Param("FastSignalEmaPeriod", 15) \
             .SetDisplay("MACD Fast Period", "Fast EMA period for MACD", "Indicators")
-        self._stop_loss_points = self.Param("StopLossPoints", 500) \
+        self._stop_loss_points = self.Param("StopLossPoints", 15) \
             .SetDisplay("Stop Loss", "Stop-loss distance", "Risk")
-        self._take_profit_points = self.Param("TakeProfitPoints", 500) \
+        self._take_profit_points = self.Param("TakeProfitPoints", 15) \
             .SetDisplay("Take Profit", "Take-profit distance", "Risk")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
             .SetDisplay("Candle Type", "Timeframe for calculations", "General")

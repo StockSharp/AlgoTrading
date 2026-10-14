@@ -26,6 +26,7 @@ Good for traders chasing volatility expansions with momentum backing. An ATR-bas
   - `MacdSignalPeriod` = 9
   - `AtrMultiplier` = 2m
   - `CandleType` = TimeSpan.FromMinutes(15).TimeFrame()
+    The channel is the EMA plus and minus Multiplier ATRs. The stop lies AtrMultiplier ATRs from the entry close and is checked on candle closes. An entry signal against an open position reverses it.
 - **Filters**:
   - Category: Mean reversion
   - Direction: Both

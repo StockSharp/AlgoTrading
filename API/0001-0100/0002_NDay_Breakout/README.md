@@ -18,7 +18,8 @@ By waiting for the prior extreme to break, the system attempts to catch the star
   - `LookbackPeriod` = 20
   - `MaPeriod` = 20
   - `StopLossPercent` = 2.0m
-  - `CandleType` = TimeSpan.FromDays(1)
+  - `CandleType` = TimeSpan.FromHours(1)
+    The sample history covers one month, which leaves about ten daily candles after the 20-candle warm-up, and on daily candles the strategy places no order on BTC in March 2024. The default therefore uses hourly candles with the same periods; daily candles stay configurable.
 - **Filters**:
   - Category: Breakout
   - Direction: Both

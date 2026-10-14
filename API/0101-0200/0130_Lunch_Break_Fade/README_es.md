@@ -18,7 +18,10 @@ Un stop porcentual gestiona el riesgo si la tendencia se reanuda en lugar de des
 - **Stops**: Sí, basado en porcentaje
 - **Valores predeterminados**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `LunchHour` = 12
+  - `LunchEndHour` = 14
+    El mercado opera las 24 horas, por lo que la sesión es el día UTC. Al cierre de la vela que termina en LunchHour la estrategia entra en contra del movimiento desde la apertura del día y cierra en LunchEndHour.
 - **Filtros**:
   - Categoría: Intradía
   - Dirección: Ambos

@@ -24,8 +24,8 @@ public class Up3x1ShiftedSmaStrategy : Strategy
 
 	public Up3x1ShiftedSmaStrategy()
 	{
-		_fastPeriod = Param(nameof(FastPeriod), 8).SetDisplay("Fast WMA", "Fast WMA period", "Indicators");
-		_slowPeriod = Param(nameof(SlowPeriod), 24).SetDisplay("Slow WMA", "Slow WMA period", "Indicators");
+		_fastPeriod = Param(nameof(FastPeriod), 24).SetDisplay("Fast WMA", "Fast WMA period", "Indicators");
+		_slowPeriod = Param(nameof(SlowPeriod), 120).SetDisplay("Slow WMA", "Slow WMA period", "Indicators");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 

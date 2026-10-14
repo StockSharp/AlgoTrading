@@ -7,7 +7,7 @@ Tests zeigen eine durchschnittliche jährliche Rendite von etwa 40%. Sie funktio
 
 Ichimoku-Komponenten definieren die Richtungsneigung, während wachsendes Volumen Interesse bestätigt. Trades öffnen sich, wenn der Preis mit der Wolke übereinstimmt und das Volumen anzieht.
 
-Es passt zu Tradern, die Wolken-Ausbrüchen mit Beteiligung folgen. Das Risiko wird durch einen ATR-basierten Stop begrenzt.
+Es passt zu Tradern, die Wolken-Ausbrüchen mit Beteiligung folgen. Das Risiko wird durch einen prozentualen Stop begrenzt.
 
 ## Details
 
@@ -17,14 +17,15 @@ Es passt zu Tradern, die Wolken-Ausbrüchen mit Beteiligung folgen. Das Risiko w
 - **Long/Short**: Beide
 - **Ausstiegskriterien**:
   - Wolken-Ausbruch in entgegengesetzter Richtung
-- **Stops**: Prozentbasiert mit `StopLoss`
+- **Stops**: Prozentbasiert mit `StopLossPercent`
 - **Standardwerte**:
   - `TenkanPeriod` = 9
   - `KijunPeriod` = 26
   - `SenkouSpanPeriod` = 52
   - `VolumeAvgPeriod` = 20
-  - `StopLoss` = new Unit(2, UnitTypes.Percent)
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    AvgVolume ist das durchschnittliche Volumen der vorherigen VolumeAvgPeriod Kerzen. Ein Long schließt, wenn der Kurs unter der Wolke schließt, ein Short, wenn er darüber schließt. Ein Einstiegssignal gegen eine offene Position dreht sie.
 - **Filter**:
   - Kategorie: Ausbruch
   - Richtung: Beide

@@ -7,7 +7,7 @@ Tests zeigen eine durchschnittliche jährliche Rendite von etwa 181%. Sie funkti
 
 Der RSI bietet eine breitere Momentumansicht, während Stochastic schnellere Signale nahe den Extremen gibt. Trades wechseln, wenn der Oszillator Levels innerhalb des RSI-Kontexts kreuzt.
 
-Ideal für flinke Trader, die Oszillator-Setups bevorzugen. Die Strategie verlässt sich auf einen ATR-Stop zur Risikobegrenzung.
+Ideal für flinke Trader, die Oszillator-Setups bevorzugen. Die Strategie verlässt sich auf einen prozentualen Stop zur Risikobegrenzung.
 
 ## Details
 
@@ -25,11 +25,11 @@ Ideal für flinke Trader, die Oszillator-Setups bevorzugen. Die Strategie verlä
   - `RsiOverbought` = 70m
   - `StochPeriod` = 14
   - `StochK` = 3
-  - `StochD` = 3
   - `StochOversold` = 20m
   - `StochOverbought` = 80m
   - `StopLossPercent` = 2.0m
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    StochK in den Regeln ist %K: die Stochastik über StochPeriod Kerzen, geglättet über StochK Kerzen; %D spielt keine Rolle und hat daher keine Einstellung. Ein Einstiegssignal gegen eine offene Position dreht sie.
 - **Filter**:
   - Kategorie: Mean Reversion
   - Richtung: Beide

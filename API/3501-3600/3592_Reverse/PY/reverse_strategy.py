@@ -16,7 +16,7 @@ class reverse_strategy(Strategy):
 
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30)))
         self._bollinger_period = self.Param("BollingerPeriod", 20)
-        self._bollinger_width = self.Param("BollingerWidth", 1.0)
+        self._bollinger_width = self.Param("BollingerWidth", 2.0)
         self._rsi_period = self.Param("RsiPeriod", 14)
         self._rsi_overbought = self.Param("RsiOverbought", 70.0)
         self._rsi_oversold = self.Param("RsiOversold", 30.0)

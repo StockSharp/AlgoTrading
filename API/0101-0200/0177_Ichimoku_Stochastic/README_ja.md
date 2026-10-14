@@ -8,13 +8,13 @@ Ichimoku CloudとStochastic Oscillatorインジケーターに基づく戦略。
 
 Ichimokuがトレンドとサポートレベルを描き、Stochasticが押し目でのエントリータイミングを計ります。オシレーターが雲の優勢な方向でリセットしたときにトレードが開始されます。
 
-構造化されたインジケーターを好むトレーダーに実用的です。ATRストップが急激なリバーサルをカバーします。
+構造化されたインジケーターを好むトレーダーに実用的です。雲そのものが急激なリバーサルに対するストップになります。
 
 ## 詳細
 
 - **エントリー条件**:
-  - ロング: `Price > Cloud && StochK < 20`
-  - ショート: `Price < Cloud && StochK > 80`
+  - ロング: `Price > Cloud && Tenkan > Kijun && StochK < 20`
+  - ショート: `Price < Cloud && Tenkan < Kijun && StochK > 80`
 - **ロング/ショート**: 両方
 - **エグジット条件**:
   - 逆方向への雲のブレイクアウト
@@ -25,8 +25,10 @@ Ichimokuがトレンドとサポートレベルを描き、Stochasticが押し�
   - `SenkouPeriod` = 52
   - `StochPeriod` = 14
   - `StochK` = 3
-  - `StochD` = 3
+  - `StochOversold` = 20
+  - `StochOverbought` = 80
   - `CandleType` = TimeSpan.FromMinutes(30).TimeFrame()
+    ルール中の20と80はStochOversoldとStochOverboughtの既定値です。%KはStochPeriod本のストキャスティクスをStochK本で平滑化した値で、%Dは関与しません。ロングは価格が雲の下で引けたとき、ショートは雲の上で引けたときに決済します。 保有ポジションと逆方向のエントリーシグナルはドテンになります。
 - **フィルター**:
   - カテゴリ: 平均回帰
   - 方向: 両方

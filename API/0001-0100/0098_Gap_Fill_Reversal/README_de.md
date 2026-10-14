@@ -17,7 +17,9 @@ Ein prozentualer Stop definiert das Risiko, und Positionen schließen, wenn der 
 - **Stops**: Ja, prozentbasiert
 - **Standardwerte**:
   - `CandleType` = 15 Minuten
-  - `StopLoss` = 2%
+  - `MinGapPercent` = 0.02
+    Eine Lücke ist eine Eröffnung mindestens MinGapPercent vom Schluss der Vorkerze entfernt; der Markt handelt rund um die Uhr, daher werden Lücken zwischen aufeinanderfolgenden Kerzen gemessen. Die Lücke ist geschlossen, wenn dieselbe Kerze zu diesem Schluss zurückkehrt, und das Gegensignal dreht die Position.
+  - `StopLossPercent` = 2
 - **Filter**:
   - Kategorie: Muster
   - Richtung: Beide

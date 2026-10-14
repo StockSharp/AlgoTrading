@@ -7,7 +7,7 @@ Testing indicates an average annual return of about 100%. It performs best in th
 
 MACD indicates the larger momentum shift, while Williams %R pinpoints near-term reversals. Both signals must line up to initiate a trade.
 
-Good for those who like to combine trend and countertrend cues. Stops hinge on an ATR factor.
+Good for those who like to combine trend and countertrend cues. Stops are a fixed percentage of the entry price.
 
 ## Details
 
@@ -22,8 +22,11 @@ Good for those who like to combine trend and countertrend cues. Stops hinge on a
   - `MacdSlow` = 26
   - `MacdSignal` = 9
   - `WilliamsRPeriod` = 14
-  - `StopLossPercent` = 2.0m
+  - `WilliamsROversold` = -80
+  - `WilliamsROverbought` = -20
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    The -80 and -20 in the rules are the defaults of WilliamsROversold and WilliamsROverbought. A long closes when MACD crosses below the signal line and a short when it crosses above it. An entry signal against an open position reverses it.
 - **Filters**:
   - Category: Mean reversion
   - Direction: Both

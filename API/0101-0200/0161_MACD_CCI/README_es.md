@@ -7,7 +7,7 @@ Las pruebas indican un retorno anual promedio de aproximadamente el 70%. Funcion
 
 Las oscilaciones del MACD resaltan los cambios de momentum; el CCI ayuda a cronometrar las entradas en retrocesos en esa dirección. Son posibles tanto operaciones largas como cortas.
 
-Los traders que combinan momentum con osciladores pueden encontrar útil esta técnica. El control de riesgo utiliza un stop basado en ATR.
+Los traders que combinan momentum con osciladores pueden encontrar útil esta técnica. El control de riesgo utiliza un stop porcentual.
 
 ## Detalles
 
@@ -16,7 +16,7 @@ Los traders que combinan momentum con osciladores pueden encontrar útil esta t�
   - Corto: `MACD < Signal && CCI > CciOverbought`
 - **Largo/Corto**: Ambos
 - **Criterios de salida**: Cruce del MACD en dirección opuesta
-- **Stops**: Basados en porcentaje usando `StopLoss`
+- **Stops**: Basados en porcentaje usando `StopLossPercent`
 - **Valores predeterminados**:
   - `FastPeriod` = 12
   - `SlowPeriod` = 26
@@ -24,8 +24,9 @@ Los traders que combinan momentum con osciladores pueden encontrar útil esta t�
   - `CciPeriod` = 20
   - `CciOversold` = -100m
   - `CciOverbought` = 100m
-  - `StopLoss` = new Unit(2, UnitTypes.Percent)
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    Una señal de entrada contra una posición abierta la invierte.
 - **Filtros**:
   - Categoría: Reversión a la media
   - Dirección: Ambos

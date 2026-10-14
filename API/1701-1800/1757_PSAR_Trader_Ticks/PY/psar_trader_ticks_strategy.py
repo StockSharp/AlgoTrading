@@ -18,7 +18,7 @@ class psar_trader_ticks_strategy(Strategy):
             .SetDisplay("SAR Step", "Acceleration factor step", "Indicators")
         self._maximum = self.Param("Maximum", 0.2) \
             .SetDisplay("SAR Maximum", "Maximum acceleration factor", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
         self._prev_sar = 0.0
         self._prev_price = 0.0

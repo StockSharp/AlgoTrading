@@ -21,7 +21,8 @@ This technique is intended for short-term traders expecting prices to revert aft
 - **Default Values**:
   - `MaPeriod` = 20
   - `AtrPeriod` = 14
-  - `Multiplier` = 2.0m
+  - `Multiplier` = 2
+    MA is the MaPeriod simple moving average and ATR the AtrPeriod average true range. The stop is set Multiplier times the ATR from the entry close, 2 ATR by default, and checked on candle closes. An entry signal against an open position reverses it.
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **Filters**:
   - Category: Mean Reversion

@@ -14,7 +14,7 @@ from StockSharp.Algo.Strategies import Strategy
 class mh_hull_moving_average_based_trading_strategy(Strategy):
     def __init__(self):
         super(mh_hull_moving_average_based_trading_strategy, self).__init__()
-        self._hull_period = self.Param("HullPeriod", 120) \
+        self._hull_period = self.Param("HullPeriod", 210) \
             .SetGreaterThanZero() \
             .SetDisplay("Hull Period", "Period for Hull Moving Average", "Indicators")
         self._signal_threshold_percent = self.Param("SignalThresholdPercent", 0.15) \
@@ -23,7 +23,7 @@ class mh_hull_moving_average_based_trading_strategy(Strategy):
         self._signal_cooldown_bars = self.Param("SignalCooldownBars", 10) \
             .SetGreaterThanZero() \
             .SetDisplay("Signal Cooldown Bars", "Minimum bars between entries", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
         self._prev_diff_percent = 0.0
         self._has_prev_diff = False

@@ -20,9 +20,9 @@ class weighted_ichimoku_strategy(Strategy):
             .SetDisplay("Kijun Period", "Kijun length", "Ichimoku")
         self._senkou_span_b_period = self.Param("SenkouSpanBPeriod", 52) \
             .SetDisplay("Senkou B Period", "Span B length", "Ichimoku")
-        self._buy_threshold = self.Param("BuyThreshold", 70.0) \
+        self._buy_threshold = self.Param("BuyThreshold", 60.0) \
             .SetDisplay("Buy Threshold", "Score to enter long", "General")
-        self._sell_threshold = self.Param("SellThreshold", -70.0) \
+        self._sell_threshold = self.Param("SellThreshold", -49.0) \
             .SetDisplay("Sell Threshold", "Score to exit/short", "General")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
             .SetDisplay("Candle Type", "Type of candles", "General")

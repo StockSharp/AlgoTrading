@@ -34,7 +34,7 @@ public class CdcPlMfiStrategy : Strategy
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
-		_mfiPeriod = Param(nameof(MfiPeriod), 14)
+		_mfiPeriod = Param(nameof(MfiPeriod), 49)
 			.SetGreaterThanZero()
 			.SetDisplay("MFI Period", "Money Flow Index period", "Indicators");
 		_longLevel = Param(nameof(LongLevel), 40m)

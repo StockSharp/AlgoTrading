@@ -33,7 +33,7 @@ public class VawsiTrendPersistanceReversalStrategy : Strategy
 
 	public VawsiTrendPersistanceReversalStrategy()
 	{
-		_slTp = Param(nameof(SlTp), 2m)
+		_slTp = Param(nameof(SlTp), 5m)
 			.SetDisplay("SL/TP", "Stop loss / take profit ratio", "Risk");
 
 		_rsiLength = Param(nameof(RsiLength), 14)

@@ -76,21 +76,21 @@ public class Surfing30Strategy : Strategy
 			
 			.SetOptimize(5, 30, 1);
 
-		_longRsiThreshold = Param(nameof(LongRsiThreshold), 30m)
+		_longRsiThreshold = Param(nameof(LongRsiThreshold), 40m)
 			.SetDisplay("Long RSI Threshold", "Minimum RSI value required for long entries.", "Filters")
 			
 			.SetOptimize(20m, 60m, 5m);
 
-		_shortRsiThreshold = Param(nameof(ShortRsiThreshold), 70m)
+		_shortRsiThreshold = Param(nameof(ShortRsiThreshold), 65m)
 			.SetDisplay("Short RSI Threshold", "Maximum RSI value allowed for short entries.", "Filters")
 			
 			.SetOptimize(40m, 80m, 5m);
 
-		_tradeStartHour = Param(nameof(TradeStartHour), 0)
+		_tradeStartHour = Param(nameof(TradeStartHour), 8)
 			.SetDisplay("Trade Start Hour", "Hour of the day when new trades may start.", "Sessions")
 			;
 
-		_tradeEndHour = Param(nameof(TradeEndHour), 23)
+		_tradeEndHour = Param(nameof(TradeEndHour), 18)
 			.SetDisplay("Trade End Hour", "Hour of the day when all positions are closed.", "Sessions")
 			;
 

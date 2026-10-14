@@ -16,13 +16,13 @@ class zero_lag_tema_crosses_pakun_strategy(Strategy):
         super(zero_lag_tema_crosses_pakun_strategy, self).__init__()
         self._lookback = self.Param("Lookback", 20) \
             .SetDisplay("Lookback", "Lookback period", "Indicators")
-        self._fast_period = self.Param("FastPeriod", 20) \
+        self._fast_period = self.Param("FastPeriod", 69) \
             .SetDisplay("Fast Period", "Fast TEMA length", "Indicators")
-        self._slow_period = self.Param("SlowPeriod", 50) \
+        self._slow_period = self.Param("SlowPeriod", 130) \
             .SetDisplay("Slow Period", "Slow TEMA length", "Indicators")
         self._risk_reward = self.Param("RiskReward", 1.5) \
             .SetDisplay("Risk/Reward", "Take profit ratio", "Risk")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Candle timeframe", "General")
         self._prev_fast = 0.0
         self._prev_slow = 0.0

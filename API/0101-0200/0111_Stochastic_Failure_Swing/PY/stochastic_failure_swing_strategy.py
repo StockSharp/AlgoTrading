@@ -4,123 +4,130 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
+from System import TimeSpan, Decimal
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, Level1Fields
+from StockSharp.BusinessEntities import Subscription
 from StockSharp.Algo.Indicators import StochasticOscillator
 from StockSharp.Algo.Strategies import Strategy
 
 class stochastic_failure_swing_strategy(Strategy):
     """
-    Strategy that trades based on Stochastic Oscillator Failure Swing pattern.
-    A failure swing occurs when Stochastic reverses direction without crossing through centerline.
-    Uses cooldown to control trade frequency.
+    K Failure Swing strategy.
+    A trough of %K below OversoldLevel that is higher than the previous such trough arms a long, which opens when %K then crosses
+    above %D; peaks above OverboughtLevel arm shorts the same way. A position closes when %K crosses back through the swing that armed it,
+    and a percent stop limits the loss.
     """
 
     def __init__(self):
         super(stochastic_failure_swing_strategy, self).__init__()
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Candle timeframe", "General")
-        self._k_period = self.Param("KPeriod", 14).SetDisplay("K Period", "%K period", "Stochastic")
-        self._d_period = self.Param("DPeriod", 3).SetDisplay("D Period", "%D period", "Stochastic")
-        self._oversold_level = self.Param("OversoldLevel", 30.0).SetDisplay("Oversold Level", "Stochastic oversold", "Stochastic")
-        self._overbought_level = self.Param("OverboughtLevel", 70.0).SetDisplay("Overbought Level", "Stochastic overbought", "Stochastic")
-        self._cooldown_bars = self.Param("CooldownBars", 250).SetDisplay("Cooldown Bars", "Bars between trades", "General")
-
-        self._prev_k = 0.0
-        self._prev_prev_k = 0.0
-        self._cooldown = 0
+        self._k_period = self.Param("KPeriod", 14).SetGreaterThanZero().SetDisplay("K Period", "Period for %K", "Indicators")
+        self._d_period = self.Param("DPeriod", 3).SetGreaterThanZero().SetDisplay("D Period", "Period for %D", "Indicators")
+        self._oversold_level = self.Param("OversoldLevel", 20.0).SetDisplay("Oversold Level", "%K level below which troughs count", "Levels")
+        self._overbought_level = self.Param("OverboughtLevel", 80.0).SetDisplay("Overbought Level", "%K level above which peaks count", "Levels")
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0).SetNotNegative().SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._reset_state()
 
     @property
     def candle_type(self):
         return self._candle_type.Value
 
+    def _reset_state(self):
+        # The last two values, the last trough and peak in the extreme zones, and the swings that arm an entry.
+        self._last = None
+        self._before_last = None
+        self._last_trough = None
+        self._last_peak = None
+        self._armed_long = None
+        self._armed_short = None
+        self._exit_level = Decimal(0)
+        self._prev_k = None
+        self._prev_d = None
+
     def OnReseted(self):
         super(stochastic_failure_swing_strategy, self).OnReseted()
-        self._prev_k = 0.0
-        self._prev_prev_k = 0.0
-        self._cooldown = 0
+        self._reset_state()
 
     def OnStarted2(self, time):
         super(stochastic_failure_swing_strategy, self).OnStarted2(time)
 
-        self._prev_k = 0.0
-        self._prev_prev_k = 0.0
-        self._cooldown = 0
+        self._reset_state()
 
-        stochastic = StochasticOscillator()
-        stochastic.K.Length = self._k_period.Value
-        stochastic.D.Length = self._d_period.Value
+        oscillator = StochasticOscillator()
+        oscillator.K.Length = self._k_period.Value
+        oscillator.D.Length = self._d_period.Value
 
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.BindEx(stochastic, self._process_candle).Start()
+        subscription.BindEx(oscillator, self._process_candle).Start()
+
+        self.StartProtection(Unit(), Unit(Decimal(self._stop_loss_percent.Value), UnitTypes.Percent), useMarketOrders=True, isLocalStop=True)
+
+        # The stop has to see prices between candles, not only at their close.
+        for field in (Level1Fields.BestBidPrice, Level1Fields.BestAskPrice):
+            quotes = Subscription(DataType.Level1, self.Security)
+            quotes.MarketData.BuildField = field
+            self.SubscribeLevel1(quotes).Bind(self._observe_protection_quote).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, stochastic)
+            self.DrawIndicator(area, oscillator)
             self.DrawOwnTrades(area)
 
-    def _process_candle(self, candle, stoch_iv):
-        if candle.State != CandleStates.Finished:
+    def _observe_protection_quote(self, quote):
+        # The high-level handler activates native protection before the callback, including between bars.
+        pass
+
+    def _process_candle(self, candle, value):
+        if candle.State != CandleStates.Finished or not value.IsFormed or value.IsEmpty or value.K is None or value.D is None:
             return
 
-        k_val = stoch_iv.K
-        if k_val is None:
-            return
-        kv = float(k_val)
+        current = value.K
+        signal = value.D
+        os_level = Decimal(self._oversold_level.Value)
+        ob_level = Decimal(self._overbought_level.Value)
+        last = self._last
 
-        # Need at least 2 previous values
-        if self._prev_k == 0 or self._prev_prev_k == 0:
-            self._prev_prev_k = self._prev_k
-            self._prev_k = kv
-            return
+        if last is not None:
+            # The previous value is a trough or a peak once the current one turns away from it.
+            before_last = self._before_last
+            if before_last is not None:
+                if last < before_last and last < current and last < os_level:
+                    self._armed_long = last if self._last_trough is not None and last > self._last_trough else None
+                    self._last_trough = last
+                elif last > before_last and last > current and last > ob_level:
+                    self._armed_short = last if self._last_peak is not None and last < self._last_peak else None
+                    self._last_peak = last
 
-        if self._cooldown > 0:
-            self._cooldown -= 1
-            self._prev_prev_k = self._prev_k
-            self._prev_k = kv
-            return
+            long_trigger = self._prev_k is not None and self._prev_d is not None and self._prev_k <= self._prev_d and current > signal
+            short_trigger = self._prev_k is not None and self._prev_d is not None and self._prev_k >= self._prev_d and current < signal
+            armed_long = self._armed_long if long_trigger else None
+            armed_short = self._armed_short if short_trigger else None
+            if long_trigger:
+                self._armed_long = None
+            if short_trigger:
+                self._armed_short = None
 
-        cd = self._cooldown_bars.Value
-        oversold = self._oversold_level.Value
-        overbought = self._overbought_level.Value
+            if self.IsFormedAndOnlineAndAllowTrading():
+                if self.Position > 0:
+                    if current < self._exit_level:
+                        self.SellMarket(self.Position)
+                elif self.Position < 0:
+                    if current > self._exit_level:
+                        self.BuyMarket(-self.Position)
+                elif armed_long is not None:
+                    self.BuyMarket(self.Volume)
+                    self._exit_level = armed_long
+                elif armed_short is not None:
+                    self.SellMarket(self.Volume)
+                    self._exit_level = armed_short
 
-        # Bullish Failure Swing: K was oversold, rose, pulled back but stayed above prior low
-        is_bullish = (
-            self._prev_prev_k < oversold and
-            self._prev_k > self._prev_prev_k and
-            kv < self._prev_k and
-            kv > self._prev_prev_k
-        )
-
-        # Bearish Failure Swing: K was overbought, fell, bounced but stayed below prior high
-        is_bearish = (
-            self._prev_prev_k > overbought and
-            self._prev_k < self._prev_prev_k and
-            kv > self._prev_k and
-            kv < self._prev_prev_k
-        )
-
-        if self.Position == 0:
-            if is_bullish:
-                self.BuyMarket()
-                self._cooldown = cd
-            elif is_bearish:
-                self.SellMarket()
-                self._cooldown = cd
-        elif self.Position > 0:
-            # Exit long when K crosses above overbought
-            if kv > overbought:
-                self.SellMarket()
-                self._cooldown = cd
-        elif self.Position < 0:
-            # Exit short when K crosses below oversold
-            if kv < oversold:
-                self.BuyMarket()
-                self._cooldown = cd
-
-        self._prev_prev_k = self._prev_k
-        self._prev_k = kv
+        self._before_last = self._last
+        self._last = current
+        self._prev_k = current
+        self._prev_d = signal
 
     def CreateClone(self):
         return stochastic_failure_swing_strategy()

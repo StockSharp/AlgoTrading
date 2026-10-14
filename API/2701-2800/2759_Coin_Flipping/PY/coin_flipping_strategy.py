@@ -17,8 +17,8 @@ class coin_flipping_strategy(Strategy):
         super(coin_flipping_strategy, self).__init__()
 
         self._risk_percent = self.Param("RiskPercent", 2.0)
-        self._take_profit_pips = self.Param("TakeProfitPips", 5000)
-        self._stop_loss_pips = self.Param("StopLossPips", 3000)
+        self._take_profit_pips = self.Param("TakeProfitPips", 20)
+        self._stop_loss_pips = self.Param("StopLossPips", 10)
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromDays(1)))
 
         self._rng = None

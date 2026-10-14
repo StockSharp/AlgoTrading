@@ -19,6 +19,7 @@
   - `TrendlinePeriod` = 20
   - `MAPeriod` = 20
   - `BounceThresholdPercent` = 0.5
+    当K线最低价（最高价）与支撑线（阻力线）的距离在该百分比以内时，视为触及该线。
   - `CandleType` = 5 分钟
   - `StopLossPercent` = 2
 - **过滤条件**：

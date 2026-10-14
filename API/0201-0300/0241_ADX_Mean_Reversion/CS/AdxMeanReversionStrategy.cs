@@ -1,39 +1,34 @@
-namespace StockSharp.Samples.Strategies;
-
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using Ecng.Common;
 
-using StockSharp.Algo;
-using StockSharp.Algo.Candles;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
+namespace StockSharp.Samples.Strategies;
+
 /// <summary>
 /// ADX Mean Reversion strategy.
-/// This strategy enters positions when ADX is significantly below or above its average value.
+/// The bands lie DeviationMultiplier standard deviations around the average of the last AveragePeriod ADX values, the current one included.
+/// ADX below the lower band with the close below the AveragePeriod simple moving average goes long and ADX above the upper band with the close above it goes short,
+/// reversing an opposite position. A long closes once ADX is back above its average and a short once it is back below it, and a percent stop limits the loss.
 /// </summary>
 public class AdxMeanReversionStrategy : Strategy
 {
 	private readonly StrategyParam<int> _adxPeriod;
 	private readonly StrategyParam<int> _averagePeriod;
 	private readonly StrategyParam<decimal> _deviationMultiplier;
-	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevAdx;
-	private decimal _avgAdx;
-	private decimal _stdDevAdx;
-	private decimal _sumAdx;
-	private decimal _sumSquaresAdx;
-	private int _count;
-	private readonly Queue<decimal> _adxValues = [];
+	private readonly Queue<decimal> _values = [];
 
 	/// <summary>
-	/// ADX Period.
+	/// Period of ADX.
 	/// </summary>
 	public int AdxPeriod
 	{
@@ -42,7 +37,7 @@ public class AdxMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Period for calculating mean and standard deviation of ADX.
+	/// Values of ADX the average and the standard deviation span.
 	/// </summary>
 	public int AveragePeriod
 	{
@@ -51,12 +46,21 @@ public class AdxMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Deviation multiplier for entry signals.
+	/// Standard deviations between the average and a band.
 	/// </summary>
 	public decimal DeviationMultiplier
 	{
 		get => _deviationMultiplier.Value;
 		set => _deviationMultiplier.Value = value;
+	}
+
+	/// <summary>
+	/// Stop loss percentage from entry price.
+	/// </summary>
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
 	}
 
 	/// <summary>
@@ -69,45 +73,28 @@ public class AdxMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop-loss percentage.
-	/// </summary>
-	public decimal StopLossPercent
-	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
-	}
-
-	/// <summary>
 	/// Constructor.
 	/// </summary>
 	public AdxMeanReversionStrategy()
 	{
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 			.SetGreaterThanZero()
-			
-			.SetOptimize(10, 20, 5)
-			.SetDisplay("ADX Period", "Period for ADX indicator", "Indicators");
+			.SetDisplay("ADX Period", "Period of ADX", "Indicators");
 
 		_averagePeriod = Param(nameof(AveragePeriod), 20)
 			.SetGreaterThanZero()
-			
-			.SetOptimize(10, 50, 10)
-			.SetDisplay("Average Period", "Period for calculating ADX average and standard deviation", "Settings");
+			.SetDisplay("Average Period", "Values of ADX the average and the standard deviation span", "Indicators");
 
 		_deviationMultiplier = Param(nameof(DeviationMultiplier), 2m)
 			.SetGreaterThanZero()
-			
-			.SetOptimize(1.5m, 3m, 0.5m)
-			.SetDisplay("Deviation Multiplier", "Multiplier for standard deviation", "Settings");
+			.SetDisplay("Multiplier", "Standard deviations between the average and a band", "Indicators");
+
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-			.SetGreaterThanZero()
-			
-			.SetOptimize(1m, 3m, 0.5m)
-			.SetDisplay("Stop Loss %", "Stop loss as percentage of entry price", "Risk Management");
 	}
 
 	/// <inheritdoc />
@@ -115,170 +102,95 @@ public class AdxMeanReversionStrategy : Strategy
 	{
 		return [(Security, CandleType)];
 	}
+
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_prevAdx = 0;
-		_avgAdx = 0;
-		_stdDevAdx = 0;
-		_sumAdx = 0;
-		_sumSquaresAdx = 0;
-		_count = 0;
-		_adxValues.Clear();
+		_values.Clear();
 	}
-
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
-		// Create ADX indicator
-		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
+		base.OnStarted2(time);
 
-		// Create subscription and bind indicator
+		_values.Clear();
+
+		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
+		var sma = new SimpleMovingAverage { Length = AveragePeriod };
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(adx, ProcessCandle)
+			.BindEx(adx, sma, ProcessCandle)
 			.Start();
 
-		// Setup chart visualization
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, adx);
+			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, adx);
+			}
 		}
-
-		// Enable position protection
-		StartProtection(
-			takeProfit: new Unit(0m), // We'll manage exits ourselves based on ADX
-			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent)
-		);
-
-		base.OnStarted2(time);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue adxValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
 	{
-		// Skip unfinished candles
+		// The high-level handler activates native protection before this callback, also between signal bars.
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue adxValue, IIndicatorValue smaValue)
+	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
+		if (!smaValue.IsFormed)
+			return;
+
+		if (!adxValue.IsFormed || adxValue is not AverageDirectionalIndexValue { MovingAverage: decimal value })
+			return;
+
+		_values.Enqueue(value);
+
+		if (_values.Count > AveragePeriod)
+			_values.Dequeue();
+
+		if (_values.Count < AveragePeriod)
+			return;
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var adxTyped = (AverageDirectionalIndexValue)adxValue;
-		
-		if (adxTyped.MovingAverage is not decimal currentAdx)
-			return;
+		var mean = _values.Average();
+		var deviation = (decimal)Math.Sqrt((double)_values.Average(v => (v - mean) * (v - mean)));
+		var upper = mean + DeviationMultiplier * deviation;
+		var lower = mean - DeviationMultiplier * deviation;
+		var close = candle.ClosePrice;
+		var ma = smaValue.GetValue<decimal>();
 
-		var dx = adxTyped.Dx;
-
-		if (dx.Plus is not decimal plusDi || dx.Minus is not decimal minusDi)
-			return;
-
-		// Update ADX statistics
-		UpdateAdxStatistics(currentAdx);
-
-		// Save current ADX for next iteration
-		_prevAdx = currentAdx;
-
-		// If we don't have enough data yet for statistics
-		if (_count < AveragePeriod)
-			return;
-
-		// Check for entry conditions
-		if (Position == 0)
-		{
-			// Positive trend strength should correspond to price direction for entry
-			var direction = plusDi > minusDi ? Sides.Buy : Sides.Sell;
-
-			// ADX is significantly below its average - mean reversion expects it to rise
-			// This could indicate a period of low trend strength that might change
-			if (currentAdx < _avgAdx - DeviationMultiplier * _stdDevAdx)
-			{
-				if (direction == Sides.Buy)
-				{
-					BuyMarket(Volume);
-					LogInfo($"Long entry: ADX = {currentAdx}, Avg = {_avgAdx}, StdDev = {_stdDevAdx}, +DI > -DI");
-				}
-				else
-				{
-					SellMarket(Volume);
-					LogInfo($"Short entry: ADX = {currentAdx}, Avg = {_avgAdx}, StdDev = {_stdDevAdx}, +DI < -DI");
-				}
-			}
-			// ADX is significantly above its average - mean reversion expects it to fall
-			// This could indicate a period of high trend strength that might weaken
-			else if (currentAdx > _avgAdx + DeviationMultiplier * _stdDevAdx)
-			{
-				// For high ADX values, we're more cautious and might want to go against the direction
-				// as extremely high ADX may indicate trend exhaustion
-				if (direction == Sides.Sell)
-				{
-					BuyMarket(Volume);
-					LogInfo($"Long entry (trend strength exhaustion): ADX = {currentAdx}, Avg = {_avgAdx}, StdDev = {_stdDevAdx}");
-				}
-				else
-				{
-					SellMarket(Volume);
-					LogInfo($"Short entry (trend strength exhaustion): ADX = {currentAdx}, Avg = {_avgAdx}, StdDev = {_stdDevAdx}");
-				}
-			}
-		}
-		// Check for exit conditions
-		else if (Position > 0) // Long position
-		{
-			if (currentAdx > _avgAdx)
-			{
-				ClosePosition();
-				LogInfo($"Long exit: ADX = {currentAdx}, Avg = {_avgAdx}");
-			}
-		}
-		else if (Position < 0) // Short position
-		{
-			if (currentAdx < _avgAdx)
-			{
-				ClosePosition();
-				LogInfo($"Short exit: ADX = {currentAdx}, Avg = {_avgAdx}");
-			}
-		}
-	}
-
-	private void UpdateAdxStatistics(decimal currentAdx)
-	{
-		// Add current value to the queue
-		_adxValues.Enqueue(currentAdx);
-		_sumAdx += currentAdx;
-		_sumSquaresAdx += currentAdx * currentAdx;
-		_count++;
-
-		// If queue is larger than period, remove oldest value
-		if (_adxValues.Count > AveragePeriod)
-		{
-			var oldestAdx = _adxValues.Dequeue();
-			_sumAdx -= oldestAdx;
-			_sumSquaresAdx -= oldestAdx * oldestAdx;
-			_count--;
-		}
-
-		// Calculate average and standard deviation
-		if (_count > 0)
-		{
-			_avgAdx = _sumAdx / _count;
-			
-			if (_count > 1)
-			{
-				var variance = (_sumSquaresAdx - (_sumAdx * _sumAdx) / _count) / (_count - 1);
-				_stdDevAdx = variance <= 0 ? 0 : (decimal)Math.Sqrt((double)variance);
-			}
-			else
-			{
-				_stdDevAdx = 0;
-			}
-		}
+		if (value < lower && close < ma && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (value > upper && close > ma && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
+		else if (Position > 0 && value > mean)
+			SellMarket(Position);
+		else if (Position < 0 && value < mean)
+			BuyMarket(-Position);
 	}
 }

@@ -16,7 +16,11 @@
 - **止损**：是，按百分比
 - **默认值**:
   - `CandleType` = 15分钟
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `BollingerPeriod` = 20
+  - `BollingerDeviation` = 2
+  - `RsiPeriod` = 14
+    收盘价高于上轨且高于上一次上轨外的收盘价，而RSI低于当时的值，即为看跌背离并做空；下轨下方的镜像情形做多，并反转相反持仓。价格收回通道内或RSI回穿50时平仓。
 - **过滤器**:
   - 类别：均值回归
   - 方向：双向

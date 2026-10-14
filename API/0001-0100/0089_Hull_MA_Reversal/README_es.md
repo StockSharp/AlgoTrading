@@ -18,6 +18,7 @@ Las salidas dependen de ese stop de protección, capturando una porción del mov
 - **Valores predeterminados**:
   - `HmaPeriod` = 9
   - `AtrMultiplier` = 2 ATR
+    El stop se coloca este número de ATR (periodo 14) más allá del mínimo de la vela de entrada en un largo o de su máximo en un corto, y se comprueba al cierre de las velas; un giro en sentido contrario invierte la posición.
   - `CandleType` = 15 minute
 - **Filtros**:
   - Categoría: Seguimiento de tendencia

@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\..\common.props" />
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <Nullable>disable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The examples import these assemblies through clr.AddReference; they are resolved from
+         this output directory, as they are for the tests. -->
+    <ProjectReference Include="$(StockSharpDir)Algo.Indicators\Algo.Indicators.csproj" />
+    <ProjectReference Include="$(StockSharpDir)Algo.Strategies\Algo.Strategies.csproj" />
+    <ProjectReference Include="$(StockSharpDir)Algo.Compilation\Algo.Compilation.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -18,7 +18,10 @@ A tight percent stop protects the position, and trades exit if volume fails to d
 - **Stops**: Yes, percent based
 - **Default Values**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `MaPeriod` = 20
+  - `VolumeMultiplier` = 2
+  - `StopLossPercent` = 2
+    A climax is a candle that closes with the trend (bullish above the MaPeriod SMA, bearish below it) on volume above VolumeMultiplier times the average of the previous MaPeriod candles. The next candle closing the other way starts the trade against the move. The trade exits when a close passes the climax extreme, when volume spikes again, or at the percent stop.
 - **Filters**:
   - Category: Volume
   - Direction: Both

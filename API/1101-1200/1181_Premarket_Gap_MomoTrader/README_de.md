@@ -1,28 +1,32 @@
-# Premarket Gap MomoTrader Strategie
+# Premarket Gap MomoTrader
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-Diese Strategie handelt einen einzelnen Long-Ausbruch während der Vorbörsensitzung, wenn die aktuelle Kerze mindestens einen angegebenen Prozentsatz über dem vorherigen Schlusskurs gewinnt, eine bullishe Kerze mit ausreichend Volumen druckt und der Kerzenkörper einen großen Teil seiner Spanne einnimmt. Die Positionsgröße wird je nach Körpergröße skaliert.
+Kerzenmomentum ausschließlich Long, mit einem Einstieg pro New Yorker Kalenderdatum. „Gap“ bezeichnet den Schlusskursanstieg zum vorherigen Schlusskurs; eine Übernacht-Kurslücke oder EMA-Kreuzung ist nicht erforderlich.
 
-Nach dem Einstieg hält die Strategie die Position, solange die nächsten Kerzen bullish bleiben und ihr Volumen zunimmt. Eine rote Kerze oder nicht zunehmendes Volumen schließt die Position. Pro Tag ist nur ein Trade erlaubt und der Handel kann auf die Sitzung 04:00–09:30 beschränkt werden.
+## Einstieg und Größe
 
-## Details
+Nur abgeschlossene Kerzen, standardmäßig fünf Minuten. Die erste speichert Schlusskurs und Volumen. Aus der Nullposition sind eine strikt bullische Kerze, positive Hoch-Tief-Spanne, Gesamtvolumen > `MinVolume`, positiver vorheriger Schlusskurs und `100 * (close - previousClose) / previousClose >= MinGainPct` erforderlich.
 
-- **Einstiegskriterien**:
-  - Gewinn der aktuellen Kerze ≥ `MinGainPct` im Vergleich zum vorherigen Schluss.
-  - Kerze ist grün und `Volume` > `MinVolume`.
-  - Körperprozent definiert Positionsgröße: ≥90% → 100%, ≥85% → 50%, ≥75% → 25%.
-  - Optionaler Sitzungsfilter 04:00–09:30 wenn `UseSession` aktiviert ist.
-- **Ausstiegskriterien**:
-  - Erste rote Kerze oder Kerze mit nicht zunehmendem Volumen nach dem Einstieg.
-- **Stops**: Nein.
-- **Standardwerte**:
-  - `MinGainPct` = 5.
-  - `MinVolume` = 15000.
-  - `UseSession` = true.
-- **Filter**:
-  - Kategorie: Momentum
-  - Richtung: Long
-  - Indikatoren: Keine
-  - Stops: Nein
-  - Komplexität: Mittel
-  - Zeitrahmen: Intraday
+`bodyPercent = 100 * (close - open) / (high - low)`: ≥90% fordert 100% des Strategie-`Volume`, ≥85% und <90% fordert 50%, ≥75% und <85% fordert 25%; unter 75% kein Einstieg. Die unteren Grenzen sind inklusive.
+
+Ein vorhandener positiver `VolumeStep` rundet die Ordergröße nach unten. Nullgrößen oder Größen außerhalb angegebener Instrument-Minima/Maxima werden abgelehnt. Bestehende Positionen werden nicht vergrößert.
+
+Mit `UseSession=true` muss die Einreichung in New Yorker Zeit innerhalb `[SessionStart, SessionEnd)` liegen, standardmäßig 04:00–09:30, einschließlich Sommerzeitumstellung. Auch ohne Sitzungsfilter gilt ein Einstieg pro Datum. Eine eingereichte Einstiegsorder verbraucht das Tagesrecht, selbst bei anschließendem Fehler.
+
+## Halten und Ausstieg
+
+Die erste rote Kerze (`close < open`) oder Kerze mit `volume <= previousVolume` schließt die gesamte tatsächliche Longposition. Bullische Kerzen mit steigendem Volumen halten; ein Doji hält ebenfalls bei steigendem Volumen. Ausstiege gelten außerhalb der Einstiegssitzung und unabhängig von Einstiegsanstieg, Körperanteil und Mindestvolumen. Auf der Ausstiegskerze gibt es keinen neuen Einstieg. Ausstehende Orders verhindern Duplikate, während vorherige Werte bei jeder abgeschlossenen Kerze aktualisiert werden.
+
+Keine Indikatoren, Short-Einstiege, sechsstündige Wartezeit oder gesonderte Stop-Loss-/Take-Profit-Regeln. Ein weiterer Einstieg braucht das nächste geeignete New Yorker Datum.
+
+## Standardwerte
+
+| Parameter | Standard | Bedeutung |
+|---|---:|---|
+| `MinGainPct` | 5 | Inklusive Mindeststeigerung in Prozent; nicht negativ |
+| `MinVolume` | 15000 | Strikte Volumenuntergrenze; nicht negativ, in Dateneinheiten |
+| `UseSession` | true | Zeitfilter für Einstiege; C#-Eigenschaft `IsUseSession` |
+| `SessionStart` / `SessionEnd` | 04:00 / 09:30 | Geordnete Zeiten eines New Yorker Tages; Beginn inklusive, Ende exklusiv |
+| `CandleType` | 5 Minuten | Abgeschlossene Signalkerzen |
+
+Tests anhand des vorhandenen BTC/TON-Archivs prüfen jede Order und tatsächliche Position, drei Größenstufen, Lotrundung, Tageslimit, beide Ausstiegsgründe, Haltefälle und New Yorker Sommerzeit im Frühjahr. TON liefert eine passende Kerze mit den veröffentlichten 5%/15000; BTC-Mechaniktests ändern Schwellen ausdrücklich. Rentabilität wird nicht nachgewiesen.

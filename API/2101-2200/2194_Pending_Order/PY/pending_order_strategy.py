@@ -11,8 +11,8 @@ from StockSharp.Algo.Strategies import Strategy
 class pending_order_strategy(Strategy):
     def __init__(self):
         super(pending_order_strategy, self).__init__()
-        self._distance = self.Param("Distance", 50.0).SetDisplay("Distance", "Offset from prev candle range for entry", "General")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))).SetDisplay("Candle Type", "Candle type", "General")
+        self._distance = self.Param("Distance", 15.0).SetDisplay("Distance", "Offset from prev candle range for entry", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Candle type", "General")
         self._prev_high = None
         self._prev_low = None
     @property

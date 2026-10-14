@@ -19,8 +19,11 @@ Trader, die systematische Ansätze bevorzugen, können den Kalman Filter nützli
   - **Short**: Ausstieg bei Schluss > Kalman Filter
 - **Stops**: Ja, ATR-basierter Stop-Loss.
 - **Standardwerte**:
-  - `ProcessNoise` = 0.01m
-  - `MeasurementNoise` = 0.1m
+  - `ProcessNoise` = 0.01
+  - `MeasurementNoise` = 0.1
+  - `AtrPeriod` = 14
+  - `AtrMultiplier` = 2
+    Ein Einstieg auf der anderen Seite der Linie dreht die Position. Der Stop liegt AtrMultiplier mal die ATR über AtrPeriod vom Einstiegsschluss entfernt und wird bei Kerzenschluss geprüft; danach eröffnet der nächste Schluss jenseits der Linie eine neue Position. 0 schaltet ihn ab.
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **Filter**:
   - Kategorie: Trend

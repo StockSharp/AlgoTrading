@@ -39,9 +39,9 @@ public class Fast2CrossoverStrategy : Strategy
 
 	public Fast2CrossoverStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame());
-		_fastLength = Param(nameof(FastLength), 5).SetDisplay("Fast length", "Fast length", "General");
-		_slowLength = Param(nameof(SlowLength), 13).SetDisplay("Slow length", "Slow length", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame());
+		_fastLength = Param(nameof(FastLength), 3).SetDisplay("Fast length", "Fast length", "General");
+		_slowLength = Param(nameof(SlowLength), 9).SetDisplay("Slow length", "Slow length", "General");
 	}
 
 	/// <inheritdoc />

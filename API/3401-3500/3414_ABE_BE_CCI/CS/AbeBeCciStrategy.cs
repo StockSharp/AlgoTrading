@@ -32,7 +32,7 @@ public class AbeBeCciStrategy : Strategy
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
-		_cciPeriod = Param(nameof(CciPeriod), 14)
+		_cciPeriod = Param(nameof(CciPeriod), 49)
 			.SetGreaterThanZero()
 			.SetDisplay("CCI Period", "CCI period", "Indicators");
 		_entryLevel = Param(nameof(EntryLevel), 100m)

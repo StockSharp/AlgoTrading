@@ -16,9 +16,9 @@ class universal_trailing_stop_hedge_strategy(Strategy):
         super(universal_trailing_stop_hedge_strategy, self).__init__()
         self._atr_period = self.Param("AtrPeriod", 14) \
             .SetDisplay("ATR Period", "ATR calculation period", "Indicators")
-        self._atr_multiplier = self.Param("AtrMultiplier", 2.0) \
+        self._atr_multiplier = self.Param("AtrMultiplier", 1.0) \
             .SetDisplay("ATR Multiplier", "ATR multiplier for stop distance", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Timeframe for calculations", "General")
         self._entry_price = 0.0
         self._trailing_stop = 0.0

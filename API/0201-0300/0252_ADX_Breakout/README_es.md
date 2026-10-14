@@ -18,9 +18,10 @@ Este sistema se adapta a traders de momentum que buscan rupturas tempranas. Las 
 - **Valores predeterminados**:
   - `ADXPeriod` = 14
   - `AvgPeriod` = 20
-  - `Multiplier` = 0.1m
+  - `Multiplier` = 0.1
   - `CandleType` = TimeSpan.FromMinutes(5)
-  - `StopLoss` = 2.0m
+  - `StopLossPercent` = 2
+    Avg y StdDev son la media y la desviación estándar de los últimos AvgPeriod valores de ADX, incluido el actual. El stop es un StopLossPercent fijo del precio de entrada, vigilado también entre velas; 0 lo desactiva. La banda es la media más Multiplier desviaciones estándar: el ADX por encima de ella en una vela alcista abre un largo y en una vela bajista un corto, y la posición se cierra cuando el ADX vuelve por debajo de su media. Una señal de entrada contra una posición abierta la invierte.
 - **Filtros**:
   - Categoría: Ruptura
   - Dirección: Ambos

@@ -31,11 +31,11 @@ public class HorizontalRayStrategy : Strategy
 
 	public HorizontalRayStrategy()
 	{
-		_fastLength = Param(nameof(FastLength), 10)
+		_fastLength = Param(nameof(FastLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast Length", "Fast SMA length", "General");
 
-		_slowLength = Param(nameof(SlowLength), 20)
+		_slowLength = Param(nameof(SlowLength), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Length", "Slow SMA length", "General");
 

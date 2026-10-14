@@ -7,7 +7,7 @@ Testing indicates an average annual return of about 70%. It performs best in the
 
 MACD swings highlight momentum shifts; CCI helps time pullback entries in that direction. Both long and short trades are possible.
 
-Traders who blend momentum with oscillators may like this technique. Risk control uses an ATR stop.
+Traders who blend momentum with oscillators may like this technique. Risk control uses a percent stop.
 
 ## Details
 
@@ -16,7 +16,7 @@ Traders who blend momentum with oscillators may like this technique. Risk contro
   - Short: `MACD < Signal && CCI > CciOverbought`
 - **Long/Short**: Both
 - **Exit Criteria**: MACD cross in opposite direction
-- **Stops**: Percent-based using `StopLoss`
+- **Stops**: Percent-based using `StopLossPercent`
 - **Default Values**:
   - `FastPeriod` = 12
   - `SlowPeriod` = 26
@@ -24,8 +24,9 @@ Traders who blend momentum with oscillators may like this technique. Risk contro
   - `CciPeriod` = 20
   - `CciOversold` = -100m
   - `CciOverbought` = 100m
-  - `StopLoss` = new Unit(2, UnitTypes.Percent)
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    An entry signal against an open position reverses it.
 - **Filters**:
   - Category: Mean reversion
   - Direction: Both

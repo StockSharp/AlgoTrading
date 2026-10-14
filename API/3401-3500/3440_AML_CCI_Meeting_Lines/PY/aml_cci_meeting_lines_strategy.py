@@ -22,7 +22,7 @@ class aml_cci_meeting_lines_strategy(Strategy):
 
         self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Candle timeframe", "General")
-        self._cci_period = self.Param("CciPeriod", 14) \
+        self._cci_period = self.Param("CciPeriod", 18) \
             .SetGreaterThanZero() \
             .SetDisplay("CCI Period", "CCI period", "Indicators")
         self._cci_low = self.Param("CciLow", -50.0) \

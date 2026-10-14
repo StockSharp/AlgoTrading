@@ -71,7 +71,7 @@ public class ProMartMacdMartingaleStrategy : Strategy
 
 	public ProMartMacdMartingaleStrategy()
 	{
-		_maxDoublingCount = Param(nameof(MaxDoublingCount), 2)
+		_maxDoublingCount = Param(nameof(MaxDoublingCount), 1)
 			.SetNotNegative()
 			.SetDisplay("Max Doubling", "Maximum number of volume doublings after losses.", "Risk");
 

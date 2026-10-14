@@ -53,7 +53,7 @@ public class MaSarAdxStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("SAR Max", "Maximum acceleration factor", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for strategy", "General");
 
 		_cooldownBars = Param(nameof(CooldownBars), 3)

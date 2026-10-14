@@ -5,14 +5,14 @@ Die RSI Donchian Strategie sucht nach Momentum-Extremen, die mit Ausbrüchen aus
 
 Tests zeigen eine durchschnittliche Jahresrendite von etwa 82%. Sie funktioniert am besten auf dem Aktienmarkt.
 
-Ein Kaufsignal erscheint, wenn der RSI unter 30 fällt und der Preis über das obere Donchian-Band bricht. Ein Short-Signal entsteht, wenn der RSI über 70 steigt und der Preis durch das untere Band fällt. Ausstiege erfolgen, sobald der Preis zur Donchian-Mittellinie zurückkehrt, was eine Rückkehr zum Gleichgewicht signalisiert.
+Ein Kaufsignal erscheint, wenn der RSI über RsiOverbought liegt, während der Preis über das obere Donchian-Band bricht. Ein Short-Signal entsteht, wenn der RSI unter RsiOversold liegt, während der Preis durch das untere Band fällt. Ausstiege erfolgen, sobald der Preis zur Donchian-Mittellinie zurückkehrt, was eine Rückkehr zum Gleichgewicht signalisiert.
 
-Diese Methode eignet sich gut für aktive Trader, die gegen Erschöpfungsbewegungen handeln möchten, aber dennoch mit klaren Ausbruch-Levels agieren. Der Stop-Loss hilft, das Risiko zu begrenzen, wenn das Momentum nicht schnell umkehrt.
+Diese Methode eignet sich gut für aktive Trader, die starkem Momentum folgen möchten, aber dennoch mit klaren Ausbruch-Levels agieren. Der Stop-Loss hilft, das Risiko zu begrenzen, wenn das Momentum nicht schnell umkehrt.
 
 ## Details
 - **Einstiegskriterien**:
-  - **Long**: RSI < 30 && Close > Donchian High
-  - **Short**: RSI > 70 && Close < Donchian Low
+  - **Long**: RSI > RsiOverbought && Close > Donchian High
+  - **Short**: RSI < RsiOversold && Close < Donchian Low
 - **Long/Short**: Beide Seiten.
 - **Ausstiegskriterien**:
   - **Long**: Ausstieg, wenn close < Donchian Middle
@@ -21,7 +21,10 @@ Diese Methode eignet sich gut für aktive Trader, die gegen Erschöpfungsbewegun
 - **Standardwerte**:
   - `RsiPeriod` = 14
   - `DonchianPeriod` = 20
-  - `StopLossPercent` = 2m
+  - `RsiOverbought` = 70
+  - `RsiOversold` = 30
+  - `StopLossPercent` = 2
+    Der Kanal ist das Hoch und Tief der vorherigen DonchianPeriod Kerzen, seine Mitte liegt genau dazwischen. Ein Ausbruch nach oben wird bestätigt, wenn der RSI über RsiOverbought liegt, einer nach unten, wenn er unter RsiOversold liegt; die umgekehrte Lesart, ein überverkaufter RSI bei einem Schluss über dem Kanal, kommt praktisch nicht vor. Der Stop liegt bei festen StopLossPercent vom Einstiegspreis und wird auch zwischen den Kerzen überwacht. Ein Einstiegssignal gegen eine offene Position dreht sie.
   - `CandleType` = TimeSpan.FromMinutes(15)
 - **Filter**:
   - Kategorie: Gemischt

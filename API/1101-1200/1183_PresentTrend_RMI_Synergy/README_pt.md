@@ -1,30 +1,31 @@
-# Estratégia PresentTrend RMI Synergy
+# PresentTrend RMI Synergy
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
-PresentTrend RMI Synergy combina um filtro de momentum baseado em RSI com um trailing stop ATR no estilo SuperTrend. As entradas ocorrem quando o momentum supera os limites e o preço está alinhado com a tendência. O stop segue dinamicamente o preço usando uma média móvel e uma banda ATR.
+RMI nativo alinhado à SMA do fechamento, seguido de stop de preço SMA/ATR que só aperta a proteção. Não afirma lucratividade.
 
-Os backtests mostram desempenho estável em mercados de tendência como cripto.
+## Indicadores e entrada
 
-## Detalhes
+Candles concluídos de cinco minutos por padrão. RMI nativo usa `d[t]=close[t]-close[t-RmiMomentum]`, lag3. Nos últimos `RmiPeriod=21` impulsos, U é a média dos d positivos (zero nos demais), D a média dos módulos dos d negativos (zero nos demais). `RMI=100*U/(U+D)`; denominador zero não fornece entrada. É o cálculo nativo de impulso relativo com médias móveis.
 
-- **Critérios de entrada**: RMI acima de 60 com preço acima da média móvel para comprados; RMI abaixo de 40 com preço abaixo da média móvel para vendidos.
-- **Comprado/Vendido**: Ambas as direções.
-- **Critérios de saída**: Trailing stop baseado em ATR.
-- **Stops**: Sim.
-- **Valores padrão**:
-  - `RmiPeriod` = 21
-  - `SuperTrendLength` = 5
-  - `SuperTrendMultiplier` = 4.0m
-  - `Direction` = TradeDirection.Both
-  - `CandleType` = TimeSpan.FromMinutes(5)
-- **Filtros**:
-  - Categoria: Tendência
-  - Direção: Ambos
-  - Indicadores: RSI, ATR, SMA
-  - Stops: Sim
-  - Complexidade: Intermediário
-  - Período: Intradiário
-  - Sazonalidade: Não
-  - Redes neurais: Não
-  - Divergência: Não
-  - Nível de risco: Médio
+SMA do fechamento e ATR Wilder nativo compartilham `SuperTrendLength=5`. ATR inclui gaps ao fechamento anterior, inicia com média crescente e depois Wilder. Após formar os três indicadores, entra somente de zero: compra se RMI>60 e close>SMA; venda se RMI<40 e close<SMA. Ordem a mercado de `Volume`. Uma posição aberta ignora novos sinais de entrada.
+
+`Direction` é filtro opcional tipado `Sides`: `null` em C#/`None` em Python permite ambos; `Sides.Buy` apenas comprado, `Sides.Sell` apenas vendido. Filtra entradas; o stop sempre fecha o lado real. Sem códigos numéricos ou strings de direção.
+
+## Stop móvel
+
+`width=SuperTrendMultiplier*ATR`, multiplicador padrão4. Compra inicializa stop=`SMA-width`; cada candle posterior usa `max(previousStop,SMA-width)`. Venda inicializa `SMA+width` e usa `min(previousStop,SMA+width)`. Nunca afrouxa. Nasce da SMA/ATR do sinal, independente da execução; os nomes SuperTrend preservados configuram estas bandas centradas em SMA.
+
+Bid positivo≤stop comprado ou ask positivo≥stop vendido fecha toda a posição real a mercado. Após atualizar também verifica close; atingir o novo nível pode fechar imediatamente. Cotações entre candles podem disparar. O novo stop vale para preço observado atual/futuro, sem aplicar ao high/low anterior do candle. SMA/ATR pode continuar atualizando proteção com RMI vazio.
+
+É monitoramento local: proteção por cotações entre candles exige Level1 bid/ask; sem elas continuam os fechamentos. Não envia stop nativo à bolsa; execução pode diferir do limiar. Ordem pendente bloqueia duplicados, mas indicadores/stop avançam. O candle de saída não reentra; um posterior elegível pode. Sem EMA, espera de seis horas, inversão imediata por sinal oposto ou take-profit separado.
+
+| Parâmetro | Padrão |
+|---|---:|
+| `RmiPeriod` | 21, positivo |
+| `RmiMomentum` | 3, lag positivo do fechamento |
+| `SuperTrendLength` | 5, período positivo compartilhado SMA/ATR |
+| `SuperTrendMultiplier` | 4, largura ATR positiva |
+| `Direction` | Sem valor: ambos |
+| `CandleType` | 5 minutos |
+
+Testes C# e Python calculam independentemente somas de impulso, SMA, ATR Wilder e stops no arquivo BTC/TON existente. Verificam cada entrada, saída a preço executável e posição real, ambos os lados/filtros, sinais opostos mantidos, stops apertados entre candles e entradas com menos de seis horas.

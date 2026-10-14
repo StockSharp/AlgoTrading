@@ -19,8 +19,8 @@ class macd_power_strategy(Strategy):
         super(macd_power_strategy, self).__init__()
         self._fast_period = self.Param("FastPeriod", 12).SetDisplay("Fast Period", "Fast EMA period", "Indicator")
         self._slow_period = self.Param("SlowPeriod", 50).SetDisplay("Slow Period", "Slow EMA period", "Indicator")
-        self._stop_loss_points = self.Param("StopLossPoints", 200).SetDisplay("Stop Loss", "Stop-loss in price steps", "Risk")
-        self._take_profit_points = self.Param("TakeProfitPoints", 400).SetDisplay("Take Profit", "Take-profit in price steps", "Risk")
+        self._stop_loss_points = self.Param("StopLossPoints", 20).SetDisplay("Stop Loss", "Stop-loss in price steps", "Risk")
+        self._take_profit_points = self.Param("TakeProfitPoints", 50).SetDisplay("Take Profit", "Take-profit in price steps", "Risk")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Candles", "General")
 
         self._prev_fast = 0.0

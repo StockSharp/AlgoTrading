@@ -21,8 +21,10 @@ This system appeals to traders looking for opportunities during low-trend enviro
 - **Default Values**:
   - `AdxPeriod` = 14
   - `AveragePeriod` = 20
-  - `DeviationMultiplier` = 2m
+  - `DeviationMultiplier` = 2
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
+    Avg and StdDev are the average and the standard deviation of the last AveragePeriod ADX values, the current one included, and MA is the simple moving average of the last AveragePeriod closes. The stop is a fixed StopLossPercent of the entry price, watched between candles as well; 0 disables it. An entry signal against an open position reverses it.
 - **Filters**:
   - Category: Mean Reversion
   - Direction: Both

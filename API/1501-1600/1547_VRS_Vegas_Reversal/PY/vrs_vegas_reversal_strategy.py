@@ -15,7 +15,7 @@ class vrs_vegas_reversal_strategy(Strategy):
         super(vrs_vegas_reversal_strategy, self).__init__()
         self._spike_percent = self.Param("SpikePercent", 0.025) \
             .SetDisplay("Spike %", "Spike percentage threshold", "Reversal")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
         self._entry_price = 0.0
         self._spike_size = 0.0

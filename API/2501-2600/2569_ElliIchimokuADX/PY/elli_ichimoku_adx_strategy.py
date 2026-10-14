@@ -21,9 +21,9 @@ class elli_ichimoku_adx_strategy(Strategy):
         self._kijun_period = self.Param("KijunPeriod", 60)
         self._senkou_span_b_period = self.Param("SenkouSpanBPeriod", 120)
         self._adx_period = self.Param("AdxPeriod", 10)
-        self._plus_di_high_threshold = self.Param("PlusDiHighThreshold", 10.0)
-        self._plus_di_low_threshold = self.Param("PlusDiLowThreshold", 8.0)
-        self._baseline_distance_threshold = self.Param("BaselineDistanceThreshold", 5.0)
+        self._plus_di_high_threshold = self.Param("PlusDiHighThreshold", 13.0)
+        self._plus_di_low_threshold = self.Param("PlusDiLowThreshold", 6.0)
+        self._baseline_distance_threshold = self.Param("BaselineDistanceThreshold", 20.0)
         self._ichimoku_candle_type = self.Param("IchimokuCandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30)))
         self._adx_candle_type = self.Param("AdxCandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5)))
 

@@ -20,9 +20,10 @@ La estrategia beneficia a los traders que observan el agotamiento después de lo
 - **Stops**: Sí, stop-loss porcentual.
 - **Valores predeterminados**:
   - `AveragePeriod` = 20
-  - `DeviationMultiplier` = 2m
+  - `DeviationMultiplier` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
-  - `StopLossPercent` = 2m
+  - `StopLossPercent` = 2
+    Avg y StdDev son la media y la desviación estándar de los últimos AveragePeriod valores de volumen, incluido el actual, y MA es la media móvil simple de los últimos AveragePeriod cierres. El stop es un StopLossPercent fijo del precio de entrada, vigilado también entre velas; 0 lo desactiva. Una señal de entrada contra una posición abierta la invierte.
 - **Filtros**:
   - Categoría: Reversión a la media
   - Dirección: Ambos

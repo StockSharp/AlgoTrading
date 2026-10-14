@@ -5,68 +5,98 @@ using System.Collections.Generic;
 
 using Ecng.Common;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 /// <summary>
 /// Opening Range Breakout Strategy.
-/// Tracks recent high/low range using BB and trades breakouts.
-/// Uses EMA as trend filter to determine direction.
+/// Candles opening during the first RangeMinutes after SessionStart (UTC) form the opening range. Afterwards, a close above the
+/// range high plus EntryBuffer buys and a close below the range low minus EntryBuffer sells, once per session. The stop sits
+/// on the opposite side of the range and the target is RewardRisk times the risk away from the entry.
 /// </summary>
 public class OpeningRangeBreakoutStrategy : Strategy
 {
+	private readonly StrategyParam<int> _rangeMinutes;
+	private readonly StrategyParam<decimal> _rewardRisk;
+	private readonly StrategyParam<decimal> _entryBuffer;
+	private readonly StrategyParam<TimeSpan> _sessionStart;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _bbLength;
-	private readonly StrategyParam<int> _emaLength;
-	private readonly StrategyParam<int> _cooldownBars;
 
-	private BollingerBands _bb;
-	private ExponentialMovingAverage _ema;
+	private DateTime? _sessionDate;
+	private decimal? _rangeHigh;
+	private decimal? _rangeLow;
+	private bool _tradedToday;
+	private decimal? _stopPrice;
+	private decimal? _targetPrice;
 
-	private int _cooldownRemaining;
-	private decimal _entryPrice;
+	/// <summary>
+	/// Length of the opening range in minutes.
+	/// </summary>
+	public int RangeMinutes
+	{
+		get => _rangeMinutes.Value;
+		set => _rangeMinutes.Value = value;
+	}
 
+	/// <summary>
+	/// Target distance as a multiple of the risk.
+	/// </summary>
+	public decimal RewardRisk
+	{
+		get => _rewardRisk.Value;
+		set => _rewardRisk.Value = value;
+	}
+
+	/// <summary>
+	/// Price buffer beyond the range required for a breakout.
+	/// </summary>
+	public decimal EntryBuffer
+	{
+		get => _entryBuffer.Value;
+		set => _entryBuffer.Value = value;
+	}
+
+	/// <summary>
+	/// Session start time (UTC).
+	/// </summary>
+	public TimeSpan SessionStart
+	{
+		get => _sessionStart.Value;
+		set => _sessionStart.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
+	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	public int BbLength
-	{
-		get => _bbLength.Value;
-		set => _bbLength.Value = value;
-	}
-
-	public int EmaLength
-	{
-		get => _emaLength.Value;
-		set => _emaLength.Value = value;
-	}
-
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
+	/// <summary>
+	/// Constructor.
+	/// </summary>
 	public OpeningRangeBreakoutStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_rangeMinutes = Param(nameof(RangeMinutes), 15)
+			.SetGreaterThanZero()
+			.SetDisplay("Range Minutes", "Length of the opening range in minutes", "Session");
+
+		_rewardRisk = Param(nameof(RewardRisk), 2.0m)
+			.SetGreaterThanZero()
+			.SetDisplay("Reward/Risk", "Target distance as a multiple of the risk", "Risk");
+
+		_entryBuffer = Param(nameof(EntryBuffer), 0.0001m)
+			.SetNotNegative()
+			.SetDisplay("Entry Buffer", "Price buffer beyond the range required for a breakout", "Trading");
+
+		_sessionStart = Param(nameof(SessionStart), new TimeSpan(8, 0, 0))
+			.SetDisplay("Session Start", "Session start time (UTC)", "Session");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_bbLength = Param(nameof(BbLength), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("BB Length", "Bollinger Bands period", "Indicators");
-
-		_emaLength = Param(nameof(EmaLength), 50)
-			.SetGreaterThanZero()
-			.SetDisplay("EMA Length", "EMA trend filter period", "Indicators");
-
-		_cooldownBars = Param(nameof(CooldownBars), 10)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "Risk");
 	}
 
 	/// <inheritdoc />
@@ -77,11 +107,17 @@ public class OpeningRangeBreakoutStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		ResetState();
+	}
 
-		_bb = null;
-		_ema = null;
-		_cooldownRemaining = 0;
-		_entryPrice = 0;
+	private void ResetState()
+	{
+		_sessionDate = null;
+		_rangeHigh = null;
+		_rangeLow = null;
+		_tradedToday = false;
+		_stopPrice = null;
+		_targetPrice = null;
 	}
 
 	/// <inheritdoc />
@@ -89,83 +125,91 @@ public class OpeningRangeBreakoutStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_bb = new BollingerBands { Length = BbLength, Width = 2m };
-		_ema = new ExponentialMovingAverage { Length = EmaLength };
+		ResetState();
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_bb, _ema, OnProcess)
+			.Bind(ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _bb);
-			DrawIndicator(area, _ema);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void OnProcess(ICandleMessage candle, IIndicatorValue bbValue, IIndicatorValue emaValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_bb.IsFormed || !_ema.IsFormed)
-			return;
+		var openTime = candle.OpenTime;
+		var date = openTime.Date;
 
-		if (bbValue.IsEmpty || emaValue.IsEmpty)
-			return;
+		if (_sessionDate != date)
+		{
+			_sessionDate = date;
+			_rangeHigh = null;
+			_rangeLow = null;
+			_tradedToday = false;
+		}
 
-		var bb = (BollingerBandsValue)bbValue;
-		if (bb.UpBand is not decimal upper || bb.LowBand is not decimal lower || bb.MovingAverage is not decimal mid)
-			return;
+		var rangeStart = date + SessionStart;
+		var rangeEnd = rangeStart + TimeSpan.FromMinutes(RangeMinutes);
 
-		var emaVal = emaValue.ToDecimal();
+		if (openTime >= rangeStart && openTime < rangeEnd)
+		{
+			_rangeHigh = _rangeHigh is decimal h ? Math.Max(h, candle.HighPrice) : candle.HighPrice;
+			_rangeLow = _rangeLow is decimal l ? Math.Min(l, candle.LowPrice) : candle.LowPrice;
+		}
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (_cooldownRemaining > 0)
+		if (Position > 0)
 		{
-			_cooldownRemaining--;
+			if ((_stopPrice is decimal stop && candle.LowPrice <= stop) || (_targetPrice is decimal target && candle.HighPrice >= target))
+			{
+				SellMarket(Position);
+				_stopPrice = null;
+				_targetPrice = null;
+			}
+
 			return;
 		}
 
-		var price = candle.ClosePrice;
+		if (Position < 0)
+		{
+			if ((_stopPrice is decimal stop && candle.HighPrice >= stop) || (_targetPrice is decimal target && candle.LowPrice <= target))
+			{
+				BuyMarket(-Position);
+				_stopPrice = null;
+				_targetPrice = null;
+			}
 
-		// Buy: price breaks above upper BB and above EMA (uptrend)
-		if (price > upper && price > emaVal && Position <= 0)
+			return;
+		}
+
+		if (_tradedToday || openTime < rangeEnd || _rangeHigh is not decimal high || _rangeLow is not decimal low)
+			return;
+
+		var close = candle.ClosePrice;
+
+		if (close > high + EntryBuffer)
 		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
 			BuyMarket(Volume);
-			_entryPrice = price;
-			_cooldownRemaining = CooldownBars;
+			_stopPrice = low;
+			_targetPrice = close + RewardRisk * (close - low);
+			_tradedToday = true;
 		}
-		// Sell: price breaks below lower BB and below EMA (downtrend)
-		else if (price < lower && price < emaVal && Position >= 0)
+		else if (close < low - EntryBuffer)
 		{
-			if (Position > 0)
-				SellMarket(Math.Abs(Position));
 			SellMarket(Volume);
-			_entryPrice = price;
-			_cooldownRemaining = CooldownBars;
-		}
-		// Exit long: price returns to mid BB
-		else if (Position > 0 && price < mid)
-		{
-			SellMarket(Math.Abs(Position));
-			_entryPrice = 0;
-			_cooldownRemaining = CooldownBars;
-		}
-		// Exit short: price returns to mid BB
-		else if (Position < 0 && price > mid)
-		{
-			BuyMarket(Math.Abs(Position));
-			_entryPrice = 0;
-			_cooldownRemaining = CooldownBars;
+			_stopPrice = high;
+			_targetPrice = close - RewardRisk * (high - close);
+			_tradedToday = true;
 		}
 	}
 }

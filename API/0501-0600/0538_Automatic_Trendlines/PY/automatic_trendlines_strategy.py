@@ -2,104 +2,138 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
-clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
-from StockSharp.Messages import CandleStates
-from StockSharp.Algo.Indicators import Highest, Lowest, ExponentialMovingAverage
+from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
+
 
 class automatic_trendlines_strategy(Strategy):
     """
-    Automatic Trendlines Strategy.
-    Uses Highest/Lowest channel breakouts with EMA trend filter.
+    Automatic trendlines strategy.
+    A pivot high is a high above the LeftBars candles before it and the RightBars candles after it, and a pivot low is the
+    mirror. The resistance line connects the last two pivot highs and the support line the last two pivot lows, both extended
+    to the current candle. A close crossing above resistance goes long and a close crossing below support goes short,
+    reversing an opposite position.
     """
 
     def __init__(self):
         super(automatic_trendlines_strategy, self).__init__()
-
-        self._candle_type = self.Param("CandleType", tf(1)) \
-            .SetDisplay("Candle type", "Candle type for strategy calculation", "General")
-        self._channel_length = self.Param("ChannelLength", 30) \
+        self._left_bars = self.Param("LeftBars", 100) \
             .SetGreaterThanZero() \
-            .SetDisplay("Channel Length", "Lookback for Highest/Lowest", "Indicators")
-        self._ema_length = self.Param("EmaLength", 50) \
+            .SetDisplay("Left Bars", "Candles before a pivot it must exceed", "Pivots")
+        self._right_bars = self.Param("RightBars", 15) \
             .SetGreaterThanZero() \
-            .SetDisplay("EMA Length", "EMA trend filter period", "Indicators")
-        self._cooldown_bars = self.Param("CooldownBars", 350) \
-            .SetDisplay("Cooldown Bars", "Bars between trades", "Trading")
+            .SetDisplay("Right Bars", "Candles after a pivot it must exceed", "Pivots")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
+            .SetDisplay("Candle Type", "Type of candles to use", "General")
 
-        self._prev_highest = 0.0
-        self._prev_lowest = 0.0
-        self._bar_index = 0
-        self._last_trade_bar = 0
+        self._reset_state()
 
     @property
-    def CandleType(self): return self._candle_type.Value
-    @CandleType.setter
-    def CandleType(self, v): self._candle_type.Value = v
-    @property
-    def ChannelLength(self): return self._channel_length.Value
-    @ChannelLength.setter
-    def ChannelLength(self, v): self._channel_length.Value = v
-    @property
-    def EmaLength(self): return self._ema_length.Value
-    @EmaLength.setter
-    def EmaLength(self, v): self._ema_length.Value = v
-    @property
-    def CooldownBars(self): return self._cooldown_bars.Value
-    @CooldownBars.setter
-    def CooldownBars(self, v): self._cooldown_bars.Value = v
+    def CandleType(self):
+        return self._candle_type.Value
+
+    def GetWorkingSecurities(self):
+        return [(self.Security, self.CandleType)]
+
+    def _reset_state(self):
+        self._window = []
+        self._bar_index = -1
+        self._last_high = None
+        self._prev_high = None
+        self._last_low = None
+        self._prev_low = None
+        self._prev_close = None
+        self._prev_resistance = None
+        self._prev_support = None
 
     def OnReseted(self):
         super(automatic_trendlines_strategy, self).OnReseted()
-        self._prev_highest = 0.0
-        self._prev_lowest = 0.0
-        self._bar_index = 0
-        self._last_trade_bar = 0
+        self._reset_state()
 
     def OnStarted2(self, time):
         super(automatic_trendlines_strategy, self).OnStarted2(time)
 
-        highest = Highest()
-        highest.Length = self.ChannelLength
-        lowest = Lowest()
-        lowest.Length = self.ChannelLength
-        ema = ExponentialMovingAverage()
-        ema.Length = self.EmaLength
+        self._reset_state()
 
         subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(highest, lowest, ema, self.ProcessCandle).Start()
+        subscription.Bind(self._process_candle).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, ema)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle, highest_value, lowest_value, ema_value):
+    def _process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
 
         self._bar_index += 1
-        cooldown_ok = self._bar_index - self._last_trade_bar > self.CooldownBars
+        self._window.append((float(candle.HighPrice), float(candle.LowPrice)))
+
+        size = self._left_bars.Value + self._right_bars.Value + 1
+        if len(self._window) > size:
+            self._window.pop(0)
+
+        if len(self._window) == size:
+            self._detect_pivots()
+
         close = float(candle.ClosePrice)
+        resistance = self._line_value(self._prev_high, self._last_high)
+        support = self._line_value(self._prev_low, self._last_low)
 
-        break_up = self._prev_highest > 0 and close > self._prev_highest and close > ema_value
-        break_down = self._prev_lowest > 0 and close < self._prev_lowest and close < ema_value
+        prev_close = self._prev_close
+        prev_resistance = self._prev_resistance
+        prev_support = self._prev_support
+        self._prev_close = close
+        self._prev_resistance = resistance
+        self._prev_support = support
 
-        if break_up and self.Position <= 0 and cooldown_ok:
-            self.BuyMarket()
-            self._last_trade_bar = self._bar_index
-        elif break_down and self.Position >= 0 and cooldown_ok:
-            self.SellMarket()
-            self._last_trade_bar = self._bar_index
+        if prev_close is None:
+            return
 
-        self._prev_highest = highest_value
-        self._prev_lowest = lowest_value
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
+        cross_up = resistance is not None and prev_resistance is not None and prev_close <= prev_resistance and close > resistance
+        cross_down = support is not None and prev_support is not None and prev_close >= prev_support and close < support
+
+        if cross_up and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+        elif cross_down and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
+
+    def _detect_pivots(self):
+        left = self._left_bars.Value
+        pivot_high, pivot_low = self._window[left]
+        is_high = True
+        is_low = True
+
+        for i in range(len(self._window)):
+            if i == left:
+                continue
+            if self._window[i][0] >= pivot_high:
+                is_high = False
+            if self._window[i][1] <= pivot_low:
+                is_low = False
+
+        pivot_index = self._bar_index - self._right_bars.Value
+
+        if is_high:
+            self._prev_high = self._last_high
+            self._last_high = (pivot_index, pivot_high)
+
+        if is_low:
+            self._prev_low = self._last_low
+            self._last_low = (pivot_index, pivot_low)
+
+    def _line_value(self, first, second):
+        if first is None or second is None or first[0] == second[0]:
+            return None
+        slope = (second[1] - first[1]) / (second[0] - first[0])
+        return second[1] + slope * (self._bar_index - second[0])
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return automatic_trendlines_strategy()

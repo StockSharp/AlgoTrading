@@ -19,9 +19,10 @@
 - **Значения по умолчанию**:
   - `VolumeAvgPeriod` = 20
   - `SupertrendPeriod` = 10
-  - `SupertrendMultiplier` = 3m
+  - `SupertrendMultiplier` = 3
   - `CandleType` = TimeSpan.FromMinutes(5)
-  - `StopLossPercent` = 2.0m
+  - `StopLossPercent` = 2
+    Avg(Volume) — средний объём предыдущих VolumeAvgPeriod свечей. Длинная позиция закрывается, как только Supertrend разворачивается вниз, короткая — когда он разворачивается вверх; стоп — фиксированный StopLossPercent от цены входа, он отслеживается и между свечами. Сигнал на вход против открытой позиции разворачивает её.
 - **Фильтры**:
   - Категория: Тренд
   - Направление: Оба

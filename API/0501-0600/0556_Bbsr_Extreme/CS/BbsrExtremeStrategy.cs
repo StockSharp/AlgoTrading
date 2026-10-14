@@ -102,11 +102,11 @@ public class BbsrExtremeStrategy : Strategy
 	/// </summary>
 	public BbsrExtremeStrategy()
 	{
-		_bollingerPeriod = Param(nameof(BollingerPeriod), 30)
+		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Period", "Bollinger Bands length", "Indicators");
 
-		_bollingerMultiplier = Param(nameof(BollingerMultiplier), 2.5m)
+		_bollingerMultiplier = Param(nameof(BollingerMultiplier), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Multiplier", "Standard deviation multiplier", "Indicators");
 
@@ -126,7 +126,7 @@ public class BbsrExtremeStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Profit Multiplier", "ATR multiplier for take profit", "Risk Management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 

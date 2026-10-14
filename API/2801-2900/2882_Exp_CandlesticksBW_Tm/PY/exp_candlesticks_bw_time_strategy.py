@@ -19,7 +19,7 @@ class exp_candlesticks_bw_time_strategy(Strategy):
 
     def __init__(self):
         super(exp_candlesticks_bw_time_strategy, self).__init__()
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Candles", "General")
         self._sma_length = self.Param("SmaLength", 34) \
             .SetDisplay("SMA Length", "Bill Williams median line proxy", "Indicators")

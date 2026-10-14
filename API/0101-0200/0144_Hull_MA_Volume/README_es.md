@@ -26,6 +26,7 @@ Este método está orientado a traders que observan una fuerte participación en
   - `StopLossAtr` = 2.0m
   - `AtrPeriod` = 14
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    AvgVolume es el volumen medio de las VolumePeriod velas anteriores. Una señal de entrada contra una posición abierta la invierte. El stop se comprueba en los cierres de vela.
 - **Filtros**:
   - Categoría: Ruptura
   - Dirección: Ambos

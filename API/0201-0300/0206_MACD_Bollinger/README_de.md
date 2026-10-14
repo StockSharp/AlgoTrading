@@ -21,9 +21,10 @@ Tests zeigen eine durchschnittliche Jahresrendite von etwa 55%. Die Strategie fu
   - `MacdSlow` = 26
   - `MacdSignal` = 9
   - `BollingerPeriod` = 20
-  - `BollingerDeviation` = 2.0m
+  - `BollingerDeviation` = 2
   - `AtrPeriod` = 14
-  - `AtrMultiplier` = 2m
+  - `AtrMultiplier` = 2
+    Eine Position schließt, sobald die Kerze wieder am mittleren Band schließt. Der Stop liegt AtrMultiplier mal die ATR über AtrPeriod vom Einstiegsschluss entfernt und wird bei Kerzenschluss geprüft; 0 schaltet ihn ab. Ein Einstiegssignal gegen eine offene Position dreht sie.
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **Filter**:
   - Kategorie: Gemischt

@@ -18,17 +18,17 @@ class range_ea_strategy(Strategy):
 
         self._ma_length = self.Param("MaLength", 21) \
             .SetDisplay("MA Length", "Moving average period", "Parameters")
-        self._range = self.Param("Range", 2500.0) \
+        self._range = self.Param("Range", 250.0) \
             .SetDisplay("Range", "Price range from MA", "Parameters")
-        self._take_profit = self.Param("TakeProfit", 3000.0) \
+        self._take_profit = self.Param("TakeProfit", 500.0) \
             .SetDisplay("Take Profit", "Fixed take profit", "Parameters")
-        self._stop_loss = self.Param("StopLoss", 1500.0) \
+        self._stop_loss = self.Param("StopLoss", 250.0) \
             .SetDisplay("Stop Loss", "Fixed stop loss", "Parameters")
-        self._use_trailing_stop = self.Param("UseTrailingStop", False) \
+        self._use_trailing_stop = self.Param("UseTrailingStop", True) \
             .SetDisplay("Use Trailing", "Enable trailing stop", "Parameters")
         self._trailing_stop = self.Param("TrailingStop", 250.0) \
             .SetDisplay("Trailing", "Trailing stop distance", "Parameters")
-        self._use_turn = self.Param("UseTurn", False) \
+        self._use_turn = self.Param("UseTurn", True) \
             .SetDisplay("Use Turn", "Enable reversal module", "Parameters")
         self._turn = self.Param("Turn", 250.0) \
             .SetDisplay("Turn", "Reversal distance", "Parameters")
@@ -48,7 +48,7 @@ class range_ea_strategy(Strategy):
             .SetDisplay("Close Time", "Trading end time", "Parameters")
         self._order_volume = self.Param("OrderVolume", 0.1) \
             .SetDisplay("Volume", "Order volume", "Parameters")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Timeframe", "Parameters")
 
         self._entry_price = 0.0

@@ -32,12 +32,12 @@ public class WaindropsMakit0Strategy : Strategy
 
 	public WaindropsMakit0Strategy()
 	{
-		_periodMinutes = Param(nameof(PeriodMinutes), 120)
+		_periodMinutes = Param(nameof(PeriodMinutes), 60)
 			.SetDisplay("Period", "Full period in candles", "General")
 
 			.SetOptimize(30, 120, 30);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type", "General");
 	}
 

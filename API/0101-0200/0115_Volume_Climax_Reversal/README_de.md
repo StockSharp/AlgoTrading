@@ -18,7 +18,10 @@ Ein enger prozentualer Stop schützt die Position, und Trades werden beendet, we
 - **Stops**: Ja, prozentbasiert
 - **Standardwerte**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `MaPeriod` = 20
+  - `VolumeMultiplier` = 2
+  - `StopLossPercent` = 2
+    Ein Klimax ist eine Kerze, die mit dem Trend schließt (bullisch über dem SMA mit Periode MaPeriod, bärisch darunter), bei einem Volumen über VolumeMultiplier mal dem Durchschnitt der vorherigen MaPeriod Kerzen. Die nächste Kerze, die in die Gegenrichtung schließt, eröffnet den Trade gegen die Bewegung. Der Trade endet, wenn ein Schluss das Extrem der Klimaxkerze überschreitet, wenn das Volumen erneut ausschlägt oder am Prozent-Stop.
 - **Filter**:
   - Kategorie: Volumen
   - Richtung: Beide

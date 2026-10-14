@@ -18,7 +18,8 @@ Al esperar que el extremo anterior sea superado, el sistema intenta capturar el 
   - `LookbackPeriod` = 20
   - `MaPeriod` = 20
   - `StopLossPercent` = 2.0m
-  - `CandleType` = TimeSpan.FromDays(1)
+  - `CandleType` = TimeSpan.FromHours(1)
+    El historial de muestra cubre un mes: tras el calentamiento de 20 velas quedan unas diez velas diarias, y con velas diarias la estrategia no envía ninguna orden sobre BTC en marzo de 2024. Por eso el valor por defecto usa velas horarias con los mismos periodos; las velas diarias siguen siendo configurables.
 - **Filtros**:
   - Categoría: Ruptura
   - Dirección: Ambos

@@ -14,7 +14,7 @@ from indicator_extensions import *
 class rnd_trade_strategy(Strategy):
     def __init__(self):
         super(rnd_trade_strategy, self).__init__()
-        self._interval_minutes = self.Param("IntervalMinutes", 360).SetGreaterThanZero().SetDisplay("Interval Minutes", "Minutes between trades", "General")
+        self._interval_minutes = self.Param("IntervalMinutes", 60).SetGreaterThanZero().SetDisplay("Interval Minutes", "Minutes between trades", "General")
 
     def OnStarted2(self, time):
         super(rnd_trade_strategy, self).OnStarted2(time)

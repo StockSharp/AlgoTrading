@@ -37,7 +37,7 @@ class adx_sentiment_momentum_strategy(Strategy):
             .SetNotNegative() \
             .SetDisplay("Cooldown Bars", "Closed candles to wait before another position change", "General")
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._adx = None

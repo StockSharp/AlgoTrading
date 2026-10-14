@@ -97,7 +97,7 @@ public class EarningsAnnouncementReversalStrategy : Strategy
 	/// </summary>
 	public EarningsAnnouncementReversalStrategy()
 	{
-		_lookbackDays = Param(nameof(LookbackDays), 6)
+		_lookbackDays = Param(nameof(LookbackDays), 5)
 			.SetRange(2, 30)
 			.SetDisplay("Lookback Days", "Number of bars used to calculate recent return", "Parameters");
 
@@ -121,7 +121,7 @@ public class EarningsAnnouncementReversalStrategy : Strategy
 			.SetRange(0.5m, 10m)
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 

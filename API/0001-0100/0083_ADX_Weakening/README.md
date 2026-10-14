@@ -18,7 +18,7 @@ Because the approach anticipates a slowdown rather than a full reversal, trades 
 - **Default Values**:
   - `AdxPeriod` = 14
   - `MaPeriod` = 20
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
   - `CandleType` = 15 minute
 - **Filters**:
   - Category: Trend following

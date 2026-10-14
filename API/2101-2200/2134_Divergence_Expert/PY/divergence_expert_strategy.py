@@ -18,7 +18,7 @@ class divergence_expert_strategy(Strategy):
             .SetDisplay("RSI Period", "RSI calculation period", "Parameters")
         self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
             .SetDisplay("Stop Loss (%)", "Max risk per trade in percent", "Risk")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
         self._start_date = self.Param("StartDate", DateTimeOffset(DateTime(2017, 1, 1), SysTimeSpan.Zero)) \
             .SetDisplay("Start Date", "Backtest start date", "General")

@@ -68,7 +68,7 @@ public class NseIndexWithEntryExitMarkersStrategy : Strategy
 	{
 		_smaPeriod = Param(nameof(SmaPeriod), 200);
 		_rsiPeriod = Param(nameof(RsiPeriod), 14);
-		_rsiOversold = Param(nameof(RsiOversold), 25m);
+		_rsiOversold = Param(nameof(RsiOversold), 40m);
 		_atrPeriod = Param(nameof(AtrPeriod), 14);
 		_atrMultiplier = Param(nameof(AtrMultiplier), 4m);
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame());

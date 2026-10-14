@@ -12,28 +12,24 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Three White Soldiers strategy.
-/// Enters long when three consecutive bullish candles with rising closes are detected.
-/// Enters short when three consecutive bearish candles with falling closes are detected.
-/// Uses SMA for exit confirmation.
-/// Uses cooldown to control trade frequency.
+/// While flat it buys after three bullish candles in a row, each closing above the previous close.
+/// The stop lies StopLossPercent below the pattern's lowest low, and a close beyond it closes the position.
 /// </summary>
 public class ThreeWhiteSoldiersStrategy : Strategy
 {
-	private readonly StrategyParam<int> _maLength;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
 
-	private ICandleMessage _candle1;
-	private ICandleMessage _candle2;
-	private int _cooldown;
+	private readonly List<ICandleMessage> _candles = [];
+	private decimal _stopPrice;
 
 	/// <summary>
-	/// MA period for exit.
+	/// Distance of the stop beyond the pattern, in percent.
 	/// </summary>
-	public int MaLength
+	public decimal StopLossPercent
 	{
-		get => _maLength.Value;
-		set => _maLength.Value = value;
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
 	}
 
 	/// <summary>
@@ -46,29 +42,16 @@ public class ThreeWhiteSoldiersStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Cooldown bars.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
 	/// Constructor.
 	/// </summary>
 	public ThreeWhiteSoldiersStrategy()
 	{
-		_maLength = Param(nameof(MaLength), 20)
-			.SetRange(10, 50)
-			.SetDisplay("MA Length", "Period of SMA for exit", "Indicators");
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Distance of the stop beyond the pattern, in percent", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_cooldownBars = Param(nameof(CooldownBars), 500)
-			.SetRange(1, 1000)
-			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -81,9 +64,8 @@ public class ThreeWhiteSoldiersStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_candle1 = null;
-		_candle2 = null;
-		_cooldown = default;
+		_candles.Clear();
+		_stopPrice = default;
 	}
 
 	/// <inheritdoc />
@@ -91,84 +73,54 @@ public class ThreeWhiteSoldiersStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_candle1 = null;
-		_candle2 = null;
-		_cooldown = 0;
-
-		var sma = new SimpleMovingAverage { Length = MaLength };
+		_candles.Clear();
+		_stopPrice = default;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(sma, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		_candles.Add(candle);
+
+		if (_candles.Count > 3)
+			_candles.RemoveAt(0);
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Shift candles
-		var prev2 = _candle1;
-		var prev1 = _candle2;
-		_candle1 = _candle2;
-		_candle2 = candle;
-
-		if (prev2 == null || prev1 == null)
-			return;
-
-		if (_cooldown > 0)
+		if (Position > 0)
 		{
-			_cooldown--;
+			if (candle.ClosePrice <= _stopPrice)
+				SellMarket(Position);
+
 			return;
 		}
 
-		// Three White Soldiers: 3 consecutive bullish candles with rising closes
-		var threeWhite =
-			prev2.ClosePrice > prev2.OpenPrice &&
-			prev1.ClosePrice > prev1.OpenPrice &&
-			candle.ClosePrice > candle.OpenPrice &&
-			prev1.ClosePrice > prev2.ClosePrice &&
-			candle.ClosePrice > prev1.ClosePrice;
+		if (Position != 0 || _candles.Count < 3)
+			return;
 
-		// Three Black Crows: 3 consecutive bearish candles with falling closes
-		var threeBlack =
-			prev2.ClosePrice < prev2.OpenPrice &&
-			prev1.ClosePrice < prev1.OpenPrice &&
-			candle.ClosePrice < candle.OpenPrice &&
-			prev1.ClosePrice < prev2.ClosePrice &&
-			candle.ClosePrice < prev1.ClosePrice;
+		var c0 = _candles[0];
+		var c1 = _candles[1];
+		var c2 = _candles[2];
 
-		if (Position == 0 && threeWhite)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position == 0 && threeBlack)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position > 0 && candle.ClosePrice < smaValue)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position < 0 && candle.ClosePrice > smaValue)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
+		if (!(c0.ClosePrice > c0.OpenPrice && c1.ClosePrice > c1.OpenPrice && c2.ClosePrice > c2.OpenPrice && c1.ClosePrice > c0.ClosePrice && c2.ClosePrice > c1.ClosePrice))
+			return;
+
+		BuyMarket(Volume);
+		_stopPrice = Math.Min(Math.Min(c0.LowPrice, c1.LowPrice), c2.LowPrice) * (1 - StopLossPercent / 100m);
 	}
 }

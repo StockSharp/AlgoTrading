@@ -263,13 +263,13 @@ public class AnubisStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("CCI Period", "CCI lookback on the higher timeframe", "Indicators");
 
-		_stopLossPips = Param(nameof(StopLossPips), 500m)
+		_stopLossPips = Param(nameof(StopLossPips), 100m)
 			.SetDisplay("Stop Loss (pips)", "Stop-loss distance measured in pips", "Risk");
 
-		_breakevenPips = Param(nameof(BreakevenPips), 300m)
+		_breakevenPips = Param(nameof(BreakevenPips), 65m)
 			.SetDisplay("Breakeven (pips)", "Distance to move stop to entry", "Risk");
 
-		_thresholdPips = Param(nameof(ThresholdPips), 200m)
+		_thresholdPips = Param(nameof(ThresholdPips), 28m)
 			.SetDisplay("MACD Exit Threshold (pips)", "Extra profit required before MACD exit", "Risk");
 
 		_takeStdMultiplier = Param(nameof(TakeStdMultiplier), 2.9m)
@@ -284,11 +284,11 @@ public class AnubisStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Entry Spacing (pips)", "Minimum distance between consecutive entries", "Trading");
 
-		_maxLongPositions = Param(nameof(MaxLongPositions), 1)
+		_maxLongPositions = Param(nameof(MaxLongPositions), 2)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Long Entries", "Maximum stacked long positions", "Trading");
 
-		_maxShortPositions = Param(nameof(MaxShortPositions), 1)
+		_maxShortPositions = Param(nameof(MaxShortPositions), 2)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Short Entries", "Maximum stacked short positions", "Trading");
 

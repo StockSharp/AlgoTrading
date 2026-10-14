@@ -7,7 +7,7 @@ Testing indicates an average annual return of about 97%. It performs best in the
 
 ADX assesses whether a trend has strength and CCI identifies entry timing after pullbacks. Longs and shorts follow the ADX direction.
 
-Geared toward momentum traders entering on retracements. ATR multiples manage risk.
+Geared toward momentum traders entering on retracements. A percent stop manages risk.
 
 ## Details
 
@@ -19,9 +19,13 @@ Geared toward momentum traders entering on retracements. ATR multiples manage ri
 - **Stops**: Percent-based using `StopLossPercent`
 - **Default Values**:
   - `AdxPeriod` = 14
+  - `AdxThreshold` = 25
   - `CciPeriod` = 20
-  - `StopLossPercent` = 2.0m
+  - `CciOversold` = -100
+  - `CciOverbought` = 100
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    The 25, -100 and 100 in the rules are the defaults of AdxThreshold, CciOversold and CciOverbought. The trend weakens when ADX falls below AdxThreshold; a long also closes when CCI rises to zero and a short when it falls to zero. An entry signal against an open position reverses it.
 - **Filters**:
   - Category: Mean reversion
   - Direction: Both

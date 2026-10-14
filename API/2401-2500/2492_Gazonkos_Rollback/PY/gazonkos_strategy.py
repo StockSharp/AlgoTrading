@@ -13,10 +13,10 @@ from StockSharp.Algo.Strategies import Strategy
 class gazonkos_strategy(Strategy):
     def __init__(self):
         super(gazonkos_strategy, self).__init__()
-        self._take_profit = self.Param("TakeProfit", 700.0)
-        self._rollback = self.Param("Rollback", 300.0)
-        self._stop_loss = self.Param("StopLoss", 1000.0)
-        self._delta = self.Param("Delta", 200.0)
+        self._take_profit = self.Param("TakeProfit", 0.0016)
+        self._rollback = self.Param("Rollback", 0.0016)
+        self._stop_loss = self.Param("StopLoss", 0.004)
+        self._delta = self.Param("Delta", 0.004)
         self._trade_volume = self.Param("TradeVolume", 0.1)
         self._first_shift = self.Param("FirstShift", 3)
         self._second_shift = self.Param("SecondShift", 2)

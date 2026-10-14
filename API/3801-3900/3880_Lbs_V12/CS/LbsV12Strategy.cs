@@ -32,7 +32,7 @@ public class LbsV12Strategy : Strategy
 	{
 		_emaPeriod = Param(nameof(EmaPeriod), 50)
 			.SetDisplay("EMA Period", "EMA lookback", "Indicators");
-		_atrPeriod = Param(nameof(AtrPeriod), 14)
+		_atrPeriod = Param(nameof(AtrPeriod), 3)
 			.SetDisplay("ATR Period", "ATR lookback", "Indicators");
 		_atrMultiplier = Param(nameof(AtrMultiplier), 3m)
 			.SetDisplay("ATR Multiplier", "Channel width multiplier", "Indicators");

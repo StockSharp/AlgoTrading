@@ -50,7 +50,7 @@ public class ThreeCommasHaMaStrategy : Strategy
 			.SetDisplay("MA Fast", "Fast moving average period", "MA");
 		_maSlow = Param(nameof(MaSlow), 18)
 			.SetDisplay("MA Slow", "Slow moving average period", "MA");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 

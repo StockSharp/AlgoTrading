@@ -14,10 +14,10 @@ class twenty_one_hour_session_breakout_strategy(Strategy):
     def __init__(self):
         super(twenty_one_hour_session_breakout_strategy, self).__init__()
 
-        self._first_session_start_hour = self.Param("FirstSessionStartHour", 2)
-        self._first_session_stop_hour = self.Param("FirstSessionStopHour", 20)
-        self._step_points = self.Param("StepPoints", 40.0)
-        self._take_profit_points = self.Param("TakeProfitPoints", 200.0)
+        self._first_session_start_hour = self.Param("FirstSessionStartHour", 8)
+        self._first_session_stop_hour = self.Param("FirstSessionStopHour", 21)
+        self._step_points = self.Param("StepPoints", 5.0)
+        self._take_profit_points = self.Param("TakeProfitPoints", 40.0)
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4)))
 
         self._session_open = None

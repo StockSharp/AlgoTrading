@@ -7,77 +7,86 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, RelativeStrengthIndex
+from StockSharp.Algo.Indicators import Highest
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
 from indicator_extensions import *
 
+
 class new_intraday_high_with_weak_bar_strategy(Strategy):
+    """
+    New intraday high with weak bar strategy.
+    When flat, a candle whose high is the highest high of the last HighestLength bars but which closes in the lower WeakRatio part of
+    its range opens a long. The long closes when a candle closes above the previous candle's high.
+    """
+
     def __init__(self):
         super(new_intraday_high_with_weak_bar_strategy, self).__init__()
-        self._candle_type = self.Param("CandleType", tf(5)) \
-            .SetDisplay("Candle type", "Primary timeframe.", "General")
+        self._highest_length = self.Param("HighestLength", 10).SetGreaterThanZero().SetDisplay("Highest Length", "Bars the highest high is taken over", "Indicators")
+        self._weak_ratio = self.Param("WeakRatio", 0.15).SetDisplay("Weak Ratio", "Maximum (close - low) / (high - low) of a weak bar", "Signals")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._highest = None
+        self._prev_high = None
 
     @property
-    def CandleType(self):
+    def candle_type(self):
         return self._candle_type.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candle_type.Value = value
 
     def OnReseted(self):
         super(new_intraday_high_with_weak_bar_strategy, self).OnReseted()
-        self._prev_f = 0
-        self._prev_s = 0
-        self._init = False
-        self._last_signal = None
-        self._cooldown = TimeSpan.FromMinutes(120)
+        self._highest = None
+        self._prev_high = None
 
     def OnStarted2(self, time):
         super(new_intraday_high_with_weak_bar_strategy, self).OnStarted2(time)
-        self._prev_f = 0
-        self._prev_s = 0
-        self._init = False
-        self._last_signal = None
-        self._cooldown = TimeSpan.FromMinutes(120)
 
-        fast = ExponentialMovingAverage()
-        fast.Length = 14
-        slow = ExponentialMovingAverage()
-        slow.Length = 40
-        rsi = RelativeStrengthIndex()
-        rsi.Length = 14
+        self._prev_high = None
+        self._highest = Highest()
+        self._highest.Length = self._highest_length.Value
 
-        sub = self.SubscribeCandles(self.CandleType)
-        sub.Bind(fast, slow, rsi, self.OnProcess).Start()
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(self._process_candle).Start()
 
         area = self.CreateChartArea()
         if area is not None:
-            self.DrawCandles(area, sub)
-            self.DrawIndicator(area, fast)
-            self.DrawIndicator(area, slow)
+            self.DrawCandles(area, subscription)
+            self.DrawIndicator(area, self._highest)
             self.DrawOwnTrades(area)
 
-    def OnProcess(self, candle, f, s, r):
+    def _process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
-        if not self._init:
-            self._prev_f = f
-            self._prev_s = s
-            self._init = True
+
+        # The highest high is taken over candle highs, the current one included.
+        highest_value = process_value(self._highest, candle.HighPrice, candle.ServerTime, True)
+        high = float(candle.HighPrice)
+        low = float(candle.LowPrice)
+        close = float(candle.ClosePrice)
+        last_high = self._prev_high
+        self._prev_high = high
+
+        if not self._highest.IsFormed or last_high is None:
             return
-        if self._last_signal is not None and (candle.OpenTime - self._last_signal) < self._cooldown:
-            pass
-        else:
-            if self._prev_f <= self._prev_s and f > s and r > 50 and self.Position <= 0:
-                self.BuyMarket()
-                self._last_signal = candle.OpenTime
-            elif self._prev_f >= self._prev_s and f < s and r < 50 and self.Position > 0:
-                self.SellMarket()
-                self._last_signal = candle.OpenTime
-        self._prev_f = f
-        self._prev_s = s
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
+        if self.Position > 0:
+            if close > last_high:
+                self.SellMarket(self.Position)
+            return
+
+        if self.Position != 0:
+            return
+
+        rng = high - low
+        if rng <= 0:
+            return
+
+        is_new_high = high >= float(to_decimal(highest_value))
+        is_weak = (close - low) / rng < float(self._weak_ratio.Value)
+
+        if is_new_high and is_weak:
+            self.BuyMarket(self.Volume)
 
     def CreateClone(self):
         return new_intraday_high_with_weak_bar_strategy()

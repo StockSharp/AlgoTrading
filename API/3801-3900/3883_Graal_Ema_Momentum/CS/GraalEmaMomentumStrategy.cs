@@ -28,8 +28,8 @@ public class GraalEmaMomentumStrategy : Strategy
 
 	public GraalEmaMomentumStrategy()
 	{
-		_fastPeriod = Param(nameof(FastPeriod), 20).SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
-		_slowPeriod = Param(nameof(SlowPeriod), 80).SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+		_fastPeriod = Param(nameof(FastPeriod), 13).SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+		_slowPeriod = Param(nameof(SlowPeriod), 34).SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 		_momentumPeriod = Param(nameof(MomentumPeriod), 14).SetDisplay("Momentum", "Momentum period", "Indicators");
 		_cooldownCandles = Param(nameof(CooldownCandles), 100).SetDisplay("Cooldown", "Candles between signals", "General");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General");

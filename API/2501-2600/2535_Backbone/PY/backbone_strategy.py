@@ -15,7 +15,7 @@ class backbone_strategy(Strategy):
         super(backbone_strategy, self).__init__()
 
         self._max_risk = self.Param("MaxRisk", 0.5)
-        self._max_trades = self.Param("MaxTrades", 1)
+        self._max_trades = self.Param("MaxTrades", 10)
         self._take_profit_pips = self.Param("TakeProfitPips", 170.0)
         self._stop_loss_pips = self.Param("StopLossPips", 40.0)
         self._trailing_stop_pips = self.Param("TrailingStopPips", 300.0)

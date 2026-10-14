@@ -51,7 +51,7 @@ public class WarriorTradingMomentumStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Risk Reward", "TP to SL ratio", "Risk");
 
-		_maxDailyTrades = Param(nameof(MaxDailyTrades), 1)
+		_maxDailyTrades = Param(nameof(MaxDailyTrades), 2)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Trades", "Daily trade limit", "Risk");
 
@@ -63,7 +63,7 @@ public class WarriorTradingMomentumStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Vol Mult", "Volume spike multiplier", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 

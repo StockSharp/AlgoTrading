@@ -18,7 +18,11 @@
 - **ストップ**: はい、パーセントベース
 - **デフォルト値**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `KPeriod` = 14
+  - `DPeriod` = 3
+  - `OversoldLevel` = 20
+  - `OverboughtLevel` = 80
+  - `StopLossPercent` = 2
 - **フィルター**:
   - カテゴリ: リバーサル
   - 方向: 両方

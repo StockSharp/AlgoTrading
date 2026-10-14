@@ -18,7 +18,9 @@ Los stops son ajustados para proteger contra una debilidad continuada si el rebo
 - **Stops**: Sí, basado en porcentaje
 - **Valores predeterminados**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `ProfitTargetPercent` = 1
+  - `StopLossPercent` = 2
+    Los días son días UTC, ya que el mercado opera las 24 horas; las entradas ocurren al cierre de la primera vela del día. Un lunes es bajista si cierra por debajo de su apertura; la compra del martes se cierra en la última vela del día o cuando el cierre supera la entrada en ProfitTargetPercent.
 - **Filtros**:
   - Categoría: Estacionalidad
   - Dirección: Ambos

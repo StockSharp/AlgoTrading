@@ -210,11 +210,11 @@ public class XoSignalReOpenStrategy : Strategy
 			.SetDisplay("Take Profit", "Take profit in ticks", "Risk")
 			.SetNotNegative();
 
-		_priceStepTicks = Param(nameof(PriceStepTicks), 1000)
+		_priceStepTicks = Param(nameof(PriceStepTicks), 300)
 			.SetDisplay("Re-entry Step", "Ticks to add position", "Trading")
 			.SetNotNegative();
 
-		_maxPyramidingPositions = Param(nameof(MaxPyramidingPositions), 1)
+		_maxPyramidingPositions = Param(nameof(MaxPyramidingPositions), 10)
 			.SetDisplay("Max Layers", "Maximum layered entries", "Trading")
 			.SetGreaterThanZero();
 

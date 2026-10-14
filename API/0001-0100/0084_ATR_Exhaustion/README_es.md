@@ -5,7 +5,7 @@ Un repentino aumento en el Average True Range indica una expansión de la volati
 
 Las pruebas indican una rentabilidad anual media de aproximadamente el 139%. Funciona mejor en el mercado de acciones.
 
-Cada barra actualiza el ATR y su propio promedio. Si el ATR supera el promedio por el multiplicador y la vela cierra en dirección opuesta al movimiento anterior, se abre una operación. El stop-loss también utiliza un múltiplo del ATR, anclando el riesgo a los niveles actuales de volatilidad.
+Cada barra actualiza el ATR y su propio promedio. Si el ATR supera el promedio por el multiplicador y la vela cierra en dirección opuesta al movimiento anterior, se abre una operación. El stop es un porcentaje del precio que se arrastra, de modo que sigue a la posición mientras se disipa el pico de volatilidad.
 
 Las posiciones típicamente dependen del stop para la salida, buscando una retracción rápida después de que el pico de volatilidad se disipe.
 
@@ -14,13 +14,13 @@ Las posiciones típicamente dependen del stop para la salida, buscando una retra
 - **Criterios de entrada**: Pico de ATR por encima del promedio con vela de reversión.
 - **Largo/Corto**: Ambos.
 - **Criterios de salida**: Stop-loss.
-- **Stops**: Sí, basado en ATR.
+- **Stops**: Sí, porcentual con arrastre.
 - **Valores predeterminados**:
   - `AtrPeriod` = 14
   - `AtrAvgPeriod` = 20
   - `AtrMultiplier` = 1.5
   - `MaPeriod` = 20
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
   - `CandleType` = 5 minute
 - **Filtros**:
   - Categoría: Reversión

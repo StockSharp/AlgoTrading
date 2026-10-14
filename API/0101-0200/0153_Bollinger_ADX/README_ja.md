@@ -24,7 +24,9 @@ Bollinger Bands の外側への価格動向は ADX によって強さが検証�
   - `AdxPeriod` = 14
   - `AdxThreshold` = 25m
   - `AtrMultiplier` = 2.0m
+  - `AtrPeriod` = 14
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    エントリー条件のとおり、ADXが強い中でのバンドブレイクには逆張りし、ミドルバンド（バンドの移動平均）への回帰を狙ってそこで決済します。ストップはエントリー時の終値からAtrMultiplier倍のATR（AtrPeriod）の位置にあり、足の終値で判定します。 保有ポジションと逆方向のエントリーシグナルはドテンになります。
 - **フィルター**:
   - カテゴリ: 平均回帰
   - 方向: 両方

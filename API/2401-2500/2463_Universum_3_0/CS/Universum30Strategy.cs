@@ -66,7 +66,7 @@ public class Universum30Strategy : Strategy
 	/// </summary>
 	public Universum30Strategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for analysis", "General");
 
 		_demarkerPeriod = Param(nameof(DemarkerPeriod), 10)

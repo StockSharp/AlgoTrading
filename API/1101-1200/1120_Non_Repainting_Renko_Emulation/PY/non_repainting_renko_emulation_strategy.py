@@ -2,82 +2,89 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
-clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan
+import math
+
+from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
+
 
 class non_repainting_renko_emulation_strategy(Strategy):
+    """
+    Non-repainting Renko emulation strategy.
+    Renko bricks of BrickSize price units are built from finished candle closes only, so a brick never changes once formed.
+    When a new brick continues the direction of the previous brick the strategy enters in that direction (reversing an
+    opposite position); when a new brick reverses the direction, the open position is closed.
+    """
+
     def __init__(self):
         super(non_repainting_renko_emulation_strategy, self).__init__()
-        self._candle_type = self.Param("CandleType", tf(5)) \
-            .SetDisplay("Candle type", "Primary timeframe.", "General")
+        self._brick_size = self.Param("BrickSize", 3.0).SetGreaterThanZero().SetDisplay("Brick Size", "Brick size in price units", "Renko")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._reset_state()
 
     @property
-    def CandleType(self):
+    def candle_type(self):
         return self._candle_type.Value
 
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candle_type.Value = value
+    def _reset_state(self):
+        self._brick_level = None
+        self._prev_direction = 0
 
     def OnReseted(self):
         super(non_repainting_renko_emulation_strategy, self).OnReseted()
-        self._prev_f = 0
-        self._prev_s = 0
-        self._init = False
-        self._last_signal = None
-        self._cooldown = TimeSpan.FromMinutes(120)
+        self._reset_state()
 
     def OnStarted2(self, time):
         super(non_repainting_renko_emulation_strategy, self).OnStarted2(time)
-        self._prev_f = 0
-        self._prev_s = 0
-        self._init = False
-        self._last_signal = None
-        self._cooldown = TimeSpan.FromMinutes(120)
 
-        fast = ExponentialMovingAverage()
-        fast.Length = 14
-        slow = ExponentialMovingAverage()
-        slow.Length = 40
-        rsi = RelativeStrengthIndex()
-        rsi.Length = 14
+        self._reset_state()
 
-        sub = self.SubscribeCandles(self.CandleType)
-        sub.Bind(fast, slow, rsi, self.OnProcess).Start()
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(self._process_candle).Start()
 
         area = self.CreateChartArea()
         if area is not None:
-            self.DrawCandles(area, sub)
-            self.DrawIndicator(area, fast)
-            self.DrawIndicator(area, slow)
+            self.DrawCandles(area, subscription)
             self.DrawOwnTrades(area)
 
-    def OnProcess(self, candle, f, s, r):
+    def _process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
-        if not self._init:
-            self._prev_f = f
-            self._prev_s = s
-            self._init = True
+
+        close = candle.ClosePrice
+
+        if self._brick_level is None:
+            self._brick_level = close
             return
-        if self._last_signal is not None and (candle.OpenTime - self._last_signal) < self._cooldown:
-            pass
-        else:
-            if self._prev_f <= self._prev_s and f > s and r > 50 and self.Position <= 0:
-                self.BuyMarket()
-                self._last_signal = candle.OpenTime
-            elif self._prev_f >= self._prev_s and f < s and r < 50 and self.Position > 0:
-                self.SellMarket()
-                self._last_signal = candle.OpenTime
-        self._prev_f = f
-        self._prev_s = s
+
+        level = self._brick_level
+        brick = Decimal(self._brick_size.Value)
+        bricks = int(math.floor(float(abs(close - level) / brick)))
+        if bricks == 0:
+            return
+
+        direction = 1 if close > level else -1
+        self._brick_level = level + Decimal(direction * bricks) * brick
+
+        # With several bricks in one candle the previous brick has the same direction.
+        prev_direction = direction if bricks > 1 else self._prev_direction
+        self._prev_direction = direction
+
+        if prev_direction == 0 or not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
+        if direction == prev_direction:
+            if direction > 0 and self.Position <= 0:
+                self.BuyMarket(self.Volume + abs(self.Position))
+            elif direction < 0 and self.Position >= 0:
+                self.SellMarket(self.Volume + abs(self.Position))
+        elif direction < 0 and self.Position > 0:
+            self.SellMarket(self.Position)
+        elif direction > 0 and self.Position < 0:
+            self.BuyMarket(-self.Position)
 
     def CreateClone(self):
         return non_repainting_renko_emulation_strategy()

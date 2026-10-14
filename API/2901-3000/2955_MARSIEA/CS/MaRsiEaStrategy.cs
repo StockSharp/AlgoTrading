@@ -60,14 +60,14 @@ public class MaRsiEaStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "EMA period for trend", "Indicators");
 
-		_rsiPeriod = Param(nameof(RsiPeriod), 14)
+		_rsiPeriod = Param(nameof(RsiPeriod), 4)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "RSI calculation period", "Indicators");
 
-		_rsiOverbought = Param(nameof(RsiOverbought), 65m)
+		_rsiOverbought = Param(nameof(RsiOverbought), 80m)
 			.SetDisplay("Overbought", "RSI overbought level", "Levels");
 
-		_rsiOversold = Param(nameof(RsiOversold), 35m)
+		_rsiOversold = Param(nameof(RsiOversold), 20m)
 			.SetDisplay("Oversold", "RSI oversold level", "Levels");
 	}
 

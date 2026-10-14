@@ -11,21 +11,21 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that trades against sharp price moves using ROC indicator.
-/// Short when ROC rises above threshold, long when ROC falls below negative threshold.
+/// Anomaly counter-trend strategy.
+/// Measures the percentage change of the close over the last LookbackMinutes. A rise of at least PercentageThreshold sells and
+/// a drop of at least PercentageThreshold buys, reversing an opposite position. Positions are closed by a stop-loss and a
+/// take-profit set in ticks.
 /// </summary>
 public class AnomalyCounterTrendStrategy : Strategy
 {
 	private readonly StrategyParam<decimal> _percentageThreshold;
-	private readonly StrategyParam<int> _rocLength;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<int> _lookbackMinutes;
+	private readonly StrategyParam<int> _stopLossTicks;
+	private readonly StrategyParam<int> _takeProfitTicks;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private int _barIndex;
-	private int _lastTradeBar;
-
 	/// <summary>
-	/// Minimum ROC percentage to detect anomaly.
+	/// Percentage move that counts as an anomaly.
 	/// </summary>
 	public decimal PercentageThreshold
 	{
@@ -34,25 +34,34 @@ public class AnomalyCounterTrendStrategy : Strategy
 	}
 
 	/// <summary>
-	/// ROC lookback period.
+	/// Window of the percentage change in minutes.
 	/// </summary>
-	public int RocLength
+	public int LookbackMinutes
 	{
-		get => _rocLength.Value;
-		set => _rocLength.Value = value;
+		get => _lookbackMinutes.Value;
+		set => _lookbackMinutes.Value = value;
 	}
 
 	/// <summary>
-	/// Cooldown bars between trades.
+	/// Stop-loss distance in ticks.
 	/// </summary>
-	public int CooldownBars
+	public int StopLossTicks
 	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
+		get => _stopLossTicks.Value;
+		set => _stopLossTicks.Value = value;
 	}
 
 	/// <summary>
-	/// Candle type to process.
+	/// Take-profit distance in ticks.
+	/// </summary>
+	public int TakeProfitTicks
+	{
+		get => _takeProfitTicks.Value;
+		set => _takeProfitTicks.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -61,21 +70,28 @@ public class AnomalyCounterTrendStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="AnomalyCounterTrendStrategy"/>.
+	/// Constructor.
 	/// </summary>
 	public AnomalyCounterTrendStrategy()
 	{
 		_percentageThreshold = Param(nameof(PercentageThreshold), 1m)
-			.SetDisplay("Percentage Threshold", "Minimum ROC to trigger counter trade", "Anomaly Detection");
+			.SetGreaterThanZero()
+			.SetDisplay("Percentage Threshold", "Percentage move that counts as an anomaly", "Anomaly Detection");
 
-		_rocLength = Param(nameof(RocLength), 60)
-			.SetDisplay("ROC Length", "Rate of change lookback period", "Anomaly Detection");
+		_lookbackMinutes = Param(nameof(LookbackMinutes), 30)
+			.SetGreaterThanZero()
+			.SetDisplay("Lookback Minutes", "Window of the percentage change in minutes", "Anomaly Detection");
 
-		_cooldownBars = Param(nameof(CooldownBars), 200)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "Trading");
+		_stopLossTicks = Param(nameof(StopLossTicks), 100)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss Ticks", "Stop-loss distance in ticks", "Risk");
+
+		_takeProfitTicks = Param(nameof(TakeProfitTicks), 200)
+			.SetNotNegative()
+			.SetDisplay("Take Profit Ticks", "Take-profit distance in ticks", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -85,52 +101,48 @@ public class AnomalyCounterTrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_barIndex = 0;
-		_lastTradeBar = 0;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var roc = new RateOfChange { Length = RocLength };
+		var frameMinutes = CandleType.Arg is TimeSpan tf && tf > TimeSpan.Zero ? tf.TotalMinutes : 1d;
+		var lookbackBars = Math.Max(1, (int)Math.Round(LookbackMinutes / frameMinutes));
+		var roc = new RateOfChange { Length = lookbackBars };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(roc, ProcessCandle)
 			.Start();
 
+		var step = Security?.PriceStep ?? 1m;
+		StartProtection(
+			TakeProfitTicks > 0 ? new Unit(TakeProfitTicks * step, UnitTypes.Absolute) : new Unit(),
+			StopLossTicks > 0 ? new Unit(StopLossTicks * step, UnitTypes.Absolute) : new Unit(),
+			useMarketOrders: true);
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+				DrawIndicator(oscillators, roc);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal rocValue)
+	private void ProcessCandle(ICandleMessage candle, decimal change)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		_barIndex++;
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
 
-		var cooldownOk = _barIndex - _lastTradeBar > CooldownBars;
-
-		// Counter-trend: sell when sharp rise, buy when sharp fall
-		if (rocValue >= PercentageThreshold && Position >= 0 && cooldownOk)
-		{
-			SellMarket();
-			_lastTradeBar = _barIndex;
-		}
-		else if (rocValue <= -PercentageThreshold && Position <= 0 && cooldownOk)
-		{
-			BuyMarket();
-			_lastTradeBar = _barIndex;
-		}
+		if (change >= PercentageThreshold && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
+		else if (change <= -PercentageThreshold && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
 	}
 }

@@ -22,8 +22,10 @@ Ideal para traders de momentum que precisam de sinais de tendência claros. Os v
   - `SupertrendMultiplier` = 3.0m
   - `StochPeriod` = 14
   - `StochK` = 3
-  - `StochD` = 3
+  - `StochOversold` = 20
+  - `StochOverbought` = 80
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    Os valores 20 e 80 das regras são os padrões de StochOversold e StochOverbought. %K é o estocástico de StochPeriod candles suavizado em StochK candles; o %D não participa. O stop é a própria linha do Supertrend, cuja distância vem do seu ATR: uma compra é encerrada quando o Supertrend vira para baixo e uma venda quando vira para cima. Um sinal de entrada contra uma posição aberta a inverte.
 - **Filtros**:
   - Categoria: Reversão à média
   - Direção: Ambos

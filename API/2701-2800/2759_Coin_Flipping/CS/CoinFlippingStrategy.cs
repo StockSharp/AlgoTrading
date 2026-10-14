@@ -79,13 +79,13 @@ public class CoinFlippingStrategy : Strategy
 			
 			.SetOptimize(1m, 10m, 1m);
 
-		_takeProfitPips = Param(nameof(TakeProfitPips), 5000)
+		_takeProfitPips = Param(nameof(TakeProfitPips), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit (pips)", "Target distance expressed in pips", "Risk Management")
 
 			.SetOptimize(10, 50, 5);
 
-		_stopLossPips = Param(nameof(StopLossPips), 3000)
+		_stopLossPips = Param(nameof(StopLossPips), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss (pips)", "Protective stop distance expressed in pips", "Risk Management")
 

@@ -48,7 +48,7 @@ public class SeparateTradeStrategy : Strategy
 
 	public SeparateTradeStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 
 		_fastPeriod = Param(nameof(FastPeriod), 14)

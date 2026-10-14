@@ -7,7 +7,7 @@ Tests zeigen eine durchschnittliche jährliche Rendite von etwa 61%. Am besten g
 
 Der Parabolic SAR liefert den Trend und der Stochastic verfeinert den Einstieg bei Rücksetzern. Signale wechseln, wenn der SAR die Seite wechselt.
 
-Eine unkomplizierte Trendstrategie mit eingebautem SAR-Stop. ATR-Einstellungen sorgen für zusätzliche Risikokontrolle.
+Eine unkomplizierte Trendstrategie mit eingebautem SAR-Stop. Der SAR-Wechsel ist der einzige Ausstieg, daher ist keine weitere Stop-Einstellung nötig.
 
 ## Details
 
@@ -22,11 +22,11 @@ Eine unkomplizierte Trendstrategie mit eingebautem SAR-Stop. ATR-Einstellungen s
   - `AccelerationFactor` = 0.02m
   - `MaxAccelerationFactor` = 0.2m
   - `StochK` = 3
-  - `StochD` = 3
   - `StochPeriod` = 14
   - `StochOversold` = 20m
   - `StochOverbought` = 80m
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    StochK in den Regeln ist %K: die Stochastik über StochPeriod Kerzen, geglättet über StochK Kerzen; %D spielt keine Rolle und hat daher keine Einstellung. Ein Einstiegssignal gegen eine offene Position dreht sie.
 - **Filter**:
   - Kategorie: Mean Reversion
   - Richtung: Beide

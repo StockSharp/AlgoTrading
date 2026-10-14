@@ -4,105 +4,109 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import VolumeWeightedMovingAverage, RelativeStrengthIndex
+from System import TimeSpan, Decimal
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, Level1Fields
+from StockSharp.BusinessEntities import Subscription
+from StockSharp.Algo.Indicators import RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
 
 class vwap_rsi_strategy(Strategy):
     """
-    VWAP + RSI strategy.
-    Enters when price is below VWAP and RSI oversold (longs)
-    or above VWAP and RSI overbought (shorts).
+    VWAP RSI strategy.
+    The market trades around the clock, so the session VWAP restarts with each UTC day and weighs each candle's typical price by its volume.
+    A close below VWAP with RSI below RsiOversold goes long and a close above VWAP with RSI above RsiOverbought goes short,
+    expecting the price to revert toward VWAP. An opposite signal reverses the position, and a percent stop limits the loss.
     """
 
     def __init__(self):
         super(vwap_rsi_strategy, self).__init__()
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles to use", "General")
-        self._rsi_period = self.Param("RsiPeriod", 14).SetDisplay("RSI Period", "Period of the RSI indicator", "Indicators")
-        self._rsi_oversold = self.Param("RsiOversold", 30.0).SetDisplay("RSI Oversold", "RSI oversold level", "Indicators")
-        self._rsi_overbought = self.Param("RsiOverbought", 70.0).SetDisplay("RSI Overbought", "RSI overbought level", "Indicators")
-        self._cooldown_bars = self.Param("CooldownBars", 100).SetDisplay("Cooldown Bars", "Bars between trades", "General")
-
-        self._vwap_value = 0.0
-        self._cooldown = 0
+        self._rsi_period = self.Param("RsiPeriod", 14).SetGreaterThanZero().SetDisplay("RSI Period", "Period of RSI", "Indicators")
+        self._rsi_oversold = self.Param("RsiOversold", 30.0).SetDisplay("RSI Oversold", "RSI level for longs below VWAP", "Indicators")
+        self._rsi_overbought = self.Param("RsiOverbought", 70.0).SetDisplay("RSI Overbought", "RSI level for shorts above VWAP", "Indicators")
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0).SetNotNegative().SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._reset_state()
 
     @property
     def candle_type(self):
         return self._candle_type.Value
 
+    def _reset_state(self):
+        self._day = None
+        self._cumulative_price_volume = Decimal(0)
+        self._cumulative_volume = Decimal(0)
+
     def OnReseted(self):
         super(vwap_rsi_strategy, self).OnReseted()
-        self._vwap_value = 0.0
-        self._cooldown = 0
+        self._reset_state()
 
     def OnStarted2(self, time):
         super(vwap_rsi_strategy, self).OnStarted2(time)
 
-        self._vwap_value = 0.0
-        self._cooldown = 0
+        self._reset_state()
 
-        vwap = VolumeWeightedMovingAverage()
         rsi = RelativeStrengthIndex()
         rsi.Length = self._rsi_period.Value
 
         subscription = self.SubscribeCandles(self.candle_type)
+        subscription.BindEx(rsi, self._process_candle).Start()
 
-        # Bind VWAP with BindEx to capture value
-        subscription.BindEx(vwap, self._on_vwap)
+        self.StartProtection(Unit(), Unit(Decimal(self._stop_loss_percent.Value), UnitTypes.Percent), useMarketOrders=True, isLocalStop=True)
 
-        # Bind RSI for main logic
-        subscription.Bind(rsi, self._process_candle).Start()
+        # The stop has to see prices between candles, not only at their close.
+        for field in (Level1Fields.BestBidPrice, Level1Fields.BestAskPrice):
+            quotes = Subscription(DataType.Level1, self.Security)
+            quotes.MarketData.BuildField = field
+            self.SubscribeLevel1(quotes).Bind(self._observe_protection_quote).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, vwap)
             self.DrawOwnTrades(area)
-            rsi_area = self.CreateChartArea()
-            if rsi_area is not None:
-                self.DrawIndicator(rsi_area, rsi)
+            oscillators = self.CreateChartArea()
+            if oscillators is not None:
+                self.DrawIndicator(oscillators, rsi)
 
-    def _on_vwap(self, candle, vwap_iv):
-        if vwap_iv.IsFormed:
-            self._vwap_value = float(vwap_iv.Value)
+    def _observe_protection_quote(self, quote):
+        # The high-level handler activates native protection before the callback, including between bars.
+        pass
 
-    def _process_candle(self, candle, rsi_val):
+    def _process_candle(self, candle, rsi_value):
         if candle.State != CandleStates.Finished:
             return
 
-        if self._vwap_value == 0:
+        day = candle.OpenTime.Date
+        if self._day is None or self._day != day:
+            self._day = day
+            self._cumulative_price_volume = Decimal(0)
+            self._cumulative_volume = Decimal(0)
+
+        typical_price = (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / Decimal(3)
+        self._cumulative_price_volume += typical_price * candle.TotalVolume
+        self._cumulative_volume += candle.TotalVolume
+
+        if not rsi_value.IsFormed or self._cumulative_volume <= 0:
             return
 
-        close = float(candle.ClosePrice)
-        rsi = float(rsi_val)
-        vwap = self._vwap_value
-        cd = self._cooldown_bars.Value
-        oversold = float(self._rsi_oversold.Value)
-        overbought = float(self._rsi_overbought.Value)
+        vwap = self._cumulative_price_volume / self._cumulative_volume
+        rsi = rsi_value.GetValue[Decimal](None)
+        close = candle.ClosePrice
 
-        if self._cooldown > 0:
-            self._cooldown -= 1
+        signal = 0
+        if close < vwap and rsi < Decimal(self._rsi_oversold.Value):
+            signal = 1
+        elif close > vwap and rsi > Decimal(self._rsi_overbought.Value):
+            signal = -1
+
+        if signal == 0 or not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        # Long: price below VWAP + RSI oversold
-        if close < vwap and rsi < oversold and self.Position == 0:
-            self.BuyMarket()
-            self._cooldown = cd
-        # Short: price above VWAP + RSI overbought
-        elif close > vwap and rsi > overbought and self.Position == 0:
-            self.SellMarket()
-            self._cooldown = cd
-
-        # Exit long: price above VWAP
-        if self.Position > 0 and close > vwap:
-            self.SellMarket()
-            self._cooldown = cd
-        # Exit short: price below VWAP
-        elif self.Position < 0 and close < vwap:
-            self.BuyMarket()
-            self._cooldown = cd
+        if signal > 0 and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+        elif signal < 0 and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
 
     def CreateClone(self):
         return vwap_rsi_strategy()

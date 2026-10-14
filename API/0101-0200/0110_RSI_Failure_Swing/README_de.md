@@ -18,7 +18,10 @@ Ein prozentualer Stop begrenzt den Nachteil, und Positionen werden geschlossen, 
 - **Stops**: Ja, prozentbasiert
 - **Standardwerte**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `RsiPeriod` = 14
+  - `OversoldLevel` = 30
+  - `OverboughtLevel` = 70
+  - `StopLossPercent` = 2
 - **Filter**:
   - Kategorie: Umkehr
   - Richtung: Beide

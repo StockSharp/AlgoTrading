@@ -18,7 +18,9 @@ A stop just above the range protects against false breakouts, and positions clos
 - **Stops**: Yes, percent based
 - **Default Values**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `RangePeriod` = 20
+  - `StopLossPercent` = 2
+    The distribution range is the highest high and lowest low of the previous RangePeriod candles. The strategy only sells, on a close below the range; the stop lies StopLossPercent above the top of the structure and the position closes when a candle closes above it.
 - **Filters**:
   - Category: Trend following
   - Direction: Both

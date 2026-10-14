@@ -40,21 +40,21 @@ public class FractalRsiStrategy : Strategy
 
 	public FractalRsiStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for indicator", "General");
 
-		_fractalPeriod = Param(nameof(FractalPeriod), 50)
+		_fractalPeriod = Param(nameof(FractalPeriod), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("Fractal Period", "Period for fractal dimension", "Indicator");
 
-		_normalSpeed = Param(nameof(NormalSpeed), 50)
+		_normalSpeed = Param(nameof(NormalSpeed), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("Normal Speed", "Base period for RSI", "Indicator");
 
-		_highLevel = Param(nameof(HighLevel), 70m)
+		_highLevel = Param(nameof(HighLevel), 60m)
 			.SetDisplay("High Level", "Upper threshold", "Indicator");
 
-		_lowLevel = Param(nameof(LowLevel), 30m)
+		_lowLevel = Param(nameof(LowLevel), 40m)
 			.SetDisplay("Low Level", "Lower threshold", "Indicator");
 
 		_stopLoss = Param(nameof(StopLoss), 1000m)

@@ -106,7 +106,7 @@ public class KnuxMartingaleStrategy : Strategy
 		_stopLoss = Param(nameof(StopLoss), 150m)
 			.SetDisplay("Stop Loss", "Absolute stop loss in price units", "Risk");
 
-		_takeProfit = Param(nameof(TakeProfit), 300m)
+		_takeProfit = Param(nameof(TakeProfit), 50m)
 			.SetDisplay("Take Profit", "Absolute take profit in price units", "Risk");
 
 		_trendThreshold = Param(nameof(TrendThreshold), 0.008m)
@@ -115,7 +115,7 @@ public class KnuxMartingaleStrategy : Strategy
 		_cooldownBars = Param(nameof(CooldownBars), 3)
 			.SetDisplay("Cooldown Bars", "Bars to wait after a completed position", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for strategy", "General");
 	}
 

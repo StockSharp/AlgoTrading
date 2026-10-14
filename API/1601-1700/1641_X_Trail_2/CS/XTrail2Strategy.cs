@@ -31,15 +31,15 @@ public class XTrail2Strategy : Strategy
 
 	public XTrail2Strategy()
 	{
-		_ma1Length = Param(nameof(Ma1Length), 10)
+		_ma1Length = Param(nameof(Ma1Length), 1)
 			.SetGreaterThanZero()
 			.SetDisplay("MA1 Length", "Length of the fast MA", "Moving Averages");
 
-		_ma2Length = Param(nameof(Ma2Length), 30)
+		_ma2Length = Param(nameof(Ma2Length), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("MA2 Length", "Length of the slow MA", "Moving Averages");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to process", "General");
 	}
 

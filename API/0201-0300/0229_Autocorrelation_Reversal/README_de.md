@@ -20,8 +20,9 @@ Der Ansatz ist für Trader geeignet, die nach statistischen Vorteilen suchen, an
 - **Stops**: Ja, prozentualer Stop-Loss.
 - **Standardwerte**:
   - `AutoCorrPeriod` = 20
-  - `AutoCorrThreshold` = -0.3m
-  - `StopLossPercent` = 2m
+  - `AutoCorrThreshold` = -0.3
+  - `StopLossPercent` = 2
+    Die Autokorrelation ist die Lag-1-Autokorrelation der Schlusskursänderungen über die letzten AutoCorrPeriod Schlusskurse, MA der einfache gleitende Durchschnitt über dieselben AutoCorrPeriod Kerzen. Der Stop liegt bei festen StopLossPercent vom Einstiegspreis und wird auch zwischen den Kerzen überwacht; 0 schaltet ihn ab. Ein Einstiegssignal gegen eine offene Position dreht sie.
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **Filter**:
   - Kategorie: Mean Reversion

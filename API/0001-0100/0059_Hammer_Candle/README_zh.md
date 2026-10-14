@@ -15,6 +15,8 @@
 - **止损**: Yes.
 - **默认值**:
   - `CandleType` = TimeSpan.FromMinutes(5)
+  - `RewardRiskRatio` = 2m
+    止损位于锤子线的最低点，目标位于入场价上方该风险距离的 RewardRiskRatio 倍处；两者均按K线收盘价检查。
 - **过滤器**:
   - 类别: Pattern
   - 方向: Long

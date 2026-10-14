@@ -19,10 +19,11 @@ Tests zeigen eine durchschnittliche Jahresrendite von etwa 67%. Sie funktioniert
 - **Standardwerte**:
   - `AdxPeriod` = 14
   - `DonchianPeriod` = 5
-  - `StopLossPercent` = 2m
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
   - `AdxThreshold` = 10
-  - `Multiplier` = 0.1m
+  - `Multiplier` = 0.1
+    upperBorder ist das höchste Hoch der letzten DonchianPeriod Kerzen einschließlich der aktuellen, um Multiplier Prozent gesenkt, lowerBorder das tiefste Tief, um Multiplier Prozent angehoben. Der Stop liegt bei festen StopLossPercent vom Einstiegspreis und wird auch zwischen den Kerzen überwacht. Ein Einstiegssignal gegen eine offene Position dreht sie.
 - **Filter**:
   - Kategorie: Gemischt
   - Richtung: Beide

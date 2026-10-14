@@ -20,8 +20,9 @@ Die Methode spricht Trader mit einem konträren Stil an, die klar definierte Ein
 - **Stops**: Ja.
 - **Standardwerte**:
   - `MovingAveragePeriod` = 20
-  - `DeviationMultiplier` = 2.0m
-  - `StopLossPercent` = 2m
+  - `DeviationMultiplier` = 2
+  - `StopLossPercent` = 2
+    MA ist der einfache gleitende Durchschnitt und StdDev die Standardabweichung der Schlusskurse über dieselben MovingAveragePeriod Kerzen, k ist DeviationMultiplier. Der Stop liegt bei festen StopLossPercent vom Einstiegspreis und wird auch zwischen den Kerzen überwacht. Ein Einstiegssignal gegen eine offene Position dreht sie.
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **Filter**:
   - Kategorie: Mean Reversion

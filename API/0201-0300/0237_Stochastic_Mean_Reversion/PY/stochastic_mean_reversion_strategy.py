@@ -4,179 +4,116 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, UnitTypes, Unit, CandleStates
-from StockSharp.Algo.Indicators import StochasticOscillator, SimpleMovingAverage, StandardDeviation
+from System import TimeSpan, Decimal, Math
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, Level1Fields
+from StockSharp.BusinessEntities import Subscription
+from StockSharp.Algo.Indicators import StochasticOscillator
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
-
 
 class stochastic_mean_reversion_strategy(Strategy):
     """
-    Stochastic Mean Reversion Strategy.
-    Enter when Stochastic %K deviates from its average by a certain multiple of standard deviation.
-    Exit when Stochastic %K returns to its average.
-
+    Stochastic Mean Reversion strategy.
+    The bands lie Multiplier standard deviations around the average of the last AveragePeriod %K values, the current one included.
+    %K below the lower band goes long and %K above the upper band goes short,
+    reversing an opposite position. A long closes once %K is back above its average and a short once it is back below it, and a percent stop limits the loss.
     """
 
     def __init__(self):
         super(stochastic_mean_reversion_strategy, self).__init__()
-
-        # Initialize strategy parameters
-        self._stoch_period = self.Param("StochPeriod", 14) \
-            .SetDisplay("Stochastic Period", "Period for Stochastic calculation", "Strategy Parameters")
-
-        self._k_period = self.Param("KPeriod", 3) \
-            .SetDisplay("K Period", "Period for %K calculation", "Strategy Parameters")
-
-        self._d_period = self.Param("DPeriod", 3) \
-            .SetDisplay("D Period", "Period for %D calculation", "Strategy Parameters")
-
-        self._average_period = self.Param("AveragePeriod", 20) \
-            .SetDisplay("Average Period", "Period for Stochastic average calculation", "Strategy Parameters")
-
-        self._multiplier = self.Param("Multiplier", 2.0) \
-            .SetDisplay("StdDev Multiplier", "Standard deviation multiplier for entry", "Strategy Parameters")
-
-        self._candle_type = self.Param("CandleType", tf(5)) \
-            .SetDisplay("Candle Type", "Type of candles to use", "Strategy Parameters")
-
-        # Internal state
-        self._stochastic = None
-        self._stoch_average = None
-        self._stoch_stddev = None
-        self._prev_stoch_k_value = 0.0
-
-    @property
-    def stoch_period(self):
-        """Stochastic period."""
-        return self._stoch_period.Value
-
-    @stoch_period.setter
-    def stoch_period(self, value):
-        self._stoch_period.Value = value
-
-    @property
-    def k_period(self):
-        """Stochastic %K period."""
-        return self._k_period.Value
-
-    @k_period.setter
-    def k_period(self, value):
-        self._k_period.Value = value
-
-    @property
-    def d_period(self):
-        """Stochastic %D period."""
-        return self._d_period.Value
-
-    @d_period.setter
-    def d_period(self, value):
-        self._d_period.Value = value
-
-    @property
-    def average_period(self):
-        """Period for Stochastic average calculation."""
-        return self._average_period.Value
-
-    @average_period.setter
-    def average_period(self, value):
-        self._average_period.Value = value
-
-    @property
-    def multiplier(self):
-        """Standard deviation multiplier for entry."""
-        return self._multiplier.Value
-
-    @multiplier.setter
-    def multiplier(self, value):
-        self._multiplier.Value = value
+        self._stoch_period = self.Param("StochPeriod", 14).SetGreaterThanZero().SetDisplay("Stochastic Period", "Lookback period of the raw stochastic", "Indicators")
+        self._k_period = self.Param("KPeriod", 3).SetGreaterThanZero().SetDisplay("%K Period", "Smoothing period of %K", "Indicators")
+        self._average_period = self.Param("AveragePeriod", 20).SetGreaterThanZero().SetDisplay("Average Period", "Values of %K the average and the standard deviation span", "Indicators")
+        self._multiplier = self.Param("Multiplier", 2.0).SetGreaterThanZero().SetDisplay("Multiplier", "Standard deviations between the average and a band", "Indicators")
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0).SetNotNegative().SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._reset_state()
 
     @property
     def candle_type(self):
-        """Type of candles to use."""
         return self._candle_type.Value
 
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
-
-    def OnStarted2(self, time):
-        """Called when the strategy starts."""
-        super(stochastic_mean_reversion_strategy, self).OnStarted2(time)
-
-        # Create indicators
-        self._stochastic = StochasticOscillator()
-        self._stochastic.K.Length = self.k_period
-        self._stochastic.D.Length = self.d_period
-
-        self._stoch_average = SimpleMovingAverage()
-        self._stoch_average.Length = self.average_period
-        self._stoch_stddev = StandardDeviation()
-        self._stoch_stddev.Length = self.average_period
-
-        self.Indicators.Add(self._stochastic)
-        self.Indicators.Add(self._stoch_average)
-        self.Indicators.Add(self._stoch_stddev)
-
-        # Create candle subscription
-        subscription = self.SubscribeCandles(self.candle_type)
-
-        # Bind candle processing (manual stochastic processing inside)
-        subscription.Bind(self.ProcessStochastic).Start()
-
-        # Setup chart visualization if available
-        area = self.CreateChartArea()
-        if area is not None:
-            self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, self._stochastic)
-            self.DrawOwnTrades(area)
-
-        # Enable position protection
-        self.StartProtection(
-            takeProfit=Unit(2, UnitTypes.Percent),
-            stopLoss=Unit(1, UnitTypes.Percent)
-        )
+    def _reset_state(self):
+        self._values = []
 
     def OnReseted(self):
         super(stochastic_mean_reversion_strategy, self).OnReseted()
-        self._prev_stoch_k_value = 0.0
-    def ProcessStochastic(self, candle):
+        self._reset_state()
+
+    def OnStarted2(self, time):
+        super(stochastic_mean_reversion_strategy, self).OnStarted2(time)
+
+        self._reset_state()
+
+        stochastic = StochasticOscillator()
+        stochastic.K.Length = self._stoch_period.Value
+        stochastic.D.Length = self._k_period.Value
+
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.BindEx(stochastic, self._process_candle).Start()
+
+        self.StartProtection(Unit(), Unit(Decimal(self._stop_loss_percent.Value), UnitTypes.Percent), useMarketOrders=True, isLocalStop=True)
+
+        # The stop has to see prices between candles, not only at their close.
+        for field in (Level1Fields.BestBidPrice, Level1Fields.BestAskPrice):
+            quotes = Subscription(DataType.Level1, self.Security)
+            quotes.MarketData.BuildField = field
+            self.SubscribeLevel1(quotes).Bind(self._observe_protection_quote).Start()
+
+        area = self.CreateChartArea()
+        if area is not None:
+            self.DrawCandles(area, subscription)
+            self.DrawOwnTrades(area)
+            oscillators = self.CreateChartArea()
+            if oscillators is not None:
+                self.DrawIndicator(oscillators, stochastic)
+
+    def _observe_protection_quote(self, quote):
+        # The high-level handler activates native protection before the callback, including between bars.
+        pass
+
+    def _process_candle(self, candle, stochastic_value):
         if candle.State != CandleStates.Finished:
             return
 
-        stoch_result = process_candle(self._stochastic, candle)
-        if not self._stochastic.IsFormed:
+        # The smoothed %K is the moving average the core oscillator exposes as D.
+        if not stochastic_value.IsFormed or stochastic_value.D is None:
             return
 
-        k_value = stoch_result.K
-        if k_value is None:
-            return
-        k_value = float(k_value)
+        value = stochastic_value.D
 
-        # Process Stochastic %K through average and standard deviation indicators
-        stoch_avg_value = float(process_float(self._stoch_average, k_value, candle.OpenTime, True))
-        stoch_stddev_value = float(process_float(self._stoch_stddev, k_value, candle.OpenTime, True))
+        period = self._average_period.Value
+        self._values.append(value)
+        if len(self._values) > period:
+            self._values.pop(0)
 
-        if not self._stoch_average.IsFormed or not self._stoch_stddev.IsFormed:
-            self._prev_stoch_k_value = k_value
+        if len(self._values) < period:
             return
 
-        effective_stddev = max(1.0, stoch_stddev_value)
-        upper_band = stoch_avg_value + self.multiplier * effective_stddev
-        lower_band = stoch_avg_value - self.multiplier * effective_stddev
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
-        # Entry logic - only when flat
-        if self.Position == 0:
-            if k_value < lower_band or k_value < 20.0:
-                self.BuyMarket()
-            elif k_value > upper_band or k_value > 80.0:
-                self.SellMarket()
+        total = Decimal(0)
+        for item in self._values:
+            total += item
+        mean = total / Decimal(period)
+        squares = Decimal(0)
+        for item in self._values:
+            squares += (item - mean) * (item - mean)
+        deviation = Decimal(Math.Sqrt(Decimal.ToDouble(squares / Decimal(period))))
+        multiplier = Decimal(self._multiplier.Value)
+        upper = mean + multiplier * deviation
+        lower = mean - multiplier * deviation
 
-        self._prev_stoch_k_value = k_value
+        if value < lower and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+        elif value > upper and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
+        elif self.Position > 0 and value > mean:
+            self.SellMarket(self.Position)
+        elif self.Position < 0 and value < mean:
+            self.BuyMarket(-self.Position)
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return stochastic_mean_reversion_strategy()

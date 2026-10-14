@@ -13,7 +13,7 @@ from StockSharp.Algo.Strategies import Strategy
 class moc_delta_moo_entry_v2_strategy(Strategy):
     def __init__(self):
         super(moc_delta_moo_entry_v2_strategy, self).__init__()
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
             .SetDisplay("Candle Type", "Candles timeframe", "General")
         self._delta_window = self.Param("DeltaWindow", 24) \
             .SetGreaterThanZero() \

@@ -16,7 +16,7 @@ class ma_channel_strategy(Strategy):
         super(ma_channel_strategy, self).__init__()
         self._length = self.Param("Length", 8) \
             .SetDisplay("Length", "Moving average period", "Parameters")
-        self._offset = self.Param("Offset", 100.0) \
+        self._offset = self.Param("Offset", 10.0) \
             .SetDisplay("Offset", "Price offset from the average", "Parameters")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "Parameters")

@@ -24,7 +24,7 @@ public class HammerHangingStochasticStrategy : Strategy
 
 	public HammerHangingStochasticStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 		_stochPeriod = Param(nameof(StochPeriod), 14)
 			.SetGreaterThanZero()

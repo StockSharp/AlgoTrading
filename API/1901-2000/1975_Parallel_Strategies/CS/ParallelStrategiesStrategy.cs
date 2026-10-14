@@ -54,7 +54,7 @@ public class ParallelStrategiesStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("MACD Signal", "Signal line period", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for candles", "General");
 	}
 

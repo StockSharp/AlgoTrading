@@ -38,7 +38,7 @@ public class DecEmaStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Smoothing Length", "Smoothing length for DecEMA", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 

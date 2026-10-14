@@ -15,7 +15,8 @@ Esta estratégia ajusta uma linha de regressão polinomial aos preços recentes 
 - **Valores padrão**:
   - `Length` = 100.
   - `Degree` = 2.
-  - `Std Dev Multiplier` = 2.
+  - `StdDevMultiplier` = 2.
+  - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame().
 - **Filtros**:
   - Categoria: Reversão à média
   - Direção: Ambos
@@ -27,3 +28,11 @@ Esta estratégia ajusta uma linha de regressão polinomial aos preços recentes 
   - Redes neurais: Não
   - Divergência: Não
   - Nível de risco: Médio
+
+## Cálculo e execução
+
+Cada vela concluída ajusta por mínimos quadrados um polinômio de grau `Degree` aos últimos `Length` fechamentos, incluindo o atual, em uma grade uniforme de -1 a 1. O centro do canal é o valor ajustado da observação mais recente. Largura: `StdDevMultiplier * sqrt(sum((close[i] - fitted[i])^2) / Length)`, desvio populacional dos resíduos sem correção por graus de liberdade.
+
+Fechamento estritamente abaixo da banda inferior abre compra; acima da superior abre venda a descoberto. Entrada oposta inverte toda a posição com uma ordem a mercado de `Volume + abs(Position)`; sem posição usa `Volume`. Dentro das bandas mantém a posição. Só negocia com janela completa; sem espera ou stops protetores.
+
+Configuração válida: `0 <= Degree <= 6`, `Length >= Degree + 2`, `StdDevMultiplier` positivo. Grau zero é uma constante. A grade normalizada fixa usa uma base polinomial ortonormal pré-calculada com duas passagens de ortogonalização; cada janela projeta deslocamentos de preço nela com precisão double. C# e Python calculam igualmente; quantidades de ordens permanecem decimal.

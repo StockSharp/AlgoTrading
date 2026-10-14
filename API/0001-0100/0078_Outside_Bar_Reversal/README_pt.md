@@ -18,6 +18,7 @@ A configuração busca reversões rápidas após um impulso exaustivo e é melho
 - **Valores padrão**:
   - `CandleType` = 5 minute
   - `StopLossPercent` = 1
+    Um stop de proteção a essa porcentagem do preço de entrada, vigiado também entre as velas; a posição também é fechada quando um fechamento rompe o extremo oposto da barra externa.
 - **Filtros**:
   - Categoria: Padrão
   - Direção: Ambos

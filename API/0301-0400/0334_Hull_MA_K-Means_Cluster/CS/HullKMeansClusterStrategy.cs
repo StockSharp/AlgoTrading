@@ -95,7 +95,7 @@ public class HullKMeansClusterStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("RSI Period", "Period for RSI calculation as a clustering feature", "Indicator Settings");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 

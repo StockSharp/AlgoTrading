@@ -1,5 +1,3 @@
-namespace StockSharp.Samples.Strategies;
-
 using System;
 using System.Collections.Generic;
 
@@ -10,89 +8,112 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
+namespace StockSharp.Samples.Strategies;
+
 /// <summary>
-/// EMA/SMA + RSI Strategy.
-/// Uses three EMAs for trend and crossover, with RSI for exit signals.
-/// Buy on fast EMA crossing above medium EMA when both above slow EMA.
-/// Sell on fast EMA crossing below medium EMA when both below slow EMA.
+/// EMA/SMA + RSI crossover strategy.
+/// Goes long when the fast EMA crosses above the medium EMA on a bullish candle closing above the slow EMA, and short
+/// on the mirrored setup. A long closes when RSI rises above 70 or when it has been held XBars bars and is in profit;
+/// a short closes when RSI falls below 30 or after XBars bars in profit.
 /// </summary>
 public class EmaSmaRsiStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleTypeParam;
-	private readonly StrategyParam<int> _emaALength;
-	private readonly StrategyParam<int> _emaBLength;
-	private readonly StrategyParam<int> _emaCLength;
+	private const decimal _rsiOverbought = 70m;
+	private const decimal _rsiOversold = 30m;
+
+	private readonly StrategyParam<int> _emaFast;
+	private readonly StrategyParam<int> _emaMedium;
+	private readonly StrategyParam<int> _emaSlow;
 	private readonly StrategyParam<int> _rsiLength;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<int> _xBars;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private ExponentialMovingAverage _emaA;
-	private ExponentialMovingAverage _emaB;
-	private ExponentialMovingAverage _emaC;
-	private RelativeStrengthIndex _rsi;
+	private decimal? _prevFast;
+	private decimal? _prevMedium;
+	private decimal _entryPrice;
+	private int _barsInPosition;
 
-	private decimal _prevEmaA;
-	private decimal _prevEmaB;
-	private int _cooldownRemaining;
-
-	public EmaSmaRsiStrategy()
+	/// <summary>
+	/// Fast EMA period.
+	/// </summary>
+	public int EMA_fast
 	{
-		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-			.SetDisplay("Candle type", "Candle type for strategy calculation.", "General");
-
-		_emaALength = Param(nameof(EmaALength), 10)
-			.SetGreaterThanZero()
-			.SetDisplay("EMA A Length", "Fast EMA period", "Moving Averages");
-
-		_emaBLength = Param(nameof(EmaBLength), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("EMA B Length", "Medium EMA period", "Moving Averages");
-
-		_emaCLength = Param(nameof(EmaCLength), 50)
-			.SetGreaterThanZero()
-			.SetDisplay("EMA C Length", "Slow EMA period", "Moving Averages");
-
-		_rsiLength = Param(nameof(RsiLength), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("RSI Length", "RSI period", "RSI");
-
-		_cooldownBars = Param(nameof(CooldownBars), 10)
-			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk");
+		get => _emaFast.Value;
+		set => _emaFast.Value = value;
 	}
 
-	public DataType CandleType
+	/// <summary>
+	/// Medium EMA period.
+	/// </summary>
+	public int EMA_medium
 	{
-		get => _candleTypeParam.Value;
-		set => _candleTypeParam.Value = value;
+		get => _emaMedium.Value;
+		set => _emaMedium.Value = value;
 	}
 
-	public int EmaALength
+	/// <summary>
+	/// Slow EMA period.
+	/// </summary>
+	public int EMA_slow
 	{
-		get => _emaALength.Value;
-		set => _emaALength.Value = value;
+		get => _emaSlow.Value;
+		set => _emaSlow.Value = value;
 	}
 
-	public int EmaBLength
-	{
-		get => _emaBLength.Value;
-		set => _emaBLength.Value = value;
-	}
-
-	public int EmaCLength
-	{
-		get => _emaCLength.Value;
-		set => _emaCLength.Value = value;
-	}
-
-	public int RsiLength
+	/// <summary>
+	/// RSI period.
+	/// </summary>
+	public int RSI_length
 	{
 		get => _rsiLength.Value;
 		set => _rsiLength.Value = value;
 	}
 
-	public int CooldownBars
+	/// <summary>
+	/// Bars after which a profitable position is closed. 0 disables the time exit.
+	/// </summary>
+	public int XBars
 	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
+		get => _xBars.Value;
+		set => _xBars.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type for strategy calculation.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
+	/// </summary>
+	public EmaSmaRsiStrategy()
+	{
+		_emaFast = Param(nameof(EMA_fast), 10)
+			.SetGreaterThanZero()
+			.SetDisplay("EMA Fast", "Fast EMA period", "Moving Averages");
+
+		_emaMedium = Param(nameof(EMA_medium), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("EMA Medium", "Medium EMA period", "Moving Averages");
+
+		_emaSlow = Param(nameof(EMA_slow), 100)
+			.SetGreaterThanZero()
+			.SetDisplay("EMA Slow", "Slow EMA period", "Moving Averages");
+
+		_rsiLength = Param(nameof(RSI_length), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("RSI Length", "RSI period", "RSI");
+
+		_xBars = Param(nameof(XBars), 24)
+			.SetNotNegative()
+			.SetDisplay("X Bars", "Bars after which a profitable position is closed", "Exit");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+			.SetDisplay("Candle type", "Candle type for strategy calculation", "General");
 	}
 
 	/// <inheritdoc />
@@ -104,13 +125,10 @@ public class EmaSmaRsiStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_emaA = null;
-		_emaB = null;
-		_emaC = null;
-		_rsi = null;
-		_prevEmaA = 0;
-		_prevEmaB = 0;
-		_cooldownRemaining = 0;
+		_prevFast = null;
+		_prevMedium = null;
+		_entryPrice = 0m;
+		_barsInPosition = 0;
 	}
 
 	/// <inheritdoc />
@@ -118,88 +136,89 @@ public class EmaSmaRsiStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_emaA = new ExponentialMovingAverage { Length = EmaALength };
-		_emaB = new ExponentialMovingAverage { Length = EmaBLength };
-		_emaC = new ExponentialMovingAverage { Length = EmaCLength };
-		_rsi = new RelativeStrengthIndex { Length = RsiLength };
+		_prevFast = null;
+		_prevMedium = null;
+		_entryPrice = 0m;
+		_barsInPosition = 0;
+
+		var fast = new ExponentialMovingAverage { Length = EMA_fast };
+		var medium = new ExponentialMovingAverage { Length = EMA_medium };
+		var slow = new ExponentialMovingAverage { Length = EMA_slow };
+		var rsi = new RelativeStrengthIndex { Length = RSI_length };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_emaA, _emaB, _emaC, _rsi, OnProcess)
+			.BindEx(fast, medium, slow, rsi, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _emaA);
-			DrawIndicator(area, _emaB);
-			DrawIndicator(area, _emaC);
+			DrawIndicator(area, fast);
+			DrawIndicator(area, medium);
+			DrawIndicator(area, slow);
 			DrawOwnTrades(area);
+
+			var rsiArea = CreateChartArea();
+			if (rsiArea != null)
+				DrawIndicator(rsiArea, rsi);
 		}
 	}
 
-	private void OnProcess(ICandleMessage candle, decimal emaA, decimal emaB, decimal emaC, decimal rsi)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue fastValue, IIndicatorValue mediumValue, IIndicatorValue slowValue, IIndicatorValue rsiValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_emaA.IsFormed || !_emaB.IsFormed || !_emaC.IsFormed || !_rsi.IsFormed)
-		{
-			_prevEmaA = emaA;
-			_prevEmaB = emaB;
+		if (!fastValue.IsFormed || !mediumValue.IsFormed || !slowValue.IsFormed || !rsiValue.IsFormed)
 			return;
-		}
+
+		var fast = fastValue.ToDecimal();
+		var medium = mediumValue.ToDecimal();
+		var slow = slowValue.ToDecimal();
+		var rsi = rsiValue.ToDecimal();
+
+		var prevFast = _prevFast;
+		var prevMedium = _prevMedium;
+		_prevFast = fast;
+		_prevMedium = medium;
+
+		if (Position != 0)
+			_barsInPosition++;
+
+		if (prevFast is not decimal lastFast || prevMedium is not decimal lastMedium)
+			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_prevEmaA = emaA;
-			_prevEmaB = emaB;
 			return;
-		}
 
-		if (_cooldownRemaining > 0)
-		{
-			_cooldownRemaining--;
-			_prevEmaA = emaA;
-			_prevEmaB = emaB;
-			return;
-		}
+		var close = candle.ClosePrice;
 
-		// Crossover detection
-		var bullishCross = emaA > emaB && _prevEmaA <= _prevEmaB && _prevEmaA > 0;
-		var bearishCross = emaA < emaB && _prevEmaA >= _prevEmaB && _prevEmaA > 0;
+		var longSignal = fast > medium && lastFast <= lastMedium && close > slow && close > candle.OpenPrice;
+		var shortSignal = fast < medium && lastFast >= lastMedium && close < slow && close < candle.OpenPrice;
 
-		// Exit long on RSI overbought
-		if (Position > 0 && rsi > 70)
-		{
-			SellMarket(Math.Abs(Position));
-			_cooldownRemaining = CooldownBars;
-		}
-		// Exit short on RSI oversold
-		else if (Position < 0 && rsi < 30)
-		{
-			BuyMarket(Math.Abs(Position));
-			_cooldownRemaining = CooldownBars;
-		}
-		// Buy: fast crosses above medium, both above slow
-		else if (bullishCross && emaA > emaC && Position <= 0)
-		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-			BuyMarket(Volume);
-			_cooldownRemaining = CooldownBars;
-		}
-		// Sell: fast crosses below medium, both below slow
-		else if (bearishCross && emaA < emaC && Position >= 0)
-		{
-			if (Position > 0)
-				SellMarket(Math.Abs(Position));
-			SellMarket(Volume);
-			_cooldownRemaining = CooldownBars;
-		}
+		var timeUp = XBars > 0 && _barsInPosition >= XBars;
 
-		_prevEmaA = emaA;
-		_prevEmaB = emaB;
+		if (longSignal && Position <= 0)
+		{
+			BuyMarket(Volume + Math.Abs(Position));
+			_entryPrice = close;
+			_barsInPosition = 0;
+		}
+		else if (shortSignal && Position >= 0)
+		{
+			SellMarket(Volume + Math.Abs(Position));
+			_entryPrice = close;
+			_barsInPosition = 0;
+		}
+		else if (Position > 0 && (rsi > _rsiOverbought || (timeUp && close > _entryPrice)))
+		{
+			SellMarket(Position);
+		}
+		else if (Position < 0 && (rsi < _rsiOversold || (timeUp && close < _entryPrice)))
+		{
+			BuyMarket(-Position);
+		}
 	}
 }

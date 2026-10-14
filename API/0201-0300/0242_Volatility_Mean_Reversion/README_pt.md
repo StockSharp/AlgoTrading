@@ -21,8 +21,10 @@ Esses setups funcionam para traders que preferem operar contra extremos de volat
 - **Valores padrão**:
   - `AtrPeriod` = 14
   - `AveragePeriod` = 20
-  - `DeviationMultiplier` = 2m
+  - `DeviationMultiplier` = 2
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
+    Avg e StdDev são a média e o desvio padrão dos últimos AveragePeriod valores de ATR, incluindo o atual, e MA é a média móvel simples dos últimos AveragePeriod fechamentos. O stop é um StopLossPercent fixo do preço de entrada, vigiado também entre os candles; 0 o desativa. Um sinal de entrada contra uma posição aberta a inverte.
 - **Filtros**:
   - Categoria: Reversão à média
   - Direção: Ambos

@@ -1,39 +1,36 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Implementation of strategy - VWAP + CCI.
-/// Buy when price is below VWAP and CCI is below -100 (oversold).
-/// Sell when price is above VWAP and CCI is above 100 (overbought).
+/// VWAP CCI strategy.
+/// The market trades around the clock, so the session VWAP restarts with each UTC day and weighs each candle's typical price by its volume.
+/// A close below VWAP with CCI below CciOversold goes long and a close above VWAP with CCI above CciOverbought goes short, reversing
+/// an opposite position. A long closes when price crosses back above VWAP and a short when it crosses back below,
+/// and a percent stop limits the loss.
 /// </summary>
 public class VwapCciStrategy : Strategy
 {
 	private readonly StrategyParam<int> _cciPeriod;
 	private readonly StrategyParam<decimal> _cciOversold;
 	private readonly StrategyParam<decimal> _cciOverbought;
-	private readonly StrategyParam<int> _cooldownBars;
-	private readonly StrategyParam<Unit> _stopLoss;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private int _cooldown;
+	private DateTime? _day;
+	private decimal _cumulativePriceVolume;
+	private decimal _cumulativeVolume;
 
 	/// <summary>
-	/// CCI period.
+	/// Period of CCI.
 	/// </summary>
 	public int CciPeriod
 	{
@@ -42,7 +39,7 @@ public class VwapCciStrategy : Strategy
 	}
 
 	/// <summary>
-	/// CCI oversold level.
+	/// CCI level for longs.
 	/// </summary>
 	public decimal CciOversold
 	{
@@ -51,7 +48,7 @@ public class VwapCciStrategy : Strategy
 	}
 
 	/// <summary>
-	/// CCI overbought level.
+	/// CCI level for shorts.
 	/// </summary>
 	public decimal CciOverbought
 	{
@@ -60,25 +57,16 @@ public class VwapCciStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Bars to wait between trades.
+	/// Stop loss percentage from entry price.
 	/// </summary>
-	public int CooldownBars
+	public decimal StopLossPercent
 	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
 	}
 
 	/// <summary>
-	/// Stop-loss value.
-	/// </summary>
-	public Unit StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used for strategy.
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -87,138 +75,123 @@ public class VwapCciStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initialize <see cref="VwapCciStrategy"/>.
+	/// Constructor.
 	/// </summary>
 	public VwapCciStrategy()
 	{
 		_cciPeriod = Param(nameof(CciPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("CCI Period", "Period for Commodity Channel Index", "CCI Parameters");
+			.SetDisplay("CCI Period", "Period of CCI", "CCI");
 
-		_cciOversold = Param(nameof(CciOversold), -20m)
-			.SetDisplay("CCI Oversold", "CCI level to consider market oversold", "CCI Parameters");
+		_cciOversold = Param(nameof(CciOversold), -100m)
+			.SetDisplay("CCI Oversold", "CCI level for longs", "CCI");
 
-		_cciOverbought = Param(nameof(CciOverbought), 20m)
-			.SetDisplay("CCI Overbought", "CCI level to consider market overbought", "CCI Parameters");
+		_cciOverbought = Param(nameof(CciOverbought), 100m)
+			.SetDisplay("CCI Overbought", "CCI level for shorts", "CCI");
 
-		_cooldownBars = Param(nameof(CooldownBars), 120)
-			.SetRange(5, 500)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "General");
-
-		_stopLoss = Param(nameof(StopLoss), new Unit(2, UnitTypes.Percent))
-			.SetDisplay("Stop Loss", "Stop loss percent or value", "Risk Management");
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Candle type for strategy", "General");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
-public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-{
-	return [(Security, CandleType)];
-}
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_cooldown = 0;
+		_day = null;
+		_cumulativePriceVolume = 0;
+		_cumulativeVolume = 0;
 	}
 
-/// <inheritdoc />
-protected override void OnStarted2(DateTime time)
-{
-	base.OnStarted2(time);
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
-		// Create indicators
-		var vwap = new VolumeWeightedMovingAverage();
+		_day = null;
+		_cumulativePriceVolume = 0;
+		_cumulativeVolume = 0;
+
 		var cci = new CommodityChannelIndex { Length = CciPeriod };
 
-		// Setup candle subscription
 		var subscription = SubscribeCandles(CandleType);
-		
-		// Bind indicators to candles
 		subscription
-			.Bind(vwap, cci, ProcessCandle)
+			.BindEx(cci, ProcessCandle)
 			.Start();
 
-		// Setup chart visualization if available
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, vwap);
-			
-			// Create separate area for CCI
-			var cciArea = CreateChartArea();
-			if (cciArea != null)
-			{
-				DrawIndicator(cciArea, cci);
-			}
-			
 			DrawOwnTrades(area);
-		}
 
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, cci);
+			}
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal vwapValue, decimal cciValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// The high-level handler activates native protection before this callback, also between signal bars.
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue cciValue)
 	{
 		if (candle.State != CandleStates.Finished)
+			return;
+
+		var day = candle.OpenTime.Date;
+
+		if (_day != day)
+		{
+			_day = day;
+			_cumulativePriceVolume = 0;
+			_cumulativeVolume = 0;
+		}
+
+		var typicalPrice = (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3;
+		_cumulativePriceVolume += typicalPrice * candle.TotalVolume;
+		_cumulativeVolume += candle.TotalVolume;
+
+		if (!cciValue.IsFormed || _cumulativeVolume <= 0)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Current price
-		var price = candle.ClosePrice;
-		
-		// Determine if price is above or below VWAP
-		var isPriceAboveVWAP = price > vwapValue;
+		var vwap = _cumulativePriceVolume / _cumulativeVolume;
+		var cci = cciValue.GetValue<decimal>();
+		var close = candle.ClosePrice;
 
-		LogInfo($"Candle: {candle.OpenTime}, Close: {price}, " +
-			$"VWAP: {vwapValue}, Price > VWAP: {isPriceAboveVWAP}, " +
-			$"CCI: {cciValue}");
-
-		if (_cooldown > 0)
-		{
-			_cooldown--;
-			return;
-		}
-
-		// Trading rules
-		var belowVwap = price <= vwapValue * 1.001m;
-		var aboveVwap = price >= vwapValue * 0.999m;
-
-		if (belowVwap && cciValue <= CciOversold && Position == 0)
-		{
-			// Buy signal - price below VWAP and CCI oversold
-			BuyMarket();
-			_cooldown = CooldownBars;
-			
-			LogInfo($"Buy signal: Price below VWAP and CCI oversold ({cciValue} <= {CciOversold}).");
-		}
-		else if (aboveVwap && cciValue >= CciOverbought && Position == 0)
-		{
-			// Sell signal - price above VWAP and CCI overbought
-			SellMarket();
-			_cooldown = CooldownBars;
-			
-			LogInfo($"Sell signal: Price above VWAP and CCI overbought ({cciValue} >= {CciOverbought}).");
-		}
-		// Exit conditions
-		else if (isPriceAboveVWAP && Position > 0)
-		{
-			// Exit long position when price crosses above VWAP
-			SellMarket();
-			_cooldown = CooldownBars;
-			LogInfo($"Exit long: Price crossed above VWAP. Position: {Position}");
-		}
-		else if (!isPriceAboveVWAP && Position < 0)
-		{
-			// Exit short position when price crosses below VWAP
-			BuyMarket();
-			_cooldown = CooldownBars;
-			LogInfo($"Exit short: Price crossed below VWAP. Position: {Position}");
-		}
+		if (close < vwap && cci < CciOversold && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (close > vwap && cci > CciOverbought && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
+		else if (Position > 0 && close > vwap)
+			SellMarket(Position);
+		else if (Position < 0 && close < vwap)
+			BuyMarket(-Position);
 	}
 }

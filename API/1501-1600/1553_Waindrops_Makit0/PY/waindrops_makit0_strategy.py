@@ -4,6 +4,7 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
+clr.AddReference("StockSharp.BusinessEntities")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
@@ -14,9 +15,9 @@ from StockSharp.Algo.Strategies import Strategy
 class waindrops_makit0_strategy(Strategy):
     def __init__(self):
         super(waindrops_makit0_strategy, self).__init__()
-        self._period_minutes = self.Param("PeriodMinutes", 120) \
+        self._period_minutes = self.Param("PeriodMinutes", 60) \
             .SetDisplay("Period", "Full period in candles", "General")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
             .SetDisplay("Candle Type", "Candle type", "General")
         self._left_vwap = None
         self._right_vwap = None

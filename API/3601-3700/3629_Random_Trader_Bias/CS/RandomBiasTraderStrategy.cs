@@ -52,7 +52,7 @@ public class RandomBiasTraderStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type", "Data");
 
-		_rewardRiskRatio = Param(nameof(RewardRiskRatio), 3m)
+		_rewardRiskRatio = Param(nameof(RewardRiskRatio), 2m)
 			.SetDisplay("Reward/Risk", "Reward to risk ratio", "Risk");
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 3m)

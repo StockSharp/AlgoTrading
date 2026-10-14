@@ -15,8 +15,8 @@ class cci_macd_scalper_strategy(Strategy):
         super(cci_macd_scalper_strategy, self).__init__()
 
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30)))
-        self._ema_period = self.Param("EmaPeriod", 21)
-        self._cci_period = self.Param("CciPeriod", 14)
+        self._ema_period = self.Param("EmaPeriod", 34)
+        self._cci_period = self.Param("CciPeriod", 50)
 
         self._prev_cci = None
 

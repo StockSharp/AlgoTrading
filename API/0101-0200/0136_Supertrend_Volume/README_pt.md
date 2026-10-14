@@ -18,7 +18,11 @@ Os stops seguem a linha Supertrend, saindo quando o preço fecha do outro lado.
 - **Stops**: Sim, baseado em percentual
 - **Valores padrão**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `SupertrendPeriod` = 10
+  - `SupertrendMultiplier` = 3
+  - `VolumePeriod` = 20
+    Uma virada do Supertrend, um fechamento do outro lado da linha, encerra a posição contrária. A virada abre posição na sua direção apenas se o volume do candle estiver acima da média dos VolumePeriod candles anteriores, de modo que uma virada confirmada inverte a posição.
 - **Filtros**:
   - Categoria: Seguidor de tendência
   - Direção: Ambos

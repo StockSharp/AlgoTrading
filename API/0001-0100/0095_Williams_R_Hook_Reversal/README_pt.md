@@ -17,7 +17,10 @@ Um stop percentual ajustado controla o risco, e as operações encerram assim qu
 - **Stops**: Sim, baseado em percentual
 - **Valores padrão**:
   - `CandleType` = 15 minutos
-  - `StopLoss` = 2%
+  - `WillRPeriod` = 14
+  - `OversoldLevel` = -80
+  - `OverboughtLevel` = -20
+  - `StopLossPercent` = 2
 - **Filtros**:
   - Categoria: Reversão
   - Direção: Ambos

@@ -18,7 +18,7 @@ class moving_regression_strategy(Strategy):
     def __init__(self):
         super(moving_regression_strategy, self).__init__()
         self._degree = self.Param("Degree", 2).SetDisplay("Degree", "Sensitivity multiplier", "General")
-        self._window = self.Param("Window", 20).SetDisplay("Window", "Regression window", "General")
+        self._window = self.Param("Window", 18).SetDisplay("Window", "Regression window", "General")
         self._cooldown_bars = self.Param("CooldownBars", 8).SetDisplay("Cooldown", "Min bars between entries", "General")
         self._slope_threshold = self.Param("SlopeThresholdPercent", 0.005).SetDisplay("Slope Threshold %", "Min slope pct", "General")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Candles", "General")

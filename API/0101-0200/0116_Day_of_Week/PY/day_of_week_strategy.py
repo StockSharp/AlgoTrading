@@ -4,101 +4,94 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import TimeSpan, DayOfWeek
-from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import SimpleMovingAverage
+from System import TimeSpan, DateTime, DayOfWeek, Decimal
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, Level1Fields
+from StockSharp.BusinessEntities import Subscription
 from StockSharp.Algo.Strategies import Strategy
 
 class day_of_week_strategy(Strategy):
     """
-    Day of Week trading strategy.
-    Enters long on Monday/Tuesday and short on Thursday/Friday, with MA trend filter.
-    Uses daily transitions to limit trade frequency.
+    Day of Week strategy.
+    Days are UTC days of a market that trades around the clock.
+    At the close of each weekday's first candle it buys on Tuesday, Wednesday and Thursday and sells short on Monday and Friday;
+    the position closes at the day's last candle, and a percent stop limits the loss. Weekends are not traded.
     """
 
     def __init__(self):
         super(day_of_week_strategy, self).__init__()
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Candle timeframe", "General")
-        self._ma_period = self.Param("MaPeriod", 20).SetDisplay("MA Period", "SMA period", "Indicators")
-        self._cooldown_bars = self.Param("CooldownBars", 300).SetDisplay("Cooldown Bars", "Bars between trades", "General")
-
-        self._prev_ma = 0.0
-        self._prev_close = 0.0
-        self._last_trade_day = -1
-        self._cooldown = 0
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0).SetNotNegative().SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._reset_state()
 
     @property
     def candle_type(self):
         return self._candle_type.Value
 
+    def _reset_state(self):
+        self._day = None
+
     def OnReseted(self):
         super(day_of_week_strategy, self).OnReseted()
-        self._prev_ma = 0.0
-        self._prev_close = 0.0
-        self._last_trade_day = -1
-        self._cooldown = 0
+        self._reset_state()
 
     def OnStarted2(self, time):
         super(day_of_week_strategy, self).OnStarted2(time)
 
-        self._prev_ma = 0.0
-        self._prev_close = 0.0
-        self._last_trade_day = -1
-        self._cooldown = 0
-
-        sma = SimpleMovingAverage()
-        sma.Length = self._ma_period.Value
+        self._reset_state()
 
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(sma, self._process_candle).Start()
+        subscription.Bind(self._process_candle).Start()
+
+        self.StartProtection(Unit(), Unit(Decimal(self._stop_loss_percent.Value), UnitTypes.Percent), useMarketOrders=True, isLocalStop=True)
+
+        # The stop has to see prices between candles, not only at their close.
+        for field in (Level1Fields.BestBidPrice, Level1Fields.BestAskPrice):
+            quotes = Subscription(DataType.Level1, self.Security)
+            quotes.MarketData.BuildField = field
+            self.SubscribeLevel1(quotes).Bind(self._observe_protection_quote).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, sma)
             self.DrawOwnTrades(area)
 
-    def _process_candle(self, candle, ma_val):
+    def _observe_protection_quote(self, quote):
+        # The high-level handler activates native protection before the callback, including between bars.
+        pass
+
+    def _process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
 
-        close = float(candle.ClosePrice)
-        ma = float(ma_val)
-        day = candle.OpenTime.DayOfWeek
-        cd = self._cooldown_bars.Value
+        day = candle.OpenTime.Date
+        first_of_day = self._day is None or self._day != day
+        if first_of_day:
+            self._day = day
 
-        if self._cooldown > 0:
-            self._cooldown -= 1
-            self._prev_ma = ma
-            self._prev_close = close
+        # The candle is the day's last when the next one would open on another day.
+        frame = self.candle_type.Arg
+        last_of_day = (candle.OpenTime + frame).Date != day
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        # Exit logic: MA cross
-        if self.Position > 0 and close < ma and self._prev_ma > 0 and self._prev_close >= self._prev_ma:
-            self.SellMarket()
-            self._cooldown = cd
-            self._last_trade_day = day
-        elif self.Position < 0 and close > ma and self._prev_ma > 0 and self._prev_close <= self._prev_ma:
-            self.BuyMarket()
-            self._cooldown = cd
-            self._last_trade_day = day
+        if self.Position != 0:
+            if last_of_day:
+                if self.Position > 0:
+                    self.SellMarket(self.Position)
+                else:
+                    self.BuyMarket(-self.Position)
+            return
 
-        # Entry logic: day-of-week based (one trade per day transition)
-        if self.Position == 0 and day != self._last_trade_day:
-            # Monday/Tuesday: buy if above MA
-            if (day == DayOfWeek.Monday or day == DayOfWeek.Tuesday) and close > ma:
-                self.BuyMarket()
-                self._cooldown = cd
-                self._last_trade_day = day
-            # Thursday/Friday: sell if below MA
-            elif (day == DayOfWeek.Thursday or day == DayOfWeek.Friday) and close < ma:
-                self.SellMarket()
-                self._cooldown = cd
-                self._last_trade_day = day
+        if not (first_of_day and day.DayOfWeek != DayOfWeek.Saturday and day.DayOfWeek != DayOfWeek.Sunday):
+            return
 
-        self._prev_ma = ma
-        self._prev_close = close
+        if (-1 if day.DayOfWeek == DayOfWeek.Monday or day.DayOfWeek == DayOfWeek.Friday else 1) > 0:
+            self.BuyMarket(self.Volume)
+        else:
+            self.SellMarket(self.Volume)
 
     def CreateClone(self):
         return day_of_week_strategy()

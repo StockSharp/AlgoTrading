@@ -129,17 +129,17 @@ public class LiquidexStrategy : Strategy
 			.SetDisplay("KC Period", "Keltner Channels period", "Parameters");
 		_useKcFilter = Param(nameof(UseKcFilter), true)
 			.SetDisplay("Use KC Filter", "Enable Keltner Channels breakout filter", "Parameters");
-		_stopLoss = Param(nameof(StopLoss), 60m)
+		_stopLoss = Param(nameof(StopLoss), 30m)
 			.SetDisplay("Stop Loss", "Stop loss in price units", "Risk");
-		_takeProfit = Param(nameof(TakeProfit), 120m)
+		_takeProfit = Param(nameof(TakeProfit), 0m)
 			.SetDisplay("Take Profit", "Take profit in price units, 0 disables", "Risk");
-		_moveToBe = Param(nameof(MoveToBe), 30m)
+		_moveToBe = Param(nameof(MoveToBe), 15m)
 			.SetDisplay("Move To BE", "Profit to move stop to break-even, 0 disables", "Risk");
-		_moveToBeOffset = Param(nameof(MoveToBeOffset), 4m)
+		_moveToBeOffset = Param(nameof(MoveToBeOffset), 2m)
 			.SetDisplay("BE Offset", "Offset when moving stop to break-even", "Risk");
-		_trailingDistance = Param(nameof(TrailingDistance), 15m)
+		_trailingDistance = Param(nameof(TrailingDistance), 5m)
 			.SetDisplay("Trailing", "Trailing stop distance, 0 disables", "Risk");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle", "Candle type", "General");
 		_breakoutPercent = Param(nameof(BreakoutPercent), 0.0025m)
 			.SetDisplay("Breakout %", "Minimum breakout beyond Keltner boundary", "Filters");

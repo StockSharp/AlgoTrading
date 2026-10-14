@@ -20,7 +20,8 @@ El umbral adaptativo hace que esta estrategia sea adecuada para mercados con reg
 - **Stops**: Sí, dinámico basado en ATR.
 - **Valores predeterminados**:
   - `Period` = 20
-  - `Multiplier` = 2.0m
+  - `Multiplier` = 2
+    MA, ATR y StdDev (la desviación estándar de los cierres) abarcan Period velas; el umbral se reduce a Multiplier veces StdDev. El stop se sitúa a Multiplier veces el ATR del cierre de entrada, dos ATR por defecto, y se comprueba al cierre de las velas. Una señal de entrada contra una posición abierta la invierte.
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **Filtros**:
   - Categoría: Reversión a la media

@@ -19,6 +19,7 @@ By only trading in the prevailing direction and waiting for a clear reaction at 
   - `TrendlinePeriod` = 20
   - `MAPeriod` = 20
   - `BounceThresholdPercent` = 0.5
+    A candle counts as touching a line when its low (high) comes within this many percent of the support (resistance) line.
   - `CandleType` = 5 minute
   - `StopLossPercent` = 2
 - **Filters**:

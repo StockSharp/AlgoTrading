@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,29 +11,22 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on RSI and Supertrend indicators.
-/// Enters long when RSI is oversold (< 30) and price is above Supertrend
-/// Enters short when RSI is overbought (> 70) and price is below Supertrend
+/// RSI Supertrend strategy.
+/// A close above the Supertrend line with RSI below RsiOversold goes long and a close below it with RSI above RsiOverbought goes short,
+/// reversing an opposite position. The Supertrend line is the trailing stop: a long closes when Supertrend flips down and a short
+/// when it flips up.
 /// </summary>
 public class RsiSupertrendStrategy : Strategy
 {
 	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<int> _supertrendPeriod;
 	private readonly StrategyParam<decimal> _supertrendMultiplier;
+	private readonly StrategyParam<decimal> _rsiOversold;
+	private readonly StrategyParam<decimal> _rsiOverbought;
 	private readonly StrategyParam<DataType> _candleType;
-	
-	// Custom Supertrend indicator
-	private AverageTrueRange _atr;
-	private decimal _upValue;
-	private decimal _downValue;
-	private decimal _currentTrend;
-	private decimal _prevUpValue;
-	private decimal _prevDownValue;
-	private decimal _prevClose;
-	private bool _isFirstValue = true;
 
 	/// <summary>
-	/// RSI period
+	/// Period of RSI.
 	/// </summary>
 	public int RsiPeriod
 	{
@@ -45,7 +35,7 @@ public class RsiSupertrendStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Supertrend ATR period
+	/// ATR period of Supertrend.
 	/// </summary>
 	public int SupertrendPeriod
 	{
@@ -54,7 +44,7 @@ public class RsiSupertrendStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Supertrend ATR multiplier
+	/// ATR multiplier of Supertrend.
 	/// </summary>
 	public decimal SupertrendMultiplier
 	{
@@ -63,7 +53,25 @@ public class RsiSupertrendStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Candle type for strategy calculation
+	/// RSI level for longs.
+	/// </summary>
+	public decimal RsiOversold
+	{
+		get => _rsiOversold.Value;
+		set => _rsiOversold.Value = value;
+	}
+
+	/// <summary>
+	/// RSI level for shorts.
+	/// </summary>
+	public decimal RsiOverbought
+	{
+		get => _rsiOverbought.Value;
+		set => _rsiOverbought.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -72,30 +80,30 @@ public class RsiSupertrendStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Constructor
+	/// Constructor.
 	/// </summary>
 	public RsiSupertrendStrategy()
 	{
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("RSI Period", "Period for RSI indicator", "Indicators")
-			
-			.SetOptimize(10, 20, 2);
+			.SetDisplay("RSI Period", "Period of RSI", "RSI");
 
 		_supertrendPeriod = Param(nameof(SupertrendPeriod), 10)
 			.SetGreaterThanZero()
-			.SetDisplay("Supertrend Period", "ATR period for Supertrend", "Indicators")
-			
-			.SetOptimize(7, 14, 1);
+			.SetDisplay("Supertrend Period", "ATR period of Supertrend", "Supertrend");
 
-		_supertrendMultiplier = Param(nameof(SupertrendMultiplier), 3.0m)
+		_supertrendMultiplier = Param(nameof(SupertrendMultiplier), 3m)
 			.SetGreaterThanZero()
-			.SetDisplay("Supertrend Multiplier", "ATR multiplier for Supertrend", "Indicators")
-			
-			.SetOptimize(2.0m, 4.0m, 0.5m);
+			.SetDisplay("Supertrend Multiplier", "ATR multiplier of Supertrend", "Supertrend");
+
+		_rsiOversold = Param(nameof(RsiOversold), 40m)
+			.SetDisplay("RSI Oversold", "RSI level for longs", "RSI");
+
+		_rsiOverbought = Param(nameof(RsiOverbought), 60m)
+			.SetDisplay("RSI Overbought", "RSI level for shorts", "RSI");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Timeframe for strategy", "General");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -105,146 +113,56 @@ public class RsiSupertrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		// Reset state variables
-		_atr = null;
-		_isFirstValue = true;
-		_currentTrend = 1;
-		_downValue = 0;
-		_prevUpValue = 0;
-		_prevDownValue = 0;
-		_prevClose = 0;
-		_upValue = 0;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		// Create RSI indicator
+		var supertrend = new SuperTrend { Length = SupertrendPeriod, Multiplier = SupertrendMultiplier };
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
-		// Create ATR indicator for Supertrend calculation
-		_atr = new AverageTrueRange { Length = SupertrendPeriod };
-		
-		// Enable using Supertrend as a dynamic stop-loss
-		// We'll implement our own stop management based on Supertrend
-
-		// Subscribe to candles and bind indicators
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(rsi, _atr, ProcessCandle)
+			.BindEx(supertrend, rsi, ProcessCandle)
 			.Start();
 
-		// Setup chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			
-			// Separate area for RSI
-			var rsiArea = CreateChartArea();
-			if (rsiArea != null)
-			{
-				DrawIndicator(rsiArea, rsi);
-			}
-			
-			// Note: We'll manually draw Supertrend lines in ProcessCandle method
-			
+			DrawIndicator(area, supertrend);
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, rsi);
+			}
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal rsiValue, decimal atrValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue supertrendValue, IIndicatorValue rsiValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
-		
-		// Check if strategy is ready to trade
+
+		if (!supertrendValue.IsFormed || !rsiValue.IsFormed || supertrendValue is not SuperTrendIndicatorValue trend)
+			return;
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Calculate Supertrend
-		var closePrice = candle.ClosePrice;
-		var highPrice = candle.HighPrice;
-		var lowPrice = candle.LowPrice;
-		
-		// Basic bands calculation
-		var basicUpperBand = (highPrice + lowPrice) / 2 + SupertrendMultiplier * atrValue;
-		var basicLowerBand = (highPrice + lowPrice) / 2 - SupertrendMultiplier * atrValue;
-		
-		if (_isFirstValue)
-		{
-			// Initialize values for the first candle
-			_upValue = basicUpperBand;
-			_downValue = basicLowerBand;
-			_prevUpValue = _upValue;
-			_prevDownValue = _downValue;
-			_prevClose = closePrice;
-			_isFirstValue = false;
-			return;
-		}
-		
-		// Calculate final upper and lower bands
-		_upValue = basicUpperBand;
-		if (_upValue < _prevUpValue || _prevClose > _prevUpValue)
-			_upValue = _prevUpValue;
-		
-		_downValue = basicLowerBand;
-		if (_downValue > _prevDownValue || _prevClose < _prevDownValue)
-			_downValue = _prevDownValue;
-		
-		// Determine trend direction
-		var prevTrend = _currentTrend;
-		
-		if (_prevClose <= _prevUpValue)
-			_currentTrend = -1; // Downtrend
-		
-		if (_prevClose >= _prevDownValue)
-			_currentTrend = 1; // Uptrend
-		
-		// Store values for next iteration
-		_prevUpValue = _upValue;
-		_prevDownValue = _downValue;
-		_prevClose = closePrice;
-		
-		// Get Supertrend value based on current trend
-		var supertrendValue = _currentTrend == 1 ? _downValue : _upValue;
-		
-		// Trading logic
-		var isTrendChange = prevTrend != _currentTrend;
-		
-		// Long condition: RSI oversold and price above Supertrend
-		if (rsiValue < 30 && _currentTrend == 1 && Position <= 0)
-		{
+		var line = trend.Value;
+		var isUpTrend = trend.IsUpTrend;
+		var rsi = rsiValue.GetValue<decimal>();
+		var close = candle.ClosePrice;
+
+		if (close > line && rsi < RsiOversold && Position <= 0)
 			BuyMarket(Volume + Math.Abs(Position));
-			
-			// Note: We're using Supertrend as our stop-loss level,
-			// so we don't need to set a separate stop-loss order
-		}
-		// Short condition: RSI overbought and price below Supertrend
-		else if (rsiValue > 70 && _currentTrend == -1 && Position >= 0)
-		{
+		else if (close < line && rsi > RsiOverbought && Position >= 0)
 			SellMarket(Volume + Math.Abs(Position));
-		}
-		// Exit conditions - based on Supertrend direction change
-		else if (isTrendChange)
-		{
-			if (_currentTrend == -1 && Position > 0)
-			{
-				// Trend changed to down - exit long
-				SellMarket(Position);
-			}
-			else if (_currentTrend == 1 && Position < 0)
-			{
-				// Trend changed to up - exit short
-				BuyMarket(Math.Abs(Position));
-			}
-		}
+		else if (Position > 0 && !isUpTrend)
+			SellMarket(Position);
+		else if (Position < 0 && isUpTrend)
+			BuyMarket(-Position);
 	}
 }

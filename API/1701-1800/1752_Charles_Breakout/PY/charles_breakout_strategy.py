@@ -20,7 +20,7 @@ class charles_breakout_strategy(Strategy):
             .SetDisplay("Slow EMA Period", "Slow EMA length", "Indicators")
         self._rsi_period = self.Param("RsiPeriod", 14) \
             .SetDisplay("RSI Period", "RSI length", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
             .SetDisplay("Candle Type", "Timeframe for calculations", "General")
         self._prev_fast = 0.0
         self._prev_slow = 0.0

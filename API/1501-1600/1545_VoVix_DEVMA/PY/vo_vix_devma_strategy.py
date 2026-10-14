@@ -14,9 +14,9 @@ from indicator_extensions import *
 class vo_vix_devma_strategy(Strategy):
     def __init__(self):
         super(vo_vix_devma_strategy, self).__init__()
-        self._fast_length = self.Param("FastLength", 10) \
+        self._fast_length = self.Param("FastLength", 20) \
             .SetDisplay("Fast Length", "Fast StdDev period", "DEVMA")
-        self._slow_length = self.Param("SlowLength", 20) \
+        self._slow_length = self.Param("SlowLength", 60) \
             .SetDisplay("Slow Length", "Slow StdDev period", "DEVMA")
         self._stop_pct = self.Param("StopPct", 1.0) \
             .SetDisplay("Stop %", "Stop loss percent", "Risk")

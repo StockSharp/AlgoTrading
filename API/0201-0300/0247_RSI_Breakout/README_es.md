@@ -21,8 +21,10 @@ Los traders de momentum pueden encontrar este enfoque útil para identificar rup
 - **Valores predeterminados**:
   - `RsiPeriod` = 14
   - `AveragePeriod` = 20
-  - `Multiplier` = 2.0m
+  - `Multiplier` = 2
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
+    Avg y StdDev son la media y la desviación estándar de los últimos AveragePeriod valores de RSI, incluido el actual. El stop es un StopLossPercent fijo del precio de entrada, vigilado también entre velas; 0 lo desactiva. Una señal de entrada contra una posición abierta la invierte.
 - **Filtros**:
   - Categoría: Ruptura
   - Dirección: Ambos

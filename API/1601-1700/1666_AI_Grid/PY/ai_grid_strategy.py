@@ -16,7 +16,7 @@ class ai_grid_strategy(Strategy):
         super(ai_grid_strategy, self).__init__()
         self._ma_length = self.Param("MaLength", 20) \
             .SetDisplay("MA Length", "SMA period", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
 
     @property

@@ -96,18 +96,18 @@ public class HpcsInter6RsiStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for RSI evaluation", "General");
 
-		_rsiLength = Param(nameof(RsiLength), 7)
+		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "Lookback period for RSI", "Parameters")
 
 			.SetOptimize(5, 40, 1);
 
-		_upperLevel = Param(nameof(UpperLevel), 65m)
+		_upperLevel = Param(nameof(UpperLevel), 70m)
 			.SetDisplay("Upper RSI", "Upper RSI level for shorts", "Parameters")
 
 			.SetOptimize(60m, 90m, 5m);
 
-		_lowerLevel = Param(nameof(LowerLevel), 35m)
+		_lowerLevel = Param(nameof(LowerLevel), 30m)
 			.SetDisplay("Lower RSI", "Lower RSI level for longs", "Parameters")
 
 			.SetOptimize(10m, 40m, 5m);
@@ -118,7 +118,7 @@ public class HpcsInter6RsiStrategy : Strategy
 			
 			.SetOptimize(0.1m, 5m, 0.1m);
 
-		_offsetInPips = Param(nameof(OffsetInPips), 30m)
+		_offsetInPips = Param(nameof(OffsetInPips), 10m)
 			.SetGreaterThanZero()
 			.SetDisplay("Offset (pips)", "Target and stop distance in pips", "Risk")
 			

@@ -14,7 +14,7 @@ from StockSharp.Algo.Strategies import Strategy
 class fracture_strategy(Strategy):
     def __init__(self):
         super(fracture_strategy, self).__init__()
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
             .SetDisplay("Candle", "Candle type", "General")
         self._fast_period = self.Param("FastPeriod", 10) \
             .SetDisplay("Fast", "Fast EMA period", "EMA")

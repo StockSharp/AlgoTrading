@@ -16,7 +16,7 @@ class nse_index_with_entry_exit_markers_strategy(Strategy):
         super(nse_index_with_entry_exit_markers_strategy, self).__init__()
         self._sma_period = self.Param("SmaPeriod", 200)
         self._rsi_period = self.Param("RsiPeriod", 14)
-        self._rsi_oversold = self.Param("RsiOversold", 25.0)
+        self._rsi_oversold = self.Param("RsiOversold", 40.0)
         self._atr_period = self.Param("AtrPeriod", 14)
         self._atr_multiplier = self.Param("AtrMultiplier", 4.0)
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5)))

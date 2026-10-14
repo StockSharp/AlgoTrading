@@ -14,14 +14,14 @@ from StockSharp.Algo.Strategies import Strategy
 class two_ma_four_level_strategy(Strategy):
     def __init__(self):
         super(two_ma_four_level_strategy, self).__init__()
-        self._fast_period = self.Param("FastPeriod", 10)
-        self._slow_period = self.Param("SlowPeriod", 30)
-        self._most_top = self.Param("MostTopLevel", 2)
-        self._top = self.Param("TopLevel", 1)
-        self._lower = self.Param("LowerLevel", 1)
-        self._lowermost = self.Param("LowermostLevel", 2)
-        self._tp = self.Param("TakeProfitPips", 500)
-        self._sl = self.Param("StopLossPips", 1000)
+        self._fast_period = self.Param("FastPeriod", 50)
+        self._slow_period = self.Param("SlowPeriod", 130)
+        self._most_top = self.Param("MostTopLevel", 500)
+        self._top = self.Param("TopLevel", 250)
+        self._lower = self.Param("LowerLevel", 250)
+        self._lowermost = self.Param("LowermostLevel", 500)
+        self._tp = self.Param("TakeProfitPips", 55)
+        self._sl = self.Param("StopLossPips", 260)
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15)))
 
         self._prev_fast = None

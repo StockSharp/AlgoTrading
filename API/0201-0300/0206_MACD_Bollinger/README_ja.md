@@ -21,9 +21,10 @@ MACD > Signal && Price < BB_lower（売られすぎ条件での上昇トレン�
   - `MacdSlow` = 26
   - `MacdSignal` = 9
   - `BollingerPeriod` = 20
-  - `BollingerDeviation` = 2.0m
+  - `BollingerDeviation` = 2
   - `AtrPeriod` = 14
-  - `AtrMultiplier` = 2m
+  - `AtrMultiplier` = 2
+    ローソク足が中間バンドまで戻って引けた時点でポジションを閉じます。ストップはエントリー時の終値からAtrPeriod本のATRのAtrMultiplier倍離れた位置に置かれ、ローソク足の終値で確認されます。0で無効になります。 保有ポジションと逆方向のエントリーシグナルはドテンになります。
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **フィルター**:
   - カテゴリ: 混合

@@ -51,7 +51,7 @@ public class ImaExpertStrategy : Strategy
 		_signalLevel = Param(nameof(SignalLevel), 0.5m)
 			.SetDisplay("Signal Level", "IMA change threshold", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for calculations", "General");
 	}
 

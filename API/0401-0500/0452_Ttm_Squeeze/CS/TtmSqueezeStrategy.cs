@@ -12,66 +12,98 @@ using StockSharp.Messages;
 
 /// <summary>
 /// TTM Squeeze Strategy.
-/// Detects volatility squeeze using BB width narrowing, then trades breakouts.
-/// Uses RSI for momentum confirmation.
-/// Buys when BB width expands from narrow and RSI > 50.
-/// Sells when BB width expands from narrow and RSI less than 50.
+/// Bollinger Bands (2 deviations) and Keltner Channels (1.5 average true ranges) span SqueezeLength bars. When the squeeze is
+/// off (the bands lie outside the channels) a long opens if the linear regression momentum is below zero and rising with RSI
+/// above 30, and a short opens if momentum is above zero and falling with RSI below 70. An opposite signal reverses the
+/// position; UseTP enables a TpPercent take profit.
 /// </summary>
 public class TtmSqueezeStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _bbLength;
+	private const decimal BollingerWidth = 2m;
+	private const decimal KeltnerMultiplier = 1.5m;
+
+	private readonly StrategyParam<int> _squeezeLength;
 	private readonly StrategyParam<int> _rsiLength;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<bool> _useTp;
+	private readonly StrategyParam<decimal> _tpPercent;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private BollingerBands _bb;
-	private RelativeStrengthIndex _rsi;
-	private ExponentialMovingAverage _ema;
+	private SimpleMovingAverage _closeSma;
+	private SimpleMovingAverage _rangeSma;
+	private Highest _highest;
+	private Lowest _lowest;
+	private LinearReg _momentum;
 
-	private decimal _prevBbWidth;
-	private decimal _minBbWidth;
-	private int _narrowBars;
-	private int _cooldownRemaining;
+	private decimal? _prevClose;
+	private decimal? _prevMomentum;
 
-	public DataType CandleType
+	/// <summary>
+	/// Length of the bands, the channels and the momentum.
+	/// </summary>
+	public int SqueezeLength
 	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
+		get => _squeezeLength.Value;
+		set => _squeezeLength.Value = value;
 	}
 
-	public int BbLength
-	{
-		get => _bbLength.Value;
-		set => _bbLength.Value = value;
-	}
-
+	/// <summary>
+	/// RSI period.
+	/// </summary>
 	public int RsiLength
 	{
 		get => _rsiLength.Value;
 		set => _rsiLength.Value = value;
 	}
 
-	public int CooldownBars
+	/// <summary>
+	/// Enable the take profit.
+	/// </summary>
+	public bool UseTP
 	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
+		get => _useTp.Value;
+		set => _useTp.Value = value;
 	}
 
+	/// <summary>
+	/// Take profit percentage from entry price.
+	/// </summary>
+	public decimal TpPercent
+	{
+		get => _tpPercent.Value;
+		set => _tpPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
+	/// </summary>
 	public TtmSqueezeStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_bbLength = Param(nameof(BbLength), 20)
+		_squeezeLength = Param(nameof(SqueezeLength), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("BB Length", "Bollinger Bands period", "Indicators");
+			.SetDisplay("Squeeze Length", "Length of the bands, the channels and the momentum", "Indicators");
 
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "RSI period", "Indicators");
 
-		_cooldownBars = Param(nameof(CooldownBars), 15)
-			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk");
+		_useTp = Param(nameof(UseTP), false)
+			.SetDisplay("Use TP", "Enable the take profit", "Risk");
+
+		_tpPercent = Param(nameof(TpPercent), 1.2m)
+			.SetGreaterThanZero()
+			.SetDisplay("TP %", "Take profit percentage from entry price", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -82,14 +114,8 @@ public class TtmSqueezeStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_bb = null;
-		_rsi = null;
-		_ema = null;
-		_prevBbWidth = 0;
-		_minBbWidth = decimal.MaxValue;
-		_narrowBars = 0;
-		_cooldownRemaining = 0;
+		_prevClose = null;
+		_prevMomentum = null;
 	}
 
 	/// <inheritdoc />
@@ -97,119 +123,94 @@ public class TtmSqueezeStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_bb = new BollingerBands { Length = BbLength, Width = 2.0m };
-		_rsi = new RelativeStrengthIndex { Length = RsiLength };
-		_ema = new ExponentialMovingAverage { Length = BbLength };
+		_prevClose = null;
+		_prevMomentum = null;
+
+		var bollinger = new BollingerBands { Length = SqueezeLength, Width = BollingerWidth };
+		var rsi = new RelativeStrengthIndex { Length = RsiLength };
+
+		_closeSma = new SimpleMovingAverage { Length = SqueezeLength };
+		_rangeSma = new SimpleMovingAverage { Length = SqueezeLength };
+		_highest = new Highest { Length = SqueezeLength };
+		_lowest = new Lowest { Length = SqueezeLength };
+		_momentum = new LinearReg { Length = SqueezeLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_bb, _rsi, _ema, OnProcess)
+			.BindEx(bollinger, rsi, ProcessCandle)
 			.Start();
+
+		if (UseTP)
+			StartProtection(new Unit(TpPercent, UnitTypes.Percent), new Unit(), useMarketOrders: true);
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _bb);
+			DrawIndicator(area, bollinger);
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+				DrawIndicator(oscillators, rsi);
 		}
 	}
 
-	private void OnProcess(ICandleMessage candle, IIndicatorValue bbValue, IIndicatorValue rsiValue, IIndicatorValue emaValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue, IIndicatorValue rsiValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_bb.IsFormed || !_rsi.IsFormed || !_ema.IsFormed)
+		var time = candle.OpenTime;
+		var close = candle.ClosePrice;
+
+		var trueRange = _prevClose is decimal pc
+			? Math.Max(candle.HighPrice - candle.LowPrice, Math.Max(Math.Abs(candle.HighPrice - pc), Math.Abs(candle.LowPrice - pc)))
+			: candle.HighPrice - candle.LowPrice;
+		_prevClose = close;
+
+		var sma = _closeSma.Process(close, time, true).ToDecimal();
+		var rangeAverage = _rangeSma.Process(trueRange, time, true).ToDecimal();
+		var highest = _highest.Process(candle.HighPrice, time, true).ToDecimal();
+		var lowest = _lowest.Process(candle.LowPrice, time, true).ToDecimal();
+
+		if (!_closeSma.IsFormed || !_rangeSma.IsFormed || !_highest.IsFormed || !_lowest.IsFormed)
 			return;
 
-		if (bbValue.IsEmpty || rsiValue.IsEmpty || emaValue.IsEmpty)
+		// Momentum is the linear regression of the close's distance from the mean of the Donchian midline and the SMA.
+		var basis = ((highest + lowest) / 2m + sma) / 2m;
+		var momentumValue = _momentum.Process(close - basis, time, true);
+		if (!_momentum.IsFormed)
 			return;
 
-		var bb = (BollingerBandsValue)bbValue;
-		if (bb.UpBand is not decimal upper || bb.LowBand is not decimal lower || bb.MovingAverage is not decimal mid)
+		var momentum = momentumValue.ToDecimal();
+		var prevMomentum = _prevMomentum;
+		_prevMomentum = momentum;
+
+		if (prevMomentum is not decimal previous)
 			return;
 
-		var rsiVal = rsiValue.ToDecimal();
-		var emaVal = emaValue.ToDecimal();
+		if (!bollingerValue.IsFormed || !rsiValue.IsFormed)
+			return;
 
-		// Calculate BB width as percentage
-		var bbWidth = mid > 0 ? (upper - lower) / mid * 100 : 0;
+		if (bollingerValue is not IBollingerBandsValue { UpBand: decimal bbUpper, LowBand: decimal bbLower })
+			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_prevBbWidth = bbWidth;
-			_minBbWidth = Math.Min(_minBbWidth, bbWidth);
 			return;
-		}
 
-		if (_cooldownRemaining > 0)
-		{
-			_cooldownRemaining--;
-			_prevBbWidth = bbWidth;
-			_minBbWidth = Math.Min(_minBbWidth, bbWidth);
+		var kcUpper = sma + KeltnerMultiplier * rangeAverage;
+		var kcLower = sma - KeltnerMultiplier * rangeAverage;
+		var squeezeOff = bbUpper > kcUpper && bbLower < kcLower;
+
+		if (!squeezeOff)
 			return;
-		}
 
-		if (_prevBbWidth == 0)
-		{
-			_prevBbWidth = bbWidth;
-			_minBbWidth = bbWidth;
-			return;
-		}
+		var rsi = rsiValue.GetValue<decimal>();
 
-		// Track narrow BB (squeeze)
-		if (bbWidth <= _minBbWidth * 1.1m)
-		{
-			_narrowBars++;
-			_minBbWidth = Math.Min(_minBbWidth, bbWidth);
-		}
-		else if (bbWidth > _prevBbWidth && _narrowBars >= 3)
-		{
-			// BB is expanding after squeeze - breakout
-			if (rsiVal > 50 && candle.ClosePrice > emaVal && Position <= 0)
-			{
-				if (Position < 0)
-					BuyMarket(Math.Abs(Position));
-				BuyMarket(Volume);
-				_cooldownRemaining = CooldownBars;
-				_narrowBars = 0;
-				_minBbWidth = bbWidth;
-			}
-			else if (rsiVal < 50 && candle.ClosePrice < emaVal && Position >= 0)
-			{
-				if (Position > 0)
-					SellMarket(Math.Abs(Position));
-				SellMarket(Volume);
-				_cooldownRemaining = CooldownBars;
-				_narrowBars = 0;
-				_minBbWidth = bbWidth;
-			}
-			else
-			{
-				_narrowBars = 0;
-				_minBbWidth = bbWidth;
-			}
-		}
-		else
-		{
-			_narrowBars = 0;
-			_minBbWidth = bbWidth;
-		}
-
-		// Exit long: price falls below lower BB
-		if (Position > 0 && candle.ClosePrice < lower)
-		{
-			SellMarket(Math.Abs(Position));
-			_cooldownRemaining = CooldownBars;
-		}
-		// Exit short: price rises above upper BB
-		else if (Position < 0 && candle.ClosePrice > upper)
-		{
-			BuyMarket(Math.Abs(Position));
-			_cooldownRemaining = CooldownBars;
-		}
-
-		_prevBbWidth = bbWidth;
+		if (momentum < 0m && momentum > previous && rsi > 30m && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (momentum > 0m && momentum < previous && rsi < 70m && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
 	}
 }

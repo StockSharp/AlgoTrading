@@ -18,7 +18,9 @@ Un stop fijo mantiene el riesgo bajo control si la volatilidad resulta ser demas
 - **Stops**: Sí, basado en porcentaje
 - **Valores predeterminados**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `MaPeriod` = 20
+  - `StopLossPercent` = 2
+    Los días son días UTC, ya que el mercado opera las 24 horas; las entradas ocurren al cierre de la primera vela del día. El vencimiento trimestral es el tercer viernes de marzo, junio, septiembre y diciembre. El lunes de esa semana la estrategia opera con la tendencia (compra por encima de la SMA de MaPeriod, vende por debajo) y cierra en la última vela del jueves, antes de la liquidación.
 - **Filtros**:
   - Categoría: Estacionalidad
   - Dirección: Ambos

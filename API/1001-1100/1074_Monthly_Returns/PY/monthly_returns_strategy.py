@@ -17,11 +17,11 @@ class monthly_returns_strategy(Strategy):
 
     def __init__(self):
         super(monthly_returns_strategy, self).__init__()
-        self._left_bars = self.Param("LeftBars", 6).SetDisplay("Left Bars", "Left bars for pivots", "General")
-        self._right_bars = self.Param("RightBars", 3).SetDisplay("Right Bars", "Right bars for pivots", "General")
+        self._left_bars = self.Param("LeftBars", 2).SetDisplay("Left Bars", "Left bars for pivots", "General")
+        self._right_bars = self.Param("RightBars", 1).SetDisplay("Right Bars", "Right bars for pivots", "General")
         self._cooldown_bars = self.Param("CooldownBars", 14).SetDisplay("Cooldown", "Min bars between entries", "General")
         self._breakout_pct = self.Param("BreakoutOffsetPercent", 0.10).SetDisplay("Breakout %", "Min breakout offset", "General")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(10))).SetDisplay("Candle Type", "Candles", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromDays(1))).SetDisplay("Candle Type", "Candles", "General")
 
         self._high_buf = []
         self._low_buf = []

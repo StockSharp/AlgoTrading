@@ -171,7 +171,7 @@ public class IiOutbreakStrategy : Strategy
 			
 			.SetOptimize(2m, 15m, 1m);
 
-		_trailStopPoints = Param(nameof(TrailStopPoints), 50000m)
+		_trailStopPoints = Param(nameof(TrailStopPoints), 20m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trail Stop Points", "Trailing stop distance in points", "Risk Management")
 			
@@ -187,11 +187,11 @@ public class IiOutbreakStrategy : Strategy
 			
 			.SetOptimize(0.05m, 0.2m, 0.01m);
 
-		_stdDevLimit = Param(nameof(StdDevLimit), 5000m)
+		_stdDevLimit = Param(nameof(StdDevLimit), 0.002m)
 			.SetNotNegative()
 			.SetDisplay("StdDev Limit", "Upper bound for standard deviation filter", "Filters");
 
-		_volatilityThreshold = Param(nameof(VolatilityThreshold), 0m)
+		_volatilityThreshold = Param(nameof(VolatilityThreshold), 800m)
 			.SetNotNegative()
 			.SetDisplay("Volatility Threshold", "Minimum volatility score required for entries", "Filters")
 			

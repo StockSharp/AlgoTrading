@@ -18,7 +18,8 @@ A percent stop beneath the pattern provides protection, and the trade exits if p
 - **Stops**: Yes, percent based
 - **Default Values**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+    The strategy only buys. The stop lies StopLossPercent below the lowest low of the pattern and the position closes when a candle closes below it.
 - **Filters**:
   - Category: Pattern
   - Direction: Both

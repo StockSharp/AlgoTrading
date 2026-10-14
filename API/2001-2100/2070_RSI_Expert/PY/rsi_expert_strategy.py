@@ -22,9 +22,9 @@ class rsi_expert_strategy(Strategy):
             .SetDisplay("RSI Overbought", "Upper RSI level triggering a short", "Indicators")
         self._level_down = self.Param("LevelDown", 30.0) \
             .SetDisplay("RSI Oversold", "Lower RSI level triggering a long", "Indicators")
-        self._take_profit_percent = self.Param("TakeProfitPercent", 3.0) \
+        self._take_profit_percent = self.Param("TakeProfitPercent", 0.0) \
             .SetDisplay("Take Profit %", "Take profit percentage", "Risk")
-        self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
+        self._stop_loss_percent = self.Param("StopLossPercent", 0.0) \
             .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")

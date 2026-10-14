@@ -34,7 +34,7 @@ public class CdcPlRsiStrategy : Strategy
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
-		_rsiPeriod = Param(nameof(RsiPeriod), 14)
+		_rsiPeriod = Param(nameof(RsiPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "RSI period", "Indicators");
 		_oversoldLevel = Param(nameof(OversoldLevel), 40m)

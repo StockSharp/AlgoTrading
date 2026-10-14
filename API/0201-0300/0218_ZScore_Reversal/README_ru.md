@@ -20,8 +20,9 @@
 - **Стопы**: да, процентный стоп‑лосс.
 - **Значения по умолчанию**:
   - `LookbackPeriod` = 20
-  - `ZScoreThreshold` = 2.0m
-  - `StopLossPercent` = 2m
+  - `ZScoreThreshold` = 2
+  - `StopLossPercent` = 2
+    Z-Score = (close - SMA) / StdDev, где простая скользящая средняя и стандартное отклонение цен закрытия считаются за одни и те же LookbackPeriod свечей. Стоп — фиксированный StopLossPercent от цены входа, он отслеживается и между свечами. Сигнал на вход против открытой позиции разворачивает её.
   - `CandleType` = TimeSpan.FromMinutes(10)
 - **Фильтры**:
   - Категория: Mean Reversion

@@ -18,9 +18,9 @@ class aml_candle_cross_strategy(Strategy):
     """
     def __init__(self):
         super(aml_candle_cross_strategy, self).__init__()
-        self._fractal = self.Param("Fractal", 10) \
+        self._fractal = self.Param("Fractal", 70) \
             .SetDisplay("Fractal", "Fractal window size", "General")
-        self._lag = self.Param("Lag", 5) \
+        self._lag = self.Param("Lag", 18) \
             .SetDisplay("Lag", "Lag for smoothing", "General")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Candle Type", "General")

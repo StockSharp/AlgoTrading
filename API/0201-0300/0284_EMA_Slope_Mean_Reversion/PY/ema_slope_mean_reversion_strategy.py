@@ -28,7 +28,7 @@ class ema_slope_mean_reversion_strategy(Strategy):
             .SetGreaterThanZero() \
             .SetDisplay("Slope Lookback", "Period for slope statistics", "Slope Settings")
 
-        self._threshold_multiplier = self.Param("ThresholdMultiplier", 1.5) \
+        self._threshold_multiplier = self.Param("ThresholdMultiplier", 2.0) \
             .SetGreaterThanZero() \
             .SetDisplay("Threshold Multiplier", "Standard deviation multiplier for entry threshold", "Slope Settings")
 

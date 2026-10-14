@@ -15,7 +15,8 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Strategy based on MACD indicator.
-/// It enters long position when MACD crosses above signal line and short position when MACD crosses below signal line.
+/// It enters long position when MACD crosses above signal line and short position when MACD crosses below signal line,
+/// reversing on the opposite cross, and protects the position with a percent stop.
 /// </summary>
 public class MacdTrendStrategy : Strategy
 {
@@ -25,8 +26,8 @@ public class MacdTrendStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
 
-	// Current state
-	private bool _prevIsMacdAboveSignal;
+	// Side of the signal line on the previous candle; unknown until the indicator forms.
+	private bool? _prevIsMacdAboveSignal;
 
 	/// <summary>
 	/// Period for fast EMA in MACD.
@@ -78,27 +79,31 @@ public class MacdTrendStrategy : Strategy
 	/// </summary>
 	public MacdTrendStrategy()
 	{
-		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 200)
+		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 12)
+			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA Period", "Period for fast EMA in MACD", "Indicators")
 
 			.SetOptimize(8, 16, 2);
 
-		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 500)
+		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 26)
+			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA Period", "Period for slow EMA in MACD", "Indicators")
 
 			.SetOptimize(20, 32, 2);
 
-		_signalPeriod = Param(nameof(SignalPeriod), 200)
+		_signalPeriod = Param(nameof(SignalPeriod), 9)
+			.SetGreaterThanZero()
 			.SetDisplay("Signal Period", "Period for signal line in MACD", "Indicators")
 
 			.SetOptimize(5, 13, 2);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (%)", "Stop loss as a percentage of entry price", "Risk parameters")
 			
 			.SetOptimize(1, 3, 0.5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -112,7 +117,7 @@ public class MacdTrendStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevIsMacdAboveSignal = false;
+		_prevIsMacdAboveSignal = null;
 
 	}
 
@@ -138,6 +143,16 @@ public class MacdTrendStrategy : Strategy
 			.BindEx(macd, ProcessCandle)
 			.Start();
 
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
+
 		// Setup chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
@@ -149,44 +164,40 @@ public class MacdTrendStrategy : Strategy
 
 	}
 
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// The high-level handler activates native protection before this callback, also between signal bars.
+	}
+
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue)
 	{
-		// Skip unfinished candles
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		// Check if strategy is ready to trade
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (candle.State != CandleStates.Finished || !macdValue.IsFormed)
 			return;
 
 		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
+
 		if (macdTyped.Macd is not decimal macd || macdTyped.Signal is not decimal signal)
 			return;
 
-		// Check MACD position relative to signal line
 		var isMacdAboveSignal = macd > signal;
-		
-		// Check for crossovers
-		var isMacdCrossedAboveSignal = isMacdAboveSignal && !_prevIsMacdAboveSignal;
-		var isMacdCrossedBelowSignal = !isMacdAboveSignal && _prevIsMacdAboveSignal;
+		var wasMacdAboveSignal = _prevIsMacdAboveSignal;
+		_prevIsMacdAboveSignal = isMacdAboveSignal;
 
-		// Entry/exit logic based on MACD crossovers
-		if (isMacdCrossedAboveSignal && Position <= 0)
+		if (wasMacdAboveSignal is not bool wasAbove || wasAbove == isMacdAboveSignal)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (isMacdAboveSignal && Position <= 0)
 		{
-			// MACD crossed above signal line - Buy signal
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
+			BuyMarket(Volume + Math.Abs(Position));
 			LogInfo($"Buy signal: MACD ({macd:F5}) crossed above Signal ({signal:F5})");
 		}
-		else if (isMacdCrossedBelowSignal && Position >= 0)
+		else if (!isMacdAboveSignal && Position >= 0)
 		{
-			// MACD crossed below signal line - Sell signal
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
+			SellMarket(Volume + Math.Abs(Position));
 			LogInfo($"Sell signal: MACD ({macd:F5}) crossed below Signal ({signal:F5})");
 		}
-
-		// Update previous state
-		_prevIsMacdAboveSignal = isMacdAboveSignal;
 	}
 }

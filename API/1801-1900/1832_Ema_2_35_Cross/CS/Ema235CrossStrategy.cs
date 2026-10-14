@@ -29,7 +29,7 @@ public class Ema235CrossStrategy : Strategy
 
 	public Ema235CrossStrategy()
 	{
-		_fastLength = Param(nameof(FastLength), 10)
+		_fastLength = Param(nameof(FastLength), 2)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA", "Fast EMA length", "Parameters");
 		_slowLength = Param(nameof(SlowLength), 35)

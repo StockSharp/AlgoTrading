@@ -6,7 +6,7 @@ Larger ATR readings result in smaller trade size, keeping risk consistent across
 
 Testing indicates an average annual return of about 154%. It performs best in the stocks market.
 
-Entries occur when MACD crosses its signal line, with exits triggered by the opposite crossover or a volatility-based stop.
+Entries occur when MACD crosses its signal line, with exits triggered by the opposite crossover or a percent stop.
 
 This combination seeks to capture momentum while accounting for changing volatility.
 
@@ -18,7 +18,13 @@ This combination seeks to capture momentum while accounting for changing volatil
 - **Stops**: Yes, percent based
 - **Default Values**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `MacdFast` = 12
+  - `MacdSlow` = 26
+  - `MacdSignal` = 9
+  - `AtrPeriod` = 14
+  - `AtrAvgPeriod` = 20
+    A MACD cross above its signal line goes long and a cross below goes short, the opposite cross reversing the position. Each new position is Volume times the average of the last AtrAvgPeriod ATR values divided by the current ATR, rounded down to the volume step.
 - **Filters**:
   - Category: Trend following
   - Direction: Both

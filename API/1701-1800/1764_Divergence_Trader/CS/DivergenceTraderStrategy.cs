@@ -29,11 +29,11 @@ public class DivergenceTraderStrategy : Strategy
 
 	public DivergenceTraderStrategy()
 	{
-		_fastPeriod = Param(nameof(FastPeriod), 12)
+		_fastPeriod = Param(nameof(FastPeriod), 7)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast Period", "Fast EMA length", "Parameters");
 
-		_slowPeriod = Param(nameof(SlowPeriod), 50)
+		_slowPeriod = Param(nameof(SlowPeriod), 88)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Period", "Slow EMA length", "Parameters");
 

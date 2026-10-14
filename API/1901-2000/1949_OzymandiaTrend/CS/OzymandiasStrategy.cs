@@ -59,7 +59,7 @@ public class OzymandiasStrategy : Strategy
 	/// </summary>
 	public OzymandiasStrategy()
 	{
-		_length = Param(nameof(Length), 8)
+		_length = Param(nameof(Length), 2)
 			.SetDisplay("Length", "Lookback period", "Indicator");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())

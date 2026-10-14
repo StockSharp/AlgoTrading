@@ -38,7 +38,7 @@ public class MonteCarloSimulationRandomWalkStrategy : Strategy
 	{
 		_forecastBars = Param(nameof(ForecastBars), 10).SetGreaterThanZero();
 		_simulations = Param(nameof(Simulations), 100).SetGreaterThanZero();
-		_dataLength = Param(nameof(DataLength), 100).SetGreaterThanZero();
+		_dataLength = Param(nameof(DataLength), 2000).SetGreaterThanZero();
 		_minForecastEdgePercent = Param(nameof(MinForecastEdgePercent), 0.5m).SetGreaterThanZero();
 		_signalCooldownBars = Param(nameof(SignalCooldownBars), 12).SetGreaterThanZero();
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame());

@@ -7,13 +7,13 @@ Testing indicates an average annual return of about 85%. It performs best in the
 
 Breakouts beyond the Donchian channel are confirmed with Stochastic momentum. Trades start as soon as price escapes the range and the oscillator agrees.
 
-Useful for traders expecting immediate follow-through. An ATR multiple sets the stop.
+Useful for traders expecting immediate follow-through. A fixed percentage of the entry price sets the stop.
 
 ## Details
 
 - **Entry Criteria**:
-  - Long: `Close > DonchianHigh && StochK < 20`
-  - Short: `Close < DonchianLow && StochK > 80`
+  - Long: `Close > DonchianHigh && StochK > StochOverbought`
+  - Short: `Close < DonchianLow && StochK < StochOversold`
 - **Long/Short**: Both
 - **Exit Criteria**: Breakout failure or opposite signal
 - **Stops**: Percent-based using `StopLossPercent`
@@ -21,9 +21,11 @@ Useful for traders expecting immediate follow-through. An ATR multiple sets the 
   - `DonchianPeriod` = 20
   - `StochPeriod` = 14
   - `StochK` = 3
-  - `StochD` = 3
+  - `StochOverbought` = 80
+  - `StochOversold` = 20
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
-  - `StopLossPercent` = 2m
+  - `StopLossPercent` = 2
+    An upside breakout of the previous DonchianPeriod candles is confirmed when %K is above StochOverbought and a downside one when %K is below StochOversold; the opposite reading, an oversold %K on an upside breakout, essentially never occurs. %K is the stochastic over StochPeriod candles smoothed over StochK candles, and %D plays no part. The breakout fails, closing the position, when price closes back beyond the broken level. An entry signal against an open position reverses it.
 - **Filters**:
   - Category: Breakout
   - Direction: Both

@@ -16,7 +16,11 @@
 - **止损**：是，按百分比
 - **默认值**:
   - `CandleType` = 15分钟
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `MaPeriod` = 20
+  - `VolumePeriod` = 20
+  - `VolumeThreshold` = 1.2
+    当K线成交量超过前VolumePeriod根K线平均成交量的VolumeThreshold倍时视为放量。空仓时，放量K线收于上升的SMA之上则做多，收于下降的SMA之下则做空。成交量跌破均值或SMA反向时平仓。
 - **过滤器**:
   - 类别：趋势跟随
   - 方向：双向

@@ -20,6 +20,7 @@ Der Trade wird typischerweise über den Stop-Loss beendet, da die Strategie eine
   - `VolumeMultiplier` = 2.0
   - `MAPeriod` = 20
   - `AtrMultiplier` = 2 ATR
+    Der Trend ist die Richtung des gleitenden Durchschnitts gegenüber der Vorkerze. Der Stop beginnt AtrMultiplier ATR (Periode 14) vom Einstiegsschluss entfernt und folgt jedem späteren Schlusskurs in diesem Abstand; er wird bei Kerzenschluss geprüft.
   - `CandleType` = 5 minute
 - **Filter**:
   - Kategorie: Umkehr

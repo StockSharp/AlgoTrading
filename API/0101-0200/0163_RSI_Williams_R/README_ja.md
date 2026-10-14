@@ -7,7 +7,7 @@
 
 RSI は全体的なモメンタムを概説し、Williams %R はより素早い反転シグナルを提供します。2 つのオシレーターが一致したときにトレードが実行されます。
 
-短期スイングを追う積極的なトレーダーに適しています。ATR ベースのストップが採用されています。
+短期スイングを追う積極的なトレーダーに適しています。パーセントストップが採用されています。
 
 ## 詳細
 
@@ -17,7 +17,7 @@ RSI は全体的なモメンタムを概説し、Williams %R はより素早い�
 - **ロング/ショート**: 両方
 - **エグジット条件**:
   - RSI がニュートラルゾーンに戻る
-- **ストップ**: `StopLoss` を使用したパーセントベース
+- **ストップ**: `StopLossPercent` を使用したパーセントベース
 - **デフォルト値**:
   - `RsiPeriod` = 14
   - `RsiOversold` = 30m
@@ -25,8 +25,9 @@ RSI は全体的なモメンタムを概説し、Williams %R はより素早い�
   - `WilliamsRPeriod` = 14
   - `WilliamsROversold` = -80m
   - `WilliamsROverbought` = -20m
-  - `StopLoss` = new Unit(2, UnitTypes.Percent)
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    ニュートラルゾーンはRSIの中央です。ロングはRSIが50まで戻ったら、ショートはRSIが50まで下がったら決済します。 保有ポジションと逆方向のエントリーシグナルはドテンになります。
 - **フィルター**:
   - カテゴリ: 平均回帰
   - 方向: 両方

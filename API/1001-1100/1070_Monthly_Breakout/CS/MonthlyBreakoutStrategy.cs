@@ -91,7 +91,7 @@ public class MonthlyBreakoutStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Holding Period", "Bars to hold position", "General");
 		
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
 		.SetDisplay("Candle Type", "Working candle timeframe", "General");
 		
 		_january = Param(nameof(January), true).SetDisplay("January", "Enable trading in January", "Months");

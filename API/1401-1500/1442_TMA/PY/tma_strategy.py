@@ -14,7 +14,7 @@ from StockSharp.Algo.Strategies import Strategy
 class tma_strategy(Strategy):
     def __init__(self):
         super(tma_strategy, self).__init__()
-        self._slow_length = self.Param("SlowLength", 40) \
+        self._slow_length = self.Param("SlowLength", 200) \
             .SetGreaterThanZero() \
             .SetDisplay("Slow Length", "Slow EMA period", "General")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \

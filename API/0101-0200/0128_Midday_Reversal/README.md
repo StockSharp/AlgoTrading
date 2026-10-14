@@ -18,7 +18,10 @@ A percent stop controls risk and exits occur if the reversal fails to develop by
 - **Stops**: Yes, percent based
 - **Default Values**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `MiddayHour` = 12
+  - `AfternoonHour` = 16
+    The market trades around the clock, so the session is the UTC day. The morning move is the change from the day's open to the close of the candle ending at MiddayHour. Between MiddayHour and AfternoonHour the strategy enters once against that move, on the first candle that closes against it, and closes the position at AfternoonHour.
 - **Filters**:
   - Category: Intraday
   - Direction: Both

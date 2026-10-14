@@ -36,7 +36,7 @@ public class SimpleForecastKeltnerWormsStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for processing", "General");
 
-		_length = Param(nameof(Length), 20)
+		_length = Param(nameof(Length), 10)
 			.SetDisplay("Length", "Channel calculation period", "Indicators");
 
 		_multiplier = Param(nameof(Multiplier), 2m)

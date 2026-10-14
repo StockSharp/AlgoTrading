@@ -1,7 +1,7 @@
 # Стратегия Hull MA RSI
 [English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-Реализация стратегии №159 — Hull Moving Average + RSI. Покупать, когда HMA растёт и RSI ниже 30 (перепроданность). Продавать, когда HMA падает и RSI выше 70 (перекупленность).
+Реализация стратегии №159 — Hull Moving Average + RSI. Покупать, когда HMA разворачивается вверх и RSI ниже RsiOversold. Продавать, когда HMA разворачивается вниз и RSI выше RsiOverbought.
 
 Тестирование показывает среднегодичную доходность около 64%\. Стратегию лучше запускать на рынке Форекс.
 
@@ -17,14 +17,16 @@ Hull MA формирует сглаженную линию тренда, а RSI 
 - **Длинные/короткие**: обе стороны
 - **Условия выхода**:
   - Изменение направления Hull MA
-- **Стопы**: на основе ATR через `StopLoss`
+- **Стопы**: на основе ATR через `StopLossAtr`
 - **Значения по умолчанию**:
   - `HmaPeriod` = 9
   - `RsiPeriod` = 14
   - `RsiOversold` = 30m
   - `RsiOverbought` = 70m
-  - `StopLoss` = new Unit(2, UnitTypes.Absolute)
+  - `StopLossAtr` = 2
+  - `AtrPeriod` = 14
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    HMA разворачивается вверх, когда растёт после снижения, и вниз, когда снижается после роста. Стоп стоит в StopLossAtr ATR (AtrPeriod) от цены закрытия при входе и проверяется по закрытиям свечей. Сигнал на вход против открытой позиции разворачивает её.
 - **Фильтры**:
   - Категория: Средняя обратная
   - Направление: Оба

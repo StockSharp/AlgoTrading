@@ -16,15 +16,17 @@ Adequado para mercados voláteis onde as tendências se expandem rapidamente. St
   - Vendido: `Close > UpperBand && CCI > CciOverbought`
 - **Comprado/Vendido**: Ambos
 - **Critérios de saída**: O preço retorna à banda do meio
-- **Stops**: Baseados em ATR usando `StopLoss`
+- **Stops**: Baseados em ATR usando `StopLossAtr`
 - **Valores padrão**:
   - `BollingerPeriod` = 20
   - `BollingerDeviation` = 2.0m
   - `CciPeriod` = 20
   - `CciOversold` = -100m
   - `CciOverbought` = 100m
-  - `StopLoss` = new Unit(2, UnitTypes.Absolute)
+  - `StopLossAtr` = 2
+  - `AtrPeriod` = 14
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    O stop fica a StopLossAtr ATR (AtrPeriod) do fechamento de entrada e é verificado nos fechamentos dos candles. Um sinal de entrada contra uma posição aberta a inverte.
 - **Filtros**:
   - Categoria: Reversão à média
   - Direção: Ambos

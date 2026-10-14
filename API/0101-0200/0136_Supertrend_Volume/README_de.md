@@ -18,7 +18,11 @@ Stops folgen der Supertrend-Linie und schließen die Position, wenn der Kurs auf
 - **Stops**: Ja, prozentbasiert
 - **Standardwerte**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `SupertrendPeriod` = 10
+  - `SupertrendMultiplier` = 3
+  - `VolumePeriod` = 20
+    Ein Supertrend-Wechsel, ein Schluss auf der anderen Seite der Linie, schließt eine Gegenposition. Der Wechsel eröffnet nur dann eine Position in seiner Richtung, wenn das Kerzenvolumen über dem Durchschnitt der vorherigen VolumePeriod Kerzen liegt, sodass ein bestätigter Wechsel die Position dreht.
 - **Filter**:
   - Kategorie: Trendfolge
   - Richtung: Beide

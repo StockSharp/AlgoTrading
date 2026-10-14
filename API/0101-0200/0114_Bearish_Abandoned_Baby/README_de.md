@@ -18,7 +18,9 @@ Das Risiko ist durch einen Stop knapp oberhalb des Doji-Hochs begrenzt, falls de
 - **Stops**: Ja, prozentbasiert
 - **Standardwerte**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `DojiBodyPercent` = 10
+  - `StopLossPercent` = 2
+    Der Markt handelt rund um die Uhr, daher haben Kerzenspannen fast nie Lücken (im Beispielmonat gibt es höchstens ein solches bärisches Muster); die Lücken werden zwischen den Kerzenkörpern gemessen. Der Körper des Doji beträgt höchstens DojiBodyPercent seiner Spanne. Die Strategie verkauft nur, zum Schluss der dritten Kerze; der Stop liegt StopLossPercent über dem Doji-Hoch, und die Position schließt, wenn eine Kerze darüber schließt.
 - **Filter**:
   - Kategorie: Muster
   - Richtung: Beide

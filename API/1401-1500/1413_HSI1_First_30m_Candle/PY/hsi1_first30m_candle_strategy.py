@@ -17,7 +17,7 @@ class hsi1_first30m_candle_strategy(Strategy):
         self._slow_length = self.Param("SlowLength", 40) \
             .SetGreaterThanZero() \
             .SetDisplay("Slow Length", "Slow EMA period", "General")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
             .SetDisplay("Candle Type", "Candle type", "General")
         self._prev_f = 0.0
         self._prev_s = 0.0

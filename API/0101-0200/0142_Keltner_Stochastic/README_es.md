@@ -26,11 +26,11 @@ Los traders a corto plazo que buscan reversiones rápidas pueden encontrarlo út
   - `KeltnerMultiplier` = 2.0m
   - `StochPeriod` = 14
   - `StochK` = 3
-  - `StochD` = 3
   - `StochOversold` = 20m
   - `StochOverbought` = 80m
   - `StopLossAtr` = 2.0m
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    El canal es la EMA más y menos KeltnerMultiplier ATR. StochK en las reglas es %K: el estocástico de StochPeriod velas suavizado en StochK velas; %D no interviene, por lo que no tiene ajuste. Una entrada contra una posición abierta la invierte. El stop se comprueba en los cierres de vela.
 - **Filtros**:
   - Categoría: Reversión a la media
   - Dirección: Ambos

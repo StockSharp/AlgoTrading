@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,9 +11,10 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy combining Keltner Channels and RSI indicators.
-/// Looks for mean reversion opportunities when price touches channel boundaries
-/// and RSI confirms oversold/overbought conditions.
+/// Keltner RSI strategy.
+/// The Keltner Channel is the EmaPeriod EMA plus and minus AtrMultiplier times the AtrPeriod ATR. A close below the lower band with RSI
+/// below RsiOversoldLevel goes long and a close above the upper band with RSI above RsiOverboughtLevel goes short, reversing an opposite
+/// position. The position closes once price returns to the EMA, and a percent stop limits the loss.
 /// </summary>
 public class KeltnerRsiStrategy : Strategy
 {
@@ -26,12 +24,11 @@ public class KeltnerRsiStrategy : Strategy
 	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<decimal> _rsiOverboughtLevel;
 	private readonly StrategyParam<decimal> _rsiOversoldLevel;
-	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
 
 	/// <summary>
-	/// EMA period for Keltner Channels.
+	/// Period of the channel EMA.
 	/// </summary>
 	public int EmaPeriod
 	{
@@ -40,7 +37,7 @@ public class KeltnerRsiStrategy : Strategy
 	}
 
 	/// <summary>
-	/// ATR period for Keltner Channels.
+	/// Period of the channel ATR.
 	/// </summary>
 	public int AtrPeriod
 	{
@@ -49,7 +46,7 @@ public class KeltnerRsiStrategy : Strategy
 	}
 
 	/// <summary>
-	/// ATR multiplier for Keltner Channels width.
+	/// ATR multiplier of the channel width.
 	/// </summary>
 	public decimal AtrMultiplier
 	{
@@ -58,7 +55,7 @@ public class KeltnerRsiStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Period for RSI calculation.
+	/// Period of RSI.
 	/// </summary>
 	public int RsiPeriod
 	{
@@ -67,7 +64,7 @@ public class KeltnerRsiStrategy : Strategy
 	}
 
 	/// <summary>
-	/// RSI overbought level.
+	/// RSI level for shorts.
 	/// </summary>
 	public decimal RsiOverboughtLevel
 	{
@@ -76,7 +73,7 @@ public class KeltnerRsiStrategy : Strategy
 	}
 
 	/// <summary>
-	/// RSI oversold level.
+	/// RSI level for longs.
 	/// </summary>
 	public decimal RsiOversoldLevel
 	{
@@ -85,7 +82,7 @@ public class KeltnerRsiStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop loss percentage.
+	/// Stop loss percentage from entry price.
 	/// </summary>
 	public decimal StopLossPercent
 	{
@@ -94,16 +91,7 @@ public class KeltnerRsiStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Bars to wait between trades.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for strategy calculation.
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -111,163 +99,116 @@ public class KeltnerRsiStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
-	// Fields for indicators
-	private ExponentialMovingAverage _ema;
-	private ATR _atr;
-	private RSI _rsi;
-	private int _cooldown;
-
 	/// <summary>
-	/// Initialize strategy.
+	/// Constructor.
 	/// </summary>
 	public KeltnerRsiStrategy()
 	{
 		_emaPeriod = Param(nameof(EmaPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("EMA Period", "Period for EMA in Keltner Channels", "Indicators")
-			
-			.SetOptimize(10, 30, 5);
+			.SetDisplay("EMA Period", "Period of the channel EMA", "Keltner");
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("ATR Period", "Period for ATR in Keltner Channels", "Indicators")
-			
-			.SetOptimize(7, 21, 7);
+			.SetDisplay("ATR Period", "Period of the channel ATR", "Keltner");
 
-		_atrMultiplier = Param(nameof(AtrMultiplier), 2.0m)
+		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
 			.SetGreaterThanZero()
-			.SetDisplay("ATR Multiplier", "Multiplier for ATR to set channel width", "Indicators")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
+			.SetDisplay("ATR Multiplier", "ATR multiplier of the channel width", "Keltner");
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("RSI Period", "Period for RSI calculation", "Indicators")
-			
-			.SetOptimize(7, 21, 7);
+			.SetDisplay("RSI Period", "Period of RSI", "RSI");
 
-		_rsiOverboughtLevel = Param(nameof(RsiOverboughtLevel), 60m)
-			.SetRange(50, 90)
-			.SetDisplay("RSI Overbought", "RSI level considered overbought", "Trading Levels")
-			
-			.SetOptimize(65, 80, 5);
+		_rsiOverboughtLevel = Param(nameof(RsiOverboughtLevel), 70m)
+			.SetDisplay("RSI Overbought", "RSI level for shorts", "RSI");
 
-		_rsiOversoldLevel = Param(nameof(RsiOversoldLevel), 40m)
-			.SetRange(10, 50)
-			.SetDisplay("RSI Oversold", "RSI level considered oversold", "Trading Levels")
-			
-			.SetOptimize(20, 35, 5);
+		_rsiOversoldLevel = Param(nameof(RsiOversoldLevel), 30m)
+			.SetDisplay("RSI Oversold", "RSI level for longs", "RSI");
 
-		_cooldownBars = Param(nameof(CooldownBars), 120)
-			.SetRange(5, 500)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "General");
-
-		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
-public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-{
-	return [(Security, CandleType)];
-}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		base.OnReseted();
-
-		_ema = null;
-		_atr = null;
-		_rsi = null;
-		_cooldown = 0;
+		return [(Security, CandleType)];
 	}
 
-/// <inheritdoc />
-protected override void OnStarted2(DateTime time)
-{
-	base.OnStarted2(time);
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
-		// Create indicators
-		_ema = new EMA { Length = EmaPeriod };
-		_atr = new ATR { Length = AtrPeriod };
-		_rsi = new RSI { Length = RsiPeriod };
+		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
+		var atr = new AverageTrueRange { Length = AtrPeriod };
+		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
-		// Create subscription
 		var subscription = SubscribeCandles(CandleType);
-
-		// Use WhenCandlesFinished to process candles manually
 		subscription
-			.Bind(_ema, _atr, _rsi, ProcessCandle)
+			.BindEx(ema, atr, rsi, ProcessCandle)
 			.Start();
 
-		// Setup chart if available
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			
-			// Add indicators to chart
-			DrawIndicator(area, _ema);
-			
-			// Create second area for RSI
-			var rsiArea = CreateChartArea();
-			DrawIndicator(rsiArea, _rsi);
-			
+			DrawIndicator(area, ema);
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, rsi);
+			}
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal emaValue, decimal atrValue, decimal rsiValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
 	{
-		// Skip if indicators are not formed yet
-		if (!_ema.IsFormed || !_atr.IsFormed || !_rsi.IsFormed)
+		// The high-level handler activates native protection before this callback, also between signal bars.
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue emaValue, IIndicatorValue atrValue, IIndicatorValue rsiValue)
+	{
+		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
+		if (!emaValue.IsFormed || !atrValue.IsFormed || !rsiValue.IsFormed)
+			return;
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Calculate Keltner Channels
-		var upperBand = emaValue + (atrValue * AtrMultiplier);
-		var lowerBand = emaValue - (atrValue * AtrMultiplier);
+		var middle = emaValue.GetValue<decimal>();
+		var atr = atrValue.GetValue<decimal>();
+		var rsi = rsiValue.GetValue<decimal>();
+		var upper = middle + AtrMultiplier * atr;
+		var lower = middle - AtrMultiplier * atr;
+		var close = candle.ClosePrice;
 
-		if (_cooldown > 0)
-		{
-			_cooldown--;
-			return;
-		}
-
-		// Trading logic
-		if (candle.ClosePrice < emaValue && rsiValue < 45m && Position == 0)
-		{
-			// Mean-reversion long in lower zone.
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (candle.ClosePrice > emaValue && rsiValue > 55m && Position == 0)
-		{
-			// Mean-reversion short in upper zone.
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position > 0 && candle.ClosePrice >= emaValue && rsiValue > 50)
-		{
-			// Exit long position when price crosses above EMA (middle band)
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position < 0 && candle.ClosePrice <= emaValue && rsiValue < 50)
-		{
-			// Exit short position when price crosses below EMA (middle band)
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
+		if (close < lower && rsi < RsiOversoldLevel && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (close > upper && rsi > RsiOverboughtLevel && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
+		else if (Position > 0 && close >= middle)
+			SellMarket(Position);
+		else if (Position < 0 && close <= middle)
+			BuyMarket(-Position);
 	}
 }

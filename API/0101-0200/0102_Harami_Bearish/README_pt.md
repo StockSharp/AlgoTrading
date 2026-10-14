@@ -18,7 +18,8 @@ Um stop percentual acima do máximo do padrão limita o risco e a operação é 
 - **Stops**: Sim, baseado em percentual
 - **Valores padrão**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+    A estratégia só vende. O stop fica StopLossPercent acima da máxima mais alta do padrão e a posição fecha quando uma vela fecha acima dele.
 - **Filtros**:
   - Categoria: Padrão
   - Direção: Ambos

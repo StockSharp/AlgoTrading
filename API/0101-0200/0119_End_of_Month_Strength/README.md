@@ -18,7 +18,9 @@ Stops are placed below recent support to guard against unexpected weakness.
 - **Stops**: Yes, percent based
 - **Default Values**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `DaysBeforeMonthEnd` = 3
+  - `StopLossPercent` = 2
+    Days are UTC days, since the market trades around the clock; entries happen at the close of the day's first candle. The long opens on each of the month's last DaysBeforeMonthEnd days while flat and closes at the first candle of the new month.
 - **Filters**:
   - Category: Seasonality
   - Direction: Both

@@ -18,6 +18,7 @@ Sollte der Kurs nicht sofort ausbrechen, verwaltet die Strategie bestehende Posi
 - **Standardwerte**:
   - `CandleType` = 5 minute
   - `StopLossPercent` = 1
+    Der Stop liegt so viele Prozent jenseits der gegenüberliegenden Seite des Inside Bars; er und der Ausstieg am Extrem der Vorkerze werden bei Kerzenschluss geprüft.
 - **Filter**:
   - Kategorie: Ausbruch
   - Richtung: Beide

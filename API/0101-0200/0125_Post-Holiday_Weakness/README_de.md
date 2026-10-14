@@ -18,7 +18,9 @@ Ein kleiner Stop wird verwendet, um übermäßige Verluste bei Handel mit gering
 - **Stops**: Ja, prozentbasiert
 - **Standardwerte**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `Holidays` = 2024 NYSE holidays
+  - `StopLossPercent` = 2
+    Tage sind UTC-Tage, da der Markt rund um die Uhr handelt; Einstiege erfolgen zum Schluss der ersten Kerze des Tages. Holidays ist eine kommagetrennte Liste von yyyy-MM-dd-Daten, standardmäßig die NYSE-Feiertage 2024 (Karfreitag ist 2024-03-29). Der Markt handelt täglich, daher öffnet der Leerverkauf am Kalendertag nach einem Feiertag und wird mit der letzten Kerze dieses Tages gedeckt.
 - **Filter**:
   - Kategorie: Saisonalität
   - Richtung: Beide

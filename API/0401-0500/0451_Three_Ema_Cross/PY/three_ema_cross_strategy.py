@@ -4,127 +4,122 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates
+from System import TimeSpan, Decimal
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, Level1Fields
+from StockSharp.BusinessEntities import Subscription
 from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 
 
 class three_ema_cross_strategy(Strategy):
-    """Three EMA Cross Strategy."""
+    """
+    Three EMA Cross Strategy.
+    After the fast EMA crosses above the slow EMA, a long opens within CrossBackBars bars on a pullback whose low touches the
+    fast EMA while the close stays at or above both the fast EMA and the trend EMA. The long closes when the fast EMA drops
+    below the slow EMA, and a percent stop limits the loss.
+    """
 
     def __init__(self):
         super(three_ema_cross_strategy, self).__init__()
-
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
-            .SetDisplay("Candle Type", "Type of candles to use", "General")
-        self._fast_ema_length = self.Param("FastEmaLength", 10) \
-            .SetDisplay("Fast EMA", "Fast EMA length", "Moving Averages")
-        self._slow_ema_length = self.Param("SlowEmaLength", 20) \
-            .SetDisplay("Slow EMA", "Slow EMA length", "Moving Averages")
-        self._trend_ema_length = self.Param("TrendEmaLength", 100) \
-            .SetDisplay("Trend EMA", "Trend EMA length", "Moving Averages")
-        self._cooldown_bars = self.Param("CooldownBars", 10) \
-            .SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk")
-
-        self._fast_ema = None
-        self._slow_ema = None
-        self._trend_ema = None
-        self._prev_fast_ema = 0.0
-        self._prev_slow_ema = 0.0
-        self._cooldown_remaining = 0
+        self._fast_ema_length = self.Param("FastEmaLength", 10).SetGreaterThanZero().SetDisplay("Fast EMA", "Fast EMA period", "Indicators")
+        self._slow_ema_length = self.Param("SlowEmaLength", 20).SetGreaterThanZero().SetDisplay("Slow EMA", "Slow EMA period", "Indicators")
+        self._trend_ema_length = self.Param("TrendEmaLength", 100).SetGreaterThanZero().SetDisplay("Trend EMA", "Trend EMA period", "Indicators")
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0).SetNotNegative().SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk")
+        self._cross_back_bars = self.Param("CrossBackBars", 10).SetGreaterThanZero().SetDisplay("Cross Back Bars", "Bars after the cross during which a pullback entry is allowed", "Trading")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._reset_state()
 
     @property
     def candle_type(self):
         return self._candle_type.Value
 
+    def _reset_state(self):
+        self._prev_fast = None
+        self._prev_slow = None
+        self._bars_since_cross = None
+
     def OnReseted(self):
         super(three_ema_cross_strategy, self).OnReseted()
-        self._fast_ema = None
-        self._slow_ema = None
-        self._trend_ema = None
-        self._prev_fast_ema = 0.0
-        self._prev_slow_ema = 0.0
-        self._cooldown_remaining = 0
+        self._reset_state()
 
     def OnStarted2(self, time):
         super(three_ema_cross_strategy, self).OnStarted2(time)
 
-        self._fast_ema = ExponentialMovingAverage()
-        self._fast_ema.Length = int(self._fast_ema_length.Value)
+        self._reset_state()
 
-        self._slow_ema = ExponentialMovingAverage()
-        self._slow_ema.Length = int(self._slow_ema_length.Value)
-
-        self._trend_ema = ExponentialMovingAverage()
-        self._trend_ema.Length = int(self._trend_ema_length.Value)
+        fast_ema = ExponentialMovingAverage()
+        fast_ema.Length = self._fast_ema_length.Value
+        slow_ema = ExponentialMovingAverage()
+        slow_ema.Length = self._slow_ema_length.Value
+        trend_ema = ExponentialMovingAverage()
+        trend_ema.Length = self._trend_ema_length.Value
 
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(self._fast_ema, self._slow_ema, self._trend_ema, self._on_process).Start()
+        subscription.BindEx(fast_ema, slow_ema, trend_ema, self._process_candle).Start()
+
+        stop = float(self._stop_loss_percent.Value)
+        if stop > 0:
+            self.StartProtection(Unit(), Unit(Decimal(stop), UnitTypes.Percent), useMarketOrders=True, isLocalStop=True)
+
+            # The stop has to see prices between candles, not only at their close.
+            for field in (Level1Fields.BestBidPrice, Level1Fields.BestAskPrice):
+                quotes = Subscription(DataType.Level1, self.Security)
+                quotes.MarketData.BuildField = field
+                self.SubscribeLevel1(quotes).Bind(self._observe_protection_quote).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, self._fast_ema)
-            self.DrawIndicator(area, self._slow_ema)
-            self.DrawIndicator(area, self._trend_ema)
+            self.DrawIndicator(area, fast_ema)
+            self.DrawIndicator(area, slow_ema)
+            self.DrawIndicator(area, trend_ema)
             self.DrawOwnTrades(area)
 
-    def _on_process(self, candle, fast_ema, slow_ema, trend_ema):
+    def _observe_protection_quote(self, quote):
+        # The high-level handler activates native protection before the callback, including between bars.
+        pass
+
+    def _process_candle(self, candle, fast_value, slow_value, trend_value):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self._fast_ema.IsFormed or not self._slow_ema.IsFormed or not self._trend_ema.IsFormed:
-            self._prev_fast_ema = float(fast_ema)
-            self._prev_slow_ema = float(slow_ema)
+        if not fast_value.IsFormed or not slow_value.IsFormed:
+            return
+
+        fast = float(fast_value.GetValue[Decimal](None))
+        slow = float(slow_value.GetValue[Decimal](None))
+
+        prev_fast = self._prev_fast
+        prev_slow = self._prev_slow
+        self._prev_fast = fast
+        self._prev_slow = slow
+
+        if prev_fast is not None and prev_slow is not None and prev_fast <= prev_slow and fast > slow:
+            self._bars_since_cross = 0
+        elif self._bars_since_cross is not None:
+            self._bars_since_cross += 1
+
+        if not trend_value.IsFormed:
             return
 
         if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_fast_ema = float(fast_ema)
-            self._prev_slow_ema = float(slow_ema)
             return
 
-        fe = float(fast_ema)
-        se = float(slow_ema)
-        te = float(trend_ema)
-
-        if self._cooldown_remaining > 0:
-            self._cooldown_remaining -= 1
-            self._prev_fast_ema = fe
-            self._prev_slow_ema = se
-            return
-
-        if self._prev_fast_ema == 0.0 or self._prev_slow_ema == 0.0:
-            self._prev_fast_ema = fe
-            self._prev_slow_ema = se
-            return
-
+        trend = float(trend_value.GetValue[Decimal](None))
         close = float(candle.ClosePrice)
-        cooldown = int(self._cooldown_bars.Value)
+        low = float(candle.LowPrice)
 
-        cross_up = fe > se and self._prev_fast_ema <= self._prev_slow_ema
-        cross_down = fe < se and self._prev_fast_ema >= self._prev_slow_ema
+        if self.Position > 0:
+            if fast < slow:
+                self.SellMarket(self.Position)
+            return
 
-        if cross_up and close > te and self.Position <= 0:
-            if self.Position < 0:
-                self.BuyMarket(Math.Abs(self.Position))
+        recent_cross = self._bars_since_cross is not None and self._bars_since_cross < self._cross_back_bars.Value
+
+        if self.Position == 0 and recent_cross and close >= fast and low <= fast and trend <= close:
             self.BuyMarket(self.Volume)
-            self._cooldown_remaining = cooldown
-        elif cross_down and close < te and self.Position >= 0:
-            if self.Position > 0:
-                self.SellMarket(Math.Abs(self.Position))
-            self.SellMarket(self.Volume)
-            self._cooldown_remaining = cooldown
-        elif self.Position > 0 and cross_down:
-            self.SellMarket(Math.Abs(self.Position))
-            self._cooldown_remaining = cooldown
-        elif self.Position < 0 and cross_up:
-            self.BuyMarket(Math.Abs(self.Position))
-            self._cooldown_remaining = cooldown
-
-        self._prev_fast_ema = fe
-        self._prev_slow_ema = se
 
     def CreateClone(self):
         return three_ema_cross_strategy()

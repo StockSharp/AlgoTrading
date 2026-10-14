@@ -57,10 +57,10 @@ public class MaOnMomentumMinProfitStrategy : Strategy
 	/// </summary>
 	public MaOnMomentumMinProfitStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles used for the momentum calculation", "General");
 
-		_momentumPeriod = Param(nameof(MomentumPeriod), 20)
+		_momentumPeriod = Param(nameof(MomentumPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Momentum Period", "Lookback for the momentum indicator", "Momentum");
 

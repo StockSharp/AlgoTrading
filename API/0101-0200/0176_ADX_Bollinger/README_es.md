@@ -1,7 +1,7 @@
 # Estrategia Adx Bollinger
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
-Estrategia basada en los indicadores ADX y Bandas de Bollinger. Entra largo cuando ADX > 25 y el precio rompe por encima de la banda superior de Bollinger. Entra corto cuando ADX > 25 y el precio rompe por debajo de la banda inferior de Bollinger.
+Estrategia basada en los indicadores ADX y Bandas de Bollinger. Entra largo cuando ADX > 25 y el precio cierra por debajo de la banda inferior de Bollinger. Entra corto cuando ADX > 25 y el precio cierra por encima de la banda superior de Bollinger.
 
 Las pruebas indican un retorno anual promedio de aproximadamente 115%. Funciona mejor en el mercado de acciones.
 
@@ -19,11 +19,13 @@ Adecuado para entornos de alta volatilidad. Un stop basado en ATR reduce el ries
 - **Stops**: Basado en ATR usando `AtrMultiplier`
 - **Valores predeterminados**:
   - `AdxPeriod` = 14
+  - `AdxThreshold` = 25
   - `BollingerPeriod` = 20
   - `BollingerDeviation` = 2.0m
   - `AtrPeriod` = 14
   - `AtrMultiplier` = 2.0m
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    El 25 de las reglas es el valor predeterminado de AdxThreshold. Como muestran los criterios de entrada, la salida en la banda media y la categoría Mean reversion, la ruptura de una banda con ADX fuerte se opera en contra. El stop está a AtrMultiplier ATR (AtrPeriod) del cierre de entrada y se comprueba en los cierres de vela. Una señal de entrada contra una posición abierta la invierte.
 - **Filtros**:
   - Categoría: Reversión a la media
   - Dirección: Ambos

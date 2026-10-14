@@ -28,7 +28,7 @@ public class GraalFractalChannelStrategy : Strategy
 
 	public GraalFractalChannelStrategy()
 	{
-		_channelPeriod = Param(nameof(ChannelPeriod), 20)
+		_channelPeriod = Param(nameof(ChannelPeriod), 14)
 			.SetDisplay("Channel Period", "Highest/Lowest lookback", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())

@@ -20,9 +20,12 @@ Delta 中性交易受到尋求低波動敞口的量化交易者歡迎。即使�
 - **止損**: 是，按價差百分比止損
 - **默認值**:
   - `LookbackPeriod` = 20
-  - `EntryThreshold` = 2m
-  - `StopLossPercent` = 2m
+  - `EntryThreshold` = 2
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
+  - `Asset2Security` — 必填，无默认值
+  - `Asset2Portfolio` — 为空时使用策略的投资组合
+    价差为策略主品种（Security）收盘价减去Asset2Security在同一时间K线上的收盘价，其z-score基于最近LookbackPeriod个价差的均值和标准差。每条腿交易Volume数量，相反信号会同时反转两条腿。当价差朝不利方向移动入场价差的StopLossPercent百分比时止损平掉两条腿，按K线收盘检查；设为0则关闭。
 - **篩選條件**:
   - 類別: 套利
   - 方向: 雙向

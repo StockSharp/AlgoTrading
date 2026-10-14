@@ -28,11 +28,11 @@ public class TrafficLightStrategy : Strategy
 
 	public TrafficLightStrategy()
 	{
-		_redMaPeriod = Param(nameof(RedMaPeriod), 50)
+		_redMaPeriod = Param(nameof(RedMaPeriod), 120)
 			.SetGreaterThanZero()
 			.SetDisplay("Red MA", "EMA period representing the slow trend", "Parameters");
 
-		_yellowMaPeriod = Param(nameof(YellowMaPeriod), 25)
+		_yellowMaPeriod = Param(nameof(YellowMaPeriod), 55)
 			.SetGreaterThanZero()
 			.SetDisplay("Yellow MA", "EMA period representing the medium trend", "Parameters");
 
@@ -40,7 +40,7 @@ public class TrafficLightStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Green MA", "EMA period representing the fast trend", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for calculations", "General");
 	}
 

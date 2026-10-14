@@ -18,7 +18,7 @@ class linear_correlation_oscillator_strategy(Strategy):
 
     def __init__(self):
         super(linear_correlation_oscillator_strategy, self).__init__()
-        self._length = self.Param("Length", 20) \
+        self._length = self.Param("Length", 14) \
             .SetDisplay("Length", "Lookback length", "General")
         self._entry_level = self.Param("EntryLevel", 0.08) \
             .SetDisplay("Entry Level", "Absolute level for entry", "General")

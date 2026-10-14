@@ -13,8 +13,8 @@ class vr_overturn_strategy(Strategy):
     """Martingale/anti-martingale reversal: alternates direction after losses with StartProtection SL/TP."""
     def __init__(self):
         super(vr_overturn_strategy, self).__init__()
-        self._sl = self.Param("StopLossPips", 300).SetGreaterThanZero().SetDisplay("Stop Loss", "SL in pips", "Risk")
-        self._tp = self.Param("TakeProfitPips", 900).SetGreaterThanZero().SetDisplay("Take Profit", "TP in pips", "Risk")
+        self._sl = self.Param("StopLossPips", 30).SetGreaterThanZero().SetDisplay("Stop Loss", "SL in pips", "Risk")
+        self._tp = self.Param("TakeProfitPips", 90).SetGreaterThanZero().SetDisplay("Take Profit", "TP in pips", "Risk")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))).SetDisplay("Candle Type", "Timeframe", "General")
 
     @property

@@ -21,10 +21,11 @@ Stochastic %Kが平均から`Multiplier`倍の標準偏差を差し引いた下�
 - **デフォルト値**:
   - `StochPeriod` = 14
   - `KPeriod` = 3
-  - `DPeriod` = 3
   - `AveragePeriod` = 20
-  - `Multiplier` = 2.0m
+  - `Multiplier` = 2
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
+    AvgとStdDevは現在値を含む直近AveragePeriod個の%Kの平均と標準偏差です。 ストップはエントリー価格の固定StopLossPercentで、ローソク足の間も監視されます。0で無効になります。 %Kは最初の期間のストキャスティクスをKPeriod本で平滑化した値で、%Dはルールに関与しないためDPeriodは削除しました。 保有ポジションと逆方向のエントリーシグナルはドテンになります。
 - **フィルター**:
   - カテゴリ: 平均回帰
   - 方向: 両方

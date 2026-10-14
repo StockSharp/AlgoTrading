@@ -20,6 +20,7 @@
   - `VolumeMultiplier` = 2.0
   - `MAPeriod` = 20
   - `AtrMultiplier` = 2 ATR
+    趋势为移动平均线相对前一根K线的方向。止损初始设在距入场收盘价 AtrMultiplier 倍 ATR（周期14）处，并按该距离跟随之后每根K线的收盘价移动；按K线收盘价检查。
   - `CandleType` = 5 分钟
 - **过滤条件**：
   - 类别: 反转

@@ -21,7 +21,7 @@ class macd_sample_trend_filter_strategy(Strategy):
             .SetDisplay("Fast Period", "Fast EMA for MACD", "Indicators")
         self._slow_period = self.Param("SlowPeriod", 26) \
             .SetDisplay("Slow Period", "Slow EMA for MACD", "Indicators")
-        self._trend_period = self.Param("TrendPeriod", 100) \
+        self._trend_period = self.Param("TrendPeriod", 26) \
             .SetDisplay("Trend Period", "Trend EMA period", "Indicators")
 
         self._prev_signal = 0

@@ -16,7 +16,7 @@ class simple_ema_crossover_strategy(Strategy):
         super(simple_ema_crossover_strategy, self).__init__()
         self._periods = self.Param("Periods", 17) \
             .SetDisplay("EMA Period", "Period for the fast EMA", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles for analysis", "General")
         self._prev_fast = 0.0
         self._prev_slow = 0.0

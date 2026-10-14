@@ -120,7 +120,7 @@ public class RsiSlopeMeanReversionStrategy : Strategy
 			.SetDisplay("Slope Lookback", "Period for slope statistics", "Slope Settings")
 			.SetOptimize(10, 50, 5);
 
-		_thresholdMultiplier = Param(nameof(ThresholdMultiplier), 1.5m)
+		_thresholdMultiplier = Param(nameof(ThresholdMultiplier), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Threshold Multiplier", "Standard deviation multiplier for entry threshold", "Slope Settings")
 			.SetOptimize(1m, 3m, 0.5m);

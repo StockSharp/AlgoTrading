@@ -7,7 +7,7 @@ Las pruebas indican un retorno anual promedio de aproximadamente 157%. Funciona 
 
 El VWAP actúa como referencia de la sesión y el ADX mide la convicción. Las entradas aparecen cuando el precio se aleja del VWAP con ADX mostrando fortaleza.
 
-Adecuado para traders intradía de tendencia. Los stops protectores usan múltiplos de ATR.
+Adecuado para traders intradía de tendencia. Los stops protectores usan un porcentaje fijo del precio de entrada.
 
 ## Detalles
 
@@ -18,9 +18,12 @@ Adecuado para traders intradía de tendencia. Los stops protectores usan múltip
 - **Criterios de salida**: ADX cae por debajo del umbral
 - **Stops**: Porcentual usando `StopLossPercent`
 - **Valores predeterminados**:
-  - `StopLossPercent` = 2m
+  - `StopLossPercent` = 2
   - `AdxPeriod` = 14
+  - `AdxThreshold` = 25
+  - `AdxExitThreshold` = 20
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    El mercado opera las 24 horas, por lo que el VWAP de la sesión se reinicia cada día UTC y pondera el precio típico de cada vela por su volumen. Los valores 25 y 20 de las reglas son los predeterminados de AdxThreshold y AdxExitThreshold. Una señal de entrada contra una posición abierta la invierte.
 - **Filtros**:
   - Categoría: Reversión a la media
   - Dirección: Ambos

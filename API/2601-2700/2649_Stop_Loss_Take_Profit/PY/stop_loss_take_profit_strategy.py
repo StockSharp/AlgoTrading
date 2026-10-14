@@ -22,7 +22,7 @@ class stop_loss_take_profit_strategy(Strategy):
             .SetDisplay("Stop Loss Distance", "Stop loss distance in price units", "Risk")
         self._take_profit_distance = self.Param("TakeProfitDistance", 5.0) \
             .SetDisplay("Take Profit Distance", "Take profit distance in price units", "Risk")
-        self._initial_volume = self.Param("InitialVolume", 1.0) \
+        self._initial_volume = self.Param("InitialVolume", 0.01) \
             .SetGreaterThanZero() \
             .SetDisplay("Initial Volume", "Starting order volume", "Risk")
 

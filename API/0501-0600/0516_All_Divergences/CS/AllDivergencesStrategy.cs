@@ -11,80 +11,158 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// All Divergences strategy - trades RSI divergences filtered by moving average.
-/// Bullish divergence: price makes lower low but RSI makes higher low.
-/// Bearish divergence: price makes higher high but RSI makes lower high.
+/// All Divergences strategy.
+/// Confirms price swing lows and highs as pivots with PivotSide bars on each side and compares each new pivot with the previous
+/// one. A lower price low with a higher RSI low while the close is above the moving average goes long; a higher price high
+/// with a lower RSI high while the close is below the moving average goes short, reversing an opposite position. A position
+/// is also closed after MaRiskCandles consecutive closes on the wrong side of the moving average, and optional percent
+/// stop-loss and take-profit protect it.
 /// </summary>
 public class AllDivergencesStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
+	private const int _pivotSide = 5;
+
 	private readonly StrategyParam<int> _maLength;
 	private readonly StrategyParam<int> _rsiLength;
-	private readonly StrategyParam<int> _lookbackBars;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<int> _maRiskCandles;
+	private readonly StrategyParam<bool> _useProtection;
+	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<decimal> _takeProfitPercent;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevLowPrice;
-	private decimal _prevLowRsi;
-	private decimal _prevHighPrice;
-	private decimal _prevHighRsi;
-	private decimal _curLowPrice;
-	private decimal _curLowRsi;
-	private decimal _curHighPrice;
-	private decimal _curHighRsi;
-	private int _barsSinceExtreme;
-	private int _cooldownRemaining;
+	private readonly List<(decimal high, decimal low, decimal rsi)> _bars = [];
+	private decimal? _lastPivotLow;
+	private decimal _lastPivotLowRsi;
+	private decimal? _lastPivotHigh;
+	private decimal _lastPivotHighRsi;
+	private int _closesBelowMa;
+	private int _closesAboveMa;
 
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-	public int MaLength { get => _maLength.Value; set => _maLength.Value = value; }
-	public int RsiLength { get => _rsiLength.Value; set => _rsiLength.Value = value; }
-	public int LookbackBars { get => _lookbackBars.Value; set => _lookbackBars.Value = value; }
-	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
+	/// <summary>
+	/// Moving average period.
+	/// </summary>
+	public int MaLength
+	{
+		get => _maLength.Value;
+		set => _maLength.Value = value;
+	}
 
+	/// <summary>
+	/// RSI period.
+	/// </summary>
+	public int RsiLength
+	{
+		get => _rsiLength.Value;
+		set => _rsiLength.Value = value;
+	}
+
+	/// <summary>
+	/// Consecutive closes against the moving average that close a position.
+	/// </summary>
+	public int MaRiskCandles
+	{
+		get => _maRiskCandles.Value;
+		set => _maRiskCandles.Value = value;
+	}
+
+	/// <summary>
+	/// Enable percent stop-loss and take-profit.
+	/// </summary>
+	public bool UseProtection
+	{
+		get => _useProtection.Value;
+		set => _useProtection.Value = value;
+	}
+
+	/// <summary>
+	/// Stop-loss percentage used when protection is enabled.
+	/// </summary>
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Take-profit percentage used when protection is enabled.
+	/// </summary>
+	public decimal TakeProfitPercent
+	{
+		get => _takeProfitPercent.Value;
+		set => _takeProfitPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
+	/// </summary>
 	public AllDivergencesStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
-
 		_maLength = Param(nameof(MaLength), 50)
 			.SetGreaterThanZero()
-			.SetDisplay("MA Length", "Length of moving average", "Indicators");
+			.SetDisplay("MA Length", "Moving average period", "Indicators");
 
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "RSI period", "Indicators");
 
-		_lookbackBars = Param(nameof(LookbackBars), 20)
+		_maRiskCandles = Param(nameof(MaRiskCandles), 3)
 			.SetGreaterThanZero()
-			.SetDisplay("Lookback Bars", "Bars to look back for divergence", "Indicators");
+			.SetDisplay("MA Risk Candles", "Consecutive closes against the MA that close a position", "Risk");
 
-		_cooldownBars = Param(nameof(CooldownBars), 10)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "Risk");
+		_useProtection = Param(nameof(UseProtection), false)
+			.SetDisplay("Use Protection", "Enable percent stop-loss and take-profit", "Risk");
+
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop-loss percentage used when protection is enabled", "Risk");
+
+		_takeProfitPercent = Param(nameof(TakeProfitPercent), 4m)
+			.SetNotNegative()
+			.SetDisplay("Take Profit %", "Take-profit percentage used when protection is enabled", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> [(Security, CandleType)];
+	{
+		return [(Security, CandleType)];
+	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevLowPrice = 0;
-		_prevLowRsi = 0;
-		_prevHighPrice = 0;
-		_prevHighRsi = 0;
-		_curLowPrice = decimal.MaxValue;
-		_curLowRsi = 100;
-		_curHighPrice = 0;
-		_curHighRsi = 0;
-		_barsSinceExtreme = 0;
-		_cooldownRemaining = 0;
+		ResetState();
+	}
+
+	private void ResetState()
+	{
+		_bars.Clear();
+		_lastPivotLow = null;
+		_lastPivotLowRsi = 0m;
+		_lastPivotHigh = null;
+		_lastPivotHighRsi = 0m;
+		_closesBelowMa = 0;
+		_closesAboveMa = 0;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+
+		ResetState();
 
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
 		var ma = new SimpleMovingAverage { Length = MaLength };
@@ -94,79 +172,88 @@ public class AllDivergencesStrategy : Strategy
 			.Bind(rsi, ma, ProcessCandle)
 			.Start();
 
+		if (UseProtection)
+			StartProtection(new Unit(TakeProfitPercent, UnitTypes.Percent), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true);
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, ma);
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+				DrawIndicator(oscillators, rsi);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal rsiValue, decimal maValue)
+	private void ProcessCandle(ICandleMessage candle, decimal rsi, decimal ma)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		_bars.Add((candle.HighPrice, candle.LowPrice, rsi));
+
+		var window = 2 * _pivotSide + 1;
+		if (_bars.Count > window)
+			_bars.RemoveAt(0);
+
+		var close = candle.ClosePrice;
+		_closesBelowMa = close < ma ? _closesBelowMa + 1 : 0;
+		_closesAboveMa = close > ma ? _closesAboveMa + 1 : 0;
+
+		if (_bars.Count < window)
+			return;
+
+		var bullishDivergence = false;
+		var bearishDivergence = false;
+
+		// The middle bar of the window is a pivot once PivotSide bars on each side have finished.
+		var (pivotHigh, pivotLow, pivotRsi) = _bars[_pivotSide];
+		var isPivotLow = true;
+		var isPivotHigh = true;
+
+		for (var i = 0; i < window; i++)
+		{
+			if (i == _pivotSide)
+				continue;
+
+			if (_bars[i].low <= pivotLow)
+				isPivotLow = false;
+
+			if (_bars[i].high >= pivotHigh)
+				isPivotHigh = false;
+		}
+
+		if (isPivotLow)
+		{
+			if (_lastPivotLow is decimal prevLow)
+				bullishDivergence = pivotLow < prevLow && pivotRsi > _lastPivotLowRsi;
+
+			_lastPivotLow = pivotLow;
+			_lastPivotLowRsi = pivotRsi;
+		}
+
+		if (isPivotHigh)
+		{
+			if (_lastPivotHigh is decimal prevHigh)
+				bearishDivergence = pivotHigh > prevHigh && pivotRsi < _lastPivotHighRsi;
+
+			_lastPivotHigh = pivotHigh;
+			_lastPivotHighRsi = pivotRsi;
+		}
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Track current lows and highs
-		if (candle.LowPrice < _curLowPrice)
-		{
-			_curLowPrice = candle.LowPrice;
-			_curLowRsi = rsiValue;
-		}
-		if (candle.HighPrice > _curHighPrice)
-		{
-			_curHighPrice = candle.HighPrice;
-			_curHighRsi = rsiValue;
-		}
-
-		_barsSinceExtreme++;
-
-		// Reset extremes periodically
-		if (_barsSinceExtreme >= LookbackBars)
-		{
-			_prevLowPrice = _curLowPrice;
-			_prevLowRsi = _curLowRsi;
-			_prevHighPrice = _curHighPrice;
-			_prevHighRsi = _curHighRsi;
-			_curLowPrice = decimal.MaxValue;
-			_curLowRsi = 100;
-			_curHighPrice = 0;
-			_curHighRsi = 0;
-			_barsSinceExtreme = 0;
-		}
-
-		if (_cooldownRemaining > 0)
-		{
-			_cooldownRemaining--;
-			return;
-		}
-
-		if (_prevLowPrice == 0 || _prevHighPrice == 0)
-			return;
-
-		// Bullish divergence: lower low in price, higher low in RSI + price above MA
-		var bullishDiv = candle.LowPrice < _prevLowPrice && rsiValue > _prevLowRsi && candle.ClosePrice > maValue;
-
-		// Bearish divergence: higher high in price, lower high in RSI + price below MA
-		var bearishDiv = candle.HighPrice > _prevHighPrice && rsiValue < _prevHighRsi && candle.ClosePrice < maValue;
-
-		if (bullishDiv && Position <= 0)
-		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-			BuyMarket(Volume);
-			_cooldownRemaining = CooldownBars;
-		}
-		else if (bearishDiv && Position >= 0)
-		{
-			if (Position > 0)
-				SellMarket(Math.Abs(Position));
-			SellMarket(Volume);
-			_cooldownRemaining = CooldownBars;
-		}
+		if (bullishDivergence && close > ma && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (bearishDivergence && close < ma && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
+		else if (Position > 0 && _closesBelowMa >= MaRiskCandles)
+			SellMarket(Position);
+		else if (Position < 0 && _closesAboveMa >= MaRiskCandles)
+			BuyMarket(-Position);
 	}
 }

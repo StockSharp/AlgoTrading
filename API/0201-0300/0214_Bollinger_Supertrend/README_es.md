@@ -20,10 +20,11 @@ Debido a que el sistema espera rupturas más allá de la volatilidad normal, es 
 - **Stops**: Sí, vía stop dinámico Supertrend.
 - **Valores predeterminados**:
   - `BollingerPeriod` = 20
-  - `BollingerDeviation` = 2.0m
+  - `BollingerDeviation` = 2
   - `SupertrendPeriod` = 10
-  - `SupertrendMultiplier` = 3.0m
+  - `SupertrendMultiplier` = 3
   - `CandleType` = TimeSpan.FromMinutes(15)
+    Un largo se cierra cuando el precio cierra por debajo de la línea Supertrend y un corto cuando cierra por encima. Una señal de entrada contra una posición abierta la invierte.
 - **Filtros**:
   - Categoría: Tendencia
   - Dirección: Ambos

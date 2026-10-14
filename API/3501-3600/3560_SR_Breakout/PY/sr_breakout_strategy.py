@@ -14,7 +14,7 @@ class sr_breakout_strategy(Strategy):
         super(sr_breakout_strategy, self).__init__()
 
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(60)))
-        self._lookback_length = self.Param("LookbackLength", 20)
+        self._lookback_length = self.Param("LookbackLength", 26)
 
         self._highs = []
         self._lows = []

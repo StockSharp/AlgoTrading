@@ -18,7 +18,9 @@ Os stops são apertados para proteger contra fraqueza continuada caso o rebote n
 - **Stops**: Sim, baseado em percentual
 - **Valores padrão**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `ProfitTargetPercent` = 1
+  - `StopLossPercent` = 2
+    Os dias são dias UTC, pois o mercado negocia 24 horas; as entradas ocorrem no fechamento da primeira vela do dia. Uma segunda é de baixa quando fecha abaixo da abertura; a compra de terça fecha na última vela do dia ou quando o fechamento fica ProfitTargetPercent acima da entrada.
 - **Filtros**:
   - Categoria: Sazonalidade
   - Direção: Ambos

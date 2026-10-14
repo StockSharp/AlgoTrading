@@ -15,8 +15,8 @@ class ma_sar_adx_bind_strategy(Strategy):
     def __init__(self):
         super(ma_sar_adx_bind_strategy, self).__init__()
 
-        self._ma_period = self.Param("MaPeriod", 120)
-        self._adx_period = self.Param("AdxPeriod", 18)
+        self._ma_period = self.Param("MaPeriod", 100)
+        self._adx_period = self.Param("AdxPeriod", 14)
         self._sar_step = self.Param("SarStep", 0.02)
         self._sar_max = self.Param("SarMax", 0.1)
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(2)))

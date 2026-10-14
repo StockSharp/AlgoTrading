@@ -4,32 +4,33 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
+from System import TimeSpan, Decimal
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, Level1Fields
+from StockSharp.BusinessEntities import Subscription
 from StockSharp.Algo.Indicators import RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
 
 class rsi_hook_reversal_strategy(Strategy):
     """
     RSI Hook Reversal strategy.
-    Enters long when RSI hooks up from oversold zone.
-    Enters short when RSI hooks down from overbought zone.
-    Exits when RSI reaches neutral zone.
-    Uses cooldown to control trade frequency.
+    A long opens when RSI was below the oversold level on the previous candle and turns up while the low makes a new low
+    against the previous candle; a short opens when it was above the overbought level and turns down while the high makes a new high.
+    The position closes when RSI turns the other way, reversing on the opposite signal, and a percent stop limits the loss.
     """
 
     def __init__(self):
         super(rsi_hook_reversal_strategy, self).__init__()
-        self._rsi_period = self.Param("RsiPeriod", 14).SetDisplay("RSI Period", "Period for RSI", "RSI")
-        self._oversold_level = self.Param("OversoldLevel", 30).SetDisplay("Oversold", "Oversold level", "RSI")
-        self._overbought_level = self.Param("OverboughtLevel", 70).SetDisplay("Overbought", "Overbought level", "RSI")
-        self._exit_level = self.Param("ExitLevel", 50).SetDisplay("Exit Level", "Neutral exit zone", "RSI")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Type of candles to use", "General")
-        self._cooldown_bars = self.Param("CooldownBars", 500).SetDisplay("Cooldown Bars", "Bars to wait between trades", "General")
+        self._rsi_period = self.Param("RsiPeriod", 14).SetGreaterThanZero().SetDisplay("RSI Period", "Period for RSI", "Indicators")
+        self._oversold_level = self.Param("OversoldLevel", 30).SetDisplay("Oversold Level", "RSI level of the oversold zone", "Levels")
+        self._overbought_level = self.Param("OverboughtLevel", 70).SetDisplay("Overbought Level", "RSI level of the overbought zone", "Levels")
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0).SetNotNegative().SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))).SetDisplay("Candle Type", "Type of candles to use", "General")
 
-        self._prev_rsi = 0.0
-        self._cooldown = 0
+        self._prev_value = None
+        self._prev_high = Decimal(0)
+        self._prev_low = Decimal(0)
 
     @property
     def candle_type(self):
@@ -37,66 +38,72 @@ class rsi_hook_reversal_strategy(Strategy):
 
     def OnReseted(self):
         super(rsi_hook_reversal_strategy, self).OnReseted()
-        self._prev_rsi = 0.0
-        self._cooldown = 0
+        self._prev_value = None
+        self._prev_high = Decimal(0)
+        self._prev_low = Decimal(0)
 
     def OnStarted2(self, time):
         super(rsi_hook_reversal_strategy, self).OnStarted2(time)
 
-        self._prev_rsi = 0.0
-        self._cooldown = 0
+        self._prev_value = None
+        self._prev_high = Decimal(0)
+        self._prev_low = Decimal(0)
 
-        rsi = RelativeStrengthIndex()
-        rsi.Length = self._rsi_period.Value
+        oscillator = RelativeStrengthIndex()
+        oscillator.Length = self._rsi_period.Value
 
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(rsi, self._process_candle).Start()
+        subscription.BindEx(oscillator, self._process_candle).Start()
+
+        self.StartProtection(Unit(), Unit(Decimal(self._stop_loss_percent.Value), UnitTypes.Percent), useMarketOrders=True, isLocalStop=True)
+
+        # The stop has to see prices between candles, not only at their close.
+        for field in (Level1Fields.BestBidPrice, Level1Fields.BestAskPrice):
+            quotes = Subscription(DataType.Level1, self.Security)
+            quotes.MarketData.BuildField = field
+            self.SubscribeLevel1(quotes).Bind(self._observe_protection_quote).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, rsi)
+            self.DrawIndicator(area, oscillator)
             self.DrawOwnTrades(area)
 
-    def _process_candle(self, candle, rsi_val):
-        if candle.State != CandleStates.Finished:
+    def _observe_protection_quote(self, quote):
+        # The high-level handler activates native protection before the callback, including between bars.
+        pass
+
+    def _process_candle(self, candle, value):
+        if candle.State != CandleStates.Finished or not value.IsFormed or value.IsEmpty:
             return
 
-        rv = float(rsi_val)
+        current = value.GetValue[Decimal](None)
+        previous = self._prev_value
+        prev_high = self._prev_high
+        prev_low = self._prev_low
 
-        if self._prev_rsi == 0:
-            self._prev_rsi = rv
+        self._prev_value = current
+        self._prev_high = candle.HighPrice
+        self._prev_low = candle.LowPrice
+
+        if previous is None or not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        if self._cooldown > 0:
-            self._cooldown -= 1
-            self._prev_rsi = rv
-            return
+        hooks_up = current > previous
+        hooks_down = current < previous
+        long_signal = previous < Decimal(self._oversold_level.Value) and hooks_up and candle.LowPrice < prev_low
+        short_signal = previous > Decimal(self._overbought_level.Value) and hooks_down and candle.HighPrice > prev_high
 
-        cd = self._cooldown_bars.Value
-        oversold = self._oversold_level.Value
-        overbought = self._overbought_level.Value
-        exit_lvl = self._exit_level.Value
-
-        # RSI hook up from oversold
-        oversold_hook_up = self._prev_rsi < oversold and rv > self._prev_rsi
-        # RSI hook down from overbought
-        overbought_hook_down = self._prev_rsi > overbought and rv < self._prev_rsi
-
-        if self.Position == 0 and oversold_hook_up:
-            self.BuyMarket()
-            self._cooldown = cd
-        elif self.Position == 0 and overbought_hook_down:
-            self.SellMarket()
-            self._cooldown = cd
-        elif self.Position > 0 and rv < exit_lvl:
-            self.SellMarket()
-            self._cooldown = cd
-        elif self.Position < 0 and rv > exit_lvl:
-            self.BuyMarket()
-            self._cooldown = cd
-
-        self._prev_rsi = rv
+        if self.Position > 0:
+            if hooks_down:
+                self.SellMarket(self.Volume + self.Position if short_signal else self.Position)
+        elif self.Position < 0:
+            if hooks_up:
+                self.BuyMarket(self.Volume - self.Position if long_signal else -self.Position)
+        elif long_signal:
+            self.BuyMarket(self.Volume)
+        elif short_signal:
+            self.SellMarket(self.Volume)
 
     def CreateClone(self):
         return rsi_hook_reversal_strategy()

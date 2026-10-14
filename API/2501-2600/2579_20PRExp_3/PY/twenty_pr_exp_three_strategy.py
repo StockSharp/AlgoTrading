@@ -19,8 +19,8 @@ class twenty_pr_exp_three_strategy(Strategy):
         self._trailing_stop_points = self.Param("TrailingStopPoints", 10.0)
         self._trailing_step_points = self.Param("TrailingStepPoints", 10.0)
         self._risk_percent = self.Param("RiskPercent", 5.0)
-        self._gap_points = self.Param("GapPoints", 100.0)
-        self._session_start_hour = self.Param("SessionStartHour", 12)
+        self._gap_points = self.Param("GapPoints", 50.0)
+        self._session_start_hour = self.Param("SessionStartHour", 7)
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5)))
         self._volume_candle_type = self.Param("VolumeCandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15)))
 

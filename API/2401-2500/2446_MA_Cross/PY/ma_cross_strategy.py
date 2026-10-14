@@ -15,8 +15,8 @@ class ma_cross_strategy(Strategy):
     def __init__(self):
         super(ma_cross_strategy, self).__init__()
 
-        self._fast_period = self.Param("FastPeriod", 5)
-        self._slow_period = self.Param("SlowPeriod", 21)
+        self._fast_period = self.Param("FastPeriod", 3)
+        self._slow_period = self.Param("SlowPeriod", 13)
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15)))
 
         self._prev_fast = 0.0

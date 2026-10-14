@@ -4,200 +4,113 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
-from StockSharp.Algo.Indicators import WilliamsR, SimpleMovingAverage
+from System import TimeSpan, Decimal, Math
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, Level1Fields
+from StockSharp.BusinessEntities import Subscription
+from StockSharp.Algo.Indicators import WilliamsR
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class williams_r_breakout_strategy(Strategy):
     """
-    Strategy that trades on Williams %R breakouts.
-    When Williams %R crosses above the overbought level or below the oversold level,
-    it enters position in the corresponding direction. Exits when Williams %R
-    crosses back through its moving average.
+    Williams R Breakout strategy.
+    The bands lie Multiplier standard deviations around the average of the last AvgPeriod %R values, the current one included.
+    %R above the upper band goes long and %R below the lower band goes short,
+    reversing an opposite position. A long closes once %R is back below its average and a short once it is back above it, and a percent stop limits the loss.
     """
 
     def __init__(self):
         super(williams_r_breakout_strategy, self).__init__()
-
-        self._williamsRPeriod = self.Param("WilliamsRPeriod", 14) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Williams %R Period", "Period for Williams %R indicator", "Indicators") \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 30, 2)
-
-        self._avgPeriod = self.Param("AvgPeriod", 20) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Average Period", "Period for Williams %R average calculation", "Indicators") \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 50, 5)
-
-        self._overboughtLevel = self.Param("OverboughtLevel", -10.0) \
-            .SetDisplay("Overbought Level", "Williams %R overbought threshold", "Indicators")
-
-        self._oversoldLevel = self.Param("OversoldLevel", -90.0) \
-            .SetDisplay("Oversold Level", "Williams %R oversold threshold", "Indicators")
-
-        self._candleType = self.Param("CandleType", tf(5)) \
-            .SetDisplay("Candle Type", "Type of candles to use", "General")
-
-        self._stopLoss = self.Param("StopLoss", 2.0) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Stop Loss %", "Stop Loss percentage", "Risk Management") \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.0, 5.0, 0.5)
-
-        self._prevInitialized = False
-        self._prevWilliamsRValue = 0
-        self._prevWilliamsRAvgValue = 0
-        self._cooldown = 0
-        self._williamsR = None
-        self._williamsRAverage = None
+        self._williams_r_period = self.Param("WilliamsRPeriod", 14).SetGreaterThanZero().SetDisplay("Williams %R Period", "Period of Williams %R", "Indicators")
+        self._avg_period = self.Param("AvgPeriod", 20).SetGreaterThanZero().SetDisplay("Average Period", "Values of %R the average and the standard deviation span", "Indicators")
+        self._multiplier = self.Param("Multiplier", 2.0).SetGreaterThanZero().SetDisplay("Multiplier", "Standard deviations between the average and a band", "Indicators")
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0).SetNotNegative().SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._reset_state()
 
     @property
-    def WilliamsRPeriod(self):
-        return self._williamsRPeriod.Value
+    def candle_type(self):
+        return self._candle_type.Value
 
-    @WilliamsRPeriod.setter
-    def WilliamsRPeriod(self, value):
-        self._williamsRPeriod.Value = value
-
-    @property
-    def AvgPeriod(self):
-        return self._avgPeriod.Value
-
-    @AvgPeriod.setter
-    def AvgPeriod(self, value):
-        self._avgPeriod.Value = value
-
-    @property
-    def OverboughtLevel(self):
-        return self._overboughtLevel.Value
-
-    @OverboughtLevel.setter
-    def OverboughtLevel(self, value):
-        self._overboughtLevel.Value = value
-
-    @property
-    def OversoldLevel(self):
-        return self._oversoldLevel.Value
-
-    @OversoldLevel.setter
-    def OversoldLevel(self, value):
-        self._oversoldLevel.Value = value
-
-    @property
-    def CandleType(self):
-        return self._candleType.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candleType.Value = value
-
-    @property
-    def StopLoss(self):
-        return self._stopLoss.Value
-
-    @StopLoss.setter
-    def StopLoss(self, value):
-        self._stopLoss.Value = value
-
-    def GetWorkingSecurities(self):
-        return [(self.Security, self.CandleType)]
+    def _reset_state(self):
+        self._values = []
 
     def OnReseted(self):
         super(williams_r_breakout_strategy, self).OnReseted()
-        self._prevInitialized = False
-        self._prevWilliamsRValue = 0
-        self._prevWilliamsRAvgValue = 0
-        self._cooldown = 0
+        self._reset_state()
 
     def OnStarted2(self, time):
         super(williams_r_breakout_strategy, self).OnStarted2(time)
 
-        # Create indicators
-        self._williamsR = WilliamsR()
-        self._williamsR.Length = self.WilliamsRPeriod
-        self._williamsRAverage = SimpleMovingAverage()
-        self._williamsRAverage.Length = self.AvgPeriod
+        self._reset_state()
 
-        # Create subscription and bind Williams %R
-        subscription = self.SubscribeCandles(self.CandleType)
+        williams = WilliamsR()
+        williams.Length = self._williams_r_period.Value
 
-        subscription.BindEx(self._williamsR, self.ProcessCandle).Start()
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.BindEx(williams, self._process_candle).Start()
 
-        # Enable stop loss protection
-        self.StartProtection(
-            takeProfit=Unit(0, UnitTypes.Absolute),
-            stopLoss=Unit(self.StopLoss, UnitTypes.Percent)
-        )
+        self.StartProtection(Unit(), Unit(Decimal(self._stop_loss_percent.Value), UnitTypes.Percent), useMarketOrders=True, isLocalStop=True)
 
-        # Create chart area for visualization
+        # The stop has to see prices between candles, not only at their close.
+        for field in (Level1Fields.BestBidPrice, Level1Fields.BestAskPrice):
+            quotes = Subscription(DataType.Level1, self.Security)
+            quotes.MarketData.BuildField = field
+            self.SubscribeLevel1(quotes).Bind(self._observe_protection_quote).Start()
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, self._williamsR)
             self.DrawOwnTrades(area)
+            oscillators = self.CreateChartArea()
+            if oscillators is not None:
+                self.DrawIndicator(oscillators, williams)
 
-    def ProcessCandle(self, candle, wrValue):
+    def _observe_protection_quote(self, quote):
+        # The high-level handler activates native protection before the callback, including between bars.
+        pass
+
+    def _process_candle(self, candle, williams_value):
         if candle.State != CandleStates.Finished:
             return
 
-        if not wrValue.IsFinal:
+        if not williams_value.IsFormed:
             return
 
-        wrVal = float(wrValue)
+        value = williams_value.GetValue[Decimal](None)
 
-        # Feed WR value through SMA to get the average (must set IsFinal for buffer to accumulate)
-        avgResult = process_float(self._williamsRAverage, wrVal, candle.ServerTime, True)
+        period = self._avg_period.Value
+        self._values.append(value)
+        if len(self._values) > period:
+            self._values.pop(0)
 
-        if not self._williamsRAverage.IsFormed:
+        if len(self._values) < period:
             return
 
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        currentWilliamsRAvg = float(avgResult)
+        total = Decimal(0)
+        for item in self._values:
+            total += item
+        mean = total / Decimal(period)
+        squares = Decimal(0)
+        for item in self._values:
+            squares += (item - mean) * (item - mean)
+        deviation = Decimal(Math.Sqrt(Decimal.ToDouble(squares / Decimal(period))))
+        multiplier = Decimal(self._multiplier.Value)
+        upper = mean + multiplier * deviation
+        lower = mean - multiplier * deviation
 
-        if not self._prevInitialized:
-            self._prevWilliamsRValue = wrVal
-            self._prevWilliamsRAvgValue = currentWilliamsRAvg
-            self._prevInitialized = True
-            return
-
-        # Cooldown between trades (minimum bars between signals)
-        if self._cooldown > 0:
-            self._cooldown -= 1
-            self._prevWilliamsRValue = wrVal
-            self._prevWilliamsRAvgValue = currentWilliamsRAvg
-            return
-
-        cooldownBars = 100
-
-        # Williams %R breakout detection using crossover of extreme levels
-        # Williams %R crossing above overbought level from below = bullish breakout
-        if self._prevWilliamsRValue <= self.OverboughtLevel and wrVal > self.OverboughtLevel and self.Position <= 0:
+        if value > upper and self.Position <= 0:
             self.BuyMarket(self.Volume + abs(self.Position))
-            self._cooldown = cooldownBars
-        # Williams %R crossing below oversold level from above = bearish breakout
-        elif self._prevWilliamsRValue >= self.OversoldLevel and wrVal < self.OversoldLevel and self.Position >= 0:
+        elif value < lower and self.Position >= 0:
             self.SellMarket(self.Volume + abs(self.Position))
-            self._cooldown = cooldownBars
-        # Exit long when Williams %R drops below the midpoint (-50)
-        elif self.Position > 0 and self._prevWilliamsRValue >= -50.0 and wrVal < -50.0:
-            self.SellMarket(abs(self.Position))
-            self._cooldown = cooldownBars
-        # Exit short when Williams %R rises above the midpoint (-50)
-        elif self.Position < 0 and self._prevWilliamsRValue <= -50.0 and wrVal > -50.0:
-            self.BuyMarket(abs(self.Position))
-            self._cooldown = cooldownBars
-
-        # Update previous values
-        self._prevWilliamsRValue = wrVal
-        self._prevWilliamsRAvgValue = currentWilliamsRAvg
+        elif self.Position > 0 and value < mean:
+            self.SellMarket(self.Position)
+        elif self.Position < 0 and value > mean:
+            self.BuyMarket(-self.Position)
 
     def CreateClone(self):
         return williams_r_breakout_strategy()

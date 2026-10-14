@@ -20,7 +20,8 @@ This approach appeals to traders looking to anticipate turning points rather tha
 - **Stops**: Yes, fixed stop-loss.
 - **Default Values**:
   - `MomentumPeriod` = 14
-  - `MaPeriod` = 20
+  - `StopLossPercent` = 2
+    A lower low is a close below the previous close while momentum, the close minus the close MomentumPeriod candles earlier, rises above its previous value; a higher high is the mirror. The zero-cross exits wait for momentum to pass through zero after the entry. The fixed stop is StopLossPercent of the entry price, watched between candles as well; 0 disables it. No rule uses a moving average, so MaPeriod is gone. An entry signal against an open position reverses it.
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **Filters**:
   - Category: Reversal

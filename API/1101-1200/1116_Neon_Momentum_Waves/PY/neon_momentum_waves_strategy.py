@@ -12,69 +12,82 @@ from StockSharp.Algo.Strategies import Strategy
 
 
 class neon_momentum_waves_strategy(Strategy):
+    """
+    Neon Momentum Waves strategy based on MACD histogram levels.
+    The histogram (MACD line minus signal line) crossing above EntryLevel goes long and crossing below it goes short, reversing an
+    opposite position. A long closes once the histogram reaches LongExitLevel and a short once it reaches ShortExitLevel.
+    """
+
     def __init__(self):
         super(neon_momentum_waves_strategy, self).__init__()
-        self._fast_length = self.Param("FastLength", 12) \
-            .SetDisplay("Fast Length", "MACD fast EMA length", "MACD")
-        self._slow_length = self.Param("SlowLength", 26) \
-            .SetDisplay("Slow Length", "MACD slow EMA length", "MACD")
-        self._signal_length = self.Param("SignalLength", 20) \
-            .SetDisplay("Signal Length", "MACD signal smoothing", "MACD")
-        self._entry_level = self.Param("EntryLevel", 0.0) \
-            .SetDisplay("Entry Level", "Histogram entry threshold", "Parameters")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
-            .SetDisplay("Candle Type", "Type of candles", "General")
+        self._fast_length = self.Param("FastLength", 12).SetDisplay("Fast Length", "MACD fast EMA length", "MACD")
+        self._slow_length = self.Param("SlowLength", 26).SetDisplay("Slow Length", "MACD slow EMA length", "MACD")
+        self._signal_length = self.Param("SignalLength", 20).SetDisplay("Signal Length", "MACD signal smoothing", "MACD")
+        self._entry_level = self.Param("EntryLevel", 0.0).SetDisplay("Entry Level", "Histogram entry threshold", "Parameters")
+        self._long_exit_level = self.Param("LongExitLevel", 11.0).SetDisplay("Long Exit Level", "Histogram level to exit longs", "Parameters")
+        self._short_exit_level = self.Param("ShortExitLevel", -9.0).SetDisplay("Short Exit Level", "Histogram level to exit shorts", "Parameters")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Type of candles", "General")
         self._prev_hist = None
-        self._last_signal_ticks = 0
 
     @property
     def candle_type(self):
         return self._candle_type.Value
 
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
-
     def OnReseted(self):
         super(neon_momentum_waves_strategy, self).OnReseted()
         self._prev_hist = None
-        self._last_signal_ticks = 0
 
     def OnStarted2(self, time):
         super(neon_momentum_waves_strategy, self).OnStarted2(time)
-        self._prev_hist = None
-        self._last_signal_ticks = 0
-        self._macd = MovingAverageConvergenceDivergenceSignal()
-        self._macd.Macd.ShortMa.Length = self._fast_length.Value
-        self._macd.Macd.LongMa.Length = self._slow_length.Value
-        self._macd.SignalMa.Length = self._signal_length.Value
-        subscription = self.SubscribeCandles(self.candle_type)
-        subscription.BindEx(self._macd, self.OnProcess).Start()
 
-    def OnProcess(self, candle, macd_value):
+        self._prev_hist = None
+
+        macd = MovingAverageConvergenceDivergenceSignal()
+        macd.Macd.ShortMa.Length = self._fast_length.Value
+        macd.Macd.LongMa.Length = self._slow_length.Value
+        macd.SignalMa.Length = self._signal_length.Value
+
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.BindEx(macd, self._process_candle).Start()
+
+        area = self.CreateChartArea()
+        if area is not None:
+            self.DrawCandles(area, subscription)
+            self.DrawIndicator(area, macd)
+            self.DrawOwnTrades(area)
+
+    def _process_candle(self, candle, macd_value):
         if candle.State != CandleStates.Finished:
             return
-        if not self._macd.IsFormed:
+
+        if not macd_value.IsFormed:
             return
+
         macd_line = macd_value.Macd
         signal_line = macd_value.Signal
         if macd_line is None or signal_line is None:
             return
+
         hist = float(macd_line) - float(signal_line)
-        if self._prev_hist is None:
-            self._prev_hist = hist
-            return
-        entry = float(self._entry_level.Value)
-        cooldown_ticks = TimeSpan.FromMinutes(360).Ticks
-        current_ticks = candle.OpenTime.Ticks
-        if current_ticks - self._last_signal_ticks >= cooldown_ticks:
-            if self._prev_hist <= entry and hist > entry and self.Position <= 0:
-                self.BuyMarket()
-                self._last_signal_ticks = current_ticks
-            elif self._prev_hist >= entry and hist < entry and self.Position > 0:
-                self.SellMarket()
-                self._last_signal_ticks = current_ticks
+        prev = self._prev_hist
         self._prev_hist = hist
+
+        if prev is None:
+            return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
+        entry = float(self._entry_level.Value)
+
+        if prev <= entry and hist > entry and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+        elif prev >= entry and hist < entry and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
+        elif self.Position > 0 and hist >= float(self._long_exit_level.Value):
+            self.SellMarket(self.Position)
+        elif self.Position < 0 and hist <= float(self._short_exit_level.Value):
+            self.BuyMarket(-self.Position)
 
     def CreateClone(self):
         return neon_momentum_waves_strategy()

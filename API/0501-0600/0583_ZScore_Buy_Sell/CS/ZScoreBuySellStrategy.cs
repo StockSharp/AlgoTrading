@@ -70,7 +70,7 @@ public class ZScoreBuySellStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
-		_rollingWindow = Param(nameof(RollingWindow), 300)
+		_rollingWindow = Param(nameof(RollingWindow), 80)
 			.SetGreaterThanZero()
 			.SetDisplay("Rolling Window", "Lookback period", "Parameters")
 			
@@ -82,7 +82,7 @@ public class ZScoreBuySellStrategy : Strategy
 			
 			.SetOptimize(1m, 5m, 0.5m);
 
-		_coolDown = Param(nameof(CoolDown), 50)
+		_coolDown = Param(nameof(CoolDown), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Cool Down", "Bars to wait after trade", "Parameters");
 	}

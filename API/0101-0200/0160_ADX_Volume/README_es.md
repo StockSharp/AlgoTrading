@@ -12,17 +12,19 @@ Excelente para capturar rupturas enérgicas. Un stop basado en ATR mantiene la e
 ## Detalles
 
 - **Criterios de entrada**:
-  - Largo: `ADX > AdxThreshold && Volume > AvgVolume`
-  - Corto: `ADX > AdxThreshold && Volume > AvgVolume`
+  - Largo: `ADX > AdxThreshold && Volume > AvgVolume && +DI > -DI`
+  - Corto: `ADX > AdxThreshold && Volume > AvgVolume && -DI > +DI`
 - **Largo/Corto**: Ambos
 - **Criterios de salida**: La tendencia se debilita por debajo del umbral
-- **Stops**: Basados en ATR usando `StopLoss`
+- **Stops**: Basados en ATR usando `StopLossAtr`
 - **Valores predeterminados**:
   - `AdxPeriod` = 14
   - `AdxThreshold` = 25m
   - `VolumeAvgPeriod` = 20
-  - `StopLoss` = new Unit(2, UnitTypes.Absolute)
+  - `StopLossAtr` = 2
+  - `AtrPeriod` = 14
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    AvgVolume es el volumen medio de las VolumeAvgPeriod velas anteriores. El stop está a StopLossAtr ATR (AtrPeriod) del cierre de entrada y se comprueba en los cierres de vela. Una señal de entrada contra una posición abierta la invierte.
 - **Filtros**:
   - Categoría: Ruptura
   - Dirección: Ambos

@@ -18,7 +18,7 @@ class fractal_force_index_strategy(Strategy):
 
     def __init__(self):
         super(fractal_force_index_strategy, self).__init__()
-        self._period = self.Param("Period", 21) \
+        self._period = self.Param("Period", 30) \
             .SetDisplay("Period", "EMA length", "Indicator")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
             .SetDisplay("Candle Type", "Timeframe for indicator", "General")

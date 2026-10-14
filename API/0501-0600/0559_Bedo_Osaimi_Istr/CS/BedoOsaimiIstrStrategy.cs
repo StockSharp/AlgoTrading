@@ -53,7 +53,7 @@ public class BedoOsaimiIstrStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		_maLength = Param(nameof(MaLength), 10)
+		_maLength = Param(nameof(MaLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Length", "Moving average length", "Parameters")
 

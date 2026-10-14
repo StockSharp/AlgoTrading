@@ -19,11 +19,11 @@ class ma_rsi_ea_strategy(Strategy):
             .SetDisplay("Candle Type", "Timeframe", "General")
         self._ma_period = self.Param("MaPeriod", 20) \
             .SetDisplay("MA Period", "EMA period for trend", "Indicators")
-        self._rsi_period = self.Param("RsiPeriod", 14) \
+        self._rsi_period = self.Param("RsiPeriod", 4) \
             .SetDisplay("RSI Period", "RSI calculation period", "Indicators")
-        self._rsi_overbought = self.Param("RsiOverbought", 65.0) \
+        self._rsi_overbought = self.Param("RsiOverbought", 80.0) \
             .SetDisplay("Overbought", "RSI overbought level", "Levels")
-        self._rsi_oversold = self.Param("RsiOversold", 35.0) \
+        self._rsi_oversold = self.Param("RsiOversold", 20.0) \
             .SetDisplay("Oversold", "RSI oversold level", "Levels")
 
         self._prev_rsi = None

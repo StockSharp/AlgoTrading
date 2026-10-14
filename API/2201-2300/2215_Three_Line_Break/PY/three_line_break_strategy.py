@@ -16,7 +16,7 @@ class three_line_break_strategy(Strategy):
         super(three_line_break_strategy, self).__init__()
         self._lines_break = self.Param("LinesBreak", 3) \
             .SetDisplay("Lines Break", "Number of lines for trend detection", "General")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(12))) \
             .SetDisplay("Candle Type", "Timeframe for analysis", "General")
         self._lowest = None
         self._prev_high = 0.0

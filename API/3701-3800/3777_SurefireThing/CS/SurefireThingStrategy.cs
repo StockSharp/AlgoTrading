@@ -45,7 +45,7 @@ public class SurefireThingStrategy : Strategy
 
 	public SurefireThingStrategy()
 	{
-		_rangeMultiplier = Param(nameof(RangeMultiplier), 0.5m)
+		_rangeMultiplier = Param(nameof(RangeMultiplier), 1.1m)
 			.SetDisplay("Range Mult", "Multiplier for range-based levels", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())

@@ -26,6 +26,7 @@ Keltnerチャネルのブレイクアウトがトリガーとなり、MACDのモ
   - `MacdSignalPeriod` = 9
   - `AtrMultiplier` = 2m
   - `CandleType` = TimeSpan.FromMinutes(15).TimeFrame()
+    チャネルはEMAの上下にMultiplier倍のATRを加えたものです。ストップはエントリー時の終値からAtrMultiplier倍のATRの位置にあり、足の終値で判定します。 保有ポジションと逆方向のエントリーシグナルはドテンになります。
 - **フィルター**:
   - カテゴリ: 平均回帰
   - 方向: 両方

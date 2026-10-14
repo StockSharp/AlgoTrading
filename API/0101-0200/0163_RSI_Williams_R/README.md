@@ -7,7 +7,7 @@ Testing indicates an average annual return of about 76%. It performs best in the
 
 RSI outlines the overall momentum, while Williams %R gives a quicker signal of reversal. Trades act on agreement between the two oscillators.
 
-Good for active traders chasing short swings. ATR-based stops are employed.
+Good for active traders chasing short swings. A percent stop is employed.
 
 ## Details
 
@@ -17,7 +17,7 @@ Good for active traders chasing short swings. ATR-based stops are employed.
 - **Long/Short**: Both
 - **Exit Criteria**:
   - RSI returns to neutral zone
-- **Stops**: Percent-based using `StopLoss`
+- **Stops**: Percent-based using `StopLossPercent`
 - **Default Values**:
   - `RsiPeriod` = 14
   - `RsiOversold` = 30m
@@ -25,8 +25,9 @@ Good for active traders chasing short swings. ATR-based stops are employed.
   - `WilliamsRPeriod` = 14
   - `WilliamsROversold` = -80m
   - `WilliamsROverbought` = -20m
-  - `StopLoss` = new Unit(2, UnitTypes.Percent)
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    The neutral zone is the middle of the RSI scale: a long closes once RSI rises back to 50 and a short once it falls back to 50. An entry signal against an open position reverses it.
 - **Filters**:
   - Category: Mean reversion
   - Direction: Both

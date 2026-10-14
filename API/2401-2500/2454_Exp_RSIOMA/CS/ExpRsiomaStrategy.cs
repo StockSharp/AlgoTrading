@@ -38,7 +38,7 @@ public class ExpRsiomaStrategy : Strategy
 
 	public ExpRsiomaStrategy()
 	{
-		_rsiPeriod = Param(nameof(RsiPeriod), 21)
+		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetDisplay("RSI Period", "RSI calculation length", "Parameters")
 			.SetGreaterThanZero();
 

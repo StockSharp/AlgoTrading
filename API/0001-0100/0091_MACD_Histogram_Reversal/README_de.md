@@ -19,7 +19,7 @@ Stops werden verwendet, um Verluste zu begrenzen, wenn der Schwung nicht in der 
   - `FastPeriod` = 12
   - `SlowPeriod` = 26
   - `SignalPeriod` = 9
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
   - `CandleType` = 15 minute
 - **Filter**:
   - Kategorie: Momentum

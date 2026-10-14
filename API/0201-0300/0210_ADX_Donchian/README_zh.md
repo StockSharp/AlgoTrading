@@ -19,10 +19,11 @@
 - **默认值**:
   - `AdxPeriod` = 14
   - `DonchianPeriod` = 5
-  - `StopLossPercent` = 2m
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
   - `AdxThreshold` = 10
-  - `Multiplier` = 0.1m
+  - `Multiplier` = 0.1
+    upperBorder为最近DonchianPeriod根K线（含当前K线）的最高价下调Multiplier个百分点，lowerBorder为最低价上调Multiplier个百分点。止损为入场价的固定StopLossPercent百分比，在K线之间同样监控。与持仓方向相反的入场信号会反转持仓。
 - **过滤器**:
   - 类别: Mixed
   - 方向: 双向

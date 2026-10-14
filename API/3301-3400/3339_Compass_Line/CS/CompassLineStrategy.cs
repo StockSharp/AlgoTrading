@@ -40,7 +40,7 @@ public class CompassLineStrategy : Strategy
 
 	public CompassLineStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 
 		_bbPeriod = Param(nameof(BbPeriod), 20)

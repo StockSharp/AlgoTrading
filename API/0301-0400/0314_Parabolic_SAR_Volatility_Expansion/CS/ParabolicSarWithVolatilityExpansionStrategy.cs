@@ -110,7 +110,7 @@ public class ParabolicSarWithVolatilityExpansionStrategy : Strategy
 			.SetRange(2, 100)
 			.SetDisplay("ATR Period", "Period for ATR calculation", "Indicators");
 
-		_volatilityExpansionFactor = Param(nameof(VolatilityExpansionFactor), 1.6m)
+		_volatilityExpansionFactor = Param(nameof(VolatilityExpansionFactor), 2m)
 			.SetRange(0.1m, 10m)
 			.SetDisplay("Volatility Expansion Factor", "Factor for volatility expansion detection", "Signals");
 

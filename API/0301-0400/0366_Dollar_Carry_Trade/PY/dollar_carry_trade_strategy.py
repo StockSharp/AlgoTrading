@@ -46,7 +46,7 @@ class dollar_carry_trade_strategy(Strategy):
             .SetRange(0.5, 10.0) \
             .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk")
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._benchmark = None

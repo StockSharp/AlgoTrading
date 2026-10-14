@@ -20,7 +20,8 @@
 - **ストップ**: あり、エントリーから`Multiplier * ATR`のストップロス。
 - **デフォルト値**:
   - `Period` = 20
-  - `Multiplier` = 2.0m
+  - `Multiplier` = 2
+    ストップはエントリー時の終値からPeriod本のATRのMultiplier倍離れた位置に置かれ、ローソク足の終値で確認されます。 保有ポジションと逆方向のエントリーシグナルはドテンになります。
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **フィルター**:
   - カテゴリ: ブレイクアウト

@@ -19,7 +19,7 @@ class ema_macd_rsi_strategy(Strategy):
     def __init__(self):
         super(ema_macd_rsi_strategy, self).__init__()
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
         self._fast_ema_length = self.Param("FastEmaLength", 50) \
             .SetDisplay("Fast EMA", "Fast EMA length", "Indicators")
@@ -27,9 +27,9 @@ class ema_macd_rsi_strategy(Strategy):
             .SetDisplay("Slow EMA", "Slow EMA length", "Indicators")
         self._rsi_length = self.Param("RsiLength", 14) \
             .SetDisplay("RSI Length", "RSI period", "Indicators")
-        self._rsi_buy_level = self.Param("RsiBuyLevel", 40.0) \
+        self._rsi_buy_level = self.Param("RsiBuyLevel", 45.0) \
             .SetDisplay("RSI Buy Level", "Min RSI for buy", "Trading")
-        self._rsi_sell_level = self.Param("RsiSellLevel", 60.0) \
+        self._rsi_sell_level = self.Param("RsiSellLevel", 55.0) \
             .SetDisplay("RSI Sell Level", "Max RSI for sell", "Trading")
         self._cooldown_bars = self.Param("CooldownBars", 10) \
             .SetDisplay("Cooldown Bars", "Bars between trades", "Risk")

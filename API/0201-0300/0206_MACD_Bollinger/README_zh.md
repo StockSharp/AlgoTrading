@@ -21,9 +21,10 @@
   - `MacdSlow` = 26
   - `MacdSignal` = 9
   - `BollingerPeriod` = 20
-  - `BollingerDeviation` = 2.0m
+  - `BollingerDeviation` = 2
   - `AtrPeriod` = 14
-  - `AtrMultiplier` = 2m
+  - `AtrMultiplier` = 2
+    K线收盘回到中轨时平仓。止损距入场收盘价AtrMultiplier倍AtrPeriod周期ATR，按K线收盘检查；设为0则关闭。与持仓方向相反的入场信号会反转持仓。
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **过滤器**:
   - 类别: Mixed

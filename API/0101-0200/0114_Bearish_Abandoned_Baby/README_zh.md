@@ -16,7 +16,9 @@
 - **止损**：是，按百分比
 - **默认值**:
   - `CandleType` = 15分钟
-  - `StopLoss` = 2%
+  - `DojiBodyPercent` = 10
+  - `StopLossPercent` = 2
+    市场全天交易，K线区间几乎不会出现跳空（样本月份中此类看跌形态最多一次），因此缺口按K线实体之间计算。十字星的实体不超过其区间的 DojiBodyPercent。策略只做空，在第三根K线收盘时卖出；止损设在十字星最高点上方 StopLossPercent 处，K线收盘突破即平仓。
 - **过滤器**:
   - 类别：形态
   - 方向：双向

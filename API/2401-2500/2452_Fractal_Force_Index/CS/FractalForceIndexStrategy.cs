@@ -50,7 +50,7 @@ public class FractalForceIndexStrategy : Strategy
 	/// </summary>
 	public FractalForceIndexStrategy()
 	{
-		_period = Param(nameof(Period), 21)
+		_period = Param(nameof(Period), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("Period", "EMA length", "Indicator")
 			.SetOptimize(5, 30, 5);

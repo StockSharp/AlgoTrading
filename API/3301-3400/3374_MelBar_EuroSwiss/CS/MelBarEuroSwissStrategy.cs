@@ -26,7 +26,7 @@ public class MelBarEuroSwissStrategy : Strategy
 
 	public MelBarEuroSwissStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 		_bbPeriod = Param(nameof(BbPeriod), 18)
 			.SetGreaterThanZero()

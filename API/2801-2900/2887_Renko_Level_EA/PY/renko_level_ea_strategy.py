@@ -16,7 +16,7 @@ class renko_level_ea_strategy(Strategy):
 
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles for calculations", "Data")
-        self._brick_size = self.Param("BrickSize", 3000) \
+        self._brick_size = self.Param("BrickSize", 30) \
             .SetDisplay("Brick Size", "Renko block size in price steps", "Renko Levels")
         self._reverse_signals = self.Param("ReverseSignals", False) \
             .SetDisplay("Reverse Signals", "Invert long and short actions", "Trading")

@@ -14,9 +14,9 @@ from StockSharp.Algo.Strategies import Strategy
 class bago_ea_strategy(Strategy):
     def __init__(self):
         super(bago_ea_strategy, self).__init__()
-        self._fast_period = self.Param("FastPeriod", 12) \
+        self._fast_period = self.Param("FastPeriod", 5) \
             .SetDisplay("Fast Period", "Fast EMA period", "Indicator")
-        self._slow_period = self.Param("SlowPeriod", 50) \
+        self._slow_period = self.Param("SlowPeriod", 12) \
             .SetDisplay("Slow Period", "Slow EMA period", "Indicator")
         self._stop_loss_points = self.Param("StopLossPoints", 200) \
             .SetDisplay("Stop Loss", "Stop-loss in price steps", "Risk")

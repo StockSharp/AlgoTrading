@@ -77,7 +77,7 @@ public class SniperJawStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Optional profit target distance; zero disables it", "Risk");
 
-		_minimumBars = Param(nameof(MinimumBars), 1)
+		_minimumBars = Param(nameof(MinimumBars), 60)
 			.SetGreaterThanZero()
 			.SetDisplay("Minimum Bars", "Required number of finished candles before trading", "Filters");
 

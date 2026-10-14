@@ -18,7 +18,10 @@
 - **ストップ**: はい、パーセントベース
 - **デフォルト値**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `LunchHour` = 12
+  - `LunchEndHour` = 14
+    市場は24時間取引のため、セッションはUTCの1日とします。 LunchHourに終わる足の終値で、当日の始値からの動きと逆方向にエントリーし、LunchEndHourに決済します。
 - **フィルター**:
   - カテゴリ: イントラデイ
   - 方向: 両方

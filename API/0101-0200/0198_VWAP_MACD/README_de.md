@@ -7,7 +7,7 @@ Tests zeigen eine durchschnittliche Jahresrendite von etwa 181%. Die Strategie f
 
 VWAP leitet den Intraday-Wert, und MACD-Kreuzungen zeigen Momentum-Wechsel an. Trades werden gestartet, wenn MACD in der Nähe des VWAP-Levels dreht.
 
-Geeignet für kurzfristige Momentum-Trader. ATR-Stop-Regeln verhindern übermäßiges Risiko.
+Geeignet für kurzfristige Momentum-Trader. Ein prozentualer Stop verhindert übermäßiges Risiko.
 
 ## Details
 
@@ -21,8 +21,9 @@ Geeignet für kurzfristige Momentum-Trader. ATR-Stop-Regeln verhindern übermä�
   - `MacdFastPeriod` = 12
   - `MacdSlowPeriod` = 26
   - `MacdSignalPeriod` = 9
-  - `StopLossPercent` = 2m
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    Der Markt handelt rund um die Uhr, daher beginnt der Sitzungs-VWAP mit jedem UTC-Tag neu und gewichtet den typischen Preis jeder Kerze mit ihrem Volumen. Ein Einstiegssignal gegen eine offene Position dreht sie.
 - **Filter**:
   - Kategorie: Mean Reversion
   - Richtung: Beide

@@ -19,7 +19,7 @@ class pro_mart_macd_martingale_strategy(Strategy):
     def __init__(self):
         super(pro_mart_macd_martingale_strategy, self).__init__()
 
-        self._max_doubling = self.Param("MaxDoublingCount", 2) \
+        self._max_doubling = self.Param("MaxDoublingCount", 1) \
             .SetDisplay("Max Doubling", "Max volume doublings after losses", "Risk")
         self._macd1_fast = self.Param("Macd1Fast", 5) \
             .SetGreaterThanZero() \

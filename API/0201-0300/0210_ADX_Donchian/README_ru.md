@@ -19,10 +19,11 @@
 - **Значения по умолчанию**:
   - `AdxPeriod` = 14
   - `DonchianPeriod` = 5
-  - `StopLossPercent` = 2m
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
   - `AdxThreshold` = 10
-  - `Multiplier` = 0.1m
+  - `Multiplier` = 0.1
+    upperBorder — максимум последних DonchianPeriod свечей, включая текущую, уменьшенный на Multiplier процентов, lowerBorder — минимум, увеличенный на Multiplier процентов. Стоп — фиксированный StopLossPercent от цены входа, он отслеживается и между свечами. Сигнал на вход против открытой позиции разворачивает её.
 - **Фильтры**:
   - Категория: Смешанная
   - Направление: Оба

@@ -4,6 +4,7 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
+clr.AddReference("StockSharp.BusinessEntities")
 
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -29,10 +30,10 @@ class bollinger_volatility_breakout_strategy(Strategy):
         self._atr_period = self.Param("AtrPeriod", 14) \
             .SetDisplay("ATR Period", "Period for ATR calculation", "Indicators")
 
-        self._atr_deviation_multiplier = self.Param("AtrDeviationMultiplier", 1.6) \
+        self._atr_deviation_multiplier = self.Param("AtrDeviationMultiplier", 2.0) \
             .SetDisplay("ATR Deviation Multiplier", "ATR regime threshold multiplier", "Signals")
 
-        self._stop_loss_multiplier = self.Param("StopLossMultiplier", 1.8) \
+        self._stop_loss_multiplier = self.Param("StopLossMultiplier", 2.0) \
             .SetDisplay("Stop Loss Multiplier", "ATR multiplier used for stop distance", "Risk")
 
         self._cooldown_bars = self.Param("CooldownBars", 84) \

@@ -46,22 +46,22 @@ public class X2MaJjrsxStrategy : Strategy
 		_signalCandleType = Param(nameof(SignalCandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Signal Candle Type", "Timeframe for entry signals", "General");
 
-		_fastMaPeriod = Param(nameof(FastMaPeriod), 5)
+		_fastMaPeriod = Param(nameof(FastMaPeriod), 12)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast MA Period", "Length of fast moving average", "Indicators");
 
-		_slowMaPeriod = Param(nameof(SlowMaPeriod), 20)
+		_slowMaPeriod = Param(nameof(SlowMaPeriod), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow MA Period", "Length of slow moving average", "Indicators");
 
-		_rsiPeriod = Param(nameof(RsiPeriod), 14)
+		_rsiPeriod = Param(nameof(RsiPeriod), 8)
 		.SetGreaterThanZero()
 		.SetDisplay("RSI Period", "Length of RSI filter", "Indicators");
 
-		_overbought = Param(nameof(Overbought), 75m)
+		_overbought = Param(nameof(Overbought), 70m)
 		.SetDisplay("Overbought", "RSI overbought threshold", "Risk");
 
-		_oversold = Param(nameof(Oversold), 25m)
+		_oversold = Param(nameof(Oversold), 30m)
 		.SetDisplay("Oversold", "RSI oversold threshold", "Risk");
 
 		_useLong = Param(nameof(UseLong), true)

@@ -160,7 +160,7 @@ public class ColorLaguerreStrategy : Strategy
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk")
 			;
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 

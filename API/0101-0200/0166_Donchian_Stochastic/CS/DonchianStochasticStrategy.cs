@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,26 +11,28 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Donchian Channel + Stochastic strategy.
-/// Strategy enters the market when the price breaks out of Donchian Channel with Stochastic confirming oversold/overbought conditions.
+/// Donchian Stochastic strategy.
+/// The channel spans the highest high and lowest low of the previous DonchianPeriod candles. A close above it with %K above StochOverbought
+/// confirms momentum and goes long, a close below it with %K below StochOversold goes short, reversing an opposite position;
+/// %K is the stochastic over StochPeriod candles smoothed over StochK candles.
+/// The breakout fails, closing the position, when price closes back beyond the broken level, and a percent stop limits the loss.
 /// </summary>
 public class DonchianStochasticStrategy : Strategy
 {
 	private readonly StrategyParam<int> _donchianPeriod;
 	private readonly StrategyParam<int> _stochPeriod;
 	private readonly StrategyParam<int> _stochK;
-	private readonly StrategyParam<int> _stochD;
-	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stochOverbought;
+	private readonly StrategyParam<decimal> _stochOversold;
 	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<DataType> _candleType;
 
-	// Indicators
-	private DonchianChannels _donchian;
-	private StochasticOscillator _stochastic;
-	private int _cooldown;
+	private decimal? _prevUpper;
+	private decimal? _prevLower;
+	private decimal _breakoutLevel;
 
 	/// <summary>
-	/// Donchian Channel period.
+	/// Previous candles the channel spans.
 	/// </summary>
 	public int DonchianPeriod
 	{
@@ -42,7 +41,7 @@ public class DonchianStochasticStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stochastic period.
+	/// Lookback period of the raw stochastic.
 	/// </summary>
 	public int StochPeriod
 	{
@@ -51,7 +50,7 @@ public class DonchianStochasticStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stochastic %K period.
+	/// Smoothing period of %K.
 	/// </summary>
 	public int StochK
 	{
@@ -60,12 +59,30 @@ public class DonchianStochasticStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stochastic %D period.
+	/// %K level that confirms an upside breakout.
 	/// </summary>
-	public int StochD
+	public decimal StochOverbought
 	{
-		get => _stochD.Value;
-		set => _stochD.Value = value;
+		get => _stochOverbought.Value;
+		set => _stochOverbought.Value = value;
+	}
+
+	/// <summary>
+	/// %K level that confirms a downside breakout.
+	/// </summary>
+	public decimal StochOversold
+	{
+		get => _stochOversold.Value;
+		set => _stochOversold.Value = value;
+	}
+
+	/// <summary>
+	/// Stop loss percentage from entry price.
+	/// </summary>
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
 	}
 
 	/// <summary>
@@ -78,190 +95,146 @@ public class DonchianStochasticStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Bars to wait between trades.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
-	/// Stop-loss percentage.
-	/// </summary>
-	public decimal StopLossPercent
-	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
-	}
-
-	/// <summary>
 	/// Constructor.
 	/// </summary>
 	public DonchianStochasticStrategy()
 	{
 		_donchianPeriod = Param(nameof(DonchianPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Donchian Period", "Donchian Channel lookback period", "Indicators")
-			
-			.SetOptimize(10, 50, 5);
+			.SetDisplay("Donchian Period", "Previous candles the channel spans", "Indicators");
 
 		_stochPeriod = Param(nameof(StochPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("Stochastic Period", "Stochastic oscillator period", "Indicators")
-			
-			.SetOptimize(5, 30, 5);
+			.SetDisplay("Stochastic Period", "Lookback period of the raw stochastic", "Stochastic");
 
 		_stochK = Param(nameof(StochK), 3)
 			.SetGreaterThanZero()
-			.SetDisplay("Stochastic %K", "Stochastic %K period", "Indicators")
-			
-			.SetOptimize(1, 10, 1);
+			.SetDisplay("Stochastic %K", "Smoothing period of %K", "Stochastic");
 
-		_stochD = Param(nameof(StochD), 3)
-			.SetGreaterThanZero()
-			.SetDisplay("Stochastic %D", "Stochastic %D period", "Indicators")
-			
-			.SetOptimize(1, 10, 1);
+		_stochOverbought = Param(nameof(StochOverbought), 80m)
+			.SetDisplay("Stochastic Overbought", "%K level that confirms an upside breakout", "Stochastic");
+
+		_stochOversold = Param(nameof(StochOversold), 20m)
+			.SetDisplay("Stochastic Oversold", "%K level that confirms a downside breakout", "Stochastic");
+
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_cooldownBars = Param(nameof(CooldownBars), 100)
-			.SetRange(5, 500)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "General");
-
-		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
-			
-			.SetOptimize(1m, 5m, 0.5m);
 	}
 
 	/// <inheritdoc />
-public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-{
-	return [(Security, CandleType)];
-}
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_donchian = null;
-		_stochastic = null;
-		_cooldown = 0;
+		_prevUpper = null;
+		_prevLower = null;
+		_breakoutLevel = default;
 	}
 
-/// <inheritdoc />
-protected override void OnStarted2(DateTime time)
-{
-	base.OnStarted2(time);
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
-		// Create indicators
-		_donchian = new DonchianChannels
+		_prevUpper = null;
+		_prevLower = null;
+		_breakoutLevel = default;
+
+		var donchian = new DonchianChannels { Length = DonchianPeriod };
+		// The D line of the core oscillator is the smoothed %K.
+		var stochastic = new StochasticOscillator
 		{
-			Length = DonchianPeriod
+			K = { Length = StochPeriod },
+			D = { Length = StochK },
 		};
 
-		_stochastic = new StochasticOscillator
-		{
-			K = { Length = StochK },
-			D = { Length = StochD },
-		};
-
-		// Enable position protection
-		var takeProfitUnit = new Unit(0, UnitTypes.Absolute); // No take profit - we'll exit based on strategy rules
-		var stopLossUnit = new Unit(StopLossPercent, UnitTypes.Percent);
-		StartProtection(takeProfitUnit, stopLossUnit);
-
-		// Subscribe to candles and bind indicators
 		var subscription = SubscribeCandles(CandleType);
-		
 		subscription
-			.BindEx(_donchian, _stochastic, ProcessCandle)
+			.BindEx(donchian, stochastic, ProcessCandle)
 			.Start();
 
-		// Setup chart
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _donchian);
-			
-			var secondArea = CreateChartArea();
-			if (secondArea != null)
-			{
-				DrawIndicator(secondArea, _stochastic);
-			}
-			
+			DrawIndicator(area, donchian);
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, stochastic);
+			}
 		}
 	}
 
-	private void ProcessCandle(
-		ICandleMessage candle,
-		IIndicatorValue donchianValue,
-		IIndicatorValue stochValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
 	{
-		// Skip unfinished candles
+		// The high-level handler activates native protection before this callback, also between signal bars.
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue donchianValue, IIndicatorValue stochasticValue)
+	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if strategy is ready to trade
+		// The channel is measured on the candles before this one.
+		var upper = _prevUpper;
+		var lower = _prevLower;
+
+		if (donchianValue.IsFormed && donchianValue is IDonchianChannelsValue { UpperBand: decimal currentUpper, LowerBand: decimal currentLower })
+		{
+			_prevUpper = currentUpper;
+			_prevLower = currentLower;
+		}
+
+		if (!stochasticValue.IsFormed || upper is not decimal channelHigh || lower is not decimal channelLow)
+			return;
+
+		if (stochasticValue is not IStochasticOscillatorValue { D: decimal k })
+			return;
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var donchianTyped = (DonchianChannelsValue)donchianValue;
-		
-		if (donchianTyped.UpperBand is not decimal upperBand ||
-			donchianTyped.LowerBand is not decimal lowerBand ||
-			donchianTyped.Middle is not decimal middleBand)
-		{
-			return;
-		}
+		var close = candle.ClosePrice;
 
-		var stochTyped = (StochasticOscillatorValue)stochValue;
-		
-		if (stochTyped.K is not decimal stochK || stochTyped.D is not decimal stochD)
+		if (close > channelHigh && k > StochOverbought && Position <= 0)
 		{
-			return;
+			BuyMarket(Volume + Math.Abs(Position));
+			_breakoutLevel = channelHigh;
 		}
-
-		if (_cooldown > 0)
+		else if (close < channelLow && k < StochOversold && Position >= 0)
 		{
-			_cooldown--;
-			return;
+			SellMarket(Volume + Math.Abs(Position));
+			_breakoutLevel = channelLow;
 		}
-
-		// Trading logic:
-		// Enter in trend direction with stochastic confirmation.
-		if (candle.ClosePrice >= middleBand && stochK > 55 && Position == 0)
+		else if (Position > 0 && close < _breakoutLevel)
 		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-			LogInfo($"Long entry: Price={candle.ClosePrice}, Middle Band={middleBand}, Stochastic %K={stochK}");
+			SellMarket(Position);
 		}
-		else if (candle.ClosePrice <= middleBand && stochK < 45 && Position == 0)
+		else if (Position < 0 && close > _breakoutLevel)
 		{
-			SellMarket();
-			_cooldown = CooldownBars;
-			LogInfo($"Short entry: Price={candle.ClosePrice}, Middle Band={middleBand}, Stochastic %K={stochK}");
-		}
-		// Exit long position when price falls below middle band
-		else if (Position > 0 && candle.ClosePrice < middleBand)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-			LogInfo($"Long exit: Price={candle.ClosePrice}, Middle Band={middleBand}");
-		}
-		// Exit short position when price rises above middle band
-		else if (Position < 0 && candle.ClosePrice > middleBand)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-			LogInfo($"Short exit: Price={candle.ClosePrice}, Middle Band={middleBand}");
+			BuyMarket(-Position);
 		}
 	}
 }

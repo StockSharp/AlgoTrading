@@ -24,7 +24,7 @@ class smart_trend_follower_strategy(Strategy):
             .SetDisplay("Signal Mode", "Trading logic selection", "Signals")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
             .SetDisplay("Candle Type", "Primary timeframe", "General")
-        self._initial_volume = self.Param("InitialVolume", 1.0) \
+        self._initial_volume = self.Param("InitialVolume", 0.01) \
             .SetGreaterThanZero() \
             .SetDisplay("Initial Volume", "Starting order volume in lots", "Money Management")
         self._multiplier = self.Param("Multiplier", 2.0) \

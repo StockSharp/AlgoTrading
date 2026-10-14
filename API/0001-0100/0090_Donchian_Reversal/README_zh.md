@@ -17,7 +17,7 @@
 - **止损**：是，按百分比。
 - **默认值**：
   - `Period` = 20
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
   - `CandleType` = 15 分钟
 - **过滤条件**：
   - 类别: 反转

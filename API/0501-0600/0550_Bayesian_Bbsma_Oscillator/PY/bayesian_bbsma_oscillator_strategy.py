@@ -33,10 +33,10 @@ class bayesian_bbsma_oscillator_strategy(Strategy):
         self._sma_period = self.Param("SmaPeriod", 20) \
             .SetGreaterThanZero() \
             .SetDisplay("SMA Period", "Simple moving average period", "General")
-        self._bayes_period = self.Param("BayesPeriod", 10) \
+        self._bayes_period = self.Param("BayesPeriod", 20) \
             .SetGreaterThanZero() \
             .SetDisplay("Bayes Period", "Lookback period for probability calculation", "Bayesian")
-        self._lower_threshold = self.Param("LowerThreshold", 30.0) \
+        self._lower_threshold = self.Param("LowerThreshold", 15.0) \
             .SetDisplay("Lower Threshold", "Probability threshold (%)", "Bayesian")
         self._use_bw_confirmation = self.Param("UseBwConfirmation", False) \
             .SetDisplay("Use BW Confirmation", "Require Bill Williams confirmation", "Filters")

@@ -18,7 +18,10 @@ Um stop percentual controla o risco e as saídas ocorrem se a reversão não se 
 - **Stops**: Sim, baseado em percentual
 - **Valores padrão**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `MiddayHour` = 12
+  - `AfternoonHour` = 16
+    O mercado negocia 24 horas, por isso a sessão é o dia UTC. O movimento da manhã é a variação da abertura do dia até o fechamento do candle que termina em MiddayHour. Entre MiddayHour e AfternoonHour a estratégia entra uma vez contra esse movimento, no primeiro candle que fecha contra ele, e encerra a posição em AfternoonHour.
 - **Filtros**:
   - Categoria: Intradiário
   - Direção: Ambos

@@ -19,7 +19,10 @@ Trades use a simple percent stop to control risk and typically close when the RS
 - **Stops**: Yes, percent based
 - **Default Values**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `RsiPeriod` = 14
+  - `OversoldLevel` = 30
+  - `OverboughtLevel` = 70
+  - `StopLossPercent` = 2
 - **Filters**:
   - Category: Reversal
   - Direction: Both

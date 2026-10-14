@@ -42,13 +42,13 @@ public class MustangAlgoChannelStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Length", "EMA smoothing period", "Parameters");
 
-		_upperBound = Param(nameof(UpperBound), 60m)
+		_upperBound = Param(nameof(UpperBound), 55m)
 			.SetDisplay("Upper Bound", "Overbought threshold", "Signals");
 
-		_lowerBound = Param(nameof(LowerBound), 40m)
+		_lowerBound = Param(nameof(LowerBound), 48m)
 			.SetDisplay("Lower Bound", "Oversold threshold", "Signals");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 

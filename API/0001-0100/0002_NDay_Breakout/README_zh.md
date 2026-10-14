@@ -14,7 +14,8 @@
   - `LookbackPeriod` = 20
   - `MaPeriod` = 20
   - `StopLossPercent` = 2.0m
-  - `CandleType` = TimeSpan.FromDays(1)
+  - `CandleType` = TimeSpan.FromHours(1)
+    附带的历史数据仅覆盖一个月：经过 20 根K线预热后只剩约十根日线，使用日线时策略在 2024 年 3 月的 BTC 上不会下任何订单。因此默认使用相同周期的小时线，日线仍可在参数中设置。
 - **过滤器**:
   - 类型: 突破
   - 方向: 双向

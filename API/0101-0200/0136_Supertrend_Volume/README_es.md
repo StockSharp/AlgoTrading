@@ -18,7 +18,11 @@ Los stops siguen la línea Supertrend, saliendo cuando el precio cierra al otro 
 - **Stops**: Sí, basado en porcentaje
 - **Valores predeterminados**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `SupertrendPeriod` = 10
+  - `SupertrendMultiplier` = 3
+  - `VolumePeriod` = 20
+    Un giro del Supertrend, un cierre al otro lado de la línea, cierra la posición contraria. El giro abre una posición en su dirección solo si el volumen de la vela supera la media de las VolumePeriod velas anteriores, de modo que un giro confirmado invierte la posición.
 - **Filtros**:
   - Categoría: Seguimiento de tendencia
   - Dirección: Ambos

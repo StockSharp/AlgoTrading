@@ -20,8 +20,9 @@
 - **止损**: 百分比止损
 - **默认值**:
   - `AutoCorrPeriod` = 20
-  - `AutoCorrThreshold` = -0.3m
-  - `StopLossPercent` = 2m
+  - `AutoCorrThreshold` = -0.3
+  - `StopLossPercent` = 2
+    自相关为最近AutoCorrPeriod个收盘价逐根变化的一阶自相关，MA为同样AutoCorrPeriod根K线的简单移动平均。止损为入场价的固定StopLossPercent百分比，在K线之间同样监控；设为0则关闭。与持仓方向相反的入场信号会反转持仓。
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **过滤器**:
   - 类别: Mean Reversion

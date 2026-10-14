@@ -34,7 +34,7 @@ public class ExpX2MaStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("First MA Length", "Period for first smoothing", "Indicators");
 
-		_secondMaLength = Param(nameof(SecondMaLength), 10)
+		_secondMaLength = Param(nameof(SecondMaLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Second MA Length", "Period for second smoothing", "Indicators");
 

@@ -43,11 +43,11 @@ public class IinMaSignalStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 
-		_fastPeriod = Param(nameof(FastPeriod), 7)
+		_fastPeriod = Param(nameof(FastPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast SMA", "Fast SMA period", "Indicators");
 
-		_slowPeriod = Param(nameof(SlowPeriod), 21)
+		_slowPeriod = Param(nameof(SlowPeriod), 22)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow SMA", "Slow SMA period", "Indicators");
 	}

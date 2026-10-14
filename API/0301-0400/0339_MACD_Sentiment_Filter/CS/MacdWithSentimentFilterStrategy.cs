@@ -126,7 +126,7 @@ public class MacdWithSentimentFilterStrategy : Strategy
 		
 		.SetOptimize(5, 13, 1);
 
-		_threshold = Param(nameof(Threshold), 0.1m)
+		_threshold = Param(nameof(Threshold), 0.5m)
 		.SetGreaterThanZero()
 		.SetDisplay("Sentiment Threshold", "Threshold for sentiment filter", "Sentiment Settings")
 		
@@ -142,7 +142,7 @@ public class MacdWithSentimentFilterStrategy : Strategy
 		
 		.SetOptimize(1m, 3m, 0.5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 

@@ -4,223 +4,109 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, Unit, UnitTypes, ICandleMessage, CandleStates, Sides
-from StockSharp.Algo.Indicators import VolumeIndicator
+from System import TimeSpan, Decimal, Math
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, Level1Fields
+from StockSharp.BusinessEntities import Subscription
+from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
 
 class volume_mean_reversion_strategy(Strategy):
     """
     Volume Mean Reversion strategy.
-    This strategy enters positions when trading volume is significantly below or above its average value.
-
+    The bands lie DeviationMultiplier standard deviations around the average of the last AveragePeriod volume values, the current one included.
+    volume below the lower band with the close below the AveragePeriod simple moving average goes long and volume above the upper band with the close above it goes short,
+    reversing an opposite position. A long closes once volume is back above its average and a short once it is back below it, and a percent stop limits the loss.
     """
 
     def __init__(self):
         super(volume_mean_reversion_strategy, self).__init__()
-
-        # Period for calculating mean and standard deviation of Volume.
-        self._average_period = self.Param("AveragePeriod", 20) \
-            .SetGreaterThanZero() \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 50, 10) \
-            .SetDisplay("Average Period", "Period for calculating Volume average and standard deviation", "Settings")
-
-        # Deviation multiplier for entry signals.
-        self._deviation_multiplier = self.Param("DeviationMultiplier", 2.0) \
-            .SetGreaterThanZero() \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.5, 3.0, 0.5) \
-            .SetDisplay("Deviation Multiplier", "Multiplier for standard deviation", "Settings")
-
-        # Candle type.
-        self._candle_type = self.Param("CandleType", tf(5)) \
-            .SetDisplay("Candle Type", "Type of candles to use", "General")
-
-        # Stop-loss percentage.
-        self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
-            .SetGreaterThanZero() \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.0, 3.0, 0.5) \
-            .SetDisplay("Stop Loss %", "Stop loss as percentage of entry price", "Risk Management")
-
-        # Internal state variables
-        self._avg_volume = 0.0
-        self._std_dev_volume = 0.0
-        self._sum_volume = 0.0
-        self._sum_squares_volume = 0.0
-        self._count = 0
-        self._volume_values = []
+        self._average_period = self.Param("AveragePeriod", 20).SetGreaterThanZero().SetDisplay("Average Period", "Values of volume the average and the standard deviation span", "Indicators")
+        self._deviation_multiplier = self.Param("DeviationMultiplier", 2.0).SetGreaterThanZero().SetDisplay("Multiplier", "Standard deviations between the average and a band", "Indicators")
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0).SetNotNegative().SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._reset_state()
 
     @property
-    def AveragePeriod(self):
-        return self._average_period.Value
-
-    @AveragePeriod.setter
-    def AveragePeriod(self, value):
-        self._average_period.Value = value
-
-    @property
-    def DeviationMultiplier(self):
-        return self._deviation_multiplier.Value
-
-    @DeviationMultiplier.setter
-    def DeviationMultiplier(self, value):
-        self._deviation_multiplier.Value = value
-
-    @property
-    def CandleType(self):
+    def candle_type(self):
         return self._candle_type.Value
 
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candle_type.Value = value
-
-    @property
-    def StopLossPercent(self):
-        return self._stop_loss_percent.Value
-
-    @StopLossPercent.setter
-    def StopLossPercent(self, value):
-        self._stop_loss_percent.Value = value
-
-    def GetWorkingSecurities(self):
-        """Return security and timeframe used by the strategy."""
-        return [(self.Security, self.CandleType)]
+    def _reset_state(self):
+        self._values = []
 
     def OnReseted(self):
         super(volume_mean_reversion_strategy, self).OnReseted()
-        self._avg_volume = 0.0
-        self._std_dev_volume = 0.0
-        self._sum_volume = 0.0
-        self._sum_squares_volume = 0.0
-        self._count = 0
-        self._volume_values = []
+        self._reset_state()
 
     def OnStarted2(self, time):
-        """
-        Initialize indicators, subscriptions and charting.
-        """
         super(volume_mean_reversion_strategy, self).OnStarted2(time)
 
-        # Create Volume indicator (for visualization)
-        volume = VolumeIndicator()
+        self._reset_state()
 
-        # Create subscription
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(self.ProcessCandle).Start()
+        sma = SimpleMovingAverage()
+        sma.Length = self._average_period.Value
 
-        # Setup chart visualization
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.BindEx(sma, self._process_candle).Start()
+
+        self.StartProtection(Unit(), Unit(Decimal(self._stop_loss_percent.Value), UnitTypes.Percent), useMarketOrders=True, isLocalStop=True)
+
+        # The stop has to see prices between candles, not only at their close.
+        for field in (Level1Fields.BestBidPrice, Level1Fields.BestAskPrice):
+            quotes = Subscription(DataType.Level1, self.Security)
+            quotes.MarketData.BuildField = field
+            self.SubscribeLevel1(quotes).Bind(self._observe_protection_quote).Start()
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, volume)
+            self.DrawIndicator(area, sma)
             self.DrawOwnTrades(area)
 
-            # Create additional area for volume
-            volume_area = self.CreateChartArea()
-            if volume_area is not None:
-                self.DrawIndicator(volume_area, volume)
+    def _observe_protection_quote(self, quote):
+        # The high-level handler activates native protection before the callback, including between bars.
+        pass
 
-        # Enable position protection
-        self.StartProtection(
-            takeProfit=Unit(0),
-            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
-        )
-    def ProcessCandle(self, candle):
-        """
-        Process candle and execute trading logic based on volume statistics.
-        """
-        # Skip unfinished candles
+    def _process_candle(self, candle, sma_value):
         if candle.State != CandleStates.Finished:
             return
 
-        # Check if strategy is ready to trade
+        value = candle.TotalVolume
 
-        # Extract Volume value (for candles, this is TotalVolume)
-        current_volume = float(candle.TotalVolume)
+        period = self._average_period.Value
+        self._values.append(value)
+        if len(self._values) > period:
+            self._values.pop(0)
 
-        # Update Volume statistics
-        self.UpdateVolumeStatistics(current_volume)
-
-        # If we don't have enough data yet for statistics
-        if self._count < self.AveragePeriod:
+        if len(self._values) < period or not sma_value.IsFormed:
             return
 
-        # For volume-based strategies, price direction is important
-        price_direction = Sides.Buy if candle.ClosePrice > candle.OpenPrice else Sides.Sell
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
-        # Check for entry conditions
-        if self.Position == 0:
-            # Volume is significantly below average - expecting a return to average trading activity
-            if current_volume < self._avg_volume - self.DeviationMultiplier * self._std_dev_volume:
-                # In low volume environments, we might look for potential market accumulation
-                # and follow the small price movement which could be institutional accumulation
-                if price_direction == Sides.Buy:
-                    self.BuyMarket(self.Volume)
-                    self.LogInfo(
-                        "Long entry: Volume = {0}, Avg = {1}, StdDev = {2}, Low volume with price up".format(
-                            current_volume, self._avg_volume, self._std_dev_volume))
-                else:
-                    self.SellMarket(self.Volume)
-                    self.LogInfo(
-                        "Short entry: Volume = {0}, Avg = {1}, StdDev = {2}, Low volume with price down".format(
-                            current_volume, self._avg_volume, self._std_dev_volume))
-            # Volume is significantly above average - potential high volume climax
-            elif current_volume > self._avg_volume + self.DeviationMultiplier * self._std_dev_volume:
-                # High volume often indicates climactic moves that might reverse
-                # So we consider going against the price direction on high volume bars
-                if price_direction == Sides.Sell:
-                    self.BuyMarket(self.Volume)
-                    self.LogInfo(
-                        "Contrarian long entry: Volume = {0}, Avg = {1}, StdDev = {2}, High volume with price down".format(
-                            current_volume, self._avg_volume, self._std_dev_volume))
-                else:
-                    self.SellMarket(self.Volume)
-                    self.LogInfo(
-                        "Contrarian short entry: Volume = {0}, Avg = {1}, StdDev = {2}, High volume with price up".format(
-                            current_volume, self._avg_volume, self._std_dev_volume))
-        # Check for exit conditions
-        elif self.Position > 0:  # Long position
-            # Exit long position when volume returns to average
-            if current_volume > self._avg_volume or (
-                current_volume > self._avg_volume * 0.8 and price_direction == Sides.Sell):
-                self.ClosePosition()
-                self.LogInfo("Long exit: Volume = {0}, Avg = {1}".format(current_volume, self._avg_volume))
-        elif self.Position < 0:  # Short position
-            # Exit short position when volume returns to average
-            if current_volume > self._avg_volume or (
-                current_volume > self._avg_volume * 0.8 and price_direction == Sides.Buy):
-                self.ClosePosition()
-                self.LogInfo("Short exit: Volume = {0}, Avg = {1}".format(current_volume, self._avg_volume))
+        total = Decimal(0)
+        for item in self._values:
+            total += item
+        mean = total / Decimal(period)
+        squares = Decimal(0)
+        for item in self._values:
+            squares += (item - mean) * (item - mean)
+        deviation = Decimal(Math.Sqrt(Decimal.ToDouble(squares / Decimal(period))))
+        multiplier = Decimal(self._deviation_multiplier.Value)
+        upper = mean + multiplier * deviation
+        lower = mean - multiplier * deviation
+        close = candle.ClosePrice
+        ma = sma_value.GetValue[Decimal](None)
 
-    def UpdateVolumeStatistics(self, current_volume):
-        """Update internal statistics for volume calculations."""
-        # Add current value to the queue
-        self._volume_values.append(current_volume)
-        self._sum_volume += current_volume
-        self._sum_squares_volume += current_volume * current_volume
-        self._count += 1
-
-        # If queue is larger than period, remove oldest value
-        if len(self._volume_values) > self.AveragePeriod:
-            oldest_volume = self._volume_values.pop(0)
-            self._sum_volume -= oldest_volume
-            self._sum_squares_volume -= oldest_volume * oldest_volume
-            self._count -= 1
-
-        # Calculate average and standard deviation
-        if self._count > 0:
-            self._avg_volume = self._sum_volume / self._count
-
-            if self._count > 1:
-                variance = (self._sum_squares_volume - (self._sum_volume * self._sum_volume) / self._count) / (self._count - 1)
-                self._std_dev_volume = 0 if variance <= 0 else Math.Sqrt(float(variance))
-            else:
-                self._std_dev_volume = 0
+        if value < lower and close < ma and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+        elif value > upper and close > ma and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
+        elif self.Position > 0 and value > mean:
+            self.SellMarket(self.Position)
+        elif self.Position < 0 and value < mean:
+            self.BuyMarket(-self.Position)
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return volume_mean_reversion_strategy()

@@ -19,10 +19,10 @@ class sidus_v1_strategy(Strategy):
         self._slow_ema2_len = self.Param("SlowEma2Length", 54).SetGreaterThanZero().SetDisplay("Slow EMA (Sell)", "Slow EMA for sell", "Indicators")
         self._rsi_period = self.Param("RsiPeriod", 67).SetGreaterThanZero().SetDisplay("RSI Period", "RSI for buy", "Indicators")
         self._rsi_period2 = self.Param("RsiPeriod2", 97).SetGreaterThanZero().SetDisplay("RSI Period (Sell)", "RSI for sell", "Indicators")
-        self._buy_diff = self.Param("BuyDifferenceThreshold", -100.0).SetDisplay("Buy EMA Threshold", "Max fast-slow EMA diff for buy", "Trading")
-        self._buy_rsi_thresh = self.Param("BuyRsiThreshold", 45.0).SetDisplay("Buy RSI Threshold", "Max RSI for buy", "Trading")
-        self._sell_diff = self.Param("SellDifferenceThreshold", 100.0).SetDisplay("Sell EMA Threshold", "Min fast-slow EMA diff for sell", "Trading")
-        self._sell_rsi_thresh = self.Param("SellRsiThreshold", 55.0).SetDisplay("Sell RSI Threshold", "Min RSI for sell", "Trading")
+        self._buy_diff = self.Param("BuyDifferenceThreshold", 63.0).SetDisplay("Buy EMA Threshold", "Max fast-slow EMA diff for buy", "Trading")
+        self._buy_rsi_thresh = self.Param("BuyRsiThreshold", 59.0).SetDisplay("Buy RSI Threshold", "Max RSI for buy", "Trading")
+        self._sell_diff = self.Param("SellDifferenceThreshold", -57.0).SetDisplay("Sell EMA Threshold", "Min fast-slow EMA diff for sell", "Trading")
+        self._sell_rsi_thresh = self.Param("SellRsiThreshold", 60.0).SetDisplay("Sell RSI Threshold", "Min RSI for sell", "Trading")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Candle type", "General")
 
     @property

@@ -314,7 +314,7 @@ public class HerculesATC2006Strategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("High/Low Window (hours)", "Duration used for breakout filter", "Filters");
 
-		_blackoutHours = Param(nameof(BlackoutHours), 4)
+		_blackoutHours = Param(nameof(BlackoutHours), 144)
 			.SetGreaterThanZero()
 			.SetDisplay("Blackout Hours", "Cooldown after a trade", "Filters");
 

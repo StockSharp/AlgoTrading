@@ -15,9 +15,9 @@ class wpr_custom_cloud_simple_strategy(Strategy):
         super(wpr_custom_cloud_simple_strategy, self).__init__()
 
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(60)))
-        self._wpr_period = self.Param("WprPeriod", 20)
-        self._overbought_level = self.Param("OverboughtLevel", -10.0)
-        self._oversold_level = self.Param("OversoldLevel", -90.0)
+        self._wpr_period = self.Param("WprPeriod", 14)
+        self._overbought_level = self.Param("OverboughtLevel", -20.0)
+        self._oversold_level = self.Param("OversoldLevel", -80.0)
 
         self._prev_wpr = 0.0
         self._older_wpr = 0.0

@@ -12,7 +12,7 @@ class ma2_cci_classic_strategy(Strategy):
         super(ma2_cci_classic_strategy, self).__init__()
         self._fast_period = self.Param("FastPeriod", 12).SetDisplay("Fast SMA", "Fast SMA period", "Indicators")
         self._slow_period = self.Param("SlowPeriod", 26).SetDisplay("Slow SMA", "Slow SMA period", "Indicators")
-        self._cci_period = self.Param("CciPeriod", 14).SetDisplay("CCI Period", "CCI lookback", "Indicators")
+        self._cci_period = self.Param("CciPeriod", 4).SetDisplay("CCI Period", "CCI lookback", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))).SetDisplay("Candle Type", "Candle timeframe", "General")
         self._prev_fast = 0.0; self._prev_slow = 0.0; self._has_prev = False
     @property

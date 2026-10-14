@@ -30,15 +30,15 @@ public class BreakTheRangeBoundStrategy : Strategy
 
 	public BreakTheRangeBoundStrategy()
 	{
-		_fastSma = Param(nameof(FastSma), 10)
+		_fastSma = Param(nameof(FastSma), 38)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast SMA", "Fast moving average period", "Parameters");
 
-		_slowSma = Param(nameof(SlowSma), 50)
+		_slowSma = Param(nameof(SlowSma), 210)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow SMA", "Slow moving average period", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 

@@ -8,13 +8,13 @@ Os testes indicam um retorno anual médio de aproximadamente 118%. Funciona melh
 
 O Ichimoku define a tendência e os níveis de suporte enquanto o Stochastic determina o momento de entrada nas correções. As operações abrem quando o oscilador reseta dentro da direção predominante da nuvem.
 
-Traders que preferem indicadores estruturados podem achá-lo prático. Stops de ATR cobrem reversões abruptas.
+Traders que preferem indicadores estruturados podem achá-lo prático. A própria nuvem funciona como stop contra reversões abruptas.
 
 ## Detalhes
 
 - **Critérios de entrada**:
-  - Comprado: `Price > Cloud && StochK < 20`
-  - Vendido: `Price < Cloud && StochK > 80`
+  - Comprado: `Price > Cloud && Tenkan > Kijun && StochK < 20`
+  - Vendido: `Price < Cloud && Tenkan < Kijun && StochK > 80`
 - **Comprado/Vendido**: Ambos
 - **Critérios de saída**:
   - Rompimento da nuvem na direção oposta
@@ -25,8 +25,10 @@ Traders que preferem indicadores estruturados podem achá-lo prático. Stops de 
   - `SenkouPeriod` = 52
   - `StochPeriod` = 14
   - `StochK` = 3
-  - `StochD` = 3
+  - `StochOversold` = 20
+  - `StochOverbought` = 80
   - `CandleType` = TimeSpan.FromMinutes(30).TimeFrame()
+    Os valores 20 e 80 das regras são os padrões de StochOversold e StochOverbought. %K é o estocástico de StochPeriod candles suavizado em StochK candles; o %D não participa. Uma compra é encerrada quando o preço fecha abaixo da nuvem e uma venda quando fecha acima. Um sinal de entrada contra uma posição aberta a inverte.
 - **Filtros**:
   - Categoria: Reversão à média
   - Direção: Ambos

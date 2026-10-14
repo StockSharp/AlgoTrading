@@ -141,7 +141,7 @@ public class LexicalDensityFilingsStrategy : Strategy
 			.SetRange(0.5m, 10m)
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for candles", "General");
 	}
 

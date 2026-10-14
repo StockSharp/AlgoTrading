@@ -19,7 +19,7 @@ class previous_high_low_breakout_strategy(Strategy):
             .SetDisplay("Stop Loss", "Stop loss in price points", "Risk Management")
         self._take_profit = self.Param("TakeProfit", 1000.0) \
             .SetDisplay("Take Profit", "Take profit in price points", "Risk Management")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Time frame for candles", "General")
         self._cooldown_candles = self.Param("CooldownCandles", 300) \
             .SetDisplay("Cooldown", "Cooldown between trades in candles", "General")

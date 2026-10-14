@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,52 +12,53 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// ATR Mean Reversion strategy.
-/// Trades when price deviates from its average by a multiple of ATR.
+/// A close more than Multiplier times the AtrPeriod ATR below the MaPeriod simple moving average goes long and one that far above it goes
+/// short, reversing an opposite position. A long closes once the close is back at or above the average and a short once it is back at or
+/// below it. The stop lies Multiplier ATR from the entry close and is checked on candle closes.
 /// </summary>
 public class AtrMeanReversionStrategy : Strategy
 {
-	private readonly StrategyParam<int> _maPeriodParam;
-	private readonly StrategyParam<int> _atrPeriodParam;
-	private readonly StrategyParam<decimal> _multiplierParam;
-	private readonly StrategyParam<DataType> _candleTypeParam;
+	private readonly StrategyParam<int> _maPeriod;
+	private readonly StrategyParam<int> _atrPeriod;
+	private readonly StrategyParam<decimal> _multiplier;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage _sma;
-	private AverageTrueRange _atr;
+	private decimal _stopPrice;
 
 	/// <summary>
-	/// Moving average period.
+	/// Period of the simple moving average.
 	/// </summary>
 	public int MaPeriod
 	{
-		get => _maPeriodParam.Value;
-		set => _maPeriodParam.Value = value;
+		get => _maPeriod.Value;
+		set => _maPeriod.Value = value;
 	}
 
 	/// <summary>
-	/// ATR indicator period.
+	/// Period of the ATR.
 	/// </summary>
 	public int AtrPeriod
 	{
-		get => _atrPeriodParam.Value;
-		set => _atrPeriodParam.Value = value;
+		get => _atrPeriod.Value;
+		set => _atrPeriod.Value = value;
 	}
 
 	/// <summary>
-	/// ATR multiplier for entry threshold.
+	/// ATR multiplier for the entry distance and the stop.
 	/// </summary>
 	public decimal Multiplier
 	{
-		get => _multiplierParam.Value;
-		set => _multiplierParam.Value = value;
+		get => _multiplier.Value;
+		set => _multiplier.Value = value;
 	}
 
 	/// <summary>
-	/// Candle type for strategy.
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
-		get => _candleTypeParam.Value;
-		set => _candleTypeParam.Value = value;
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
 	/// <summary>
@@ -68,26 +66,20 @@ public class AtrMeanReversionStrategy : Strategy
 	/// </summary>
 	public AtrMeanReversionStrategy()
 	{
-		_maPeriodParam = Param(nameof(MaPeriod), 20)
+		_maPeriod = Param(nameof(MaPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("MA Period", "Period for Moving Average", "Parameters")
-			
-			.SetOptimize(10, 50, 10);
+			.SetDisplay("MA Period", "Period of the simple moving average", "Parameters");
 
-		_atrPeriodParam = Param(nameof(AtrPeriod), 14)
+		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("ATR Period", "Period for ATR indicator", "Parameters")
-			
-			.SetOptimize(7, 21, 7);
+			.SetDisplay("ATR Period", "Period of the ATR", "Parameters");
 
-		_multiplierParam = Param(nameof(Multiplier), 2.0m)
-			.SetRange(0.1m, decimal.MaxValue)
-			.SetDisplay("ATR Multiplier", "ATR multiplier for entry threshold", "Parameters")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
+		_multiplier = Param(nameof(Multiplier), 2m)
+			.SetGreaterThanZero()
+			.SetDisplay("Multiplier", "ATR multiplier for the entry distance and the stop", "Parameters");
 
-		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Candle type for strategy", "Common");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -100,9 +92,7 @@ public class AtrMeanReversionStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_sma = null;
-		_atr = null;
+		_stopPrice = default;
 	}
 
 	/// <inheritdoc />
@@ -110,68 +100,63 @@ public class AtrMeanReversionStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
-		_sma = new SMA { Length = MaPeriod };
-		_atr = new AverageTrueRange { Length = AtrPeriod };
+		_stopPrice = default;
 
-		// Create subscription and bind indicators
+		var sma = new SimpleMovingAverage { Length = MaPeriod };
+		var atr = new AverageTrueRange { Length = AtrPeriod };
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_sma, _atr, ProcessCandle)
+			.BindEx(sma, atr, ProcessCandle)
 			.Start();
 
-		// Setup chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _sma);
-			DrawIndicator(area, _atr);
+			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, atr);
+			}
 		}
-		
-		// Enable position protection
-		StartProtection(
-			takeProfit: new Unit(0, UnitTypes.Absolute), // No take profit
-			stopLoss: new Unit(2, UnitTypes.Absolute) // Stop loss at 2*ATR
-		);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal smaValue, decimal atrValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue smaValue, IIndicatorValue atrValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		if (!smaValue.IsFormed || !atrValue.IsFormed)
+			return;
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
-		
-		// Calculate entry thresholds
-		var upperThreshold = smaValue + Multiplier * atrValue;
-		var lowerThreshold = smaValue - Multiplier * atrValue;
-		
-		// Long setup - price below lower threshold
-		if (candle.ClosePrice < lowerThreshold && Position <= 0)
+
+		var sma = smaValue.GetValue<decimal>();
+		var distance = Multiplier * atrValue.GetValue<decimal>();
+		var close = candle.ClosePrice;
+
+		if (close < sma - distance && Position <= 0)
 		{
-			// Buy signal - price has deviated too much below average
 			BuyMarket(Volume + Math.Abs(Position));
+			_stopPrice = close - distance;
 		}
-		// Short setup - price above upper threshold
-		else if (candle.ClosePrice > upperThreshold && Position >= 0)
+		else if (close > sma + distance && Position >= 0)
 		{
-			// Sell signal - price has deviated too much above average
 			SellMarket(Volume + Math.Abs(Position));
+			_stopPrice = close + distance;
 		}
-		// Exit long position when price returns to average
-		else if (Position > 0 && candle.ClosePrice >= smaValue)
+		else if (Position > 0 && (close >= sma || close <= _stopPrice))
 		{
-			// Close long position
 			SellMarket(Position);
 		}
-		// Exit short position when price returns to average
-		else if (Position < 0 && candle.ClosePrice <= smaValue)
+		else if (Position < 0 && (close <= sma || close >= _stopPrice))
 		{
-			// Close short position
-			BuyMarket(Math.Abs(Position));
+			BuyMarket(-Position);
 		}
 	}
 }

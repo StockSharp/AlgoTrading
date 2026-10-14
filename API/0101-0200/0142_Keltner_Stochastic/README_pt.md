@@ -26,11 +26,11 @@ Traders de curto prazo que buscam reversões rápidas podem achá-la útil. O ri
   - `KeltnerMultiplier` = 2.0m
   - `StochPeriod` = 14
   - `StochK` = 3
-  - `StochD` = 3
   - `StochOversold` = 20m
   - `StochOverbought` = 80m
   - `StopLossAtr` = 2.0m
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    O canal é a EMA mais e menos KeltnerMultiplier ATR. StochK nas regras é o %K: o estocástico de StochPeriod candles suavizado em StochK candles; o %D não participa, por isso não tem ajuste. Uma entrada contra uma posição aberta a inverte. O stop é verificado nos fechamentos dos candles.
 - **Filtros**:
   - Categoria: Reversão à média
   - Direção: Ambos

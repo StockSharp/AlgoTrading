@@ -27,6 +27,7 @@ Geeignet für Ausbruchs-Trader, die eine Fortsetzung erwarten. Ein ATR-basierter
   - `StopLossAtr` = 2.0m
   - `AtrPeriod` = 14
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    AvgVolume ist das durchschnittliche Volumen der vorherigen VolumePeriod Kerzen. Ein Einstiegssignal gegen eine offene Position dreht sie. Der Stop liegt StopLossAtr ATR vom Einstiegsschluss entfernt und wird auf Kerzenschlüssen geprüft.
 - **Filter**:
   - Kategorie: Mean Reversion
   - Richtung: Beide

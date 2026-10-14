@@ -1,7 +1,6 @@
-namespace StockSharp.Samples.Strategies;
-
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using Ecng.Common;
 
@@ -10,34 +9,27 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
+namespace StockSharp.Samples.Strategies;
+
 /// <summary>
-/// Strategy that combines moving average and volume indicators.
-/// Buys on MA crossover with volume confirmation, sells on reverse crossover.
+/// MA Volume strategy.
+/// Volume expands when a candle's volume exceeds VolumeThreshold times the average of the previous VolumePeriod candles.
+/// While flat, an expanding candle that closes above a rising MaPeriod SMA goes long and one that closes below a falling SMA goes short.
+/// The position closes once volume dries up below its average or the SMA turns against it, and a percent stop limits the loss.
 /// </summary>
 public class MaVolumeStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _maPeriod;
+	private readonly StrategyParam<int> _volumePeriod;
 	private readonly StrategyParam<decimal> _volumeThreshold;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevClose;
-	private decimal _prevSma;
-	private bool _hasPrev;
-	private decimal _prevVolume;
-	private int _cooldown;
+	private readonly List<decimal> _volumes = [];
+	private decimal? _prevMa;
 
 	/// <summary>
-	/// Data type for candles.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Period for moving average calculation.
+	/// Period of the trend SMA.
 	/// </summary>
 	public int MaPeriod
 	{
@@ -46,7 +38,16 @@ public class MaVolumeStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Volume threshold multiplier for volume confirmation.
+	/// Previous candles the volume is averaged over.
+	/// </summary>
+	public int VolumePeriod
+	{
+		get => _volumePeriod.Value;
+		set => _volumePeriod.Value = value;
+	}
+
+	/// <summary>
+	/// How many times the average volume an expanding candle must exceed.
 	/// </summary>
 	public decimal VolumeThreshold
 	{
@@ -55,31 +56,46 @@ public class MaVolumeStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Cooldown bars between trades.
+	/// Stop loss percentage from entry price.
 	/// </summary>
-	public int CooldownBars
+	public decimal StopLossPercent
 	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
 	}
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="MaVolumeStrategy"/>.
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
 	/// </summary>
 	public MaVolumeStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
 		_maPeriod = Param(nameof(MaPeriod), 20)
-			.SetDisplay("MA Period", "Period for moving average calculation", "MA Settings");
+			.SetGreaterThanZero()
+			.SetDisplay("MA Period", "Period of the trend SMA", "Indicators");
+
+		_volumePeriod = Param(nameof(VolumePeriod), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("Volume Period", "Previous candles the volume is averaged over", "Indicators");
 
 		_volumeThreshold = Param(nameof(VolumeThreshold), 1.2m)
-			.SetDisplay("Volume Threshold", "Volume threshold multiplier", "Volume Settings");
+			.SetGreaterThanZero()
+			.SetDisplay("Volume Threshold", "How many times the average volume an expanding candle must exceed", "Indicators");
 
-		_cooldownBars = Param(nameof(CooldownBars), 150)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "General")
-			.SetRange(5, 500);
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -92,11 +108,8 @@ public class MaVolumeStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevClose = 0;
-		_prevSma = 0;
-		_hasPrev = false;
-		_prevVolume = 0;
-		_cooldown = 0;
+		_volumes.Clear();
+		_prevMa = null;
 	}
 
 	/// <inheritdoc />
@@ -104,80 +117,85 @@ public class MaVolumeStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var volumeSma = new SimpleMovingAverage { Length = 20 };
-		var priceSma = new SimpleMovingAverage { Length = MaPeriod };
+		_volumes.Clear();
+		_prevMa = null;
+
+		var sma = new SimpleMovingAverage { Length = MaPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-
-		// Use volumeSma to track volume average via separate bind
-		subscription.Bind(priceSma, OnProcess);
 		subscription
+			.BindEx(sma, ProcessCandle)
 			.Start();
+
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, priceSma);
+			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void OnProcess(ICandleMessage candle, decimal smaValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// The high-level handler activates native protection before this callback, also between signal bars.
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue smaValue)
 	{
 		if (candle.State != CandleStates.Finished)
+			return;
+
+		// Expansion is measured against the candles before this one.
+		var average = _volumes.Count == VolumePeriod ? _volumes.Average() : (decimal?)null;
+
+		_volumes.Add(candle.TotalVolume);
+
+		if (_volumes.Count > VolumePeriod)
+			_volumes.RemoveAt(0);
+
+		if (!smaValue.IsFormed)
+			return;
+
+		var ma = smaValue.GetValue<decimal>();
+		var prevMa = _prevMa;
+		_prevMa = ma;
+
+		if (average is not decimal avgVolume || prevMa is not decimal lastMa)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
 		var close = candle.ClosePrice;
-		var vol = candle.TotalVolume;
+		var volume = candle.TotalVolume;
 
-		if (_cooldown > 0)
+		if (Position > 0)
 		{
-			_cooldown--;
-			_prevClose = close;
-			_prevSma = smaValue;
-			_prevVolume = vol;
-			_hasPrev = true;
-			return;
+			if (volume < avgVolume || ma < lastMa)
+				SellMarket(Position);
 		}
-
-		// Volume confirmation: current volume is above threshold * previous volume
-		var volumeOk = _prevVolume > 0 && vol > _prevVolume * VolumeThreshold;
-
-		if (_hasPrev)
+		else if (Position < 0)
 		{
-			// Price crosses above MA with volume - buy
-			if (_prevClose <= _prevSma && close > smaValue && volumeOk && Position == 0)
-			{
-				BuyMarket();
-				_cooldown = CooldownBars;
-			}
-			// Price crosses below MA with volume - sell
-			else if (_prevClose >= _prevSma && close < smaValue && volumeOk && Position == 0)
-			{
-				SellMarket();
-				_cooldown = CooldownBars;
-			}
-			// Exit long on MA cross down
-			else if (_prevClose >= _prevSma && close < smaValue && Position > 0)
-			{
-				SellMarket();
-				_cooldown = CooldownBars;
-			}
-			// Exit short on MA cross up
-			else if (_prevClose <= _prevSma && close > smaValue && Position < 0)
-			{
-				BuyMarket();
-				_cooldown = CooldownBars;
-			}
+			if (volume < avgVolume || ma > lastMa)
+				BuyMarket(-Position);
 		}
-
-		_prevClose = close;
-		_prevSma = smaValue;
-		_prevVolume = vol;
-		_hasPrev = true;
+		else if (volume > avgVolume * VolumeThreshold)
+		{
+			if (close > ma && ma > lastMa)
+				BuyMarket(Volume);
+			else if (close < ma && ma < lastMa)
+				SellMarket(Volume);
+		}
 	}
 }

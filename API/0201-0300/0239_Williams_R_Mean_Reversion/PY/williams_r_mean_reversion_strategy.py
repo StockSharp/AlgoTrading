@@ -4,202 +4,113 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import TimeSpan, Math
-from System.Collections.Generic import Queue
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from System import TimeSpan, Decimal, Math
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, Level1Fields
+from StockSharp.BusinessEntities import Subscription
 from StockSharp.Algo.Indicators import WilliamsR
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class williams_r_mean_reversion_strategy(Strategy):
     """
-    Williams %R Mean Reversion strategy.
-    This strategy enters positions when Williams %R is significantly below or above its average value.
+    Williams R Mean Reversion strategy.
+    The bands lie DeviationMultiplier standard deviations around the average of the last AveragePeriod %R values, the current one included.
+    %R below the lower band goes long and %R above the upper band goes short,
+    reversing an opposite position. A long closes once %R is back above its average and a short once it is back below it, and a percent stop limits the loss.
     """
 
     def __init__(self):
         super(williams_r_mean_reversion_strategy, self).__init__()
-
-        # Williams %R Period.
-        self._williams_r_period = self.Param("WilliamsRPeriod", 14) \
-            .SetGreaterThanZero() \
-            .SetCanOptimize(True) \
-            .SetOptimize(7, 21, 7) \
-            .SetDisplay("Williams %R Period", "Period for Williams %R indicator", "Indicators")
-
-        # Period for calculating mean and standard deviation of Williams %R.
-        self._average_period = self.Param("AveragePeriod", 20) \
-            .SetGreaterThanZero() \
-            .SetCanOptimize(True) \
-            .SetOptimize(10, 50, 10) \
-            .SetDisplay("Average Period", "Period for calculating Williams %R average and standard deviation", "Settings")
-
-        # Deviation multiplier for entry signals.
-        self._deviation_multiplier = self.Param("DeviationMultiplier", 2.0) \
-            .SetGreaterThanZero() \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.5, 3.0, 0.5) \
-            .SetDisplay("Deviation Multiplier", "Multiplier for standard deviation", "Settings")
-
-        # Candle type.
-        self._candle_type = self.Param("CandleType", tf(5)) \
-            .SetDisplay("Candle Type", "Type of candles to use", "General")
-
-        # Stop-loss percentage.
-        self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
-            .SetGreaterThanZero() \
-            .SetCanOptimize(True) \
-            .SetOptimize(1.0, 3.0, 0.5) \
-            .SetDisplay("Stop Loss %", "Stop loss as percentage of entry price", "Risk Management")
-
-        # Internal statistics
-        self._prev_williams_r = 0.0
-        self._avg_williams_r = 0.0
-        self._std_dev_williams_r = 0.0
-        self._sum_williams_r = 0.0
-        self._sum_squares_williams_r = 0.0
-        self._count = 0
-        self._williams_r_values = Queue[float]()
+        self._williams_r_period = self.Param("WilliamsRPeriod", 14).SetGreaterThanZero().SetDisplay("Williams %R Period", "Period of Williams %R", "Indicators")
+        self._average_period = self.Param("AveragePeriod", 20).SetGreaterThanZero().SetDisplay("Average Period", "Values of %R the average and the standard deviation span", "Indicators")
+        self._deviation_multiplier = self.Param("DeviationMultiplier", 2.0).SetGreaterThanZero().SetDisplay("Multiplier", "Standard deviations between the average and a band", "Indicators")
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0).SetNotNegative().SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._reset_state()
 
     @property
-    def WilliamsRPeriod(self):
-        return self._williams_r_period.Value
-
-    @WilliamsRPeriod.setter
-    def WilliamsRPeriod(self, value):
-        self._williams_r_period.Value = value
-
-    @property
-    def AveragePeriod(self):
-        return self._average_period.Value
-
-    @AveragePeriod.setter
-    def AveragePeriod(self, value):
-        self._average_period.Value = value
-
-    @property
-    def DeviationMultiplier(self):
-        return self._deviation_multiplier.Value
-
-    @DeviationMultiplier.setter
-    def DeviationMultiplier(self, value):
-        self._deviation_multiplier.Value = value
-
-    @property
-    def CandleType(self):
+    def candle_type(self):
         return self._candle_type.Value
 
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candle_type.Value = value
+    def _reset_state(self):
+        self._values = []
 
-    @property
-    def StopLossPercent(self):
-        return self._stop_loss_percent.Value
-
-    @StopLossPercent.setter
-    def StopLossPercent(self, value):
-        self._stop_loss_percent.Value = value
+    def OnReseted(self):
+        super(williams_r_mean_reversion_strategy, self).OnReseted()
+        self._reset_state()
 
     def OnStarted2(self, time):
         super(williams_r_mean_reversion_strategy, self).OnStarted2(time)
 
-        # Create Williams %R indicator
-        williams_r = WilliamsR()
-        williams_r.Length = self.WilliamsRPeriod
+        self._reset_state()
 
-        # Create subscription and bind indicator
-        subscription = self.SubscribeCandles(self.CandleType)
-        subscription.BindEx(williams_r, self.ProcessCandle).Start()
+        williams = WilliamsR()
+        williams.Length = self._williams_r_period.Value
 
-        # Setup chart visualization
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.BindEx(williams, self._process_candle).Start()
+
+        self.StartProtection(Unit(), Unit(Decimal(self._stop_loss_percent.Value), UnitTypes.Percent), useMarketOrders=True, isLocalStop=True)
+
+        # The stop has to see prices between candles, not only at their close.
+        for field in (Level1Fields.BestBidPrice, Level1Fields.BestAskPrice):
+            quotes = Subscription(DataType.Level1, self.Security)
+            quotes.MarketData.BuildField = field
+            self.SubscribeLevel1(quotes).Bind(self._observe_protection_quote).Start()
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, williams_r)
             self.DrawOwnTrades(area)
+            oscillators = self.CreateChartArea()
+            if oscillators is not None:
+                self.DrawIndicator(oscillators, williams)
 
-        # Enable position protection
-        self.StartProtection(
-            takeProfit=Unit(0),
-            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
-        )
+    def _observe_protection_quote(self, quote):
+        # The high-level handler activates native protection before the callback, including between bars.
+        pass
 
-    def OnReseted(self):
-        super(williams_r_mean_reversion_strategy, self).OnReseted()
-        self._prev_williams_r = 0.0
-        self._avg_williams_r = 0.0
-        self._std_dev_williams_r = 0.0
-        self._sum_williams_r = 0.0
-        self._sum_squares_williams_r = 0.0
-        self._count = 0
-        self._williams_r_values.Clear()
-    def ProcessCandle(self, candle, williams_r_value):
-        # Skip unfinished candles
+    def _process_candle(self, candle, williams_value):
         if candle.State != CandleStates.Finished:
             return
 
-        # Check if strategy is ready to trade
-
-        # Extract Williams %R value
-        current_williams_r = float(williams_r_value)
-
-        # Update Williams %R statistics
-        self.UpdateWilliamsRStatistics(current_williams_r)
-
-        # Save current Williams %R for next iteration
-        self._prev_williams_r = current_williams_r
-
-        # If we don't have enough data yet for statistics
-        if self._count < self.AveragePeriod:
+        if not williams_value.IsFormed:
             return
 
-        # Check for entry conditions
-        if self.Position == 0:
-            # Long entry - Williams %R is significantly below its average
-            if current_williams_r < self._avg_williams_r - self.DeviationMultiplier * self._std_dev_williams_r:
-                self.BuyMarket(self.Volume)
-                self.LogInfo(f"Long entry: Williams %R = {current_williams_r}, Avg = {self._avg_williams_r}, StdDev = {self._std_dev_williams_r}")
-            # Short entry - Williams %R is significantly above its average
-            elif current_williams_r > self._avg_williams_r + self.DeviationMultiplier * self._std_dev_williams_r:
-                self.SellMarket(self.Volume)
-                self.LogInfo(f"Short entry: Williams %R = {current_williams_r}, Avg = {self._avg_williams_r}, StdDev = {self._std_dev_williams_r}")
-        # Check for exit conditions
-        elif self.Position > 0:  # Long position
-            if current_williams_r > self._avg_williams_r:
-                self.ClosePosition()
-                self.LogInfo(f"Long exit: Williams %R = {current_williams_r}, Avg = {self._avg_williams_r}")
-        elif self.Position < 0:  # Short position
-            if current_williams_r < self._avg_williams_r:
-                self.ClosePosition()
-                self.LogInfo(f"Short exit: Williams %R = {current_williams_r}, Avg = {self._avg_williams_r}")
+        value = williams_value.GetValue[Decimal](None)
 
-    def UpdateWilliamsRStatistics(self, current_williams_r):
-        # Add current value to the queue
-        self._williams_r_values.Enqueue(current_williams_r)
-        self._sum_williams_r += current_williams_r
-        self._sum_squares_williams_r += current_williams_r * current_williams_r
-        self._count += 1
+        period = self._average_period.Value
+        self._values.append(value)
+        if len(self._values) > period:
+            self._values.pop(0)
 
-        # If queue is larger than period, remove oldest value
-        if self._williams_r_values.Count > self.AveragePeriod:
-            oldest = self._williams_r_values.Dequeue()
-            self._sum_williams_r -= oldest
-            self._sum_squares_williams_r -= oldest * oldest
-            self._count -= 1
+        if len(self._values) < period:
+            return
 
-        # Calculate average and standard deviation
-        if self._count > 0:
-            self._avg_williams_r = self._sum_williams_r / self._count
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
-            if self._count > 1:
-                variance = (self._sum_squares_williams_r - (self._sum_williams_r * self._sum_williams_r) / self._count) / (self._count - 1)
-                self._std_dev_williams_r = 0 if variance <= 0 else Math.Sqrt(float(variance))
-            else:
-                self._std_dev_williams_r = 0.0
+        total = Decimal(0)
+        for item in self._values:
+            total += item
+        mean = total / Decimal(period)
+        squares = Decimal(0)
+        for item in self._values:
+            squares += (item - mean) * (item - mean)
+        deviation = Decimal(Math.Sqrt(Decimal.ToDouble(squares / Decimal(period))))
+        multiplier = Decimal(self._deviation_multiplier.Value)
+        upper = mean + multiplier * deviation
+        lower = mean - multiplier * deviation
+
+        if value < lower and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+        elif value > upper and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
+        elif self.Position > 0 and value > mean:
+            self.SellMarket(self.Position)
+        elif self.Position < 0 and value < mean:
+            self.BuyMarket(-self.Position)
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return williams_r_mean_reversion_strategy()

@@ -14,7 +14,7 @@ from StockSharp.Algo.Strategies import Strategy
 class trade_channel_atr_strategy(Strategy):
     def __init__(self):
         super(trade_channel_atr_strategy, self).__init__()
-        self._channel_period = self.Param("ChannelPeriod", 48) \
+        self._channel_period = self.Param("ChannelPeriod", 20) \
             .SetDisplay("Channel Period", "Channel lookback", "Indicators")
         self._cooldown_candles = self.Param("CooldownCandles", 150) \
             .SetDisplay("Cooldown", "Candles between signals", "General")

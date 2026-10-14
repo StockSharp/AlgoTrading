@@ -19,7 +19,7 @@ class berlin_candles_strategy(Strategy):
             .SetDisplay("Smoothing", "EMA smoothing for Berlin open", "Berlin")
         self._baseline_period = self.Param("BaselinePeriod", 26) \
             .SetDisplay("Baseline Period", "Donchian baseline period", "Berlin")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
         self._prev_ema = 0.0
         self._is_initialized = False

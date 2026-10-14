@@ -128,7 +128,7 @@ public class Hans123TraderStrategy : Strategy
 			
 			.SetOptimize(0.1m, 2m, 0.1m);
 
-		_rangeLength = Param(nameof(RangeLength), 40)
+		_rangeLength = Param(nameof(RangeLength), 80)
 			.SetGreaterThanZero()
 			.SetDisplay("Range Length", "Candles in breakout range", "General")
 			
@@ -154,12 +154,12 @@ public class Hans123TraderStrategy : Strategy
 			
 			.SetOptimize(0, 50, 5);
 
-		_startHour = Param(nameof(StartHour), 0)
+		_startHour = Param(nameof(StartHour), 6)
 			.SetDisplay("Start Hour", "Hour (UTC) when orders can be placed", "Schedule")
 			
 			.SetOptimize(0, 23, 1);
 
-		_endHour = Param(nameof(EndHour), 24)
+		_endHour = Param(nameof(EndHour), 10)
 			.SetDisplay("End Hour", "Hour (UTC) when orders stop", "Schedule")
 			
 			.SetOptimize(1, 24, 1);

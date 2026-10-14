@@ -17,7 +17,11 @@ Las posiciones utilizan un pequeño stop porcentual y se cierran cuando el estoc
 - **Stops**: Sí, basado en porcentaje
 - **Valores predeterminados**:
   - `CandleType` = 15 minutos
-  - `StopLoss` = 2%
+  - `KPeriod` = 14
+  - `DPeriod` = 3
+  - `OversoldLevel` = 20
+  - `OverboughtLevel` = 80
+  - `StopLossPercent` = 2
 - **Filtros**:
   - Categoría: Reversión
   - Dirección: Ambos

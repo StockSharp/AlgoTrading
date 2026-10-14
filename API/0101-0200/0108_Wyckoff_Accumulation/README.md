@@ -18,7 +18,9 @@ A protective stop sits just below the base to limit losses should the breakout f
 - **Stops**: Yes, percent based
 - **Default Values**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `RangePeriod` = 20
+  - `StopLossPercent` = 2
+    The accumulation range is the highest high and lowest low of the previous RangePeriod candles. The strategy only buys, on a close above the range; the stop lies StopLossPercent below the base and the position closes when a candle closes below it.
 - **Filters**:
   - Category: Trend following
   - Direction: Both

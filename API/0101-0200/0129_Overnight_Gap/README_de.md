@@ -18,7 +18,9 @@ Stops basieren auf einem Prozentsatz jenseits der Gap-Extreme, um das Risiko zu 
 - **Stops**: Ja, prozentbasiert
 - **Standardwerte**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `MinGapPercent` = 0.01
+    Der Markt handelt rund um die Uhr, daher ist die Sitzung der UTC-Tag. Die Lücke ist der Abstand vom letzten Schlusskurs des Vortags zur ersten Eröffnung des Tages. Eine Lücke von mindestens MinGapPercent wird zum Schluss der ersten Kerze gegengehandelt; der Stop liegt StopLossPercent jenseits des Hochs (Short) oder Tiefs (Long) dieser Kerze und wird auf Kerzenschlüssen geprüft, und die Position schließt mit der letzten Kerze des Tages.
 - **Filter**:
   - Kategorie: Gap
   - Richtung: Beide

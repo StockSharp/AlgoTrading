@@ -27,14 +27,14 @@ class donchian_hurst_strategy(Strategy):
             .SetGreaterThanZero() \
             .SetDisplay("Hurst Period", "Period for Hurst Exponent calculation", "Indicator Settings")
 
-        self._hurst_threshold = self.Param("HurstThreshold", 0.45) \
+        self._hurst_threshold = self.Param("HurstThreshold", 0.5) \
             .SetDisplay("Hurst Threshold", "Minimum Hurst Exponent value for trend persistence", "Indicator Settings")
 
         self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
             .SetGreaterThanZero() \
             .SetDisplay("Stop Loss %", "Stop Loss percentage from entry price", "Risk Management")
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(2))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._hurst_value = 0.0

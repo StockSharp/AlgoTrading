@@ -12,9 +12,9 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Ichimoku Tenkan/Kijun Cross strategy.
-/// Enters long when Tenkan crosses above Kijun and price is above Kumo.
-/// Enters short when Tenkan crosses below Kijun and price is below Kumo.
-/// Exits on opposite cross or Kumo breach.
+/// Tenkan-sen crossing above Kijun-sen while the close is above the cloud opens a long position, the opposite cross below the
+/// cloud a short one. The stop is the Kijun-sen at entry; an opposite cross closes the position, reversing it when the close
+/// is on the other side of the cloud.
 /// </summary>
 public class IchimokuTenkanKijunStrategy : Strategy
 {
@@ -22,14 +22,12 @@ public class IchimokuTenkanKijunStrategy : Strategy
 	private readonly StrategyParam<int> _kijunPeriod;
 	private readonly StrategyParam<int> _senkouSpanBPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
 
-	private decimal _prevTenkan;
-	private decimal _prevKijun;
-	private int _cooldown;
+	private bool? _prevTenkanAbove;
+	private decimal _stopPrice;
 
 	/// <summary>
-	/// Tenkan period.
+	/// Tenkan-sen period.
 	/// </summary>
 	public int TenkanPeriod
 	{
@@ -38,7 +36,7 @@ public class IchimokuTenkanKijunStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Kijun period.
+	/// Kijun-sen period.
 	/// </summary>
 	public int KijunPeriod
 	{
@@ -65,37 +63,24 @@ public class IchimokuTenkanKijunStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Cooldown bars.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
 	/// Constructor.
 	/// </summary>
 	public IchimokuTenkanKijunStrategy()
 	{
 		_tenkanPeriod = Param(nameof(TenkanPeriod), 9)
-			.SetRange(7, 13)
+			.SetGreaterThanZero()
 			.SetDisplay("Tenkan Period", "Period for Tenkan-sen", "Ichimoku");
 
 		_kijunPeriod = Param(nameof(KijunPeriod), 26)
-			.SetRange(20, 30)
+			.SetGreaterThanZero()
 			.SetDisplay("Kijun Period", "Period for Kijun-sen", "Ichimoku");
 
 		_senkouSpanBPeriod = Param(nameof(SenkouSpanBPeriod), 52)
-			.SetRange(40, 60)
+			.SetGreaterThanZero()
 			.SetDisplay("Senkou Span B Period", "Period for Senkou Span B", "Ichimoku");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_cooldownBars = Param(nameof(CooldownBars), 500)
-			.SetRange(1, 1000)
-			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -108,9 +93,8 @@ public class IchimokuTenkanKijunStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevTenkan = default;
-		_prevKijun = default;
-		_cooldown = default;
+		_prevTenkanAbove = null;
+		_stopPrice = default;
 	}
 
 	/// <inheritdoc />
@@ -118,9 +102,8 @@ public class IchimokuTenkanKijunStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_prevTenkan = 0;
-		_prevKijun = 0;
-		_cooldown = 0;
+		_prevTenkanAbove = null;
+		_stopPrice = default;
 
 		var ichimoku = new Ichimoku
 		{
@@ -148,61 +131,57 @@ public class IchimokuTenkanKijunStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!ichimokuIv.IsFormed)
+		if (ichimokuIv is not IIchimokuValue { Tenkan: decimal tenkan, Kijun: decimal kijun, SenkouA: decimal senkouA, SenkouB: decimal senkouB })
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		// Equal lines are no cross; the previous side holds.
+		var wasAbove = _prevTenkanAbove;
+
+		if (tenkan != kijun)
+			_prevTenkanAbove = tenkan > kijun;
+
+		if (wasAbove is not bool previous || !IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var iv = (IchimokuValue)ichimokuIv;
-
-		if (iv.Tenkan is not decimal tenkan || iv.Kijun is not decimal kijun ||
-		    iv.SenkouA is not decimal senkouA || iv.SenkouB is not decimal senkouB)
-			return;
-
-		if (_prevTenkan == 0 || _prevKijun == 0)
-		{
-			_prevTenkan = tenkan;
-			_prevKijun = kijun;
-			return;
-		}
-
-		if (_cooldown > 0)
-		{
-			_cooldown--;
-			_prevTenkan = tenkan;
-			_prevKijun = kijun;
-			return;
-		}
-
-		var bullishCross = _prevTenkan <= _prevKijun && tenkan > kijun;
-		var bearishCross = _prevTenkan >= _prevKijun && tenkan < kijun;
-
+		var bullishCross = !previous && tenkan > kijun;
+		var bearishCross = previous && tenkan < kijun;
+		var close = candle.ClosePrice;
 		var upperKumo = Math.Max(senkouA, senkouB);
 		var lowerKumo = Math.Min(senkouA, senkouB);
 
-		if (Position == 0 && bullishCross && candle.ClosePrice > upperKumo)
+		if (Position > 0)
 		{
-			BuyMarket();
-			_cooldown = CooldownBars;
+			if (bearishCross && close < lowerKumo)
+			{
+				SellMarket(Volume + Position);
+				_stopPrice = kijun;
+			}
+			else if (bearishCross || close <= _stopPrice)
+			{
+				SellMarket(Position);
+			}
 		}
-		else if (Position == 0 && bearishCross && candle.ClosePrice < lowerKumo)
+		else if (Position < 0)
 		{
-			SellMarket();
-			_cooldown = CooldownBars;
+			if (bullishCross && close > upperKumo)
+			{
+				BuyMarket(Volume - Position);
+				_stopPrice = kijun;
+			}
+			else if (bullishCross || close >= _stopPrice)
+			{
+				BuyMarket(-Position);
+			}
 		}
-		else if (Position > 0 && (bearishCross || candle.ClosePrice < lowerKumo))
+		else if (bullishCross && close > upperKumo)
 		{
-			SellMarket();
-			_cooldown = CooldownBars;
+			BuyMarket(Volume);
+			_stopPrice = kijun;
 		}
-		else if (Position < 0 && (bullishCross || candle.ClosePrice > upperKumo))
+		else if (bearishCross && close < lowerKumo)
 		{
-			BuyMarket();
-			_cooldown = CooldownBars;
+			SellMarket(Volume);
+			_stopPrice = kijun;
 		}
-
-		_prevTenkan = tenkan;
-		_prevKijun = kijun;
 	}
 }

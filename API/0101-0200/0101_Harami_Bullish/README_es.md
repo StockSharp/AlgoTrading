@@ -17,7 +17,8 @@ Un stop porcentual por debajo del patrón proporciona protección, y la operaci�
 - **Stops**: Sí, basado en porcentaje
 - **Valores predeterminados**:
   - `CandleType` = 15 minutos
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+    La estrategia solo compra. El stop se coloca StopLossPercent por debajo del mínimo más bajo del patrón y la posición se cierra cuando una vela cierra por debajo.
 - **Filtros**:
   - Categoría: Patrón
   - Dirección: Ambos

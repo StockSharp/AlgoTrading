@@ -1,10 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,27 +12,24 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Stochastic Mean Reversion Strategy.
-/// Enter when Stochastic %K deviates from its average by a certain multiple of standard deviation.
-/// Exit when Stochastic %K returns to its average.
+/// Stochastic Mean Reversion strategy.
+/// The bands lie Multiplier standard deviations around the average of the last AveragePeriod %K values, the current one included.
+/// %K below the lower band goes long and %K above the upper band goes short,
+/// reversing an opposite position. A long closes once %K is back above its average and a short once it is back below it, and a percent stop limits the loss.
 /// </summary>
 public class StochasticMeanReversionStrategy : Strategy
 {
 	private readonly StrategyParam<int> _stochPeriod;
 	private readonly StrategyParam<int> _kPeriod;
-	private readonly StrategyParam<int> _dPeriod;
 	private readonly StrategyParam<int> _averagePeriod;
 	private readonly StrategyParam<decimal> _multiplier;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private StochasticOscillator _stochastic;
-	private SimpleMovingAverage _stochAverage;
-	private StandardDeviation _stochStdDev;
-	
-	private decimal _prevStochKValue;
+	private readonly Queue<decimal> _values = [];
 
 	/// <summary>
-	/// Stochastic period.
+	/// Lookback period of the raw stochastic.
 	/// </summary>
 	public int StochPeriod
 	{
@@ -43,7 +38,7 @@ public class StochasticMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stochastic %K period.
+	/// Smoothing period of %K.
 	/// </summary>
 	public int KPeriod
 	{
@@ -52,16 +47,7 @@ public class StochasticMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stochastic %D period.
-	/// </summary>
-	public int DPeriod
-	{
-		get => _dPeriod.Value;
-		set => _dPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Period for Stochastic average calculation.
+	/// Values of %K the average and the standard deviation span.
 	/// </summary>
 	public int AveragePeriod
 	{
@@ -70,7 +56,7 @@ public class StochasticMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Standard deviation multiplier for entry.
+	/// Standard deviations between the average and a band.
 	/// </summary>
 	public decimal Multiplier
 	{
@@ -79,7 +65,16 @@ public class StochasticMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Type of candles to use.
+	/// Stop loss percentage from entry price.
+	/// </summary>
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -88,42 +83,32 @@ public class StochasticMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="StochasticMeanReversionStrategy"/>.
+	/// Constructor.
 	/// </summary>
 	public StochasticMeanReversionStrategy()
 	{
 		_stochPeriod = Param(nameof(StochPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("Stochastic Period", "Period for Stochastic calculation", "Strategy Parameters")
-			
-			.SetOptimize(10, 20, 2);
+			.SetDisplay("Stochastic Period", "Lookback period of the raw stochastic", "Indicators");
 
 		_kPeriod = Param(nameof(KPeriod), 3)
 			.SetGreaterThanZero()
-			.SetDisplay("K Period", "Period for %K calculation", "Strategy Parameters")
-			
-			.SetOptimize(2, 5, 1);
-
-		_dPeriod = Param(nameof(DPeriod), 3)
-			.SetGreaterThanZero()
-			.SetDisplay("D Period", "Period for %D calculation", "Strategy Parameters")
-			
-			.SetOptimize(2, 5, 1);
+			.SetDisplay("%K Period", "Smoothing period of %K", "Indicators");
 
 		_averagePeriod = Param(nameof(AveragePeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Average Period", "Period for Stochastic average calculation", "Strategy Parameters")
-			
-			.SetOptimize(10, 30, 5);
+			.SetDisplay("Average Period", "Values of %K the average and the standard deviation span", "Indicators");
 
-		_multiplier = Param(nameof(Multiplier), 2.0m)
+		_multiplier = Param(nameof(Multiplier), 2m)
 			.SetGreaterThanZero()
-			.SetDisplay("StdDev Multiplier", "Standard deviation multiplier for entry", "Strategy Parameters")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
+			.SetDisplay("Multiplier", "Standard deviations between the average and a band", "Indicators");
+
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "Strategy Parameters");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -136,10 +121,7 @@ public class StochasticMeanReversionStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_stochastic = null;
-		_stochAverage = null;
-		_stochStdDev = null;
-		_prevStochKValue = default;
+		_values.Clear();
 	}
 
 	/// <inheritdoc />
@@ -147,72 +129,80 @@ public class StochasticMeanReversionStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
+		_values.Clear();
 
-		_stochastic = new StochasticOscillator
+		var stochastic = new StochasticOscillator
 		{
-			K = { Length = KPeriod },
-			D = { Length = DPeriod }
+			K = { Length = StochPeriod },
+			D = { Length = KPeriod },
 		};
-
-		_stochAverage = new SimpleMovingAverage { Length = AveragePeriod };
-		_stochStdDev = new StandardDeviation { Length = AveragePeriod };
-
-		Indicators.Add(_stochastic);
-		Indicators.Add(_stochAverage);
-		Indicators.Add(_stochStdDev);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(ProcessStochastic)
+			.BindEx(stochastic, ProcessCandle)
 			.Start();
 
-		StartProtection(
-			takeProfit: new Unit(2, UnitTypes.Percent),
-			stopLoss: new Unit(1, UnitTypes.Percent)
-		);
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _stochastic);
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, stochastic);
+			}
 		}
 	}
 
-	private void ProcessStochastic(ICandleMessage candle)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// The high-level handler activates native protection before this callback, also between signal bars.
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochasticValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var stochResult = _stochastic.Process(candle);
-		if (!_stochastic.IsFormed)
+		// The smoothed %K is the moving average the core oscillator exposes as D.
+		if (!stochasticValue.IsFormed || stochasticValue is not IStochasticOscillatorValue { D: decimal value })
 			return;
 
-		if (stochResult is not StochasticOscillatorValue stochTyped || stochTyped.K is not decimal kValue)
+		_values.Enqueue(value);
+
+		if (_values.Count > AveragePeriod)
+			_values.Dequeue();
+
+		if (_values.Count < AveragePeriod)
 			return;
 
-		var stochAvgValue = _stochAverage.Process(new DecimalIndicatorValue(_stochAverage, kValue, candle.OpenTime) { IsFinal = true }).ToDecimal();
-		var stochStdDevValue = _stochStdDev.Process(new DecimalIndicatorValue(_stochStdDev, kValue, candle.OpenTime) { IsFinal = true }).ToDecimal();
-
-		if (!_stochAverage.IsFormed || !_stochStdDev.IsFormed)
-		{
-			_prevStochKValue = kValue;
+		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
-		}
 
-		var effectiveStdDev = Math.Max(1m, stochStdDevValue);
-		var upperBand = stochAvgValue + Multiplier * effectiveStdDev;
-		var lowerBand = stochAvgValue - Multiplier * effectiveStdDev;
+		var mean = _values.Average();
+		var deviation = (decimal)Math.Sqrt((double)_values.Average(v => (v - mean) * (v - mean)));
+		var upper = mean + Multiplier * deviation;
+		var lower = mean - Multiplier * deviation;
 
-		if (Position == 0)
-		{
-			if (kValue < lowerBand || kValue < 20m)
-				BuyMarket();
-			else if (kValue > upperBand || kValue > 80m)
-				SellMarket();
-		}
-
-		_prevStochKValue = kValue;
+		if (value < lower && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (value > upper && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
+		else if (Position > 0 && value > mean)
+			SellMarket(Position);
+		else if (Position < 0 && value < mean)
+			BuyMarket(-Position);
 	}
 }

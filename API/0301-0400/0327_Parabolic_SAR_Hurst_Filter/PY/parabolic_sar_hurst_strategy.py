@@ -4,6 +4,7 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
+clr.AddReference("StockSharp.BusinessEntities")
 
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -38,7 +39,7 @@ class parabolic_sar_hurst_strategy(Strategy):
             .SetCanOptimize(True) \
             .SetOptimize(50, 150, 25)
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._signal_cooldown_bars = self.Param("SignalCooldownBars", 4) \

@@ -7,7 +7,7 @@ Os testes indicam um retorno anual médio de aproximadamente 175%. Funciona melh
 
 Os cruzamentos do MACD são filtrados por um aumento de volume para confirmar o momentum. Sinais de compra surgem em cruzamentos de alta com volume em expansão; os de venda fazem o oposto.
 
-Traders de momentum que observam picos de volume podem achá-la valiosa. O risco é limitado usando um stop de ATR.
+Traders de momentum que observam picos de volume podem achá-la valiosa. O risco é limitado usando um stop percentual.
 
 ## Detalhes
 
@@ -26,6 +26,7 @@ Traders de momentum que observam picos de volume podem achá-la valiosa. O risco
   - `VolumeMultiplier` = 1.5m
   - `StopLossPercent` = 2.0m
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    AvgVolume é o volume médio dos VolumePeriod candles anteriores. Cada cruzamento do MACD encerra a posição contrária, então um cruzamento com pico de volume inverte a posição e um sem ele apenas a encerra.
 - **Filtros**:
   - Categoria: Rompimento
   - Direção: Ambos

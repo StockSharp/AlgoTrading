@@ -14,7 +14,7 @@ from StockSharp.Algo.Strategies import Strategy
 class nrtr_trailing_stop_strategy(Strategy):
     def __init__(self):
         super(nrtr_trailing_stop_strategy, self).__init__()
-        self._length = self.Param("Length", 20) \
+        self._length = self.Param("Length", 10) \
             .SetDisplay("NRTR Length", "Number of bars for average range", "Indicator")
         self._digits_shift = self.Param("DigitsShift", 0) \
             .SetDisplay("Digits Shift", "Adjustment for price digits", "Indicator")

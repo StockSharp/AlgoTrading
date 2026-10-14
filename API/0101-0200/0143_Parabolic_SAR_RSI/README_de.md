@@ -26,6 +26,7 @@ Die Kombination ist attraktiv für diejenigen, die Trailing Stops mögen, da SAR
   - `RsiOversold` = 30m
   - `RsiOverbought` = 70m
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    Ein Einstiegssignal gegen eine offene Position dreht sie.
 - **Filter**:
   - Kategorie: Mean Reversion
   - Richtung: Beide

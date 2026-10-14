@@ -4,6 +4,7 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
+clr.AddReference("StockSharp.BusinessEntities")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
@@ -19,11 +20,11 @@ class adaptive_rsi_volume_strategy(Strategy):
     def __init__(self):
         super(adaptive_rsi_volume_strategy, self).__init__()
 
-        self._min_rsi_period = self.Param("MinRsiPeriod", 8) \
+        self._min_rsi_period = self.Param("MinRsiPeriod", 10) \
             .SetGreaterThanZero() \
             .SetDisplay("Min RSI Period", "Fast RSI period used in high volatility", "Indicator Settings")
 
-        self._max_rsi_period = self.Param("MaxRsiPeriod", 21) \
+        self._max_rsi_period = self.Param("MaxRsiPeriod", 20) \
             .SetGreaterThanZero() \
             .SetDisplay("Max RSI Period", "Slow RSI period used in low volatility", "Indicator Settings")
 
@@ -31,7 +32,7 @@ class adaptive_rsi_volume_strategy(Strategy):
             .SetGreaterThanZero() \
             .SetDisplay("ATR Period", "Period for ATR volatility calculation", "Indicator Settings")
 
-        self._volume_lookback = self.Param("VolumeLookback", 12) \
+        self._volume_lookback = self.Param("VolumeLookback", 20) \
             .SetGreaterThanZero() \
             .SetDisplay("Volume Lookback", "Periods used for average volume", "Volume Settings")
 
@@ -39,7 +40,7 @@ class adaptive_rsi_volume_strategy(Strategy):
             .SetNotNegative() \
             .SetDisplay("Cooldown Bars", "Closed candles to wait before another signal", "Trading")
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._fast_rsi = None

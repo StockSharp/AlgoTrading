@@ -21,9 +21,12 @@ Melhor para traders de expansão de volatilidade. Stops de ATR lidam com revers�
   - `BollingerPeriod` = 20
   - `BollingerDeviation` = 2.0m
   - `WilliamsRPeriod` = 14
+  - `WilliamsROversold` = -80
+  - `WilliamsROverbought` = -20
   - `AtrPeriod` = 14
   - `AtrMultiplier` = 2.0m
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    Os valores -80 e -20 das regras são os padrões de WilliamsROversold e WilliamsROverbought. O stop fica a AtrMultiplier ATR (AtrPeriod) do fechamento de entrada e é verificado nos fechamentos dos candles. Um sinal de entrada contra uma posição aberta a inverte.
 - **Filtros**:
   - Categoria: Reversão à média
   - Direção: Ambos

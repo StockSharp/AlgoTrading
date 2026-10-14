@@ -20,7 +20,8 @@ O limiar adaptativo torna esta estratégia adequada para mercados com regimes de
 - **Stops**: Sim, dinâmico baseado em ATR.
 - **Valores padrão**:
   - `Period` = 20
-  - `Multiplier` = 2.0m
+  - `Multiplier` = 2
+    MA, ATR e StdDev (o desvio padrão dos fechamentos) abrangem Period candles; o limiar se reduz a Multiplier vezes StdDev. O stop fica a Multiplier vezes o ATR do fechamento de entrada, dois ATR por padrão, e é verificado no fechamento dos candles. Um sinal de entrada contra uma posição aberta a inverte.
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **Filtros**:
   - Categoria: Reversão à média

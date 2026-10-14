@@ -37,7 +37,7 @@ public class ColorJVariationStrategy : Strategy
 		_jmaPhase = Param(nameof(JmaPhase), 100)
 			.SetDisplay("JMA Phase", "Phase for JMA", "Indicator");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for analysis", "General");
 	}
 

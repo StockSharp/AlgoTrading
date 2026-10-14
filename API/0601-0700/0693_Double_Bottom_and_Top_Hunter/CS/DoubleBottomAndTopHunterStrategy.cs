@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using Ecng.Common;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -11,31 +11,62 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// DoubleBottomAndTopHunterStrategy using EMA crossover for trend timing.
-/// Enters long on golden cross, short on death cross.
+/// Double Bottom and Top Hunter strategy.
+/// The recent window is the previous Length candles and the wider window adds the Lookback candles before them. A double bottom is
+/// a candle whose low reaches the lowest low of the older part of the wider window again while the recent candles stayed above it,
+/// and that closes back above it; a double top mirrors this with highs. A double bottom goes long and a double top goes short,
+/// reversing an opposite position. A long closes once price has made a new high above the recent high and then closes below the
+/// recent low; a short closes once price has made a new low below the recent low and then closes above the recent high.
 /// </summary>
 public class DoubleBottomAndTopHunterStrategy : Strategy
 {
-	private readonly StrategyParam<int> _fastEmaPeriod;
-	private readonly StrategyParam<int> _slowEmaPeriod;
+	private readonly StrategyParam<int> _length;
+	private readonly StrategyParam<int> _lookback;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevFastEma;
-	private decimal _prevSlowEma;
+	private readonly List<decimal> _highs = [];
+	private readonly List<decimal> _lows = [];
+	private bool _newExtremeSinceEntry;
 
-	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
-	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	/// <summary>
+	/// Candles in the recent window.
+	/// </summary>
+	public int Length
+	{
+		get => _length.Value;
+		set => _length.Value = value;
+	}
 
+	/// <summary>
+	/// Older candles that widen the window.
+	/// </summary>
+	public int Lookback
+	{
+		get => _lookback.Value;
+		set => _lookback.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
+	/// </summary>
 	public DoubleBottomAndTopHunterStrategy()
 	{
-		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+		_length = Param(nameof(Length), 100)
 			.SetGreaterThanZero()
-			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+			.SetDisplay("Length", "Candles in the recent window", "Pattern");
 
-		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+		_lookback = Param(nameof(Lookback), 100)
 			.SetGreaterThanZero()
-			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+			.SetDisplay("Lookback", "Older candles that widen the window", "Pattern");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -51,8 +82,14 @@ public class DoubleBottomAndTopHunterStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevFastEma = 0m;
-		_prevSlowEma = 0m;
+		ResetState();
+	}
+
+	private void ResetState()
+	{
+		_highs.Clear();
+		_lows.Clear();
+		_newExtremeSinceEntry = false;
 	}
 
 	/// <inheritdoc />
@@ -60,46 +97,95 @@ public class DoubleBottomAndTopHunterStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
-		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
+		ResetState();
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(fastEma, slowEma, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, fastEma);
-			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_prevFastEma == 0m || _prevSlowEma == 0m)
+		var total = Length + Lookback;
+
+		if (_highs.Count < total)
 		{
-			_prevFastEma = fastEmaValue;
-			_prevSlowEma = slowEmaValue;
+			AddCandle(candle, total);
 			return;
 		}
 
-		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+		// Oldest first: the first Lookback entries are the older part, the last Length entries the recent one.
+		var olderHigh = _highs.Take(Lookback).Max();
+		var olderLow = _lows.Take(Lookback).Min();
+		var recentHigh = _highs.Skip(Lookback).Max();
+		var recentLow = _lows.Skip(Lookback).Min();
+
+		AddCandle(candle, total);
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		var close = candle.ClosePrice;
+
+		var doubleBottom = olderLow < recentLow && candle.LowPrice <= olderLow && close > olderLow;
+		var doubleTop = olderHigh > recentHigh && candle.HighPrice >= olderHigh && close < olderHigh;
+
+		if (doubleBottom && Position <= 0)
 		{
-			BuyMarket();
-		}
-		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
-		{
-			SellMarket();
+			BuyMarket(Volume + Math.Abs(Position));
+			_newExtremeSinceEntry = false;
+			return;
 		}
 
-		_prevFastEma = fastEmaValue;
-		_prevSlowEma = slowEmaValue;
+		if (doubleTop && Position >= 0)
+		{
+			SellMarket(Volume + Math.Abs(Position));
+			_newExtremeSinceEntry = false;
+			return;
+		}
+
+		if (Position > 0)
+		{
+			if (candle.HighPrice > recentHigh)
+				_newExtremeSinceEntry = true;
+			else if (_newExtremeSinceEntry && close < recentLow)
+			{
+				SellMarket(Position);
+				_newExtremeSinceEntry = false;
+			}
+		}
+		else if (Position < 0)
+		{
+			if (candle.LowPrice < recentLow)
+				_newExtremeSinceEntry = true;
+			else if (_newExtremeSinceEntry && close > recentHigh)
+			{
+				BuyMarket(-Position);
+				_newExtremeSinceEntry = false;
+			}
+		}
+	}
+
+	private void AddCandle(ICandleMessage candle, int total)
+	{
+		_highs.Add(candle.HighPrice);
+		_lows.Add(candle.LowPrice);
+
+		while (_highs.Count > total)
+		{
+			_highs.RemoveAt(0);
+			_lows.RemoveAt(0);
+		}
 	}
 }

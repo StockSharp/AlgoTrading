@@ -15,23 +15,27 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Strategy based on Average Directional Index (ADX) trend.
-/// It enters long position when ADX > 25 and price > MA, and short position when ADX > 25 and price < MA.
+/// While ADX is above 25 it holds a long position when the close is above the moving average and a short one when it is below.
+/// The position closes when ADX falls below the exit threshold or the close crosses the ATR stop set at entry,
+/// and reverses when the opposite setup appears.
 /// </summary>
 public class AdxTrendStrategy : Strategy
 {
+	/// <summary>
+	/// ADX level above which the trend counts as established.
+	/// </summary>
+	public const decimal AdxEntryThreshold = 25m;
+
 	private readonly StrategyParam<int> _adxPeriod;
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<decimal> _atrMultiplier;
 	private readonly StrategyParam<int> _adxExitThreshold;
 	private readonly StrategyParam<DataType> _candleType;
-	
-	// Current trend state
-	private bool _adxAboveThreshold;
-	private decimal _prevAdxValue;
-	private decimal _prevMaValue;
+
+	private decimal _stopPrice;
 
 	/// <summary>
-	/// ADX period.
+	/// ADX period, also used for the ATR of the stop.
 	/// </summary>
 	public int AdxPeriod
 	{
@@ -49,7 +53,7 @@ public class AdxTrendStrategy : Strategy
 	}
 
 	/// <summary>
-	/// ATR multiplier for stop loss.
+	/// Stop distance in ATR multiples, fixed at entry.
 	/// </summary>
 	public decimal AtrMultiplier
 	{
@@ -58,7 +62,7 @@ public class AdxTrendStrategy : Strategy
 	}
 
 	/// <summary>
-	/// ADX threshold to exit position.
+	/// ADX level below which the position is closed.
 	/// </summary>
 	public int AdxExitThreshold
 	{
@@ -80,27 +84,27 @@ public class AdxTrendStrategy : Strategy
 	/// </summary>
 	public AdxTrendStrategy()
 	{
-		_adxPeriod = Param(nameof(AdxPeriod), 50)
-			.SetDisplay("ADX Period", "Period for calculating ADX indicator", "Indicators")
-
+		_adxPeriod = Param(nameof(AdxPeriod), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("ADX Period", "Period for the ADX and the ATR of the stop", "Indicators")
 			.SetOptimize(10, 30, 2);
 
-		_maPeriod = Param(nameof(MaPeriod), 200)
+		_maPeriod = Param(nameof(MaPeriod), 50)
+			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Period for calculating Moving Average", "Indicators")
-
 			.SetOptimize(20, 100, 10);
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
-			.SetDisplay("ATR Multiplier", "Multiplier for stop-loss based on ATR", "Risk parameters")
-			
+			.SetGreaterThanZero()
+			.SetDisplay("ATR Multiplier", "Stop distance in entry ATR multiples", "Risk parameters")
 			.SetOptimize(1, 3, 0.5m);
 
 		_adxExitThreshold = Param(nameof(AdxExitThreshold), 20)
+			.SetRange(0, 100)
 			.SetDisplay("ADX Exit Threshold", "ADX level below which to exit position", "Exit parameters")
-			
 			.SetOptimize(15, 25, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -114,10 +118,7 @@ public class AdxTrendStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_adxAboveThreshold = default;
-		_prevAdxValue = default;
-		_prevMaValue = default;
-
+		_stopPrice = 0m;
 	}
 
 	/// <inheritdoc />
@@ -125,36 +126,15 @@ public class AdxTrendStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
 		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
+		var atr = new AverageTrueRange { Length = AdxPeriod };
 		var ma = new SMA { Length = MaPeriod };
 
-		var currentAdxMa = 0m;
-		var currentMaValue = 0m;
-
-		// Create subscription and bind indicators
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(adx, (candle, adxVal) =>
-			{
-				if (adxVal is AverageDirectionalIndexValue adxTyped && adxTyped.MovingAverage is decimal adxMaVal)
-					currentAdxMa = adxMaVal;
-			})
-			.Bind(ma, (candle, maVal) =>
-			{
-				if (candle.State != CandleStates.Finished)
-					return;
-
-				if (!IsFormedAndOnlineAndAllowTrading())
-					return;
-
-				currentMaValue = maVal;
-
-				ProcessCandle(candle, currentAdxMa, currentMaValue);
-			})
+			.BindEx(adx, atr, ma, ProcessCandle)
 			.Start();
 
-		// Setup chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -163,38 +143,62 @@ public class AdxTrendStrategy : Strategy
 			DrawIndicator(area, ma);
 			DrawOwnTrades(area);
 		}
-
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal adxMa, decimal maValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue adxValue, IIndicatorValue atrValue, IIndicatorValue maValue)
 	{
-		if (adxMa == 0 || maValue == 0)
-		{
-			_prevMaValue = maValue;
-			_prevAdxValue = adxMa;
+		if (candle.State != CandleStates.Finished || !adxValue.IsFormed || !atrValue.IsFormed || !maValue.IsFormed)
 			return;
-		}
 
-		var isPriceAboveMa = candle.ClosePrice > maValue;
-		var wasPriceAboveMa = _prevMaValue != 0 && candle.OpenPrice > _prevMaValue;
-		var isAdxStrong = adxMa > 25;
+		if (adxValue is not AverageDirectionalIndexValue { MovingAverage: decimal adx })
+			return;
 
-		// Only trade on MA crossover when ADX is strong
-		if (_prevMaValue != 0 && isAdxStrong && wasPriceAboveMa != isPriceAboveMa)
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		var close = candle.ClosePrice;
+		var ma = maValue.GetValue<decimal>();
+		var atr = atrValue.GetValue<decimal>();
+
+		var trending = adx > AdxEntryThreshold;
+		var longSetup = trending && close > ma;
+		var shortSetup = trending && close < ma;
+
+		if (Position > 0)
 		{
-			if (isPriceAboveMa && Position <= 0)
+			if (shortSetup)
 			{
-				BuyMarket(Volume + Math.Abs(Position));
+				SellMarket(Volume + Position);
+				_stopPrice = close + AtrMultiplier * atr;
 			}
-			else if (!isPriceAboveMa && Position >= 0)
+			else if (adx < AdxExitThreshold || close <= _stopPrice)
 			{
-				SellMarket(Volume + Math.Abs(Position));
+				SellMarket(Position);
+				_stopPrice = 0m;
 			}
 		}
-
-		// Update previous values
-		_prevAdxValue = adxMa;
-		_prevMaValue = maValue;
-		_adxAboveThreshold = isAdxStrong;
+		else if (Position < 0)
+		{
+			if (longSetup)
+			{
+				BuyMarket(Volume - Position);
+				_stopPrice = close - AtrMultiplier * atr;
+			}
+			else if (adx < AdxExitThreshold || close >= _stopPrice)
+			{
+				BuyMarket(-Position);
+				_stopPrice = 0m;
+			}
+		}
+		else if (longSetup)
+		{
+			BuyMarket(Volume);
+			_stopPrice = close - AtrMultiplier * atr;
+		}
+		else if (shortSetup)
+		{
+			SellMarket(Volume);
+			_stopPrice = close + AtrMultiplier * atr;
+		}
 	}
 }

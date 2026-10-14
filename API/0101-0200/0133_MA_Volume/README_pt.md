@@ -18,7 +18,11 @@ Um stop percentual protege contra mudanças repentinas na tendência.
 - **Stops**: Sim, baseado em percentual
 - **Valores padrão**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `MaPeriod` = 20
+  - `VolumePeriod` = 20
+  - `VolumeThreshold` = 1.2
+    O volume se expande quando o volume de um candle supera VolumeThreshold vezes a média dos VolumePeriod candles anteriores. Sem posição, um candle com expansão que fecha acima de uma SMA ascendente abre uma compra e um que fecha abaixo de uma SMA descendente abre uma venda. A posição é encerrada quando o volume cai abaixo da média ou a SMA vira contra ela.
 - **Filtros**:
   - Categoria: Seguidor de tendência
   - Direção: Ambos

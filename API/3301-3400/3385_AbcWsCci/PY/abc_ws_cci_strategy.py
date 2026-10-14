@@ -15,7 +15,7 @@ class abc_ws_cci_strategy(Strategy):
     def __init__(self):
         super(abc_ws_cci_strategy, self).__init__()
 
-        self._cci_period = self.Param("CciPeriod", 14) \
+        self._cci_period = self.Param("CciPeriod", 37) \
             .SetDisplay("CCI Period", "CCI period for confirmation", "Indicators")
         self._signal_cooldown = self.Param("SignalCooldownCandles", 6) \
             .SetDisplay("Signal Cooldown", "Bars to wait between trades", "Trading")

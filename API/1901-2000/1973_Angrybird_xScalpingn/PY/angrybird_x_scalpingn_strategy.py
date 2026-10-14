@@ -19,7 +19,7 @@ class angrybird_x_scalpingn_strategy(Strategy):
 
         self._lot_exponent = self.Param("LotExponent", 2.0) \
             .SetDisplay("Lot Exponent", "Volume multiplier for additional trades", "General")
-        self._dynamic_pips = self.Param("DynamicPips", False) \
+        self._dynamic_pips = self.Param("DynamicPips", True) \
             .SetDisplay("Dynamic Pips", "Use dynamic grid step", "Parameters")
         self._default_pips = self.Param("DefaultPips", 12) \
             .SetDisplay("Default Pips", "Base grid step in ticks", "Parameters")
@@ -37,9 +37,9 @@ class angrybird_x_scalpingn_strategy(Strategy):
             .SetDisplay("RSI Minimum", "Minimum RSI to allow short", "Parameters")
         self._rsi_maximum = self.Param("RsiMaximum", 70.0) \
             .SetDisplay("RSI Maximum", "Maximum RSI to allow long", "Parameters")
-        self._max_trades = self.Param("MaxTrades", 2) \
+        self._max_trades = self.Param("MaxTrades", 10) \
             .SetDisplay("Max Trades", "Maximum number of open trades", "Risk")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
             .SetDisplay("Candle Type", "Type of candles", "Parameters")
 
         self._highs = deque()

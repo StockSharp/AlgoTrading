@@ -21,10 +21,11 @@
 - **デフォルト値**:
   - `StochasticPeriod` = 14
   - `KPeriod` = 3
-  - `DPeriod` = 3
   - `LookbackPeriod` = 20
-  - `DeviationMultiplier` = 2.0m
+  - `DeviationMultiplier` = 2
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
+    AvgとStdDevは現在値を含む直近LookbackPeriod個の%Kの平均と標準偏差です。 ストップはエントリー価格の固定StopLossPercentで、ローソク足の間も監視されます。0で無効になります。 %Kは最初の期間のストキャスティクスをKPeriod本で平滑化した値で、%Dはルールに関与しないためDPeriodは削除しました。 保有ポジションと逆方向のエントリーシグナルはドテンになります。
 - **フィルター**:
   - カテゴリ: ブレイクアウト
   - 方向: 両方

@@ -56,7 +56,7 @@ public class VrsVegasReversalStrategy : Strategy
 	    
 	    .SetOptimize(0.01m, 0.05m, 0.005m);
 
-	_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+	_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 	    .SetDisplay("Candle Type", "Type of candles", "General");
     }
 

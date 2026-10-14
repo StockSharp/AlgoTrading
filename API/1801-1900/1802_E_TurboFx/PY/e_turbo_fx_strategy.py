@@ -13,7 +13,7 @@ class e_turbo_fx_strategy(Strategy):
         super(e_turbo_fx_strategy, self).__init__()
         self._ema_period = self.Param("EmaPeriod", 20) \
             .SetDisplay("EMA Period", "EMA trend filter period", "Parameters")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
             .SetDisplay("Candle Type", "Candle type", "General")
         self._bear_count = 0
         self._bull_count = 0

@@ -16,7 +16,9 @@
 - **止损**：是，按百分比
 - **默认值**:
   - `CandleType` = 15分钟
-  - `StopLoss` = 2%
+  - `WickRatio` = 1.5
+  - `StopLossPercent` = 2
+    拒绝K线刺破前一根K线的最低价（最高价），反向收盘，且影线长度超过 WickRatio 倍实体。止损设在被拒绝的最低价或最高价之外 StopLossPercent 处，收盘越过该价位即平仓。
 - **过滤器**:
   - 类别：形态
   - 方向：双向

@@ -77,7 +77,7 @@ public class ReverseStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Period", "MA length for Bollinger Bands", "Indicators");
 
-		_bollingerWidth = Param(nameof(BollingerWidth), 1m)
+		_bollingerWidth = Param(nameof(BollingerWidth), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Width", "Standard deviation multiplier", "Indicators");
 

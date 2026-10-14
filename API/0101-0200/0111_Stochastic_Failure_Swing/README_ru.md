@@ -17,7 +17,11 @@ Stochastic Failure Swing отслеживает осциллятор на пре
 - **Стопы**: да, процентные
 - **Значения по умолчанию**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `KPeriod` = 14
+  - `DPeriod` = 3
+  - `OversoldLevel` = 20
+  - `OverboughtLevel` = 80
+  - `StopLossPercent` = 2
 - **Фильтры**:
   - Категория: Разворот
   - Направление: обе

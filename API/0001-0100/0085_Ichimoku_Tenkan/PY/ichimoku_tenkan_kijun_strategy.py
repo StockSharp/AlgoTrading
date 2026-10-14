@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan
+from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import Ichimoku
 from StockSharp.Algo.Strategies import Strategy
@@ -13,22 +13,20 @@ from StockSharp.Algo.Strategies import Strategy
 class ichimoku_tenkan_kijun_strategy(Strategy):
     """
     Ichimoku Tenkan/Kijun Cross strategy.
-    Enters long when Tenkan crosses above Kijun and price is above Kumo.
-    Enters short when Tenkan crosses below Kijun and price is below Kumo.
-    Exits on opposite cross or Kumo breach.
+    Tenkan-sen crossing above Kijun-sen while the close is above the cloud opens a long position, the opposite cross below the
+    cloud a short one. The stop is the Kijun-sen at entry; an opposite cross closes the position, reversing it when the close
+    is on the other side of the cloud.
     """
 
     def __init__(self):
         super(ichimoku_tenkan_kijun_strategy, self).__init__()
-        self._tenkan_period = self.Param("TenkanPeriod", 9).SetDisplay("Tenkan Period", "Period for Tenkan-sen", "Ichimoku")
-        self._kijun_period = self.Param("KijunPeriod", 26).SetDisplay("Kijun Period", "Period for Kijun-sen", "Ichimoku")
-        self._senkou_span_b_period = self.Param("SenkouSpanBPeriod", 52).SetDisplay("Senkou Span B Period", "Period for Senkou Span B", "Ichimoku")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Type of candles to use", "General")
-        self._cooldown_bars = self.Param("CooldownBars", 500).SetDisplay("Cooldown Bars", "Bars to wait between trades", "General")
+        self._tenkan_period = self.Param("TenkanPeriod", 9).SetGreaterThanZero().SetDisplay("Tenkan Period", "Period for Tenkan-sen", "Ichimoku")
+        self._kijun_period = self.Param("KijunPeriod", 26).SetGreaterThanZero().SetDisplay("Kijun Period", "Period for Kijun-sen", "Ichimoku")
+        self._senkou_span_b_period = self.Param("SenkouSpanBPeriod", 52).SetGreaterThanZero().SetDisplay("Senkou Span B Period", "Period for Senkou Span B", "Ichimoku")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))).SetDisplay("Candle Type", "Type of candles to use", "General")
 
-        self._prev_tenkan = 0.0
-        self._prev_kijun = 0.0
-        self._cooldown = 0
+        self._prev_tenkan_above = None
+        self._stop_price = Decimal(0)
 
     @property
     def candle_type(self):
@@ -36,16 +34,14 @@ class ichimoku_tenkan_kijun_strategy(Strategy):
 
     def OnReseted(self):
         super(ichimoku_tenkan_kijun_strategy, self).OnReseted()
-        self._prev_tenkan = 0.0
-        self._prev_kijun = 0.0
-        self._cooldown = 0
+        self._prev_tenkan_above = None
+        self._stop_price = Decimal(0)
 
     def OnStarted2(self, time):
         super(ichimoku_tenkan_kijun_strategy, self).OnStarted2(time)
 
-        self._prev_tenkan = 0.0
-        self._prev_kijun = 0.0
-        self._cooldown = 0
+        self._prev_tenkan_above = None
+        self._stop_price = Decimal(0)
 
         ichimoku = Ichimoku()
         ichimoku.Tenkan.Length = self._tenkan_period.Value
@@ -65,57 +61,45 @@ class ichimoku_tenkan_kijun_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not ichimoku_iv.IsFormed:
+        tenkan = ichimoku_iv.Tenkan
+        kijun = ichimoku_iv.Kijun
+        senkou_a = ichimoku_iv.SenkouA
+        senkou_b = ichimoku_iv.SenkouB
+        if tenkan is None or kijun is None or senkou_a is None or senkou_b is None:
             return
 
-        tenkan_val = ichimoku_iv.Tenkan
-        kijun_val = ichimoku_iv.Kijun
-        senkou_a_val = ichimoku_iv.SenkouA
-        senkou_b_val = ichimoku_iv.SenkouB
+        # Equal lines are no cross; the previous side holds.
+        was_above = self._prev_tenkan_above
+        if tenkan != kijun:
+            self._prev_tenkan_above = tenkan > kijun
 
-        if tenkan_val is None or kijun_val is None or senkou_a_val is None or senkou_b_val is None:
+        if was_above is None or not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        tenkan = float(tenkan_val)
-        kijun = float(kijun_val)
-        senkou_a = float(senkou_a_val)
-        senkou_b = float(senkou_b_val)
+        bullish_cross = not was_above and tenkan > kijun
+        bearish_cross = was_above and tenkan < kijun
+        close = candle.ClosePrice
+        upper_kumo = Math.Max(senkou_a, senkou_b)
+        lower_kumo = Math.Min(senkou_a, senkou_b)
 
-        if self._prev_tenkan == 0 or self._prev_kijun == 0:
-            self._prev_tenkan = tenkan
-            self._prev_kijun = kijun
-            return
-
-        if self._cooldown > 0:
-            self._cooldown -= 1
-            self._prev_tenkan = tenkan
-            self._prev_kijun = kijun
-            return
-
-        bullish_cross = self._prev_tenkan <= self._prev_kijun and tenkan > kijun
-        bearish_cross = self._prev_tenkan >= self._prev_kijun and tenkan < kijun
-
-        upper_kumo = max(senkou_a, senkou_b)
-        lower_kumo = min(senkou_a, senkou_b)
-
-        close = float(candle.ClosePrice)
-        cd = self._cooldown_bars.Value
-
-        if self.Position == 0 and bullish_cross and close > upper_kumo:
-            self.BuyMarket()
-            self._cooldown = cd
-        elif self.Position == 0 and bearish_cross and close < lower_kumo:
-            self.SellMarket()
-            self._cooldown = cd
-        elif self.Position > 0 and (bearish_cross or close < lower_kumo):
-            self.SellMarket()
-            self._cooldown = cd
-        elif self.Position < 0 and (bullish_cross or close > upper_kumo):
-            self.BuyMarket()
-            self._cooldown = cd
-
-        self._prev_tenkan = tenkan
-        self._prev_kijun = kijun
+        if self.Position > 0:
+            if bearish_cross and close < lower_kumo:
+                self.SellMarket(self.Volume + self.Position)
+                self._stop_price = kijun
+            elif bearish_cross or close <= self._stop_price:
+                self.SellMarket(self.Position)
+        elif self.Position < 0:
+            if bullish_cross and close > upper_kumo:
+                self.BuyMarket(self.Volume - self.Position)
+                self._stop_price = kijun
+            elif bullish_cross or close >= self._stop_price:
+                self.BuyMarket(-self.Position)
+        elif bullish_cross and close > upper_kumo:
+            self.BuyMarket(self.Volume)
+            self._stop_price = kijun
+        elif bearish_cross and close < lower_kumo:
+            self.SellMarket(self.Volume)
+            self._stop_price = kijun
 
     def CreateClone(self):
         return ichimoku_tenkan_kijun_strategy()

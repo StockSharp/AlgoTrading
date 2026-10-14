@@ -11,33 +11,27 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy combining MA trend filter with manual ADX-like trend strength.
-/// Enters when price crosses MA with strong directional movement.
+/// MA ADX strategy.
+/// A close crossing above the MaPeriod SMA while ADX is above AdxThreshold goes long and a cross below goes short; the reverse cross
+/// closes the position and, with ADX still strong, opens the other side. The target lies TakeProfitAtrMultiplier ATR from the entry close
+/// and is checked on candle closes, and a percent stop limits the loss.
 /// </summary>
 public class MaAdxStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _adxPeriod;
 	private readonly StrategyParam<decimal> _adxThreshold;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _takeProfitAtrMultiplier;
+	private readonly StrategyParam<int> _atrPeriod;
+	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly List<decimal> _highs = new();
-	private readonly List<decimal> _lows = new();
-	private readonly List<decimal> _closes = new();
-	private int _cooldown;
-
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	private decimal? _prevClose;
+	private decimal _prevMa;
+	private decimal _targetPrice;
 
 	/// <summary>
-	/// Moving Average period.
+	/// Period of the SMA.
 	/// </summary>
 	public int MaPeriod
 	{
@@ -46,7 +40,7 @@ public class MaAdxStrategy : Strategy
 	}
 
 	/// <summary>
-	/// ADX period.
+	/// Period of ADX.
 	/// </summary>
 	public int AdxPeriod
 	{
@@ -55,7 +49,7 @@ public class MaAdxStrategy : Strategy
 	}
 
 	/// <summary>
-	/// ADX threshold for trend strength.
+	/// ADX level of a strong trend.
 	/// </summary>
 	public decimal AdxThreshold
 	{
@@ -64,36 +58,71 @@ public class MaAdxStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Cooldown bars between trades.
+	/// Target distance from the entry in ATRs.
 	/// </summary>
-	public int CooldownBars
+	public decimal TakeProfitAtrMultiplier
 	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
+		get => _takeProfitAtrMultiplier.Value;
+		set => _takeProfitAtrMultiplier.Value = value;
 	}
 
 	/// <summary>
-	/// Strategy constructor.
+	/// Period of the target ATR.
+	/// </summary>
+	public int AtrPeriod
+	{
+		get => _atrPeriod.Value;
+		set => _atrPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Stop loss percentage from entry price.
+	/// </summary>
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
 	/// </summary>
 	public MaAdxStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
 		_maPeriod = Param(nameof(MaPeriod), 20)
-			.SetRange(10, 50)
-			.SetDisplay("MA Period", "Period of the Moving Average", "Indicators");
+			.SetGreaterThanZero()
+			.SetDisplay("MA Period", "Period of the SMA", "Indicators");
 
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
-			.SetRange(7, 21)
-			.SetDisplay("ADX Period", "Period of the ADX indicator", "Indicators");
+			.SetGreaterThanZero()
+			.SetDisplay("ADX Period", "Period of ADX", "Indicators");
 
 		_adxThreshold = Param(nameof(AdxThreshold), 25m)
-			.SetDisplay("ADX Threshold", "ADX level for strong trend", "Indicators");
+			.SetDisplay("ADX Threshold", "ADX level of a strong trend", "Indicators");
 
-		_cooldownBars = Param(nameof(CooldownBars), 100)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "General")
-			.SetRange(5, 500);
+		_takeProfitAtrMultiplier = Param(nameof(TakeProfitAtrMultiplier), 2m)
+			.SetNotNegative()
+			.SetDisplay("Take Profit ATR", "Target distance from the entry in ATRs", "Risk");
+
+		_atrPeriod = Param(nameof(AtrPeriod), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("ATR Period", "Period of the target ATR", "Risk");
+
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -106,10 +135,9 @@ public class MaAdxStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_highs.Clear();
-		_lows.Clear();
-		_closes.Clear();
-		_cooldown = 0;
+		_prevClose = null;
+		_prevMa = default;
+		_targetPrice = default;
 	}
 
 	/// <inheritdoc />
@@ -117,129 +145,95 @@ public class MaAdxStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Use EMA as binding indicator to drive candle processing
-		var ma = new ExponentialMovingAverage { Length = MaPeriod };
+		_prevClose = null;
+		_prevMa = default;
+		_targetPrice = default;
+
+		var sma = new SimpleMovingAverage { Length = MaPeriod };
+		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
+		var atr = new AverageTrueRange { Length = AtrPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-
 		subscription
-			.Bind(ma, ProcessCandle)
+			.BindEx(sma, adx, atr, ProcessCandle)
 			.Start();
+
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, ma);
+			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, adx);
+			}
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal maValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// The high-level handler activates native protection before this callback, also between signal bars.
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue smaValue, IIndicatorValue adxValue, IIndicatorValue atrValue)
 	{
 		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (!smaValue.IsFormed || !adxValue.IsFormed || !atrValue.IsFormed)
+			return;
+
+		if (adxValue is not AverageDirectionalIndexValue { MovingAverage: decimal strength })
+			return;
+
+		var ma = smaValue.GetValue<decimal>();
+		var close = candle.ClosePrice;
+		var prevClose = _prevClose;
+		var prevMa = _prevMa;
+		_prevClose = close;
+		_prevMa = ma;
+
+		if (prevClose is not decimal lastClose)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var high = candle.HighPrice;
-		var low = candle.LowPrice;
-		var close = candle.ClosePrice;
+		var atr = atrValue.GetValue<decimal>();
+		var crossUp = lastClose <= prevMa && close > ma;
+		var crossDown = lastClose >= prevMa && close < ma;
+		var strong = strength > AdxThreshold;
 
-		_highs.Add(high);
-		_lows.Add(low);
-		_closes.Add(close);
-
-		var adxPeriod = AdxPeriod;
-
-		// Need at least adxPeriod+1 bars
-		if (_closes.Count < adxPeriod + 2)
+		if (crossUp && strong && Position <= 0)
 		{
-			if (_cooldown > 0)
-				_cooldown--;
-			return;
+			BuyMarket(Volume + Math.Abs(Position));
+			_targetPrice = close + TakeProfitAtrMultiplier * atr;
 		}
-
-		// Manual ADX-like trend strength calculation
-		decimal sumTr = 0;
-		decimal sumDmPlus = 0;
-		decimal sumDmMinus = 0;
-
-		var count = _highs.Count;
-		var start = count - adxPeriod;
-
-		for (int i = start; i < count; i++)
+		else if (crossDown && strong && Position >= 0)
 		{
-			var h = _highs[i];
-			var l = _lows[i];
-			var prevC = _closes[i - 1];
-			var prevH = _highs[i - 1];
-			var prevL = _lows[i - 1];
-
-			var tr = Math.Max(h - l, Math.Max(Math.Abs(h - prevC), Math.Abs(l - prevC)));
-			sumTr += tr;
-
-			var upMove = h - prevH;
-			var downMove = prevL - l;
-
-			if (upMove > downMove && upMove > 0)
-				sumDmPlus += upMove;
-
-			if (downMove > upMove && downMove > 0)
-				sumDmMinus += downMove;
+			SellMarket(Volume + Math.Abs(Position));
+			_targetPrice = close - TakeProfitAtrMultiplier * atr;
 		}
-
-		decimal trendStrength = 0;
-		if (sumTr > 0)
+		else if (Position > 0 && (crossDown || (TakeProfitAtrMultiplier > 0 && close >= _targetPrice)))
 		{
-			var diPlus = 100m * sumDmPlus / sumTr;
-			var diMinus = 100m * sumDmMinus / sumTr;
-			var diSum = diPlus + diMinus;
-			trendStrength = diSum > 0 ? 100m * Math.Abs(diPlus - diMinus) / diSum : 0;
+			SellMarket(Position);
 		}
-
-		// Keep lists manageable
-		if (_highs.Count > adxPeriod * 3)
+		else if (Position < 0 && (crossUp || (TakeProfitAtrMultiplier > 0 && close <= _targetPrice)))
 		{
-			var trim = _highs.Count - adxPeriod * 2;
-			_highs.RemoveRange(0, trim);
-			_lows.RemoveRange(0, trim);
-			_closes.RemoveRange(0, trim);
-		}
-
-		var strongTrend = trendStrength > AdxThreshold;
-
-		if (_cooldown > 0)
-		{
-			_cooldown--;
-			return;
-		}
-
-		// Long: price above MA + strong trend
-		if (close > maValue && strongTrend && Position == 0)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-		// Short: price below MA + strong trend
-		else if (close < maValue && strongTrend && Position == 0)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-
-		// Exit long: price crosses below MA
-		if (Position > 0 && close < maValue)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		// Exit short: price crosses above MA
-		else if (Position < 0 && close > maValue)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
+			BuyMarket(-Position);
 		}
 	}
 }

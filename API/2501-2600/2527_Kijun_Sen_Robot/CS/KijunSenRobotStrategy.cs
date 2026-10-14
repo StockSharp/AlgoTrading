@@ -192,7 +192,7 @@ public class KijunSenRobotStrategy : Strategy
 		
 		.SetOptimize(10, 40, 2);
 
-		_maFilterPips = Param(nameof(MaFilterPips), 20m)
+		_maFilterPips = Param(nameof(MaFilterPips), 6m)
 		.SetNotNegative()
 		.SetDisplay("LWMA Filter (pips)", "Minimum distance between price and Kijun required by the LWMA", "Trend Filter")
 		

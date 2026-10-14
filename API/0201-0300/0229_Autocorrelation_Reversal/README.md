@@ -20,8 +20,9 @@ The approach is suited for traders looking for statistical edges rather than cha
 - **Stops**: Yes, percent stop-loss.
 - **Default Values**:
   - `AutoCorrPeriod` = 20
-  - `AutoCorrThreshold` = -0.3m
-  - `StopLossPercent` = 2m
+  - `AutoCorrThreshold` = -0.3
+  - `StopLossPercent` = 2
+    The autocorrelation is the lag-one autocorrelation of the close-to-close changes over the last AutoCorrPeriod closes, and MA is the simple moving average over the same AutoCorrPeriod candles. The stop is a fixed StopLossPercent of the entry price, watched between candles as well; 0 disables it. An entry signal against an open position reverses it.
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **Filters**:
   - Category: Mean Reversion

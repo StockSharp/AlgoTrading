@@ -3,7 +3,6 @@ using System.Collections.Generic;
 
 using Ecng.Common;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -11,31 +10,71 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// CycleBiologiqueStrategy using EMA crossover for trend timing.
-/// Enters long on golden cross, short on death cross.
+/// Cycle Biologique strategy.
+/// The cycle is Amplitude * sin(2 * pi * (bar index + Offset) / CycleLength).
+/// A cross above zero opens a long and a cross below zero closes it.
 /// </summary>
 public class CycleBiologiqueStrategy : Strategy
 {
-	private readonly StrategyParam<int> _fastEmaPeriod;
-	private readonly StrategyParam<int> _slowEmaPeriod;
+	private readonly StrategyParam<int> _cycleLength;
+	private readonly StrategyParam<decimal> _amplitude;
+	private readonly StrategyParam<int> _offset;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevFastEma;
-	private decimal _prevSlowEma;
+	private int _barIndex;
+	private double? _prevCycle;
 
-	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
-	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	/// <summary>
+	/// Bars in one full cycle.
+	/// </summary>
+	public int CycleLength
+	{
+		get => _cycleLength.Value;
+		set => _cycleLength.Value = value;
+	}
 
+	/// <summary>
+	/// Cycle amplitude.
+	/// </summary>
+	public decimal Amplitude
+	{
+		get => _amplitude.Value;
+		set => _amplitude.Value = value;
+	}
+
+	/// <summary>
+	/// Phase shift of the cycle in bars.
+	/// </summary>
+	public int Offset
+	{
+		get => _offset.Value;
+		set => _offset.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
+	/// </summary>
 	public CycleBiologiqueStrategy()
 	{
-		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+		_cycleLength = Param(nameof(CycleLength), 30)
 			.SetGreaterThanZero()
-			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+			.SetDisplay("Cycle Length", "Bars in one full cycle", "Cycle");
 
-		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
+		_amplitude = Param(nameof(Amplitude), 1.0m)
 			.SetGreaterThanZero()
-			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+			.SetDisplay("Amplitude", "Cycle amplitude", "Cycle");
+
+		_offset = Param(nameof(Offset), 0)
+			.SetDisplay("Offset", "Phase shift of the cycle in bars", "Cycle");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -51,8 +90,8 @@ public class CycleBiologiqueStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevFastEma = 0m;
-		_prevSlowEma = 0m;
+		_barIndex = 0;
+		_prevCycle = null;
 	}
 
 	/// <inheritdoc />
@@ -60,46 +99,42 @@ public class CycleBiologiqueStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
-		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
+		_barIndex = 0;
+		_prevCycle = null;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(fastEma, slowEma, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, fastEma);
-			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_prevFastEma == 0m || _prevSlowEma == 0m)
-		{
-			_prevFastEma = fastEmaValue;
-			_prevSlowEma = slowEmaValue;
+		var cycle = (double)Amplitude * Math.Sin(2 * Math.PI * (_barIndex + Offset) / CycleLength);
+		_barIndex++;
+
+		var prev = _prevCycle;
+		_prevCycle = cycle;
+
+		if (prev is not double prevCycle)
 			return;
-		}
 
-		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
-		{
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (prevCycle <= 0 && cycle > 0 && Position == 0)
 			BuyMarket();
-		}
-		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
-		{
-			SellMarket();
-		}
-
-		_prevFastEma = fastEmaValue;
-		_prevSlowEma = slowEmaValue;
+		else if (prevCycle >= 0 && cycle < 0 && Position > 0)
+			SellMarket(Position);
 	}
 }

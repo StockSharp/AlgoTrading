@@ -65,6 +65,8 @@ static class StrategyInventory
 		"0526_Spot_Futures_Arbitrage",
 		"1005_MA_With_Logistic",
 		"1153_Pairs",
+		// The unchanged 5% candle-gain/15000-volume defaults are reachable on packaged TON, not BTC.
+		"1181_Premarket_Gap_MomoTrader",
 		"1507_Ultimate_Template",
 		"1908_Random_Trailing_Stop",
 		"2000_HFT_Spreader_for_FORTS",

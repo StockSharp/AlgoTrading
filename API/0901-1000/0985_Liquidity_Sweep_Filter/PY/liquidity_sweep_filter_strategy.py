@@ -18,7 +18,7 @@ class liquidity_sweep_filter_strategy(Strategy):
 
     def __init__(self):
         super(liquidity_sweep_filter_strategy, self).__init__()
-        self._length = self.Param("Length", 20) \
+        self._length = self.Param("Length", 12) \
             .SetDisplay("Length", "Base period", "Trend")
         self._multiplier = self.Param("Multiplier", 0.3) \
             .SetDisplay("Multiplier", "Band width multiplier", "Trend")

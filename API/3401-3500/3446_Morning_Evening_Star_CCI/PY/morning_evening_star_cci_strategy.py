@@ -17,7 +17,7 @@ class morning_evening_star_cci_strategy(Strategy):
 
     def __init__(self):
         super(morning_evening_star_cci_strategy, self).__init__()
-        self._cci_period = self.Param("CciPeriod", 14).SetDisplay("CCI Period", "CCI period", "Indicators")
+        self._cci_period = self.Param("CciPeriod", 25).SetDisplay("CCI Period", "CCI period", "Indicators")
         self._cci_level = self.Param("CciLevel", 0.0).SetDisplay("CCI Level", "CCI threshold", "Signals")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Candles", "General")
 

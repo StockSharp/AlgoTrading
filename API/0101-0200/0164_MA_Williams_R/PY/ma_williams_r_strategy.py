@@ -1,20 +1,19 @@
 import clr
 
-clr.AddReference("System.Drawing")
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import TimeSpan, Math
-from System.Drawing import Color
-from StockSharp.Messages import UnitTypes, Unit, DataType, ICandleMessage, CandleStates
+from System import TimeSpan, Decimal
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, Level1Fields
+from StockSharp.BusinessEntities import Subscription
 from StockSharp.Algo.Indicators import SimpleMovingAverage, ExponentialMovingAverage, WeightedMovingAverage, SmoothedMovingAverage, HullMovingAverage, WilliamsR
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
 
 class MovingAverageTypeEnum:
-    """Enum for Moving Average types."""
+    """Moving average types."""
     Simple = 0
     Exponential = 1
     Weighted = 2
@@ -23,192 +22,95 @@ class MovingAverageTypeEnum:
 
 class ma_williams_r_strategy(Strategy):
     """
-    Implementation of strategy - MA + Williams %R.
-    Buy when price is above MA and Williams %R is below -70 (oversold).
-    Sell when price is below MA and Williams %R is above -30 (overbought).
+    MA Williams %R strategy.
+    A close above the MaPeriod moving average of type MaType with Williams %R below WilliamsROversold goes long and a close below it with
+    %R above WilliamsROverbought goes short, reversing an opposite position. A long closes once %R returns to the -50 middle from below
+    and a short once it returns from above, and a percent stop limits the loss.
     """
+
     def __init__(self):
         super(ma_williams_r_strategy, self).__init__()
-
-        # Initialize strategy parameters
-        self._maPeriod = self.Param("MaPeriod", 20) \
-            .SetGreaterThanZero() \
-            .SetDisplay("MA Period", "Period for Moving Average", "MA Parameters")
-
-        self._maType = self.Param("MaType", MovingAverageTypeEnum.Simple) \
-            .SetDisplay("MA Type", "Type of Moving Average", "MA Parameters")
-
-        self._williamsRPeriod = self.Param("WilliamsRPeriod", 14) \
-            .SetGreaterThanZero() \
-            .SetDisplay("Williams %R Period", "Period for Williams %R", "Williams %R Parameters")
-
-        self._williamsROversold = self.Param("WilliamsROversold", -70.0) \
-            .SetRange(-100, 0) \
-            .SetDisplay("Williams %R Oversold", "Williams %R level to consider market oversold", "Williams %R Parameters")
-
-        self._williamsROverbought = self.Param("WilliamsROverbought", -30.0) \
-            .SetRange(-100, 0) \
-            .SetDisplay("Williams %R Overbought", "Williams %R level to consider market overbought", "Williams %R Parameters")
-
-        self._cooldownBars = self.Param("CooldownBars", 120) \
-            .SetRange(5, 500) \
-            .SetDisplay("Cooldown Bars", "Bars between trades", "General")
-
-        self._stopLoss = self.Param("StopLoss", Unit(2, UnitTypes.Percent)) \
-            .SetDisplay("Stop Loss", "Stop loss percent or value", "Risk Management")
-
-        self._candleType = self.Param("CandleType", tf(5)) \
-            .SetDisplay("Candle Type", "Candle type for strategy", "General")
-
-        self._cooldown = 0
+        self._ma_period = self.Param("MaPeriod", 20).SetGreaterThanZero().SetDisplay("MA Period", "Period of the moving average", "Indicators")
+        self._ma_type = self.Param("MaType", MovingAverageTypeEnum.Simple).SetDisplay("MA Type", "Type of the moving average", "Indicators")
+        self._williams_r_period = self.Param("WilliamsRPeriod", 14).SetGreaterThanZero().SetDisplay("Williams %R Period", "Period of Williams %R", "Indicators")
+        self._williams_r_oversold = self.Param("WilliamsROversold", -80.0).SetDisplay("Williams %R Oversold", "Williams %R level for longs", "Indicators")
+        self._williams_r_overbought = self.Param("WilliamsROverbought", -20.0).SetDisplay("Williams %R Overbought", "Williams %R level for shorts", "Indicators")
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0).SetNotNegative().SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles to use", "General")
 
     @property
-    def MaPeriod(self):
-        return self._maPeriod.Value
-
-    @MaPeriod.setter
-    def MaPeriod(self, value):
-        self._maPeriod.Value = value
-
-    @property
-    def MaType(self):
-        return self._maType.Value
-
-    @MaType.setter
-    def MaType(self, value):
-        self._maType.Value = value
-
-    @property
-    def WilliamsRPeriod(self):
-        return self._williamsRPeriod.Value
-
-    @WilliamsRPeriod.setter
-    def WilliamsRPeriod(self, value):
-        self._williamsRPeriod.Value = value
-
-    @property
-    def WilliamsROversold(self):
-        return self._williamsROversold.Value
-
-    @WilliamsROversold.setter
-    def WilliamsROversold(self, value):
-        self._williamsROversold.Value = value
-
-    @property
-    def WilliamsROverbought(self):
-        return self._williamsROverbought.Value
-
-    @WilliamsROverbought.setter
-    def WilliamsROverbought(self, value):
-        self._williamsROverbought.Value = value
-
-    @property
-    def CooldownBars(self):
-        return self._cooldownBars.Value
-
-    @CooldownBars.setter
-    def CooldownBars(self, value):
-        self._cooldownBars.Value = value
-
-    @property
-    def StopLoss(self):
-        return self._stopLoss.Value
-
-    @StopLoss.setter
-    def StopLoss(self, value):
-        self._stopLoss.Value = value
-
-    @property
-    def CandleType(self):
-        return self._candleType.Value
-
-    @CandleType.setter
-    def CandleType(self, value):
-        self._candleType.Value = value
-
-    def OnReseted(self):
-        super(ma_williams_r_strategy, self).OnReseted()
-        self._cooldown = 0
+    def candle_type(self):
+        return self._candle_type.Value
 
     def OnStarted2(self, time):
         super(ma_williams_r_strategy, self).OnStarted2(time)
 
-        # Create MA based on selected type
-        if self.MaType == MovingAverageTypeEnum.Exponential:
-            ma = ExponentialMovingAverage()
-            ma.Length = self.MaPeriod
-        elif self.MaType == MovingAverageTypeEnum.Weighted:
-            ma = WeightedMovingAverage()
-            ma.Length = self.MaPeriod
-        elif self.MaType == MovingAverageTypeEnum.Smoothed:
-            ma = SmoothedMovingAverage()
-            ma.Length = self.MaPeriod
-        elif self.MaType == MovingAverageTypeEnum.HullMA:
-            ma = HullMovingAverage()
-            ma.Length = self.MaPeriod
-        else:
-            ma = SimpleMovingAverage()
-            ma.Length = self.MaPeriod
+        ma = self._create_moving_average()
+        williams = WilliamsR()
+        williams.Length = self._williams_r_period.Value
 
-        williamsR = WilliamsR()
-        williamsR.Length = self.WilliamsRPeriod
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.BindEx(ma, williams, self._process_candle).Start()
 
-        # Setup candle subscription
-        subscription = self.SubscribeCandles(self.CandleType)
+        self.StartProtection(Unit(), Unit(Decimal(self._stop_loss_percent.Value), UnitTypes.Percent), useMarketOrders=True, isLocalStop=True)
 
-        # Bind indicators to candles
-        subscription.Bind(ma, williamsR, self.ProcessCandle).Start()
+        # The stop has to see prices between candles, not only at their close.
+        for field in (Level1Fields.BestBidPrice, Level1Fields.BestAskPrice):
+            quotes = Subscription(DataType.Level1, self.Security)
+            quotes.MarketData.BuildField = field
+            self.SubscribeLevel1(quotes).Bind(self._observe_protection_quote).Start()
 
-        # Setup chart visualization if available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
             self.DrawIndicator(area, ma)
-
-            oscillatorArea = self.CreateChartArea()
-            if oscillatorArea is not None:
-                self.DrawIndicator(oscillatorArea, williamsR)
-
             self.DrawOwnTrades(area)
+            oscillators = self.CreateChartArea()
+            if oscillators is not None:
+                self.DrawIndicator(oscillators, williams)
 
-    def ProcessCandle(self, candle, maValue, williamsRValue):
+    def _observe_protection_quote(self, quote):
+        # The high-level handler activates native protection before the callback, including between bars.
+        pass
+
+    def _create_moving_average(self):
+        ma_type = self._ma_type.Value
+        if ma_type == MovingAverageTypeEnum.Exponential:
+            ma = ExponentialMovingAverage()
+        elif ma_type == MovingAverageTypeEnum.Weighted:
+            ma = WeightedMovingAverage()
+        elif ma_type == MovingAverageTypeEnum.Smoothed:
+            ma = SmoothedMovingAverage()
+        elif ma_type == MovingAverageTypeEnum.HullMA:
+            ma = HullMovingAverage()
+        else:
+            ma = SimpleMovingAverage()
+        ma.Length = self._ma_period.Value
+        return ma
+
+    def _process_candle(self, candle, ma_value, williams_value):
         if candle.State != CandleStates.Finished:
+            return
+
+        if not ma_value.IsFormed or not williams_value.IsFormed:
             return
 
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        # Current price
-        price = float(candle.ClosePrice)
+        ma = ma_value.GetValue[Decimal](None)
+        williams = williams_value.GetValue[Decimal](None)
+        close = candle.ClosePrice
 
-        # Determine if price is above or below MA
-        isPriceAboveMA = price > maValue
-
-        if self._cooldown > 0:
-            self._cooldown -= 1
-            return
-
-        # Trading rules
-        if isPriceAboveMA and williamsRValue <= self.WilliamsROversold and self.Position == 0:
-            # Buy signal - price above MA and Williams %R oversold
-            self.BuyMarket()
-            self._cooldown = self.CooldownBars
-
-        elif not isPriceAboveMA and williamsRValue >= self.WilliamsROverbought and self.Position == 0:
-            # Sell signal - price below MA and Williams %R overbought
-            self.SellMarket()
-            self._cooldown = self.CooldownBars
-
-        # Exit conditions
-        elif not isPriceAboveMA and self.Position > 0:
-            # Exit long position when price falls below MA
-            self.SellMarket()
-            self._cooldown = self.CooldownBars
-
-        elif isPriceAboveMA and self.Position < 0:
-            # Exit short position when price rises above MA
-            self.BuyMarket()
-            self._cooldown = self.CooldownBars
+        middle = Decimal(-50)
+        if close > ma and williams < Decimal(self._williams_r_oversold.Value) and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+        elif close < ma and williams > Decimal(self._williams_r_overbought.Value) and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
+        elif self.Position > 0 and williams >= middle:
+            self.SellMarket(self.Position)
+        elif self.Position < 0 and williams <= middle:
+            self.BuyMarket(-self.Position)
 
     def CreateClone(self):
         return ma_williams_r_strategy()

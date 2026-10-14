@@ -22,7 +22,6 @@ class pineconnector_template_strategy(Strategy):
         self._prev_fast = 0.0
         self._prev_slow = 0.0
         self._initialized = False
-        self._last_signal_ticks = 0
 
     @property
     def candle_type(self):
@@ -37,14 +36,12 @@ class pineconnector_template_strategy(Strategy):
         self._prev_fast = 0.0
         self._prev_slow = 0.0
         self._initialized = False
-        self._last_signal_ticks = 0
 
     def OnStarted2(self, time):
         super(pineconnector_template_strategy, self).OnStarted2(time)
         self._prev_fast = 0.0
         self._prev_slow = 0.0
         self._initialized = False
-        self._last_signal_ticks = 0
         self._fast = ExponentialMovingAverage()
         self._fast.Length = self._fast_length.Value
         self._slow = ExponentialMovingAverage()
@@ -57,24 +54,17 @@ class pineconnector_template_strategy(Strategy):
             return
         if not self._fast.IsFormed or not self._slow.IsFormed:
             return
-        fv = float(f)
-        sv = float(s)
         if not self._initialized:
-            self._prev_fast = fv
-            self._prev_slow = sv
+            self._prev_fast = f
+            self._prev_slow = s
             self._initialized = True
             return
-        cooldown_ticks = TimeSpan.FromMinutes(360).Ticks
-        current_ticks = candle.OpenTime.Ticks
-        if current_ticks - self._last_signal_ticks >= cooldown_ticks:
-            if self._prev_fast <= self._prev_slow and fv > sv and self.Position <= 0:
-                self.BuyMarket()
-                self._last_signal_ticks = current_ticks
-            elif self._prev_fast >= self._prev_slow and fv < sv and self.Position >= 0:
-                self.SellMarket()
-                self._last_signal_ticks = current_ticks
-        self._prev_fast = fv
-        self._prev_slow = sv
+        if self._prev_fast <= self._prev_slow and f > s and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+        elif self._prev_fast >= self._prev_slow and f < s and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
+        self._prev_fast = f
+        self._prev_slow = s
 
     def CreateClone(self):
         return pineconnector_template_strategy()

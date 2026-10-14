@@ -7,7 +7,7 @@ Os testes indicam um retorno anual médio de cerca de 52%. Funciona melhor no me
 
 Esta estratégia usa o VWAP para avaliar o valor e requer confirmação de volume antes das operações. A ideia é acompanhar movimentos sustentados por forte participação do mercado.
 
-Traders intradiários focados em métricas de volume podem empregar este método. As perdas são limitadas por um stop baseado em ATR.
+Traders intradiários focados em métricas de volume podem empregar este método. As perdas são limitadas por um stop percentual.
 
 ## Detalhes
 
@@ -23,6 +23,7 @@ Traders intradiários focados em métricas de volume podem empregar este método
   - `VolumeThreshold` = 1.5m
   - `StopLossPercent` = 2.0m
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    O mercado negocia 24 horas, por isso o VWAP da sessão reinicia a cada dia UTC e pondera o preço típico de cada candle pelo seu volume. AvgVolume é o volume médio dos VolumePeriod candles anteriores. Um sinal de entrada contra uma posição aberta a inverte.
 - **Filtros**:
   - Categoria: Reversão à média
   - Direção: Ambos

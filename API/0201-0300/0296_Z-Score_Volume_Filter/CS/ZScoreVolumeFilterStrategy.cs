@@ -113,7 +113,7 @@ public class ZScoreVolumeFilterStrategy : Strategy
 			.SetRange(0.1m, 3m)
 			.SetDisplay("Volume Factor", "Minimum multiple of average volume required for entry", "Signals");
 
-		_stopLossPercent = Param(nameof(StopLossPercent), 3m)
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 			.SetRange(0.5m, 10m)
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
 

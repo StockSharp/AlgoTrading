@@ -22,13 +22,13 @@ class knux_martingale_strategy(Strategy):
             .SetDisplay("Lots Multiplier", "Multiplier for losing trades", "Risk")
         self._stop_loss = self.Param("StopLoss", 150.0) \
             .SetDisplay("Stop Loss", "Absolute stop loss in price units", "Risk")
-        self._take_profit = self.Param("TakeProfit", 300.0) \
+        self._take_profit = self.Param("TakeProfit", 50.0) \
             .SetDisplay("Take Profit", "Absolute take profit in price units", "Risk")
         self._trend_threshold = self.Param("TrendThreshold", 0.008) \
             .SetDisplay("Trend Threshold", "Minimum distance from trend average", "Indicators")
         self._cooldown_bars = self.Param("CooldownBars", 3) \
             .SetDisplay("Cooldown Bars", "Bars to wait after a completed position", "Risk")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Time frame for strategy", "General")
 
         self._current_volume = 0.0

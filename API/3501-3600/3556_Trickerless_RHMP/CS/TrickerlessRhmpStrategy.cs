@@ -48,11 +48,11 @@ public class TrickerlessRhmpStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe", "General");
 
-		_fastMaPeriod = Param(nameof(FastMaPeriod), 20)
+		_fastMaPeriod = Param(nameof(FastMaPeriod), 60)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast MA", "Fast EMA period", "Indicators");
 
-		_slowMaPeriod = Param(nameof(SlowMaPeriod), 50)
+		_slowMaPeriod = Param(nameof(SlowMaPeriod), 120)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow MA", "Slow SMA period (computed manually)", "Indicators");
 	}

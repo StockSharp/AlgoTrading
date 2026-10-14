@@ -18,7 +18,10 @@ Un stop porcentual ajustado protege la posición, y las operaciones salen si el 
 - **Stops**: Sí, basado en porcentaje
 - **Valores predeterminados**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `MaPeriod` = 20
+  - `VolumeMultiplier` = 2
+  - `StopLossPercent` = 2
+    Un clímax es una vela que cierra a favor de la tendencia (alcista por encima de la SMA de MaPeriod, bajista por debajo) con un volumen mayor que VolumeMultiplier veces el promedio de las MaPeriod velas anteriores. La siguiente vela que cierra en sentido contrario abre la operación contra el movimiento. La operación sale cuando un cierre supera el extremo del clímax, cuando el volumen vuelve a dispararse o en el stop porcentual.
 - **Filtros**:
   - Categoría: Volumen
   - Dirección: Ambos

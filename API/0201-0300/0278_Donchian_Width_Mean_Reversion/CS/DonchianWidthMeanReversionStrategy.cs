@@ -98,7 +98,7 @@ public class DonchianWidthMeanReversionStrategy : Strategy
 			.SetDisplay("Lookback Period", "Lookback period for width statistics", "Strategy Parameters")
 			.SetOptimize(10, 50, 5);
 
-		_deviationMultiplier = Param(nameof(DeviationMultiplier), 1.5m)
+		_deviationMultiplier = Param(nameof(DeviationMultiplier), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Deviation Multiplier", "Deviation multiplier for mean reversion detection", "Strategy Parameters")
 			.SetOptimize(1m, 3m, 0.5m);

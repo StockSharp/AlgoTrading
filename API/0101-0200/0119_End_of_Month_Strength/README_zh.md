@@ -16,7 +16,9 @@
 - **止损**：是，按百分比
 - **默认值**:
   - `CandleType` = 15分钟
-  - `StopLoss` = 2%
+  - `DaysBeforeMonthEnd` = 3
+  - `StopLossPercent` = 2
+    由于市场全天交易，日期按UTC日计算；入场发生在当日第一根K线收盘时。 在每月最后 DaysBeforeMonthEnd 天中的每一天（无持仓时）开多，并在新月第一根K线平仓。
 - **过滤器**:
   - 类别：季节性
   - 方向：双向

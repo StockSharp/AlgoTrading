@@ -157,7 +157,7 @@ public class CommodityMomentumStrategy : Strategy
 			.SetRange(0.5m, 10m)
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle series for both instruments", "General");
 	}
 

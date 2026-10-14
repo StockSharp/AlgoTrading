@@ -171,15 +171,15 @@ public class ElliIchimokuAdxStrategy : Strategy
 			.SetDisplay("ADX Period", "Average Directional Index period", "ADX")
 			.SetGreaterThanZero();
 
-		_plusDiHighThreshold = Param(nameof(PlusDiHighThreshold), 10m)
+		_plusDiHighThreshold = Param(nameof(PlusDiHighThreshold), 13m)
 			.SetDisplay("+DI High Threshold", "Level current +DI must exceed", "ADX")
 			.SetGreaterThanZero();
 
-		_plusDiLowThreshold = Param(nameof(PlusDiLowThreshold), 8m)
+		_plusDiLowThreshold = Param(nameof(PlusDiLowThreshold), 6m)
 			.SetDisplay("+DI Low Threshold", "Level previous +DI must stay below", "ADX")
 			.SetNotNegative();
 
-		_baselineDistanceThreshold = Param(nameof(BaselineDistanceThreshold), 5m)
+		_baselineDistanceThreshold = Param(nameof(BaselineDistanceThreshold), 20m)
 			.SetDisplay("Baseline Distance", "Minimum Tenkan/Kijun spread in steps", "Ichimoku")
 			.SetNotNegative();
 

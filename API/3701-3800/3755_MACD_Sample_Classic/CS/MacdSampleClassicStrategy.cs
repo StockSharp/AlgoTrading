@@ -154,12 +154,12 @@ public class MacdSampleClassicStrategy : Strategy
 		
 		.SetOptimize(20, 40, 2);
 
-		_macdOpenLevel = Param(nameof(MacdOpenLevel), 0m)
+		_macdOpenLevel = Param(nameof(MacdOpenLevel), 3m)
 		.SetDisplay("MACD Open", "Entry threshold in MACD points", "Signals")
 		
 		.SetOptimize(1m, 5m, 1m);
 
-		_macdCloseLevel = Param(nameof(MacdCloseLevel), 0m)
+		_macdCloseLevel = Param(nameof(MacdCloseLevel), 2m)
 		.SetDisplay("MACD Close", "Exit threshold in MACD points", "Signals")
 		
 		.SetOptimize(1m, 4m, 1m);

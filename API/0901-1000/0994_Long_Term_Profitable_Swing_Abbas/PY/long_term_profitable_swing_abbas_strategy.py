@@ -19,7 +19,7 @@ class long_term_profitable_swing_abbas_strategy(Strategy):
         self._fast_ema_length = self.Param("FastEmaLength", 16) \
             .SetGreaterThanZero() \
             .SetDisplay("Fast EMA", "Fast EMA length", "Indicators")
-        self._slow_ema_length = self.Param("SlowEmaLength", 25) \
+        self._slow_ema_length = self.Param("SlowEmaLength", 30) \
             .SetGreaterThanZero() \
             .SetDisplay("Slow EMA", "Slow EMA length", "Indicators")
         self._rsi_length = self.Param("RsiLength", 9) \
@@ -30,9 +30,9 @@ class long_term_profitable_swing_abbas_strategy(Strategy):
             .SetDisplay("ATR Length", "ATR calculation length", "Indicators")
         self._rsi_threshold = self.Param("RsiThreshold", 50.0) \
             .SetDisplay("RSI Threshold", "RSI bullish threshold", "Indicators")
-        self._atr_stop_mult = self.Param("AtrStopMult", 15.0) \
+        self._atr_stop_mult = self.Param("AtrStopMult", 8.0) \
             .SetDisplay("ATR Stop Mult", "ATR stop loss multiplier", "Risk")
-        self._atr_tp_mult = self.Param("AtrTpMult", 20.0) \
+        self._atr_tp_mult = self.Param("AtrTpMult", 11.0) \
             .SetDisplay("ATR TP Mult", "ATR take profit multiplier", "Risk")
         self._prev_fast = 0.0
         self._prev_slow = 0.0

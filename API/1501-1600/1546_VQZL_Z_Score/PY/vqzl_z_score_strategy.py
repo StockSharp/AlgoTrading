@@ -20,7 +20,7 @@ class vqzl_z_score_strategy(Strategy):
             .SetDisplay("Z Length", "Lookback for standard deviation", "ZScore")
         self._threshold = self.Param("Threshold", 1.64) \
             .SetDisplay("Z Threshold", "Z-score threshold", "ZScore")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
 
     @property

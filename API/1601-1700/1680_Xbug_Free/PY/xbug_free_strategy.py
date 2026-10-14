@@ -14,7 +14,7 @@ from StockSharp.Algo.Strategies import Strategy
 class xbug_free_strategy(Strategy):
     def __init__(self):
         super(xbug_free_strategy, self).__init__()
-        self._ma_period = self.Param("MaPeriod", 20) \
+        self._ma_period = self.Param("MaPeriod", 19) \
             .SetDisplay("MA Period", "SMA period", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")

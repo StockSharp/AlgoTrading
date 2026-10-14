@@ -7,7 +7,7 @@ Las pruebas indican un rendimiento anual promedio de aproximadamente 82%. Funcio
 
 El VWAP actúa como referencia de valor, y el CCI destaca los movimientos de impulso que se alejan de él. Las entradas favorecen lecturas de CCI fuertes en relación con el VWAP.
 
-Diseñado para traders intradía que se centran en la interacción con el VWAP. Los stops de ATR ayudan a mantener la disciplina.
+Diseñado para traders intradía que se centran en la interacción con el VWAP. Un stop porcentual ayuda a mantener la disciplina.
 
 ## Detalles
 
@@ -17,13 +17,14 @@ Diseñado para traders intradía que se centran en la interacción con el VWAP. 
 - **Largo/Corto**: Ambos
 - **Criterios de salida**:
   - El precio cruza de regreso a través del VWAP
-- **Stops**: Basados en porcentaje usando `StopLoss`
+- **Stops**: Basados en porcentaje usando `StopLossPercent`
 - **Valores predeterminados**:
   - `CciPeriod` = 20
   - `CciOversold` = -100m
   - `CciOverbought` = 100m
-  - `StopLoss` = new Unit(2, UnitTypes.Percent)
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    El mercado opera las 24 horas, por lo que el VWAP de la sesión se reinicia cada día UTC y pondera el precio típico de cada vela por su volumen. Una señal de entrada contra una posición abierta la invierte.
 - **Filtros**:
   - Categoría: Reversión a la media
   - Dirección: Ambos

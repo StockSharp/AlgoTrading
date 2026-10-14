@@ -1,5 +1,3 @@
-namespace StockSharp.Samples.Strategies;
-
 using System;
 using System.Collections.Generic;
 
@@ -10,34 +8,126 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
+namespace StockSharp.Samples.Strategies;
+
 /// <summary>
-/// Multi EMA + Bollinger Bands + RSI Strategy.
-/// Buys when price is above fast EMA and touches lower BB.
-/// Sells when RSI becomes overbought or price touches upper BB.
+/// Multi EMA + Bollinger Bands + RSI strategy.
+/// Goes long when the close is above the fast EMA on a candle whose low pierced the lower band, and short when the
+/// close is below the fast EMA on a candle whose high pierced the upper band while RSI is above 50. A long closes when
+/// RSI rises above RSIOversold and a short when the close drops below the lower band. After XBars bars a position that
+/// is in profit is closed as well. Each side can be switched off. The slow EMA is plotted as a trend reference.
 /// </summary>
 public class MemaBbRsiStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleTypeParam;
 	private readonly StrategyParam<int> _ma1Period;
 	private readonly StrategyParam<int> _ma2Period;
 	private readonly StrategyParam<int> _bbLength;
 	private readonly StrategyParam<decimal> _bbMultiplier;
 	private readonly StrategyParam<int> _rsiLength;
-	private readonly StrategyParam<int> _rsiOverbought;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _rsiOversold;
+	private readonly StrategyParam<int> _xBars;
+	private readonly StrategyParam<bool> _enableLong;
+	private readonly StrategyParam<bool> _enableShort;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private ExponentialMovingAverage _ma1;
-	private ExponentialMovingAverage _ma2;
-	private BollingerBands _bollinger;
-	private RelativeStrengthIndex _rsi;
+	private decimal _entryPrice;
+	private int _barsInPosition;
 
-	private int _cooldownRemaining;
+	/// <summary>
+	/// Fast EMA period.
+	/// </summary>
+	public int Ma1Period
+	{
+		get => _ma1Period.Value;
+		set => _ma1Period.Value = value;
+	}
 
+	/// <summary>
+	/// Slow EMA period.
+	/// </summary>
+	public int Ma2Period
+	{
+		get => _ma2Period.Value;
+		set => _ma2Period.Value = value;
+	}
+
+	/// <summary>
+	/// Bollinger Bands period.
+	/// </summary>
+	public int BBLength
+	{
+		get => _bbLength.Value;
+		set => _bbLength.Value = value;
+	}
+
+	/// <summary>
+	/// Bollinger Bands standard deviation multiplier.
+	/// </summary>
+	public decimal BBMultiplier
+	{
+		get => _bbMultiplier.Value;
+		set => _bbMultiplier.Value = value;
+	}
+
+	/// <summary>
+	/// RSI period.
+	/// </summary>
+	public int RSILength
+	{
+		get => _rsiLength.Value;
+		set => _rsiLength.Value = value;
+	}
+
+	/// <summary>
+	/// RSI level above which a long is closed.
+	/// </summary>
+	public decimal RSIOversold
+	{
+		get => _rsiOversold.Value;
+		set => _rsiOversold.Value = value;
+	}
+
+	/// <summary>
+	/// Bars after which a profitable position is closed. 0 disables the time exit.
+	/// </summary>
+	public int XBars
+	{
+		get => _xBars.Value;
+		set => _xBars.Value = value;
+	}
+
+	/// <summary>
+	/// Allow long trades.
+	/// </summary>
+	public bool EnableLong
+	{
+		get => _enableLong.Value;
+		set => _enableLong.Value = value;
+	}
+
+	/// <summary>
+	/// Allow short trades.
+	/// </summary>
+	public bool EnableShort
+	{
+		get => _enableShort.Value;
+		set => _enableShort.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type for strategy calculation.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
+	/// </summary>
 	public MemaBbRsiStrategy()
 	{
-		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
-			.SetDisplay("Candle type", "Candle type for strategy calculation.", "General");
-
 		_ma1Period = Param(nameof(Ma1Period), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("MA1 Period", "Fast EMA period", "Moving Average");
@@ -51,65 +141,28 @@ public class MemaBbRsiStrategy : Strategy
 			.SetDisplay("BB Length", "Bollinger Bands period", "Bollinger Bands");
 
 		_bbMultiplier = Param(nameof(BBMultiplier), 2.0m)
-			.SetDisplay("BB StdDev", "Standard deviation multiplier", "Bollinger Bands");
+			.SetGreaterThanZero()
+			.SetDisplay("BB Multiplier", "Bollinger Bands standard deviation multiplier", "Bollinger Bands");
 
 		_rsiLength = Param(nameof(RSILength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "RSI period", "RSI");
 
-		_rsiOverbought = Param(nameof(RsiOverbought), 70)
-			.SetDisplay("RSI Overbought", "RSI overbought level", "RSI");
+		_rsiOversold = Param(nameof(RSIOversold), 71m)
+			.SetDisplay("RSI Exit Level", "RSI level above which a long is closed", "RSI");
 
-		_cooldownBars = Param(nameof(CooldownBars), 10)
-			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk");
-	}
+		_xBars = Param(nameof(XBars), 12)
+			.SetNotNegative()
+			.SetDisplay("X Bars", "Bars after which a profitable position is closed, 0 disables", "Exit");
 
-	public DataType CandleType
-	{
-		get => _candleTypeParam.Value;
-		set => _candleTypeParam.Value = value;
-	}
+		_enableLong = Param(nameof(EnableLong), true)
+			.SetDisplay("Enable Long", "Allow long trades", "Trading");
 
-	public int Ma1Period
-	{
-		get => _ma1Period.Value;
-		set => _ma1Period.Value = value;
-	}
+		_enableShort = Param(nameof(EnableShort), true)
+			.SetDisplay("Enable Short", "Allow short trades", "Trading");
 
-	public int Ma2Period
-	{
-		get => _ma2Period.Value;
-		set => _ma2Period.Value = value;
-	}
-
-	public int BBLength
-	{
-		get => _bbLength.Value;
-		set => _bbLength.Value = value;
-	}
-
-	public decimal BBMultiplier
-	{
-		get => _bbMultiplier.Value;
-		set => _bbMultiplier.Value = value;
-	}
-
-	public int RSILength
-	{
-		get => _rsiLength.Value;
-		set => _rsiLength.Value = value;
-	}
-
-	public int RsiOverbought
-	{
-		get => _rsiOverbought.Value;
-		set => _rsiOverbought.Value = value;
-	}
-
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+			.SetDisplay("Candle type", "Candle type for strategy calculation", "General");
 	}
 
 	/// <inheritdoc />
@@ -121,11 +174,8 @@ public class MemaBbRsiStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_ma1 = null;
-		_ma2 = null;
-		_bollinger = null;
-		_rsi = null;
-		_cooldownRemaining = 0;
+		_entryPrice = 0m;
+		_barsInPosition = 0;
 	}
 
 	/// <inheritdoc />
@@ -133,93 +183,80 @@ public class MemaBbRsiStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_ma1 = new ExponentialMovingAverage { Length = Ma1Period };
-		_ma2 = new ExponentialMovingAverage { Length = Ma2Period };
-		_bollinger = new BollingerBands
-		{
-			Length = BBLength,
-			Width = BBMultiplier
-		};
-		_rsi = new RelativeStrengthIndex { Length = RSILength };
+		_entryPrice = 0m;
+		_barsInPosition = 0;
+
+		var ma1 = new ExponentialMovingAverage { Length = Ma1Period };
+		var ma2 = new ExponentialMovingAverage { Length = Ma2Period };
+		var bollinger = new BollingerBands { Length = BBLength, Width = BBMultiplier };
+		var rsi = new RelativeStrengthIndex { Length = RSILength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_ma1, _ma2, _bollinger, _rsi, OnProcess)
+			.BindEx(ma1, ma2, bollinger, rsi, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _ma1);
-			DrawIndicator(area, _ma2);
-			DrawIndicator(area, _bollinger);
+			DrawIndicator(area, ma1);
+			DrawIndicator(area, ma2);
+			DrawIndicator(area, bollinger);
 			DrawOwnTrades(area);
+
+			var rsiArea = CreateChartArea();
+			if (rsiArea != null)
+				DrawIndicator(rsiArea, rsi);
 		}
 	}
 
-	private void OnProcess(ICandleMessage candle, IIndicatorValue ma1Value, IIndicatorValue ma2Value, IIndicatorValue bbValue, IIndicatorValue rsiValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue ma1Value, IIndicatorValue ma2Value, IIndicatorValue bollingerValue, IIndicatorValue rsiValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_ma1.IsFormed || !_ma2.IsFormed || !_bollinger.IsFormed || !_rsi.IsFormed)
+		if (Position != 0)
+			_barsInPosition++;
+
+		if (!ma1Value.IsFormed || !bollingerValue.IsFormed || !rsiValue.IsFormed)
 			return;
 
-		if (ma1Value.IsEmpty || ma2Value.IsEmpty || bbValue.IsEmpty || rsiValue.IsEmpty)
-			return;
-
-		var ma1Price = ma1Value.ToDecimal();
-		var rsiVal = rsiValue.ToDecimal();
-
-		var bb = (BollingerBandsValue)bbValue;
+		var bb = (BollingerBandsValue)bollingerValue;
 		if (bb.UpBand is not decimal upper || bb.LowBand is not decimal lower)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (_cooldownRemaining > 0)
-		{
-			_cooldownRemaining--;
-			return;
-		}
+		var ma1 = ma1Value.ToDecimal();
+		var rsi = rsiValue.ToDecimal();
+		var close = candle.ClosePrice;
 
-		// Buy: price above fast EMA and low touches lower BB (mean reversion from below)
-		var entryLong = candle.ClosePrice > ma1Price && candle.LowPrice <= lower;
-		// Sell: price below fast EMA and high touches upper BB
-		var entryShort = candle.ClosePrice < ma1Price && candle.HighPrice >= upper;
+		var longSignal = EnableLong && close > ma1 && candle.LowPrice < lower;
+		var shortSignal = EnableShort && close < ma1 && candle.HighPrice > upper && rsi > 50m;
 
-		// Exit long: RSI overbought
-		var exitLong = rsiVal > RsiOverbought;
-		// Exit short: price drops below lower BB
-		var exitShort = candle.ClosePrice < lower;
+		var timeUp = XBars > 0 && _barsInPosition >= XBars;
 
-		// Exit positions first
-		if (exitLong && Position > 0)
+		if (longSignal && Position <= 0)
 		{
-			SellMarket(Math.Abs(Position));
-			_cooldownRemaining = CooldownBars;
+			BuyMarket(Volume + Math.Abs(Position));
+			_entryPrice = close;
+			_barsInPosition = 0;
 		}
-		else if (exitShort && Position < 0)
+		else if (shortSignal && Position >= 0)
 		{
-			BuyMarket(Math.Abs(Position));
-			_cooldownRemaining = CooldownBars;
+			SellMarket(Volume + Math.Abs(Position));
+			_entryPrice = close;
+			_barsInPosition = 0;
 		}
-		// Enter new positions
-		else if (entryLong && Position <= 0)
+		else if (Position > 0 && (rsi > RSIOversold || (timeUp && close > _entryPrice)))
 		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-			BuyMarket(Volume);
-			_cooldownRemaining = CooldownBars;
+			SellMarket(Position);
 		}
-		else if (entryShort && Position >= 0)
+		else if (Position < 0 && (close < lower || (timeUp && close < _entryPrice)))
 		{
-			if (Position > 0)
-				SellMarket(Math.Abs(Position));
-			SellMarket(Volume);
-			_cooldownRemaining = CooldownBars;
+			BuyMarket(-Position);
 		}
 	}
 }

@@ -12,30 +12,29 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Outside Bar Reversal strategy.
-/// Detects outside bar patterns (higher high and lower low than previous bar).
-/// Bullish outside bar = buy, bearish outside bar = sell.
-/// Uses SMA for exit signals.
+/// An outside bar's high and low both exceed the previous candle's. While flat, a bullish outside bar after a bearish candle buys
+/// and a bearish one after a bullish candle sells. The position closes when a close breaks through the outside bar's opposite
+/// extreme, and a percent stop from the entry price, watched between candles, limits the loss.
 /// </summary>
 public class OutsideBarReversalStrategy : Strategy
 {
-	private readonly StrategyParam<int> _maPeriod;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
 
 	private ICandleMessage _prevCandle;
-	private int _cooldown;
+	private decimal _exitLevel;
 
 	/// <summary>
-	/// MA Period.
+	/// Stop-loss percentage from the entry price.
 	/// </summary>
-	public int MAPeriod
+	public decimal StopLossPercent
 	{
-		get => _maPeriod.Value;
-		set => _maPeriod.Value = value;
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
 	}
 
 	/// <summary>
-	/// Candle type.
+	/// Candle type and timeframe.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -44,29 +43,16 @@ public class OutsideBarReversalStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Cooldown bars.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
 	/// Constructor.
 	/// </summary>
 	public OutsideBarReversalStrategy()
 	{
-		_maPeriod = Param(nameof(MAPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("MA Period", "Period for SMA", "Indicators");
+		_stopLossPercent = Param(nameof(StopLossPercent), 1m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_cooldownBars = Param(nameof(CooldownBars), 500)
-			.SetRange(1, 1000)
-			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -80,7 +66,7 @@ public class OutsideBarReversalStrategy : Strategy
 	{
 		base.OnReseted();
 		_prevCandle = null;
-		_cooldown = default;
+		_exitLevel = default;
 	}
 
 	/// <inheritdoc />
@@ -89,74 +75,82 @@ public class OutsideBarReversalStrategy : Strategy
 		base.OnStarted2(time);
 
 		_prevCandle = null;
-		_cooldown = 0;
-
-		var sma = new SimpleMovingAverage { Length = MAPeriod };
+		_exitLevel = default;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(sma, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
+
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// The high-level handler activates native protection before this callback, also between signal bars.
+	}
+
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (_cooldown > 0)
-		{
-			_cooldown--;
-			_prevCandle = candle;
-			return;
-		}
-
-		if (_prevCandle != null)
-		{
-			// Outside bar: higher high AND lower low than previous bar
-			var isOutsideBar = candle.HighPrice > _prevCandle.HighPrice && candle.LowPrice < _prevCandle.LowPrice;
-
-			if (isOutsideBar)
-			{
-				var isBullish = candle.ClosePrice > candle.OpenPrice;
-				var isBearish = candle.ClosePrice < candle.OpenPrice;
-
-				if (Position == 0 && isBullish)
-				{
-					BuyMarket();
-					_cooldown = CooldownBars;
-				}
-				else if (Position == 0 && isBearish)
-				{
-					SellMarket();
-					_cooldown = CooldownBars;
-				}
-			}
-
-			// Exit logic using SMA
-			if (Position > 0 && candle.ClosePrice < smaValue)
-			{
-				SellMarket();
-				_cooldown = CooldownBars;
-			}
-			else if (Position < 0 && candle.ClosePrice > smaValue)
-			{
-				BuyMarket();
-				_cooldown = CooldownBars;
-			}
-		}
-
+		var previous = _prevCandle;
 		_prevCandle = candle;
+
+		if (previous == null || !IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		var close = candle.ClosePrice;
+
+		if (Position > 0)
+		{
+			if (close < _exitLevel)
+				SellMarket(Position);
+
+			return;
+		}
+
+		if (Position < 0)
+		{
+			if (close > _exitLevel)
+				BuyMarket(-Position);
+
+			return;
+		}
+
+		var isOutsideBar = candle.HighPrice > previous.HighPrice && candle.LowPrice < previous.LowPrice;
+
+		if (!isOutsideBar)
+			return;
+
+		var afterDecline = previous.ClosePrice < previous.OpenPrice;
+		var afterRally = previous.ClosePrice > previous.OpenPrice;
+
+		if (close > candle.OpenPrice && afterDecline)
+		{
+			BuyMarket(Volume);
+			_exitLevel = candle.LowPrice;
+		}
+		else if (close < candle.OpenPrice && afterRally)
+		{
+			SellMarket(Volume);
+			_exitLevel = candle.HighPrice;
+		}
 	}
 }

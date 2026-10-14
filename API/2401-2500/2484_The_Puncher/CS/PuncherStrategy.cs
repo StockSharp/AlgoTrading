@@ -176,12 +176,12 @@ public class PuncherStrategy : Strategy
 			
 			.SetOptimize(7, 28, 1);
 
-		_oversoldLevel = Param(nameof(OversoldLevel), 20m)
+		_oversoldLevel = Param(nameof(OversoldLevel), 30m)
 			.SetDisplay("Oversold Level", "Threshold for oversold detection", "Signals")
 			
 			.SetOptimize(10m, 40m, 5m);
 
-		_overboughtLevel = Param(nameof(OverboughtLevel), 80m)
+		_overboughtLevel = Param(nameof(OverboughtLevel), 70m)
 			.SetDisplay("Overbought Level", "Threshold for overbought detection", "Signals")
 			
 			.SetOptimize(60m, 90m, 5m);

@@ -18,7 +18,7 @@ class rsi_value_strategy(Strategy):
             .SetDisplay("RSI Period", "RSI period", "Indicators")
         self._rsi_level = self.Param("RsiLevel", 50.0) \
             .SetDisplay("RSI Level", "RSI crossing level", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Candle type", "General")
         self._prev_rsi = 0.0
         self._has_prev = False

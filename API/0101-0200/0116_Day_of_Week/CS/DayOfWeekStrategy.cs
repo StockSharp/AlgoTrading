@@ -11,22 +11,26 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Day of Week trading strategy.
-/// Enters long on Monday and short on Friday, with MA trend filter.
-/// Uses daily transitions to limit trade frequency.
+/// Day of Week strategy.
+/// Days are UTC days of a market that trades around the clock.
+/// At the close of each weekday's first candle it buys on Tuesday, Wednesday and Thursday and sells short on Monday and Friday;
+/// the position closes at the day's last candle, and a percent stop limits the loss. Weekends are not traded.
 /// </summary>
 public class DayOfWeekStrategy : Strategy
 {
+	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _maPeriod;
-	private readonly StrategyParam<int> _cooldownBars;
 
-	private SimpleMovingAverage _ma;
+	private DateTime? _day;
 
-	private decimal _prevMa;
-	private decimal _prevClose;
-	private DayOfWeek _lastTradeDay;
-	private int _cooldown;
+	/// <summary>
+	/// Stop-loss percentage.
+	/// </summary>
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
+	}
 
 	/// <summary>
 	/// Candle type.
@@ -38,38 +42,16 @@ public class DayOfWeekStrategy : Strategy
 	}
 
 	/// <summary>
-	/// MA period.
-	/// </summary>
-	public int MaPeriod
-	{
-		get => _maPeriod.Value;
-		set => _maPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Cooldown bars.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
 	/// Constructor.
 	/// </summary>
 	public DayOfWeekStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Candle timeframe", "General");
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
 
-		_maPeriod = Param(nameof(MaPeriod), 20)
-			.SetDisplay("MA Period", "SMA period", "Indicators")
-			.SetRange(10, 50);
-
-		_cooldownBars = Param(nameof(CooldownBars), 300)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "General")
-			.SetRange(10, 2000);
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -82,11 +64,7 @@ public class DayOfWeekStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_ma = default;
-		_prevMa = 0;
-		_prevClose = 0;
-		_lastTradeDay = default;
-		_cooldown = 0;
+		_day = null;
 	}
 
 	/// <inheritdoc />
@@ -94,75 +72,74 @@ public class DayOfWeekStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_ma = new SimpleMovingAverage { Length = MaPeriod };
-
+		_day = null;
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_ma, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
+
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _ma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal ma)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// The high-level handler activates native protection before this callback, also between signal bars.
+	}
+
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		var day = candle.OpenTime.Date;
+		var firstOfDay = _day != day;
+
+		if (firstOfDay)
+		{
+			_day = day;
+		}
+
+		// The candle is the day's last when the next one would open on another day.
+		var frame = CandleType.Arg is TimeSpan tf ? tf : TimeSpan.Zero;
+		var lastOfDay = (candle.OpenTime + frame).Date != day;
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var close = candle.ClosePrice;
-		var day = candle.OpenTime.DayOfWeek;
-
-		if (_cooldown > 0)
+		if (Position != 0)
 		{
-			_cooldown--;
-			_prevMa = ma;
-			_prevClose = close;
+			if (lastOfDay)
+			{
+				if (Position > 0)
+					SellMarket(Position);
+				else
+					BuyMarket(-Position);
+			}
+
 			return;
 		}
 
-		// Exit logic: MA cross
-		if (Position > 0 && close < ma && _prevMa > 0 && _prevClose >= _prevMa)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-			_lastTradeDay = day;
-		}
-		else if (Position < 0 && close > ma && _prevMa > 0 && _prevClose <= _prevMa)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-			_lastTradeDay = day;
-		}
+		if (!(firstOfDay && day.DayOfWeek is >= DayOfWeek.Monday and <= DayOfWeek.Friday))
+			return;
 
-		// Entry logic: day-of-week based (one trade per day transition)
-		if (Position == 0 && day != _lastTradeDay)
-		{
-			// Monday/Tuesday: buy if above MA
-			if ((day == DayOfWeek.Monday || day == DayOfWeek.Tuesday) && close > ma)
-			{
-				BuyMarket();
-				_cooldown = CooldownBars;
-				_lastTradeDay = day;
-			}
-			// Thursday/Friday: sell if below MA
-			else if ((day == DayOfWeek.Thursday || day == DayOfWeek.Friday) && close < ma)
-			{
-				SellMarket();
-				_cooldown = CooldownBars;
-				_lastTradeDay = day;
-			}
-		}
-
-		_prevMa = ma;
-		_prevClose = close;
+		if ((day.DayOfWeek is DayOfWeek.Monday or DayOfWeek.Friday ? -1 : 1) > 0)
+			BuyMarket(Volume);
+		else
+			SellMarket(Volume);
 	}
 }

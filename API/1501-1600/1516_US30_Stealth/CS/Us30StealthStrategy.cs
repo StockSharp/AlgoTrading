@@ -35,7 +35,7 @@ public class Us30StealthStrategy : Strategy
 
 	public Us30StealthStrategy()
 	{
-		_maLen = Param(nameof(MaLen), 20)
+		_maLen = Param(nameof(MaLen), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Length", "Moving average length", "General");
 

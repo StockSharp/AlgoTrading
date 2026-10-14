@@ -35,7 +35,7 @@ public class ColorXAdxStrategy : Strategy
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 			.SetDisplay("ADX Period", "Period for ADX calculation", "Indicators");
 
-		_adxThreshold = Param(nameof(AdxThreshold), 20m)
+		_adxThreshold = Param(nameof(AdxThreshold), 30m)
 			.SetDisplay("ADX Threshold", "Minimum ADX level for trades", "Indicators");
 
 		_stopLossPct = Param(nameof(StopLossPct), 2m)

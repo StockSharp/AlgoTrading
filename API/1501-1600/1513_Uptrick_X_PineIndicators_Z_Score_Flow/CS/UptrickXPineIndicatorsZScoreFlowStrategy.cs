@@ -38,7 +38,7 @@ public class UptrickXPineIndicatorsZScoreFlowStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
-		_zScorePeriod = Param(nameof(ZScorePeriod), 20)
+		_zScorePeriod = Param(nameof(ZScorePeriod), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("Z-Score Period", "Period for Z-Score calculation", "General");
 

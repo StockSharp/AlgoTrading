@@ -19,6 +19,7 @@ Indem nur in der vorherrschenden Richtung gehandelt und auf eine klare Reaktion 
   - `TrendlinePeriod` = 20
   - `MAPeriod` = 20
   - `BounceThresholdPercent` = 0.5
+    Eine Kerze berührt eine Linie, wenn ihr Tief (Hoch) bis auf diesen Prozentsatz an die Unterstützungs- (Widerstands-)Linie heranreicht.
   - `CandleType` = 5 minute
   - `StopLossPercent` = 2
 - **Filter**:

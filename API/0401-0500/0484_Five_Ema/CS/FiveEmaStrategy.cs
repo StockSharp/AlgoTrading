@@ -1,5 +1,3 @@
-namespace StockSharp.Samples.Strategies;
-
 using System;
 using System.Collections.Generic;
 
@@ -10,95 +8,169 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
+namespace StockSharp.Samples.Strategies;
+
 /// <summary>
-/// 5 EMA Strategy - stores a signal when price closes beyond the EMA
-/// and enters on breakout within the next few candles.
-/// Uses stop-loss and take-profit based on risk/reward ratio.
+/// 5 EMA strategy.
+/// A candle whose close and high are below the EMA marks a long setup, one whose close and low are above it marks a short setup.
+/// If price breaks the signal candle's high (long) or low (short) within the next three candles and outside the block window, the
+/// strategy enters in that direction with the stop at the signal candle's opposite extreme and the target at TargetRR times the risk.
+/// Open positions are closed at ExitHour:ExitMinute.
 /// </summary>
 public class FiveEmaStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
+	private const int _signalBars = 3;
+
 	private readonly StrategyParam<int> _emaLength;
 	private readonly StrategyParam<decimal> _targetRR;
-	private readonly StrategyParam<int> _cooldownBars;
-
-	private ExponentialMovingAverage _ema;
+	private readonly StrategyParam<int> _exitHour;
+	private readonly StrategyParam<int> _exitMinute;
+	private readonly StrategyParam<int> _blockStartHour;
+	private readonly StrategyParam<int> _blockStartMinute;
+	private readonly StrategyParam<int> _blockEndHour;
+	private readonly StrategyParam<int> _blockEndMinute;
+	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal? _signalHigh;
 	private decimal? _signalLow;
-	private int? _signalIndex;
-	private bool _isBuySignal;
-	private bool _isSellSignal;
+	private bool _signalIsLong;
+	private int _barsSinceSignal;
+	private decimal? _stopPrice;
+	private decimal? _targetPrice;
 
-	private int _barIndex;
-	private decimal? _longStop;
-	private decimal? _longTarget;
-	private decimal? _shortStop;
-	private decimal? _shortTarget;
-	private int _cooldownRemaining;
-
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
+	/// <summary>
+	/// EMA period.
+	/// </summary>
 	public int EmaLength
 	{
 		get => _emaLength.Value;
 		set => _emaLength.Value = value;
 	}
 
+	/// <summary>
+	/// Reward to risk ratio of the target.
+	/// </summary>
 	public decimal TargetRR
 	{
 		get => _targetRR.Value;
 		set => _targetRR.Value = value;
 	}
 
-	public int CooldownBars
+	/// <summary>
+	/// Hour of the forced exit.
+	/// </summary>
+	public int ExitHour
 	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
+		get => _exitHour.Value;
+		set => _exitHour.Value = value;
 	}
 
+	/// <summary>
+	/// Minute of the forced exit.
+	/// </summary>
+	public int ExitMinute
+	{
+		get => _exitMinute.Value;
+		set => _exitMinute.Value = value;
+	}
+
+	/// <summary>
+	/// Hour the entry block starts.
+	/// </summary>
+	public int BlockStartHour
+	{
+		get => _blockStartHour.Value;
+		set => _blockStartHour.Value = value;
+	}
+
+	/// <summary>
+	/// Minute the entry block starts.
+	/// </summary>
+	public int BlockStartMinute
+	{
+		get => _blockStartMinute.Value;
+		set => _blockStartMinute.Value = value;
+	}
+
+	/// <summary>
+	/// Hour the entry block ends.
+	/// </summary>
+	public int BlockEndHour
+	{
+		get => _blockEndHour.Value;
+		set => _blockEndHour.Value = value;
+	}
+
+	/// <summary>
+	/// Minute the entry block ends.
+	/// </summary>
+	public int BlockEndMinute
+	{
+		get => _blockEndMinute.Value;
+		set => _blockEndMinute.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
+	/// </summary>
 	public FiveEmaStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
 		_emaLength = Param(nameof(EmaLength), 5)
 			.SetGreaterThanZero()
-			.SetDisplay("EMA Length", "Length of EMA", "EMA");
+			.SetDisplay("EMA Length", "EMA period", "EMA");
 
 		_targetRR = Param(nameof(TargetRR), 3.0m)
 			.SetGreaterThanZero()
-			.SetDisplay("Target R:R", "Reward to risk ratio", "Risk Management");
+			.SetDisplay("Target R:R", "Reward to risk ratio of the target", "Risk");
 
-		_cooldownBars = Param(nameof(CooldownBars), 10)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "Risk");
+		_exitHour = Param(nameof(ExitHour), 15)
+			.SetRange(0, 23)
+			.SetDisplay("Exit Hour", "Hour of the forced exit", "Time");
+
+		_exitMinute = Param(nameof(ExitMinute), 30)
+			.SetRange(0, 59)
+			.SetDisplay("Exit Minute", "Minute of the forced exit", "Time");
+
+		_blockStartHour = Param(nameof(BlockStartHour), 15)
+			.SetRange(0, 23)
+			.SetDisplay("Block Start Hour", "Hour the entry block starts", "Time");
+
+		_blockStartMinute = Param(nameof(BlockStartMinute), 0)
+			.SetRange(0, 59)
+			.SetDisplay("Block Start Minute", "Minute the entry block starts", "Time");
+
+		_blockEndHour = Param(nameof(BlockEndHour), 15)
+			.SetRange(0, 23)
+			.SetDisplay("Block End Hour", "Hour the entry block ends", "Time");
+
+		_blockEndMinute = Param(nameof(BlockEndMinute), 30)
+			.SetRange(0, 59)
+			.SetDisplay("Block End Minute", "Minute the entry block ends", "Time");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> [(Security, CandleType)];
+	{
+		return [(Security, CandleType)];
+	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_ema = null;
-		_signalHigh = null;
-		_signalLow = null;
-		_signalIndex = null;
-		_isBuySignal = false;
-		_isSellSignal = false;
-		_barIndex = 0;
-		_longStop = null;
-		_longTarget = null;
-		_shortStop = null;
-		_shortTarget = null;
-		_cooldownRemaining = 0;
+		ResetState();
 	}
 
 	/// <inheritdoc />
@@ -106,123 +178,144 @@ public class FiveEmaStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_ema = new ExponentialMovingAverage { Length = EmaLength };
+		ResetState();
+
+		var ema = new ExponentialMovingAverage { Length = EmaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_ema, ProcessCandle)
+			.BindEx(ema, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _ema);
+			DrawIndicator(area, ema);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal emaValue)
+	private void ResetState()
+	{
+		_signalHigh = null;
+		_signalLow = null;
+		_signalIsLong = false;
+		_barsSinceSignal = 0;
+		_stopPrice = null;
+		_targetPrice = null;
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue emaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_ema.IsFormed)
+		if (!emaValue.IsFormed)
 			return;
 
-		_barIndex++;
+		var ema = emaValue.ToDecimal();
 
 		var high = candle.HighPrice;
 		var low = candle.LowPrice;
 		var close = candle.ClosePrice;
 
-		// Check stop/target exits first (always)
-		if (Position > 0 && _longStop is decimal ls && _longTarget is decimal lt)
+		if (_signalHigh != null)
 		{
-			if (low <= ls || high >= lt)
-			{
-				SellMarket(Math.Abs(Position));
-				_longStop = null;
-				_longTarget = null;
-				_cooldownRemaining = CooldownBars;
-			}
+			_barsSinceSignal++;
+			if (_barsSinceSignal > _signalBars)
+				_signalHigh = _signalLow = null;
 		}
-		else if (Position < 0 && _shortStop is decimal ss && _shortTarget is decimal st)
-		{
-			if (high >= ss || low <= st)
-			{
-				BuyMarket(Math.Abs(Position));
-				_shortStop = null;
-				_shortTarget = null;
-				_cooldownRemaining = CooldownBars;
-			}
-		}
+
+		var signalHigh = _signalHigh;
+		var signalLow = _signalLow;
+		var signalIsLong = _signalIsLong;
+
+		// A new signal candle replaces the pending one and can only be broken by later candles.
+		var newSignal = true;
+		if (close < ema && high < ema)
+			SetSignal(high, low, true);
+		else if (close > ema && low > ema)
+			SetSignal(high, low, false);
+		else
+			newSignal = false;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Signal detection: candle entirely below EMA = buy setup
-		if (high < emaValue)
-		{
-			_signalHigh = high;
-			_signalLow = low;
-			_signalIndex = _barIndex;
-			_isBuySignal = true;
-			_isSellSignal = false;
-		}
-		// Signal detection: candle entirely above EMA = sell setup
-		else if (low > emaValue)
-		{
-			_signalHigh = high;
-			_signalLow = low;
-			_signalIndex = _barIndex;
-			_isBuySignal = false;
-			_isSellSignal = true;
-		}
+		var tod = candle.OpenTime.TimeOfDay;
+		var exitTime = new TimeSpan(ExitHour, ExitMinute, 0);
+		var frame = CandleType.Arg is TimeSpan tf ? tf : TimeSpan.Zero;
 
-		if (_cooldownRemaining > 0)
+		if (Position != 0 && tod <= exitTime && exitTime < tod + frame)
 		{
-			_cooldownRemaining--;
+			ClosePosition();
 			return;
 		}
 
-		var withinWindow = _signalIndex is int idx && _barIndex > idx && _barIndex <= idx + 3;
+		if (Position > 0 && _stopPrice is decimal longStop && _targetPrice is decimal longTarget)
+		{
+			if (low <= longStop || high >= longTarget)
+			{
+				ClosePosition();
+				return;
+			}
+		}
+		else if (Position < 0 && _stopPrice is decimal shortStop && _targetPrice is decimal shortTarget)
+		{
+			if (high >= shortStop || low <= shortTarget)
+			{
+				ClosePosition();
+				return;
+			}
+		}
 
-		// Buy entry: breakout above signal high
-		if (_isBuySignal && withinWindow && _signalHigh is decimal sh && high > sh && Position <= 0)
+		if (signalHigh is not decimal sHigh || signalLow is not decimal sLow)
+			return;
+
+		var blockStart = new TimeSpan(BlockStartHour, BlockStartMinute, 0);
+		var blockEnd = new TimeSpan(BlockEndHour, BlockEndMinute, 0);
+		if (tod >= blockStart && tod < blockEnd)
+			return;
+
+		var risk = sHigh - sLow;
+		if (risk <= 0)
+			return;
+
+		if (signalIsLong && high > sHigh && Position <= 0)
 		{
-			var sl = _signalLow ?? low;
-			var risk = sh - sl;
-			if (risk > 0)
-			{
-				if (Position < 0)
-					BuyMarket(Math.Abs(Position));
-				_longStop = sl;
-				_longTarget = sh + risk * TargetRR;
-				BuyMarket(Volume);
-				_isBuySignal = false;
+			BuyMarket(Volume + Math.Abs(Position));
+			_stopPrice = sLow;
+			_targetPrice = sHigh + risk * TargetRR;
+			if (!newSignal)
 				_signalHigh = _signalLow = null;
-				_signalIndex = null;
-				_cooldownRemaining = CooldownBars;
-			}
 		}
-		// Sell entry: breakdown below signal low
-		else if (_isSellSignal && withinWindow && _signalLow is decimal slw && low < slw && Position >= 0)
+		else if (!signalIsLong && low < sLow && Position >= 0)
 		{
-			var sl = _signalHigh ?? high;
-			var risk = sl - slw;
-			if (risk > 0)
-			{
-				if (Position > 0)
-					SellMarket(Math.Abs(Position));
-				_shortStop = sl;
-				_shortTarget = slw - risk * TargetRR;
-				SellMarket(Volume);
-				_isSellSignal = false;
+			SellMarket(Volume + Math.Abs(Position));
+			_stopPrice = sHigh;
+			_targetPrice = sLow - risk * TargetRR;
+			if (!newSignal)
 				_signalHigh = _signalLow = null;
-				_signalIndex = null;
-				_cooldownRemaining = CooldownBars;
-			}
 		}
+	}
+
+	private void SetSignal(decimal high, decimal low, bool isLong)
+	{
+		_signalHigh = high;
+		_signalLow = low;
+		_signalIsLong = isLong;
+		_barsSinceSignal = 0;
+	}
+
+	private void ClosePosition()
+	{
+		if (Position > 0)
+			SellMarket(Position);
+		else if (Position < 0)
+			BuyMarket(-Position);
+
+		_stopPrice = null;
+		_targetPrice = null;
 	}
 }

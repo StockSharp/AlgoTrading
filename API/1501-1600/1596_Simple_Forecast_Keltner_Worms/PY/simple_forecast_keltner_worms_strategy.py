@@ -16,7 +16,7 @@ class simple_forecast_keltner_worms_strategy(Strategy):
         super(simple_forecast_keltner_worms_strategy, self).__init__()
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
             .SetDisplay("Candle Type", "Type of candles for processing", "General")
-        self._length = self.Param("Length", 20) \
+        self._length = self.Param("Length", 10) \
             .SetDisplay("Length", "Channel calculation period", "Indicators")
         self._multiplier = self.Param("Multiplier", 2) \
             .SetDisplay("Multiplier", "ATR multiplier for bands", "Indicators")

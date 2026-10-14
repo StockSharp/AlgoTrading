@@ -103,14 +103,14 @@ public class RsiWithOptionOpenInterestStrategy : Strategy
 			.SetRange(5, 30)
 			.SetDisplay("RSI Period", "Period for RSI calculation", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(2).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		_oiPeriod = Param(nameof(OiPeriod), 20)
 			.SetRange(10, 50)
 			.SetDisplay("OI Period", "Period for open interest averaging", "Options");
 
-		_oiDeviationFactor = Param(nameof(OiDeviationFactor), 2.5m)
+		_oiDeviationFactor = Param(nameof(OiDeviationFactor), 2m)
 			.SetRange(1m, 4m)
 			.SetDisplay("OI StdDev Factor", "Standard deviation multiplier for OI threshold", "Options");
 

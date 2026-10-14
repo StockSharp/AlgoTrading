@@ -14,7 +14,7 @@ from StockSharp.Algo.Strategies import Strategy
 class fib_hurst_breakout_strategy(Strategy):
     def __init__(self):
         super(fib_hurst_breakout_strategy, self).__init__()
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
             .SetDisplay("Candle Type", "Type of candles for strategy", "Parameters")
         self._hurst_period = self.Param("HurstPeriod", 50) \
             .SetGreaterThanZero() \

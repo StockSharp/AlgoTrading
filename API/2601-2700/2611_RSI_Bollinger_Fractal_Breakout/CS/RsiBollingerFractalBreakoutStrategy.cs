@@ -184,7 +184,7 @@ public class RsiBollingerFractalBreakoutStrategy : Strategy
 			.SetDisplay("RSI Period", "RSI averaging period", "RSI")
 			.SetGreaterThanZero();
 		
-		_bandsPeriod = Param(nameof(BandsPeriod), 10)
+		_bandsPeriod = Param(nameof(BandsPeriod), 14)
 			.SetDisplay("Bollinger Period", "RSI Bollinger period", "Bollinger")
 			.SetGreaterThanZero();
 		
@@ -209,10 +209,10 @@ public class RsiBollingerFractalBreakoutStrategy : Strategy
 		_indentPips = Param(nameof(IndentPips), 15m)
 			.SetDisplay("Indent (pips)", "Offset from fractal breakout", "Entries");
 		
-		_rsiUpper = Param(nameof(RsiUpper), 75m)
+		_rsiUpper = Param(nameof(RsiUpper), 70m)
 			.SetDisplay("RSI Upper", "Overbought threshold", "RSI");
 
-		_rsiLower = Param(nameof(RsiLower), 25m)
+		_rsiLower = Param(nameof(RsiLower), 30m)
 			.SetDisplay("RSI Lower", "Oversold threshold", "RSI");
 		
 		_sarTrailingPips = Param(nameof(SarTrailingPips), 10m)

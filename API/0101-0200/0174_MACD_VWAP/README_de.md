@@ -7,7 +7,7 @@ Tests zeigen eine durchschnittliche jährliche Rendite von etwa 109%. Sie funkti
 
 Der MACD-Momentum wird relativ zur VWAP-Linie gemessen. Long-Trades suchen nach MACD-Stärke unterhalb des VWAP, während Shorts oberhalb davon entstehen.
 
-Ideal für Intraday-Momentum-Trader, die volumengewichtete Referenzen verwenden. ATR-basierte Stops steuern das Risiko.
+Ideal für Intraday-Momentum-Trader, die volumengewichtete Referenzen verwenden. Ein prozentualer Stop steuert das Risiko.
 
 ## Details
 
@@ -21,8 +21,9 @@ Ideal für Intraday-Momentum-Trader, die volumengewichtete Referenzen verwenden.
   - `MacdFast` = 12
   - `MacdSlow` = 26
   - `MacdSignal` = 9
-  - `StopLossPercent` = 2.0m
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    Der Markt handelt rund um die Uhr, daher beginnt der Sitzungs-VWAP mit jedem UTC-Tag neu und gewichtet den typischen Preis jeder Kerze mit ihrem Volumen. Ein Long schließt, wenn MACD die Signallinie nach unten kreuzt, ein Short, wenn er sie nach oben kreuzt. Ein Einstiegssignal gegen eine offene Position dreht sie.
 - **Filter**:
   - Kategorie: Mean Reversion
   - Richtung: Beide

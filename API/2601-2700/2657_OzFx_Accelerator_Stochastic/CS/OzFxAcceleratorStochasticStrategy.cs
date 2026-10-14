@@ -176,17 +176,17 @@ public class OzFxAcceleratorStochasticStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Max Layers", "Maximum number of layered positions", "Risk");
 
-		_orderVolume = Param(nameof(OrderVolume), 1m)
+		_orderVolume = Param(nameof(OrderVolume), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume", "Order volume for each layer", "Trading");
 
-		_stopLossPips = Param(nameof(StopLossPips), 10m)
+		_stopLossPips = Param(nameof(StopLossPips), 100m)
 			.SetDisplay("Stop Loss (pips)", "Protective stop distance in pips", "Risk");
 
-		_takeProfitPips = Param(nameof(TakeProfitPips), 5m)
+		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
 			.SetDisplay("Take Profit (pips)", "Base take profit increment in pips", "Risk");
 
-		_trailingStopPips = Param(nameof(TrailingStopPips), 5m)
+		_trailingStopPips = Param(nameof(TrailingStopPips), 50m)
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance in pips", "Risk");
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)

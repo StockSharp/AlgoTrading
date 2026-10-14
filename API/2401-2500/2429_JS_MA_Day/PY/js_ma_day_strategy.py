@@ -17,7 +17,7 @@ class js_ma_day_strategy(Strategy):
 
     def __init__(self):
         super(js_ma_day_strategy, self).__init__()
-        self._ma_period = self.Param("MaPeriod", 5) \
+        self._ma_period = self.Param("MaPeriod", 3) \
             .SetDisplay("MA Period", "SMA period on daily candles", "Parameters")
         self._reverse = self.Param("Reverse", False) \
             .SetDisplay("Reverse Signals", "Reverse entry direction", "Parameters")

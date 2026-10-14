@@ -7,7 +7,7 @@ Las pruebas indican un retorno anual promedio de aproximadamente 148%. Funciona 
 
 La estrategia espera una ruptura de Donchian y verifica el momentum con MACD. Las operaciones largas o cortas siguen el movimiento una vez que MACD está de acuerdo.
 
-Dirigida a entusiastas de las rupturas que desean confirmación. Los stops se colocan usando un multiplicador de ATR.
+Dirigida a entusiastas de las rupturas que desean confirmación. Los stops se colocan a un porcentaje fijo del precio de entrada.
 
 ## Detalles
 
@@ -22,8 +22,9 @@ Dirigida a entusiastas de las rupturas que desean confirmación. Los stops se co
   - `MacdFast` = 12
   - `MacdSlow` = 26
   - `MacdSignal` = 9
-  - `StopLossPercent` = 2m
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    Una ruptura es un cierre más allá del máximo o mínimo de las DonchianPeriod velas anteriores. La salida por giro del MACD cierra un largo cuando el MACD cruza por debajo de la línea de señal y un corto cuando la cruza por encima. Una señal de entrada contra una posición abierta la invierte.
 - **Filtros**:
   - Categoría: Ruptura
   - Dirección: Ambos

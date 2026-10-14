@@ -12,17 +12,19 @@ ADX + Volume 戦略の実装。ADX が閾値を超え出来高が平均を上回
 ## 詳細
 
 - **エントリー条件**:
-  - ロング: `ADX > AdxThreshold && Volume > AvgVolume`
-  - ショート: `ADX > AdxThreshold && Volume > AvgVolume`
+  - ロング: `ADX > AdxThreshold && Volume > AvgVolume && +DI > -DI`
+  - ショート: `ADX > AdxThreshold && Volume > AvgVolume && -DI > +DI`
 - **ロング/ショート**: 両方
 - **エグジット条件**: トレンドが閾値を下回って弱まる
-- **ストップ**: `StopLoss` を使用した ATR ベース
+- **ストップ**: `StopLossAtr` を使用した ATR ベース
 - **デフォルト値**:
   - `AdxPeriod` = 14
   - `AdxThreshold` = 25m
   - `VolumeAvgPeriod` = 20
-  - `StopLoss` = new Unit(2, UnitTypes.Absolute)
+  - `StopLossAtr` = 2
+  - `AtrPeriod` = 14
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    AvgVolumeは直前VolumeAvgPeriod本の平均出来高です。ストップはエントリー時の終値からStopLossAtr倍のATR（AtrPeriod）の位置にあり、足の終値で判定します。 保有ポジションと逆方向のエントリーシグナルはドテンになります。
 - **フィルター**:
   - カテゴリ: ブレイクアウト
   - 方向: 両方

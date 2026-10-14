@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -15,52 +12,61 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Hurst Exponent Trend strategy.
-/// Uses Hurst exponent to identify trending markets.
+/// A HurstPeriod Hurst exponent above HurstThreshold marks a trending market. Then a close above the MaPeriod simple moving average goes long
+/// and a close below it goes short, reversing an opposite position. A long closes once the close is below the average or the exponent
+/// drops below the threshold, a short mirrors it, and a percent stop limits the loss.
 /// </summary>
 public class HurstExponentTrendStrategy : Strategy
 {
-	private readonly StrategyParam<int> _hurstPeriodParam;
-	private readonly StrategyParam<int> _maPeriodParam;
-	private readonly StrategyParam<decimal> _hurstThresholdParam;
-	private readonly StrategyParam<DataType> _candleTypeParam;
-
-	private HurstExponent _hurst;
-	private SimpleMovingAverage _sma;
+	private readonly StrategyParam<int> _hurstPeriod;
+	private readonly StrategyParam<int> _maPeriod;
+	private readonly StrategyParam<decimal> _hurstThreshold;
+	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<DataType> _candleType;
 
 	/// <summary>
-	/// Hurst exponent calculation period.
+	/// Period of the Hurst exponent.
 	/// </summary>
 	public int HurstPeriod
 	{
-		get => _hurstPeriodParam.Value;
-		set => _hurstPeriodParam.Value = value;
+		get => _hurstPeriod.Value;
+		set => _hurstPeriod.Value = value;
 	}
 
 	/// <summary>
-	/// Moving average period.
+	/// Period of the simple moving average.
 	/// </summary>
 	public int MaPeriod
 	{
-		get => _maPeriodParam.Value;
-		set => _maPeriodParam.Value = value;
+		get => _maPeriod.Value;
+		set => _maPeriod.Value = value;
 	}
 
 	/// <summary>
-	/// Hurst exponent threshold for trend identification.
+	/// Hurst exponent level of a trending market.
 	/// </summary>
 	public decimal HurstThreshold
 	{
-		get => _hurstThresholdParam.Value;
-		set => _hurstThresholdParam.Value = value;
+		get => _hurstThreshold.Value;
+		set => _hurstThreshold.Value = value;
 	}
 
 	/// <summary>
-	/// Candle type for strategy.
+	/// Stop loss percentage from entry price.
+	/// </summary>
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
-		get => _candleTypeParam.Value;
-		set => _candleTypeParam.Value = value;
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
 	/// <summary>
@@ -68,26 +74,23 @@ public class HurstExponentTrendStrategy : Strategy
 	/// </summary>
 	public HurstExponentTrendStrategy()
 	{
-		_hurstPeriodParam = Param(nameof(HurstPeriod), 100)
+		_hurstPeriod = Param(nameof(HurstPeriod), 100)
 			.SetGreaterThanZero()
-			.SetDisplay("Hurst Period", "Period for Hurst exponent calculation", "Parameters")
-			
-			.SetOptimize(50, 150, 25);
+			.SetDisplay("Hurst Period", "Period of the Hurst exponent", "Indicators");
 
-		_maPeriodParam = Param(nameof(MaPeriod), 20)
+		_maPeriod = Param(nameof(MaPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("MA Period", "Period for Moving Average", "Parameters")
-			
-			.SetOptimize(10, 50, 10);
+			.SetDisplay("MA Period", "Period of the simple moving average", "Indicators");
 
-		_hurstThresholdParam = Param(nameof(HurstThreshold), 0.55m)
-			.SetRange(0.1m, 0.9m)
-			.SetDisplay("Hurst Threshold", "Threshold value for trend identification", "Parameters")
-			
-			.SetOptimize(0.5m, 0.6m, 0.05m);
+		_hurstThreshold = Param(nameof(HurstThreshold), 0.55m)
+			.SetDisplay("Hurst Threshold", "Hurst exponent level of a trending market", "Indicators");
 
-		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Candle type for strategy", "Common");
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -97,84 +100,71 @@ public class HurstExponentTrendStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-
-		_hurst = null;
-		_sma = null;
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		// Create indicators
-		_hurst = new HurstExponent { Length = HurstPeriod };
-		_sma = new SMA { Length = MaPeriod };
+		var hurst = new HurstExponent { Length = HurstPeriod };
+		var sma = new SimpleMovingAverage { Length = MaPeriod };
 
-		// Create subscription and bind indicators
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_hurst, _sma, ProcessCandle)
+			.BindEx(hurst, sma, ProcessCandle)
 			.Start();
 
-		// Setup chart visualization if available
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _sma);
+			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, hurst);
+			}
 		}
-		
-		// Enable position protection
-		StartProtection(
-			takeProfit: new Unit(0, UnitTypes.Absolute), // No take profit
-			stopLoss: new Unit(2, UnitTypes.Percent) // 2% stop loss
-		);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal hurstValue, decimal smaValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// The high-level handler activates native protection before this callback, also between signal bars.
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue hurstValue, IIndicatorValue smaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		if (!hurstValue.IsFormed || !smaValue.IsFormed)
+			return;
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
-		
-		// Check if market is trending (Hurst > 0.5 indicates trending market)
-		bool isTrending = hurstValue > HurstThreshold;
-		
-		if (isTrending)
-		{
-			// In trending markets, use price relative to MA to determine direction
-			
-			// Long setup - trending market with price above MA
-			if (candle.ClosePrice > smaValue && Position <= 0)
-			{
-				// Buy signal - trending market with price above MA
-				BuyMarket(Volume + Math.Abs(Position));
-			}
-			// Short setup - trending market with price below MA
-			else if (candle.ClosePrice < smaValue && Position >= 0)
-			{
-				// Sell signal - trending market with price below MA
-				SellMarket(Volume + Math.Abs(Position));
-			}
-		}
-		else
-		{
-			// In non-trending markets, exit positions
-			if (Position > 0)
-			{
-				SellMarket(Position);
-			}
-			else if (Position < 0)
-			{
-				BuyMarket(Math.Abs(Position));
-			}
-		}
+
+		var hurst = hurstValue.GetValue<decimal>();
+		var sma = smaValue.GetValue<decimal>();
+		var close = candle.ClosePrice;
+		var trending = hurst > HurstThreshold;
+
+		if (trending && close > sma && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (trending && close < sma && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
+		else if (Position > 0 && (close < sma || hurst < HurstThreshold))
+			SellMarket(Position);
+		else if (Position < 0 && (close > sma || hurst < HurstThreshold))
+			BuyMarket(-Position);
 	}
 }

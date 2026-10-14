@@ -2,67 +2,86 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
-clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan
+from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 
 
 class btc_future_gamma_weighted_momentum_model_strategy(Strategy):
+    """
+    BTC Future Gamma-Weighted Momentum Model strategy.
+    The gamma-weighted average price (GWAP) averages the last Length closes with weight GammaFactor^i for the close i bars ago.
+    A close above GWAP after three consecutively rising closes goes long, a close below GWAP after three consecutively falling closes
+    goes short, and the opposite signal reverses the position.
+    """
+
     def __init__(self):
         super(btc_future_gamma_weighted_momentum_model_strategy, self).__init__()
-        self._fast_ema_period = self.Param("FastEmaPeriod", 120)             .SetDisplay("Fast EMA", "Fast EMA period", "Indicators")
-        self._slow_ema_period = self.Param("SlowEmaPeriod", 450)             .SetDisplay("Slow EMA", "Slow EMA period", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1)))             .SetDisplay("Candle Type", "Type of candles to use", "General")
-        self._prev_fast_ema = 0.0
-        self._prev_slow_ema = 0.0
+        self._length = self.Param("Length", 60).SetGreaterThanZero().SetDisplay("Length", "Closes in the GWAP window", "GWAP")
+        self._gamma_factor = self.Param("GammaFactor", 0.75).SetRange(0.01, 1.0).SetDisplay("Gamma Factor", "Decay of the weight per bar back", "GWAP")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._closes = []
 
-    @property
-    def fast_ema_period(self):
-        return self._fast_ema_period.Value
-    @property
-    def slow_ema_period(self):
-        return self._slow_ema_period.Value
     @property
     def candle_type(self):
         return self._candle_type.Value
 
     def OnReseted(self):
         super(btc_future_gamma_weighted_momentum_model_strategy, self).OnReseted()
-        self._prev_fast_ema = 0.0
-        self._prev_slow_ema = 0.0
+        self._closes = []
 
     def OnStarted2(self, time):
         super(btc_future_gamma_weighted_momentum_model_strategy, self).OnStarted2(time)
-        fast_ema = ExponentialMovingAverage()
-        fast_ema.Length = self.fast_ema_period
-        slow_ema = ExponentialMovingAverage()
-        slow_ema.Length = self.slow_ema_period
+
+        self._closes = []
+
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(fast_ema, slow_ema, self.OnProcess).Start()
+        subscription.Bind(self._process_candle).Start()
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, fast_ema)
-            self.DrawIndicator(area, slow_ema)
             self.DrawOwnTrades(area)
 
-    def OnProcess(self, candle, fast_ema_value, slow_ema_value):
+    def _process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
-        if self._prev_fast_ema == 0 or self._prev_slow_ema == 0:
-            self._prev_fast_ema = float(fast_ema_value)
-            self._prev_slow_ema = float(slow_ema_value)
+
+        length = self._length.Value
+        self._closes.append(candle.ClosePrice)
+        keep = max(length, 3)
+        while len(self._closes) > keep:
+            self._closes.pop(0)
+
+        if len(self._closes) < keep:
             return
-        if self._prev_fast_ema <= self._prev_slow_ema and fast_ema_value > slow_ema_value and self.Position <= 0:
-            self.BuyMarket()
-        elif self._prev_fast_ema >= self._prev_slow_ema and fast_ema_value < slow_ema_value and self.Position >= 0:
-            self.SellMarket()
-        self._prev_fast_ema = float(fast_ema_value)
-        self._prev_slow_ema = float(slow_ema_value)
+
+        last = len(self._closes) - 1
+        gamma = Decimal(self._gamma_factor.Value)
+
+        weighted = Decimal(0)
+        weights = Decimal(0)
+        weight = Decimal(1)
+        for i in range(length):
+            weighted += self._closes[last - i] * weight
+            weights += weight
+            weight *= gamma
+
+        gwap = weighted / weights
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
+        close = self._closes[last]
+        rising = close > self._closes[last - 1] and self._closes[last - 1] > self._closes[last - 2]
+        falling = close < self._closes[last - 1] and self._closes[last - 1] < self._closes[last - 2]
+
+        if close > gwap and rising and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+        elif close < gwap and falling and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
 
     def CreateClone(self):
         return btc_future_gamma_weighted_momentum_model_strategy()

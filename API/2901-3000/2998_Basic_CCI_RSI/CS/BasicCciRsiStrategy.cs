@@ -23,7 +23,7 @@ public class BasicCciRsiStrategy : Strategy
 	public BasicCciRsiStrategy()
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame()).SetDisplay("Candle Type", "Timeframe", "General");
-		_cciPeriod = Param(nameof(CciPeriod), 20).SetGreaterThanZero().SetDisplay("CCI Period", "CCI lookback", "Indicators");
+		_cciPeriod = Param(nameof(CciPeriod), 12).SetGreaterThanZero().SetDisplay("CCI Period", "CCI lookback", "Indicators");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() => [(Security, CandleType)];

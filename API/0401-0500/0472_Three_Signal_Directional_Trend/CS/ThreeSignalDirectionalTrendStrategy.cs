@@ -12,85 +12,174 @@ using StockSharp.Messages;
 
 /// <summary>
 /// Three Signal Directional Trend Strategy.
-/// Combines MACD, Stochastic, and RSI signals.
-/// Enters when at least 2 of 3 indicators agree on direction.
+/// Three indicators vote: the MACD signal line rising or falling, the Stochastic %K (StochLength, smoothed over SmoothK) below
+/// Oversold or above Overbought, and the rate of change over RocLength bars of the AvgLength SMA, averaged over AvgRocLength
+/// bars, above or below zero. At least two long votes open a long and at least two short votes open a short, reversing
+/// an opposite position.
 /// </summary>
 public class ThreeSignalDirectionalTrendStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _avgLength;
+	private readonly StrategyParam<int> _rocLength;
+	private readonly StrategyParam<int> _avgRocLength;
+	private readonly StrategyParam<int> _stochLength;
+	private readonly StrategyParam<int> _smoothK;
+	private readonly StrategyParam<decimal> _overbought;
+	private readonly StrategyParam<decimal> _oversold;
 	private readonly StrategyParam<int> _macdFastLength;
 	private readonly StrategyParam<int> _macdSlowLength;
 	private readonly StrategyParam<int> _macdAvgLength;
-	private readonly StrategyParam<int> _rsiLength;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private MovingAverageConvergenceDivergenceSignal _macd;
-	private StochasticOscillator _stochastic;
-	private RelativeStrengthIndex _rsi;
+	private SimpleMovingAverage _kSmooth;
+	private SimpleMovingAverage _rocAverage;
+	private readonly List<decimal> _maHistory = [];
+	private decimal? _prevSignal;
 
-	private decimal _prevMacdSignal;
-	private bool _macdInit;
-	private int _cooldownRemaining;
-
-	public DataType CandleType
+	/// <summary>
+	/// SMA period of the rate of change.
+	/// </summary>
+	public int AvgLength
 	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
+		get => _avgLength.Value;
+		set => _avgLength.Value = value;
 	}
 
+	/// <summary>
+	/// Bars of the rate of change.
+	/// </summary>
+	public int RocLength
+	{
+		get => _rocLength.Value;
+		set => _rocLength.Value = value;
+	}
+
+	/// <summary>
+	/// Averaging period of the rate of change.
+	/// </summary>
+	public int AvgRocLength
+	{
+		get => _avgRocLength.Value;
+		set => _avgRocLength.Value = value;
+	}
+
+	/// <summary>
+	/// Stochastic lookback.
+	/// </summary>
+	public int StochLength
+	{
+		get => _stochLength.Value;
+		set => _stochLength.Value = value;
+	}
+
+	/// <summary>
+	/// Smoothing of %K.
+	/// </summary>
+	public int SmoothK
+	{
+		get => _smoothK.Value;
+		set => _smoothK.Value = value;
+	}
+
+	/// <summary>
+	/// Stochastic overbought level.
+	/// </summary>
+	public decimal Overbought
+	{
+		get => _overbought.Value;
+		set => _overbought.Value = value;
+	}
+
+	/// <summary>
+	/// Stochastic oversold level.
+	/// </summary>
+	public decimal Oversold
+	{
+		get => _oversold.Value;
+		set => _oversold.Value = value;
+	}
+
+	/// <summary>
+	/// MACD fast EMA period.
+	/// </summary>
 	public int MacdFastLength
 	{
 		get => _macdFastLength.Value;
 		set => _macdFastLength.Value = value;
 	}
 
+	/// <summary>
+	/// MACD slow EMA period.
+	/// </summary>
 	public int MacdSlowLength
 	{
 		get => _macdSlowLength.Value;
 		set => _macdSlowLength.Value = value;
 	}
 
+	/// <summary>
+	/// MACD signal line period.
+	/// </summary>
 	public int MacdAvgLength
 	{
 		get => _macdAvgLength.Value;
 		set => _macdAvgLength.Value = value;
 	}
 
-	public int RsiLength
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
 	{
-		get => _rsiLength.Value;
-		set => _rsiLength.Value = value;
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
+	/// <summary>
+	/// Constructor.
+	/// </summary>
 	public ThreeSignalDirectionalTrendStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
+		_avgLength = Param(nameof(AvgLength), 50)
+			.SetGreaterThanZero()
+			.SetDisplay("Average Length", "SMA period of the rate of change", "ROC");
+
+		_rocLength = Param(nameof(RocLength), 1)
+			.SetGreaterThanZero()
+			.SetDisplay("ROC Length", "Bars of the rate of change", "ROC");
+
+		_avgRocLength = Param(nameof(AvgRocLength), 10)
+			.SetGreaterThanZero()
+			.SetDisplay("Average ROC Length", "Averaging period of the rate of change", "ROC");
+
+		_stochLength = Param(nameof(StochLength), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("Stochastic Length", "Stochastic lookback", "Stochastic");
+
+		_smoothK = Param(nameof(SmoothK), 3)
+			.SetGreaterThanZero()
+			.SetDisplay("Smooth K", "Smoothing of %K", "Stochastic");
+
+		_overbought = Param(nameof(Overbought), 80m)
+			.SetDisplay("Overbought", "Stochastic overbought level", "Stochastic");
+
+		_oversold = Param(nameof(Oversold), 20m)
+			.SetDisplay("Oversold", "Stochastic oversold level", "Stochastic");
 
 		_macdFastLength = Param(nameof(MacdFastLength), 12)
 			.SetGreaterThanZero()
-			.SetDisplay("MACD Fast", "Fast EMA length", "MACD");
+			.SetDisplay("MACD Fast", "MACD fast EMA period", "MACD");
 
 		_macdSlowLength = Param(nameof(MacdSlowLength), 26)
 			.SetGreaterThanZero()
-			.SetDisplay("MACD Slow", "Slow EMA length", "MACD");
+			.SetDisplay("MACD Slow", "MACD slow EMA period", "MACD");
 
 		_macdAvgLength = Param(nameof(MacdAvgLength), 9)
 			.SetGreaterThanZero()
-			.SetDisplay("MACD Signal", "Signal EMA length", "MACD");
+			.SetDisplay("MACD Signal", "MACD signal line period", "MACD");
 
-		_rsiLength = Param(nameof(RsiLength), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("RSI Length", "RSI period", "RSI");
-
-		_cooldownBars = Param(nameof(CooldownBars), 10)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "Risk");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -101,13 +190,8 @@ public class ThreeSignalDirectionalTrendStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_macd = null;
-		_stochastic = null;
-		_rsi = null;
-		_prevMacdSignal = 0;
-		_macdInit = false;
-		_cooldownRemaining = 0;
+		_maHistory.Clear();
+		_prevSignal = null;
 	}
 
 	/// <inheritdoc />
@@ -115,112 +199,94 @@ public class ThreeSignalDirectionalTrendStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_macd = new MovingAverageConvergenceDivergenceSignal
-		{
-			Macd = { ShortMa = { Length = MacdFastLength }, LongMa = { Length = MacdSlowLength } },
-			SignalMa = { Length = MacdAvgLength }
-		};
+		_maHistory.Clear();
+		_prevSignal = null;
 
-		_stochastic = new StochasticOscillator
+		var macd = new MovingAverageConvergenceDivergenceSignal
 		{
-			K = { Length = 14 },
-			D = { Length = 3 }
+			Macd =
+			{
+				ShortMa = { Length = MacdFastLength },
+				LongMa = { Length = MacdSlowLength },
+			},
+			SignalMa = { Length = MacdAvgLength },
 		};
+		var stochK = new StochasticK { Length = StochLength };
+		var sma = new SimpleMovingAverage { Length = AvgLength };
 
-		_rsi = new RelativeStrengthIndex { Length = RsiLength };
+		_kSmooth = new SimpleMovingAverage { Length = SmoothK };
+		_rocAverage = new SimpleMovingAverage { Length = AvgRocLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_macd, _stochastic, _rsi, OnProcess)
+			.BindEx(macd, stochK, sma, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+				DrawIndicator(oscillators, macd);
 		}
 	}
 
-	private void OnProcess(ICandleMessage candle, IIndicatorValue macdVal, IIndicatorValue stochVal, IIndicatorValue rsiVal)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue, IIndicatorValue stochValue, IIndicatorValue smaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_macd.IsFormed || !_stochastic.IsFormed || !_rsi.IsFormed)
-			return;
+		var time = candle.OpenTime;
 
-		if (macdVal.IsEmpty || stochVal.IsEmpty || rsiVal.IsEmpty)
-			return;
+		decimal? k = null;
+		if (stochValue.IsFormed)
+		{
+			var smoothed = _kSmooth.Process(stochValue.GetValue<decimal>(), time, true);
+			if (_kSmooth.IsFormed)
+				k = smoothed.ToDecimal();
+		}
 
-		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdVal;
-		if (macdTyped.Signal is not decimal macdSignal)
-			return;
+		decimal? avgRoc = null;
+		if (smaValue.IsFormed)
+		{
+			var ma = smaValue.GetValue<decimal>();
+			_maHistory.Add(ma);
+			if (_maHistory.Count > RocLength + 1)
+				_maHistory.RemoveAt(0);
 
-		var stochTyped = (StochasticOscillatorValue)stochVal;
-		if (stochTyped.K is not decimal stochK)
-			return;
+			if (_maHistory.Count == RocLength + 1 && _maHistory[0] != 0m)
+			{
+				var roc = (ma - _maHistory[0]) / _maHistory[0] * 100m;
+				var averaged = _rocAverage.Process(roc, time, true);
+				if (_rocAverage.IsFormed)
+					avgRoc = averaged.ToDecimal();
+			}
+		}
 
-		var rsi = rsiVal.ToDecimal();
+		decimal? signal = null;
+		if (macdValue.IsFormed && macdValue is IMovingAverageConvergenceDivergenceSignalValue { Signal: decimal s })
+			signal = s;
+
+		var prevSignal = _prevSignal;
+		if (signal is not null)
+			_prevSignal = signal;
+
+		if (k is not decimal kValue || avgRoc is not decimal rocValue || signal is not decimal signalValue || prevSignal is not decimal previous)
+			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_prevMacdSignal = macdSignal;
-			_macdInit = true;
 			return;
-		}
 
-		if (!_macdInit)
-		{
-			_prevMacdSignal = macdSignal;
-			_macdInit = true;
-			return;
-		}
+		var longVotes = (signalValue > previous ? 1 : 0) + (kValue < Oversold ? 1 : 0) + (rocValue > 0m ? 1 : 0);
+		var shortVotes = (signalValue < previous ? 1 : 0) + (kValue > Overbought ? 1 : 0) + (rocValue < 0m ? 1 : 0);
 
-		if (_cooldownRemaining > 0)
-		{
-			_cooldownRemaining--;
-			_prevMacdSignal = macdSignal;
-			return;
-		}
-
-		var longCount = 0;
-		var shortCount = 0;
-
-		// MACD signal rising/falling
-		if (macdSignal > _prevMacdSignal)
-			longCount++;
-		else if (macdSignal < _prevMacdSignal)
-			shortCount++;
-
-		// Stochastic oversold/overbought
-		if (stochK <= 20)
-			longCount++;
-		else if (stochK >= 80)
-			shortCount++;
-
-		// RSI direction
-		if (rsi < 40)
-			longCount++;
-		else if (rsi > 60)
-			shortCount++;
-
-		// Trade when at least 2 signals agree
-		if (longCount >= 2 && Position <= 0)
-		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-			BuyMarket(Volume);
-			_cooldownRemaining = CooldownBars;
-		}
-		else if (shortCount >= 2 && Position >= 0)
-		{
-			if (Position > 0)
-				SellMarket(Math.Abs(Position));
-			SellMarket(Volume);
-			_cooldownRemaining = CooldownBars;
-		}
-
-		_prevMacdSignal = macdSignal;
+		if (longVotes >= 2 && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (shortVotes >= 2 && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
 	}
 }

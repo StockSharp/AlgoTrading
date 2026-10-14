@@ -20,10 +20,11 @@ Da das System auf Ausbrüche jenseits der normalen Volatilität wartet, eignet e
 - **Stops**: Ja, über Supertrend Trailing-Stop.
 - **Standardwerte**:
   - `BollingerPeriod` = 20
-  - `BollingerDeviation` = 2.0m
+  - `BollingerDeviation` = 2
   - `SupertrendPeriod` = 10
-  - `SupertrendMultiplier` = 3.0m
+  - `SupertrendMultiplier` = 3
   - `CandleType` = TimeSpan.FromMinutes(15)
+    Ein Long schließt, wenn der Kurs unter der Supertrend-Linie schließt, ein Short, wenn er darüber schließt. Ein Einstiegssignal gegen eine offene Position dreht sie.
 - **Filter**:
   - Kategorie: Trend
   - Richtung: Beide

@@ -1,17 +1,14 @@
+namespace StockSharp.Samples.Strategies;
+
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-
-namespace StockSharp.Samples.Strategies;
 
 public class PhaseCrossWithZoneStrategy : Strategy
 {
@@ -104,10 +101,10 @@ public class PhaseCrossWithZoneStrategy : Strategy
 			var crossedUp = _prevLead <= _prevLag && lead > lag;
 			var crossedDown = _prevLead >= _prevLag && lead < lag;
 
-			if (crossedUp && Position <= 0)
+			if (crossedUp && Position == 0)
 				BuyMarket();
-			else if (crossedDown && Position >= 0)
-				SellMarket();
+			else if (crossedDown && Position > 0)
+				SellMarket(Position);
 		}
 
 		_prevLead = lead;

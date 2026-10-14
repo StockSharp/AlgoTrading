@@ -27,6 +27,7 @@ Suited for breakout players expecting continuation. A stop based on ATR keeps lo
   - `StopLossAtr` = 2.0m
   - `AtrPeriod` = 14
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    AvgVolume is the average volume of the previous VolumePeriod candles. An entry signal against an open position reverses it. The stop lies StopLossAtr ATRs from the entry close and is checked on candle closes.
 - **Filters**:
   - Category: Mean reversion
   - Direction: Both

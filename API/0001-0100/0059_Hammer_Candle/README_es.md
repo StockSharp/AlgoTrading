@@ -15,6 +15,8 @@ El sistema requiere una sombra inferior de al menos el doble del cuerpo y poca s
 - **Stops**: Sí.
 - **Valores predeterminados**:
   - `CandleType` = TimeSpan.FromMinutes(5)
+  - `RewardRiskRatio` = 2m
+    El stop es el mínimo del martillo y el objetivo está RewardRiskRatio veces esa distancia por encima de la entrada; ambos se comprueban al cierre de las velas.
 - **Filtros**:
   - Categoría: Patrón
   - Dirección: Solo largos

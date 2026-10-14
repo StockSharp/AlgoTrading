@@ -7,13 +7,13 @@ Testing indicates an average annual return of about 55%. It performs best in the
 
 Donchian channels identify breakout levels, while RSI checks whether momentum supports the move. Positions follow when a breakout aligns with RSI direction.
 
-Best for traders expecting a sustained breakout rather than a fakeout. Risk is limited through an ATR stop.
+Best for traders expecting a sustained breakout rather than a fakeout. Risk is limited through a percent stop.
 
 ## Details
 
 - **Entry Criteria**:
-  - Long: `Close > DonchianHigh && RSI < RsiOversoldLevel`
-  - Short: `Close < DonchianLow && RSI > RsiOverboughtLevel`
+  - Long: `Close > DonchianHigh && RSI < RsiOverboughtLevel`
+  - Short: `Close < DonchianLow && RSI > RsiOversoldLevel`
 - **Long/Short**: Both
 - **Exit Criteria**:
   - Breakout failure or opposite signal
@@ -25,6 +25,7 @@ Best for traders expecting a sustained breakout rather than a fakeout. Risk is l
   - `RsiOversoldLevel` = 30m
   - `StopLossPercent` = 2.0m
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    A breakout is not overextended while RSI stays below RsiOverboughtLevel (long) or above RsiOversoldLevel (short); the channel spans the previous DonchianPeriod candles. The breakout fails, closing the position, when price closes back beyond the broken level. An entry signal against an open position reverses it.
 - **Filters**:
   - Category: Breakout
   - Direction: Both

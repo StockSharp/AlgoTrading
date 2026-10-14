@@ -1,7 +1,7 @@
 # Hull Ma Rsi Strategy
 [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
  
-Implementation of strategy - Hull Moving Average + RSI. Buy when HMA is rising and RSI is below 30 (oversold). Sell when HMA is falling and RSI is above 70 (overbought).
+Implementation of strategy - Hull Moving Average + RSI. Buy when HMA turns up and RSI is below RsiOversold. Sell when HMA turns down and RSI is above RsiOverbought.
 
 Testing indicates an average annual return of about 64%. It performs best in the forex market.
 
@@ -17,14 +17,16 @@ Suited to short-term swing traders who want early signals. ATR-based stops prote
 - **Long/Short**: Both
 - **Exit Criteria**:
   - Hull MA change of direction
-- **Stops**: ATR-based using `StopLoss`
+- **Stops**: ATR-based using `StopLossAtr`
 - **Default Values**:
   - `HmaPeriod` = 9
   - `RsiPeriod` = 14
   - `RsiOversold` = 30m
   - `RsiOverbought` = 70m
-  - `StopLoss` = new Unit(2, UnitTypes.Absolute)
+  - `StopLossAtr` = 2
+  - `AtrPeriod` = 14
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    The Hull average turns up when it rises after falling and turns down when it falls after rising. The stop lies StopLossAtr ATRs (AtrPeriod) from the entry close and is checked on candle closes. An entry signal against an open position reverses it.
 - **Filters**:
   - Category: Mean reversion
   - Direction: Both

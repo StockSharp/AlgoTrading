@@ -35,7 +35,7 @@ public class Maybeawo222Strategy : Strategy
 
 	public Maybeawo222Strategy()
 	{
-		_movingPeriod = Param(nameof(MovingPeriod), 20)
+		_movingPeriod = Param(nameof(MovingPeriod), 14)
 			.SetDisplay("MA Period", "Simple moving average period", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())

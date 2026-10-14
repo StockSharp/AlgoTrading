@@ -1,7 +1,7 @@
 # Estrategia Supertrend RSI
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-Implementación de la estrategia Supertrend + RSI. Comprar cuando el precio está por encima del Supertrend y el RSI está por debajo de 30 (sobrevendido). Vender cuando el precio está por debajo del Supertrend y el RSI está por encima de 70 (sobrecomprado).
+Implementación de la estrategia Supertrend + RSI. Comprar cuando el precio está por encima del Supertrend y el RSI está por debajo de RsiOversold. Vender cuando el precio está por debajo del Supertrend y el RSI está por encima de RsiOverbought.
 
 Las pruebas indican un retorno anual promedio de aproximadamente el 43%. Funciona mejor en el mercado de acciones.
 
@@ -22,9 +22,10 @@ Una buena opción para los traders que confían en los stops de seguimiento. El 
   - `SupertrendPeriod` = 10
   - `SupertrendMultiplier` = 3.0m
   - `RsiPeriod` = 14
-  - `RsiOversold` = 30m
-  - `RsiOverbought` = 70m
+  - `RsiOversold` = 40
+  - `RsiOverbought` = 60
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    En velas de cinco minutos el RSI casi nunca llega a 30 con el precio por encima del Supertrend (ni a 70 por debajo): el archivo de BTC de marzo de 2024 no tiene ni una vela así. Por eso los valores por defecto son 40 y 60, que siguen marcando un retroceso contra la tendencia y operan en ambos sentidos. Una señal de entrada contra una posición abierta la invierte.
 - **Filtros**:
   - Categoría: Reversión a la media
   - Dirección: Ambos

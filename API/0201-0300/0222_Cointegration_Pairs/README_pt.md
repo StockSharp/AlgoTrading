@@ -15,15 +15,18 @@ O trading de pares por cointegração é adequado para arbitragistas estatístic
   - **Vendido**: Z-Score Residual > EntryThreshold
 - **Comprado/Vendido**: Ambos os lados.
 - **Critérios de saída**:
-  - **Comprado**: Sair quando |Z-Score| < 0.5
-  - **Vendido**: Sair quando |Z-Score| < 0.5
+  - **Comprado**: Sair quando |Z-Score| < ExitThreshold
+  - **Vendido**: Sair quando |Z-Score| < ExitThreshold
 - **Stops**: Sim, stop-loss percentual.
 - **Valores padrão**:
   - `Period` = 20
-  - `EntryThreshold` = 2.0m
-  - `Beta` = 1.0m
-  - `StopLossPercent` = 2.0m
+  - `EntryThreshold` = 2
+  - `ExitThreshold` = 0.5
+  - `Beta` = 1
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
+  - `Asset2` — obrigatório, sem valor padrão
+    O resíduo é o fechamento do Security da estratégia menos Beta vezes o fechamento de Asset2 em candles do mesmo horário, e o seu z-score usa a média e o desvio padrão dos últimos Period resíduos. 0.5 é o nível de saída padrão citado nas regras. A primeira perna negocia Volume e Asset2 negocia Beta vezes Volume; um sinal oposto inverte as duas pernas. O stop fecha as duas pernas quando o resíduo se move contra o par em StopLossPercent do seu valor de entrada, verificado no fechamento dos candles; 0 o desativa.
 - **Filtros**:
   - Categoria: Arbitragem
   - Direção: Ambos

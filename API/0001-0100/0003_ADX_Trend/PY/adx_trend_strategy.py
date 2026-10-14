@@ -5,55 +5,61 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan
+from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import AverageDirectionalIndex, SimpleMovingAverage
+from StockSharp.Algo.Indicators import AverageDirectionalIndex, AverageTrueRange, SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+
+# ADX level above which the trend counts as established.
+ADX_ENTRY_THRESHOLD = Decimal(25)
 
 class adx_trend_strategy(Strategy):
     """
     Strategy based on Average Directional Index (ADX) trend.
-    Enters long when ADX > 25 and price crosses above MA.
-    Enters short when ADX > 25 and price crosses below MA.
+    While ADX is above 25 it holds a long position when the close is above the moving average and a short one when it is below.
+    The position closes when ADX falls below the exit threshold or the close crosses the ATR stop set at entry,
+    and reverses when the opposite setup appears.
     """
 
     def __init__(self):
         super(adx_trend_strategy, self).__init__()
-        self._adx_period = self.Param("AdxPeriod", 50).SetDisplay("ADX Period", "Period for calculating ADX indicator", "Indicators")
-        self._ma_period = self.Param("MaPeriod", 200).SetDisplay("MA Period", "Period for calculating Moving Average", "Indicators")
-        self._atr_multiplier = self.Param("AtrMultiplier", 2.0).SetDisplay("ATR Multiplier", "Multiplier for stop-loss based on ATR", "Risk parameters")
-        self._adx_exit_threshold = self.Param("AdxExitThreshold", 20).SetDisplay("ADX Exit Threshold", "ADX level below which to exit position", "Exit parameters")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._adx_period = self.Param("AdxPeriod", 14) \
+            .SetGreaterThanZero() \
+            .SetDisplay("ADX Period", "Period for the ADX and the ATR of the stop", "Indicators") \
+            .SetOptimize(10, 30, 2)
+        self._ma_period = self.Param("MaPeriod", 50) \
+            .SetGreaterThanZero() \
+            .SetDisplay("MA Period", "Period for calculating Moving Average", "Indicators") \
+            .SetOptimize(20, 100, 10)
+        self._atr_multiplier = self.Param("AtrMultiplier", 2.0) \
+            .SetGreaterThanZero() \
+            .SetDisplay("ATR Multiplier", "Stop distance in entry ATR multiples", "Risk parameters") \
+            .SetOptimize(1.0, 3.0, 0.5)
+        self._adx_exit_threshold = self.Param("AdxExitThreshold", 20) \
+            .SetRange(0, 100) \
+            .SetDisplay("ADX Exit Threshold", "ADX level below which to exit position", "Exit parameters") \
+            .SetOptimize(15, 25, 1)
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+            .SetDisplay("Candle Type", "Type of candles to use", "General")
 
-        self._adx_above_threshold = False
-        self._prev_adx_value = 0.0
-        self._prev_ma_value = 0.0
-
-    @property
-    def candle_type(self):
-        return self._candle_type.Value
+        self._stop_price = Decimal(0)
 
     def OnReseted(self):
         super(adx_trend_strategy, self).OnReseted()
-        self._adx_above_threshold = False
-        self._prev_adx_value = 0.0
-        self._prev_ma_value = 0.0
+        self._stop_price = Decimal(0)
 
     def OnStarted2(self, time):
         super(adx_trend_strategy, self).OnStarted2(time)
 
         adx = AverageDirectionalIndex()
         adx.Length = self._adx_period.Value
+        atr = AverageTrueRange()
+        atr.Length = self._adx_period.Value
         ma = SimpleMovingAverage()
         ma.Length = self._ma_period.Value
 
-        self._current_adx_ma = 0.0
-
-        subscription = self.SubscribeCandles(self.candle_type)
-        subscription \
-            .BindEx(adx, self._process_adx) \
-            .Bind(ma, self._process_ma) \
-            .Start()
+        subscription = self.SubscribeCandles(self._candle_type.Value)
+        subscription.BindEx(adx, atr, ma, self._process_candle).Start()
 
         area = self.CreateChartArea()
         if area is not None:
@@ -62,35 +68,46 @@ class adx_trend_strategy(Strategy):
             self.DrawIndicator(area, ma)
             self.DrawOwnTrades(area)
 
-    def _process_adx(self, candle, adx_val):
-        if hasattr(adx_val, 'MovingAverage') and adx_val.MovingAverage is not None:
-            self._current_adx_ma = float(adx_val.MovingAverage)
-
-    def _process_ma(self, candle, ma_val):
-        if candle.State != CandleStates.Finished:
+    def _process_candle(self, candle, adx_value, atr_value, ma_value):
+        if candle.State != CandleStates.Finished or not adx_value.IsFormed or not atr_value.IsFormed or not ma_value.IsFormed:
+            return
+        if adx_value.MovingAverage is None:
+            return
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        adx_ma = self._current_adx_ma
-        ma_value = float(ma_val)
+        adx = adx_value.MovingAverage
+        close = candle.ClosePrice
+        ma = ma_value.GetValue[Decimal](None)
+        atr = atr_value.GetValue[Decimal](None)
+        offset = Decimal(self._atr_multiplier.Value) * atr
+        exit_level = Decimal(self._adx_exit_threshold.Value)
 
-        if adx_ma == 0 or ma_value == 0:
-            self._prev_ma_value = ma_value
-            self._prev_adx_value = adx_ma
-            return
+        trending = adx > ADX_ENTRY_THRESHOLD
+        long_setup = trending and close > ma
+        short_setup = trending and close < ma
+        position = self.Position
 
-        is_price_above_ma = float(candle.ClosePrice) > ma_value
-        was_price_above_ma = self._prev_ma_value != 0 and float(candle.OpenPrice) > self._prev_ma_value
-        is_adx_strong = adx_ma > 25
-
-        if self._prev_ma_value != 0 and is_adx_strong and was_price_above_ma != is_price_above_ma:
-            if is_price_above_ma and self.Position <= 0:
-                self.BuyMarket(self.Volume + abs(self.Position))
-            elif not is_price_above_ma and self.Position >= 0:
-                self.SellMarket(self.Volume + abs(self.Position))
-
-        self._prev_adx_value = adx_ma
-        self._prev_ma_value = ma_value
-        self._adx_above_threshold = is_adx_strong
+        if position > 0:
+            if short_setup:
+                self.SellMarket(self.Volume + position)
+                self._stop_price = close + offset
+            elif adx < exit_level or close <= self._stop_price:
+                self.SellMarket(position)
+                self._stop_price = Decimal(0)
+        elif position < 0:
+            if long_setup:
+                self.BuyMarket(self.Volume - position)
+                self._stop_price = close - offset
+            elif adx < exit_level or close >= self._stop_price:
+                self.BuyMarket(-position)
+                self._stop_price = Decimal(0)
+        elif long_setup:
+            self.BuyMarket(self.Volume)
+            self._stop_price = close - offset
+        elif short_setup:
+            self.SellMarket(self.Volume)
+            self._stop_price = close + offset
 
     def CreateClone(self):
         return adx_trend_strategy()

@@ -7,7 +7,7 @@ Os testes indicam um retorno anual médio de cerca de 49%. Funciona melhor no me
 
 Uma média móvel orienta a tendência enquanto o CCI busca desvios dessa média. As entradas ocorrem nos extremos do CCI na direção da MA.
 
-Ideal para traders de swing que entram em retrocessos. Stops baseados em ATR protegem contra movimentos bruscos.
+Ideal para traders de swing que entram em retrocessos. Um stop percentual protege contra movimentos bruscos.
 
 ## Detalhes
 
@@ -19,12 +19,13 @@ Ideal para traders de swing que entram em retrocessos. Stops baseados em ATR pro
   - CCI retorna à linha zero
 - **Stops**: Baseados em percentual usando `StopLossPercent`
 - **Valores padrão**:
-  - `MaPeriod` = 20
+  - `MaPeriod` = 50
   - `CciPeriod` = 20
   - `OverboughtLevel` = 100m
   - `OversoldLevel` = -100m
   - `StopLossPercent` = 2.0m
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    Uma SMA de 20 candles se move junto com o CCI dos mesmos 20 candles, então o preço quase nunca fica acima dela com o CCI abaixo de -100: o arquivo de março de 2024 tem no máximo um candle assim por instrumento. Por isso a SMA de tendência usa 50 candles por padrão. Um sinal de entrada contra uma posição aberta a inverte.
 - **Filtros**:
   - Categoria: Reversão à média
   - Direção: Ambos

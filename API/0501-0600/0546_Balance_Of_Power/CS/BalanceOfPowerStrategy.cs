@@ -12,19 +12,23 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Balance of Power strategy.
-/// Uses EMA crossover with RSI filter and cooldown.
+/// Long only: buys when Balance of Power crosses above Threshold and closes the long when it crosses below -Threshold.
 /// </summary>
 public class BalanceOfPowerStrategy : Strategy
 {
+	private readonly StrategyParam<decimal> _threshold;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _fastEmaLength;
-	private readonly StrategyParam<int> _slowEmaLength;
-	private readonly StrategyParam<int> _cooldownBars;
 
-	private decimal _prevFast;
-	private decimal _prevSlow;
-	private int _barIndex;
-	private int _lastTradeBar;
+	private decimal? _prevBop;
+
+	/// <summary>
+	/// Balance of Power level whose upward cross opens a long.
+	/// </summary>
+	public decimal Threshold
+	{
+		get => _threshold.Value;
+		set => _threshold.Value = value;
+	}
 
 	/// <summary>
 	/// Candle type.
@@ -36,50 +40,16 @@ public class BalanceOfPowerStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Fast EMA period.
-	/// </summary>
-	public int FastEmaLength
-	{
-		get => _fastEmaLength.Value;
-		set => _fastEmaLength.Value = value;
-	}
-
-	/// <summary>
-	/// Slow EMA period.
-	/// </summary>
-	public int SlowEmaLength
-	{
-		get => _slowEmaLength.Value;
-		set => _slowEmaLength.Value = value;
-	}
-
-	/// <summary>
-	/// Cooldown bars between trades.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
 	/// Constructor.
 	/// </summary>
 	public BalanceOfPowerStrategy()
 	{
+		_threshold = Param(nameof(Threshold), 0.8m)
+			.SetNotNegative()
+			.SetDisplay("Threshold", "Balance of Power level whose upward cross opens a long", "Indicators");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_fastEmaLength = Param(nameof(FastEmaLength), 12)
-			.SetGreaterThanZero()
-			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
-
-		_slowEmaLength = Param(nameof(SlowEmaLength), 40)
-			.SetGreaterThanZero()
-			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
-
-		_cooldownBars = Param(nameof(CooldownBars), 350)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "Trading");
 	}
 
 	/// <inheritdoc />
@@ -92,10 +62,7 @@ public class BalanceOfPowerStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevFast = 0;
-		_prevSlow = 0;
-		_barIndex = 0;
-		_lastTradeBar = 0;
+		_prevBop = null;
 	}
 
 	/// <inheritdoc />
@@ -103,48 +70,49 @@ public class BalanceOfPowerStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var fastEma = new ExponentialMovingAverage { Length = FastEmaLength };
-		var slowEma = new ExponentialMovingAverage { Length = SlowEmaLength };
+		_prevBop = null;
+
+		var bop = new BalanceOfPower();
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(fastEma, slowEma, ProcessCandle)
+			.BindEx(bop, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, fastEma);
-			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+				DrawIndicator(oscillators, bop);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bopValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		_barIndex++;
+		// A candle without range has no Balance of Power value.
+		if (!bopValue.IsFormed || bopValue.IsEmpty)
+			return;
 
-		var cooldownOk = _barIndex - _lastTradeBar > CooldownBars;
+		var bop = bopValue.GetValue<decimal>();
+		var prev = _prevBop;
+		_prevBop = bop;
 
-		var crossUp = _prevFast > 0 && _prevFast <= _prevSlow && fastValue > slowValue;
-		var crossDown = _prevFast > 0 && _prevFast >= _prevSlow && fastValue < slowValue;
+		if (prev is not decimal prevBop)
+			return;
 
-		if (crossUp && Position <= 0 && cooldownOk)
-		{
-			BuyMarket();
-			_lastTradeBar = _barIndex;
-		}
-		else if (crossDown && Position >= 0 && cooldownOk)
-		{
-			SellMarket();
-			_lastTradeBar = _barIndex;
-		}
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
 
-		_prevFast = fastValue;
-		_prevSlow = slowValue;
+		if (Position == 0 && prevBop <= Threshold && bop > Threshold)
+			BuyMarket(Volume);
+		else if (Position > 0 && prevBop >= -Threshold && bop < -Threshold)
+			SellMarket(Position);
 	}
 }

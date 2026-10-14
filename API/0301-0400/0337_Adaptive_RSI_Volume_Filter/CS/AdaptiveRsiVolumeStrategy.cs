@@ -91,11 +91,11 @@ public class AdaptiveRsiVolumeStrategy : Strategy
 	/// </summary>
 	public AdaptiveRsiVolumeStrategy()
 	{
-		_minRsiPeriod = Param(nameof(MinRsiPeriod), 8)
+		_minRsiPeriod = Param(nameof(MinRsiPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Min RSI Period", "Fast RSI period used in high volatility", "Indicator Settings");
 
-		_maxRsiPeriod = Param(nameof(MaxRsiPeriod), 21)
+		_maxRsiPeriod = Param(nameof(MaxRsiPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Max RSI Period", "Slow RSI period used in low volatility", "Indicator Settings");
 
@@ -103,7 +103,7 @@ public class AdaptiveRsiVolumeStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Period", "Period for ATR volatility calculation", "Indicator Settings");
 
-		_volumeLookback = Param(nameof(VolumeLookback), 12)
+		_volumeLookback = Param(nameof(VolumeLookback), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Volume Lookback", "Periods used for average volume", "Volume Settings");
 
@@ -111,7 +111,7 @@ public class AdaptiveRsiVolumeStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Cooldown Bars", "Closed candles to wait before another signal", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 

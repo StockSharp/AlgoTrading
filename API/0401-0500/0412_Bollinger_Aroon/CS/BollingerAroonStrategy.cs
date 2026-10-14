@@ -94,14 +94,14 @@ public class BollingerAroonStrategy : Strategy
 		_bbMultiplier = Param(nameof(BBMultiplier), 2.0m)
 			.SetDisplay("BB StdDev", "Bollinger Bands standard deviation multiplier", "Bollinger Bands");
 
-		_aroonLength = Param(nameof(AroonLength), 14)
+		_aroonLength = Param(nameof(AroonLength), 288)
 			.SetGreaterThanZero()
 			.SetDisplay("Aroon Period", "Aroon indicator period", "Aroon");
 
-		_aroonConfirmation = Param(nameof(AroonConfirmation), 60m)
+		_aroonConfirmation = Param(nameof(AroonConfirmation), 90m)
 			.SetDisplay("Aroon Confirmation", "Aroon confirmation level", "Aroon");
 
-		_aroonStop = Param(nameof(AroonStop), 40m)
+		_aroonStop = Param(nameof(AroonStop), 70m)
 			.SetDisplay("Aroon Stop", "Aroon stop level", "Aroon");
 	}
 

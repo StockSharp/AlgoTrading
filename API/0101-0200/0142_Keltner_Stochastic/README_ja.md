@@ -26,11 +26,11 @@ Keltnerチャネルとストキャスティクスオシレーターを組み合�
   - `KeltnerMultiplier` = 2.0m
   - `StochPeriod` = 14
   - `StochK` = 3
-  - `StochD` = 3
   - `StochOversold` = 20m
   - `StochOverbought` = 80m
   - `StopLossAtr` = 2.0m
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    チャネルはEMAの上下にKeltnerMultiplier倍のATRを加えたものです。ルール中のStochKは%Kで、StochPeriod本のストキャスティクスをStochK本で平滑化した値です。%Dはルールに関与しないため設定はありません。保有ポジションと逆方向のエントリーはドテンになります。ストップは足の終値で判定します。
 - **フィルター**:
   - カテゴリ: 平均回帰
   - 方向: 両方

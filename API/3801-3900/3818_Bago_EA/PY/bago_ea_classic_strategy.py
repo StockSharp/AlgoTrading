@@ -18,7 +18,7 @@ class bago_ea_classic_strategy(Strategy):
             .SetDisplay("Fast EMA", "Fast EMA period", "Indicators")
         self._slow_period = self.Param("SlowPeriod", 12) \
             .SetDisplay("Slow EMA", "Slow EMA period", "Indicators")
-        self._rsi_period = self.Param("RsiPeriod", 14) \
+        self._rsi_period = self.Param("RsiPeriod", 21) \
             .SetDisplay("RSI Period", "RSI period", "Indicators")
         self._rsi_level = self.Param("RsiLevel", 50.0) \
             .SetDisplay("RSI Level", "RSI neutral level", "Indicators")

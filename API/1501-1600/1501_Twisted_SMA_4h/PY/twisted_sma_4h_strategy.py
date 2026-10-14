@@ -14,7 +14,7 @@ class twisted_sma_4h_strategy(Strategy):
     """RSI momentum crossing 50 with EMA histogram filter and cooldown."""
     def __init__(self):
         super(twisted_sma_4h_strategy, self).__init__()
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))).SetDisplay("Candle Type", "Timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

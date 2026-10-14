@@ -20,7 +20,7 @@ class basic_trailing_stop_strategy(Strategy):
             .SetDisplay("CCI Period", "Commodity Channel Index period", "Indicators")
         self._rsi_period = self.Param("RsiPeriod", 14) \
             .SetDisplay("RSI Period", "Relative Strength Index period", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
         self._stop_price = 0.0
 

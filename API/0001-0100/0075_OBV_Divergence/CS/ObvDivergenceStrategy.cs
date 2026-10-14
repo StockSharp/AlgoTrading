@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using Ecng.Common;
 
@@ -12,23 +13,29 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// OBV (On-Balance Volume) Divergence strategy.
-/// Tracks OBV direction vs price direction over a lookback window.
-/// Bullish divergence: price trending down but OBV trending up.
-/// Bearish divergence: price trending up but OBV trending down.
-/// Uses SMA for exit signals.
+/// Bullish divergence: the low falls below the lows of the previous DivergencePeriod candles while OBV stays above its value
+/// at the earlier low. Bearish divergence: the high rises above their highs while OBV stays below its value at the earlier high.
+/// A divergence opens a position while flat; it closes when the close crosses back over the moving average or at the percent stop.
 /// </summary>
 public class ObvDivergenceStrategy : Strategy
 {
+	private readonly StrategyParam<int> _divergencePeriod;
 	private readonly StrategyParam<int> _maPeriod;
-	private readonly StrategyParam<int> _lookback;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
 
-	private decimal _cumulativeObv;
-	private decimal _prevClosePrice;
-	private readonly List<decimal> _priceHistory = new();
-	private readonly List<decimal> _obvHistory = new();
-	private int _cooldown;
+	private readonly List<(decimal High, decimal Low, decimal Obv)> _history = [];
+	private decimal _obv;
+	private decimal? _prevClose;
+
+	/// <summary>
+	/// Number of previous candles the new extreme is compared with.
+	/// </summary>
+	public int DivergencePeriod
+	{
+		get => _divergencePeriod.Value;
+		set => _divergencePeriod.Value = value;
+	}
 
 	/// <summary>
 	/// MA Period.
@@ -40,12 +47,12 @@ public class ObvDivergenceStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Lookback period for divergence.
+	/// Stop-loss percentage.
 	/// </summary>
-	public int Lookback
+	public decimal StopLossPercent
 	{
-		get => _lookback.Value;
-		set => _lookback.Value = value;
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
 	}
 
 	/// <summary>
@@ -58,33 +65,24 @@ public class ObvDivergenceStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Cooldown bars.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
 	/// Constructor.
 	/// </summary>
 	public ObvDivergenceStrategy()
 	{
+		_divergencePeriod = Param(nameof(DivergencePeriod), 5)
+			.SetGreaterThanZero()
+			.SetDisplay("Divergence Period", "Previous candles the new extreme is compared with", "Indicators");
+
 		_maPeriod = Param(nameof(MAPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("MA Period", "Period for SMA exit signal", "Indicators");
 
-		_lookback = Param(nameof(Lookback), 10)
-			.SetGreaterThanZero()
-			.SetDisplay("Lookback", "Lookback period for divergence detection", "Indicators");
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_cooldownBars = Param(nameof(CooldownBars), 500)
-			.SetRange(1, 1000)
-			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -97,11 +95,9 @@ public class ObvDivergenceStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_cumulativeObv = default;
-		_prevClosePrice = default;
-		_priceHistory.Clear();
-		_obvHistory.Clear();
-		_cooldown = default;
+		_history.Clear();
+		_obv = 0;
+		_prevClose = null;
 	}
 
 	/// <inheritdoc />
@@ -109,18 +105,26 @@ public class ObvDivergenceStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_cumulativeObv = 0;
-		_prevClosePrice = 0;
-		_priceHistory.Clear();
-		_obvHistory.Clear();
-		_cooldown = 0;
+		_history.Clear();
+		_obv = 0;
+		_prevClose = null;
 
 		var sma = new SimpleMovingAverage { Length = MAPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(sma, ProcessCandle)
+			.BindEx(sma, ProcessCandle)
 			.Start();
+
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -131,72 +135,69 @@ public class ObvDivergenceStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// The high-level handler activates native protection before this callback, also between signal bars.
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue smaValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Calculate OBV manually
-		if (_prevClosePrice > 0)
-		{
-			if (candle.ClosePrice > _prevClosePrice)
-				_cumulativeObv += candle.TotalVolume;
-			else if (candle.ClosePrice < _prevClosePrice)
-				_cumulativeObv -= candle.TotalVolume;
-		}
-		_prevClosePrice = candle.ClosePrice;
+		var close = candle.ClosePrice;
 
-		// Store history
-		_priceHistory.Add(candle.ClosePrice);
-		_obvHistory.Add(_cumulativeObv);
-
-		// Keep only what we need
-		if (_priceHistory.Count > Lookback + 1)
+		if (_prevClose is decimal prevClose)
 		{
-			_priceHistory.RemoveAt(0);
-			_obvHistory.RemoveAt(0);
+			if (close > prevClose)
+				_obv += candle.TotalVolume;
+			else if (close < prevClose)
+				_obv -= candle.TotalVolume;
 		}
+
+		_prevClose = close;
+
+		// Compare this candle with the DivergencePeriod candles before it.
+		var previous = _history.ToArray();
+
+		_history.Add((candle.HighPrice, candle.LowPrice, _obv));
+
+		if (_history.Count > DivergencePeriod)
+			_history.RemoveAt(0);
+
+		if (previous.Length < DivergencePeriod || !smaValue.IsFormed)
+			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (_priceHistory.Count <= Lookback)
+		var ma = smaValue.GetValue<decimal>();
+
+		if (Position > 0)
+		{
+			if (close > ma)
+				SellMarket(Position);
+
 			return;
+		}
 
-		if (_cooldown > 0)
+		if (Position < 0)
 		{
-			_cooldown--;
+			if (close < ma)
+				BuyMarket(-Position);
+
 			return;
 		}
 
-		// Compare current values to lookback-period-ago values
-		var priceChange = _priceHistory[_priceHistory.Count - 1] - _priceHistory[0];
-		var obvChange = _obvHistory[_obvHistory.Count - 1] - _obvHistory[0];
+		var lowest = previous.MinBy(c => c.Low);
+		var highest = previous.MaxBy(c => c.High);
 
-		// Bullish divergence: price down but OBV up
-		var bullishDiv = priceChange < 0 && obvChange > 0;
-		// Bearish divergence: price up but OBV down
-		var bearishDiv = priceChange > 0 && obvChange < 0;
+		var bullish = candle.LowPrice < lowest.Low && _obv > lowest.Obv;
+		var bearish = candle.HighPrice > highest.High && _obv < highest.Obv;
 
-		if (Position == 0 && bullishDiv)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position == 0 && bearishDiv)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position > 0 && candle.ClosePrice < smaValue)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position < 0 && candle.ClosePrice > smaValue)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
+		if (bullish && !bearish)
+			BuyMarket(Volume);
+		else if (bearish && !bullish)
+			SellMarket(Volume);
 	}
 }

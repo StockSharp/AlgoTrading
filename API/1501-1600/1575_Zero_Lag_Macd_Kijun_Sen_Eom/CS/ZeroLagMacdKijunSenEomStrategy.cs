@@ -55,11 +55,11 @@ public class ZeroLagMacdKijunSenEomStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Stop %", "Stop loss percent", "Risk");
 
-		_riskReward = Param(nameof(RiskReward), 1.5m)
+		_riskReward = Param(nameof(RiskReward), 1.2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Risk/Reward", "Take profit ratio", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 

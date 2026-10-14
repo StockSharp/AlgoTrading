@@ -4,142 +4,94 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import RelativeStrengthIndex, ExponentialMovingAverage
+from System import TimeSpan, Decimal
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, Level1Fields
+from StockSharp.BusinessEntities import Subscription
+from StockSharp.Algo.Indicators import RelativeStrengthIndex, StochasticOscillator
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-
 
 class rsi_stochastic_strategy(Strategy):
     """
-    Strategy combining RSI with EMA trend filter for oversold/overbought trading.
+    RSI Stochastic strategy.
+    RSI below RsiOversold together with %K below StochOversold goes long, RSI above RsiOverbought together with %K above StochOverbought
+    goes short, reversing an opposite position; %K is the stochastic over StochPeriod candles smoothed over StochK candles.
+    A long closes once RSI rises above 50 and a short once it falls below 50, and a percent stop limits the loss.
     """
 
     def __init__(self):
         super(rsi_stochastic_strategy, self).__init__()
-
-        self._candle_type = self.Param("CandleType", tf(5)) \
-            .SetDisplay("Candle Type", "Type of candles to use", "General")
-
-        self._rsi_period = self.Param("RsiPeriod", 14) \
-            .SetRange(7, 21) \
-            .SetDisplay("RSI Period", "Period of the RSI indicator", "Indicators")
-
-        self._rsi_oversold = self.Param("RsiOversold", 30.0) \
-            .SetDisplay("RSI Oversold", "RSI oversold level", "Indicators")
-
-        self._rsi_overbought = self.Param("RsiOverbought", 70.0) \
-            .SetDisplay("RSI Overbought", "RSI overbought level", "Indicators")
-
-        self._ema_period = self.Param("EmaPeriod", 20) \
-            .SetRange(10, 50) \
-            .SetDisplay("EMA Period", "EMA period for trend filter", "Indicators")
-
-        self._cooldown_bars = self.Param("CooldownBars", 100) \
-            .SetDisplay("Cooldown Bars", "Bars between trades", "General") \
-            .SetRange(5, 500)
-
-        self._ema_value = 0.0
-        self._cooldown = 0
+        self._rsi_period = self.Param("RsiPeriod", 14).SetGreaterThanZero().SetDisplay("RSI Period", "Period of RSI", "RSI")
+        self._rsi_oversold = self.Param("RsiOversold", 30.0).SetDisplay("RSI Oversold", "RSI level for longs", "RSI")
+        self._rsi_overbought = self.Param("RsiOverbought", 70.0).SetDisplay("RSI Overbought", "RSI level for shorts", "RSI")
+        self._stoch_period = self.Param("StochPeriod", 14).SetGreaterThanZero().SetDisplay("Stochastic Period", "Lookback period of the raw stochastic", "Stochastic")
+        self._stoch_k = self.Param("StochK", 3).SetGreaterThanZero().SetDisplay("Stochastic %K", "Smoothing period of %K", "Stochastic")
+        self._stoch_oversold = self.Param("StochOversold", 20.0).SetDisplay("Stochastic Oversold", "%K level for longs", "Stochastic")
+        self._stoch_overbought = self.Param("StochOverbought", 80.0).SetDisplay("Stochastic Overbought", "%K level for shorts", "Stochastic")
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0).SetNotNegative().SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles to use", "General")
 
     @property
     def candle_type(self):
         return self._candle_type.Value
 
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
-
-    @property
-    def rsi_period(self):
-        return self._rsi_period.Value
-
-    @property
-    def rsi_oversold(self):
-        return self._rsi_oversold.Value
-
-    @property
-    def rsi_overbought(self):
-        return self._rsi_overbought.Value
-
-    @property
-    def ema_period(self):
-        return self._ema_period.Value
-
-    @property
-    def cooldown_bars(self):
-        return self._cooldown_bars.Value
-
     def OnStarted2(self, time):
         super(rsi_stochastic_strategy, self).OnStarted2(time)
 
-        self._ema_value = 0.0
-        self._cooldown = 0
-
-        ema = ExponentialMovingAverage()
-        ema.Length = self.ema_period
-
         rsi = RelativeStrengthIndex()
-        rsi.Length = self.rsi_period
+        rsi.Length = self._rsi_period.Value
+        # The D line of the core oscillator is the smoothed %K.
+        stochastic = StochasticOscillator()
+        stochastic.K.Length = self._stoch_period.Value
+        stochastic.D.Length = self._stoch_k.Value
 
         subscription = self.SubscribeCandles(self.candle_type)
+        subscription.BindEx(rsi, stochastic, self._process_candle).Start()
 
-        # Bind EMA to capture value
-        subscription.Bind(ema, self.OnEma)
+        self.StartProtection(Unit(), Unit(Decimal(self._stop_loss_percent.Value), UnitTypes.Percent), useMarketOrders=True, isLocalStop=True)
 
-        # Bind RSI for main logic
-        subscription.Bind(rsi, self.ProcessCandle).Start()
+        # The stop has to see prices between candles, not only at their close.
+        for field in (Level1Fields.BestBidPrice, Level1Fields.BestAskPrice):
+            quotes = Subscription(DataType.Level1, self.Security)
+            quotes.MarketData.BuildField = field
+            self.SubscribeLevel1(quotes).Bind(self._observe_protection_quote).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, ema)
             self.DrawOwnTrades(area)
+            oscillators = self.CreateChartArea()
+            if oscillators is not None:
+                self.DrawIndicator(oscillators, rsi)
+                self.DrawIndicator(oscillators, stochastic)
 
-            rsi_area = self.CreateChartArea()
-            if rsi_area is not None:
-                self.DrawIndicator(rsi_area, rsi)
+    def _observe_protection_quote(self, quote):
+        # The high-level handler activates native protection before the callback, including between bars.
+        pass
 
-    def OnEma(self, candle, ema_val):
-        self._ema_value = float(ema_val)
-
-    def ProcessCandle(self, candle, rsi_value):
+    def _process_candle(self, candle, rsi_value, stochastic_value):
         if candle.State != CandleStates.Finished:
             return
 
-        if self._ema_value == 0:
+        if not rsi_value.IsFormed or not stochastic_value.IsFormed or stochastic_value.D is None:
             return
 
-        if self._cooldown > 0:
-            self._cooldown -= 1
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        rv = float(rsi_value)
+        rsi = rsi_value.GetValue[Decimal](None)
+        k = stochastic_value.D
 
-        # Long: RSI oversold
-        if rv < self.rsi_oversold and self.Position == 0:
-            self.BuyMarket()
-            self._cooldown = self.cooldown_bars
-        # Short: RSI overbought
-        elif rv > self.rsi_overbought and self.Position == 0:
-            self.SellMarket()
-            self._cooldown = self.cooldown_bars
-
-        # Exit long: RSI returns to neutral
-        if self.Position > 0 and rv > 50:
-            self.SellMarket()
-            self._cooldown = self.cooldown_bars
-        # Exit short: RSI returns to neutral
-        elif self.Position < 0 and rv < 50:
-            self.BuyMarket()
-            self._cooldown = self.cooldown_bars
-
-    def OnReseted(self):
-        super(rsi_stochastic_strategy, self).OnReseted()
-        self._ema_value = 0.0
-        self._cooldown = 0
+        middle = Decimal(50)
+        if rsi < Decimal(self._rsi_oversold.Value) and k < Decimal(self._stoch_oversold.Value) and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+        elif rsi > Decimal(self._rsi_overbought.Value) and k > Decimal(self._stoch_overbought.Value) and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
+        elif self.Position > 0 and rsi > middle:
+            self.SellMarket(self.Position)
+        elif self.Position < 0 and rsi < middle:
+            self.BuyMarket(-self.Position)
 
     def CreateClone(self):
         return rsi_stochastic_strategy()

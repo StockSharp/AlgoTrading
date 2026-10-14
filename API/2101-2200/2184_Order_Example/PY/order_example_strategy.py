@@ -14,11 +14,11 @@ from StockSharp.Algo.Strategies import Strategy
 class order_example_strategy(Strategy):
     def __init__(self):
         super(order_example_strategy, self).__init__()
-        self._lookback = self.Param("Lookback", 5) \
+        self._lookback = self.Param("Lookback", 26) \
             .SetDisplay("Lookback", "Candles to calculate highs and lows", "General")
         self._sma_period = self.Param("SmaPeriod", 5) \
             .SetDisplay("SMA Period", "Trend filter SMA period", "General")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Timeframe for candles", "General")
         self._highs = []
         self._lows = []

@@ -49,10 +49,10 @@ public class OsMaSterV0Strategy : Strategy
 			.SetDisplay("Signal Smoothing", "Signal moving average period", "Indicators")
 			.SetGreaterThanZero();
 
-		_stopLossPips = Param(nameof(StopLossPips), 500)
+		_stopLossPips = Param(nameof(StopLossPips), 30)
 			.SetDisplay("Stop Loss (pips)", "Stop loss distance in pips", "Risk");
 
-		_takeProfitPips = Param(nameof(TakeProfitPips), 1000)
+		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
 			.SetDisplay("Take Profit (pips)", "Take profit distance in pips", "Risk");
 
 		_tradeVolume = Param(nameof(TradeVolume), 1m)

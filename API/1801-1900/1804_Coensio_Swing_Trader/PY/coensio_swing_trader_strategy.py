@@ -16,7 +16,7 @@ class coensio_swing_trader_strategy(Strategy):
         super(coensio_swing_trader_strategy, self).__init__()
         self._fast_period = self.Param("FastPeriod", 12)             .SetDisplay("Fast Period", "Fast EMA period", "Indicators")
         self._slow_period = self.Param("SlowPeriod", 26)             .SetDisplay("Slow Period", "Slow EMA period", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4)))             .SetDisplay("Candle Type", "Candle type", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5)))             .SetDisplay("Candle Type", "Candle type", "General")
         self._prev_fast = 0.0
         self._prev_slow = 0.0
         self._has_prev = False

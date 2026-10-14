@@ -4,6 +4,7 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
+clr.AddReference("StockSharp.BusinessEntities")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
@@ -23,7 +24,7 @@ class vwap_adx_trend_strength_strategy(Strategy):
             .SetRange(2, 100) \
             .SetDisplay("ADX Period", "Period for ADX calculation", "Indicators")
 
-        self._adx_threshold = self.Param("AdxThreshold", 23.0) \
+        self._adx_threshold = self.Param("AdxThreshold", 25.0) \
             .SetRange(1.0, 100.0) \
             .SetDisplay("ADX Threshold", "Threshold for strong trend identification", "Signals")
 

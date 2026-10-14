@@ -26,8 +26,8 @@ public class TradeChannelAtrStrategy : Strategy
 
 	public TradeChannelAtrStrategy()
 	{
-		_channelPeriod = Param(nameof(ChannelPeriod), 48).SetDisplay("Channel Period", "Channel lookback", "Indicators");
-		_atrPeriod = Param(nameof(AtrPeriod), 14).SetDisplay("ATR Period", "ATR lookback", "Indicators");
+		_channelPeriod = Param(nameof(ChannelPeriod), 20).SetDisplay("Channel Period", "Channel lookback", "Indicators");
+		_atrPeriod = Param(nameof(AtrPeriod), 4).SetDisplay("ATR Period", "ATR lookback", "Indicators");
 		_cooldownCandles = Param(nameof(CooldownCandles), 150).SetDisplay("Cooldown", "Candles between signals", "General");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General");
 	}

@@ -39,7 +39,7 @@ public class ZStrikeRecoveryStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Z-Score Length", "Lookback length for z-score", "Indicators");
 
-		_zThreshold = Param(nameof(ZThreshold), 2.5m)
+		_zThreshold = Param(nameof(ZThreshold), 1.3m)
 			.SetGreaterThanZero()
 			.SetDisplay("Z-Score Threshold", "Entry threshold", "Trading");
 

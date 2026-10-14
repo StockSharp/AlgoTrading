@@ -83,7 +83,7 @@ public class NatusekoProtrader4HStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("MACD fast period", "Fast EMA length inside the MACD indicator.", "Indicator");
 
-		_macdSlowPeriod = Param(nameof(MacdSlowPeriod), 26)
+		_macdSlowPeriod = Param(nameof(MacdSlowPeriod), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("MACD slow period", "Slow EMA length inside the MACD indicator.", "Indicator");
 

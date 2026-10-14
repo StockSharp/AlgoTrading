@@ -18,7 +18,9 @@ Stops are set outside the rejected high or low to cap risk, and trades exit if m
 - **Stops**: Yes, percent based
 - **Default Values**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `WickRatio` = 1.5
+  - `StopLossPercent` = 2
+    A rejection candle probes beyond the previous candle's low (high), closes the other way, and has a wick longer than WickRatio bodies. The stop lies StopLossPercent beyond the rejected low or high, and a close beyond it closes the position.
 - **Filters**:
   - Category: Pattern
   - Direction: Both

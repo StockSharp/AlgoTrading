@@ -38,7 +38,7 @@ class parabolic_sar_rsi_divergence_strategy(Strategy):
         self._cooldown_bars = self.Param("CooldownBars", 24) \
             .SetDisplay("Cooldown Bars", "Closed candles to wait before another position change", "Trading")
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(2))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._prev_rsi = 0.0

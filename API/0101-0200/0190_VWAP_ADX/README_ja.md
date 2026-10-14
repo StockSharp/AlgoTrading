@@ -7,7 +7,7 @@ VWAPとADXインジケーターに基づく戦略。価格がVWAPより上でADX
 
 VWAPがセッションのベンチマークとして機能し、ADXが確信度を測定します。価格がVWAPから乖離しADXが強さを示したときにエントリーが現れます。
 
-イントラデイトレンドトレーダーに適しています。保護ストップはATRの倍数を使用します。
+イントラデイトレンドトレーダーに適しています。保護ストップはエントリー価格の一定割合を使用します。
 
 ## 詳細
 
@@ -18,9 +18,12 @@ VWAPがセッションのベンチマークとして機能し、ADXが確信度�
 - **エグジット条件**: ADXが閾値を下回る
 - **ストップ**: `StopLossPercent`を使用したパーセントベース
 - **デフォルト値**:
-  - `StopLossPercent` = 2m
+  - `StopLossPercent` = 2
   - `AdxPeriod` = 14
+  - `AdxThreshold` = 25
+  - `AdxExitThreshold` = 20
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    市場は24時間取引のため、セッションVWAPはUTCの毎日リセットされ、各足の典型価格を出来高で加重します。ルール中の25と20はAdxThresholdとAdxExitThresholdの既定値です。 保有ポジションと逆方向のエントリーシグナルはドテンになります。
 - **フィルター**:
   - カテゴリ: 平均回帰
   - 方向: 両方

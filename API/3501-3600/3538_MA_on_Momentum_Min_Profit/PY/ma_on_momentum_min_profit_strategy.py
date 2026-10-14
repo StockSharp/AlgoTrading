@@ -14,8 +14,8 @@ class ma_on_momentum_min_profit_strategy(Strategy):
     def __init__(self):
         super(ma_on_momentum_min_profit_strategy, self).__init__()
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(60)))
-        self._momentum_period = self.Param("MomentumPeriod", 20)
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5)))
+        self._momentum_period = self.Param("MomentumPeriod", 14)
         self._ma_period = self.Param("MaPeriod", 10)
 
         self._mom_history = []

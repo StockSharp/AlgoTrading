@@ -16,8 +16,8 @@ class volatility_pivot_strategy(Strategy):
     """ATR-based trailing pivot stop: flip long/short when price crosses pivot line."""
     def __init__(self):
         super(volatility_pivot_strategy, self).__init__()
-        self._atr_period = self.Param("AtrPeriod", 14).SetGreaterThanZero().SetDisplay("ATR Period", "ATR period", "Indicator")
-        self._atr_mult = self.Param("AtrMultiplier", 5).SetGreaterThanZero().SetDisplay("ATR Multiplier", "Multiplier for pivot", "Indicator")
+        self._atr_period = self.Param("AtrPeriod", 100).SetGreaterThanZero().SetDisplay("ATR Period", "ATR period", "Indicator")
+        self._atr_mult = self.Param("AtrMultiplier", 3).SetGreaterThanZero().SetDisplay("ATR Multiplier", "Multiplier for pivot", "Indicator")
         self._ema_period = self.Param("EmaPeriod", 100).SetGreaterThanZero().SetDisplay("EMA Period", "EMA trend filter", "Indicator")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Timeframe", "General")
 

@@ -15,7 +15,7 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Strategy based on Supertrend indicator.
-/// It enters long position when price is above Supertrend line and short position when price is below Supertrend line.
+/// It turns long when the Supertrend line flips below price and short when it flips above, reversing on every flip.
 /// </summary>
 public class SupertrendStrategy : Strategy
 {
@@ -23,9 +23,8 @@ public class SupertrendStrategy : Strategy
 	private readonly StrategyParam<decimal> _multiplier;
 	private readonly StrategyParam<DataType> _candleType;
 
-	// Current state tracking
-	private bool _prevIsPriceAboveSupertrend;
-	private decimal _prevSupertrendValue;
+	// Trend of the previous candle; unknown until the indicator forms.
+	private bool? _prevIsUpTrend;
 
 	/// <summary>
 	/// Period for Supertrend calculation.
@@ -59,17 +58,19 @@ public class SupertrendStrategy : Strategy
 	/// </summary>
 	public SupertrendStrategy()
 	{
-		_period = Param(nameof(Period), 300)
+		_period = Param(nameof(Period), 10)
+			.SetGreaterThanZero()
 			.SetDisplay("Period", "Period for Supertrend calculation", "Indicators")
 
 			.SetOptimize(7, 21, 2);
 
-		_multiplier = Param(nameof(Multiplier), 50.0m)
+		_multiplier = Param(nameof(Multiplier), 3.0m)
+			.SetGreaterThanZero()
 			.SetDisplay("Multiplier", "Multiplier for Supertrend calculation", "Indicators")
 
 			.SetOptimize(2.0m, 4.0m, 0.5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -83,8 +84,7 @@ public class SupertrendStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevIsPriceAboveSupertrend = false;
-		_prevSupertrendValue = 0;
+		_prevIsUpTrend = null;
 
 	}
 
@@ -96,94 +96,48 @@ public class SupertrendStrategy : Strategy
 		// Create custom supertrend indicator
 		// Since StockSharp doesn't have a built-in Supertrend indicator,
 		// we'll use ATR to calculate the basic components
-		var atr = new AverageTrueRange { Length = Period };
+		var supertrend = new SuperTrend { Length = Period, Multiplier = Multiplier };
 
-		// Create subscription
 		var subscription = SubscribeCandles(CandleType);
-		
-		// We'll process candles manually and calculate Supertrend in the handler
 		subscription
-			.Bind(atr, ProcessCandle)
+			.BindEx(supertrend, ProcessCandle)
 			.Start();
 
-		// Setup chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, supertrend);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal atrValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue supertrendValue)
 	{
-		// Skip unfinished candles
-		if (candle.State != CandleStates.Finished)
+		if (candle.State != CandleStates.Finished || !supertrendValue.IsFormed || supertrendValue is not SuperTrendIndicatorValue value)
 			return;
 
-		// Check if strategy is ready to trade
+		var isUpTrend = value.IsUpTrend;
+		var wasUpTrend = _prevIsUpTrend;
+		_prevIsUpTrend = isUpTrend;
+
+		if (wasUpTrend is not bool wasUp || wasUp == isUpTrend)
+			return;
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Calculate Supertrend components
-		var medianPrice = (candle.HighPrice + candle.LowPrice) / 2;
-		var basicUpperBand = medianPrice + Multiplier * atrValue;
-		var basicLowerBand = medianPrice - Multiplier * atrValue;
+		var line = value.Value;
 
-		// We need to track previous values to implement the Supertrend logic
-		decimal supertrendValue;
-
-		// If this is the first processed candle, initialize values
-		if (_prevSupertrendValue == 0)
+		if (isUpTrend && Position <= 0)
 		{
-			supertrendValue = candle.ClosePrice > medianPrice ? basicLowerBand : basicUpperBand;
-			_prevSupertrendValue = supertrendValue;
-			_prevIsPriceAboveSupertrend = candle.ClosePrice > supertrendValue;
-			return;
+			BuyMarket(Volume + Math.Abs(Position));
+			LogInfo($"Buy signal: Price ({candle.ClosePrice}) crossed above Supertrend ({line})");
 		}
-
-		// Determine current Supertrend value based on previous value and current price
-		if (_prevSupertrendValue <= candle.HighPrice)
+		else if (!isUpTrend && Position >= 0)
 		{
-			// Previous Supertrend was resistance
-			supertrendValue = Math.Max(basicLowerBand, _prevSupertrendValue);
+			SellMarket(Volume + Math.Abs(Position));
+			LogInfo($"Sell signal: Price ({candle.ClosePrice}) crossed below Supertrend ({line})");
 		}
-		else if (_prevSupertrendValue >= candle.LowPrice)
-		{
-			// Previous Supertrend was support
-			supertrendValue = Math.Min(basicUpperBand, _prevSupertrendValue);
-		}
-		else
-		{
-			// Price crossed the Supertrend
-			supertrendValue = candle.ClosePrice > _prevSupertrendValue ? basicLowerBand : basicUpperBand;
-		}
-
-		// Check if price is above or below Supertrend
-		var isPriceAboveSupertrend = candle.ClosePrice > supertrendValue;
-		
-		// Detect crossovers
-		var isCrossedAbove = isPriceAboveSupertrend && !_prevIsPriceAboveSupertrend;
-		var isCrossedBelow = !isPriceAboveSupertrend && _prevIsPriceAboveSupertrend;
-
-		// Trading logic
-		if (isCrossedAbove && Position <= 0)
-		{
-			// Price crossed above Supertrend - Buy signal
-			var volume = Volume + Math.Abs(Position);
-			BuyMarket(volume);
-			LogInfo($"Buy signal: Price ({candle.ClosePrice}) crossed above Supertrend ({supertrendValue})");
-		}
-		else if (isCrossedBelow && Position >= 0)
-		{
-			// Price crossed below Supertrend - Sell signal
-			var volume = Volume + Math.Abs(Position);
-			SellMarket(volume);
-			LogInfo($"Sell signal: Price ({candle.ClosePrice}) crossed below Supertrend ({supertrendValue})");
-		}
-
-		// Update state for the next candle
-		_prevSupertrendValue = supertrendValue;
-		_prevIsPriceAboveSupertrend = isPriceAboveSupertrend;
 	}
 }

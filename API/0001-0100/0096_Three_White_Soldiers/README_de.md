@@ -17,7 +17,8 @@ Stops werden knapp unterhalb des Musters platziert, um gegen Fehlsignale zu sch�
 - **Stops**: Ja, prozentbasiert
 - **Standardwerte**:
   - `CandleType` = 15 Minuten
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+    Die Strategie kauft nur. Der Stop liegt StopLossPercent unter dem tiefsten Tief des Musters, und die Position schließt, wenn eine Kerze darunter schließt.
 - **Filter**:
   - Kategorie: Muster
   - Richtung: Beide

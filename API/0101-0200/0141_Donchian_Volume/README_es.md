@@ -18,7 +18,10 @@ Los stops se establecen a corta distancia dentro del canal para proteger contra 
 - **Stops**: Sí, basado en porcentaje
 - **Valores predeterminados**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `DonchianPeriod` = 20
+  - `VolumePeriod` = 20
+    El canal abarca el máximo y el mínimo de las DonchianPeriod velas anteriores. Un cierre fuera de él con volumen superior a la media de las VolumePeriod velas anteriores entra en la dirección de la ruptura e invierte una posición opuesta. La posición se cierra cuando el precio vuelve a cerrar dentro del canal o el volumen cae por debajo de su media; el stop está a StopLossPercent del precio de entrada, justo dentro del límite roto.
 - **Filtros**:
   - Categoría: Ruptura
   - Dirección: Ambos

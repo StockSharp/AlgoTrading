@@ -22,7 +22,7 @@ class iu_range_trading_strategy(Strategy):
             .SetDisplay("ATR Target Factor", "Multiplier for trailing stop step", "Parameters")
         self._atr_range_factor = self.Param("AtrRangeFactor", 1.75) \
             .SetDisplay("ATR Range Factor", "ATR multiplier to validate range", "Parameters")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
         self._prev_range_cond = False
         self._range_high = 0.0

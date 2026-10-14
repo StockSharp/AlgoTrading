@@ -15,10 +15,10 @@ class rsi_trader_strategy(Strategy):
         super(rsi_trader_strategy, self).__init__()
 
         self._rsi_period = self.Param("RsiPeriod", 14)
-        self._short_rsi_ma_period = self.Param("ShortRsiMaPeriod", 12)
-        self._long_rsi_ma_period = self.Param("LongRsiMaPeriod", 60)
-        self._short_price_ma_period = self.Param("ShortPriceMaPeriod", 12)
-        self._long_price_ma_period = self.Param("LongPriceMaPeriod", 60)
+        self._short_rsi_ma_period = self.Param("ShortRsiMaPeriod", 9)
+        self._long_rsi_ma_period = self.Param("LongRsiMaPeriod", 45)
+        self._short_price_ma_period = self.Param("ShortPriceMaPeriod", 9)
+        self._long_price_ma_period = self.Param("LongPriceMaPeriod", 45)
         self._reverse = self.Param("Reverse", False)
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4)))
 

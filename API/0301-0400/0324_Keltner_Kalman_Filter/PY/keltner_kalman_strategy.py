@@ -44,7 +44,7 @@ class keltner_kalman_strategy(Strategy):
             .SetCanOptimize(True) \
             .SetOptimize(0.01, 1.0, 0.05)
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._ema = None

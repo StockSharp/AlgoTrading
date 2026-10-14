@@ -29,10 +29,10 @@ public class SimpleFxCrossoverStrategy : Strategy
 
 	public SimpleFxCrossoverStrategy()
 	{
-		_shortPeriod = Param(nameof(ShortPeriod), 10)
+		_shortPeriod = Param(nameof(ShortPeriod), 50)
 			.SetDisplay("Fast SMA", "Fast SMA period", "Indicators");
 
-		_longPeriod = Param(nameof(LongPeriod), 30)
+		_longPeriod = Param(nameof(LongPeriod), 200)
 			.SetDisplay("Slow SMA", "Slow SMA period", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())

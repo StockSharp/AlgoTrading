@@ -20,6 +20,7 @@ The trade is typically exited via the stop-loss as the strategy anticipates a sw
   - `VolumeMultiplier` = 2.0
   - `MAPeriod` = 20
   - `AtrMultiplier` = 2 ATR
+    The trend is the direction of the moving average from the previous candle. The stop starts AtrMultiplier ATRs (period 14) from the entry close and trails each later close by that distance; it is checked on candle closes.
   - `CandleType` = 5 minute
 - **Filters**:
   - Category: Reversal

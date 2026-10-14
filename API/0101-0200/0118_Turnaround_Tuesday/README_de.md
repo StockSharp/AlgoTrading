@@ -18,7 +18,9 @@ Stops sind eng gesetzt, um bei anhaltender Schwäche zu schützen, falls der Auf
 - **Stops**: Ja, prozentbasiert
 - **Standardwerte**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `ProfitTargetPercent` = 1
+  - `StopLossPercent` = 2
+    Tage sind UTC-Tage, da der Markt rund um die Uhr handelt; Einstiege erfolgen zum Schluss der ersten Kerze des Tages. Ein Montag ist fallend, wenn er unter seiner Eröffnung schließt; der Dienstagskauf schließt mit der letzten Kerze des Tages oder sobald der Schluss ProfitTargetPercent über dem Einstieg liegt.
 - **Filter**:
   - Kategorie: Saisonalität
   - Richtung: Beide

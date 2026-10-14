@@ -33,7 +33,7 @@ class liquid_pulse_strategy(Strategy):
             .SetDisplay("MACD Speed", "MACD speed", "General")
         self._daily_trade_limit = self.Param("DailyTradeLimit", 20) \
             .SetDisplay("Daily Trade Limit", "Max trades per day", "Risk")
-        self._adx_trend_threshold = self.Param("AdxTrendThreshold", 20) \
+        self._adx_trend_threshold = self.Param("AdxTrendThreshold", 41) \
             .SetDisplay("ADX Trend Threshold", "Trend threshold", "Indicators")
         self._atr_period = self.Param("AtrPeriod", 9) \
             .SetDisplay("ATR Period", "ATR period", "Indicators")

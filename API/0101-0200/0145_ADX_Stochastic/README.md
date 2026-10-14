@@ -7,7 +7,7 @@ Testing indicates an average annual return of about 172%. It performs best in th
 
 ADX highlights trend strength while Stochastic pinpoints pullbacks. Long or short signals appear when momentum turns while ADX stays high.
 
-It suits traders who combine trend following with oscillator timing. Protective ATR stops help control drawdowns.
+It suits traders who combine trend following with oscillator timing. A protective percent stop helps control drawdowns.
 
 ## Details
 
@@ -23,11 +23,11 @@ It suits traders who combine trend following with oscillator timing. Protective 
   - `AdxThreshold` = 25m
   - `StochPeriod` = 14
   - `StochK` = 3
-  - `StochD` = 3
   - `StochOversold` = 20m
   - `StochOverbought` = 80m
   - `StopLossPercent` = 2.0m
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    Bullish means +DI above -DI and bearish means -DI above +DI. StochK in the rules is %K: the stochastic over StochPeriod candles smoothed over StochK candles; %D plays no part, so it has no setting. An entry against an open position reverses it.
 - **Filters**:
   - Category: Mean reversion
   - Direction: Both

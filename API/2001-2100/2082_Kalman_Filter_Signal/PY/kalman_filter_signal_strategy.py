@@ -18,7 +18,7 @@ class kalman_filter_signal_strategy(Strategy):
             .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk")
         self._take_profit_pct = self.Param("TakeProfitPct", 3.0) \
             .SetDisplay("Take Profit %", "Take profit percentage", "Risk")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(3))) \
             .SetDisplay("Candle Type", "Timeframe for calculations", "General")
         self._prev_filter = None
         self._prev_signal = None

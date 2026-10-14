@@ -18,6 +18,7 @@ Ausstiege verlassen sich auf diesen Schutz-Stop und erfassen einen Teil der Bewe
 - **Standardwerte**:
   - `HmaPeriod` = 9
   - `AtrMultiplier` = 2 ATR
+    Der Stop liegt so viele ATR (Periode 14) jenseits des Tiefs der Einstiegskerze bei Long bzw. ihres Hochs bei Short und wird bei Kerzenschluss geprüft; eine Wende in die Gegenrichtung dreht die Position.
   - `CandleType` = 15 minute
 - **Filter**:
   - Kategorie: Trendfolge

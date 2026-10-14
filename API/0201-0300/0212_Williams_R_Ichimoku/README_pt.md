@@ -5,14 +5,14 @@ Esta configuração combina os extremos de momentum de Williams %R com a estrutu
 
 Os testes indicam um retorno anual médio de aproximadamente 73%. Funciona melhor no mercado de criptomoedas.
 
-Uma oportunidade de compra surge quando o oscilador cai abaixo de -80 enquanto o preço se mantém acima da nuvem e Tenkan-sen cruza acima de Kijun-sen. Um sinal de venda ocorre quando %R sobe acima de -20 com o preço abaixo da nuvem e Tenkan-sen abaixo de Kijun-sen. A posição permanece aberta até que o preço cruze o lado oposto da nuvem.
+Uma oportunidade de compra surge quando o oscilador cai abaixo de WilliamsROversold enquanto o preço se mantém acima da nuvem e Tenkan-sen está acima de Kijun-sen. Um sinal de venda ocorre quando %R sobe acima de WilliamsROverbought com o preço abaixo da nuvem e Tenkan-sen abaixo de Kijun-sen. A posição permanece aberta até que o preço cruze o lado oposto da nuvem.
 
-Como o método aguarda várias confirmações, é adequado para traders que preferem filtros de tendência claros em vez de reversões rápidas. Stops dinâmicos são definidos em torno do Kijun-sen para que o risco se ajuste com a força da tendência subjacente.
+Como o método aguarda várias confirmações, é adequado para traders que preferem filtros de tendência claros em vez de reversões rápidas. O lado oposto da nuvem funciona como stop dinâmico, de modo que o risco se ajusta com a tendência subjacente.
 
 ## Detalhes
 - **Critérios de entrada**:
-  - **Comprado**: %R < -80 && price above Ichimoku cloud and Tenkan-sen > Kijun-sen
-  - **Vendido**: %R > -20 && price below Ichimoku cloud and Tenkan-sen < Kijun-sen
+  - **Comprado**: %R < WilliamsROversold && price above Ichimoku cloud and Tenkan-sen > Kijun-sen
+  - **Vendido**: %R > WilliamsROverbought && price below Ichimoku cloud and Tenkan-sen < Kijun-sen
 - **Comprado/Vendido**: Ambos os lados.
 - **Critérios de saída**:
   - **Comprado**: Sair quando o preço cruzar abaixo da nuvem
@@ -20,10 +20,13 @@ Como o método aguarda várias confirmações, é adequado para traders que pref
 - **Stops**: Sim.
 - **Valores padrão**:
   - `WilliamsRPeriod` = 14
+  - `WilliamsROversold` = -80
+  - `WilliamsROverbought` = -20
   - `TenkanPeriod` = 9
   - `KijunPeriod` = 26
   - `SenkouSpanBPeriod` = 52
   - `CandleType` = TimeSpan.FromMinutes(15)
+    -80 e -20 são os valores padrão dos níveis de Williams %R citados nas regras. Uma compra é encerrada quando o preço fecha abaixo da nuvem e uma venda quando fecha acima. Um sinal de entrada contra uma posição aberta a inverte.
 - **Filtros**:
   - Categoria: Misto
   - Direção: Ambos

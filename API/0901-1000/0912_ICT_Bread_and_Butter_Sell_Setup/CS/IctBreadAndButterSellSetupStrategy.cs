@@ -1,12 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -15,10 +11,21 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// ICT Bread and Butter Sell-Setup strategy.
-/// Tracks session highs and lows and trades specific setups around them.
+/// Tracks the London (02:00-08:20 UTC), New York (08:20-16:00 UTC) and Asia (19:00-02:00 UTC) session ranges.
+/// NY short: during the NY session a bearish candle whose high exceeds the London session high.
+/// London close buy: between 10:30 and 13:00 a close below the London session low.
+/// Asia short: during the Asia session a close above the Asia session high so far.
+/// Every setup has its own stop loss and take profit in ticks; an opposite setup reverses the position.
 /// </summary>
 public class IctBreadAndButterSellSetupStrategy : Strategy
 {
+	private static readonly TimeSpan _londonStart = new(2, 0, 0);
+	private static readonly TimeSpan _nyStart = new(8, 20, 0);
+	private static readonly TimeSpan _nyEnd = new(16, 0, 0);
+	private static readonly TimeSpan _asiaStart = new(19, 0, 0);
+	private static readonly TimeSpan _londonCloseStart = new(10, 30, 0);
+	private static readonly TimeSpan _londonCloseEnd = new(13, 0, 0);
+
 	private readonly StrategyParam<int> _shortStopTicks;
 	private readonly StrategyParam<int> _shortTakeTicks;
 	private readonly StrategyParam<int> _buyStopTicks;
@@ -27,16 +34,14 @@ public class IctBreadAndButterSellSetupStrategy : Strategy
 	private readonly StrategyParam<int> _asiaTakeTicks;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _londonHigh;
-	private decimal _londonLow;
-	private decimal _nyHigh;
-	private decimal _nyLow;
-	private decimal _asiaHigh;
-	private decimal _asiaLow;
-
+	private decimal? _londonHigh;
+	private decimal? _londonLow;
+	private decimal? _asiaHigh;
 	private bool _inLondon;
-	private bool _inNy;
 	private bool _inAsia;
+
+	private decimal? _stopPrice;
+	private decimal? _takePrice;
 
 	/// <summary>
 	/// Stop loss ticks for NY short entry.
@@ -93,7 +98,7 @@ public class IctBreadAndButterSellSetupStrategy : Strategy
 	}
 
 	/// <summary>
-	/// The type of candles to use for strategy calculation.
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -107,42 +112,30 @@ public class IctBreadAndButterSellSetupStrategy : Strategy
 	public IctBreadAndButterSellSetupStrategy()
 	{
 		_shortStopTicks = Param(nameof(ShortStopTicks), 10)
-			.SetGreaterThanZero()
-			.SetDisplay("Short Stop Ticks", "Stop loss ticks for NY short entry", "Risk Management")
-			
-			.SetOptimize(5, 30, 5);
+			.SetNotNegative()
+			.SetDisplay("Short Stop Ticks", "Stop loss ticks for NY short entry", "Risk Management");
 
 		_shortTakeTicks = Param(nameof(ShortTakeTicks), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("Short Take Profit Ticks", "Take profit ticks for NY short entry", "Risk Management")
-			
-			.SetOptimize(10, 50, 5);
+			.SetNotNegative()
+			.SetDisplay("Short Take Profit Ticks", "Take profit ticks for NY short entry", "Risk Management");
 
 		_buyStopTicks = Param(nameof(BuyStopTicks), 10)
-			.SetGreaterThanZero()
-			.SetDisplay("Buy Stop Ticks", "Stop loss ticks for London close buy", "Risk Management")
-			
-			.SetOptimize(5, 30, 5);
+			.SetNotNegative()
+			.SetDisplay("Buy Stop Ticks", "Stop loss ticks for London close buy", "Risk Management");
 
 		_buyTakeTicks = Param(nameof(BuyTakeTicks), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("Buy Take Profit Ticks", "Take profit ticks for London close buy", "Risk Management")
-			
-			.SetOptimize(10, 50, 5);
+			.SetNotNegative()
+			.SetDisplay("Buy Take Profit Ticks", "Take profit ticks for London close buy", "Risk Management");
 
 		_asiaStopTicks = Param(nameof(AsiaStopTicks), 10)
-			.SetGreaterThanZero()
-			.SetDisplay("Asia Stop Ticks", "Stop loss ticks for Asia sell entry", "Risk Management")
-			
-			.SetOptimize(5, 30, 5);
+			.SetNotNegative()
+			.SetDisplay("Asia Stop Ticks", "Stop loss ticks for Asia sell entry", "Risk Management");
 
 		_asiaTakeTicks = Param(nameof(AsiaTakeTicks), 15)
-			.SetGreaterThanZero()
-			.SetDisplay("Asia Take Profit Ticks", "Take profit ticks for Asia sell entry", "Risk Management")
-			
-			.SetOptimize(5, 40, 5);
+			.SetNotNegative()
+			.SetDisplay("Asia Take Profit Ticks", "Take profit ticks for Asia sell entry", "Risk Management");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -156,12 +149,18 @@ public class IctBreadAndButterSellSetupStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		ResetState();
+	}
+
+	private void ResetState()
+	{
+		_londonHigh = null;
+		_londonLow = null;
+		_asiaHigh = null;
 		_inLondon = false;
-		_inNy = false;
 		_inAsia = false;
-		_londonHigh = _londonLow = 0m;
-		_nyHigh = _nyLow = 0m;
-		_asiaHigh = _asiaLow = 0m;
+		_stopPrice = null;
+		_takePrice = null;
 	}
 
 	/// <inheritdoc />
@@ -169,10 +168,19 @@ public class IctBreadAndButterSellSetupStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
+		ResetState();
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(ProcessCandle)
 			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -180,97 +188,96 @@ public class IctBreadAndButterSellSetupStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var time = candle.OpenTime;
-		var date = time.Date;
+		var tod = candle.OpenTime.TimeOfDay;
+		var high = candle.HighPrice;
+		var low = candle.LowPrice;
+		var close = candle.ClosePrice;
 
-		var sessionNyOpen = new DateTime(date.Year, date.Month, date.Day, 8, 20, 0);
-		var sessionLondon = new DateTime(date.Year, date.Month, date.Day, 2, 0, 0);
-		var sessionAsia = new DateTime(date.Year, date.Month, date.Day, 19, 0, 0);
-		var sessionEnd = new DateTime(date.Year, date.Month, date.Day, 16, 0, 0);
-		var londonCloseStart = new DateTime(date.Year, date.Month, date.Day, 10, 30, 0);
-		var londonCloseEnd = new DateTime(date.Year, date.Month, date.Day, 13, 0, 0);
+		var inLondon = tod >= _londonStart && tod < _nyStart;
+		var inNy = tod >= _nyStart && tod < _nyEnd;
+		var inAsia = tod >= _asiaStart || tod < _londonStart;
 
-		if (time >= sessionLondon && time < sessionNyOpen)
+		if (inLondon)
 		{
 			if (!_inLondon)
 			{
-				_londonHigh = candle.HighPrice;
-				_londonLow = candle.LowPrice;
-				_inLondon = true;
+				_londonHigh = high;
+				_londonLow = low;
 			}
 			else
 			{
-				_londonHigh = Math.Max(_londonHigh, candle.HighPrice);
-				_londonLow = Math.Min(_londonLow, candle.LowPrice);
+				_londonHigh = Math.Max(_londonHigh ?? high, high);
+				_londonLow = Math.Min(_londonLow ?? low, low);
 			}
 		}
-		else
+		_inLondon = inLondon;
+
+		// The Asia breakout is measured against the range before this candle.
+		var prevAsiaHigh = _inAsia && inAsia ? _asiaHigh : null;
+		if (inAsia)
+			_asiaHigh = prevAsiaHigh is decimal h ? Math.Max(h, high) : high;
+		_inAsia = inAsia;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (CheckExits(high, low))
+			return;
+
+		var step = Security?.PriceStep ?? 1m;
+		if (step <= 0)
+			step = 1m;
+
+		var nyShort = inNy && _londonHigh is decimal lh && high > lh && close < candle.OpenPrice;
+		var londonCloseBuy = tod >= _londonCloseStart && tod <= _londonCloseEnd && _londonLow is decimal ll && close < ll;
+		var asiaShort = inAsia && prevAsiaHigh is decimal ah && close > ah;
+
+		if (nyShort && Position >= 0)
 		{
-			_inLondon = false;
+			SellMarket(Volume + Math.Abs(Position));
+			SetLevels(close, false, ShortStopTicks * step, ShortTakeTicks * step);
 		}
-
-		if (time >= sessionNyOpen && time < sessionEnd)
+		else if (londonCloseBuy && Position <= 0)
 		{
-			if (!_inNy)
-			{
-				_nyHigh = candle.HighPrice;
-				_nyLow = candle.LowPrice;
-				_inNy = true;
-			}
-			else
-			{
-				_nyHigh = Math.Max(_nyHigh, candle.HighPrice);
-				_nyLow = Math.Min(_nyLow, candle.LowPrice);
-			}
+			BuyMarket(Volume + Math.Abs(Position));
+			SetLevels(close, true, BuyStopTicks * step, BuyTakeTicks * step);
 		}
-		else
+		else if (asiaShort && Position >= 0)
 		{
-			_inNy = false;
-		}
-
-		if (time >= sessionAsia && time < sessionLondon)
-		{
-			if (!_inAsia)
-			{
-				_asiaHigh = candle.HighPrice;
-				_asiaLow = candle.LowPrice;
-				_inAsia = true;
-			}
-			else
-			{
-				_asiaHigh = Math.Max(_asiaHigh, candle.HighPrice);
-				_asiaLow = Math.Min(_asiaLow, candle.LowPrice);
-			}
-		}
-		else
-		{
-			_inAsia = false;
-		}
-
-		var judasSwing = candle.HighPrice >= _londonHigh && time >= sessionNyOpen && time < sessionEnd;
-		var shortEntry = judasSwing && candle.ClosePrice < candle.OpenPrice;
-
-		if (shortEntry && Position >= 0)
-		{
-
-			SellMarket();
-		}
-
-		var londonCloseBuy = time >= londonCloseStart && time <= londonCloseEnd && candle.ClosePrice < _londonLow;
-
-		if (londonCloseBuy && Position <= 0)
-		{
-
-			BuyMarket();
-		}
-
-		var asiaSell = time >= sessionAsia && time < sessionLondon && candle.ClosePrice > _asiaHigh;
-
-		if (asiaSell && Position >= 0)
-		{
-
-			SellMarket();
+			SellMarket(Volume + Math.Abs(Position));
+			SetLevels(close, false, AsiaStopTicks * step, AsiaTakeTicks * step);
 		}
 	}
-}
 
+	private void SetLevels(decimal entry, bool isLong, decimal stop, decimal take)
+	{
+		_stopPrice = stop > 0 ? (isLong ? entry - stop : entry + stop) : null;
+		_takePrice = take > 0 ? (isLong ? entry + take : entry - take) : null;
+	}
+
+	private bool CheckExits(decimal high, decimal low)
+	{
+		if (Position > 0)
+		{
+			if ((_stopPrice is decimal sl && low <= sl) || (_takePrice is decimal tp && high >= tp))
+			{
+				SellMarket(Position);
+				_stopPrice = null;
+				_takePrice = null;
+				return true;
+			}
+		}
+		else if (Position < 0)
+		{
+			if ((_stopPrice is decimal sl && high >= sl) || (_takePrice is decimal tp && low <= tp))
+			{
+				BuyMarket(-Position);
+				_stopPrice = null;
+				_takePrice = null;
+				return true;
+			}
+		}
+
+		return false;
+	}
+}

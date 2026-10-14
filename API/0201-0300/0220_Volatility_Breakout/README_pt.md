@@ -20,7 +20,8 @@ Esta técnica atende traders intradia que prosperam com surtos de momentum. O us
 - **Stops**: Sim, stop-loss a `Multiplier * ATR` da entrada.
 - **Valores padrão**:
   - `Period` = 20
-  - `Multiplier` = 2.0m
+  - `Multiplier` = 2
+    O stop fica a Multiplier vezes o ATR de Period do fechamento de entrada e é verificado no fechamento dos candles. Um sinal de entrada contra uma posição aberta a inverte.
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **Filtros**:
   - Categoria: Rompimento

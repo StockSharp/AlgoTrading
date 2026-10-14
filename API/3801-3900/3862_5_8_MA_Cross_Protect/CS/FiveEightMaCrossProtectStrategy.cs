@@ -35,7 +35,7 @@ public class FiveEightMaCrossProtectStrategy : Strategy
 		_slowPeriod = Param(nameof(SlowPeriod), 8)
 			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 

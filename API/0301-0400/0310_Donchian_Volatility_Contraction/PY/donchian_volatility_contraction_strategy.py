@@ -27,7 +27,7 @@ class donchian_volatility_contraction_strategy(Strategy):
             .SetRange(2, 100) \
             .SetDisplay("ATR Period", "Period for the ATR", "Indicators")
 
-        self._volatility_factor = self.Param("VolatilityFactor", 0.8) \
+        self._volatility_factor = self.Param("VolatilityFactor", 2.0) \
             .SetRange(0.1, 5.0) \
             .SetDisplay("Volatility Factor", "Standard deviation multiplier for contraction detection", "Signals")
 

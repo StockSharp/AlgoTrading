@@ -23,6 +23,7 @@ Keltner通道提供突破信号，MACD动量用于过滤方向。适合寻求波
   - `MacdSignalPeriod` = 9
   - `AtrMultiplier` = 2m
   - `CandleType` = TimeSpan.FromMinutes(15).TimeFrame()
+    通道为EMA加减Multiplier倍ATR。止损位于距入场收盘价AtrMultiplier倍ATR处，按K线收盘检查。与持仓方向相反的入场信号会反转持仓。
 - **过滤器**:
   - 类别: Mean reversion
   - 方向: 双向

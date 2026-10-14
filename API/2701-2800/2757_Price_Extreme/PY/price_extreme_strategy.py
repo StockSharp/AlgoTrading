@@ -15,7 +15,7 @@ class price_extreme_strategy(Strategy):
     def __init__(self):
         super(price_extreme_strategy, self).__init__()
 
-        self._level_length = self.Param("LevelLength", 20)
+        self._level_length = self.Param("LevelLength", 5)
         self._signal_shift = self.Param("SignalShift", 1)
         self._enable_long = self.Param("EnableLong", True)
         self._enable_short = self.Param("EnableShort", True)

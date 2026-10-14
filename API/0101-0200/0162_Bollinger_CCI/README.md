@@ -16,15 +16,17 @@ Suitable for volatile markets where trends extend quickly. ATR stops are applied
   - Short: `Close > UpperBand && CCI > CciOverbought`
 - **Long/Short**: Both
 - **Exit Criteria**: Price returns to middle band
-- **Stops**: ATR-based using `StopLoss`
+- **Stops**: ATR-based using `StopLossAtr`
 - **Default Values**:
   - `BollingerPeriod` = 20
   - `BollingerDeviation` = 2.0m
   - `CciPeriod` = 20
   - `CciOversold` = -100m
   - `CciOverbought` = 100m
-  - `StopLoss` = new Unit(2, UnitTypes.Absolute)
+  - `StopLossAtr` = 2
+  - `AtrPeriod` = 14
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    The stop lies StopLossAtr ATRs (AtrPeriod) from the entry close and is checked on candle closes. An entry signal against an open position reverses it.
 - **Filters**:
   - Category: Mean reversion
   - Direction: Both

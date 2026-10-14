@@ -20,7 +20,7 @@ class sniper_jaw_strategy(Strategy):
         self._use_entry_to_exit = self.Param("UseEntryToExit", True).SetDisplay("Use Entry To Exit", "Close opposite before new trade", "Trading")
         self._sl_pips = self.Param("StopLossPips", 20).SetNotNegative().SetDisplay("Stop Loss (pips)", "SL distance", "Risk")
         self._tp_pips = self.Param("TakeProfitPips", 50).SetNotNegative().SetDisplay("Take Profit (pips)", "TP distance", "Risk")
-        self._minimum_bars = self.Param("MinimumBars", 1).SetGreaterThanZero().SetDisplay("Minimum Bars", "Required candles before trading", "Filters")
+        self._minimum_bars = self.Param("MinimumBars", 60).SetGreaterThanZero().SetDisplay("Minimum Bars", "Required candles before trading", "Filters")
         self._jaw_period = self.Param("JawPeriod", 13).SetGreaterThanZero().SetDisplay("Jaw Period", "Jaw SMA length", "Alligator")
         self._teeth_period = self.Param("TeethPeriod", 8).SetGreaterThanZero().SetDisplay("Teeth Period", "Teeth SMA length", "Alligator")
         self._lips_period = self.Param("LipsPeriod", 5).SetGreaterThanZero().SetDisplay("Lips Period", "Lips SMA length", "Alligator")

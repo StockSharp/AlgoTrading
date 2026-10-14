@@ -12,8 +12,8 @@ A flexible approach for those wanting smooth signals. ATR-based stops cap potent
 ## Details
 
 - **Entry Criteria**:
-  - Long: `HullMA turning up && StochK < 20`
-  - Short: `HullMA turning down && StochK > 80`
+  - Long: `HullMA turning up && StochK < StochOversold`
+  - Short: `HullMA turning down && StochK > StochOverbought`
 - **Long/Short**: Both
 - **Exit Criteria**:
   - Hull MA change of direction
@@ -22,9 +22,12 @@ A flexible approach for those wanting smooth signals. ATR-based stops cap potent
   - `HmaPeriod` = 9
   - `StochPeriod` = 14
   - `StochK` = 3
-  - `StochD` = 3
+  - `StochOversold` = 20
+  - `StochOverbought` = 80
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
-  - `StopLossAtr` = 2m
+  - `StopLossAtr` = 2
+  - `AtrPeriod` = 14
+    The Hull average turns up when it rises after falling and turns down when it falls after rising; a long closes when it falls and a short when it rises. %K is the stochastic over StochPeriod candles smoothed over StochK candles, and %D plays no part. The stop lies StopLossAtr ATRs (AtrPeriod) from the entry close and is checked on candle closes. An entry signal against an open position reverses it.
 - **Filters**:
   - Category: Mean reversion
   - Direction: Both

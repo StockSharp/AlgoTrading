@@ -18,7 +18,7 @@ class fxscalper_strategy(Strategy):
             .SetDisplay("BB Period", "Bollinger Bands length", "Indicators")
         self._bollinger_deviation = self.Param("BollingerDeviation", 2.0) \
             .SetDisplay("BB Width", "Bollinger Bands width", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Candle Type", "General")
         self._entry_price = 0.0
 

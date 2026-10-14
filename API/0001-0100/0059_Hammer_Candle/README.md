@@ -15,6 +15,8 @@ The system requires a lower shadow at least twice the body and little upper shad
 - **Stops**: Yes.
 - **Default Values**:
   - `CandleType` = TimeSpan.FromMinutes(5)
+  - `RewardRiskRatio` = 2m
+    The stop is the low of the hammer and the target lies RewardRiskRatio times that distance above the entry; both are checked on candle closes.
 - **Filters**:
   - Category: Pattern
   - Direction: Long

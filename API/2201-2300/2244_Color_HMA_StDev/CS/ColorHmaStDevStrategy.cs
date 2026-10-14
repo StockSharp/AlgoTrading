@@ -36,7 +36,7 @@ public class ColorHmaStDevStrategy : Strategy
 			.SetDisplay("StdDev Period", "Standard deviation period", "Indicators")
 			.SetOptimize(5, 20, 1);
 
-		_k1 = Param(nameof(K1), 0.5m)
+		_k1 = Param(nameof(K1), 1.5m)
 			.SetDisplay("Entry Multiplier", "Deviation multiplier for entry", "Parameters")
 			.SetOptimize(0.5m, 3m, 0.5m);
 

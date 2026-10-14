@@ -17,7 +17,7 @@ class close_by_equity_percent_strategy(Strategy):
 
         self._equity_percent = self.Param("EquityPercentFromBalance", 1.2) \
             .SetDisplay("Equity/Bal Multiplier", "Threshold multiplier for equity relative to balance", "Risk Management")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
             .SetDisplay("Candle Type", "Type of candles for periodic checks", "General")
 
         self._current_balance = 0.0

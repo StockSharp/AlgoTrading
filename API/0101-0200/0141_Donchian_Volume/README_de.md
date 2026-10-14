@@ -18,7 +18,10 @@ Stops werden kurz innerhalb des Kanals gesetzt, um gegen Fehlbewegungen zu schü
 - **Stops**: Ja, prozentbasiert
 - **Standardwerte**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `DonchianPeriod` = 20
+  - `VolumePeriod` = 20
+    Der Kanal umfasst das höchste Hoch und das tiefste Tief der vorherigen DonchianPeriod Kerzen. Ein Schluss außerhalb bei Volumen über dem Durchschnitt der vorherigen VolumePeriod Kerzen steigt in Ausbruchsrichtung ein und dreht eine Gegenposition. Die Position schließt, sobald der Kurs wieder im Kanal schließt oder das Volumen unter seinen Durchschnitt fällt; der Stop liegt StopLossPercent vom Einstiegspreis entfernt, knapp innerhalb der durchbrochenen Grenze.
 - **Filter**:
   - Kategorie: Ausbruch
   - Richtung: Beide

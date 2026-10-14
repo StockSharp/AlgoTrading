@@ -15,11 +15,11 @@ class super_take_strategy(Strategy):
     def __init__(self):
         super(super_take_strategy, self).__init__()
 
-        self._take_profit = self.Param("TakeProfit", 3000.0) \
+        self._take_profit = self.Param("TakeProfit", 10.0) \
             .SetDisplay("Take Profit", "Base take profit distance", "Risk")
-        self._stop_loss = self.Param("StopLoss", 5000.0) \
+        self._stop_loss = self.Param("StopLoss", 15.0) \
             .SetDisplay("Stop Loss", "Stop loss distance", "Risk")
-        self._martin_factor = self.Param("MartinFactor", 1.5) \
+        self._martin_factor = self.Param("MartinFactor", 1.8) \
             .SetDisplay("Martingale Factor", "Multiplier after losing trade", "Risk")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")

@@ -23,14 +23,14 @@ class rsi_with_option_open_interest_strategy(Strategy):
             .SetRange(5, 30) \
             .SetDisplay("RSI Period", "Period for RSI calculation", "Indicators")
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(2))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._oi_period = self.Param("OiPeriod", 20) \
             .SetRange(10, 50) \
             .SetDisplay("OI Period", "Period for open interest averaging", "Options")
 
-        self._oi_deviation_factor = self.Param("OiDeviationFactor", 2.5) \
+        self._oi_deviation_factor = self.Param("OiDeviationFactor", 2.0) \
             .SetRange(1.0, 4.0) \
             .SetDisplay("OI StdDev Factor", "Standard deviation multiplier for OI threshold", "Options")
 

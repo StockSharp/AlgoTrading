@@ -20,11 +20,11 @@ class bollinger_winner_lite_strategy(Strategy):
             .SetDisplay("Candle type", "Candle type for strategy calculation.", "General")
         self._bb_length = self.Param("BBLength", 20) \
             .SetDisplay("BB Period", "Bollinger Bands period", "Bollinger Bands")
-        self._bb_multiplier = self.Param("BBMultiplier", 1.5) \
+        self._bb_multiplier = self.Param("BBMultiplier", 2.0) \
             .SetDisplay("BB StdDev", "Bollinger Bands standard deviation multiplier", "Bollinger Bands")
         self._candle_percent = self.Param("CandlePercent", 30.0) \
             .SetDisplay("Candle %", "Candle percentage below/above the BB", "Strategy")
-        self._show_short = self.Param("ShowShort", True) \
+        self._show_short = self.Param("ShowShort", False) \
             .SetDisplay("Short entries", "Enable short entries", "Strategy")
         self._cooldown_bars = self.Param("CooldownBars", 10) \
             .SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk")

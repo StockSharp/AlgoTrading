@@ -15,8 +15,8 @@ class hth_trader_strategy(Strategy):
         super(hth_trader_strategy, self).__init__()
 
         self._trade_enabled = self.Param("TradeEnabled", True)
-        self._use_profit_target = self.Param("UseProfitTarget", True)
-        self._use_loss_limit = self.Param("UseLossLimit", True)
+        self._use_profit_target = self.Param("UseProfitTarget", False)
+        self._use_loss_limit = self.Param("UseLossLimit", False)
         self._profit_target_pips = self.Param("ProfitTargetPips", 80)
         self._loss_limit_pips = self.Param("LossLimitPips", 40)
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1)))

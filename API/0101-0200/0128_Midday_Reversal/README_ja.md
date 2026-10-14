@@ -18,7 +18,10 @@
 - **ストップ**: はい、パーセントベース
 - **デフォルト値**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `MiddayHour` = 12
+  - `AfternoonHour` = 16
+    市場は24時間取引のため、セッションはUTCの1日とします。 朝の値動きは、当日の始値からMiddayHourに終わる足の終値までの変化です。MiddayHourからAfternoonHourの間に、その動きと逆に引けた最初の足で一度だけ逆張りし、AfternoonHourにポジションを閉じます。
 - **フィルター**:
   - カテゴリ: イントラデイ
   - 方向: 両方

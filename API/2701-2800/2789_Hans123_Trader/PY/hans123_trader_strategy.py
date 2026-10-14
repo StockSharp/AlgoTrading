@@ -16,13 +16,13 @@ class hans123_trader_strategy(Strategy):
     def __init__(self):
         super(hans123_trader_strategy, self).__init__()
         self._order_volume = self.Param("OrderVolume", 0.1)
-        self._range_length = self.Param("RangeLength", 40)
+        self._range_length = self.Param("RangeLength", 80)
         self._stop_loss_pips = self.Param("StopLossPips", 50)
         self._take_profit_pips = self.Param("TakeProfitPips", 50)
         self._trailing_stop_pips = self.Param("TrailingStopPips", 10)
         self._trailing_step_pips = self.Param("TrailingStepPips", 5)
-        self._start_hour = self.Param("StartHour", 0)
-        self._end_hour = self.Param("EndHour", 24)
+        self._start_hour = self.Param("StartHour", 6)
+        self._end_hour = self.Param("EndHour", 10)
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(3)))
 
         self._highest = None

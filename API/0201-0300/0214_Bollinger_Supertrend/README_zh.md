@@ -20,10 +20,11 @@
 - **止损**: 通过Supertrend跟踪止损
 - **默认值**:
   - `BollingerPeriod` = 20
-  - `BollingerDeviation` = 2.0m
+  - `BollingerDeviation` = 2
   - `SupertrendPeriod` = 10
-  - `SupertrendMultiplier` = 3.0m
+  - `SupertrendMultiplier` = 3
   - `CandleType` = TimeSpan.FromMinutes(15)
+    价格收于Supertrend线下方时多头平仓，收于其上方时空头平仓。与持仓方向相反的入场信号会反转持仓。
 - **过滤器**:
   - 类别: Trend
   - 方向: 双向

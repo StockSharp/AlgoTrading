@@ -19,7 +19,9 @@ A percent-based stop defines the risk and positions close when momentum fades or
 - **Stops**: Yes, percent based
 - **Default Values**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `MinGapPercent` = 0.02
+    A gap is an open at least MinGapPercent away from the previous candle's close; the market trades around the clock, so gaps are measured between consecutive candles. The gap is filled when the same candle trades back to that close, and the opposite signal reverses the position.
+  - `StopLossPercent` = 2
 - **Filters**:
   - Category: Pattern
   - Direction: Both

@@ -19,9 +19,10 @@ Der Ansatz ist für Intraday-Trader konzipiert, die erwarten, dass die Preise um
   - **Short**: Ausstieg wenn close <= VWAP
 - **Stops**: Ja, ATR-basierter Stop.
 - **Standardwerte**:
-  - `K` = 2.0m
+  - `K` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
   - `AtrPeriod` = 14
+    Der Markt handelt rund um die Uhr, daher beginnt der Sitzungs-VWAP mit jedem UTC-Tag neu und gewichtet den typischen Preis jeder Kerze mit ihrem Volumen. Der Stop liegt K mal die ATR über AtrPeriod vom Einstiegsschluss entfernt und wird bei Kerzenschluss geprüft. Ein Einstiegssignal gegen eine offene Position dreht sie.
 - **Filter**:
   - Kategorie: Mean Reversion
   - Richtung: Beide

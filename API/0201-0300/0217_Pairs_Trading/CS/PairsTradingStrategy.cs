@@ -1,22 +1,21 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
-	
+
 /// <summary>
-/// Statistical Pairs Trading strategy.
-/// Trades the spread between two correlated assets, entering positions when
-/// the spread deviates significantly from its mean.
+/// Pairs trading strategy.
+/// The spread is the first instrument's close minus the second's on candles of the same time. A spread more than DeviationMultiplier
+/// standard deviations below the mean of the last LookbackPeriod spreads buys the first instrument and sells the second, one more than
+/// that above it does the opposite, reversing an opposite pair. Both legs close once the spread returns to the mean, or once it moves
+/// StopLossPercent of its entry value against the pair.
 /// </summary>
 public class PairsTradingStrategy : Strategy
 {
@@ -26,48 +25,49 @@ public class PairsTradingStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<Security> _secondSecurity;
 
-	private SimpleMovingAverage _spreadMA;
-	private StandardDeviation _spreadStdDev;
-	
-	private decimal _spread;
-	private decimal _lastSecondPrice;
+	private readonly Dictionary<DateTime, decimal> _firstCloses = [];
+	private readonly Dictionary<DateTime, decimal> _secondCloses = [];
+	private readonly Queue<decimal> _spreads = [];
+	// 1 while long the spread, -1 while short it, 0 while flat.
+	private int _side;
+	private decimal _entrySpread;
 
 	/// <summary>
-	/// Period for calculating mean and standard deviation of the spread.
+	/// Number of spreads the mean and standard deviation are measured over.
 	/// </summary>
 	public int LookbackPeriod
 	{
 		get => _lookbackPeriod.Value;
 		set => _lookbackPeriod.Value = value;
 	}
-	
+
 	/// <summary>
-	/// Number of standard deviations for entry signals.
+	/// Standard deviations between the mean and an entry level.
 	/// </summary>
 	public decimal DeviationMultiplier
 	{
 		get => _deviationMultiplier.Value;
 		set => _deviationMultiplier.Value = value;
 	}
-	
+
 	/// <summary>
-	/// Stop-loss percentage parameter.
+	/// Adverse spread move, in percent of the entry spread, that closes the pair.
 	/// </summary>
 	public decimal StopLossPercent
 	{
 		get => _stopLossPercent.Value;
 		set => _stopLossPercent.Value = value;
 	}
-	
+
 	/// <summary>
-	/// Candle type parameter.
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
-	
+
 	/// <summary>
 	/// Second security in the pair.
 	/// </summary>
@@ -76,7 +76,7 @@ public class PairsTradingStrategy : Strategy
 		get => _secondSecurity.Value;
 		set => _secondSecurity.Value = value;
 	}
-	
+
 	/// <summary>
 	/// Constructor.
 	/// </summary>
@@ -84,49 +84,35 @@ public class PairsTradingStrategy : Strategy
 	{
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Lookback Period", "Period for calculating spread mean and standard deviation", "Parameters")
-			
-			.SetOptimize(10, 40, 5);
-			
-		_deviationMultiplier = Param(nameof(DeviationMultiplier), 2.0m)
+			.SetDisplay("Lookback Period", "Spreads the mean and standard deviation are measured over", "Parameters");
+
+		_deviationMultiplier = Param(nameof(DeviationMultiplier), 2m)
 			.SetGreaterThanZero()
-			.SetDisplay("Deviation Multiplier", "Number of standard deviations for entry signals", "Parameters")
-			
-			.SetOptimize(1.5m, 3.0m, 0.5m);
-			
+			.SetDisplay("Deviation Multiplier", "Standard deviations between the mean and an entry level", "Parameters");
+
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop-loss %", "Stop-loss as percentage of spread at entry", "Risk Management")
-			
-			.SetOptimize(1m, 3m, 0.5m);
-			
+			.SetNotNegative()
+			.SetDisplay("Stop-loss %", "Adverse spread move in percent of the entry spread", "Risk Management");
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-			
+
 		_secondSecurity = Param<Security>(nameof(SecondSecurity))
 			.SetDisplay("Second Security", "Second security in the pair", "General")
 			.SetRequired();
 	}
-	
+
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		return
-		[
-			(Security, CandleType),
-			(SecondSecurity, CandleType)
-		];
+		return [(Security, CandleType), (SecondSecurity, CandleType)];
 	}
-	
+
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_spreadMA = null;
-		_spreadStdDev = null;
-		_spread = 0;
-		_lastSecondPrice = 0;
+		ResetState();
 	}
 
 	/// <inheritdoc />
@@ -136,114 +122,106 @@ public class PairsTradingStrategy : Strategy
 
 		if (SecondSecurity == null)
 			throw new InvalidOperationException("Second security is not specified.");
-		
-		// Initialize indicators
-		_spreadMA = new() { Length = LookbackPeriod };
-		_spreadStdDev = new StandardDeviation { Length = LookbackPeriod };
-		
-		// Create subscriptions for both securities
-		var firstSecuritySubscription = SubscribeCandles(CandleType);
-		var secondSecuritySubscription = SubscribeCandles(CandleType, security: SecondSecurity);
-		
-		// Bind to first security candles
-		firstSecuritySubscription
-			.Bind(ProcessFirstSecurityCandle)
-			.Start();
-		
-		// Bind to second security candles
-		secondSecuritySubscription
-			.Bind(ProcessSecondSecurityCandle)
-			.Start();
-		
-		// Enable position protection with stop-loss
-		StartProtection(
-			takeProfit: new Unit(0, UnitTypes.Absolute), // No take-profit
-			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent) // Stop-loss as percentage
-		);
-		
-		// Setup chart if available
+
+		ResetState();
+
+		var firstSubscription = SubscribeCandles(CandleType);
+		firstSubscription.Bind(candle => ProcessCandle(candle, _firstCloses)).Start();
+
+		var secondSubscription = SubscribeCandles(CandleType, security: SecondSecurity);
+		secondSubscription.Bind(candle => ProcessCandle(candle, _secondCloses)).Start();
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
-			DrawCandles(area, firstSecuritySubscription);
+			DrawCandles(area, firstSubscription);
 			DrawOwnTrades(area);
 		}
 	}
-	
-	private void ProcessFirstSecurityCandle(ICandleMessage candle)
+
+	private void ResetState()
 	{
-		// Skip if we don't have price for the second security yet
-		if (_lastSecondPrice == 0)
+		_firstCloses.Clear();
+		_secondCloses.Clear();
+		_spreads.Clear();
+		_side = 0;
+		_entrySpread = 0;
+	}
+
+	private void ProcessCandle(ICandleMessage candle, Dictionary<DateTime, decimal> closes)
+	{
+		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Calculate the spread: Asset1 - Asset2
-		_spread = candle.ClosePrice - _lastSecondPrice;
-		
-		// Process the spread through indicators
-		var maValue = _spreadMA.Process(new DecimalIndicatorValue(_spreadMA, _spread, candle.ServerTime) { IsFinal = true });
-		var stdDevValue = _spreadStdDev.Process(new DecimalIndicatorValue(_spreadStdDev, _spread, candle.ServerTime) { IsFinal = true });
-		
-		// Skip until indicators are formed
-		if (!_spreadMA.IsFormed || !_spreadStdDev.IsFormed)
+		closes[candle.OpenTime] = candle.ClosePrice;
+
+		// The spread needs both instruments' candles of the same time, whichever arrives last.
+		if (!_firstCloses.TryGetValue(candle.OpenTime, out var first) || !_secondCloses.TryGetValue(candle.OpenTime, out var second))
 			return;
-		
-		decimal spreadMean = maValue.ToDecimal();
-		decimal spreadStdDev = stdDevValue.ToDecimal();
-		
-		// Calculate entry thresholds
-		decimal upperThreshold = spreadMean + (spreadStdDev * DeviationMultiplier);
-		decimal lowerThreshold = spreadMean - (spreadStdDev * DeviationMultiplier);
-		
-		// Trading logic
-		if (_spread < lowerThreshold)
+
+		foreach (var stale in _firstCloses.Keys.Where(t => t <= candle.OpenTime).ToArray())
+			_firstCloses.Remove(stale);
+
+		foreach (var stale in _secondCloses.Keys.Where(t => t <= candle.OpenTime).ToArray())
+			_secondCloses.Remove(stale);
+
+		var spread = first - second;
+
+		_spreads.Enqueue(spread);
+
+		if (_spreads.Count > LookbackPeriod)
+			_spreads.Dequeue();
+
+		if (_spreads.Count < LookbackPeriod)
+			return;
+
+		var mean = _spreads.Average();
+		var deviation = (decimal)Math.Sqrt((double)_spreads.Average(s => (s - mean) * (s - mean)));
+		var upper = mean + DeviationMultiplier * deviation;
+		var lower = mean - DeviationMultiplier * deviation;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		var stopDistance = Math.Abs(_entrySpread) * StopLossPercent / 100;
+
+		if (spread < lower && _side <= 0)
 		{
-			// Spread is below lower threshold: 
-			// Buy Asset1 (Security), Sell Asset2 (SecondSecurity)
-			if (Position <= 0)
-			{
-				// Close any existing position and enter new position
-				BuyMarket(Volume + Math.Abs(Position));
-				LogInfo($"Long Signal: Spread({_spread:F4}) < Lower Threshold({lowerThreshold:F4})");
-				
-				// Note: In a real implementation, you would also place a sell order
-				// for the second security here, using a different strategy instance or connector
-			}
+			MoveLegs(1);
+			_entrySpread = spread;
 		}
-		else if (_spread > upperThreshold)
+		else if (spread > upper && _side >= 0)
 		{
-			// Spread is above upper threshold:
-			// Sell Asset1 (Security), Buy Asset2 (SecondSecurity)
-			if (Position >= 0)
-			{
-				// Close any existing position and enter new position
-				SellMarket(Volume + Math.Abs(Position));
-				LogInfo($"Short Signal: Spread({_spread:F4}) > Upper Threshold({upperThreshold:F4})");
-				
-				// Note: In a real implementation, you would also place a buy order
-				// for the second security here, using a different strategy instance or connector
-			}
+			MoveLegs(-1);
+			_entrySpread = spread;
 		}
-		else if ((_spread > spreadMean && Position > 0) || 
-				(_spread < spreadMean && Position < 0))
+		else if (_side > 0 && (spread >= mean || (StopLossPercent > 0 && spread <= _entrySpread - stopDistance)))
 		{
-			// Exit signals: Spread returned to the mean
-			if (Position > 0)
-			{
-				SellMarket(Math.Abs(Position));
-				LogInfo($"Exit Long: Spread({_spread:F4}) > Mean({spreadMean:F4})");
-			}
-			else if (Position < 0)
-			{
-				BuyMarket(Math.Abs(Position));
-				LogInfo($"Exit Short: Spread({_spread:F4}) < Mean({spreadMean:F4})");
-			}
+			MoveLegs(0);
+		}
+		else if (_side < 0 && (spread <= mean || (StopLossPercent > 0 && spread >= _entrySpread + stopDistance)))
+		{
+			MoveLegs(0);
 		}
 	}
-	
-	private void ProcessSecondSecurityCandle(ICandleMessage candle)
+
+	private void MoveLegs(int side)
 	{
-		// Store the close price of the second security for spread calculation
-		_lastSecondPrice = candle.ClosePrice;
+		_side = side;
+
+		// Long the spread holds the first instrument and is short the second, each by Volume.
+		var firstChange = side * Volume - Position;
+
+		if (firstChange > 0)
+			BuyMarket(firstChange);
+		else if (firstChange < 0)
+			SellMarket(-firstChange);
+
+		var secondChange = -side * Volume - (GetPositionValue(SecondSecurity, Portfolio) ?? 0m);
+
+		if (secondChange > 0)
+			BuyMarket(secondChange, SecondSecurity);
+		else if (secondChange < 0)
+			SellMarket(-secondChange, SecondSecurity);
 	}
 }
-	

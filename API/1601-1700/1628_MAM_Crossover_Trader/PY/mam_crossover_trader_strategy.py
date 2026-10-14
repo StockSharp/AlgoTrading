@@ -18,7 +18,7 @@ class mam_crossover_trader_strategy(Strategy):
             .SetDisplay("Fast Period", "Fast SMA period", "Indicators")
         self._slow_period = self.Param("SlowPeriod", 20) \
             .SetDisplay("Slow Period", "Slow SMA period", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
         self._prev_diff = 0.0
 

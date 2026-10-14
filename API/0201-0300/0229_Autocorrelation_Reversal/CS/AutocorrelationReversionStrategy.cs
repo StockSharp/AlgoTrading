@@ -1,10 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,9 +12,11 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that trades based on price autocorrelation.
-/// Buys when autocorrelation is negative and price is below average.
-/// Sells when autocorrelation is negative and price is above average.
+/// Autocorrelation Reversal strategy.
+/// The autocorrelation is the lag-one autocorrelation of the close-to-close changes over the last AutoCorrPeriod closes. Below
+/// AutoCorrThreshold a close under the AutoCorrPeriod simple moving average goes long and a close above it goes short, reversing an opposite
+/// position. A long closes once the close is above the average or the autocorrelation rises above the threshold, a short mirrors it,
+/// and a percent stop limits the loss.
 /// </summary>
 public class AutocorrelationReversionStrategy : Strategy
 {
@@ -25,13 +25,10 @@ public class AutocorrelationReversionStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage _sma;
-	private decimal _currentPrice;
-	private readonly Queue<decimal> _priceHistory = [];
-	private decimal _latestAutocorrelation;
+	private readonly Queue<decimal> _closes = [];
 
 	/// <summary>
-	/// Period for autocorrelation calculation.
+	/// Closes the autocorrelation and the average span.
 	/// </summary>
 	public int AutoCorrPeriod
 	{
@@ -40,7 +37,7 @@ public class AutocorrelationReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Autocorrelation threshold for signal generation.
+	/// Autocorrelation below which the market reverts.
 	/// </summary>
 	public decimal AutoCorrThreshold
 	{
@@ -49,7 +46,7 @@ public class AutocorrelationReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Stop-loss percentage.
+	/// Stop loss percentage from entry price.
 	/// </summary>
 	public decimal StopLossPercent
 	{
@@ -58,7 +55,7 @@ public class AutocorrelationReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Type of candles to use.
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -72,22 +69,18 @@ public class AutocorrelationReversionStrategy : Strategy
 	public AutocorrelationReversionStrategy()
 	{
 		_autoCorrPeriod = Param(nameof(AutoCorrPeriod), 20)
-			.SetDisplay("Autocorrelation period", "Period for autocorrelation calculation", "Strategy parameters")
-			
-			.SetOptimize(10, 30, 5);
+			.SetGreaterThanZero()
+			.SetDisplay("Autocorrelation Period", "Closes the autocorrelation and the average span", "Indicators");
 
 		_autoCorrThreshold = Param(nameof(AutoCorrThreshold), -0.3m)
-			.SetDisplay("Autocorr threshold", "Threshold for autocorrelation signals", "Strategy parameters")
-			
-			.SetOptimize(-0.5m, -0.1m, 0.1m);
+			.SetDisplay("Autocorrelation Threshold", "Autocorrelation below which the market reverts", "Indicators");
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-			.SetDisplay("Stop-loss %", "Stop-loss as percentage from entry price", "Risk management")
-			
-			.SetOptimize(1m, 3m, 0.5m);
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle type", "Type of candles to use", "General");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -100,10 +93,7 @@ public class AutocorrelationReversionStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_priceHistory.Clear();
-		_latestAutocorrelation = default;
-		_currentPrice = default;
+		_closes.Clear();
 	}
 
 	/// <inheritdoc />
@@ -111,109 +101,92 @@ public class AutocorrelationReversionStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Initialize the SMA indicator (using same period as autocorrelation for simplicity)
-		_sma = new SMA { Length = AutoCorrPeriod };
+		_closes.Clear();
 
-		// Create a subscription to candlesticks
+		var sma = new SimpleMovingAverage { Length = AutoCorrPeriod };
+
 		var subscription = SubscribeCandles(CandleType);
-
-		// Subscribe to candle processing
 		subscription
-			.Bind(_sma, ProcessCandle)
+			.BindEx(sma, ProcessCandle)
 			.Start();
 
-		// Start position protection
-		StartProtection(
-			new Unit(StopLossPercent, UnitTypes.Percent),
-			new Unit(StopLossPercent * 1.5m, UnitTypes.Percent));
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
 
-		// Setup chart if available
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _sma);
+			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
 	{
-		// Skip unfinished candles
+		// The high-level handler activates native protection before this callback, also between signal bars.
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue smaValue)
+	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Update current price and price history
-		_currentPrice = candle.ClosePrice;
-		
-		// Update price history queue
-		_priceHistory.Enqueue(_currentPrice);
-		if (_priceHistory.Count > AutoCorrPeriod)
-			_priceHistory.Dequeue();
+		var close = candle.ClosePrice;
 
-		// Wait until we have enough data
-		if (_priceHistory.Count < AutoCorrPeriod)
+		_closes.Enqueue(close);
+
+		if (_closes.Count > AutoCorrPeriod)
+			_closes.Dequeue();
+
+		if (_closes.Count < AutoCorrPeriod || !smaValue.IsFormed)
 			return;
 
-		// Check if strategy is ready to trade
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Calculate autocorrelation
-		_latestAutocorrelation = CalculateAutocorrelation();
+		var autocorrelation = CalculateAutocorrelation();
+		var sma = smaValue.GetValue<decimal>();
+		var reverting = autocorrelation < AutoCorrThreshold;
 
-		// Log the autocorrelation value
-		LogInfo($"Autocorrelation: {_latestAutocorrelation}, Current price: {_currentPrice}, SMA: {smaValue}");
-
-		// Trading logic: Look for negative autocorrelation below threshold
-		if (_latestAutocorrelation < AutoCorrThreshold)
-		{
-			// Price below average - buy signal
-			if (_currentPrice < smaValue && Position <= 0)
-			{
-				BuyMarket(Volume);
-				LogInfo($"Buy signal: Autocorr={_latestAutocorrelation}, Price={_currentPrice}, SMA={smaValue}");
-			}
-			// Price above average - sell signal
-			else if (_currentPrice > smaValue && Position >= 0)
-			{
-				SellMarket(Volume + Math.Abs(Position));
-				LogInfo($"Sell signal: Autocorr={_latestAutocorrelation}, Price={_currentPrice}, SMA={smaValue}");
-			}
-		}
+		if (reverting && close < sma && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (reverting && close > sma && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
+		else if (Position > 0 && (close > sma || autocorrelation > AutoCorrThreshold))
+			SellMarket(Position);
+		else if (Position < 0 && (close < sma || autocorrelation > AutoCorrThreshold))
+			BuyMarket(-Position);
 	}
 
 	private decimal CalculateAutocorrelation()
 	{
-		// Convert queue to array for easier calculation
-		decimal[] prices = [.. _priceHistory];
-		
-		// Calculate price changes
-		decimal[] priceChanges = new decimal[prices.Length - 1];
-		for (int i = 0; i < prices.Length - 1; i++)
+		var closes = _closes.ToArray();
+		var changes = new decimal[closes.Length - 1];
+
+		for (var i = 1; i < closes.Length; i++)
+			changes[i - 1] = closes[i] - closes[i - 1];
+
+		var mean = changes.Average();
+		var numerator = 0m;
+		var denominator = 0m;
+
+		for (var i = 0; i < changes.Length; i++)
 		{
-			priceChanges[i] = prices[i + 1] - prices[i];
+			var deviation = changes[i] - mean;
+			denominator += deviation * deviation;
+
+			if (i > 0)
+				numerator += (changes[i - 1] - mean) * deviation;
 		}
 
-		// Calculate autocorrelation of lag 1
-		decimal meanChange = priceChanges.Average();
-		
-		decimal numerator = 0;
-		decimal denominator = 0;
-		
-		for (int i = 0; i < priceChanges.Length - 1; i++)
-		{
-			decimal deviation1 = priceChanges[i] - meanChange;
-			decimal deviation2 = priceChanges[i + 1] - meanChange;
-			
-			numerator += deviation1 * deviation2;
-			denominator += deviation1 * deviation1;
-		}
-		
-		// Guard against division by zero
-		if (denominator == 0)
-			return 0;
-			
-		return numerator / denominator;
+		return denominator == 0 ? 0 : numerator / denominator;
 	}
 }

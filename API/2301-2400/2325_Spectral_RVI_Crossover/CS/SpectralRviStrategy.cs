@@ -36,7 +36,7 @@ public class SpectralRviStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("RVI Length", "Length for RVI", "General");
 
-		_smoothLength = Param(nameof(SmoothLength), 10)
+		_smoothLength = Param(nameof(SmoothLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Smooth Length", "Smoothing length", "General");
 

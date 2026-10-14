@@ -26,6 +26,7 @@ Hull移動平均はノイズを平滑化し、出来高の増加が確信を確�
   - `StopLossAtr` = 2.0m
   - `AtrPeriod` = 14
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    AvgVolumeは直前VolumePeriod本の平均出来高です。保有ポジションと逆方向のエントリーシグナルはドテンになります。ストップは足の終値で判定します。
 - **フィルター**:
   - カテゴリ: ブレイクアウト
   - 方向: 両方

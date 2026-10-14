@@ -18,7 +18,14 @@ Ein prozentualer Stop begrenzt das Risiko, falls die Mean Reversion ausbleibt.
 - **Stops**: Ja, prozentbasiert
 - **Standardwerte**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `BollingerPeriod` = 20
+  - `BollingerDeviation` = 2
+  - `StochPeriod` = 14
+  - `StochDPeriod` = 3
+  - `StochOversold` = 20
+  - `StochOverbought` = 80
+    Eine Kerze, deren Tief das untere Band berührt, während Stochastik-%K unter StochOversold liegt, eröffnet einen Long; eine Kerze, deren Hoch das obere Band berührt, während %K über StochOverbought liegt, einen Short. Ein Gegensignal dreht die Position.
 - **Filter**:
   - Kategorie: Mean Reversion
   - Richtung: Beide

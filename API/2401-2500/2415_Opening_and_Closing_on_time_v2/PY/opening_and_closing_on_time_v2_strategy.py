@@ -22,11 +22,11 @@ class opening_and_closing_on_time_v2_strategy(Strategy):
         self._open_hour = self.Param("OpenHour", 2)
         self._close_hour = self.Param("CloseHour", 14)
         self._trade_mode = self.Param("TradeMode", 2)
-        self._slow_period = self.Param("SlowPeriod", 20)
-        self._fast_period = self.Param("FastPeriod", 5)
+        self._slow_period = self.Param("SlowPeriod", 200)
+        self._fast_period = self.Param("FastPeriod", 50)
         self._stop_loss = self.Param("StopLoss", 1000.0)
         self._take_profit = self.Param("TakeProfit", 2000.0)
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5)))
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1)))
 
         self._prev_slow = 0.0
         self._prev_fast = 0.0

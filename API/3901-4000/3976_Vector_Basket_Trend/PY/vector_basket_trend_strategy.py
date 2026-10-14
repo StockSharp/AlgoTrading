@@ -16,7 +16,7 @@ class vector_basket_trend_strategy(Strategy):
         super(vector_basket_trend_strategy, self).__init__()
         self._tp = self.Param("TakeProfitPoints", 500).SetDisplay("Take Profit", "TP distance", "Risk")
         self._sl = self.Param("StopLossPoints", 300).SetDisplay("Stop Loss", "SL distance", "Risk")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Timeframe", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))).SetDisplay("Candle Type", "Timeframe", "General")
 
     @property
     def CandleType(self): return self._candle_type.Value

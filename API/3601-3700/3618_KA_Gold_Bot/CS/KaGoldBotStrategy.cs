@@ -63,7 +63,7 @@ public class KaGoldBotStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe", "General");
 
-		_keltnerPeriod = Param(nameof(KeltnerPeriod), 20)
+		_keltnerPeriod = Param(nameof(KeltnerPeriod), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Keltner Period", "EMA period for Keltner channel center", "Indicators");
 
@@ -71,7 +71,7 @@ public class KaGoldBotStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Short Period", "Short EMA for crossover signal", "Indicators");
 
-		_emaLongPeriod = Param(nameof(EmaLongPeriod), 50)
+		_emaLongPeriod = Param(nameof(EmaLongPeriod), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Long Period", "Long EMA for crossover signal", "Indicators");
 	}

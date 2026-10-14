@@ -4,29 +4,27 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import SimpleMovingAverage
+from System import TimeSpan, Math, Decimal
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, Level1Fields
+from StockSharp.BusinessEntities import Subscription
 from StockSharp.Algo.Strategies import Strategy
 
 class gap_fill_reversal_strategy(Strategy):
     """
     Gap Fill Reversal strategy.
-    Enters when a gap between candles is followed by a reversal candle.
-    Gap up + bearish candle = short, gap down + bullish candle = long.
-    Uses SMA for exit confirmation.
+    A gap is an open at least MinGapPercent away from the previous close. When the same candle trades back to the previous close,
+    filling the gap, the position turns against the gap: short after a gap up, long after a gap down. A percent stop limits the loss.
     """
 
     def __init__(self):
         super(gap_fill_reversal_strategy, self).__init__()
-        self._min_gap_percent = self.Param("MinGapPercent", 0.02).SetDisplay("Min Gap %", "Minimum gap size percentage", "Trading")
-        self._ma_length = self.Param("MaLength", 20).SetDisplay("MA Length", "Period of SMA for exit", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Type of candles to use", "General")
-        self._cooldown_bars = self.Param("CooldownBars", 500).SetDisplay("Cooldown Bars", "Bars to wait between trades", "General")
+        self._min_gap_percent = self.Param("MinGapPercent", 0.02).SetGreaterThanZero().SetDisplay("Min Gap %", "Minimum gap between the previous close and the open", "Pattern")
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0).SetNotNegative().SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))).SetDisplay("Candle Type", "Type of candles to use", "General")
 
-        self._prev_candle = None
-        self._cooldown = 0
+        self._prev_close = None
 
     @property
     def candle_type(self):
@@ -34,79 +32,50 @@ class gap_fill_reversal_strategy(Strategy):
 
     def OnReseted(self):
         super(gap_fill_reversal_strategy, self).OnReseted()
-        self._prev_candle = None
-        self._cooldown = 0
+        self._prev_close = None
 
     def OnStarted2(self, time):
         super(gap_fill_reversal_strategy, self).OnStarted2(time)
 
-        self._prev_candle = None
-        self._cooldown = 0
-
-        sma = SimpleMovingAverage()
-        sma.Length = self._ma_length.Value
+        self._prev_close = None
 
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(sma, self._process_candle).Start()
+        subscription.Bind(self._process_candle).Start()
+
+        self.StartProtection(Unit(), Unit(Decimal(self._stop_loss_percent.Value), UnitTypes.Percent), useMarketOrders=True, isLocalStop=True)
+
+        # The stop has to see prices between candles, not only at their close.
+        for field in (Level1Fields.BestBidPrice, Level1Fields.BestAskPrice):
+            quotes = Subscription(DataType.Level1, self.Security)
+            quotes.MarketData.BuildField = field
+            self.SubscribeLevel1(quotes).Bind(self._observe_protection_quote).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, sma)
             self.DrawOwnTrades(area)
 
-    def _process_candle(self, candle, sma_val):
+    def _observe_protection_quote(self, quote):
+        # The high-level handler activates native protection before the callback, including between bars.
+        pass
+
+    def _process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
 
-        if self._prev_candle is None:
-            self._prev_candle = candle
+        prev_close = self._prev_close
+        self._prev_close = candle.ClosePrice
+
+        if prev_close is None or prev_close <= 0 or not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        if self._cooldown > 0:
-            self._cooldown -= 1
-            self._prev_candle = candle
-            return
+        gap = (candle.OpenPrice - prev_close) / prev_close * Decimal(100)
+        min_gap = Decimal(self._min_gap_percent.Value)
 
-        prev_close = float(self._prev_candle.ClosePrice)
-        open_price = float(candle.OpenPrice)
-
-        # Gap detection
-        gap_up = open_price > prev_close
-        gap_down = open_price < prev_close
-
-        gap_percent = 0.0
-        if gap_up and prev_close > 0:
-            gap_percent = (open_price - prev_close) / prev_close * 100.0
-        elif gap_down and prev_close > 0:
-            gap_percent = (prev_close - open_price) / prev_close * 100.0
-
-        is_bearish = candle.ClosePrice < candle.OpenPrice
-        is_bullish = candle.ClosePrice > candle.OpenPrice
-
-        sv = float(sma_val)
-        cd = self._cooldown_bars.Value
-        min_gap = self._min_gap_percent.Value
-
-        if gap_percent >= min_gap:
-            # Gap down + bullish reversal = long
-            if self.Position == 0 and gap_down and is_bullish:
-                self.BuyMarket()
-                self._cooldown = cd
-            # Gap up + bearish reversal = short
-            elif self.Position == 0 and gap_up and is_bearish:
-                self.SellMarket()
-                self._cooldown = cd
-
-        # Exit on SMA cross
-        if self.Position > 0 and float(candle.ClosePrice) < sv:
-            self.SellMarket()
-            self._cooldown = cd
-        elif self.Position < 0 and float(candle.ClosePrice) > sv:
-            self.BuyMarket()
-            self._cooldown = cd
-
-        self._prev_candle = candle
+        if gap >= min_gap and candle.LowPrice <= prev_close and self.Position >= 0:
+            self.SellMarket(self.Volume + Math.Abs(self.Position))
+        elif -gap >= min_gap and candle.HighPrice >= prev_close and self.Position <= 0:
+            self.BuyMarket(self.Volume + Math.Abs(self.Position))
 
     def CreateClone(self):
         return gap_fill_reversal_strategy()

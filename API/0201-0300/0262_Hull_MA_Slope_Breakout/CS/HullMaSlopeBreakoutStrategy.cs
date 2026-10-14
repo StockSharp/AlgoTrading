@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,30 +11,24 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on Hull Moving Average Slope breakout
-/// Enters positions when the slope of Hull MA exceeds average slope plus a multiple of standard deviation
+/// Hull Moving Average slope breakout.
+/// Enters in the direction of the slope when it exceeds its average by a standard deviation multiplier
+/// and exits when the slope returns to its average.
 /// </summary>
 public class HullMaSlopeBreakoutStrategy : Strategy
 {
 	private readonly StrategyParam<int> _hullLength;
 	private readonly StrategyParam<int> _lookbackPeriod;
 	private readonly StrategyParam<decimal> _deviationMultiplier;
-	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<Unit> _stopLoss;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private HullMovingAverage _hullMa;
-	private AverageTrueRange _atr;
-	
-	private decimal _prevHullValue;
-	private decimal _currentSlope;
-	private decimal _avgSlope;
-	private decimal _stdDevSlope;
-	private decimal[] _slopes;
-	private int _currentIndex;
-	private bool _isInitialized;
+	private SimpleMovingAverage _slopeAverage;
+	private StandardDeviation _slopeStdDev;
+	private decimal? _prevHull;
 
 	/// <summary>
-	/// Hull Moving Average length
+	/// Hull Moving Average length.
 	/// </summary>
 	public int HullLength
 	{
@@ -46,7 +37,7 @@ public class HullMaSlopeBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Lookback period for slope statistics calculation
+	/// Lookback period for slope statistics.
 	/// </summary>
 	public int LookbackPeriod
 	{
@@ -55,7 +46,7 @@ public class HullMaSlopeBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Standard deviation multiplier for breakout detection
+	/// Standard deviation multiplier for breakout detection.
 	/// </summary>
 	public decimal DeviationMultiplier
 	{
@@ -64,16 +55,7 @@ public class HullMaSlopeBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Candle type
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Stop loss value
+	/// Stop-loss value.
 	/// </summary>
 	public Unit StopLoss
 	{
@@ -82,30 +64,36 @@ public class HullMaSlopeBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Constructor
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Initialize <see cref="HullMaSlopeBreakoutStrategy"/>.
 	/// </summary>
 	public HullMaSlopeBreakoutStrategy()
 	{
 		_hullLength = Param(nameof(HullLength), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Hull MA Length", "Period for Hull Moving Average", "Indicator Parameters")
-			
 			.SetOptimize(5, 20, 1);
 
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Lookback Period", "Period for slope statistics calculation", "Strategy Parameters")
-			
 			.SetOptimize(10, 50, 5);
 
 		_deviationMultiplier = Param(nameof(DeviationMultiplier), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Deviation Multiplier", "Standard deviation multiplier for breakout detection", "Strategy Parameters")
-			
 			.SetOptimize(1m, 3m, 0.5m);
-			
-		_stopLoss = Param(nameof(StopLoss), new Unit(2, UnitTypes.Absolute))
-			.SetDisplay("Stop Loss", "Stop loss value in ATRs", "Risk Management");
+
+		_stopLoss = Param(nameof(StopLoss), new Unit(2, UnitTypes.Percent))
+			.SetDisplay("Stop Loss", "Protective stop-loss", "Risk Management");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -121,164 +109,74 @@ public class HullMaSlopeBreakoutStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevHullValue = 0;
-		_currentSlope = 0;
-		_avgSlope = 0;
-		_stdDevSlope = 0;
-		_currentIndex = 0;
-		_isInitialized = false;
-		_slopes = new decimal[LookbackPeriod];
+		_slopeAverage = null;
+		_slopeStdDev = null;
+		_prevHull = null;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
-		_slopes = new decimal[LookbackPeriod];
+		base.OnStarted2(time);
 
-		_hullMa = new HullMovingAverage { Length = HullLength };
-		_atr = new AverageTrueRange { Length = 14 }; // ATR for stop-loss
+		var hull = new HullMovingAverage { Length = HullLength };
+		_slopeAverage = new SimpleMovingAverage { Length = LookbackPeriod };
+		_slopeStdDev = new StandardDeviation { Length = LookbackPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_hullMa, _atr, ProcessCandle)
+			.Bind(hull, ProcessCandle)
 			.Start();
 
-		// Setup chart visualization if available
+		StartProtection(takeProfit: null, stopLoss: StopLoss);
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _hullMa);
+			DrawIndicator(area, hull);
 			DrawOwnTrades(area);
 		}
-
-		// Set up position protection
-		StartProtection(
-			takeProfit: null, // We'll handle exits via strategy logic
-			stopLoss: StopLoss,
-			isStopTrailing: false
-		);
-
-		base.OnStarted2(time);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal hullValue, decimal atrValue)
+	private void ProcessCandle(ICandleMessage candle, decimal hullValue)
 	{
-		// Skip unfinished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Check if indicator is formed
-		if (!_hullMa.IsFormed)
-			return;
-
-		// Extract Hull MA value
-		decimal currentHullValue = hullValue;
-		
-		// Calculate the slope
-		if (!_isInitialized)
+		if (_prevHull is not decimal prev)
 		{
-			_prevHullValue = currentHullValue;
-			_isInitialized = true;
+			_prevHull = hullValue;
 			return;
 		}
-		
-		// Calculate current slope (simple difference for now)
-		_currentSlope = currentHullValue - _prevHullValue;
 
-		if (_slopes is null || _slopes.Length != LookbackPeriod)
-		{
-			_slopes = new decimal[LookbackPeriod];
-			_currentIndex = 0;
-			_prevHullValue = currentHullValue;
+		_prevHull = hullValue;
+
+		var slope = hullValue - prev;
+		var avgSlope = _slopeAverage.Process(slope, candle.ServerTime, true).ToDecimal();
+		var stdSlope = _slopeStdDev.Process(slope, candle.ServerTime, true).ToDecimal();
+
+		if (!_slopeAverage.IsFormed || !_slopeStdDev.IsFormed)
 			return;
-		}
-		
-		// Store slope in array and update index
-		_slopes[_currentIndex] = _currentSlope;
-		_currentIndex = (_currentIndex + 1) % _slopes.Length;
-		
-		// Calculate statistics once we have enough data
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
-			
-		CalculateStatistics();
-		
-		// Trading logic
-		if (Math.Abs(_avgSlope) > 0)  // Avoid division by zero
-		{
-			// Long signal: slope exceeds average + k*stddev (slope is positive and we don't have a long position)
-			if (_currentSlope > 0 && 
-				_currentSlope > _avgSlope + DeviationMultiplier * _stdDevSlope && 
-				Position <= 0)
-			{
-				// Cancel existing orders
-				CancelActiveOrders();
-				
-				// Enter long position
-				var volume = Volume + Math.Abs(Position);
-				BuyMarket(volume);
-				
-				LogInfo($"Long signal: Slope {_currentSlope} > Avg {_avgSlope} + {DeviationMultiplier}*StdDev {_stdDevSlope}");
-			}
-			// Short signal: slope exceeds average + k*stddev in negative direction (slope is negative and we don't have a short position)
-			else if (_currentSlope < 0 && 
-					 _currentSlope < _avgSlope - DeviationMultiplier * _stdDevSlope && 
-					 Position >= 0)
-			{
-				// Cancel existing orders
-				CancelActiveOrders();
-				
-				// Enter short position
-				var volume = Volume + Math.Abs(Position);
-				SellMarket(volume);
-				
-				LogInfo($"Short signal: Slope {_currentSlope} < Avg {_avgSlope} - {DeviationMultiplier}*StdDev {_stdDevSlope}");
-			}
-			
-			// Exit conditions - when slope returns to average
-			if (Position > 0 && _currentSlope < _avgSlope)
-			{
-				// Exit long position
-				SellMarket(Math.Abs(Position));
-				LogInfo($"Exit long: Slope {_currentSlope} < Avg {_avgSlope}");
-			}
-			else if (Position < 0 && _currentSlope > _avgSlope)
-			{
-				// Exit short position
-				BuyMarket(Math.Abs(Position));
-				LogInfo($"Exit short: Slope {_currentSlope} > Avg {_avgSlope}");
-			}
-		}
-		
-		// Store current Hull MA value for next slope calculation
-		_prevHullValue = currentHullValue;
-	}
-	
-	private void CalculateStatistics()
-	{
-		var period = _slopes?.Length ?? 0;
-		if (period <= 0)
-			return;
 
-		// Reset statistics
-		_avgSlope = 0;
-		decimal sumSquaredDiffs = 0;
-		
-		// Calculate average
-		for (int i = 0; i < period; i++)
+		if (slope > avgSlope + DeviationMultiplier * stdSlope && Position <= 0)
 		{
-			_avgSlope += _slopes[i];
+			BuyMarket(Volume + Math.Abs(Position));
 		}
-		_avgSlope /= period;
-		
-		// Calculate standard deviation
-		for (int i = 0; i < period; i++)
+		else if (slope < avgSlope - DeviationMultiplier * stdSlope && Position >= 0)
 		{
-			decimal diff = _slopes[i] - _avgSlope;
-			sumSquaredDiffs += diff * diff;
+			SellMarket(Volume + Math.Abs(Position));
 		}
-		
-		_stdDevSlope = (decimal)Math.Sqrt((double)(sumSquaredDiffs / period));
+		else if (Position > 0 && slope < avgSlope)
+		{
+			SellMarket(Position);
+		}
+		else if (Position < 0 && slope > avgSlope)
+		{
+			BuyMarket(-Position);
+		}
 	}
 }

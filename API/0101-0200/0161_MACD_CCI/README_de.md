@@ -7,7 +7,7 @@ Tests zeigen eine durchschnittliche jährliche Rendite von etwa 70%. Am besten g
 
 MACD-Schwankungen heben Impulswechsel hervor; der CCI hilft dabei, Pullback-Einstiege in diese Richtung zu timen. Sowohl Long- als auch Short-Trades sind möglich.
 
-Trader, die Momentum mit Oszillatoren kombinieren, könnten diese Technik mögen. Die Risikokontrolle verwendet einen ATR-Stop.
+Trader, die Momentum mit Oszillatoren kombinieren, könnten diese Technik mögen. Die Risikokontrolle verwendet einen prozentualen Stop.
 
 ## Details
 
@@ -16,7 +16,7 @@ Trader, die Momentum mit Oszillatoren kombinieren, könnten diese Technik mögen
   - Short: `MACD < Signal && CCI > CciOverbought`
 - **Long/Short**: Beide
 - **Ausstiegskriterien**: MACD-Kreuzung in entgegengesetzte Richtung
-- **Stops**: Prozentbasiert mit `StopLoss`
+- **Stops**: Prozentbasiert mit `StopLossPercent`
 - **Standardwerte**:
   - `FastPeriod` = 12
   - `SlowPeriod` = 26
@@ -24,8 +24,9 @@ Trader, die Momentum mit Oszillatoren kombinieren, könnten diese Technik mögen
   - `CciPeriod` = 20
   - `CciOversold` = -100m
   - `CciOverbought` = 100m
-  - `StopLoss` = new Unit(2, UnitTypes.Percent)
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    Ein Einstiegssignal gegen eine offene Position dreht sie.
 - **Filter**:
   - Kategorie: Mean Reversion
   - Richtung: Beide

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using Ecng.Common;
 
@@ -11,34 +12,24 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that combines manual Supertrend calculation with ATR for trend direction
-/// and volume confirmation for entries.
+/// Supertrend Volume strategy.
+/// A Supertrend flip happens when a candle closes on the other side of the line. A position closes on the flip against it,
+/// and the flip opens a position in its direction only when the candle's volume is above the average of the previous VolumePeriod candles,
+/// so a confirmed flip reverses the position. A percent stop limits the loss.
 /// </summary>
 public class SupertrendVolumeStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _supertrendPeriod;
 	private readonly StrategyParam<decimal> _supertrendMultiplier;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<int> _volumePeriod;
+	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _atrValue;
-	private decimal? _upperBand;
-	private decimal? _lowerBand;
-	private decimal? _supertrend;
-	private bool? _isBullish;
-	private int _cooldown;
+	private readonly List<decimal> _volumes = [];
+	private bool? _prevIsUpTrend;
 
 	/// <summary>
-	/// Data type for candles.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Period for Supertrend ATR calculation.
+	/// ATR period of Supertrend.
 	/// </summary>
 	public int SupertrendPeriod
 	{
@@ -47,7 +38,7 @@ public class SupertrendVolumeStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Multiplier for Supertrend ATR calculation.
+	/// ATR multiplier of Supertrend.
 	/// </summary>
 	public decimal SupertrendMultiplier
 	{
@@ -56,33 +47,55 @@ public class SupertrendVolumeStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Cooldown bars between trades.
+	/// Previous candles the volume is averaged over.
 	/// </summary>
-	public int CooldownBars
+	public int VolumePeriod
 	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
+		get => _volumePeriod.Value;
+		set => _volumePeriod.Value = value;
 	}
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="SupertrendVolumeStrategy"/>.
+	/// Stop loss percentage from entry price.
+	/// </summary>
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
 	/// </summary>
 	public SupertrendVolumeStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
 		_supertrendPeriod = Param(nameof(SupertrendPeriod), 10)
-			.SetRange(5, 30)
-			.SetDisplay("Supertrend Period", "Period for Supertrend ATR calculation", "Supertrend Settings");
+			.SetGreaterThanZero()
+			.SetDisplay("Supertrend Period", "ATR period of Supertrend", "Supertrend");
 
-		_supertrendMultiplier = Param(nameof(SupertrendMultiplier), 3.0m)
-			.SetRange(1.0m, 5.0m)
-			.SetDisplay("Supertrend Multiplier", "Multiplier for Supertrend ATR", "Supertrend Settings");
+		_supertrendMultiplier = Param(nameof(SupertrendMultiplier), 3m)
+			.SetGreaterThanZero()
+			.SetDisplay("Supertrend Multiplier", "ATR multiplier of Supertrend", "Supertrend");
 
-		_cooldownBars = Param(nameof(CooldownBars), 100)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "General")
-			.SetRange(5, 500);
+		_volumePeriod = Param(nameof(VolumePeriod), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("Volume Period", "Previous candles the volume is averaged over", "Volume");
+
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -95,12 +108,8 @@ public class SupertrendVolumeStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_atrValue = 0;
-		_upperBand = null;
-		_lowerBand = null;
-		_supertrend = null;
-		_isBullish = null;
-		_cooldown = 0;
+		_volumes.Clear();
+		_prevIsUpTrend = null;
 	}
 
 	/// <inheritdoc />
@@ -108,123 +117,81 @@ public class SupertrendVolumeStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var atr = new AverageTrueRange { Length = SupertrendPeriod };
+		_volumes.Clear();
+		_prevIsUpTrend = null;
+
+		var supertrend = new SuperTrend { Length = SupertrendPeriod, Multiplier = SupertrendMultiplier };
 
 		var subscription = SubscribeCandles(CandleType);
-
 		subscription
-			.BindEx(atr, ProcessCandle)
+			.BindEx(supertrend, ProcessCandle)
 			.Start();
+
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, supertrend);
 			DrawOwnTrades(area);
-
-			var atrArea = CreateChartArea();
-			if (atrArea != null)
-				DrawIndicator(atrArea, atr);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue atrValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// The high-level handler activates native protection before this callback, also between signal bars.
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue supertrendValue)
 	{
 		if (candle.State != CandleStates.Finished)
+			return;
+
+		// Volume is compared with the candles before this one.
+		var average = _volumes.Count == VolumePeriod ? _volumes.Average() : (decimal?)null;
+
+		_volumes.Add(candle.TotalVolume);
+
+		if (_volumes.Count > VolumePeriod)
+			_volumes.RemoveAt(0);
+
+		if (!supertrendValue.IsFormed || supertrendValue is not SuperTrendIndicatorValue value)
+			return;
+
+		var isUpTrend = value.IsUpTrend;
+		var wasUpTrend = _prevIsUpTrend;
+		_prevIsUpTrend = isUpTrend;
+
+		if (wasUpTrend is not bool was || was == isUpTrend)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (!atrValue.IsFormed)
-			return;
+		var confirmed = average is decimal avgVolume && candle.TotalVolume > avgVolume;
 
-		var atr = atrValue.ToDecimal();
-		if (atr <= 0)
-			return;
-
-		_atrValue = atr;
-
-		// Calculate Supertrend
-		var basicPrice = (candle.HighPrice + candle.LowPrice) / 2;
-		var newUpperBand = basicPrice + (SupertrendMultiplier * _atrValue);
-		var newLowerBand = basicPrice - (SupertrendMultiplier * _atrValue);
-
-		if (_upperBand == null || _lowerBand == null || _supertrend == null || _isBullish == null)
+		if (isUpTrend)
 		{
-			_upperBand = newUpperBand;
-			_lowerBand = newLowerBand;
-			_supertrend = newUpperBand;
-			_isBullish = false;
-			return;
-		}
-
-		// Update upper band
-		if (newUpperBand < _upperBand || candle.ClosePrice > _upperBand)
-			_upperBand = newUpperBand;
-
-		// Update lower band
-		if (newLowerBand > _lowerBand || candle.ClosePrice < _lowerBand)
-			_lowerBand = newLowerBand;
-
-		// Determine trend direction
-		if (_supertrend == _upperBand)
-		{
-			if (candle.ClosePrice > _upperBand)
-			{
-				_supertrend = _lowerBand;
-				_isBullish = true;
-			}
-			else
-			{
-				_supertrend = _upperBand;
-				_isBullish = false;
-			}
+			if (confirmed && Position <= 0)
+				BuyMarket(Volume + Math.Abs(Position));
+			else if (Position < 0)
+				BuyMarket(-Position);
 		}
 		else
 		{
-			if (candle.ClosePrice < _lowerBand)
-			{
-				_supertrend = _upperBand;
-				_isBullish = false;
-			}
-			else
-			{
-				_supertrend = _lowerBand;
-				_isBullish = true;
-			}
-		}
-
-		if (_cooldown > 0)
-		{
-			_cooldown--;
-			return;
-		}
-
-		// Entry: bullish supertrend
-		if (_isBullish.Value && candle.ClosePrice > _supertrend.Value && Position == 0)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-		// Entry: bearish supertrend
-		else if (!_isBullish.Value && candle.ClosePrice < _supertrend.Value && Position == 0)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-
-		// Exit long on bearish flip
-		if (Position > 0 && !_isBullish.Value)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		// Exit short on bullish flip
-		else if (Position < 0 && _isBullish.Value)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
+			if (confirmed && Position >= 0)
+				SellMarket(Volume + Math.Abs(Position));
+			else if (Position > 0)
+				SellMarket(Position);
 		}
 	}
 }

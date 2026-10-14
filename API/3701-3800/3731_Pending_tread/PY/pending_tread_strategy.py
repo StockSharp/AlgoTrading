@@ -20,19 +20,19 @@ class pending_tread_strategy(Strategy):
     def __init__(self):
         super(pending_tread_strategy, self).__init__()
 
-        self._pip_step = self.Param("PipStep", 200000.0) \
+        self._pip_step = self.Param("PipStep", 12.0) \
             .SetGreaterThanZero() \
             .SetDisplay("Grid step (pips)", "Distance between adjacent pending orders expressed in pips", "Trading")
 
-        self._take_profit_pips = self.Param("TakeProfitPips", 150000.0) \
+        self._take_profit_pips = self.Param("TakeProfitPips", 10.0) \
             .SetGreaterThanZero() \
             .SetDisplay("Take profit (pips)", "Individual take-profit distance assigned to every pending order", "Trading")
 
-        self._order_volume = self.Param("OrderVolume", 1.0) \
+        self._order_volume = self.Param("OrderVolume", 0.01) \
             .SetGreaterThanZero() \
             .SetDisplay("Order volume", "Volume sent with each pending order", "Trading")
 
-        self._orders_per_side = self.Param("OrdersPerSide", 2) \
+        self._orders_per_side = self.Param("OrdersPerSide", 10) \
             .SetGreaterThanZero() \
             .SetDisplay("Orders per side", "Maximum number of grid levels maintained above and below the anchor", "Trading")
 

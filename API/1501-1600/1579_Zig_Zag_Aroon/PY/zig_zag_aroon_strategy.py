@@ -18,7 +18,7 @@ class zig_zag_aroon_strategy(Strategy):
             .SetDisplay("ZigZag Depth", "Pivot search depth", "ZigZag")
         self._aroon_length = self.Param("AroonLength", 14) \
             .SetDisplay("Aroon Period", "Aroon indicator period", "Aroon")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
         self._highs = []
         self._lows = []

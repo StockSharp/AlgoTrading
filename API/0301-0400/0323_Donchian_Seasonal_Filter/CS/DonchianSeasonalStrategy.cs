@@ -86,7 +86,7 @@ public class DonchianSeasonalStrategy : Strategy
 	/// </summary>
 	public DonchianSeasonalStrategy()
 	{
-		_donchianPeriod = Param(nameof(DonchianPeriod), 40)
+		_donchianPeriod = Param(nameof(DonchianPeriod), 20)
 			.SetDisplay("Donchian Period", "Donchian Channel period", "Donchian")
 			
 			.SetOptimize(10, 50, 5);
@@ -106,7 +106,7 @@ public class DonchianSeasonalStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Signal Cooldown Bars", "Closed candles to wait before a new breakout entry", "General");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 			
 		// Initialize monthly returns with neutral values

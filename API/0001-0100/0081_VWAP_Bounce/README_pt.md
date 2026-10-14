@@ -17,7 +17,8 @@ Como opera contra os extremos intradiários, o método funciona melhor em mercad
 - **Stops**: Sim, baseados em percentual.
 - **Valores padrão**:
   - `CandleType` = 5 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+    O VWAP recomeça no início de cada dia UTC e pondera o preço típico de cada vela pelo seu volume.
 - **Filtros**:
   - Categoria: Reversão à média
   - Direção: Ambos

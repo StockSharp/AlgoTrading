@@ -18,7 +18,14 @@ Bollinger Stochastic は、ボリンジャーバンドとストキャスティ�
 - **ストップ**: はい、パーセントベース
 - **デフォルト値**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `BollingerPeriod` = 20
+  - `BollingerDeviation` = 2
+  - `StochPeriod` = 14
+  - `StochDPeriod` = 3
+  - `StochOversold` = 20
+  - `StochOverbought` = 80
+    安値が下側バンドに触れ、ストキャスティクス%KがStochOversold未満なら買い、高値が上側バンドに触れ、%KがStochOverboughtを超えれば売ります。反対シグナルでドテンします。
 - **フィルター**:
   - カテゴリ: 平均回帰
   - 方向: 両方

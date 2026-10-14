@@ -17,7 +17,10 @@ Williams %R Hook Reversal戦略は、Williams %Rインジケーターが極端�
 - **ストップ**: はい、パーセントベース
 - **デフォルト値**:
   - `CandleType` = 15分
-  - `StopLoss` = 2%
+  - `WillRPeriod` = 14
+  - `OversoldLevel` = -80
+  - `OverboughtLevel` = -20
+  - `StopLossPercent` = 2
 - **フィルター**:
   - カテゴリ: リバーサル
   - 方向: 両方

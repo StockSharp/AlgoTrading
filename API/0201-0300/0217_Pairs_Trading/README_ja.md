@@ -20,9 +20,11 @@
 - **ストップ**: はい、スプレッド価値に基づくパーセンテージストップ。
 - **デフォルト値**:
   - `LookbackPeriod` = 20
-  - `DeviationMultiplier` = 2.0m
-  - `StopLossPercent` = 2m
+  - `DeviationMultiplier` = 2
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
+  - `SecondSecurity` — 必須、既定値なし
+    スプレッドは同時刻のローソク足における戦略のSecurityの終値からSecondSecurityの終値を引いた値で、MeanとStdDevは直近LookbackPeriod個のスプレッドから計算します。各レッグはVolumeで取引され、逆のシグナルで両レッグがドテンします。ストップはスプレッドがエントリー時の値のStopLossPercentだけ不利に動いたときに両レッグを閉じ、ローソク足の終値で確認されます。0で無効になります。
 - **フィルター**:
   - カテゴリ: 裁定取引
   - 方向: 両方

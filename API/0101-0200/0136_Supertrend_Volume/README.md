@@ -18,7 +18,11 @@ Stops track the Supertrend line, exiting when price closes on the other side.
 - **Stops**: Yes, percent based
 - **Default Values**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `SupertrendPeriod` = 10
+  - `SupertrendMultiplier` = 3
+  - `VolumePeriod` = 20
+    A Supertrend flip, a close on the other side of the line, closes a position against it. The flip opens a position in its direction only when the candle's volume is above the average of the previous VolumePeriod candles, so a confirmed flip reverses the position.
 - **Filters**:
   - Category: Trend following
   - Direction: Both

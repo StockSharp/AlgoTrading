@@ -19,9 +19,10 @@ El enfoque está diseñado para traders intradía que esperan que los precios os
   - **Corto**: Salir cuando close <= VWAP
 - **Stops**: Sí, stop basado en ATR.
 - **Valores predeterminados**:
-  - `K` = 2.0m
+  - `K` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
   - `AtrPeriod` = 14
+    El mercado opera las 24 horas, por lo que el VWAP de la sesión se reinicia cada día UTC y pondera el precio típico de cada vela por su volumen. El stop se sitúa a K veces el ATR de AtrPeriod del cierre de entrada y se comprueba al cierre de las velas. Una señal de entrada contra una posición abierta la invierte.
 - **Filtros**:
   - Categoría: Mean reversion
   - Dirección: Ambos

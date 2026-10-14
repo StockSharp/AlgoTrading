@@ -107,19 +107,19 @@ public class Mare51Strategy : Strategy
 			.SetDisplay("Fast Period", "Fast SMA period", "Indicators")
 			.SetGreaterThanZero();
 
-		_slowPeriod = Param(nameof(SlowPeriod), 20)
+		_slowPeriod = Param(nameof(SlowPeriod), 79)
 			.SetDisplay("Slow Period", "Slow SMA period", "Indicators")
 			.SetGreaterThanZero();
 
-		_movingAverageShift = Param(nameof(MovingAverageShift), 1)
+		_movingAverageShift = Param(nameof(MovingAverageShift), 4)
 			.SetDisplay("MA Shift", "Forward shift applied to both SMAs", "Indicators")
 			.SetNotNegative();
 
-		_sessionOpenHour = Param(nameof(SessionOpenHour), 0)
+		_sessionOpenHour = Param(nameof(SessionOpenHour), 2)
 			.SetDisplay("Session Open Hour", "Inclusive start hour for trading", "Session")
 			.SetRange(0, 23);
 
-		_sessionCloseHour = Param(nameof(SessionCloseHour), 23)
+		_sessionCloseHour = Param(nameof(SessionCloseHour), 3)
 			.SetDisplay("Session Close Hour", "Inclusive end hour for trading", "Session")
 			.SetRange(0, 23);
 

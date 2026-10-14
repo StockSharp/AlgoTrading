@@ -18,7 +18,11 @@ Ein enger prozentualer Stop begrenzt das Risiko, falls die Volatilität weiter z
 - **Stops**: Ja, prozentbasiert
 - **Standardwerte**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `BollingerPeriod` = 20
+  - `BollingerDeviation` = 2
+  - `RsiPeriod` = 14
+    Ein Schluss über dem oberen Band, der höher ist als der vorherige Schluss darüber, während RSI niedriger ist als damals, ist eine bärische Divergenz und eröffnet einen Short; das Spiegelbild unter dem unteren Band eröffnet einen Long und dreht eine Gegenposition. Die Position schließt, sobald der Kurs wieder innerhalb der Bänder schließt oder RSI zurück über 50 kreuzt.
 - **Filter**:
   - Kategorie: Mean Reversion
   - Richtung: Beide

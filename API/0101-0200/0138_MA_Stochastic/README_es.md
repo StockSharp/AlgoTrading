@@ -18,7 +18,13 @@ Los stops porcentuales fijos ayudan a evitar grandes pérdidas si la tendencia r
 - **Stops**: Sí, basado en porcentaje
 - **Valores predeterminados**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `MaPeriod` = 50
+  - `StochPeriod` = 14
+  - `StochDPeriod` = 3
+  - `StochOversold` = 20
+  - `StochOverbought` = 80
+    El precio por encima de la SMA es tendencia alcista y por debajo bajista. Un %K por debajo de StochOversold en tendencia alcista prepara un largo, que se compra en la siguiente subida de %K mientras el precio siga sobre la SMA; un %K por encima de StochOverbought en tendencia bajista prepara un corto, vendido en la siguiente bajada de %K. Salir de la tendencia cancela la preparación y una señal opuesta invierte la posición.
 - **Filtros**:
   - Categoría: Seguimiento de tendencia
   - Dirección: Ambos

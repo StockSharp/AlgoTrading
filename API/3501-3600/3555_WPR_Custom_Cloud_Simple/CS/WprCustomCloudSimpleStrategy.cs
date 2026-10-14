@@ -51,14 +51,14 @@ public class WprCustomCloudSimpleStrategy : Strategy
 
 	public WprCustomCloudSimpleStrategy()
 	{
-		_wprPeriod = Param(nameof(WprPeriod), 20)
+		_wprPeriod = Param(nameof(WprPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("WPR Period", "Williams %R lookback length", "Williams %R");
 
-		_overboughtLevel = Param(nameof(OverboughtLevel), -10m)
+		_overboughtLevel = Param(nameof(OverboughtLevel), -20m)
 			.SetDisplay("Overbought Level", "%R level that marks overbought conditions", "Williams %R");
 
-		_oversoldLevel = Param(nameof(OversoldLevel), -90m)
+		_oversoldLevel = Param(nameof(OversoldLevel), -80m)
 			.SetDisplay("Oversold Level", "%R level that marks oversold conditions", "Williams %R");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())

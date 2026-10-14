@@ -7,7 +7,7 @@ Testing indicates an average annual return of about 187%. It performs best in th
 
 VWAP marks the average trading level and Stochastic shows overbought or oversold conditions. Longs trigger below VWAP with a rising oscillator, shorts above VWAP with a falling one.
 
-Day traders watching intraday value levels may benefit from this style. Stops are placed using an ATR multiple.
+Day traders watching intraday value levels may benefit from this style. Stops are placed at a fixed percentage of the entry price.
 
 ## Details
 
@@ -22,11 +22,11 @@ Day traders watching intraday value levels may benefit from this style. Stops ar
 - **Default Values**:
   - `StochPeriod` = 14
   - `StochKPeriod` = 3
-  - `StochDPeriod` = 3
   - `OverboughtLevel` = 80m
   - `OversoldLevel` = 20m
   - `StopLossPercent` = 2m
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    The market trades around the clock, so the session VWAP restarts each UTC day and weighs the typical price of each candle by its volume. StochK in the rules is %K: the stochastic over StochPeriod candles smoothed over StochKPeriod candles; %D plays no part, so it has no setting. An entry signal against an open position reverses it.
 - **Filters**:
   - Category: Mean reversion
   - Direction: Both

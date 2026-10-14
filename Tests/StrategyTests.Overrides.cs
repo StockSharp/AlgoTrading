@@ -105,50 +105,6 @@ public abstract partial class StrategyTests
 		tightStop.AssertDiffersFrom(wideStop, "Changing StopLossPercent did not affect submitted orders.");
 	}
 
-	[TestMethod]
-	[TestCategory("Shard01")]
-	public Task S0217_PairsTrading()
-		=> Replay("0217_Pairs_Trading", (s, sec2) => SetParam(s, "SecondSecurity", sec2));
-
-	[TestMethod]
-	[TestCategory("Shard03")]
-	public Task S0219_StatisticalArbitrage()
-		=> Replay("0219_Statistical_Arbitrage", (s, sec2) => SetParam(s, "SecondSecurity", sec2));
-
-	/// <summary>
-	/// The pair is the whole example, and Beta = 1 is the ratio it documents. Only the presence of
-	/// both legs is asserted: how the two sides net out over a month depends on when positions are
-	/// closed, and the audit makes no claim about that.
-	/// </summary>
-	[TestMethod]
-	[TestCategory("Shard06")]
-	public async Task S0222_CointegrationPairs()
-	{
-		var recorder = new PairedOrderRecorder();
-		Security primary = null;
-		Security hedge = null;
-
-		await Replay("0222_Cointegration_Pairs", (strategy, second) =>
-		{
-			SetParam(strategy, "Asset2", second);
-			SetParam(strategy, "Beta", 1m);
-			primary = strategy.Security;
-			hedge = second;
-			recorder.Attach(strategy);
-		});
-
-		recorder.AssertTradesBoth(primary, hedge);
-	}
-
-	[TestMethod]
-	[TestCategory("Shard06")]
-	public Task S0230_DeltaNeutralArbitrage()
-		=> Replay("0230_Delta_Neutral_Arbitrage", (s, sec2) =>
-		{
-			SetParam(s, "Asset2Security", sec2);
-			SetParam(s, "Asset2Portfolio", s.Portfolio);
-		});
-
 	/// <summary>
 	/// The README sells this example as a 5-minute strategy whose stops are ATR multiples and whose
 	/// HmmHistoryLength is the model's history. The implementation runs hour candles, protects the
@@ -449,6 +405,10135 @@ public abstract partial class StrategyTests
 
 		recorder.AssertFirstSide(Sides.Buy);
 	}
+
+	private const string NDayBreakout = "0002_NDay_Breakout";
+
+	[TestMethod]
+	[TestCategory("Shard00")]
+	[DataRow(20, 20, false)]
+	[DataRow(10, 30, false)]
+	[DataRow(5, 8, true)]
+	public async Task S0002_PriorRangeBreakoutsFilteredAndClosedByTheMovingAverage(int lookback, int maPeriod, bool secondary)
+	{
+		var highs = new Queue<decimal>();
+		var lows = new Queue<decimal>();
+		var closes = new Queue<decimal>();
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var longEntries = 0;
+		var shortEntries = 0;
+		var maExits = 0;
+		var filteredBreakouts = 0;
+		var violations = new List<string>();
+		await Replay(NDayBreakout, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["LookbackPeriod"].Value);
+			AreEqual(20, strategy.Parameters["MaPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromHours(1).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "LookbackPeriod", lookback);
+			SetParam(strategy, "MaPeriod", maPeriod);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var close = candle.ClosePrice;
+				closes.Enqueue(close);
+				if (closes.Count > maPeriod) closes.Dequeue();
+				// The range is that of the candles before this one.
+				var ready = highs.Count == lookback && closes.Count == maPeriod;
+				var rangeHigh = ready ? highs.Max() : 0m;
+				var rangeLow = ready ? lows.Min() : 0m;
+				highs.Enqueue(candle.HighPrice);
+				lows.Enqueue(candle.LowPrice);
+				if (highs.Count > lookback) { highs.Dequeue(); lows.Dequeue(); }
+				if (!ready) return;
+				var ma = closes.Average();
+				var position = strategy.Position;
+				var breaksUp = candle.HighPrice > rangeHigh;
+				var breaksDown = candle.LowPrice < rangeLow;
+				if (breaksUp && close > ma && position <= 0m)
+				{
+					expectedSide = Sides.Buy;
+					expectedVolume = strategy.Volume + Math.Abs(position);
+					longEntries++;
+				}
+				else if (breaksDown && close < ma && position >= 0m)
+				{
+					expectedSide = Sides.Sell;
+					expectedVolume = strategy.Volume + Math.Abs(position);
+					shortEntries++;
+				}
+				else if (position > 0m && close < ma)
+				{
+					expectedSide = Sides.Sell;
+					expectedVolume = position;
+					maExits++;
+				}
+				else if (position < 0m && close > ma)
+				{
+					expectedSide = Sides.Buy;
+					expectedVolume = -position;
+					maExits++;
+				}
+				else if ((breaksUp && close <= ma) || (breaksDown && close >= ma))
+					filteredBreakouts++;
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a break of the previous candles' range on the side of the moving average, or close the position when the close crosses back through it.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(longEntries > 0 && shortEntries > 0, "The fixture must break out on both sides.");
+		IsTrue(maExits > 0, "The fixture must exercise the moving-average exit.");
+		IsTrue(filteredBreakouts > 0, "The fixture must contain breakouts the moving average filters out.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard00")]
+	public Task S0002_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars(NDayBreakout, TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromHours(1));
+
+	private const string AdxTrend = "0003_ADX_Trend";
+
+	[TestMethod]
+	[TestCategory("Shard01")]
+	[DataRow(14, 50, 2.0, 20, false)]
+	[DataRow(7, 20, 0.5, 22, false)]
+	[DataRow(10, 30, 1.0, 18, true)]
+	public async Task S0003_TrendSideByAdxWithAdxFadeAndFrozenAtrStopExits(int adxPeriod, int maPeriod, double multiplier, int exitThreshold, bool secondary)
+	{
+		var adx = new AverageDirectionalIndex { Length = adxPeriod };
+		var atr = new AverageTrueRange { Length = adxPeriod };
+		var sma = new SimpleMovingAverage { Length = maPeriod };
+		var k = (decimal)multiplier;
+		var stop = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var reversals = 0;
+		var fadeExits = 0;
+		var stopExits = 0;
+		var violations = new List<string>();
+		await Replay(AdxTrend, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(14, strategy.Parameters["AdxPeriod"].Value);
+			AreEqual(50, strategy.Parameters["MaPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["AtrMultiplier"].Value));
+			AreEqual(20, strategy.Parameters["AdxExitThreshold"].Value);
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "AdxPeriod", adxPeriod);
+			SetParam(strategy, "MaPeriod", maPeriod);
+			SetParam(strategy, "AtrMultiplier", multiplier);
+			SetParam(strategy, "AdxExitThreshold", exitThreshold);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var adxValue = (AverageDirectionalIndexValue)adx.Process(candle);
+				var atrValue = atr.Process(candle);
+				var maValue = sma.Process(candle);
+				if (!adxValue.IsFormed || !atrValue.IsFormed || !maValue.IsFormed || adxValue.MovingAverage is not decimal strength) return;
+				var close = candle.ClosePrice;
+				var ma = maValue.GetValue<decimal>();
+				var offset = k * atrValue.GetValue<decimal>();
+				var longSetup = strength > 25m && close > ma;
+				var shortSetup = strength > 25m && close < ma;
+				var position = strategy.Position;
+				void Enter(Sides side, decimal volume)
+				{
+					expectedSide = side;
+					expectedVolume = volume;
+					stop = side == Sides.Buy ? close - offset : close + offset;
+					entries[side]++;
+				}
+				void Exit(Sides side, decimal volume)
+				{
+					expectedSide = side;
+					expectedVolume = volume;
+					if (strength < exitThreshold) fadeExits++; else stopExits++;
+				}
+				if (position > 0m)
+				{
+					if (shortSetup) { Enter(Sides.Sell, strategy.Volume + position); reversals++; }
+					else if (strength < exitThreshold || close <= stop) Exit(Sides.Sell, position);
+				}
+				else if (position < 0m)
+				{
+					if (longSetup) { Enter(Sides.Buy, strategy.Volume - position); reversals++; }
+					else if (strength < exitThreshold || close >= stop) Exit(Sides.Buy, -position);
+				}
+				else if (longSetup) Enter(Sides.Buy, strategy.Volume);
+				else if (shortSetup) Enter(Sides.Sell, strategy.Volume);
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow the side of the moving average while ADX is above 25, or close the position when ADX fades or the close crosses the ATR stop fixed at entry.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "The fixture must enter on both sides.");
+		IsTrue(fadeExits > 0, "The fixture must close a position because ADX faded.");
+		if (multiplier < 1.5) IsTrue(stopExits > 0, "A tight multiplier must exercise the ATR stop.");
+		if (!secondary) IsTrue(reversals > 0, "The fixture must reverse on the opposite setup.");
+	}
+
+	private const string SarTrend = "0004_Parabolic_SAR_Trend";
+
+	[TestMethod]
+	[TestCategory("Shard02")]
+	[DataRow(0.02, 0.2, false)]
+	[DataRow(0.01, 0.1, true)]
+	public async Task S0004_ReversesOnEveryCloseFlipAcrossTheSar(double acceleration, double maximum, bool secondary)
+	{
+		var sar = new ParabolicSar { Acceleration = (decimal)acceleration, AccelerationMax = (decimal)maximum };
+		bool? previousAbove = null;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var reversals = 0;
+		var violations = new List<string>();
+		await Replay(SarTrend, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(0.02m, Convert.ToDecimal(strategy.Parameters["AccelerationFactor"].Value));
+			AreEqual(0.2m, Convert.ToDecimal(strategy.Parameters["MaxAccelerationFactor"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "AccelerationFactor", acceleration);
+			SetParam(strategy, "MaxAccelerationFactor", maximum);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var value = sar.Process(candle);
+				if (value.IsEmpty) return;
+				var level = value.GetValue<decimal>();
+				if (level <= 0m) return;
+				var above = candle.ClosePrice > level;
+				var flipped = previousAbove is bool before && before != above;
+				previousAbove = above;
+				if (!flipped) return;
+				var position = strategy.Position;
+				if (above && position <= 0m) expectedSide = Sides.Buy;
+				else if (!above && position >= 0m) expectedSide = Sides.Sell;
+				else return;
+				expectedVolume = strategy.Volume + Math.Abs(position);
+				if (position != 0m) reversals++;
+				expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must reverse to the side of the SAR the close has just flipped to.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(reversals > 10, "The fixture must reverse repeatedly.");
+	}
+
+	private const string Donchian = "0005_Donchian_Channel";
+
+	[TestMethod]
+	[TestCategory("Shard03")]
+	[DataRow(20, false)]
+	[DataRow(8, true)]
+	public async Task S0005_ClosesBeyondThePriorChannelWithMidpointExits(int period, bool secondary)
+	{
+		var highs = new Queue<decimal>();
+		var lows = new Queue<decimal>();
+		(decimal Upper, decimal Lower, decimal Middle)? channel = null;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var longEntries = 0;
+		var shortEntries = 0;
+		var midpointExits = 0;
+		var violations = new List<string>();
+		await Replay(Donchian, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["ChannelPeriod"].Value);
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "ChannelPeriod", period);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var prior = channel;
+				highs.Enqueue(candle.HighPrice);
+				lows.Enqueue(candle.LowPrice);
+				if (highs.Count > period) { highs.Dequeue(); lows.Dequeue(); }
+				if (highs.Count == period)
+				{
+					var upper = highs.Max();
+					var lower = lows.Min();
+					channel = (upper, lower, (upper + lower) / 2m);
+				}
+				if (prior is not { } band) return;
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (close > band.Upper && position <= 0m)
+				{
+					expectedSide = Sides.Buy;
+					expectedVolume = strategy.Volume + Math.Abs(position);
+					longEntries++;
+				}
+				else if (close < band.Lower && position >= 0m)
+				{
+					expectedSide = Sides.Sell;
+					expectedVolume = strategy.Volume + Math.Abs(position);
+					shortEntries++;
+				}
+				else if (position > 0m && close <= band.Middle)
+				{
+					expectedSide = Sides.Sell;
+					expectedVolume = position;
+					midpointExits++;
+				}
+				else if (position < 0m && close >= band.Middle)
+				{
+					expectedSide = Sides.Buy;
+					expectedVolume = -position;
+					midpointExits++;
+				}
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a close beyond the channel of the previous candles, or close the position when the close returns to its midpoint.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(longEntries > 0 && shortEntries > 0, "The fixture must break out on both sides.");
+		IsTrue(midpointExits > 0, "The fixture must exercise the midpoint exit.");
+	}
+
+	private const string TripleMa = "0006_Tripple_MA";
+
+	[TestMethod]
+	[TestCategory("Shard04")]
+	[DataRow(5, 20, 50, false)]
+	[DataRow(3, 10, 30, true)]
+	public async Task S0006_ShortAverageAboveOrBelowBothWithShortMiddleCrossExits(int shortPeriod, int middlePeriod, int longPeriod, bool secondary)
+	{
+		var fast = new ExponentialMovingAverage { Length = shortPeriod };
+		var middle = new ExponentialMovingAverage { Length = middlePeriod };
+		var slow = new ExponentialMovingAverage { Length = longPeriod };
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var crossExits = 0;
+		var reversals = 0;
+		var violations = new List<string>();
+		await Replay(TripleMa, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(5, strategy.Parameters["ShortMaPeriod"].Value);
+			AreEqual(20, strategy.Parameters["MiddleMaPeriod"].Value);
+			AreEqual(50, strategy.Parameters["LongMaPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "ShortMaPeriod", shortPeriod);
+			SetParam(strategy, "MiddleMaPeriod", middlePeriod);
+			SetParam(strategy, "LongMaPeriod", longPeriod);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var f = fast.Process(candle);
+				var m = middle.Process(candle);
+				var l = slow.Process(candle);
+				if (!f.IsFormed || !m.IsFormed || !l.IsFormed) return;
+				var s = f.GetValue<decimal>();
+				var mid = m.GetValue<decimal>();
+				var lng = l.GetValue<decimal>();
+				var longSetup = s > mid && s > lng;
+				var shortSetup = s < mid && s < lng;
+				var position = strategy.Position;
+				if (position > 0m && s < mid)
+				{
+					expectedSide = Sides.Sell;
+					expectedVolume = shortSetup ? strategy.Volume + position : position;
+					if (shortSetup) { reversals++; entries[Sides.Sell]++; } else crossExits++;
+				}
+				else if (position < 0m && s > mid)
+				{
+					expectedSide = Sides.Buy;
+					expectedVolume = longSetup ? strategy.Volume - position : -position;
+					if (longSetup) { reversals++; entries[Sides.Buy]++; } else crossExits++;
+				}
+				else if (position == 0m && (longSetup || shortSetup))
+				{
+					expectedSide = longSetup ? Sides.Buy : Sides.Sell;
+					expectedVolume = strategy.Volume;
+					entries[expectedSide.Value]++;
+				}
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must open on the short average being above or below both others, or close when it crosses the middle one.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "The fixture must enter on both sides.");
+		IsTrue(crossExits > 0, "The fixture must close a position on a short/middle cross alone.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard04")]
+	public Task S0006_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars(TripleMa, TimeSpan.FromDays(31));
+
+	private const string KeltnerBreakout = "0007_Keltner_Channel_Breakout";
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	[DataRow(20, 14, 2.0, false)]
+	[DataRow(10, 7, 1.0, true)]
+	public async Task S0007_FreshBandBreakoutsWithCenterAndFrozenAtrStopExits(int emaPeriod, int atrPeriod, double multiplier, bool secondary)
+	{
+		var ema = new ExponentialMovingAverage { Length = emaPeriod };
+		var atr = new AverageTrueRange { Length = atrPeriod };
+		var k = (decimal)multiplier;
+		decimal? prevClose = null;
+		var prevUpper = 0m;
+		var prevLower = 0m;
+		var stop = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var centerExits = 0;
+		var stopExits = 0;
+		var violations = new List<string>();
+		await Replay(KeltnerBreakout, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["EmaPeriod"].Value);
+			AreEqual(14, strategy.Parameters["AtrPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["AtrMultiplier"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "EmaPeriod", emaPeriod);
+			SetParam(strategy, "AtrPeriod", atrPeriod);
+			SetParam(strategy, "AtrMultiplier", multiplier);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var e = ema.Process(candle);
+				var a = atr.Process(candle);
+				if (!e.IsFormed || !a.IsFormed) return;
+				var center = e.GetValue<decimal>();
+				var offset = k * a.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var last = prevClose;
+				var upper = prevUpper;
+				var lower = prevLower;
+				prevClose = close;
+				prevUpper = center + offset;
+				prevLower = center - offset;
+				if (last is not decimal lastClose) return;
+				var position = strategy.Position;
+				if (close > upper && lastClose <= upper && position <= 0m)
+				{
+					expectedSide = Sides.Buy;
+					expectedVolume = strategy.Volume + Math.Abs(position);
+					stop = close - offset;
+					entries[Sides.Buy]++;
+				}
+				else if (close < lower && lastClose >= lower && position >= 0m)
+				{
+					expectedSide = Sides.Sell;
+					expectedVolume = strategy.Volume + Math.Abs(position);
+					stop = close + offset;
+					entries[Sides.Sell]++;
+				}
+				else if (position > 0m && (close < center || close <= stop))
+				{
+					expectedSide = Sides.Sell;
+					expectedVolume = position;
+					if (close <= stop) stopExits++; else centerExits++;
+				}
+				else if (position < 0m && (close > center || close >= stop))
+				{
+					expectedSide = Sides.Buy;
+					expectedVolume = -position;
+					if (close >= stop) stopExits++; else centerExits++;
+				}
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a fresh close beyond the previous EMA ± ATR band, or close the position back through the EMA or at the ATR stop fixed at entry.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "The fixture must break out on both sides.");
+		IsTrue(centerExits > 0 && stopExits > 0, "The fixture must exercise both the center exit and the stop.");
+	}
+
+	private const string HullTrend = "0008_Hull_MA_Trend";
+
+	[TestMethod]
+	[TestCategory("Shard06")]
+	[DataRow(9, 14, 2.0, false)]
+	[DataRow(16, 7, 1.0, true)]
+	public async Task S0008_SlopeTurnsWithAtrTrailingStop(int hmaPeriod, int atrPeriod, double multiplier, bool secondary)
+	{
+		var hma = new HullMovingAverage { Length = hmaPeriod };
+		var atr = new AverageTrueRange { Length = atrPeriod };
+		var k = (decimal)multiplier;
+		decimal? previousHma = null;
+		var lastSlope = 0;
+		var stop = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var turns = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var stopExits = 0;
+		var trailedStops = 0;
+		var violations = new List<string>();
+		await Replay(HullTrend, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(9, strategy.Parameters["HmaPeriod"].Value);
+			AreEqual(14, strategy.Parameters["AtrPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["AtrMultiplier"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "HmaPeriod", hmaPeriod);
+			SetParam(strategy, "AtrPeriod", atrPeriod);
+			SetParam(strategy, "AtrMultiplier", multiplier);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var h = hma.Process(candle);
+				var a = atr.Process(candle);
+				if (!h.IsFormed || !a.IsFormed) return;
+				var value = h.GetValue<decimal>();
+				var previous = previousHma;
+				previousHma = value;
+				if (previous is not decimal prior) return;
+				var close = candle.ClosePrice;
+				var distance = k * a.GetValue<decimal>();
+				var slope = value > prior ? 1 : value < prior ? -1 : 0;
+				var position = strategy.Position;
+				if (slope != 0 && slope != lastSlope)
+				{
+					lastSlope = slope;
+					if ((slope > 0 && position <= 0m) || (slope < 0 && position >= 0m))
+					{
+						expectedSide = slope > 0 ? Sides.Buy : Sides.Sell;
+						expectedVolume = strategy.Volume + Math.Abs(position);
+						stop = slope > 0 ? close - distance : close + distance;
+						turns[expectedSide.Value]++;
+						expectedOrders++;
+						return;
+					}
+				}
+				if (position > 0m)
+				{
+					if (close <= stop) { expectedSide = Sides.Sell; expectedVolume = position; stopExits++; }
+					else if (close - distance > stop) { stop = close - distance; trailedStops++; }
+				}
+				else if (position < 0m)
+				{
+					if (close >= stop) { expectedSide = Sides.Buy; expectedVolume = -position; stopExits++; }
+					else if (close + distance < stop) { stop = close + distance; trailedStops++; }
+				}
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a turn of the Hull MA slope, or close the position at the stop trailing the close by the ATR distance.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(turns[Sides.Buy] > 0 && turns[Sides.Sell] > 0, "The fixture must turn both ways.");
+		IsTrue(stopExits > 0 && trailedStops > 0, "The fixture must trail the stop and stop out.");
+	}
+
+	private const string MacdTrend = "0009_MACD_Trend";
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(12, 26, 9, false)]
+	[DataRow(6, 13, 5, true)]
+	public async Task S0009_ReversesOnEveryMacdSignalCross(int fastPeriod, int slowPeriod, int signalPeriod, bool secondary)
+	{
+		var macd = new MovingAverageConvergenceDivergenceSignal
+		{
+			Macd = { ShortMa = { Length = fastPeriod }, LongMa = { Length = slowPeriod } },
+			SignalMa = { Length = signalPeriod },
+		};
+		bool? previousAbove = null;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var reversals = 0;
+		var violations = new List<string>();
+		await Replay(MacdTrend, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(12, strategy.Parameters["FastEmaPeriod"].Value);
+			AreEqual(26, strategy.Parameters["SlowEmaPeriod"].Value);
+			AreEqual(9, strategy.Parameters["SignalPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "FastEmaPeriod", fastPeriod);
+			SetParam(strategy, "SlowEmaPeriod", slowPeriod);
+			SetParam(strategy, "SignalPeriod", signalPeriod);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var value = (MovingAverageConvergenceDivergenceSignalValue)macd.Process(candle);
+				if (!value.IsFormed || value.Macd is not decimal line || value.Signal is not decimal signal) return;
+				var above = line > signal;
+				var crossed = previousAbove is bool before && before != above;
+				previousAbove = above;
+				if (!crossed) return;
+				var position = strategy.Position;
+				if (above && position <= 0m) expectedSide = Sides.Buy;
+				else if (!above && position >= 0m) expectedSide = Sides.Sell;
+				else return;
+				expectedVolume = strategy.Volume + Math.Abs(position);
+				if (position != 0m) reversals++;
+				expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must reverse to the side of a fresh MACD/signal cross.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(reversals > 10, "The fixture must reverse repeatedly.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0009_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars(MacdTrend, TimeSpan.FromDays(31));
+
+	private const string Supertrend = "0010_Super_Trend";
+
+	[TestMethod]
+	[TestCategory("Shard00")]
+	[DataRow(10, 3.0, false)]
+	[DataRow(7, 2.0, true)]
+	public async Task S0010_ReversesOnEveryFlipOfTheStandardSupertrend(int period, double multiplier, bool secondary)
+	{
+		var atr = new AverageTrueRange { Length = period };
+		var k = (decimal)multiplier;
+		decimal? upperBand = null;
+		decimal? lowerBand = null;
+		decimal? previousClose = null;
+		bool? upTrend = null;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var reversals = 0;
+		var violations = new List<string>();
+		await Replay(Supertrend, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(10, strategy.Parameters["Period"].Value);
+			AreEqual(3m, Convert.ToDecimal(strategy.Parameters["Multiplier"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "Period", period);
+			SetParam(strategy, "Multiplier", multiplier);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var a = atr.Process(candle);
+				if (!a.IsFormed) return;
+				// Standard Supertrend: final bands only tighten until the close crosses them.
+				var close = candle.ClosePrice;
+				var median = (candle.HighPrice + candle.LowPrice) / 2m;
+				var basicUpper = median + k * a.GetValue<decimal>();
+				var basicLower = median - k * a.GetValue<decimal>();
+				var finalUpper = upperBand is not decimal pu || basicUpper < pu || previousClose > pu ? basicUpper : pu;
+				var finalLower = lowerBand is not decimal pl || basicLower > pl || previousClose < pl ? basicLower : pl;
+				var before = upTrend;
+				var now = before is not bool wasUp ? close >= median : wasUp ? close > finalLower : close >= finalUpper;
+				upperBand = finalUpper;
+				lowerBand = finalLower;
+				previousClose = close;
+				upTrend = now;
+				if (before is not bool previous || previous == now) return;
+				var position = strategy.Position;
+				if (now && position <= 0m) expectedSide = Sides.Buy;
+				else if (!now && position >= 0m) expectedSide = Sides.Sell;
+				else return;
+				expectedVolume = strategy.Volume + Math.Abs(position);
+				if (position != 0m) reversals++;
+				expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must reverse on a flip of the standard Supertrend.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(reversals > 5, "The fixture must reverse repeatedly.");
+	}
+
+	private const string KumoBreakout = "0011_Ichimoku_Kumo_Breakout";
+
+	[TestMethod]
+	[TestCategory("Shard01")]
+	[DataRow(9, 26, 52, false)]
+	[DataRow(5, 13, 26, true)]
+	public async Task S0011_CloudBreakoutsConfirmedByTenkanAndHeldUntilThroughTheCloud(int tenkanPeriod, int kijunPeriod, int spanPeriod, bool secondary)
+	{
+		var ichimoku = new Ichimoku
+		{
+			Tenkan = { Length = tenkanPeriod },
+			Kijun = { Length = kijunPeriod },
+			SenkouB = { Length = spanPeriod },
+		};
+		bool? wasLong = null;
+		bool? wasShort = null;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var cloudExits = 0;
+		var violations = new List<string>();
+		await Replay(KumoBreakout, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(9, strategy.Parameters["TenkanPeriod"].Value);
+			AreEqual(26, strategy.Parameters["KijunPeriod"].Value);
+			AreEqual(52, strategy.Parameters["SenkouSpanPeriod"].Value);
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "TenkanPeriod", tenkanPeriod);
+			SetParam(strategy, "KijunPeriod", kijunPeriod);
+			SetParam(strategy, "SenkouSpanPeriod", spanPeriod);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				if (ichimoku.Process(candle) is not IIchimokuValue { Tenkan: decimal tenkan, Kijun: decimal kijun, SenkouA: decimal a, SenkouB: decimal b }) return;
+				var close = candle.ClosePrice;
+				var top = Math.Max(a, b);
+				var bottom = Math.Min(a, b);
+				var longSetup = close > top && tenkan > kijun;
+				var shortSetup = close < bottom && tenkan < kijun;
+				var lastLong = wasLong;
+				var lastShort = wasShort;
+				wasLong = longSetup;
+				wasShort = shortSetup;
+				if (lastLong is not bool previousLong || lastShort is not bool previousShort) return;
+				var position = strategy.Position;
+				if (longSetup && !previousLong && position <= 0m)
+				{
+					expectedSide = Sides.Buy;
+					expectedVolume = strategy.Volume + Math.Abs(position);
+					entries[Sides.Buy]++;
+				}
+				else if (shortSetup && !previousShort && position >= 0m)
+				{
+					expectedSide = Sides.Sell;
+					expectedVolume = strategy.Volume + Math.Abs(position);
+					entries[Sides.Sell]++;
+				}
+				else if (position > 0m && close < bottom)
+				{
+					expectedSide = Sides.Sell;
+					expectedVolume = position;
+					cloudExits++;
+				}
+				else if (position < 0m && close > top)
+				{
+					expectedSide = Sides.Buy;
+					expectedVolume = -position;
+					cloudExits++;
+				}
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must open when a close beyond the cloud and the Tenkan/Kijun order first agree, or close once the close goes through the cloud.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "The fixture must break out of the cloud on both sides.");
+		IsTrue(cloudExits > 0, "The fixture must close a position through the cloud.");
+	}
+
+	private const string HeikinRun = "0012_Heikin_Ashi_Consecutive";
+
+	[TestMethod]
+	[TestCategory("Shard02")]
+	[DataRow(3, false)]
+	[DataRow(5, true)]
+	public async Task S0012_HeikinAshiRunsWithFirstOppositeCandleExits(int required, bool secondary)
+	{
+		decimal? haOpen = null;
+		var haClose = 0m;
+		var bullish = 0;
+		var bearish = 0;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var oppositeExits = 0;
+		var violations = new List<string>();
+		await Replay(HeikinRun, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(3, strategy.Parameters["ConsecutiveCandles"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "ConsecutiveCandles", required);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var close = (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m;
+				var open = haOpen is decimal previousOpen ? (previousOpen + haClose) / 2m : (candle.OpenPrice + candle.ClosePrice) / 2m;
+				haOpen = open;
+				haClose = close;
+				var up = close > open;
+				var down = close < open;
+				bullish = up ? bullish + 1 : 0;
+				bearish = down ? bearish + 1 : 0;
+				var position = strategy.Position;
+				if (position > 0m && down)
+				{
+					expectedSide = Sides.Sell;
+					expectedVolume = bearish >= required ? strategy.Volume + position : position;
+					oppositeExits++;
+				}
+				else if (position < 0m && up)
+				{
+					expectedSide = Sides.Buy;
+					expectedVolume = bullish >= required ? strategy.Volume - position : -position;
+					oppositeExits++;
+				}
+				else if (position == 0m && (bullish >= required || bearish >= required))
+				{
+					expectedSide = bullish >= required ? Sides.Buy : Sides.Sell;
+					expectedVolume = strategy.Volume;
+					entries[expectedSide.Value]++;
+				}
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a run of same-colored Heikin Ashi candles, or close the position on the first opposite one.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "The fixture must enter on both sides.");
+		IsTrue(oppositeExits > 0, "The fixture must exit on the first opposite candle.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard02")]
+	public Task S0012_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars(HeikinRun, TimeSpan.FromDays(31));
+
+	private const string GannSwing = "0015_Gann_Swing_Breakout";
+
+	[TestMethod]
+	[TestCategory("Shard03")]
+	[DataRow(5, 20, false)]
+	[DataRow(3, 10, true)]
+	public async Task S0015_BreaksOfConfirmedSwingsFilteredByTheAverageAndHeldUntilTheOpposingSwing(int lookback, int maPeriod, bool secondary)
+	{
+		var sma = new SimpleMovingAverage { Length = maPeriod };
+		var window = new List<(decimal High, decimal Low)>();
+		decimal? swingHigh = null;
+		decimal? swingLow = null;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var swingExits = 0;
+		var violations = new List<string>();
+		await Replay(GannSwing, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(5, strategy.Parameters["SwingLookback"].Value);
+			AreEqual(20, strategy.Parameters["MaPeriod"].Value);
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "SwingLookback", lookback);
+			SetParam(strategy, "MaPeriod", maPeriod);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				window.Add((candle.HighPrice, candle.LowPrice));
+				if (window.Count > 2 * lookback + 1) window.RemoveAt(0);
+				if (window.Count == 2 * lookback + 1)
+				{
+					var pivot = window[lookback];
+					var others = window.Where((_, index) => index != lookback).ToArray();
+					if (others.All(c => pivot.High > c.High)) swingHigh = pivot.High;
+					if (others.All(c => pivot.Low < c.Low)) swingLow = pivot.Low;
+				}
+				var m = sma.Process(candle);
+				if (!m.IsFormed || swingHigh is not decimal high || swingLow is not decimal low) return;
+				var ma = m.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (close > high && close > ma && position <= 0m)
+				{
+					expectedSide = Sides.Buy;
+					expectedVolume = strategy.Volume + Math.Abs(position);
+					entries[Sides.Buy]++;
+				}
+				else if (close < low && close < ma && position >= 0m)
+				{
+					expectedSide = Sides.Sell;
+					expectedVolume = strategy.Volume + Math.Abs(position);
+					entries[Sides.Sell]++;
+				}
+				else if (position > 0m && close < low)
+				{
+					expectedSide = Sides.Sell;
+					expectedVolume = position;
+					swingExits++;
+				}
+				else if (position < 0m && close > high)
+				{
+					expectedSide = Sides.Buy;
+					expectedVolume = -position;
+					swingExits++;
+				}
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a close beyond the latest confirmed swing on the side of the average, or close the position when the opposing swing is breached.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "The fixture must break swings on both sides.");
+		IsTrue(swingExits + entries.Values.Sum() > 4, "The fixture must trade repeatedly.");
+	}
+
+	private const string Hammer = "0059_Hammer_Candle";
+
+	[TestMethod]
+	[TestCategory("Shard04")]
+	[DataRow(2.0, false)]
+	[DataRow(1.0, true)]
+	public async Task S0059_LongOnlyHammersWithStopAtTheLowAndRewardRiskTarget(double ratio, bool secondary)
+	{
+		var stop = 0m;
+		var target = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = 0;
+		var stopExits = 0;
+		var targetExits = 0;
+		var violations = new List<string>();
+		await Replay(Hammer, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["RewardRiskRatio"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "RewardRiskRatio", ratio);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (position > 0m)
+				{
+					if (close <= stop || close >= target)
+					{
+						expectedSide = Sides.Sell;
+						expectedVolume = position;
+						if (close <= stop) stopExits++; else targetExits++;
+					}
+				}
+				else if (position == 0m)
+				{
+					var body = Math.Abs(candle.OpenPrice - close);
+					var lower = Math.Min(candle.OpenPrice, close) - candle.LowPrice;
+					var upper = candle.HighPrice - Math.Max(candle.OpenPrice, close);
+					if (body > 0m && lower >= 2m * body && upper < body / 2m && close > candle.LowPrice)
+					{
+						expectedSide = Sides.Buy;
+						expectedVolume = strategy.Volume;
+						stop = candle.LowPrice;
+						target = close + (decimal)ratio * (close - candle.LowPrice);
+						entries++;
+					}
+				}
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must buy a hammer while flat, or close the long at the hammer's low or at the reward/risk target.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries > 3, "The fixture must buy several hammers.");
+		IsTrue(stopExits > 0 && targetExits > 0, "The fixture must exercise both the stop and the target.");
+	}
+
+	private const string ObvDivergence = "0075_OBV_Divergence";
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	[DataRow(5, 20, false)]
+	[DataRow(3, 10, true)]
+	public async Task S0075_NewExtremesUnconfirmedByObvWithMeanReversionExits(int period, int maPeriod, bool secondary)
+	{
+		var sma = new SimpleMovingAverage { Length = maPeriod };
+		var history = new List<(decimal High, decimal Low, decimal Obv)>();
+		var obv = 0m;
+		decimal? previousClose = null;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var averageExits = 0;
+		var unconfirmedExtremes = 0;
+		var violations = new List<string>();
+		await Replay(ObvDivergence, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(5, strategy.Parameters["DivergencePeriod"].Value);
+			AreEqual(20, strategy.Parameters["MAPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "DivergencePeriod", period);
+			SetParam(strategy, "MAPeriod", maPeriod);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var close = candle.ClosePrice;
+				if (previousClose is decimal last)
+					obv += close > last ? candle.TotalVolume : close < last ? -candle.TotalVolume : 0m;
+				previousClose = close;
+				var previous = history.ToArray();
+				history.Add((candle.HighPrice, candle.LowPrice, obv));
+				if (history.Count > period) history.RemoveAt(0);
+				var m = sma.Process(candle);
+				if (previous.Length < period || !m.IsFormed) return;
+				var ma = m.GetValue<decimal>();
+				var position = strategy.Position;
+				if (position > 0m && close > ma) { expectedSide = Sides.Sell; expectedVolume = position; averageExits++; }
+				else if (position < 0m && close < ma) { expectedSide = Sides.Buy; expectedVolume = -position; averageExits++; }
+				else if (position == 0m)
+				{
+					var lowest = previous.MinBy(c => c.Low);
+					var highest = previous.MaxBy(c => c.High);
+					var bullish = candle.LowPrice < lowest.Low && obv > lowest.Obv;
+					var bearish = candle.HighPrice > highest.High && obv < highest.Obv;
+					if ((candle.LowPrice < lowest.Low && !bullish) || (candle.HighPrice > highest.High && !bearish)) unconfirmedExtremes++;
+					if (bullish != bearish)
+					{
+						expectedSide = bullish ? Sides.Buy : Sides.Sell;
+						expectedVolume = strategy.Volume;
+						entries[expectedSide.Value]++;
+					}
+				}
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must fade a new extreme OBV does not confirm while flat, or close the position when the close crosses back over the average.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "The fixture must find divergences on both sides.");
+		IsTrue(averageExits > 0, "The fixture must exit at the average.");
+		IsTrue(unconfirmedExtremes > 0, "The fixture must contain new extremes that OBV confirms and that are not traded.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public Task S0075_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars(ObvDivergence, TimeSpan.FromDays(31));
+
+	private const string FibonacciReversal = "0076_Fibonacci_Retracement_Reversal";
+
+	[TestMethod]
+	[TestCategory("Shard06")]
+	[DataRow(20, 0.5, false)]
+	[DataRow(12, 0.3, true)]
+	public async Task S0076_DeepRetracementsInTheSwingDirectionWithMidpointTargets(int period, double bufferPercent, bool secondary)
+	{
+		var candles = new List<(decimal High, decimal Low)>();
+		var target = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var targetExits = 0;
+		var violations = new List<string>();
+		await Replay(FibonacciReversal, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["SwingLookbackPeriod"].Value);
+			AreEqual(0.5m, Convert.ToDecimal(strategy.Parameters["FibLevelBuffer"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "SwingLookbackPeriod", period);
+			SetParam(strategy, "FibLevelBuffer", bufferPercent);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var swing = candles.ToArray();
+				candles.Add((candle.HighPrice, candle.LowPrice));
+				if (candles.Count > period) candles.RemoveAt(0);
+				if (swing.Length < period) return;
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (position > 0m && close >= target) { expectedSide = Sides.Sell; expectedVolume = position; targetExits++; }
+				else if (position < 0m && close <= target) { expectedSide = Sides.Buy; expectedVolume = -position; targetExits++; }
+				else if (position == 0m)
+				{
+					var high = swing.Max(c => c.High);
+					var low = swing.Min(c => c.Low);
+					var highIndex = Array.FindIndex(swing, c => c.High == high);
+					var lowIndex = Array.FindIndex(swing, c => c.Low == low);
+					var range = high - low;
+					var middle = low + range / 2m;
+					bool Near(decimal level) => Math.Abs(close - level) <= level * (decimal)bufferPercent / 100m;
+					if (range > 0m && lowIndex < highIndex && close > candle.OpenPrice && close < middle && (Near(high - range * 0.618m) || Near(high - range * 0.786m)))
+						expectedSide = Sides.Buy;
+					else if (range > 0m && highIndex < lowIndex && close < candle.OpenPrice && close > middle && (Near(low + range * 0.618m) || Near(low + range * 0.786m)))
+						expectedSide = Sides.Sell;
+					if (expectedSide is Sides side)
+					{
+						expectedVolume = strategy.Volume;
+						target = middle;
+						entries[side]++;
+					}
+				}
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must trade a confirming candle at the 61.8% or 78.6% retracement in the swing's direction, or close at the swing's 50% level.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "The fixture must trade retracements of rising and falling swings.");
+		IsTrue(targetExits > 0, "The fixture must reach the 50% target.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard06")]
+	public Task S0076_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars(FibonacciReversal, TimeSpan.FromDays(31));
+
+	private const string InsideBar = "0077_Inside_Bar_Breakout";
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(1.0, false)]
+	[DataRow(0.05, true)]
+	public async Task S0077_ClosesOutsideTheLatestInsideBarWithPatternStopAndPriorExtremeExits(double stopPercent, bool secondary)
+	{
+		(decimal High, decimal Low)? previous = null;
+		(decimal High, decimal Low)? pattern = null;
+		var stop = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var stopExits = 0;
+		var extremeExits = 0;
+		var violations = new List<string>();
+		await Replay(InsideBar, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(1m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "StopLossPercent", stopPercent);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var prior = previous;
+				var active = pattern;
+				previous = (candle.HighPrice, candle.LowPrice);
+				var close = candle.ClosePrice;
+				if (active is { } used && (close > used.High || close < used.Low)) pattern = null;
+				if (prior is { } p && candle.HighPrice <= p.High && candle.LowPrice >= p.Low) pattern = (candle.HighPrice, candle.LowPrice);
+				if (prior is not { } last) return;
+				var position = strategy.Position;
+				var k = (decimal)stopPercent / 100m;
+				if (position > 0m && (close <= stop || close < last.Low))
+				{
+					expectedSide = Sides.Sell;
+					expectedVolume = position;
+					if (close <= stop) stopExits++; else extremeExits++;
+				}
+				else if (position < 0m && (close >= stop || close > last.High))
+				{
+					expectedSide = Sides.Buy;
+					expectedVolume = -position;
+					if (close >= stop) stopExits++; else extremeExits++;
+				}
+				else if (position == 0m && active is { } bar && (close > bar.High || close < bar.Low))
+				{
+					expectedSide = close > bar.High ? Sides.Buy : Sides.Sell;
+					expectedVolume = strategy.Volume;
+					stop = expectedSide == Sides.Buy ? bar.Low * (1 - k) : bar.High * (1 + k);
+					entries[expectedSide.Value]++;
+				}
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a close outside the latest inside bar while flat, or close the position at the stop beyond the pattern or beyond the previous candle's extreme.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "The fixture must break out on both sides.");
+		IsTrue(extremeExits > 0, "The fixture must exit beyond the previous candle's extreme.");
+		if (stopPercent < 0.5) IsTrue(stopExits > 0, "A tight stop must be reached.");
+	}
+
+	private const string OutsideBar = "0078_Outside_Bar_Reversal";
+
+	[TestMethod]
+	[TestCategory("Shard00")]
+	[DataRow(false)]
+	[DataRow(true)]
+	public async Task S0078_OutsideBarsAgainstThePriorCandleWithExtremeBreakExits(bool secondary)
+	{
+		ICandleMessage previous = null;
+		var exitLevel = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var extremeExits = 0;
+		var sameDirectionOutsideBars = 0;
+		var violations = new List<string>();
+		await Replay(OutsideBar, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(1m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var prior = previous;
+				previous = candle;
+				if (prior == null) return;
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (position > 0m && close < exitLevel) { expectedSide = Sides.Sell; expectedVolume = position; extremeExits++; }
+				else if (position < 0m && close > exitLevel) { expectedSide = Sides.Buy; expectedVolume = -position; extremeExits++; }
+				else if (position == 0m && candle.HighPrice > prior.HighPrice && candle.LowPrice < prior.LowPrice)
+				{
+					var bullish = close > candle.OpenPrice;
+					var bearish = close < candle.OpenPrice;
+					if (bullish && prior.ClosePrice < prior.OpenPrice) { expectedSide = Sides.Buy; exitLevel = candle.LowPrice; }
+					else if (bearish && prior.ClosePrice > prior.OpenPrice) { expectedSide = Sides.Sell; exitLevel = candle.HighPrice; }
+					else if (bullish || bearish) sameDirectionOutsideBars++;
+					if (expectedSide is Sides side) { expectedVolume = strategy.Volume; entries[side]++; }
+				}
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must fade an outside bar closing against the previous candle while flat, or close the position when a close breaks the bar's opposite extreme.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] + entries[Sides.Sell] > 0, "The fixture must fade outside bars.");
+		if (secondary) IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "TON must fade outside bars on both sides.");
+		IsTrue(extremeExits > 0, "The fixture must exit through the outside bar's extreme.");
+		if (secondary) IsTrue(sameDirectionOutsideBars > 0, "TON must contain outside bars that continue the previous candle and are not traded.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard00")]
+	public Task S0078_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars(OutsideBar, TimeSpan.FromDays(31), expectedStopPercent: 1m);
+
+	private const string TrendlineBounce = "0079_Trendline_Bounce";
+
+	[TestMethod]
+	[TestCategory("Shard01")]
+	[DataRow(20, 20, 0.5, false)]
+	[DataRow(10, 10, 0.2, true)]
+	public async Task S0079_BouncesOffSlopingRegressionLinesWithAverageExits(int period, int maPeriod, double thresholdPercent, bool secondary)
+	{
+		static (decimal Slope, decimal Next) Fit(IReadOnlyList<decimal> values)
+		{
+			var n = values.Count;
+			var meanX = (n - 1) / 2m;
+			var meanY = values.Average();
+			var covariance = 0m;
+			var variance = 0m;
+			for (var i = 0; i < n; i++)
+			{
+				covariance += (i - meanX) * (values[i] - meanY);
+				variance += (i - meanX) * (i - meanX);
+			}
+			var slope = covariance / variance;
+			return (slope, meanY + slope * (n - meanX));
+		}
+		var sma = new SimpleMovingAverage { Length = maPeriod };
+		var highs = new List<decimal>();
+		var lows = new List<decimal>();
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var averageExits = 0;
+		var violations = new List<string>();
+		await Replay(TrendlineBounce, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["TrendlinePeriod"].Value);
+			AreEqual(20, strategy.Parameters["MAPeriod"].Value);
+			AreEqual(0.5m, Convert.ToDecimal(strategy.Parameters["BounceThresholdPercent"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "TrendlinePeriod", period);
+			SetParam(strategy, "MAPeriod", maPeriod);
+			SetParam(strategy, "BounceThresholdPercent", thresholdPercent);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var ready = highs.Count == period;
+				var support = ready ? Fit(lows) : default;
+				var resistance = ready ? Fit(highs) : default;
+				highs.Add(candle.HighPrice);
+				lows.Add(candle.LowPrice);
+				if (highs.Count > period) { highs.RemoveAt(0); lows.RemoveAt(0); }
+				var m = sma.Process(candle);
+				if (!ready || !m.IsFormed) return;
+				var ma = m.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				var t = (decimal)thresholdPercent / 100m;
+				if (position > 0m && close < ma) { expectedSide = Sides.Sell; expectedVolume = position; averageExits++; }
+				else if (position < 0m && close > ma) { expectedSide = Sides.Buy; expectedVolume = -position; averageExits++; }
+				else if (position == 0m)
+				{
+					if (support.Slope > 0m && candle.LowPrice <= support.Next * (1 + t) && close > candle.OpenPrice && close > ma) expectedSide = Sides.Buy;
+					else if (resistance.Slope < 0m && candle.HighPrice >= resistance.Next * (1 - t) && close < candle.OpenPrice && close < ma) expectedSide = Sides.Sell;
+					if (expectedSide is Sides side) { expectedVolume = strategy.Volume; entries[side]++; }
+				}
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a confirmed bounce off a rising support or falling resistance on the side of the average, or close the position when the close crosses the average.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "The fixture must bounce off both lines.");
+		IsTrue(averageExits > 0, "The fixture must exit on the average.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard01")]
+	public Task S0079_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars(TrendlineBounce, TimeSpan.FromDays(31));
+
+	private const string PivotReversal = "0080_Pivot_Point_Reversal";
+
+	[TestMethod]
+	[TestCategory("Shard02")]
+	[DataRow(false)]
+	[DataRow(true)]
+	public async Task S0080_RejectionsOfPriorDayS1AndR1WithPivotExits(bool secondary)
+	{
+		var days = new Dictionary<DateTime, (decimal High, decimal Low, decimal Close)>();
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var pivotExits = 0;
+		var violations = new List<string>();
+		await Replay(PivotReversal, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var day = candle.OpenTime.Date;
+				days[day] = days.TryGetValue(day, out var d)
+					? (Math.Max(d.High, candle.HighPrice), Math.Min(d.Low, candle.LowPrice), candle.ClosePrice)
+					: (candle.HighPrice, candle.LowPrice, candle.ClosePrice);
+				var earlier = days.Keys.Where(k => k < day).ToArray();
+				if (earlier.Length == 0) return;
+				var prior = days[earlier.Max()];
+				var pivot = (prior.High + prior.Low + prior.Close) / 3m;
+				var r1 = 2 * pivot - prior.Low;
+				var s1 = 2 * pivot - prior.High;
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (position > 0m && close >= pivot) { expectedSide = Sides.Sell; expectedVolume = position; pivotExits++; }
+				else if (position < 0m && close <= pivot) { expectedSide = Sides.Buy; expectedVolume = -position; pivotExits++; }
+				else if (position == 0m)
+				{
+					if (close > candle.OpenPrice && candle.LowPrice <= s1 && close > s1) expectedSide = Sides.Buy;
+					else if (close < candle.OpenPrice && candle.HighPrice >= r1 && close < r1) expectedSide = Sides.Sell;
+					if (expectedSide is Sides side) { expectedVolume = strategy.Volume; entries[side]++; }
+				}
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a confirmed rejection of the prior day's S1 or R1 while flat, or close the position at the central pivot.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] + entries[Sides.Sell] > 1, "The fixture must reject pivot levels.");
+		if (secondary) IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "TON must reject both S1 and R1.");
+		IsTrue(pivotExits > 0, "The fixture must reach the central pivot.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard02")]
+	public Task S0080_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars(PivotReversal, TimeSpan.FromDays(31));
+
+	private const string VwapBounce = "0081_VWAP_Bounce";
+
+	[TestMethod]
+	[TestCategory("Shard03")]
+	[DataRow(false)]
+	[DataRow(true)]
+	public async Task S0081_CandlesClosingAgainstTheDailyVwapReverseThePosition(bool secondary)
+	{
+		var day = DateTime.MinValue;
+		var priceVolume = 0m;
+		var volume = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var reversals = 0;
+		var violations = new List<string>();
+		await Replay(VwapBounce, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				if (candle.OpenTime.Date != day) { day = candle.OpenTime.Date; priceVolume = 0m; volume = 0m; }
+				priceVolume += (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m * candle.TotalVolume;
+				volume += candle.TotalVolume;
+				if (volume <= 0m) return;
+				var vwap = priceVolume / volume;
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (close > candle.OpenPrice && close < vwap && position <= 0m) expectedSide = Sides.Buy;
+				else if (close < candle.OpenPrice && close > vwap && position >= 0m) expectedSide = Sides.Sell;
+				if (expectedSide is Sides side)
+				{
+					expectedVolume = strategy.Volume + Math.Abs(position);
+					entries[side]++;
+					if (position != 0m) reversals++;
+					expectedOrders++;
+				}
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a bullish close below or a bearish close above the daily VWAP, reversing an opposite position.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && reversals > 5, "The fixture must reverse repeatedly on both sides.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard03")]
+	public Task S0081_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars(VwapBounce, TimeSpan.FromDays(31));
+
+	private const string VolumeExhaustion = "0082_Volume_Exhaustion";
+
+	[TestMethod]
+	[TestCategory("Shard04")]
+	[DataRow(20, 2.0, 20, 2.0, false)]
+	[DataRow(10, 1.5, 10, 1.0, true)]
+	public async Task S0082_VolumeSpikesAgainstTheTrendWithAtrTrailingStop(int volumePeriod, double volumeMultiplier, int maPeriod, double atrMultiplier, bool secondary)
+	{
+		var sma = new SimpleMovingAverage { Length = maPeriod };
+		var atr = new AverageTrueRange { Length = 14 };
+		var volumes = new List<decimal>();
+		decimal? previousMa = null;
+		var stop = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var stopExits = 0;
+		var trendSpikes = 0;
+		var violations = new List<string>();
+		await Replay(VolumeExhaustion, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["VolumePeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["VolumeMultiplier"].Value));
+			AreEqual(20, strategy.Parameters["MAPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["AtrMultiplier"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "VolumePeriod", volumePeriod);
+			SetParam(strategy, "VolumeMultiplier", volumeMultiplier);
+			SetParam(strategy, "MAPeriod", maPeriod);
+			SetParam(strategy, "AtrMultiplier", atrMultiplier);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				decimal? average = volumes.Count == volumePeriod ? volumes.Average() : null;
+				volumes.Add(candle.TotalVolume);
+				if (volumes.Count > volumePeriod) volumes.RemoveAt(0);
+				var m = sma.Process(candle);
+				var a = atr.Process(candle);
+				if (!m.IsFormed || !a.IsFormed) return;
+				var ma = m.GetValue<decimal>();
+				var last = previousMa;
+				previousMa = ma;
+				if (average is not decimal avg || last is not decimal lastMa) return;
+				var close = candle.ClosePrice;
+				var distance = (decimal)atrMultiplier * a.GetValue<decimal>();
+				var position = strategy.Position;
+				if (position > 0m)
+				{
+					if (close <= stop) { expectedSide = Sides.Sell; expectedVolume = position; stopExits++; }
+					else stop = Math.Max(stop, close - distance);
+				}
+				else if (position < 0m)
+				{
+					if (close >= stop) { expectedSide = Sides.Buy; expectedVolume = -position; stopExits++; }
+					else stop = Math.Min(stop, close + distance);
+				}
+				else if (candle.TotalVolume > avg * (decimal)volumeMultiplier)
+				{
+					if (close > candle.OpenPrice && ma < lastMa) { expectedSide = Sides.Buy; stop = close - distance; }
+					else if (close < candle.OpenPrice && ma > lastMa) { expectedSide = Sides.Sell; stop = close + distance; }
+					else if (close != candle.OpenPrice) trendSpikes++;
+					if (expectedSide is Sides side) { expectedVolume = strategy.Volume; entries[side]++; }
+				}
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must fade a volume spike against the moving-average trend while flat, or close the position at the ATR trailing stop.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "The fixture must fade spikes on both sides.");
+		IsTrue(stopExits > 0, "The fixture must exit at the trailing stop.");
+		IsTrue(trendSpikes > 0, "The fixture must contain spikes in the direction of the trend that are not traded.");
+	}
+
+	private const string AdxWeakening = "0083_ADX_Weakening";
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	[DataRow(14, 20, false)]
+	[DataRow(7, 10, true)]
+	public async Task S0083_FallingAdxOnTheSideOfTheAverageHeldUntilAdxRises(int adxPeriod, int maPeriod, bool secondary)
+	{
+		var adx = new AverageDirectionalIndex { Length = adxPeriod };
+		var sma = new SimpleMovingAverage { Length = maPeriod };
+		decimal? previousAdx = null;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var risingExits = 0;
+		var violations = new List<string>();
+		await Replay(AdxWeakening, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(14, strategy.Parameters["AdxPeriod"].Value);
+			AreEqual(20, strategy.Parameters["MaPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "AdxPeriod", adxPeriod);
+			SetParam(strategy, "MaPeriod", maPeriod);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var m = sma.Process(candle);
+				var a = adx.Process(candle);
+				if (!m.IsFormed || !a.IsFormed || a is not AverageDirectionalIndexValue { MovingAverage: decimal strength }) return;
+				var last = previousAdx;
+				previousAdx = strength;
+				if (last is not decimal lastStrength) return;
+				var close = candle.ClosePrice;
+				var ma = m.GetValue<decimal>();
+				var position = strategy.Position;
+				if (position > 0m && strength > lastStrength) { expectedSide = Sides.Sell; expectedVolume = position; risingExits++; }
+				else if (position < 0m && strength > lastStrength) { expectedSide = Sides.Buy; expectedVolume = -position; risingExits++; }
+				else if (position == 0m && strength < lastStrength && close != ma)
+				{
+					expectedSide = close > ma ? Sides.Buy : Sides.Sell;
+					expectedVolume = strategy.Volume;
+					entries[expectedSide.Value]++;
+				}
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a falling ADX on the side of the average while flat, or close the position when ADX rises.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "The fixture must enter on both sides.");
+		IsTrue(risingExits > 0, "The fixture must exit when ADX rises.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public Task S0083_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars(AdxWeakening, TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
+
+	private const string AtrExhaustion = "0084_ATR_Exhaustion";
+
+	[TestMethod]
+	[TestCategory("Shard06")]
+	[DataRow(14, 20, 1.5, 20, false)]
+	[DataRow(7, 10, 1.2, 10, true)]
+	public async Task S0084_AtrSpikesWithCandlesAgainstThePriorMove(int atrPeriod, int averagePeriod, double multiplier, int maPeriod, bool secondary)
+	{
+		var atr = new AverageTrueRange { Length = atrPeriod };
+		var sma = new SimpleMovingAverage { Length = maPeriod };
+		var atrs = new Queue<decimal>();
+		decimal? previousMa = null;
+		Sides? expectedSide = null;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var spikesWithTheMove = 0;
+		var nativeStop = typeof(Strategy).GetField("_isStopTrailing", BindingFlags.Instance | BindingFlags.NonPublic);
+		var violations = new List<string>();
+		await Replay(AtrExhaustion, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(14, strategy.Parameters["AtrPeriod"].Value);
+			AreEqual(20, strategy.Parameters["AtrAvgPeriod"].Value);
+			AreEqual(1.5m, Convert.ToDecimal(strategy.Parameters["AtrMultiplier"].Value));
+			AreEqual(20, strategy.Parameters["MaPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "AtrPeriod", atrPeriod);
+			SetParam(strategy, "AtrAvgPeriod", averagePeriod);
+			SetParam(strategy, "AtrMultiplier", multiplier);
+			SetParam(strategy, "MaPeriod", maPeriod);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var a = atr.Process(candle);
+				var m = sma.Process(candle);
+				if (!a.IsFormed) return;
+				var value = a.GetValue<decimal>();
+				atrs.Enqueue(value);
+				if (atrs.Count > averagePeriod) atrs.Dequeue();
+				if (!m.IsFormed) return;
+				var ma = m.GetValue<decimal>();
+				var last = previousMa;
+				previousMa = ma;
+				if (atrs.Count < averagePeriod || last is not decimal lastMa || strategy.Position != 0m) return;
+				if (value <= atrs.Average() * (decimal)multiplier) return;
+				var close = candle.ClosePrice;
+				if (close > candle.OpenPrice && ma < lastMa) expectedSide = Sides.Buy;
+				else if (close < candle.OpenPrice && ma > lastMa) expectedSide = Sides.Sell;
+				else if (close != candle.OpenPrice) spikesWithTheMove++;
+				if (expectedSide is Sides side) { entries[side]++; expectedOrders++; }
+			};
+			strategy.OrderRegistering += order =>
+			{
+				if (strategy.Position != 0m)
+				{
+					// Only the trailing protection may close a position.
+					IsTrue((bool)nativeStop.GetValue(strategy), "The percent stop must trail.");
+					return;
+				}
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != strategy.Volume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide}. Every entry must follow an ATR spike above its average with a candle against the prior move of the price average.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] + entries[Sides.Sell] > 1, "The fixture must fade ATR spikes.");
+		if (secondary) IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "TON must fade spikes on both sides.");
+		IsTrue(spikesWithTheMove > 0, "The fixture must contain spikes with candles in the direction of the prior move that are not traded.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard06")]
+	public Task S0084_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars(AtrExhaustion, TimeSpan.FromDays(31));
+
+	private const string TenkanKijun = "0085_Ichimoku_Tenkan";
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(9, 26, 52, false)]
+	[DataRow(5, 13, 26, true)]
+	public async Task S0085_TenkanKijunCrossesBeyondTheCloudWithKijunStops(int tenkanPeriod, int kijunPeriod, int spanPeriod, bool secondary)
+	{
+		var ichimoku = new Ichimoku
+		{
+			Tenkan = { Length = tenkanPeriod },
+			Kijun = { Length = kijunPeriod },
+			SenkouB = { Length = spanPeriod },
+		};
+		bool? tenkanAbove = null;
+		var stop = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var crossExits = 0;
+		var stopExits = 0;
+		var violations = new List<string>();
+		await Replay(TenkanKijun, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(9, strategy.Parameters["TenkanPeriod"].Value);
+			AreEqual(26, strategy.Parameters["KijunPeriod"].Value);
+			AreEqual(52, strategy.Parameters["SenkouSpanBPeriod"].Value);
+			AreEqual(TimeSpan.FromMinutes(30).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "TenkanPeriod", tenkanPeriod);
+			SetParam(strategy, "KijunPeriod", kijunPeriod);
+			SetParam(strategy, "SenkouSpanBPeriod", spanPeriod);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				if (ichimoku.Process(candle) is not IIchimokuValue { Tenkan: decimal tenkan, Kijun: decimal kijun, SenkouA: decimal a, SenkouB: decimal b }) return;
+				var before = tenkanAbove;
+				if (tenkan != kijun) tenkanAbove = tenkan > kijun;
+				if (before is not bool wasAbove) return;
+				var up = !wasAbove && tenkan > kijun;
+				var down = wasAbove && tenkan < kijun;
+				var close = candle.ClosePrice;
+				var top = Math.Max(a, b);
+				var bottom = Math.Min(a, b);
+				var position = strategy.Position;
+				void Enter(Sides side, decimal volume) { expectedSide = side; expectedVolume = volume; stop = kijun; entries[side]++; }
+				if (position > 0m)
+				{
+					if (down && close < bottom) Enter(Sides.Sell, strategy.Volume + position);
+					else if (down || close <= stop) { expectedSide = Sides.Sell; expectedVolume = position; if (down) crossExits++; else stopExits++; }
+				}
+				else if (position < 0m)
+				{
+					if (up && close > top) Enter(Sides.Buy, strategy.Volume - position);
+					else if (up || close >= stop) { expectedSide = Sides.Buy; expectedVolume = -position; if (up) crossExits++; else stopExits++; }
+				}
+				else if (up && close > top) Enter(Sides.Buy, strategy.Volume);
+				else if (down && close < bottom) Enter(Sides.Sell, strategy.Volume);
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a Tenkan/Kijun cross beyond the cloud, or close the position on the opposite cross or at the Kijun stop.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] + entries[Sides.Sell] > 1, "The fixture must trade crosses beyond the cloud.");
+		IsTrue(crossExits + stopExits > 0, "The fixture must close positions.");
+	}
+
+	private const string HeikinFlip = "0086_Heikin_Ashi_Reversal";
+
+	[TestMethod]
+	[TestCategory("Shard00")]
+	[DataRow(false)]
+	[DataRow(true)]
+	public async Task S0086_HeikinAshiColorFlipsReverseThePosition(bool secondary)
+	{
+		decimal? haOpen = null;
+		var haClose = 0m;
+		bool? bullish = null;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var reversals = 0;
+		var violations = new List<string>();
+		await Replay(HeikinFlip, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var close = (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m;
+				var open = haOpen is decimal previousOpen ? (previousOpen + haClose) / 2m : (candle.OpenPrice + candle.ClosePrice) / 2m;
+				haOpen = open;
+				haClose = close;
+				if (close == open) return;
+				var before = bullish;
+				bullish = close > open;
+				if (before is not bool wasBullish || wasBullish == bullish) return;
+				var position = strategy.Position;
+				if (bullish == true && position <= 0m) expectedSide = Sides.Buy;
+				else if (bullish == false && position >= 0m) expectedSide = Sides.Sell;
+				else return;
+				expectedVolume = strategy.Volume + Math.Abs(position);
+				if (position != 0m) reversals++;
+				expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must reverse to the new color of a Heikin-Ashi flip.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(reversals > 10, "The fixture must reverse repeatedly.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard00")]
+	public Task S0086_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars(HeikinFlip, TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
+
+	private const string SarReversal = "0087_Parabolic_SAR_Reversal";
+
+	[TestMethod]
+	[TestCategory("Shard01")]
+	[DataRow(0.02, 0.2, false)]
+	[DataRow(0.01, 0.1, true)]
+	public async Task S0087_ReversesWhenTheSarSwitchesSides(double initial, double maximum, bool secondary)
+	{
+		var sar = new ParabolicSar { Acceleration = (decimal)initial, AccelerationMax = (decimal)maximum };
+		bool? sarAbove = null;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var reversals = 0;
+		var violations = new List<string>();
+		await Replay(SarReversal, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(0.02m, Convert.ToDecimal(strategy.Parameters["InitialAcceleration"].Value));
+			AreEqual(0.2m, Convert.ToDecimal(strategy.Parameters["MaxAcceleration"].Value));
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "InitialAcceleration", initial);
+			SetParam(strategy, "MaxAcceleration", maximum);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var value = sar.Process(candle);
+				if (!value.IsFormed || value.IsEmpty) return;
+				var level = value.GetValue<decimal>();
+				if (level <= 0m) return;
+				var above = level > candle.ClosePrice;
+				var before = sarAbove;
+				sarAbove = above;
+				if (before is not bool wasAbove || wasAbove == above) return;
+				var position = strategy.Position;
+				if (!above && position <= 0m) expectedSide = Sides.Buy;
+				else if (above && position >= 0m) expectedSide = Sides.Sell;
+				else return;
+				expectedVolume = strategy.Volume + Math.Abs(position);
+				if (position != 0m) reversals++;
+				expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must reverse when the SAR switches sides of the close.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(reversals > 10, "The fixture must reverse repeatedly.");
+	}
+
+	private const string HullReversal = "0089_Hull_MA_Reversal";
+
+	[TestMethod]
+	[TestCategory("Shard02")]
+	[DataRow(9, 2.0, false)]
+	[DataRow(16, 0.5, true)]
+	public async Task S0089_HullTurnsWithAtrStopBeyondTheEntryCandle(int hmaPeriod, double multiplier, bool secondary)
+	{
+		var hma = new HullMovingAverage { Length = hmaPeriod };
+		var atr = new AverageTrueRange { Length = 14 };
+		decimal? previousHma = null;
+		var lastSlope = 0;
+		var stop = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var turns = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var stopExits = 0;
+		var violations = new List<string>();
+		await Replay(HullReversal, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(9, strategy.Parameters["HmaPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["AtrMultiplier"].Value));
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "HmaPeriod", hmaPeriod);
+			SetParam(strategy, "AtrMultiplier", multiplier);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var h = hma.Process(candle);
+				var a = atr.Process(candle);
+				if (!h.IsFormed || !a.IsFormed) return;
+				var value = h.GetValue<decimal>();
+				var last = previousHma;
+				previousHma = value;
+				if (last is not decimal prior) return;
+				var before = lastSlope;
+				var slope = value > prior ? 1 : value < prior ? -1 : 0;
+				if (slope != 0) lastSlope = slope;
+				var distance = (decimal)multiplier * a.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (before == -1 && slope == 1 && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); stop = candle.LowPrice - distance; turns[Sides.Buy]++; }
+				else if (before == 1 && slope == -1 && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); stop = candle.HighPrice + distance; turns[Sides.Sell]++; }
+				else if (position > 0m && close <= stop) { expectedSide = Sides.Sell; expectedVolume = position; stopExits++; }
+				else if (position < 0m && close >= stop) { expectedSide = Sides.Buy; expectedVolume = -position; stopExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must reverse on a turn of the Hull MA, or close the position at the ATR stop beyond the entry candle.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(turns[Sides.Buy] > 0 && turns[Sides.Sell] > 0, "The fixture must turn both ways.");
+		if (multiplier < 1.0) IsTrue(stopExits > 0, "A tight stop must be reached.");
+	}
+
+	private const string DonchianReversal = "0090_Donchian_Reversal";
+
+	[TestMethod]
+	[TestCategory("Shard03")]
+	[DataRow(20, false)]
+	[DataRow(8, true)]
+	public async Task S0090_ClosesBackInsideAfterAOneCandleBreakout(int period, bool secondary)
+	{
+		var candles = new List<(decimal High, decimal Low)>();
+		(decimal Close, decimal Upper, decimal Lower)? previous = null;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var violations = new List<string>();
+		await Replay(DonchianReversal, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["Period"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "Period", period);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var close = candle.ClosePrice;
+				var prior = previous;
+				previous = candles.Count == period ? (close, candles.Max(c => c.High), candles.Min(c => c.Low)) : null;
+				candles.Add((candle.HighPrice, candle.LowPrice));
+				if (candles.Count > period) candles.RemoveAt(0);
+				if (prior is not { } p) return;
+				var position = strategy.Position;
+				if (p.Close < p.Lower && close > p.Lower && position <= 0m) expectedSide = Sides.Buy;
+				else if (p.Close > p.Upper && close < p.Upper && position >= 0m) expectedSide = Sides.Sell;
+				if (expectedSide is Sides side) { expectedVolume = strategy.Volume + Math.Abs(position); entries[side]++; expectedOrders++; }
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a close back inside the band the previous close broke.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] + entries[Sides.Sell] > 1, "The fixture must trade failed breakouts.");
+		if (secondary) IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "TON must fail breakouts on both sides.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard03")]
+	public Task S0090_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars(DonchianReversal, TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
+
+	private const string MacdHistogram = "0091_MACD_Histogram_Reversal";
+
+	[TestMethod]
+	[TestCategory("Shard04")]
+	[DataRow(12, 26, 9, false)]
+	[DataRow(10, 22, 7, true)]
+	public async Task S0091_ReversesOnEverySignChangeOfTheHistogram(int fast, int slow, int signal, bool secondary)
+	{
+		var macd = new MovingAverageConvergenceDivergenceSignal
+		{
+			Macd = { ShortMa = { Length = fast }, LongMa = { Length = slow } },
+			SignalMa = { Length = signal },
+		};
+		bool? positive = null;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var reversals = 0;
+		var violations = new List<string>();
+		await Replay(MacdHistogram, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(12, strategy.Parameters["FastPeriod"].Value);
+			AreEqual(26, strategy.Parameters["SlowPeriod"].Value);
+			AreEqual(9, strategy.Parameters["SignalPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "FastPeriod", fast);
+			SetParam(strategy, "SlowPeriod", slow);
+			SetParam(strategy, "SignalPeriod", signal);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var value = (MovingAverageConvergenceDivergenceSignalValue)macd.Process(candle);
+				if (!value.IsFormed || value.Macd is not decimal line || value.Signal is not decimal sig || line == sig) return;
+				var before = positive;
+				positive = line > sig;
+				if (before is not bool was || was == positive) return;
+				var position = strategy.Position;
+				if (positive == true && position <= 0m) expectedSide = Sides.Buy;
+				else if (positive == false && position >= 0m) expectedSide = Sides.Sell;
+				else return;
+				expectedVolume = strategy.Volume + Math.Abs(position);
+				if (position != 0m) reversals++;
+				expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must reverse when the MACD histogram changes sign.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(reversals > 10, "The fixture must reverse repeatedly.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard04")]
+	public Task S0091_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars(MacdHistogram, TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
+
+	private async Task CheckOscillatorHooks(string key, string periodParameter, int defaultPeriod, decimal oversold, decimal overbought, int period, bool secondary, Func<int, Func<ICandleMessage, decimal?>> oscillator, params (string Name, object Value)[] extra)
+	{
+		var compute = oscillator(period);
+		decimal? previous = null;
+		var previousHigh = 0m;
+		var previousLow = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var hookExits = 0;
+		var violations = new List<string>();
+		await Replay(key, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(defaultPeriod, strategy.Parameters[periodParameter].Value);
+			AreEqual(oversold, Convert.ToDecimal(strategy.Parameters["OversoldLevel"].Value));
+			AreEqual(overbought, Convert.ToDecimal(strategy.Parameters["OverboughtLevel"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, periodParameter, period);
+			foreach (var (name, value) in extra) SetParam(strategy, name, value);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				if (compute(candle) is not decimal current) return;
+				var last = previous;
+				var high = previousHigh;
+				var low = previousLow;
+				previous = current;
+				previousHigh = candle.HighPrice;
+				previousLow = candle.LowPrice;
+				if (last is not decimal prior) return;
+				var up = current > prior;
+				var down = current < prior;
+				var longSignal = prior < oversold && up && candle.LowPrice < low;
+				var shortSignal = prior > overbought && down && candle.HighPrice > high;
+				var position = strategy.Position;
+				if (position > 0m && down) { expectedSide = Sides.Sell; expectedVolume = shortSignal ? strategy.Volume + position : position; if (shortSignal) entries[Sides.Sell]++; else hookExits++; }
+				else if (position < 0m && up) { expectedSide = Sides.Buy; expectedVolume = longSignal ? strategy.Volume - position : -position; if (longSignal) entries[Sides.Buy]++; else hookExits++; }
+				else if (position == 0m && (longSignal || shortSignal)) { expectedSide = longSignal ? Sides.Buy : Sides.Sell; expectedVolume = strategy.Volume; entries[expectedSide.Value]++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a hook out of an extreme zone with a new price extreme, or close the position when the oscillator turns the other way.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] + entries[Sides.Sell] > 1, "The fixture must trade hooks.");
+		IsTrue(hookExits > 0, "The fixture must exit when the oscillator turns back.");
+	}
+
+	private static Func<int, Func<ICandleMessage, decimal?>> Single(Func<int, IIndicator> create)
+		=> period =>
+		{
+			var indicator = create(period);
+			return candle =>
+			{
+				var value = indicator.Process(candle);
+				return value.IsFormed && !value.IsEmpty ? value.GetValue<decimal>() : null;
+			};
+		};
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	[DataRow(14, false)]
+	[DataRow(7, true)]
+	public Task S0092_RsiHooksOutOfExtremesOnNewPriceExtremes(int period, bool secondary)
+		=> CheckOscillatorHooks("0092_RSI_Hook_Reversal", "RsiPeriod", 14, 30m, 70m, period, secondary, Single(p => new RelativeStrengthIndex { Length = p }));
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public Task S0092_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0092_RSI_Hook_Reversal", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
+
+	[TestMethod]
+	[TestCategory("Shard06")]
+	[DataRow(14, false)]
+	[DataRow(7, true)]
+	public Task S0093_StochasticHooksOutOfExtremesOnNewPriceExtremes(int period, bool secondary)
+		=> CheckOscillatorHooks("0093_Stochastic_Hook_Reversal", "KPeriod", 14, 20m, 80m, period, secondary, p =>
+		{
+			var stochastic = new StochasticOscillator { K = { Length = p }, D = { Length = 3 } };
+			return candle => stochastic.Process(candle) is IStochasticOscillatorValue { IsFormed: true, K: decimal k } ? k : null;
+		});
+
+	[TestMethod]
+	[TestCategory("Shard06")]
+	public Task S0093_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0093_Stochastic_Hook_Reversal", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(20, false)]
+	[DataRow(10, true)]
+	public Task S0094_CciHooksOutOfExtremesOnNewPriceExtremes(int period, bool secondary)
+		=> CheckOscillatorHooks("0094_CCI_Hook_Reversal", "CciPeriod", 20, -100m, 100m, period, secondary, Single(p => new CommodityChannelIndex { Length = p }));
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0094_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0094_CCI_Hook_Reversal", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
+
+	[TestMethod]
+	[TestCategory("Shard00")]
+	[DataRow(14, false)]
+	[DataRow(7, true)]
+	public Task S0095_WilliamsRHooksOutOfExtremesOnNewPriceExtremes(int period, bool secondary)
+		=> CheckOscillatorHooks("0095_Williams_R_Hook_Reversal", "WillRPeriod", 14, -80m, -20m, period, secondary, Single(p => new WilliamsR { Length = p }));
+
+	[TestMethod]
+	[TestCategory("Shard00")]
+	public Task S0095_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0095_Williams_R_Hook_Reversal", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
+
+	private async Task CheckOneSidedPatternWithStopBeyond(string key, int count, bool longOnly, Func<ICandleMessage[], bool> pattern, double stopPercent, bool secondary, params (string Name, object Value)[] extra)
+	{
+		var candles = new List<ICandleMessage>();
+		var stop = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = 0;
+		var stopExits = 0;
+		var violations = new List<string>();
+		var k = (decimal)stopPercent / 100m;
+		await Replay(key, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "StopLossPercent", stopPercent);
+			foreach (var (name, value) in extra) SetParam(strategy, name, value);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				candles.Add(candle);
+				if (candles.Count > count) candles.RemoveAt(0);
+				var position = strategy.Position;
+				if (position != 0m)
+				{
+					IsTrue(longOnly ? position > 0m : position < 0m, "The strategy trades one direction only.");
+					if (longOnly ? candle.ClosePrice <= stop : candle.ClosePrice >= stop)
+					{
+						expectedSide = longOnly ? Sides.Sell : Sides.Buy;
+						expectedVolume = Math.Abs(position);
+						stopExits++;
+					}
+				}
+				else if (candles.Count == count && pattern([.. candles]))
+				{
+					expectedSide = longOnly ? Sides.Buy : Sides.Sell;
+					expectedVolume = strategy.Volume;
+					stop = longOnly ? candles.Min(c => c.LowPrice) * (1 - k) : candles.Max(c => c.HighPrice) * (1 + k);
+					entries++;
+				}
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must enter on the pattern while flat, or close the position on a close beyond the stop set past the pattern.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries > 0, "The fixture must enter on the pattern.");
+		if (secondary) IsTrue(entries > 1 && stopExits > 0, $"TON must enter repeatedly and stop out (entries {entries}, stop exits {stopExits}).");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard01")]
+	[DataRow(0.1, false)]
+	[DataRow(0.05, true)]
+	public Task S0096_LongOnlyThreeWhiteSoldiersWithStopBelowThePattern(double stopPercent, bool secondary)
+		=> CheckOneSidedPatternWithStopBeyond("0096_Three_White_Soldiers", 3, true,
+			c => c.All(x => x.ClosePrice > x.OpenPrice) && c[1].ClosePrice > c[0].ClosePrice && c[2].ClosePrice > c[1].ClosePrice, stopPercent, secondary);
+
+	[TestMethod]
+	[TestCategory("Shard02")]
+	[DataRow(0.1, false)]
+	[DataRow(0.05, true)]
+	public Task S0097_ShortOnlyThreeBlackCrowsWithStopAboveThePattern(double stopPercent, bool secondary)
+		=> CheckOneSidedPatternWithStopBeyond("0097_Three_Black_Crows", 3, false,
+			c => c.All(x => x.ClosePrice < x.OpenPrice) && c[1].ClosePrice < c[0].ClosePrice && c[2].ClosePrice < c[1].ClosePrice, stopPercent, secondary);
+
+	[TestMethod]
+	[TestCategory("Shard03")]
+	[DataRow(0.1, 0.1, false)]
+	[DataRow(0.05, 0.2, true)]
+	public Task S0099_LongOnlyTweezerBottomsWithStopBelowTheLows(double stopPercent, double tolerance, bool secondary)
+		=> CheckOneSidedPatternWithStopBeyond("0099_Tweezer_Bottom", 2, true,
+			c => c[0].ClosePrice < c[0].OpenPrice && c[1].ClosePrice > c[1].OpenPrice && Math.Abs(c[0].LowPrice - c[1].LowPrice) <= c[0].LowPrice * (decimal)tolerance / 100m,
+			stopPercent, secondary, ("TolerancePercent", tolerance));
+
+	[TestMethod]
+	[TestCategory("Shard04")]
+	[DataRow(0.1, 0.1, false)]
+	[DataRow(0.05, 0.2, true)]
+	public Task S0100_ShortOnlyTweezerTopsWithStopAboveTheHighs(double stopPercent, double tolerance, bool secondary)
+		=> CheckOneSidedPatternWithStopBeyond("0100_Tweezer_Top", 2, false,
+			c => c[0].ClosePrice > c[0].OpenPrice && c[1].ClosePrice < c[1].OpenPrice && Math.Abs(c[0].HighPrice - c[1].HighPrice) <= c[0].HighPrice * (decimal)tolerance / 100m,
+			stopPercent, secondary, ("TolerancePercent", tolerance));
+
+	private const string GapFill = "0098_Gap_Fill_Reversal";
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	[DataRow(0.02, false)]
+	[DataRow(0.05, true)]
+	public async Task S0098_FilledGapsBetweenCandlesReverseAgainstTheGap(double minGap, bool secondary)
+	{
+		decimal? previousClose = null;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var unfilledGaps = 0;
+		var violations = new List<string>();
+		await Replay(GapFill, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(0.02m, Convert.ToDecimal(strategy.Parameters["MinGapPercent"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "MinGapPercent", minGap);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var last = previousClose;
+				previousClose = candle.ClosePrice;
+				if (last is not decimal prior) return;
+				var gap = (candle.OpenPrice - prior) / prior * 100m;
+				var position = strategy.Position;
+				if (gap >= (decimal)minGap && candle.LowPrice <= prior && position >= 0m) expectedSide = Sides.Sell;
+				else if (-gap >= (decimal)minGap && candle.HighPrice >= prior && position <= 0m) expectedSide = Sides.Buy;
+				else if (Math.Abs(gap) >= (decimal)minGap && (gap > 0m ? candle.LowPrice > prior : candle.HighPrice < prior)) unfilledGaps++;
+				if (expectedSide is Sides side) { expectedVolume = strategy.Volume + Math.Abs(position); entries[side]++; expectedOrders++; }
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must turn against a gap the same candle filled.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "The fixture must fade filled gaps on both sides.");
+		IsTrue(unfilledGaps > 0, "The fixture must contain gaps that are not filled and not traded.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public Task S0098_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars(GapFill, TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
+
+	[TestMethod]
+	[TestCategory("Shard06")]
+	[DataRow(0.1, false)]
+	[DataRow(0.05, true)]
+	public Task S0101_LongOnlyBullishHaramiWithStopBelowThePattern(double stopPercent, bool secondary)
+		=> CheckOneSidedPatternWithStopBeyond("0101_Harami_Bullish", 2, true,
+			c => c[0].ClosePrice < c[0].OpenPrice && Math.Abs(c[1].ClosePrice - c[1].OpenPrice) < c[0].OpenPrice - c[0].ClosePrice
+				&& Math.Min(c[1].OpenPrice, c[1].ClosePrice) >= c[0].LowPrice && Math.Max(c[1].OpenPrice, c[1].ClosePrice) <= c[0].HighPrice, stopPercent, secondary);
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(0.1, false)]
+	[DataRow(0.05, true)]
+	public Task S0102_ShortOnlyBearishHaramiWithStopAboveThePattern(double stopPercent, bool secondary)
+		=> CheckOneSidedPatternWithStopBeyond("0102_Harami_Bearish", 2, false,
+			c => c[0].ClosePrice > c[0].OpenPrice && Math.Abs(c[1].ClosePrice - c[1].OpenPrice) < c[0].ClosePrice - c[0].OpenPrice
+				&& Math.Min(c[1].OpenPrice, c[1].ClosePrice) >= c[0].LowPrice && Math.Max(c[1].OpenPrice, c[1].ClosePrice) <= c[0].HighPrice, stopPercent, secondary);
+
+	private const string Rejection = "0104_Rejection_Candle";
+
+	[TestMethod]
+	[TestCategory("Shard00")]
+	[DataRow(1.5, 0.1, false)]
+	[DataRow(1.0, 0.05, true)]
+	public async Task S0104_RejectionWicksBeyondThePreviousCandleWithStopsPastThem(double ratio, double stopPercent, bool secondary)
+	{
+		ICandleMessage previous = null;
+		var stop = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var stopExits = 0;
+		var violations = new List<string>();
+		var k = (decimal)stopPercent / 100m;
+		await Replay(Rejection, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(1.5m, Convert.ToDecimal(strategy.Parameters["WickRatio"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "WickRatio", ratio);
+			SetParam(strategy, "StopLossPercent", stopPercent);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var prior = previous;
+				previous = candle;
+				if (prior == null) return;
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (position > 0m && close <= stop) { expectedSide = Sides.Sell; expectedVolume = position; stopExits++; }
+				else if (position < 0m && close >= stop) { expectedSide = Sides.Buy; expectedVolume = -position; stopExits++; }
+				else if (position == 0m)
+				{
+					var body = Math.Abs(close - candle.OpenPrice);
+					var upper = candle.HighPrice - Math.Max(candle.OpenPrice, close);
+					var lower = Math.Min(candle.OpenPrice, close) - candle.LowPrice;
+					if (candle.LowPrice < prior.LowPrice && close > candle.OpenPrice && lower > body * (decimal)ratio) { expectedSide = Sides.Buy; stop = candle.LowPrice * (1 - k); }
+					else if (candle.HighPrice > prior.HighPrice && close < candle.OpenPrice && upper > body * (decimal)ratio) { expectedSide = Sides.Sell; stop = candle.HighPrice * (1 + k); }
+					if (expectedSide is Sides side) { expectedVolume = strategy.Volume; entries[side]++; }
+				}
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must trade against a rejection wick while flat, or close the position on a close past the stop beyond the rejected extreme.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] + entries[Sides.Sell] > 0, "The fixture must trade rejections.");
+		if (secondary) IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && stopExits > 0, "TON must trade rejections on both sides and stop out.");
+	}
+
+	private async Task CheckOneSidedLevelPattern(string key, string periodParameter, bool longOnly, int period, double stopPercent, bool secondary,
+		Func<ICandleMessage, decimal, decimal, bool> signal, Func<ICandleMessage, decimal, decimal, decimal, decimal> stopOf)
+	{
+		var candles = new List<(decimal High, decimal Low)>();
+		var stop = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = 0;
+		var stopExits = 0;
+		var violations = new List<string>();
+		var k = (decimal)stopPercent / 100m;
+		await Replay(key, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters[periodParameter].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, periodParameter, period);
+			SetParam(strategy, "StopLossPercent", stopPercent);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var ready = candles.Count == period;
+				var high = ready ? candles.Max(c => c.High) : 0m;
+				var low = ready ? candles.Min(c => c.Low) : 0m;
+				candles.Add((candle.HighPrice, candle.LowPrice));
+				if (candles.Count > period) candles.RemoveAt(0);
+				var position = strategy.Position;
+				if (position != 0m)
+				{
+					IsTrue(longOnly ? position > 0m : position < 0m, "The strategy trades one direction only.");
+					if (longOnly ? candle.ClosePrice <= stop : candle.ClosePrice >= stop)
+					{
+						expectedSide = longOnly ? Sides.Sell : Sides.Buy;
+						expectedVolume = Math.Abs(position);
+						stopExits++;
+					}
+				}
+				else if (ready && signal(candle, high, low))
+				{
+					expectedSide = longOnly ? Sides.Buy : Sides.Sell;
+					expectedVolume = strategy.Volume;
+					stop = stopOf(candle, high, low, k);
+					entries++;
+				}
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must enter on the documented break of the previous candles' level while flat, or close the position on a close past the stop.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries > 0, "The fixture must enter.");
+		if (secondary) IsTrue(entries > 1 && stopExits > 0, $"TON must enter repeatedly and stop out (entries {entries}, stop exits {stopExits}).");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard01")]
+	[DataRow(20, 0.1, false)]
+	[DataRow(10, 0.05, true)]
+	public Task S0106_LongOnlySpringsBackAboveSupport(int period, double stopPercent, bool secondary)
+		=> CheckOneSidedLevelPattern("0106_Spring_Reversal", "LookbackPeriod", true, period, stopPercent, secondary,
+			(c, high, low) => c.LowPrice < low && c.ClosePrice > low && c.ClosePrice > c.OpenPrice, (c, high, low, k) => c.LowPrice * (1 - k));
+
+	[TestMethod]
+	[TestCategory("Shard02")]
+	[DataRow(20, 0.1, false)]
+	[DataRow(10, 0.05, true)]
+	public Task S0107_ShortOnlyUpthrustsBackBelowResistance(int period, double stopPercent, bool secondary)
+		=> CheckOneSidedLevelPattern("0107_Upthrust_Reversal", "LookbackPeriod", false, period, stopPercent, secondary,
+			(c, high, low) => c.HighPrice > high && c.ClosePrice < high && c.ClosePrice < c.OpenPrice, (c, high, low, k) => c.HighPrice * (1 + k));
+
+	[TestMethod]
+	[TestCategory("Shard03")]
+	[DataRow(20, 0.0, false)]
+	[DataRow(10, 0.0, true)]
+	public Task S0108_LongOnlyBreakoutsAboveTheRangeWithStopBelowTheBase(int period, double stopPercent, bool secondary)
+		=> CheckOneSidedLevelPattern("0108_Wyckoff_Accumulation", "RangePeriod", true, period, stopPercent, secondary,
+			(c, high, low) => c.ClosePrice > high, (c, high, low, k) => low * (1 - k));
+
+	[TestMethod]
+	[TestCategory("Shard04")]
+	[DataRow(20, 0.0, false)]
+	[DataRow(10, 0.0, true)]
+	public Task S0109_ShortOnlyBreakdownsBelowTheRangeWithStopAboveTheTop(int period, double stopPercent, bool secondary)
+		=> CheckOneSidedLevelPattern("0109_Wyckoff_Distribution", "RangePeriod", false, period, stopPercent, secondary,
+			(c, high, low) => c.ClosePrice < low, (c, high, low, k) => high * (1 + k));
+
+	private enum SwingTrigger { LevelCross, SignalCross, Turn }
+
+	private async Task CheckFailureSwing(string key, string periodParameter, int defaultPeriod, int period, decimal oversold, decimal overbought, SwingTrigger trigger, bool secondary,
+		Func<int, Func<ICandleMessage, (decimal Value, decimal Signal)?>> oscillator)
+	{
+		var compute = oscillator(period);
+		decimal? last = null, beforeLast = null, lastTrough = null, lastPeak = null, armedLong = null, armedShort = null, prevSignal = null;
+		var exitLevel = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = 0;
+		var exits = 0;
+		var violations = new List<string>();
+		await Replay(key, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(defaultPeriod, strategy.Parameters[periodParameter].Value);
+			AreEqual(oversold, Convert.ToDecimal(strategy.Parameters["OversoldLevel"].Value));
+			AreEqual(overbought, Convert.ToDecimal(strategy.Parameters["OverboughtLevel"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, periodParameter, period);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				if (compute(candle) is not { } point) return;
+				var current = point.Value;
+				if (last is decimal l)
+				{
+					if (beforeLast is decimal b)
+					{
+						if (l < b && l < current && l < oversold) { armedLong = lastTrough is decimal t && l > t ? l : null; lastTrough = l; }
+						else if (l > b && l > current && l > overbought) { armedShort = lastPeak is decimal pk && l < pk ? l : null; lastPeak = l; }
+					}
+					var (longTrigger, shortTrigger) = trigger switch
+					{
+						SwingTrigger.LevelCross => (l <= oversold && current > oversold, l >= overbought && current < overbought),
+						SwingTrigger.SignalCross => (last <= prevSignal && current > point.Signal, last >= prevSignal && current < point.Signal),
+						_ => (current > l, current < l),
+					};
+					var longSwing = longTrigger ? armedLong : null;
+					var shortSwing = shortTrigger ? armedShort : null;
+					if (longTrigger) armedLong = null;
+					if (shortTrigger) armedShort = null;
+					var position = strategy.Position;
+					bool exitLong, exitShort;
+					if (trigger == SwingTrigger.LevelCross) { exitLong = l <= overbought && current > overbought; exitShort = l >= oversold && current < oversold; }
+					else { exitLong = current < exitLevel; exitShort = current > exitLevel; }
+					if (position > 0m && exitLong) { expectedSide = Sides.Sell; expectedVolume = position; exits++; }
+					else if (position < 0m && exitShort) { expectedSide = Sides.Buy; expectedVolume = -position; exits++; }
+					else if (position == 0m && longSwing is decimal ls) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume; exitLevel = ls; entries++; }
+					else if (position == 0m && shortSwing is decimal ss) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume; exitLevel = ss; entries++; }
+					if (expectedSide is not null) expectedOrders++;
+				}
+				beforeLast = last;
+				last = current;
+				prevSignal = point.Signal;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a failure swing in an extreme zone, or close the position on the documented exit.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries > 0 && exits > 0, $"The fixture must trade failure swings (entries {entries}, exits {exits}).");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	[DataRow(14, false)]
+	[DataRow(7, true)]
+	public Task S0110_RsiFailureSwingsCrossingBackThroughTheZone(int period, bool secondary)
+		=> CheckFailureSwing("0110_RSI_Failure_Swing", "RsiPeriod", 14, period, 30m, 70m, SwingTrigger.LevelCross, secondary, p =>
+		{
+			var rsi = new RelativeStrengthIndex { Length = p };
+			return candle => rsi.Process(candle) is { IsFormed: true, IsEmpty: false } v ? (v.GetValue<decimal>(), 0m) : null;
+		});
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public Task S0110_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0110_RSI_Failure_Swing", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15), setup: (s, _) => SetParam(s, "RsiPeriod", 5));
+
+	[TestMethod]
+	[TestCategory("Shard06")]
+	[DataRow(14, false)]
+	[DataRow(7, true)]
+	public Task S0111_StochasticFailureSwingsConfirmedByTheSignalCross(int period, bool secondary)
+		=> CheckFailureSwing("0111_Stochastic_Failure_Swing", "KPeriod", 14, period, 20m, 80m, SwingTrigger.SignalCross, secondary, p =>
+		{
+			var stochastic = new StochasticOscillator { K = { Length = p }, D = { Length = 3 } };
+			return candle => stochastic.Process(candle) is IStochasticOscillatorValue { IsFormed: true, K: decimal k, D: decimal d } ? (k, d) : null;
+		});
+
+	[TestMethod]
+	[TestCategory("Shard06")]
+	public Task S0111_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0111_Stochastic_Failure_Swing", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(20, false)]
+	[DataRow(10, true)]
+	public Task S0112_CciFailureSwingsTurningAwayFromTheZone(int period, bool secondary)
+		=> CheckFailureSwing("0112_CCI_Failure_Swing", "CciPeriod", 20, period, -100m, 100m, SwingTrigger.Turn, secondary, p =>
+		{
+			var cci = new CommodityChannelIndex { Length = p };
+			return candle => cci.Process(candle) is { IsFormed: true, IsEmpty: false } v ? (v.GetValue<decimal>(), 0m) : null;
+		});
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0112_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0112_CCI_Failure_Swing", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
+
+	private async Task CheckAbandonedBaby(string key, bool bullish, double stopPercent, bool secondary)
+	{
+		var candles = new List<ICandleMessage>();
+		var stop = 0m;
+		Sides? expectedSide = null;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = 0;
+		var violations = new List<string>();
+		var k = (decimal)stopPercent / 100m;
+		static decimal Top(ICandleMessage c) => Math.Max(c.OpenPrice, c.ClosePrice);
+		static decimal Bottom(ICandleMessage c) => Math.Min(c.OpenPrice, c.ClosePrice);
+		await Replay(key, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(10m, Convert.ToDecimal(strategy.Parameters["DojiBodyPercent"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "StopLossPercent", stopPercent);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				candles.Add(candle);
+				if (candles.Count > 3) candles.RemoveAt(0);
+				var position = strategy.Position;
+				if (position != 0m)
+				{
+					IsTrue(bullish ? position > 0m : position < 0m, "The strategy trades one direction only.");
+					if (bullish ? candle.ClosePrice <= stop : candle.ClosePrice >= stop) expectedSide = bullish ? Sides.Sell : Sides.Buy;
+				}
+				else if (candles.Count == 3)
+				{
+					var (first, doji, third) = (candles[0], candles[1], candles[2]);
+					var isDoji = Math.Abs(doji.ClosePrice - doji.OpenPrice) <= (doji.HighPrice - doji.LowPrice) / 10m;
+					var pattern = bullish
+						? first.ClosePrice < first.OpenPrice && isDoji && Top(doji) < Bottom(first) && third.ClosePrice > third.OpenPrice && Bottom(third) > Top(doji)
+						: first.ClosePrice > first.OpenPrice && isDoji && Bottom(doji) > Top(first) && third.ClosePrice < third.OpenPrice && Top(third) < Bottom(doji);
+					if (pattern)
+					{
+						expectedSide = bullish ? Sides.Buy : Sides.Sell;
+						stop = bullish ? doji.LowPrice * (1 - k) : doji.HighPrice * (1 + k);
+						entries++;
+					}
+				}
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side}, expected {expectedSide}. Every order must enter on an abandoned baby with body gaps while flat, or close the position on a close past the stop beyond the doji.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries > 0, "The fixture must contain the pattern.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard00")]
+	[DataRow(0.0, false)]
+	[DataRow(0.0, true)]
+	public Task S0113_LongOnlyBodyGapAbandonedBabiesWithStopBelowTheDoji(double stopPercent, bool secondary)
+		=> CheckAbandonedBaby("0113_Bullish_Abandoned_Baby", true, stopPercent, secondary);
+
+	[TestMethod]
+	[TestCategory("Shard01")]
+	[DataRow(0.0, false)]
+	[DataRow(0.0, true)]
+	public Task S0114_ShortOnlyBodyGapAbandonedBabiesWithStopAboveTheDoji(double stopPercent, bool secondary)
+		=> CheckAbandonedBaby("0114_Bearish_Abandoned_Baby", false, stopPercent, secondary);
+
+	private const string VolumeClimax = "0115_Volume_Climax_Reversal";
+
+	[TestMethod]
+	[TestCategory("Shard02")]
+	[DataRow(20, 2.0, false)]
+	[DataRow(10, 1.5, true)]
+	public async Task S0115_RetracementsAfterTrendClimaxesWithContinuationAndVolumeExits(int period, double multiplier, bool secondary)
+	{
+		var sma = new SimpleMovingAverage { Length = period };
+		var volumes = new List<decimal>();
+		var climax = 0;
+		var climaxExtreme = 0m;
+		var exitLevel = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var exits = 0;
+		var violations = new List<string>();
+		await Replay(VolumeClimax, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["MaPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["VolumeMultiplier"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "MaPeriod", period);
+			SetParam(strategy, "VolumeMultiplier", multiplier);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				decimal? average = volumes.Count == period ? volumes.Average() : null;
+				volumes.Add(candle.TotalVolume);
+				if (volumes.Count > period) volumes.RemoveAt(0);
+				var previousClimax = climax;
+				var previousExtreme = climaxExtreme;
+				climax = 0;
+				var m = sma.Process(candle);
+				if (average is not decimal avg || !m.IsFormed) return;
+				var ma = m.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var spike = candle.TotalVolume > avg * (decimal)multiplier;
+				if (spike && close > candle.OpenPrice && close > ma) { climax = 1; climaxExtreme = candle.HighPrice; }
+				else if (spike && close < candle.OpenPrice && close < ma) { climax = -1; climaxExtreme = candle.LowPrice; }
+				var position = strategy.Position;
+				if (position < 0m && (close > exitLevel || spike)) { expectedSide = Sides.Buy; expectedVolume = -position; exits++; }
+				else if (position > 0m && (close < exitLevel || spike)) { expectedSide = Sides.Sell; expectedVolume = position; exits++; }
+				else if (position == 0m && previousClimax == 1 && close < candle.OpenPrice) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume; exitLevel = previousExtreme; entries[Sides.Sell]++; }
+				else if (position == 0m && previousClimax == -1 && close > candle.OpenPrice) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume; exitLevel = previousExtreme; entries[Sides.Buy]++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must fade the retracement after a trend climax while flat, or close the position on continuation past the climax or a new volume spike.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] + entries[Sides.Sell] > 1 && exits > 0, "The fixture must fade climaxes and exit.");
+		if (secondary) IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "TON must fade climaxes on both sides.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard02")]
+	public Task S0115_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars(VolumeClimax, TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15), setup: (s, _) => SetParam(s, "VolumeMultiplier", 1.2m));
+
+	private sealed class CalendarDay
+	{
+		public DateTime Day;
+		public bool First;
+		public bool Last;
+		public DateTime? PreviousDay;
+		public decimal PreviousOpen;
+		public decimal PreviousClose;
+		public decimal EntryPrice;
+		public DateTime ExitDay;
+	}
+
+	private static DateTime ThirdFriday(DateTime day)
+	{
+		var first = new DateTime(day.Year, day.Month, 1, 0, 0, 0, day.Kind);
+		while (first.DayOfWeek != DayOfWeek.Friday) first = first.AddDays(1);
+		return first.AddDays(14);
+	}
+
+	private async Task CheckCalendarStrategy(string key, bool secondary, Action<Strategy> setup, Func<ICandleMessage, CalendarDay, decimal?, int> entrySide, Func<ICandleMessage, CalendarDay, bool> exit,
+		int maPeriod = 0, int minimumEntries = 1)
+	{
+		var sma = maPeriod > 0 ? new SimpleMovingAverage { Length = maPeriod } : null;
+		var state = new CalendarDay();
+		DateTime? currentDay = null;
+		var dayOpen = 0m;
+		var dayClose = 0m;
+		Sides? expectedSide = null;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = 0;
+		var violations = new List<string>();
+		await Replay(key, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			setup?.Invoke(strategy);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var day = candle.OpenTime.Date;
+				state.First = currentDay != day;
+				if (state.First)
+				{
+					if (currentDay is DateTime previous) { state.PreviousDay = previous; state.PreviousOpen = dayOpen; state.PreviousClose = dayClose; }
+					currentDay = day;
+					dayOpen = candle.OpenPrice;
+				}
+				dayClose = candle.ClosePrice;
+				state.Day = day;
+				state.Last = (candle.OpenTime + TimeSpan.FromMinutes(15)).Date != day;
+				decimal? ma = null;
+				if (sma != null) { var m = sma.Process(candle); if (m.IsFormed) ma = m.GetValue<decimal>(); }
+				var position = strategy.Position;
+				if (position != 0m)
+				{
+					if (exit(candle, state)) expectedSide = position > 0m ? Sides.Sell : Sides.Buy;
+				}
+				else if (entrySide(candle, state, ma) is var side and not 0)
+				{
+					expectedSide = side > 0 ? Sides.Buy : Sides.Sell;
+					state.EntryPrice = candle.ClosePrice;
+					entries++;
+				}
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side}, expected {expectedSide}. Every order must open or close on the documented calendar day.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries >= minimumEntries, $"The fixture must enter at least {minimumEntries} time(s), entered {entries}.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard03")]
+	[DataRow(false)]
+	[DataRow(true)]
+	public Task S0116_MidweekLongsAndMondayFridayShortsHeldForTheDay(bool secondary)
+		=> CheckCalendarStrategy("0116_Day_of_Week", secondary, null,
+			(c, d, _) => !d.First || d.Day.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday ? 0 : d.Day.DayOfWeek is DayOfWeek.Monday or DayOfWeek.Friday ? -1 : 1,
+			(c, d) => d.Last, minimumEntries: 15);
+
+	[TestMethod]
+	[TestCategory("Shard04")]
+	[DataRow(false)]
+	[DataRow(true)]
+	public Task S0117_SeasonalMonthDirectionFromTheFirstCandle(bool secondary)
+		=> CheckCalendarStrategy("0117_Month_of_Year", secondary, null,
+			(c, d, _) => d.First && d.Day.Day == 1 ? (d.Day.Month is >= 5 and <= 10 ? -1 : 1) : 0,
+			(c, d) => d.Last && (c.OpenTime + TimeSpan.FromMinutes(15)).Month != d.Day.Month);
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	[DataRow(1.0, false)]
+	[DataRow(0.3, true)]
+	public Task S0118_TuesdayLongsAfterADownMondayWithTargetOrDayEnd(double target, bool secondary)
+		=> CheckCalendarStrategy("0118_Turnaround_Tuesday", secondary, s =>
+			{
+				AreEqual(1m, Convert.ToDecimal(s.Parameters["ProfitTargetPercent"].Value));
+				SetParam(s, "ProfitTargetPercent", target);
+			},
+			(c, d, _) => d.First && d.Day.DayOfWeek == DayOfWeek.Tuesday && d.PreviousDay == d.Day.AddDays(-1) && d.PreviousClose < d.PreviousOpen ? 1 : 0,
+			(c, d) => d.Last || c.ClosePrice >= d.EntryPrice * (1 + (decimal)target / 100m));
+
+	[TestMethod]
+	[TestCategory("Shard06")]
+	[DataRow(3, false)]
+	[DataRow(10, true)]
+	public Task S0119_LongsOverTheLastDaysOfTheMonth(int days, bool secondary)
+		=> CheckCalendarStrategy("0119_End_of_Month_Strength", secondary, s =>
+			{
+				AreEqual(3, s.Parameters["DaysBeforeMonthEnd"].Value);
+				SetParam(s, "DaysBeforeMonthEnd", days);
+			},
+			(c, d, _) => d.First && d.Day.Day > DateTime.DaysInMonth(d.Day.Year, d.Day.Month) - days ? 1 : 0,
+			(c, d) => d.First && d.Day.Day == 1);
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(false)]
+	[DataRow(true)]
+	public Task S0120_LongForTheFirstDayOfTheMonth(bool secondary)
+		=> CheckCalendarStrategy("0120_First_Day_of_Month", secondary, null,
+			(c, d, _) => d.First && d.Day.Day == 1 ? 1 : 0, (c, d) => d.Last);
+
+	[TestMethod]
+	[TestCategory("Shard00")]
+	[DataRow(false)]
+	[DataRow(true)]
+	public Task S0123_ShortForEveryMonday(bool secondary)
+		=> CheckCalendarStrategy("0123_Monday_Weakness", secondary, null,
+			(c, d, _) => d.First && d.Day.DayOfWeek == DayOfWeek.Monday ? -1 : 0, (c, d) => d.Last, minimumEntries: 4);
+
+	[TestMethod]
+	[TestCategory("Shard01")]
+	[DataRow(false)]
+	[DataRow(true)]
+	public Task S0124_LongTheDayBeforeAHoliday(bool secondary)
+		=> CheckCalendarStrategy("0124_Pre-Holiday_Strength", secondary, s =>
+			{
+				StringAssert.Contains((string)s.Parameters["Holidays"].Value, "2024-03-29");
+				SetParam(s, "Holidays", "2024-03-08, 2024-03-29");
+			},
+			(c, d, _) => d.First && (d.Day.AddDays(1) == new DateTime(2024, 3, 8) || d.Day.AddDays(1) == new DateTime(2024, 3, 29)) ? 1 : 0,
+			(c, d) => d.Last, minimumEntries: 2);
+
+	[TestMethod]
+	[TestCategory("Shard02")]
+	[DataRow(false)]
+	[DataRow(true)]
+	public Task S0125_ShortTheDayAfterAHoliday(bool secondary)
+		=> CheckCalendarStrategy("0125_Post-Holiday_Weakness", secondary, s =>
+			{
+				StringAssert.Contains((string)s.Parameters["Holidays"].Value, "2024-03-29");
+				SetParam(s, "Holidays", "2024-03-08,2024-03-29");
+			},
+			(c, d, _) => d.First && (d.Day.AddDays(-1) == new DateTime(2024, 3, 8) || d.Day.AddDays(-1) == new DateTime(2024, 3, 29)) ? -1 : 0,
+			(c, d) => d.Last, minimumEntries: 2);
+
+	[TestMethod]
+	[TestCategory("Shard03")]
+	[DataRow(20, false)]
+	[DataRow(50, true)]
+	public Task S0126_TrendTradeThroughQuarterlyExpiryWeekUntilThursday(int maPeriod, bool secondary)
+		=> CheckCalendarStrategy("0126_Quarterly_Expiry", secondary, s =>
+			{
+				AreEqual(20, s.Parameters["MaPeriod"].Value);
+				SetParam(s, "MaPeriod", maPeriod);
+			},
+			(c, d, ma) => d.First && ma is decimal trend && c.ClosePrice != trend && d.Day.Month % 3 == 0 && d.Day == ThirdFriday(d.Day).AddDays(-4) ? (c.ClosePrice > trend ? 1 : -1) : 0,
+			(c, d) => d.Last && d.Day == ThirdFriday(d.Day).AddDays(-1), maPeriod);
+
+	private sealed class SessionCandle
+	{
+		public DateTime Day;
+		public bool First;
+		public bool Last;
+		public DateTime CloseTime;
+		public decimal DayOpen;
+		public decimal? PreviousClose;
+	}
+
+	// The decision returns +1 to buy, -1 to sell and 0 for no order; the strategy's native percent stop is switched off
+	// unless the stop is part of the decision.
+	private async Task CheckSessionStrategy(string key, bool secondary, Action<Strategy> setup, Func<ICandleMessage, SessionCandle, decimal, int> decide,
+		int minimumEntries, bool keepStop = false)
+	{
+		var state = new SessionCandle();
+		DateTime? currentDay = null;
+		decimal? lastClose = null;
+		Sides? expectedSide = null;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var exits = 0;
+		var violations = new List<string>();
+		await Replay(key, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			setup?.Invoke(strategy);
+			if (!keepStop) SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var day = candle.OpenTime.Date;
+				state.First = currentDay != day;
+				if (state.First) { currentDay = day; state.DayOpen = candle.OpenPrice; }
+				state.Day = day;
+				state.CloseTime = candle.OpenTime + TimeSpan.FromMinutes(15);
+				state.Last = state.CloseTime.Date != day;
+				state.PreviousClose = lastClose;
+				lastClose = candle.ClosePrice;
+				var position = strategy.Position;
+				var side = decide(candle, state, position);
+				if (side == 0) return;
+				expectedSide = side > 0 ? Sides.Buy : Sides.Sell;
+				expectedOrders++;
+				if (position == 0m) entries[expectedSide.Value]++;
+				else
+				{
+					IsTrue(position > 0m == (side < 0), "An order while in a position must close it.");
+					exits++;
+				}
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				var expectedVolume = strategy.Position == 0m ? strategy.Volume : Math.Abs(strategy.Position);
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow the documented session rule.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] + entries[Sides.Sell] >= minimumEntries && exits > 0, $"The fixture must enter at least {minimumEntries} time(s) and exit, entered {entries[Sides.Buy] + entries[Sides.Sell]}, exited {exits}.");
+		if (secondary) IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "TON must trade both sides.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard04")]
+	[DataRow(20, false)]
+	[DataRow(10, true)]
+	public Task S0127_FirstCandleOfTheDayOnHighVolumeUntilACandleAgainstIt(int period, bool secondary)
+	{
+		var volumes = new List<decimal>();
+		return CheckSessionStrategy("0127_Open_Drive", secondary, s =>
+			{
+				AreEqual(20, s.Parameters["VolumePeriod"].Value);
+				SetParam(s, "VolumePeriod", period);
+			},
+			(c, d, position) =>
+			{
+				decimal? average = volumes.Count == period ? volumes.Average() : null;
+				volumes.Add(c.TotalVolume);
+				if (volumes.Count > period) volumes.RemoveAt(0);
+				if (position > 0m) return c.ClosePrice < c.OpenPrice ? -1 : 0;
+				if (position < 0m) return c.ClosePrice > c.OpenPrice ? 1 : 0;
+				if (!d.First || average is not decimal avg || c.TotalVolume <= avg) return 0;
+				return Math.Sign(c.ClosePrice - c.OpenPrice);
+			}, minimumEntries: 5);
+	}
+
+	[TestMethod]
+	[TestCategory("Shard04")]
+	public Task S0127_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0127_Open_Drive", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	[DataRow(12, 16, false)]
+	[DataRow(10, 18, true)]
+	public Task S0128_OneFadeOfTheMorningMoveBetweenMiddayAndAfternoon(int midday, int afternoon, bool secondary)
+	{
+		var morning = 0;
+		var traded = false;
+		return CheckSessionStrategy("0128_Midday_Reversal", secondary, s =>
+			{
+				AreEqual(12, s.Parameters["MiddayHour"].Value);
+				AreEqual(16, s.Parameters["AfternoonHour"].Value);
+				SetParam(s, "MiddayHour", midday);
+				SetParam(s, "AfternoonHour", afternoon);
+			},
+			(c, d, position) =>
+			{
+				if (d.First) { morning = 0; traded = false; }
+				if (d.CloseTime == d.Day.AddHours(midday)) morning = Math.Sign(c.ClosePrice - d.DayOpen);
+				if (position != 0m) return d.CloseTime >= d.Day.AddHours(afternoon) ? (position > 0m ? -1 : 1) : 0;
+				if (traded || morning == 0 || d.CloseTime <= d.Day.AddHours(midday) || d.CloseTime >= d.Day.AddHours(afternoon)) return 0;
+				if (Math.Sign(c.ClosePrice - c.OpenPrice) != -morning) return 0;
+				traded = true;
+				return -morning;
+			}, minimumEntries: 10);
+	}
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public Task S0128_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0128_Midday_Reversal", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
+
+	[TestMethod]
+	[TestCategory("Shard06")]
+	[DataRow(0.01, 2.0, false)]
+	[DataRow(0.05, 0.3, true)]
+	public async Task S0129_FadeTheMidnightGapWithAStopBeyondTheFirstCandle(double minGap, double stopPercent, bool secondary)
+	{
+		var stopPrice = 0m;
+		var stops = 0;
+		await CheckSessionStrategy("0129_Overnight_Gap", secondary, s =>
+			{
+				AreEqual(0.01m, Convert.ToDecimal(s.Parameters["MinGapPercent"].Value));
+				SetParam(s, "MinGapPercent", minGap);
+				SetParam(s, "StopLossPercent", stopPercent);
+			},
+			(c, d, position) =>
+			{
+				var close = c.ClosePrice;
+				if (position != 0m)
+				{
+					var stopped = position > 0m ? close <= stopPrice : close >= stopPrice;
+					if (stopped && !d.Last) stops++;
+					return d.Last || stopped ? (position > 0m ? -1 : 1) : 0;
+				}
+				if (!d.First || d.PreviousClose is not decimal last || last <= 0m) return 0;
+				var gap = (c.OpenPrice - last) / last * 100m;
+				var percent = (decimal)stopPercent / 100m;
+				if (gap >= (decimal)minGap) { stopPrice = c.HighPrice * (1 + percent); return -1; }
+				if (-gap >= (decimal)minGap) { stopPrice = c.LowPrice * (1 - percent); return 1; }
+				return 0;
+			}, minimumEntries: secondary ? 10 : 3, keepStop: true);
+		if (secondary) IsTrue(stops > 0, "TON must close a position at the stop.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(12, 14, false)]
+	[DataRow(11, 15, true)]
+	public Task S0130_FadeTheMorningMoveAtLunchUntilItEnds(int lunch, int lunchEnd, bool secondary)
+		=> CheckSessionStrategy("0130_Lunch_Break_Fade", secondary, s =>
+			{
+				AreEqual(12, s.Parameters["LunchHour"].Value);
+				AreEqual(14, s.Parameters["LunchEndHour"].Value);
+				SetParam(s, "LunchHour", lunch);
+				SetParam(s, "LunchEndHour", lunchEnd);
+			},
+			(c, d, position) =>
+			{
+				if (position != 0m) return d.CloseTime >= d.Day.AddHours(lunchEnd) ? (position > 0m ? -1 : 1) : 0;
+				return d.CloseTime == d.Day.AddHours(lunch) ? -Math.Sign(c.ClosePrice - d.DayOpen) : 0;
+			}, minimumEntries: 20);
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0130_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0130_Lunch_Break_Fade", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
+
+	[TestMethod]
+	[TestCategory("Shard00")]
+	[DataRow(12, 26, 9, 14, 30.0, 70.0, false)]
+	[DataRow(8, 21, 5, 10, 35.0, 65.0, true)]
+	public async Task S0131_MacdCrossesConfirmRsiExtremesAndReverse(int fast, int slow, int signalPeriod, int rsiPeriod, double oversold, double overbought, bool secondary)
+	{
+		var macd = new MovingAverageConvergenceDivergenceSignal { Macd = { ShortMa = { Length = fast }, LongMa = { Length = slow } }, SignalMa = { Length = signalPeriod } };
+		var rsi = new RelativeStrengthIndex { Length = rsiPeriod };
+		bool? previousAbove = null;
+		var zone = 0;
+		var crossesWithoutExtreme = 0;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var reversals = 0;
+		var violations = new List<string>();
+		await Replay("0131_MACD_RSI", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(12, strategy.Parameters["MacdFast"].Value);
+			AreEqual(26, strategy.Parameters["MacdSlow"].Value);
+			AreEqual(9, strategy.Parameters["MacdSignal"].Value);
+			AreEqual(14, strategy.Parameters["RsiPeriod"].Value);
+			AreEqual(30m, Convert.ToDecimal(strategy.Parameters["RsiOversold"].Value));
+			AreEqual(70m, Convert.ToDecimal(strategy.Parameters["RsiOverbought"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "MacdFast", fast);
+			SetParam(strategy, "MacdSlow", slow);
+			SetParam(strategy, "MacdSignal", signalPeriod);
+			SetParam(strategy, "RsiPeriod", rsiPeriod);
+			SetParam(strategy, "RsiOversold", oversold);
+			SetParam(strategy, "RsiOverbought", overbought);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var r = rsi.Process(candle);
+				var m = (MovingAverageConvergenceDivergenceSignalValue)macd.Process(candle);
+				if (r.IsFormed)
+				{
+					var value = r.GetValue<decimal>();
+					if (value < (decimal)oversold) zone = 1;
+					else if (value > (decimal)overbought) zone = -1;
+				}
+				if (!m.IsFormed || m.Macd is not decimal line || m.Signal is not decimal sig) return;
+				var above = line > sig;
+				var was = previousAbove;
+				previousAbove = above;
+				if (was is not bool wasAbove || wasAbove == above) return;
+				var side = above ? 1 : -1;
+				if (zone != side) { crossesWithoutExtreme++; return; }
+				zone = 0;
+				var position = strategy.Position;
+				if (side > 0 && position <= 0m) expectedSide = Sides.Buy;
+				else if (side < 0 && position >= 0m) expectedSide = Sides.Sell;
+				if (expectedSide is not Sides s) return;
+				expectedVolume = strategy.Volume + Math.Abs(position);
+				expectedOrders++;
+				entries[s]++;
+				if (position != 0m) reversals++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a MACD cross that confirms the latest RSI extreme.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && reversals > 0, "The fixture must trade both sides and reverse.");
+		IsTrue(crossesWithoutExtreme > 0, "The fixture must contain MACD crosses without an RSI extreme that are not traded.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard00")]
+	public Task S0131_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0131_MACD_RSI", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
+
+	// The oracle returns +1 for a long signal, -1 for a short one and 0 otherwise; a signal opens a position or reverses
+	// the opposite one and is ignored while the position already points its way. The percent stop is switched off.
+	private async Task CheckReversingSignals(string key, bool secondary, Action<Strategy> setup, Func<ICandleMessage, int> signal, string rule,
+		TimeSpan? frame = null, bool requireReversal = true)
+	{
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var reversals = 0;
+		var violations = new List<string>();
+		await Replay(key, (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual((frame ?? TimeSpan.FromMinutes(15)).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			setup?.Invoke(strategy);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var side = signal(candle);
+				var position = strategy.Position;
+				if (side > 0 && position <= 0m) expectedSide = Sides.Buy;
+				else if (side < 0 && position >= 0m) expectedSide = Sides.Sell;
+				if (expectedSide is not Sides s) return;
+				expectedVolume = strategy.Volume + Math.Abs(position);
+				expectedOrders++;
+				entries[s]++;
+				if (position != 0m) reversals++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. {rule}");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "The fixture must trade both sides.");
+		if (requireReversal) IsTrue(reversals > 0, "The fixture must reverse a position on an opposite signal.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard01")]
+	[DataRow(20, 2.0, 14, 20.0, 80.0, false)]
+	[DataRow(14, 1.5, 9, 25.0, 75.0, true)]
+	public Task S0132_BandTouchesWithStochasticExtremesAreFaded(int period, double width, int stochPeriod, double oversold, double overbought, bool secondary)
+	{
+		var bollinger = new BollingerBands { Length = period, Width = (decimal)width };
+		var stochastic = new StochasticOscillator { K = { Length = stochPeriod }, D = { Length = 3 } };
+		return CheckReversingSignals("0132_Bollinger_Stochastic", secondary, s =>
+			{
+				AreEqual(20, s.Parameters["BollingerPeriod"].Value);
+				AreEqual(2m, Convert.ToDecimal(s.Parameters["BollingerDeviation"].Value));
+				AreEqual(14, s.Parameters["StochPeriod"].Value);
+				AreEqual(3, s.Parameters["StochDPeriod"].Value);
+				AreEqual(20m, Convert.ToDecimal(s.Parameters["StochOversold"].Value));
+				AreEqual(80m, Convert.ToDecimal(s.Parameters["StochOverbought"].Value));
+				SetParam(s, "BollingerPeriod", period);
+				SetParam(s, "BollingerDeviation", width);
+				SetParam(s, "StochPeriod", stochPeriod);
+				SetParam(s, "StochOversold", oversold);
+				SetParam(s, "StochOverbought", overbought);
+			},
+			candle =>
+			{
+				var b = (BollingerBandsValue)bollinger.Process(candle);
+				var k = stochastic.Process(candle) is IStochasticOscillatorValue { IsFormed: true, K: decimal kv } ? kv : (decimal?)null;
+				if (!b.IsFormed || b.UpBand is not decimal upper || b.LowBand is not decimal lower || k is not decimal value) return 0;
+				if (candle.LowPrice <= lower && value < (decimal)oversold) return 1;
+				if (candle.HighPrice >= upper && value > (decimal)overbought) return -1;
+				return 0;
+			}, "Every order must fade a band touch confirmed by a stochastic extreme.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard01")]
+	public Task S0132_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0132_Bollinger_Stochastic", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
+
+	[TestMethod]
+	[TestCategory("Shard02")]
+	[DataRow(20, 20, 1.2, false)]
+	[DataRow(30, 10, 1.5, true)]
+	public async Task S0133_ExpandingVolumeWithTheSmaUntilVolumeDriesUpOrTheSmaTurns(int maPeriod, int volumePeriod, double threshold, bool secondary)
+	{
+		var sma = new SimpleMovingAverage { Length = maPeriod };
+		var volumes = new List<decimal>();
+		decimal? previousMa = null;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var dryExits = 0;
+		var turnExits = 0;
+		var violations = new List<string>();
+		await Replay("0133_MA_Volume", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["MaPeriod"].Value);
+			AreEqual(20, strategy.Parameters["VolumePeriod"].Value);
+			AreEqual(1.2m, Convert.ToDecimal(strategy.Parameters["VolumeThreshold"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "MaPeriod", maPeriod);
+			SetParam(strategy, "VolumePeriod", volumePeriod);
+			SetParam(strategy, "VolumeThreshold", threshold);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				decimal? average = volumes.Count == volumePeriod ? volumes.Average() : null;
+				volumes.Add(candle.TotalVolume);
+				if (volumes.Count > volumePeriod) volumes.RemoveAt(0);
+				var m = sma.Process(candle);
+				if (!m.IsFormed) return;
+				var ma = m.GetValue<decimal>();
+				var last = previousMa;
+				previousMa = ma;
+				if (average is not decimal avg || last is not decimal lastMa) return;
+				var close = candle.ClosePrice;
+				var volume = candle.TotalVolume;
+				var position = strategy.Position;
+				if (position != 0m)
+				{
+					var dry = volume < avg;
+					var turned = position > 0m ? ma < lastMa : ma > lastMa;
+					if (!dry && !turned) return;
+					if (dry) dryExits++; else turnExits++;
+					expectedSide = position > 0m ? Sides.Sell : Sides.Buy;
+					expectedVolume = Math.Abs(position);
+				}
+				else if (volume > avg * (decimal)threshold)
+				{
+					if (close > ma && ma > lastMa) expectedSide = Sides.Buy;
+					else if (close < ma && ma < lastMa) expectedSide = Sides.Sell;
+					if (expectedSide is not Sides s) return;
+					expectedVolume = strategy.Volume;
+					entries[s]++;
+				}
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow expanding volume with the SMA while flat, or close the position when volume dries up or the SMA turns.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "The fixture must trade both sides.");
+		IsTrue(dryExits > 0 && turnExits > 0, "The fixture must exit both on drying volume and on a turning SMA.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard02")]
+	public Task S0133_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0133_MA_Volume", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
+
+	[TestMethod]
+	[TestCategory("Shard03")]
+	[DataRow(14, 12, 26, 9, false)]
+	[DataRow(10, 8, 21, 5, true)]
+	public async Task S0134_MacdCrossesWhileAdxRisesUntilAdxWeakensOrMacdFlips(int adxPeriod, int fast, int slow, int signalPeriod, bool secondary)
+	{
+		var adx = new AverageDirectionalIndex { Length = adxPeriod };
+		var macd = new MovingAverageConvergenceDivergenceSignal { Macd = { ShortMa = { Length = fast }, LongMa = { Length = slow } }, SignalMa = { Length = signalPeriod } };
+		bool? previousAbove = null;
+		decimal? previousAdx = null;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var weakeningExits = 0;
+		var flipExits = 0;
+		var crossesWithFallingAdx = 0;
+		var violations = new List<string>();
+		await Replay("0134_ADX_MACD", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(14, strategy.Parameters["AdxPeriod"].Value);
+			AreEqual(12, strategy.Parameters["MacdFast"].Value);
+			AreEqual(26, strategy.Parameters["MacdSlow"].Value);
+			AreEqual(9, strategy.Parameters["MacdSignal"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "AdxPeriod", adxPeriod);
+			SetParam(strategy, "MacdFast", fast);
+			SetParam(strategy, "MacdSlow", slow);
+			SetParam(strategy, "MacdSignal", signalPeriod);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var a = adx.Process(candle);
+				var m = (MovingAverageConvergenceDivergenceSignalValue)macd.Process(candle);
+				if (!a.IsFormed || !m.IsFormed || a is not AverageDirectionalIndexValue { MovingAverage: decimal strength } || m.Macd is not decimal line || m.Signal is not decimal sig) return;
+				var above = line > sig;
+				var was = previousAbove;
+				var last = previousAdx;
+				previousAbove = above;
+				previousAdx = strength;
+				if (was is not bool wasAbove || last is not decimal lastStrength) return;
+				var rising = strength > lastStrength;
+				var position = strategy.Position;
+				if (position != 0m)
+				{
+					var flipped = position > 0m ? !above : above;
+					if (rising && !flipped) return;
+					if (!rising) weakeningExits++; else flipExits++;
+					expectedSide = position > 0m ? Sides.Sell : Sides.Buy;
+					expectedVolume = Math.Abs(position);
+				}
+				else if (wasAbove != above)
+				{
+					if (!rising) { crossesWithFallingAdx++; return; }
+					expectedSide = above ? Sides.Buy : Sides.Sell;
+					expectedVolume = strategy.Volume;
+					entries[expectedSide.Value]++;
+				}
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a MACD cross with rising ADX while flat, or close the position when ADX weakens or MACD flips.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "The fixture must trade both sides.");
+		IsTrue(weakeningExits > 0 && crossesWithFallingAdx > 0, "The fixture must exit on weakening ADX and skip crosses while ADX falls.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard03")]
+	public Task S0134_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0134_ADX_MACD", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
+
+	[TestMethod]
+	[TestCategory("Shard04")]
+	[DataRow(9, 26, 52, 14, 30.0, 70.0, false)]
+	[DataRow(7, 22, 44, 10, 35.0, 65.0, true)]
+	public Task S0135_RsiRecoveriesInTheDirectionOfTheCloud(int tenkan, int kijun, int senkouB, int rsiPeriod, double oversold, double overbought, bool secondary)
+	{
+		var ichimoku = new Ichimoku { Tenkan = { Length = tenkan }, Kijun = { Length = kijun }, SenkouB = { Length = senkouB } };
+		var rsi = new RelativeStrengthIndex { Length = rsiPeriod };
+		decimal? previousRsi = null;
+		return CheckReversingSignals("0135_Ichimoku_RSI", secondary, s =>
+			{
+				AreEqual(9, s.Parameters["TenkanPeriod"].Value);
+				AreEqual(26, s.Parameters["KijunPeriod"].Value);
+				AreEqual(52, s.Parameters["SenkouSpanBPeriod"].Value);
+				AreEqual(14, s.Parameters["RsiPeriod"].Value);
+				AreEqual(30m, Convert.ToDecimal(s.Parameters["RsiOversold"].Value));
+				AreEqual(70m, Convert.ToDecimal(s.Parameters["RsiOverbought"].Value));
+				SetParam(s, "TenkanPeriod", tenkan);
+				SetParam(s, "KijunPeriod", kijun);
+				SetParam(s, "SenkouSpanBPeriod", senkouB);
+				SetParam(s, "RsiPeriod", rsiPeriod);
+				SetParam(s, "RsiOversold", oversold);
+				SetParam(s, "RsiOverbought", overbought);
+			},
+			candle =>
+			{
+				var cloud = ichimoku.Process(candle);
+				var r = rsi.Process(candle);
+				if (!r.IsFormed) return 0;
+				var value = r.GetValue<decimal>();
+				var last = previousRsi;
+				previousRsi = value;
+				if (last is not decimal lastRsi || cloud is not IIchimokuValue { SenkouA: decimal a, SenkouB: decimal b }) return 0;
+				if (a > b && lastRsi < (decimal)oversold && value >= (decimal)oversold) return 1;
+				if (a < b && lastRsi > (decimal)overbought && value <= (decimal)overbought) return -1;
+				return 0;
+			}, "Every order must follow RSI leaving an extreme in the direction of the cloud.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard04")]
+	public Task S0135_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0135_Ichimoku_RSI", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	[DataRow(10, 3.0, 20, false)]
+	[DataRow(7, 2.0, 10, true)]
+	public async Task S0136_SupertrendFlipsWithVolumeReverseAndUnconfirmedFlipsClose(int period, double multiplier, int volumePeriod, bool secondary)
+	{
+		var supertrend = new SuperTrend { Length = period, Multiplier = (decimal)multiplier };
+		var volumes = new List<decimal>();
+		bool? previousUp = null;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var reversals = 0;
+		var plainExits = 0;
+		var violations = new List<string>();
+		await Replay("0136_Supertrend_Volume", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(10, strategy.Parameters["SupertrendPeriod"].Value);
+			AreEqual(3m, Convert.ToDecimal(strategy.Parameters["SupertrendMultiplier"].Value));
+			AreEqual(20, strategy.Parameters["VolumePeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "SupertrendPeriod", period);
+			SetParam(strategy, "SupertrendMultiplier", multiplier);
+			SetParam(strategy, "VolumePeriod", volumePeriod);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				decimal? average = volumes.Count == volumePeriod ? volumes.Average() : null;
+				volumes.Add(candle.TotalVolume);
+				if (volumes.Count > volumePeriod) volumes.RemoveAt(0);
+				if (supertrend.Process(candle) is not SuperTrendIndicatorValue { IsFormed: true } value) return;
+				var up = value.IsUpTrend;
+				var was = previousUp;
+				previousUp = up;
+				if (was is not bool wasUp || wasUp == up) return;
+				var confirmed = average is decimal avg && candle.TotalVolume > avg;
+				var position = strategy.Position;
+				var direction = up ? 1m : -1m;
+				if (confirmed && position * direction <= 0m)
+				{
+					expectedVolume = strategy.Volume + Math.Abs(position);
+					entries[up ? Sides.Buy : Sides.Sell]++;
+					if (position != 0m) reversals++;
+				}
+				else if (position * direction < 0m)
+				{
+					expectedVolume = Math.Abs(position);
+					plainExits++;
+				}
+				else return;
+				expectedSide = up ? Sides.Buy : Sides.Sell;
+				expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a Supertrend flip: entering or reversing with above-average volume, closing without it.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "The fixture must trade both sides.");
+		IsTrue(reversals > 0 && plainExits > 0, "The fixture must both reverse on confirmed flips and close on unconfirmed ones.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public Task S0136_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0136_Supertrend_Volume", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
+
+	[TestMethod]
+	[TestCategory("Shard06")]
+	[DataRow(20, 2.0, 14, false)]
+	[DataRow(14, 1.5, 10, true)]
+	public async Task S0137_RsiDivergencesOutsideTheBandsUntilPriceReentersOrRsiCrossesBack(int period, double width, int rsiPeriod, bool secondary)
+	{
+		var bollinger = new BollingerBands { Length = period, Width = (decimal)width };
+		var rsi = new RelativeStrengthIndex { Length = rsiPeriod };
+		decimal? upperClose = null, lowerClose = null;
+		var upperRsi = 0m;
+		var lowerRsi = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var exits = 0;
+		var outsideWithoutDivergence = 0;
+		var violations = new List<string>();
+		await Replay("0137_Bollinger_RSI", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["BollingerPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["BollingerDeviation"].Value));
+			AreEqual(14, strategy.Parameters["RsiPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "BollingerPeriod", period);
+			SetParam(strategy, "BollingerDeviation", width);
+			SetParam(strategy, "RsiPeriod", rsiPeriod);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var b = (BollingerBandsValue)bollinger.Process(candle);
+				var r = rsi.Process(candle);
+				if (!b.IsFormed || !r.IsFormed || b.UpBand is not decimal upper || b.LowBand is not decimal lower) return;
+				var value = r.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var signal = 0;
+				if (close > upper)
+				{
+					if (upperClose is decimal previous && close > previous && value < upperRsi) signal = -1; else outsideWithoutDivergence++;
+					upperClose = close;
+					upperRsi = value;
+				}
+				else if (close < lower)
+				{
+					if (lowerClose is decimal previous && close < previous && value > lowerRsi) signal = 1; else outsideWithoutDivergence++;
+					lowerClose = close;
+					lowerRsi = value;
+				}
+				var position = strategy.Position;
+				if (signal > 0 && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (signal < 0 && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (signal == 0 && position > 0m && (close >= lower || value > 50m)) { expectedSide = Sides.Sell; expectedVolume = position; exits++; }
+				else if (signal == 0 && position < 0m && (close <= upper || value < 50m)) { expectedSide = Sides.Buy; expectedVolume = -position; exits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must fade an RSI divergence outside the bands, or close once price re-enters the bands or RSI crosses back over 50.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && exits > 0, "The fixture must trade both divergences and exit.");
+		IsTrue(outsideWithoutDivergence > 0, "The fixture must contain closes outside the bands without divergence that are not traded.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard06")]
+	public Task S0137_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0137_Bollinger_RSI", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(50, 14, 20.0, 80.0, false)]
+	[DataRow(30, 10, 25.0, 75.0, true)]
+	public Task S0138_StochasticPullbacksBoughtOnTheUpturnWithTheSma(int maPeriod, int stochPeriod, double oversold, double overbought, bool secondary)
+	{
+		var sma = new SimpleMovingAverage { Length = maPeriod };
+		var stochastic = new StochasticOscillator { K = { Length = stochPeriod }, D = { Length = 3 } };
+		decimal? previousK = null;
+		var setup = 0;
+		return CheckReversingSignals("0138_MA_Stochastic", secondary, s =>
+			{
+				AreEqual(50, s.Parameters["MaPeriod"].Value);
+				AreEqual(14, s.Parameters["StochPeriod"].Value);
+				AreEqual(3, s.Parameters["StochDPeriod"].Value);
+				AreEqual(20m, Convert.ToDecimal(s.Parameters["StochOversold"].Value));
+				AreEqual(80m, Convert.ToDecimal(s.Parameters["StochOverbought"].Value));
+				SetParam(s, "MaPeriod", maPeriod);
+				SetParam(s, "StochPeriod", stochPeriod);
+				SetParam(s, "StochOversold", oversold);
+				SetParam(s, "StochOverbought", overbought);
+			},
+			candle =>
+			{
+				var m = sma.Process(candle);
+				var st = stochastic.Process(candle);
+				if (!m.IsFormed || st is not IStochasticOscillatorValue { IsFormed: true, K: decimal k }) return 0;
+				var ma = m.GetValue<decimal>();
+				var last = previousK;
+				previousK = k;
+				var up = candle.ClosePrice > ma;
+				var down = candle.ClosePrice < ma;
+				var signal = 0;
+				if (last is decimal lastK)
+				{
+					if (setup == 1 && up && k > lastK) signal = 1;
+					else if (setup == -1 && down && k < lastK) signal = -1;
+				}
+				if (signal != 0) setup = 0;
+				if (up && k < (decimal)oversold) setup = 1;
+				else if (down && k > (decimal)overbought) setup = -1;
+				else if ((setup == 1 && !up) || (setup == -1 && !down)) setup = 0;
+				return signal;
+			}, "Every order must follow the first stochastic turn after an extreme on the side of the SMA.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0138_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0138_MA_Stochastic", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
+
+	[TestMethod]
+	[TestCategory("Shard00")]
+	[DataRow(12, 26, 9, 14, 20, false)]
+	[DataRow(8, 21, 5, 10, 30, true)]
+	public async Task S0139_MacdCrossesReverseWithSizeInverseToAtr(int fast, int slow, int signalPeriod, int atrPeriod, int averagePeriod, bool secondary)
+	{
+		var macd = new MovingAverageConvergenceDivergenceSignal { Macd = { ShortMa = { Length = fast }, LongMa = { Length = slow } }, SignalMa = { Length = signalPeriod } };
+		var atr = new AverageTrueRange { Length = atrPeriod };
+		var atrs = new List<decimal>();
+		bool? previousAbove = null;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var reversals = 0;
+		var smaller = 0;
+		var larger = 0;
+		var violations = new List<string>();
+		await Replay("0139_ATR_MACD", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(12, strategy.Parameters["MacdFast"].Value);
+			AreEqual(26, strategy.Parameters["MacdSlow"].Value);
+			AreEqual(9, strategy.Parameters["MacdSignal"].Value);
+			AreEqual(14, strategy.Parameters["AtrPeriod"].Value);
+			AreEqual(20, strategy.Parameters["AtrAvgPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "MacdFast", fast);
+			SetParam(strategy, "MacdSlow", slow);
+			SetParam(strategy, "MacdSignal", signalPeriod);
+			SetParam(strategy, "AtrPeriod", atrPeriod);
+			SetParam(strategy, "AtrAvgPeriod", averagePeriod);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var m = (MovingAverageConvergenceDivergenceSignalValue)macd.Process(candle);
+				var a = atr.Process(candle);
+				if (a.IsFormed)
+				{
+					atrs.Add(a.GetValue<decimal>());
+					if (atrs.Count > averagePeriod) atrs.RemoveAt(0);
+				}
+				if (!m.IsFormed || m.Macd is not decimal line || m.Signal is not decimal sig) return;
+				var above = line > sig;
+				var was = previousAbove;
+				previousAbove = above;
+				if (was is not bool wasAbove || wasAbove == above || atrs.Count < averagePeriod || atrs[^1] <= 0m) return;
+				var step = strategy.Security.VolumeStep ?? 0m;
+				var raw = strategy.Volume * atrs.Average() / atrs[^1];
+				var size = step > 0m ? Math.Max(step, Math.Floor(raw / step) * step) : raw;
+				var position = strategy.Position;
+				if (above ? position > 0m : position < 0m) return;
+				expectedSide = above ? Sides.Buy : Sides.Sell;
+				expectedVolume = size + Math.Abs(position);
+				expectedOrders++;
+				entries[expectedSide.Value]++;
+				if (position != 0m) reversals++;
+				if (size < strategy.Volume) smaller++;
+				else if (size > strategy.Volume) larger++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a MACD cross with a size of Volume times the average ATR over the current ATR.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && reversals > 0, "The fixture must trade both sides and reverse.");
+		IsTrue(smaller > 0 && larger > 0, "The fixture must size positions both below and above Volume as ATR moves around its average.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard00")]
+	public Task S0139_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0139_ATR_MACD", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
+
+	[TestMethod]
+	[TestCategory("Shard01")]
+	[DataRow(14, 30.0, 70.0, false)]
+	[DataRow(10, 35.0, 65.0, true)]
+	public Task S0140_RsiExtremesAwayFromTheDailyVwapAreFaded(int rsiPeriod, double oversold, double overbought, bool secondary)
+	{
+		var rsi = new RelativeStrengthIndex { Length = rsiPeriod };
+		DateTime? day = null;
+		decimal priceVolume = 0m, volume = 0m;
+		return CheckReversingSignals("0140_VWAP_RSI", secondary, s =>
+			{
+				AreEqual(14, s.Parameters["RsiPeriod"].Value);
+				AreEqual(30m, Convert.ToDecimal(s.Parameters["RsiOversold"].Value));
+				AreEqual(70m, Convert.ToDecimal(s.Parameters["RsiOverbought"].Value));
+				SetParam(s, "RsiPeriod", rsiPeriod);
+				SetParam(s, "RsiOversold", oversold);
+				SetParam(s, "RsiOverbought", overbought);
+			},
+			candle =>
+			{
+				if (day != candle.OpenTime.Date) { day = candle.OpenTime.Date; priceVolume = 0m; volume = 0m; }
+				priceVolume += (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3 * candle.TotalVolume;
+				volume += candle.TotalVolume;
+				var r = rsi.Process(candle);
+				if (!r.IsFormed || volume <= 0m) return 0;
+				var vwap = priceVolume / volume;
+				var value = r.GetValue<decimal>();
+				if (candle.ClosePrice < vwap && value < (decimal)oversold) return 1;
+				if (candle.ClosePrice > vwap && value > (decimal)overbought) return -1;
+				return 0;
+			}, "Every order must fade an RSI extreme on the far side of the UTC-day VWAP.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard01")]
+	public Task S0140_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0140_VWAP_RSI", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
+
+	[TestMethod]
+	[TestCategory("Shard02")]
+	[DataRow(20, 20, false)]
+	[DataRow(30, 10, true)]
+	public async Task S0141_ChannelBreakoutsOnVolumeUntilPriceReentersOrVolumeWanes(int period, int volumePeriod, bool secondary)
+	{
+		var highs = new List<decimal>();
+		var lows = new List<decimal>();
+		var volumes = new List<decimal>();
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var reentryExits = 0;
+		var waningExits = 0;
+		var violations = new List<string>();
+		await Replay("0141_Donchian_Volume", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["DonchianPeriod"].Value);
+			AreEqual(20, strategy.Parameters["VolumePeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "DonchianPeriod", period);
+			SetParam(strategy, "VolumePeriod", volumePeriod);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				decimal? average = volumes.Count == volumePeriod ? volumes.Average() : null;
+				decimal? upper = highs.Count == period ? highs.Max() : null;
+				decimal? lower = lows.Count == period ? lows.Min() : null;
+				volumes.Add(candle.TotalVolume);
+				highs.Add(candle.HighPrice);
+				lows.Add(candle.LowPrice);
+				if (volumes.Count > volumePeriod) volumes.RemoveAt(0);
+				if (highs.Count > period) { highs.RemoveAt(0); lows.RemoveAt(0); }
+				if (average is not decimal avg || upper is not decimal high || lower is not decimal low) return;
+				var close = candle.ClosePrice;
+				var volume = candle.TotalVolume;
+				var signal = volume > avg ? (close > high ? 1 : close < low ? -1 : 0) : 0;
+				var position = strategy.Position;
+				if (signal > 0 && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (signal < 0 && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && (close <= high || volume < avg)) { expectedSide = Sides.Sell; expectedVolume = position; if (close <= high) reentryExits++; else waningExits++; }
+				else if (position < 0m && (close >= low || volume < avg)) { expectedSide = Sides.Buy; expectedVolume = -position; if (close >= low) reentryExits++; else waningExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a channel breakout on above-average volume, or close once price is back inside or volume wanes.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "The fixture must trade both sides.");
+		IsTrue(reentryExits > 0 && waningExits > 0, "The fixture must exit both on re-entry into the channel and on waning volume.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard02")]
+	public Task S0141_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0141_Donchian_Volume", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
+
+	[TestMethod]
+	[TestCategory("Shard03")]
+	[DataRow(20, 14, 2.0, 14, 3, 20.0, 80.0, 2.0, false)]
+	[DataRow(14, 10, 1.5, 9, 3, 25.0, 75.0, 0.5, true)]
+	public async Task S0142_KeltnerTouchesWithStochasticExtremesUntilTheEmaOrAnAtrStop(int emaPeriod, int atrPeriod, double multiplier, int stochPeriod, int stochK, double oversold, double overbought, double stopAtr, bool secondary)
+	{
+		var ema = new ExponentialMovingAverage { Length = emaPeriod };
+		var atr = new AverageTrueRange { Length = atrPeriod };
+		var stochastic = new StochasticOscillator { K = { Length = stochPeriod }, D = { Length = stochK } };
+		var stopPrice = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var emaExits = 0;
+		var stopExits = 0;
+		var violations = new List<string>();
+		await Replay("0142_Keltner_Stochastic", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["EmaPeriod"].Value);
+			AreEqual(14, strategy.Parameters["AtrPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["KeltnerMultiplier"].Value));
+			AreEqual(14, strategy.Parameters["StochPeriod"].Value);
+			AreEqual(3, strategy.Parameters["StochK"].Value);
+			AreEqual(20m, Convert.ToDecimal(strategy.Parameters["StochOversold"].Value));
+			AreEqual(80m, Convert.ToDecimal(strategy.Parameters["StochOverbought"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossAtr"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "EmaPeriod", emaPeriod);
+			SetParam(strategy, "AtrPeriod", atrPeriod);
+			SetParam(strategy, "KeltnerMultiplier", multiplier);
+			SetParam(strategy, "StochPeriod", stochPeriod);
+			SetParam(strategy, "StochK", stochK);
+			SetParam(strategy, "StochOversold", oversold);
+			SetParam(strategy, "StochOverbought", overbought);
+			SetParam(strategy, "StopLossAtr", stopAtr);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var e = ema.Process(candle);
+				var a = atr.Process(candle);
+				var st = stochastic.Process(candle);
+				if (!e.IsFormed || !a.IsFormed || st is not IStochasticOscillatorValue { IsFormed: true, D: decimal k }) return;
+				var middle = e.GetValue<decimal>();
+				var range = a.GetValue<decimal>();
+				var upper = middle + (decimal)multiplier * range;
+				var lower = middle - (decimal)multiplier * range;
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (close < lower && k < (decimal)oversold && position <= 0m)
+				{
+					expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++;
+					stopPrice = close - (decimal)stopAtr * range;
+				}
+				else if (close > upper && k > (decimal)overbought && position >= 0m)
+				{
+					expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++;
+					stopPrice = close + (decimal)stopAtr * range;
+				}
+				else if (position > 0m && (close > middle || close <= stopPrice))
+				{
+					expectedSide = Sides.Sell; expectedVolume = position;
+					if (close > middle) emaExits++; else stopExits++;
+				}
+				else if (position < 0m && (close < middle || close >= stopPrice))
+				{
+					expectedSide = Sides.Buy; expectedVolume = -position;
+					if (close < middle) emaExits++; else stopExits++;
+				}
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must fade a Keltner band with a stochastic extreme, or close at the EMA or the ATR stop.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && emaExits > 0, "The fixture must trade both sides and exit at the EMA.");
+		if (secondary) IsTrue(stopExits > 0, "TON must close a position at the ATR stop.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard04")]
+	[DataRow(0.02, 0.2, 14, 30.0, 70.0, false)]
+	[DataRow(0.03, 0.3, 10, 40.0, 60.0, true)]
+	public async Task S0143_RsiExtremesOnTheSarSideWithTheSarAsTrailingExit(double af, double maxAf, int rsiPeriod, double oversold, double overbought, bool secondary)
+	{
+		var sar = new ParabolicSar { Acceleration = (decimal)af, AccelerationMax = (decimal)maxAf };
+		var rsi = new RelativeStrengthIndex { Length = rsiPeriod };
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var sarExits = 0;
+		var violations = new List<string>();
+		await Replay("0143_Parabolic_SAR_RSI", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(0.02m, Convert.ToDecimal(strategy.Parameters["SarAf"].Value));
+			AreEqual(0.2m, Convert.ToDecimal(strategy.Parameters["SarMaxAf"].Value));
+			AreEqual(14, strategy.Parameters["RsiPeriod"].Value);
+			AreEqual(30m, Convert.ToDecimal(strategy.Parameters["RsiOversold"].Value));
+			AreEqual(70m, Convert.ToDecimal(strategy.Parameters["RsiOverbought"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "SarAf", af);
+			SetParam(strategy, "SarMaxAf", maxAf);
+			SetParam(strategy, "RsiPeriod", rsiPeriod);
+			SetParam(strategy, "RsiOversold", oversold);
+			SetParam(strategy, "RsiOverbought", overbought);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var s = sar.Process(candle);
+				var r = rsi.Process(candle);
+				if (!s.IsFormed || s.IsEmpty || !r.IsFormed) return;
+				var level = s.GetValue<decimal>();
+				var value = r.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (close > level && value < (decimal)oversold && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (close < level && value > (decimal)overbought && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && close < level) { expectedSide = Sides.Sell; expectedVolume = position; sarExits++; }
+				else if (position < 0m && close > level) { expectedSide = Sides.Buy; expectedVolume = -position; sarExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow an RSI extreme on the SAR side, or close when price crosses the SAR.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] + entries[Sides.Sell] > 1 && sarExits > 0, "The fixture must enter and exit at the SAR.");
+		if (secondary) IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "TON must trade both sides.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	[DataRow(9, 20, 1.5, 2.0, 14, false)]
+	[DataRow(14, 10, 1.2, 0.5, 10, true)]
+	public async Task S0144_HullSlopeOnVolumeSurgesUntilTheSlopeTurnsOrAnAtrStop(int hullPeriod, int volumePeriod, double multiplier, double stopAtr, int atrPeriod, bool secondary)
+	{
+		var hull = new HullMovingAverage { Length = hullPeriod };
+		var atr = new AverageTrueRange { Length = atrPeriod };
+		var volumes = new List<decimal>();
+		decimal? previousHull = null;
+		var stopPrice = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var turnExits = 0;
+		var stopExits = 0;
+		var violations = new List<string>();
+		await Replay("0144_Hull_MA_Volume", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(9, strategy.Parameters["HullPeriod"].Value);
+			AreEqual(20, strategy.Parameters["VolumePeriod"].Value);
+			AreEqual(1.5m, Convert.ToDecimal(strategy.Parameters["VolumeMultiplier"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossAtr"].Value));
+			AreEqual(14, strategy.Parameters["AtrPeriod"].Value);
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "HullPeriod", hullPeriod);
+			SetParam(strategy, "VolumePeriod", volumePeriod);
+			SetParam(strategy, "VolumeMultiplier", multiplier);
+			SetParam(strategy, "StopLossAtr", stopAtr);
+			SetParam(strategy, "AtrPeriod", atrPeriod);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var h = hull.Process(candle);
+				var a = atr.Process(candle);
+				// The strategy only sees candles once no bound indicator returns an empty value.
+				if (h.IsEmpty || a.IsEmpty) return;
+				decimal? average = volumes.Count == volumePeriod ? volumes.Average() : null;
+				volumes.Add(candle.TotalVolume);
+				if (volumes.Count > volumePeriod) volumes.RemoveAt(0);
+				if (!h.IsFormed || !a.IsFormed) return;
+				var value = h.GetValue<decimal>();
+				var last = previousHull;
+				previousHull = value;
+				if (last is not decimal lastHull || average is not decimal avg) return;
+				var range = a.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var rising = value > lastHull;
+				var falling = value < lastHull;
+				var surge = candle.TotalVolume > avg * (decimal)multiplier;
+				var position = strategy.Position;
+				if (rising && surge && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; stopPrice = close - (decimal)stopAtr * range; }
+				else if (falling && surge && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; stopPrice = close + (decimal)stopAtr * range; }
+				else if (position > 0m && (falling || close <= stopPrice)) { expectedSide = Sides.Sell; expectedVolume = position; if (falling) turnExits++; else stopExits++; }
+				else if (position < 0m && (rising || close >= stopPrice)) { expectedSide = Sides.Buy; expectedVolume = -position; if (rising) turnExits++; else stopExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow the Hull slope on a volume surge, or close when the slope turns or at the ATR stop.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && turnExits > 0, "The fixture must trade both sides and exit when the slope turns.");
+		if (secondary) IsTrue(stopExits > 0, "TON must close a position at the ATR stop.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard06")]
+	[DataRow(14, 25.0, 14, 3, 20.0, 80.0, false)]
+	[DataRow(10, 20.0, 9, 3, 25.0, 75.0, true)]
+	public async Task S0145_StochasticExtremesWithTheDirectionalTrendWhileAdxIsStrong(int adxPeriod, double threshold, int stochPeriod, int stochK, double oversold, double overbought, bool secondary)
+	{
+		var adx = new AverageDirectionalIndex { Length = adxPeriod };
+		var stochastic = new StochasticOscillator { K = { Length = stochPeriod }, D = { Length = stochK } };
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var weakExits = 0;
+		var violations = new List<string>();
+		await Replay("0145_ADX_Stochastic", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(14, strategy.Parameters["AdxPeriod"].Value);
+			AreEqual(25m, Convert.ToDecimal(strategy.Parameters["AdxThreshold"].Value));
+			AreEqual(14, strategy.Parameters["StochPeriod"].Value);
+			AreEqual(3, strategy.Parameters["StochK"].Value);
+			AreEqual(20m, Convert.ToDecimal(strategy.Parameters["StochOversold"].Value));
+			AreEqual(80m, Convert.ToDecimal(strategy.Parameters["StochOverbought"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "AdxPeriod", adxPeriod);
+			SetParam(strategy, "AdxThreshold", threshold);
+			SetParam(strategy, "StochPeriod", stochPeriod);
+			SetParam(strategy, "StochK", stochK);
+			SetParam(strategy, "StochOversold", oversold);
+			SetParam(strategy, "StochOverbought", overbought);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var a = adx.Process(candle);
+				var st = stochastic.Process(candle);
+				if (!a.IsFormed || a is not AverageDirectionalIndexValue { MovingAverage: decimal strength } typed || typed.Dx.Plus is not decimal plus || typed.Dx.Minus is not decimal minus) return;
+				if (st is not IStochasticOscillatorValue { IsFormed: true, D: decimal k }) return;
+				var strong = strength > (decimal)threshold;
+				var position = strategy.Position;
+				if (strong && k < (decimal)oversold && plus > minus && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (strong && k > (decimal)overbought && minus > plus && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position != 0m && strength < (decimal)threshold) { expectedSide = position > 0m ? Sides.Sell : Sides.Buy; expectedVolume = Math.Abs(position); weakExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a stochastic extreme with the DI trend under a strong ADX, or close when ADX weakens.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && weakExits > 0, "The fixture must trade both sides and exit when ADX weakens.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard06")]
+	public Task S0145_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0145_ADX_Stochastic", TimeSpan.FromDays(31));
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(12, 26, 9, 20, 1.5, false)]
+	[DataRow(8, 21, 5, 10, 1.2, true)]
+	public async Task S0146_MacdCrossesWithVolumeReverseAndUnconfirmedCrossesClose(int fast, int slow, int signalPeriod, int volumePeriod, double multiplier, bool secondary)
+	{
+		var macd = new MovingAverageConvergenceDivergenceSignal { Macd = { ShortMa = { Length = fast }, LongMa = { Length = slow } }, SignalMa = { Length = signalPeriod } };
+		var volumes = new List<decimal>();
+		bool? previousAbove = null;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var reversals = 0;
+		var plainExits = 0;
+		var violations = new List<string>();
+		await Replay("0146_MACD_Volume", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(12, strategy.Parameters["MacdFast"].Value);
+			AreEqual(26, strategy.Parameters["MacdSlow"].Value);
+			AreEqual(9, strategy.Parameters["MacdSignal"].Value);
+			AreEqual(20, strategy.Parameters["VolumePeriod"].Value);
+			AreEqual(1.5m, Convert.ToDecimal(strategy.Parameters["VolumeMultiplier"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "MacdFast", fast);
+			SetParam(strategy, "MacdSlow", slow);
+			SetParam(strategy, "MacdSignal", signalPeriod);
+			SetParam(strategy, "VolumePeriod", volumePeriod);
+			SetParam(strategy, "VolumeMultiplier", multiplier);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var m = (MovingAverageConvergenceDivergenceSignalValue)macd.Process(candle);
+				// The strategy only sees candles once the bound indicator returns a value.
+				if (m.IsEmpty) return;
+				decimal? average = volumes.Count == volumePeriod ? volumes.Average() : null;
+				volumes.Add(candle.TotalVolume);
+				if (volumes.Count > volumePeriod) volumes.RemoveAt(0);
+				if (!m.IsFormed || m.Macd is not decimal line || m.Signal is not decimal sig) return;
+				var above = line > sig;
+				var was = previousAbove;
+				previousAbove = above;
+				if (was is not bool wasAbove || wasAbove == above) return;
+				var confirmed = average is decimal avg && candle.TotalVolume > avg * (decimal)multiplier;
+				var position = strategy.Position;
+				var direction = above ? 1m : -1m;
+				if (confirmed && position * direction <= 0m)
+				{
+					expectedVolume = strategy.Volume + Math.Abs(position);
+					entries[above ? Sides.Buy : Sides.Sell]++;
+					if (position != 0m) reversals++;
+				}
+				else if (position * direction < 0m)
+				{
+					expectedVolume = Math.Abs(position);
+					plainExits++;
+				}
+				else return;
+				expectedSide = above ? Sides.Buy : Sides.Sell;
+				expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a MACD cross: entering or reversing on a volume surge, closing without it.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "The fixture must trade both sides.");
+		IsTrue(plainExits > 0, "The fixture must close on unconfirmed opposite crosses.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0146_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0146_MACD_Volume", TimeSpan.FromDays(31), setup: (s, _) => SetParam(s, "VolumeMultiplier", 1m));
+
+	[TestMethod]
+	[TestCategory("Shard00")]
+	[DataRow(20, 2.0, 20, 1.5, 2.0, 14, false)]
+	[DataRow(14, 1.5, 10, 1.2, 0.3, 10, true)]
+	public async Task S0147_BandBreakoutsOnVolumeUntilTheMiddleBandOrAnAtrStop(int period, double width, int volumePeriod, double multiplier, double stopAtr, int atrPeriod, bool secondary)
+	{
+		var bollinger = new BollingerBands { Length = period, Width = (decimal)width };
+		var atr = new AverageTrueRange { Length = atrPeriod };
+		var volumes = new List<decimal>();
+		var stopPrice = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var middleExits = 0;
+		var stopExits = 0;
+		var violations = new List<string>();
+		await Replay("0147_Bollinger_Volume", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["BollingerPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["BollingerDeviation"].Value));
+			AreEqual(20, strategy.Parameters["VolumePeriod"].Value);
+			AreEqual(1.5m, Convert.ToDecimal(strategy.Parameters["VolumeMultiplier"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossAtr"].Value));
+			AreEqual(14, strategy.Parameters["AtrPeriod"].Value);
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "BollingerPeriod", period);
+			SetParam(strategy, "BollingerDeviation", width);
+			SetParam(strategy, "VolumePeriod", volumePeriod);
+			SetParam(strategy, "VolumeMultiplier", multiplier);
+			SetParam(strategy, "StopLossAtr", stopAtr);
+			SetParam(strategy, "AtrPeriod", atrPeriod);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var b = (BollingerBandsValue)bollinger.Process(candle);
+				var a = atr.Process(candle);
+				// The strategy only sees candles once no bound indicator returns an empty value.
+				if (b.IsEmpty || a.IsEmpty) return;
+				decimal? average = volumes.Count == volumePeriod ? volumes.Average() : null;
+				volumes.Add(candle.TotalVolume);
+				if (volumes.Count > volumePeriod) volumes.RemoveAt(0);
+				if (!b.IsFormed || !a.IsFormed || average is not decimal avg || b.UpBand is not decimal upper || b.LowBand is not decimal lower || b.MovingAverage is not decimal middle) return;
+				var range = a.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var surge = candle.TotalVolume > avg * (decimal)multiplier;
+				var position = strategy.Position;
+				if (close > upper && surge && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; stopPrice = close - (decimal)stopAtr * range; }
+				else if (close < lower && surge && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; stopPrice = close + (decimal)stopAtr * range; }
+				else if (position > 0m && (close <= middle || close <= stopPrice)) { expectedSide = Sides.Sell; expectedVolume = position; if (close <= middle) middleExits++; else stopExits++; }
+				else if (position < 0m && (close >= middle || close >= stopPrice)) { expectedSide = Sides.Buy; expectedVolume = -position; if (close >= middle) middleExits++; else stopExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a band breakout on a volume surge, or close at the middle band or the ATR stop.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && middleExits > 0, "The fixture must trade both sides and exit at the middle band.");
+		if (secondary) IsTrue(stopExits > 0, "TON must close a position at the ATR stop.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard01")]
+	[DataRow(14, 30.0, 70.0, 14, 3, 20.0, 80.0, false)]
+	[DataRow(10, 35.0, 65.0, 9, 3, 25.0, 75.0, true)]
+	public async Task S0148_RsiAndStochasticExtremesTogetherUntilRsiCrossesFifty(int rsiPeriod, double rsiLow, double rsiHigh, int stochPeriod, int stochK, double stochLow, double stochHigh, bool secondary)
+	{
+		var rsi = new RelativeStrengthIndex { Length = rsiPeriod };
+		var stochastic = new StochasticOscillator { K = { Length = stochPeriod }, D = { Length = stochK } };
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var middleExits = 0;
+		var violations = new List<string>();
+		await Replay("0148_RSI_Stochastic", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(14, strategy.Parameters["RsiPeriod"].Value);
+			AreEqual(30m, Convert.ToDecimal(strategy.Parameters["RsiOversold"].Value));
+			AreEqual(70m, Convert.ToDecimal(strategy.Parameters["RsiOverbought"].Value));
+			AreEqual(14, strategy.Parameters["StochPeriod"].Value);
+			AreEqual(3, strategy.Parameters["StochK"].Value);
+			AreEqual(20m, Convert.ToDecimal(strategy.Parameters["StochOversold"].Value));
+			AreEqual(80m, Convert.ToDecimal(strategy.Parameters["StochOverbought"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "RsiPeriod", rsiPeriod);
+			SetParam(strategy, "RsiOversold", rsiLow);
+			SetParam(strategy, "RsiOverbought", rsiHigh);
+			SetParam(strategy, "StochPeriod", stochPeriod);
+			SetParam(strategy, "StochK", stochK);
+			SetParam(strategy, "StochOversold", stochLow);
+			SetParam(strategy, "StochOverbought", stochHigh);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var r = rsi.Process(candle);
+				var st = stochastic.Process(candle);
+				if (!r.IsFormed || st is not IStochasticOscillatorValue { IsFormed: true, D: decimal k }) return;
+				var value = r.GetValue<decimal>();
+				var position = strategy.Position;
+				if (value < (decimal)rsiLow && k < (decimal)stochLow && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (value > (decimal)rsiHigh && k > (decimal)stochHigh && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && value > 50m) { expectedSide = Sides.Sell; expectedVolume = position; middleExits++; }
+				else if (position < 0m && value < 50m) { expectedSide = Sides.Buy; expectedVolume = -position; middleExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow RSI and %K extremes together, or close when RSI crosses 50.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && middleExits > 0, "The fixture must trade both sides and exit at RSI 50.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard01")]
+	public Task S0148_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0148_RSI_Stochastic", TimeSpan.FromDays(31));
+
+	[TestMethod]
+	[TestCategory("Shard02")]
+	[DataRow(20, 14, 25.0, 2.0, 14, false)]
+	[DataRow(30, 10, 20.0, 1.0, 10, true)]
+	public async Task S0149_SmaCrossesWithStrongAdxUntilTheReverseCrossOrAnAtrTarget(int maPeriod, int adxPeriod, double threshold, double targetAtr, int atrPeriod, bool secondary)
+	{
+		var sma = new SimpleMovingAverage { Length = maPeriod };
+		var adx = new AverageDirectionalIndex { Length = adxPeriod };
+		var atr = new AverageTrueRange { Length = atrPeriod };
+		decimal? previousClose = null;
+		var previousMa = 0m;
+		var targetPrice = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var crossExits = 0;
+		var targetExits = 0;
+		var violations = new List<string>();
+		await Replay("0149_MA_ADX", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["MaPeriod"].Value);
+			AreEqual(14, strategy.Parameters["AdxPeriod"].Value);
+			AreEqual(25m, Convert.ToDecimal(strategy.Parameters["AdxThreshold"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["TakeProfitAtrMultiplier"].Value));
+			AreEqual(14, strategy.Parameters["AtrPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "MaPeriod", maPeriod);
+			SetParam(strategy, "AdxPeriod", adxPeriod);
+			SetParam(strategy, "AdxThreshold", threshold);
+			SetParam(strategy, "TakeProfitAtrMultiplier", targetAtr);
+			SetParam(strategy, "AtrPeriod", atrPeriod);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var m = sma.Process(candle);
+				var a = adx.Process(candle);
+				var r = atr.Process(candle);
+				if (!m.IsFormed || !a.IsFormed || !r.IsFormed || a is not AverageDirectionalIndexValue { MovingAverage: decimal strength }) return;
+				var ma = m.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var last = previousClose;
+				var lastMa = previousMa;
+				previousClose = close;
+				previousMa = ma;
+				if (last is not decimal lastClose) return;
+				var range = r.GetValue<decimal>();
+				var up = lastClose <= lastMa && close > ma;
+				var down = lastClose >= lastMa && close < ma;
+				var strong = strength > (decimal)threshold;
+				var position = strategy.Position;
+				if (up && strong && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; targetPrice = close + (decimal)targetAtr * range; }
+				else if (down && strong && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; targetPrice = close - (decimal)targetAtr * range; }
+				else if (position > 0m && (down || close >= targetPrice)) { expectedSide = Sides.Sell; expectedVolume = position; if (down) crossExits++; else targetExits++; }
+				else if (position < 0m && (up || close <= targetPrice)) { expectedSide = Sides.Buy; expectedVolume = -position; if (up) crossExits++; else targetExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow an SMA cross with strong ADX, or close on the reverse cross or the ATR target.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && crossExits > 0 && targetExits > 0, "The fixture must trade both sides and exit both on the reverse cross and at the target.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard02")]
+	public Task S0149_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0149_MA_ADX", TimeSpan.FromDays(31));
+
+	[TestMethod]
+	[TestCategory("Shard03")]
+	[DataRow(14, 3, 80.0, 20.0, false)]
+	[DataRow(9, 3, 75.0, 25.0, true)]
+	public async Task S0150_StochasticExtremesAcrossTheDailyVwapUntilPriceCrossesIt(int stochPeriod, int stochK, double overbought, double oversold, bool secondary)
+	{
+		var stochastic = new StochasticOscillator { K = { Length = stochPeriod }, D = { Length = stochK } };
+		DateTime? day = null;
+		decimal priceVolume = 0m, volume = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var vwapExits = 0;
+		var violations = new List<string>();
+		await Replay("0150_VWAP_Stochastic", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(14, strategy.Parameters["StochPeriod"].Value);
+			AreEqual(3, strategy.Parameters["StochKPeriod"].Value);
+			AreEqual(80m, Convert.ToDecimal(strategy.Parameters["OverboughtLevel"].Value));
+			AreEqual(20m, Convert.ToDecimal(strategy.Parameters["OversoldLevel"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "StochPeriod", stochPeriod);
+			SetParam(strategy, "StochKPeriod", stochK);
+			SetParam(strategy, "OverboughtLevel", overbought);
+			SetParam(strategy, "OversoldLevel", oversold);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var st = stochastic.Process(candle);
+				// The strategy only sees candles once the bound indicator returns a value.
+				if (st.IsEmpty) return;
+				if (day != candle.OpenTime.Date) { day = candle.OpenTime.Date; priceVolume = 0m; volume = 0m; }
+				priceVolume += (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3 * candle.TotalVolume;
+				volume += candle.TotalVolume;
+				if (volume <= 0m || st is not IStochasticOscillatorValue { IsFormed: true, D: decimal k }) return;
+				var vwap = priceVolume / volume;
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (close < vwap && k < (decimal)oversold && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (close > vwap && k > (decimal)overbought && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && close > vwap) { expectedSide = Sides.Sell; expectedVolume = position; vwapExits++; }
+				else if (position < 0m && close < vwap) { expectedSide = Sides.Buy; expectedVolume = -position; vwapExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a %K extreme on the far side of the UTC-day VWAP, or close when price crosses VWAP.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && vwapExits > 0, "The fixture must trade both sides and exit at VWAP.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard03")]
+	public Task S0150_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0150_VWAP_Stochastic", TimeSpan.FromDays(31));
+
+	[TestMethod]
+	[TestCategory("Shard04")]
+	[DataRow(9, 26, 52, 20, false)]
+	[DataRow(7, 22, 44, 10, true)]
+	public async Task S0151_CloudAndTenkanTrendsOnVolumeUntilAnOppositeCloudBreak(int tenkanPeriod, int kijunPeriod, int senkouPeriod, int volumePeriod, bool secondary)
+	{
+		var ichimoku = new Ichimoku { Tenkan = { Length = tenkanPeriod }, Kijun = { Length = kijunPeriod }, SenkouB = { Length = senkouPeriod } };
+		var volumes = new List<decimal>();
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var cloudExits = 0;
+		var violations = new List<string>();
+		await Replay("0151_Ichimoku_Volume", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(9, strategy.Parameters["TenkanPeriod"].Value);
+			AreEqual(26, strategy.Parameters["KijunPeriod"].Value);
+			AreEqual(52, strategy.Parameters["SenkouSpanPeriod"].Value);
+			AreEqual(20, strategy.Parameters["VolumeAvgPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "TenkanPeriod", tenkanPeriod);
+			SetParam(strategy, "KijunPeriod", kijunPeriod);
+			SetParam(strategy, "SenkouSpanPeriod", senkouPeriod);
+			SetParam(strategy, "VolumeAvgPeriod", volumePeriod);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var value = ichimoku.Process(candle);
+				// The strategy only sees candles once the bound indicator returns a value.
+				if (value.IsEmpty) return;
+				decimal? average = volumes.Count == volumePeriod ? volumes.Average() : null;
+				volumes.Add(candle.TotalVolume);
+				if (volumes.Count > volumePeriod) volumes.RemoveAt(0);
+				if (value is not IIchimokuValue { Tenkan: decimal tenkan, Kijun: decimal kijun, SenkouA: decimal a, SenkouB: decimal b } || average is not decimal avg) return;
+				var close = candle.ClosePrice;
+				var top = Math.Max(a, b);
+				var bottom = Math.Min(a, b);
+				var surge = candle.TotalVolume > avg;
+				var position = strategy.Position;
+				if (close > top && tenkan > kijun && surge && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (close < bottom && tenkan < kijun && surge && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && close < bottom) { expectedSide = Sides.Sell; expectedVolume = position; cloudExits++; }
+				else if (position < 0m && close > top) { expectedSide = Sides.Buy; expectedVolume = -position; cloudExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow price beyond the cloud with Tenkan/Kijun agreement on above-average volume, or close on an opposite cloud break.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && cloudExits > 0, "The fixture must trade both sides and exit on an opposite cloud break.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard04")]
+	public Task S0151_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0151_Ichimoku_Volume", TimeSpan.FromDays(31));
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	[DataRow(10, 3.0, 14, 40.0, 60.0, false)]
+	[DataRow(7, 2.0, 10, 35.0, 65.0, true)]
+	public async Task S0152_RsiExtremesOnTheSupertrendSideUntilItFlips(int period, double multiplier, int rsiPeriod, double oversold, double overbought, bool secondary)
+	{
+		var supertrend = new SuperTrend { Length = period, Multiplier = (decimal)multiplier };
+		var rsi = new RelativeStrengthIndex { Length = rsiPeriod };
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var flipExits = 0;
+		var violations = new List<string>();
+		await Replay("0152_Supertrend_RSI", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(10, strategy.Parameters["SupertrendPeriod"].Value);
+			AreEqual(3m, Convert.ToDecimal(strategy.Parameters["SupertrendMultiplier"].Value));
+			AreEqual(14, strategy.Parameters["RsiPeriod"].Value);
+			AreEqual(40m, Convert.ToDecimal(strategy.Parameters["RsiOversold"].Value));
+			AreEqual(60m, Convert.ToDecimal(strategy.Parameters["RsiOverbought"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "SupertrendPeriod", period);
+			SetParam(strategy, "SupertrendMultiplier", multiplier);
+			SetParam(strategy, "RsiPeriod", rsiPeriod);
+			SetParam(strategy, "RsiOversold", oversold);
+			SetParam(strategy, "RsiOverbought", overbought);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var st = supertrend.Process(candle);
+				var r = rsi.Process(candle);
+				if (st is not SuperTrendIndicatorValue { IsFormed: true } trend || !r.IsFormed) return;
+				var line = trend.Value;
+				var value = r.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (close > line && value < (decimal)oversold && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (close < line && value > (decimal)overbought && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && !trend.IsUpTrend) { expectedSide = Sides.Sell; expectedVolume = position; flipExits++; }
+				else if (position < 0m && trend.IsUpTrend) { expectedSide = Sides.Buy; expectedVolume = -position; flipExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow an RSI extreme on the Supertrend side, or close when Supertrend flips.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && flipExits > 0, "The fixture must trade both sides and exit on a Supertrend flip.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard06")]
+	[DataRow(20, 2.0, 14, 25.0, 2.0, 14, false)]
+	[DataRow(14, 1.5, 10, 20.0, 0.5, 10, true)]
+	public async Task S0153_BandExtremesWithStrongAdxUntilTheMiddleBandOrAnAtrStop(int period, double width, int adxPeriod, double threshold, double stopAtr, int atrPeriod, bool secondary)
+	{
+		var bollinger = new BollingerBands { Length = period, Width = (decimal)width };
+		var adx = new AverageDirectionalIndex { Length = adxPeriod };
+		var atr = new AverageTrueRange { Length = atrPeriod };
+		var stopPrice = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var middleExits = 0;
+		var stopExits = 0;
+		var violations = new List<string>();
+		await Replay("0153_Bollinger_ADX", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["BollingerPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["BollingerDeviation"].Value));
+			AreEqual(14, strategy.Parameters["AdxPeriod"].Value);
+			AreEqual(25m, Convert.ToDecimal(strategy.Parameters["AdxThreshold"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["AtrMultiplier"].Value));
+			AreEqual(14, strategy.Parameters["AtrPeriod"].Value);
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "BollingerPeriod", period);
+			SetParam(strategy, "BollingerDeviation", width);
+			SetParam(strategy, "AdxPeriod", adxPeriod);
+			SetParam(strategy, "AdxThreshold", threshold);
+			SetParam(strategy, "AtrMultiplier", stopAtr);
+			SetParam(strategy, "AtrPeriod", atrPeriod);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var b = (BollingerBandsValue)bollinger.Process(candle);
+				var a = adx.Process(candle);
+				var r = atr.Process(candle);
+				if (!b.IsFormed || !a.IsFormed || !r.IsFormed || b.UpBand is not decimal upper || b.LowBand is not decimal lower || b.MovingAverage is not decimal middle || a is not AverageDirectionalIndexValue { MovingAverage: decimal strength }) return;
+				var range = r.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var strong = strength > (decimal)threshold;
+				var position = strategy.Position;
+				if (close < lower && strong && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; stopPrice = close - (decimal)stopAtr * range; }
+				else if (close > upper && strong && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; stopPrice = close + (decimal)stopAtr * range; }
+				else if (position > 0m && (close >= middle || close <= stopPrice)) { expectedSide = Sides.Sell; expectedVolume = position; if (close >= middle) middleExits++; else stopExits++; }
+				else if (position < 0m && (close <= middle || close >= stopPrice)) { expectedSide = Sides.Buy; expectedVolume = -position; if (close <= middle) middleExits++; else stopExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must fade a band extreme under strong ADX, or close at the middle band or the ATR stop.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && middleExits > 0, "The fixture must trade both sides and exit at the middle band.");
+		if (secondary) IsTrue(stopExits > 0, "TON must close a position at the ATR stop.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(50, 20, 100.0, -100.0, false)]
+	[DataRow(100, 14, 80.0, -80.0, true)]
+	public async Task S0154_CciExtremesOnTheSmaSideUntilCciReturnsToZero(int maPeriod, int cciPeriod, double overbought, double oversold, bool secondary)
+	{
+		var sma = new SimpleMovingAverage { Length = maPeriod };
+		var cci = new CommodityChannelIndex { Length = cciPeriod };
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var zeroExits = 0;
+		var violations = new List<string>();
+		await Replay("0154_MA_CCI", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(50, strategy.Parameters["MaPeriod"].Value);
+			AreEqual(20, strategy.Parameters["CciPeriod"].Value);
+			AreEqual(100m, Convert.ToDecimal(strategy.Parameters["OverboughtLevel"].Value));
+			AreEqual(-100m, Convert.ToDecimal(strategy.Parameters["OversoldLevel"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "MaPeriod", maPeriod);
+			SetParam(strategy, "CciPeriod", cciPeriod);
+			SetParam(strategy, "OverboughtLevel", overbought);
+			SetParam(strategy, "OversoldLevel", oversold);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var m = sma.Process(candle);
+				var c = cci.Process(candle);
+				if (!m.IsFormed || !c.IsFormed) return;
+				var ma = m.GetValue<decimal>();
+				var value = c.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (close > ma && value < (decimal)oversold && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (close < ma && value > (decimal)overbought && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && value >= 0m) { expectedSide = Sides.Sell; expectedVolume = position; zeroExits++; }
+				else if (position < 0m && value <= 0m) { expectedSide = Sides.Buy; expectedVolume = -position; zeroExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a CCI extreme on the SMA side, or close when CCI returns to zero.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && zeroExits > 0, "The fixture must trade both sides and exit at the zero line.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0154_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0154_MA_CCI", TimeSpan.FromDays(31));
+
+	[TestMethod]
+	[TestCategory("Shard00")]
+	[DataRow(20, 1.5, false)]
+	[DataRow(10, 1.2, true)]
+	public async Task S0155_VolumeSurgesAwayFromTheDailyVwapUntilPriceCrossesIt(int volumePeriod, double threshold, bool secondary)
+	{
+		var volumes = new List<decimal>();
+		DateTime? day = null;
+		decimal priceVolume = 0m, volume = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var vwapExits = 0;
+		var violations = new List<string>();
+		await Replay("0155_VWAP_Volume", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["VolumePeriod"].Value);
+			AreEqual(1.5m, Convert.ToDecimal(strategy.Parameters["VolumeThreshold"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "VolumePeriod", volumePeriod);
+			SetParam(strategy, "VolumeThreshold", threshold);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				decimal? average = volumes.Count == volumePeriod ? volumes.Average() : null;
+				volumes.Add(candle.TotalVolume);
+				if (volumes.Count > volumePeriod) volumes.RemoveAt(0);
+				if (day != candle.OpenTime.Date) { day = candle.OpenTime.Date; priceVolume = 0m; volume = 0m; }
+				priceVolume += (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3 * candle.TotalVolume;
+				volume += candle.TotalVolume;
+				if (average is not decimal avg || volume <= 0m) return;
+				var vwap = priceVolume / volume;
+				var close = candle.ClosePrice;
+				var surge = candle.TotalVolume > avg * (decimal)threshold;
+				var position = strategy.Position;
+				if (close < vwap && surge && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (close > vwap && surge && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && close > vwap) { expectedSide = Sides.Sell; expectedVolume = position; vwapExits++; }
+				else if (position < 0m && close < vwap) { expectedSide = Sides.Buy; expectedVolume = -position; vwapExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a volume surge away from the UTC-day VWAP, or close when price crosses back through VWAP.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && vwapExits > 0, "The fixture must trade both sides and exit at VWAP.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard00")]
+	public Task S0155_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0155_VWAP_Volume", TimeSpan.FromDays(31));
+
+	[TestMethod]
+	[TestCategory("Shard01")]
+	[DataRow(20, 14, 70.0, 30.0, false)]
+	[DataRow(30, 10, 65.0, 35.0, true)]
+	public async Task S0156_ChannelBreakoutsNotOverextendedByRsiUntilTheBreakoutFails(int period, int rsiPeriod, double overbought, double oversold, bool secondary)
+	{
+		var donchian = new DonchianChannels { Length = period };
+		var rsi = new RelativeStrengthIndex { Length = rsiPeriod };
+		decimal? previousUpper = null, previousLower = null;
+		var breakoutLevel = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var failures = 0;
+		var overextended = 0;
+		var violations = new List<string>();
+		await Replay("0156_Donchian_RSI", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["DonchianPeriod"].Value);
+			AreEqual(14, strategy.Parameters["RsiPeriod"].Value);
+			AreEqual(70m, Convert.ToDecimal(strategy.Parameters["RsiOverboughtLevel"].Value));
+			AreEqual(30m, Convert.ToDecimal(strategy.Parameters["RsiOversoldLevel"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "DonchianPeriod", period);
+			SetParam(strategy, "RsiPeriod", rsiPeriod);
+			SetParam(strategy, "RsiOverboughtLevel", overbought);
+			SetParam(strategy, "RsiOversoldLevel", oversold);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var d = donchian.Process(candle);
+				var r = rsi.Process(candle);
+				// The strategy only sees candles once no bound indicator returns an empty value.
+				if (d.IsEmpty || r.IsEmpty) return;
+				var upper = previousUpper;
+				var lower = previousLower;
+				if (d.IsFormed && d is IDonchianChannelsValue { UpperBand: decimal u, LowerBand: decimal l }) { previousUpper = u; previousLower = l; }
+				if (!r.IsFormed || upper is not decimal high || lower is not decimal low) return;
+				var value = r.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if ((close > high && value >= (decimal)overbought) || (close < low && value <= (decimal)oversold)) overextended++;
+				if (close > high && value < (decimal)overbought && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; breakoutLevel = high; }
+				else if (close < low && value > (decimal)oversold && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; breakoutLevel = low; }
+				else if (position > 0m && close < breakoutLevel) { expectedSide = Sides.Sell; expectedVolume = position; failures++; }
+				else if (position < 0m && close > breakoutLevel) { expectedSide = Sides.Buy; expectedVolume = -position; failures++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a channel breakout that RSI does not show as overextended, or close when the breakout fails.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && failures > 0, "The fixture must trade both sides and close failed breakouts.");
+		IsTrue(overextended > 0, "The fixture must contain overextended breakouts that are not traded.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard01")]
+	public Task S0156_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0156_Donchian_RSI", TimeSpan.FromDays(31));
+
+	[TestMethod]
+	[TestCategory("Shard02")]
+	[DataRow(20, 14, 2.0, 20, 2.0, false)]
+	[DataRow(14, 10, 1.5, 10, 0.5, true)]
+	public async Task S0157_KeltnerBandFadesOnVolumeUntilTheEmaOrAnAtrStop(int emaPeriod, int atrPeriod, double multiplier, int volumePeriod, double stopAtr, bool secondary)
+	{
+		var ema = new ExponentialMovingAverage { Length = emaPeriod };
+		var atr = new AverageTrueRange { Length = atrPeriod };
+		var volumes = new List<decimal>();
+		var stopPrice = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var emaExits = 0;
+		var stopExits = 0;
+		var violations = new List<string>();
+		await Replay("0157_Keltner_Volume", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["EmaPeriod"].Value);
+			AreEqual(14, strategy.Parameters["AtrPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["Multiplier"].Value));
+			AreEqual(20, strategy.Parameters["VolumeAvgPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossAtr"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "EmaPeriod", emaPeriod);
+			SetParam(strategy, "AtrPeriod", atrPeriod);
+			SetParam(strategy, "Multiplier", multiplier);
+			SetParam(strategy, "VolumeAvgPeriod", volumePeriod);
+			SetParam(strategy, "StopLossAtr", stopAtr);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var e = ema.Process(candle);
+				var a = atr.Process(candle);
+				// The strategy only sees candles once no bound indicator returns an empty value.
+				if (e.IsEmpty || a.IsEmpty) return;
+				decimal? average = volumes.Count == volumePeriod ? volumes.Average() : null;
+				volumes.Add(candle.TotalVolume);
+				if (volumes.Count > volumePeriod) volumes.RemoveAt(0);
+				if (!e.IsFormed || !a.IsFormed || average is not decimal avg) return;
+				var middle = e.GetValue<decimal>();
+				var range = a.GetValue<decimal>();
+				var upper = middle + (decimal)multiplier * range;
+				var lower = middle - (decimal)multiplier * range;
+				var close = candle.ClosePrice;
+				var surge = candle.TotalVolume > avg;
+				var position = strategy.Position;
+				if (close < lower && surge && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; stopPrice = close - (decimal)stopAtr * range; }
+				else if (close > upper && surge && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; stopPrice = close + (decimal)stopAtr * range; }
+				else if (position > 0m && (close > middle || close <= stopPrice)) { expectedSide = Sides.Sell; expectedVolume = position; if (close > middle) emaExits++; else stopExits++; }
+				else if (position < 0m && (close < middle || close >= stopPrice)) { expectedSide = Sides.Buy; expectedVolume = -position; if (close < middle) emaExits++; else stopExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must fade a Keltner band on above-average volume, or close at the EMA or the ATR stop.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && emaExits > 0, "The fixture must trade both sides and exit at the EMA.");
+		if (secondary) IsTrue(stopExits > 0, "TON must close a position at the ATR stop.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard03")]
+	[DataRow(0.02, 0.2, 3, 14, 20.0, 80.0, false)]
+	[DataRow(0.03, 0.3, 3, 9, 25.0, 75.0, true)]
+	public async Task S0158_StochasticExtremesOnTheSarSideUntilTheSarFlips(double af, double maxAf, int stochK, int stochPeriod, double oversold, double overbought, bool secondary)
+	{
+		var sar = new ParabolicSar { Acceleration = (decimal)af, AccelerationMax = (decimal)maxAf };
+		var stochastic = new StochasticOscillator { K = { Length = stochPeriod }, D = { Length = stochK } };
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var sarExits = 0;
+		var violations = new List<string>();
+		await Replay("0158_Parabolic_SAR_Stochastic", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(0.02m, Convert.ToDecimal(strategy.Parameters["AccelerationFactor"].Value));
+			AreEqual(0.2m, Convert.ToDecimal(strategy.Parameters["MaxAccelerationFactor"].Value));
+			AreEqual(3, strategy.Parameters["StochK"].Value);
+			AreEqual(14, strategy.Parameters["StochPeriod"].Value);
+			AreEqual(20m, Convert.ToDecimal(strategy.Parameters["StochOversold"].Value));
+			AreEqual(80m, Convert.ToDecimal(strategy.Parameters["StochOverbought"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "AccelerationFactor", af);
+			SetParam(strategy, "MaxAccelerationFactor", maxAf);
+			SetParam(strategy, "StochK", stochK);
+			SetParam(strategy, "StochPeriod", stochPeriod);
+			SetParam(strategy, "StochOversold", oversold);
+			SetParam(strategy, "StochOverbought", overbought);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var s = sar.Process(candle);
+				var st = stochastic.Process(candle);
+				if (!s.IsFormed || s.IsEmpty || st is not IStochasticOscillatorValue { IsFormed: true, D: decimal k }) return;
+				var level = s.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (close > level && k < (decimal)oversold && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (close < level && k > (decimal)overbought && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && close < level) { expectedSide = Sides.Sell; expectedVolume = position; sarExits++; }
+				else if (position < 0m && close > level) { expectedSide = Sides.Buy; expectedVolume = -position; sarExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a %K extreme on the SAR side, or close when the SAR flips.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && sarExits > 0, "The fixture must trade both sides and exit on a SAR flip.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard04")]
+	[DataRow(9, 14, 30.0, 70.0, 2.0, 14, false)]
+	[DataRow(14, 10, 40.0, 60.0, 0.3, 10, true)]
+	public async Task S0159_HullTurnsWithRsiExtremesUntilTheHullTurnsBackOrAnAtrStop(int hullPeriod, int rsiPeriod, double oversold, double overbought, double stopAtr, int atrPeriod, bool secondary)
+	{
+		var hull = new HullMovingAverage { Length = hullPeriod };
+		var rsi = new RelativeStrengthIndex { Length = rsiPeriod };
+		var atr = new AverageTrueRange { Length = atrPeriod };
+		decimal? previousHull = null, beforePreviousHull = null;
+		var stopPrice = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var turnExits = 0;
+		var stopExits = 0;
+		var violations = new List<string>();
+		await Replay("0159_Hull_MA_RSI", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(9, strategy.Parameters["HmaPeriod"].Value);
+			AreEqual(14, strategy.Parameters["RsiPeriod"].Value);
+			AreEqual(30m, Convert.ToDecimal(strategy.Parameters["RsiOversold"].Value));
+			AreEqual(70m, Convert.ToDecimal(strategy.Parameters["RsiOverbought"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossAtr"].Value));
+			AreEqual(14, strategy.Parameters["AtrPeriod"].Value);
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "HmaPeriod", hullPeriod);
+			SetParam(strategy, "RsiPeriod", rsiPeriod);
+			SetParam(strategy, "RsiOversold", oversold);
+			SetParam(strategy, "RsiOverbought", overbought);
+			SetParam(strategy, "StopLossAtr", stopAtr);
+			SetParam(strategy, "AtrPeriod", atrPeriod);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var h = hull.Process(candle);
+				var r = rsi.Process(candle);
+				var a = atr.Process(candle);
+				// The strategy only sees candles once no bound indicator returns an empty value.
+				if (h.IsEmpty || r.IsEmpty || a.IsEmpty) return;
+				if (!h.IsFormed || !r.IsFormed || !a.IsFormed) return;
+				var value = h.GetValue<decimal>();
+				var last = previousHull;
+				var beforeLast = beforePreviousHull;
+				beforePreviousHull = last;
+				previousHull = value;
+				if (last is not decimal l1 || beforeLast is not decimal l2) return;
+				var level = r.GetValue<decimal>();
+				var range = a.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var rising = value > l1;
+				var falling = value < l1;
+				var position = strategy.Position;
+				if (rising && l1 < l2 && level < (decimal)oversold && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; stopPrice = close - (decimal)stopAtr * range; }
+				else if (falling && l1 > l2 && level > (decimal)overbought && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; stopPrice = close + (decimal)stopAtr * range; }
+				else if (position > 0m && (falling || close <= stopPrice)) { expectedSide = Sides.Sell; expectedVolume = position; if (falling) turnExits++; else stopExits++; }
+				else if (position < 0m && (rising || close >= stopPrice)) { expectedSide = Sides.Buy; expectedVolume = -position; if (rising) turnExits++; else stopExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a Hull turn with an RSI extreme, or close when the Hull average turns back or at the ATR stop.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && turnExits > 0, "The fixture must trade both sides and exit when the Hull average turns back.");
+		if (secondary) IsTrue(stopExits > 0, "TON must close a position at the ATR stop.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	[DataRow(14, 25.0, 20, 2.0, 14, false)]
+	[DataRow(10, 20.0, 10, 0.5, 10, true)]
+	public async Task S0160_DirectionalTrendOnVolumeWhileAdxIsStrongWithAnAtrStop(int adxPeriod, double threshold, int volumePeriod, double stopAtr, int atrPeriod, bool secondary)
+	{
+		var adx = new AverageDirectionalIndex { Length = adxPeriod };
+		var atr = new AverageTrueRange { Length = atrPeriod };
+		var volumes = new List<decimal>();
+		var stopPrice = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var weakExits = 0;
+		var stopExits = 0;
+		var violations = new List<string>();
+		await Replay("0160_ADX_Volume", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(14, strategy.Parameters["AdxPeriod"].Value);
+			AreEqual(25m, Convert.ToDecimal(strategy.Parameters["AdxThreshold"].Value));
+			AreEqual(20, strategy.Parameters["VolumeAvgPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossAtr"].Value));
+			AreEqual(14, strategy.Parameters["AtrPeriod"].Value);
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "AdxPeriod", adxPeriod);
+			SetParam(strategy, "AdxThreshold", threshold);
+			SetParam(strategy, "VolumeAvgPeriod", volumePeriod);
+			SetParam(strategy, "StopLossAtr", stopAtr);
+			SetParam(strategy, "AtrPeriod", atrPeriod);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var a = adx.Process(candle);
+				var r = atr.Process(candle);
+				// The strategy only sees candles once no bound indicator returns an empty value.
+				if (a.IsEmpty || r.IsEmpty) return;
+				decimal? average = volumes.Count == volumePeriod ? volumes.Average() : null;
+				volumes.Add(candle.TotalVolume);
+				if (volumes.Count > volumePeriod) volumes.RemoveAt(0);
+				if (!a.IsFormed || !r.IsFormed || average is not decimal avg) return;
+				if (a is not AverageDirectionalIndexValue { MovingAverage: decimal strength } typed || typed.Dx.Plus is not decimal plus || typed.Dx.Minus is not decimal minus) return;
+				var range = r.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var active = strength > (decimal)threshold && candle.TotalVolume > avg;
+				var position = strategy.Position;
+				if (active && plus > minus && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; stopPrice = close - (decimal)stopAtr * range; }
+				else if (active && minus > plus && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; stopPrice = close + (decimal)stopAtr * range; }
+				else if (position > 0m && (strength < (decimal)threshold || close <= stopPrice)) { expectedSide = Sides.Sell; expectedVolume = position; if (strength < (decimal)threshold) weakExits++; else stopExits++; }
+				else if (position < 0m && (strength < (decimal)threshold || close >= stopPrice)) { expectedSide = Sides.Buy; expectedVolume = -position; if (strength < (decimal)threshold) weakExits++; else stopExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow the DI direction on above-average volume under strong ADX, or close when ADX weakens or at the ATR stop.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && weakExits > 0, "The fixture must trade both sides and exit when ADX weakens.");
+		if (secondary) IsTrue(stopExits > 0, "TON must close a position at the ATR stop.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard06")]
+	[DataRow(12, 26, 9, 20, -100.0, 100.0, false)]
+	[DataRow(8, 21, 5, 14, -80.0, 80.0, true)]
+	public async Task S0161_CciExtremesOnTheMacdSideUntilMacdCrossesBack(int fast, int slow, int signalPeriod, int cciPeriod, double oversold, double overbought, bool secondary)
+	{
+		var macd = new MovingAverageConvergenceDivergenceSignal { Macd = { ShortMa = { Length = fast }, LongMa = { Length = slow } }, SignalMa = { Length = signalPeriod } };
+		var cci = new CommodityChannelIndex { Length = cciPeriod };
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var crossExits = 0;
+		var violations = new List<string>();
+		await Replay("0161_MACD_CCI", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(12, strategy.Parameters["FastPeriod"].Value);
+			AreEqual(26, strategy.Parameters["SlowPeriod"].Value);
+			AreEqual(9, strategy.Parameters["SignalPeriod"].Value);
+			AreEqual(20, strategy.Parameters["CciPeriod"].Value);
+			AreEqual(-100m, Convert.ToDecimal(strategy.Parameters["CciOversold"].Value));
+			AreEqual(100m, Convert.ToDecimal(strategy.Parameters["CciOverbought"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "FastPeriod", fast);
+			SetParam(strategy, "SlowPeriod", slow);
+			SetParam(strategy, "SignalPeriod", signalPeriod);
+			SetParam(strategy, "CciPeriod", cciPeriod);
+			SetParam(strategy, "CciOversold", oversold);
+			SetParam(strategy, "CciOverbought", overbought);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var m = (MovingAverageConvergenceDivergenceSignalValue)macd.Process(candle);
+				var c = cci.Process(candle);
+				if (!m.IsFormed || !c.IsFormed || m.Macd is not decimal line || m.Signal is not decimal sig) return;
+				var value = c.GetValue<decimal>();
+				var position = strategy.Position;
+				if (line > sig && value < (decimal)oversold && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (line < sig && value > (decimal)overbought && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && line < sig) { expectedSide = Sides.Sell; expectedVolume = position; crossExits++; }
+				else if (position < 0m && line > sig) { expectedSide = Sides.Buy; expectedVolume = -position; crossExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a CCI extreme on the MACD side, or close when MACD crosses back.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && crossExits > 0, "The fixture must trade both sides and exit on the MACD cross.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard06")]
+	public Task S0161_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0161_MACD_CCI", TimeSpan.FromDays(31));
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(20, 2.0, 20, -100.0, 100.0, 2.0, 14, false)]
+	[DataRow(14, 1.5, 14, -80.0, 80.0, 0.3, 10, true)]
+	public async Task S0162_BandAndCciExtremesUntilTheMiddleBandOrAnAtrStop(int period, double width, int cciPeriod, double oversold, double overbought, double stopAtr, int atrPeriod, bool secondary)
+	{
+		var bollinger = new BollingerBands { Length = period, Width = (decimal)width };
+		var cci = new CommodityChannelIndex { Length = cciPeriod };
+		var atr = new AverageTrueRange { Length = atrPeriod };
+		var stopPrice = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var middleExits = 0;
+		var stopExits = 0;
+		var violations = new List<string>();
+		await Replay("0162_Bollinger_CCI", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["BollingerPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["BollingerDeviation"].Value));
+			AreEqual(20, strategy.Parameters["CciPeriod"].Value);
+			AreEqual(-100m, Convert.ToDecimal(strategy.Parameters["CciOversold"].Value));
+			AreEqual(100m, Convert.ToDecimal(strategy.Parameters["CciOverbought"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossAtr"].Value));
+			AreEqual(14, strategy.Parameters["AtrPeriod"].Value);
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "BollingerPeriod", period);
+			SetParam(strategy, "BollingerDeviation", width);
+			SetParam(strategy, "CciPeriod", cciPeriod);
+			SetParam(strategy, "CciOversold", oversold);
+			SetParam(strategy, "CciOverbought", overbought);
+			SetParam(strategy, "StopLossAtr", stopAtr);
+			SetParam(strategy, "AtrPeriod", atrPeriod);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var b = (BollingerBandsValue)bollinger.Process(candle);
+				var c = cci.Process(candle);
+				var r = atr.Process(candle);
+				if (!b.IsFormed || !c.IsFormed || !r.IsFormed || b.UpBand is not decimal upper || b.LowBand is not decimal lower || b.MovingAverage is not decimal middle) return;
+				var value = c.GetValue<decimal>();
+				var range = r.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (close < lower && value < (decimal)oversold && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; stopPrice = close - (decimal)stopAtr * range; }
+				else if (close > upper && value > (decimal)overbought && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; stopPrice = close + (decimal)stopAtr * range; }
+				else if (position > 0m && (close >= middle || close <= stopPrice)) { expectedSide = Sides.Sell; expectedVolume = position; if (close >= middle) middleExits++; else stopExits++; }
+				else if (position < 0m && (close <= middle || close >= stopPrice)) { expectedSide = Sides.Buy; expectedVolume = -position; if (close <= middle) middleExits++; else stopExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must fade a band close confirmed by a CCI extreme, or close at the middle band or the ATR stop.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && middleExits > 0, "The fixture must trade both sides and exit at the middle band.");
+		if (secondary) IsTrue(stopExits > 0, "TON must close a position at the ATR stop.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard00")]
+	[DataRow(14, 30.0, 70.0, 14, -80.0, -20.0, false)]
+	[DataRow(10, 35.0, 65.0, 10, -75.0, -25.0, true)]
+	public async Task S0163_RsiAndWilliamsExtremesTogetherUntilRsiReturnsToFifty(int rsiPeriod, double rsiLow, double rsiHigh, int williamsPeriod, double williamsLow, double williamsHigh, bool secondary)
+	{
+		var rsi = new RelativeStrengthIndex { Length = rsiPeriod };
+		var williams = new WilliamsR { Length = williamsPeriod };
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var neutralExits = 0;
+		var violations = new List<string>();
+		await Replay("0163_RSI_Williams_R", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(14, strategy.Parameters["RsiPeriod"].Value);
+			AreEqual(30m, Convert.ToDecimal(strategy.Parameters["RsiOversold"].Value));
+			AreEqual(70m, Convert.ToDecimal(strategy.Parameters["RsiOverbought"].Value));
+			AreEqual(14, strategy.Parameters["WilliamsRPeriod"].Value);
+			AreEqual(-80m, Convert.ToDecimal(strategy.Parameters["WilliamsROversold"].Value));
+			AreEqual(-20m, Convert.ToDecimal(strategy.Parameters["WilliamsROverbought"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "RsiPeriod", rsiPeriod);
+			SetParam(strategy, "RsiOversold", rsiLow);
+			SetParam(strategy, "RsiOverbought", rsiHigh);
+			SetParam(strategy, "WilliamsRPeriod", williamsPeriod);
+			SetParam(strategy, "WilliamsROversold", williamsLow);
+			SetParam(strategy, "WilliamsROverbought", williamsHigh);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var r = rsi.Process(candle);
+				var w = williams.Process(candle);
+				// The strategy only sees candles once no bound indicator returns an empty value.
+				if (r.IsEmpty || w.IsEmpty || !r.IsFormed || !w.IsFormed) return;
+				var value = r.GetValue<decimal>();
+				var percentR = w.GetValue<decimal>();
+				var position = strategy.Position;
+				if (value < (decimal)rsiLow && percentR < (decimal)williamsLow && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (value > (decimal)rsiHigh && percentR > (decimal)williamsHigh && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && value >= 50m) { expectedSide = Sides.Sell; expectedVolume = position; neutralExits++; }
+				else if (position < 0m && value <= 50m) { expectedSide = Sides.Buy; expectedVolume = -position; neutralExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow RSI and Williams %R extremes together, or close when RSI returns to 50.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && neutralExits > 0, "The fixture must trade both sides and exit at RSI 50.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard00")]
+	public Task S0163_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0163_RSI_Williams_R", TimeSpan.FromDays(31));
+
+	[TestMethod]
+	[TestCategory("Shard01")]
+	[DataRow(20, 0, 14, -80.0, -20.0, false)]
+	[DataRow(30, 1, 10, -75.0, -25.0, true)]
+	public async Task S0164_WilliamsExtremesOnTheMaSideUntilPercentRReturnsToTheMiddle(int maPeriod, int maType, int williamsPeriod, double oversold, double overbought, bool secondary)
+	{
+		DecimalLengthIndicator ma = maType == 1 ? new ExponentialMovingAverage { Length = maPeriod } : new SimpleMovingAverage { Length = maPeriod };
+		var williams = new WilliamsR { Length = williamsPeriod };
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var middleExits = 0;
+		var violations = new List<string>();
+		await Replay("0164_MA_Williams_R", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["MaPeriod"].Value);
+			AreEqual(0, Convert.ToInt32(strategy.Parameters["MaType"].Value));
+			AreEqual(14, strategy.Parameters["WilliamsRPeriod"].Value);
+			AreEqual(-80m, Convert.ToDecimal(strategy.Parameters["WilliamsROversold"].Value));
+			AreEqual(-20m, Convert.ToDecimal(strategy.Parameters["WilliamsROverbought"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "MaPeriod", maPeriod);
+			var typeParam = strategy.Parameters["MaType"];
+			typeParam.Value = typeParam.Value is Enum ? Enum.ToObject(typeParam.Value.GetType(), maType) : maType;
+			SetParam(strategy, "WilliamsRPeriod", williamsPeriod);
+			SetParam(strategy, "WilliamsROversold", oversold);
+			SetParam(strategy, "WilliamsROverbought", overbought);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var m = ma.Process(candle);
+				var w = williams.Process(candle);
+				// The strategy only sees candles once no bound indicator returns an empty value.
+				if (m.IsEmpty || w.IsEmpty || !m.IsFormed || !w.IsFormed) return;
+				var average = m.GetValue<decimal>();
+				var percentR = w.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (close > average && percentR < (decimal)oversold && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (close < average && percentR > (decimal)overbought && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && percentR >= -50m) { expectedSide = Sides.Sell; expectedVolume = position; middleExits++; }
+				else if (position < 0m && percentR <= -50m) { expectedSide = Sides.Buy; expectedVolume = -position; middleExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a Williams %R extreme on the MA side, or close when %R returns to -50.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && middleExits > 0, "The fixture must trade both sides and exit at the -50 middle.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard01")]
+	public Task S0164_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0164_MA_Williams_R", TimeSpan.FromDays(31));
+
+	[TestMethod]
+	[TestCategory("Shard02")]
+	[DataRow(20, -100.0, 100.0, false)]
+	[DataRow(14, -80.0, 80.0, true)]
+	public async Task S0165_CciExtremesAcrossTheDailyVwapUntilPriceCrossesBack(int cciPeriod, double oversold, double overbought, bool secondary)
+	{
+		var cci = new CommodityChannelIndex { Length = cciPeriod };
+		DateTime? day = null;
+		decimal priceVolume = 0m, volume = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var vwapExits = 0;
+		var violations = new List<string>();
+		await Replay("0165_VWAP_CCI", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["CciPeriod"].Value);
+			AreEqual(-100m, Convert.ToDecimal(strategy.Parameters["CciOversold"].Value));
+			AreEqual(100m, Convert.ToDecimal(strategy.Parameters["CciOverbought"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "CciPeriod", cciPeriod);
+			SetParam(strategy, "CciOversold", oversold);
+			SetParam(strategy, "CciOverbought", overbought);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var c = cci.Process(candle);
+				// The strategy only sees candles once the bound indicator returns a value.
+				if (c.IsEmpty) return;
+				if (day != candle.OpenTime.Date) { day = candle.OpenTime.Date; priceVolume = 0m; volume = 0m; }
+				priceVolume += (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3 * candle.TotalVolume;
+				volume += candle.TotalVolume;
+				if (volume <= 0m || !c.IsFormed) return;
+				var k = c.GetValue<decimal>();
+				var vwap = priceVolume / volume;
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (close < vwap && k < (decimal)oversold && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (close > vwap && k > (decimal)overbought && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && close > vwap) { expectedSide = Sides.Sell; expectedVolume = position; vwapExits++; }
+				else if (position < 0m && close < vwap) { expectedSide = Sides.Buy; expectedVolume = -position; vwapExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a CCI extreme on the far side of the UTC-day VWAP, or close when price crosses VWAP.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && vwapExits > 0, "The fixture must trade both sides and exit at VWAP.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard02")]
+	public Task S0165_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0165_VWAP_CCI", TimeSpan.FromDays(31));
+
+	[TestMethod]
+	[TestCategory("Shard03")]
+	[DataRow(20, 14, 80.0, 20.0, false)]
+	[DataRow(30, 9, 85.0, 15.0, true)]
+	public async Task S0166_ChannelBreakoutsConfirmedByStochasticUntilTheBreakoutFails(int period, int stochPeriod, double overbought, double oversold, bool secondary)
+	{
+		var donchian = new DonchianChannels { Length = period };
+		var stochastic = new StochasticOscillator { K = { Length = stochPeriod }, D = { Length = 3 } };
+		decimal? previousUpper = null, previousLower = null;
+		var breakoutLevel = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var failures = 0;
+		var unconfirmed = 0;
+		var violations = new List<string>();
+		await Replay("0166_Donchian_Stochastic", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["DonchianPeriod"].Value);
+			AreEqual(14, strategy.Parameters["StochPeriod"].Value);
+			AreEqual(3, strategy.Parameters["StochK"].Value);
+			AreEqual(80m, Convert.ToDecimal(strategy.Parameters["StochOverbought"].Value));
+			AreEqual(20m, Convert.ToDecimal(strategy.Parameters["StochOversold"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "DonchianPeriod", period);
+			SetParam(strategy, "StochPeriod", stochPeriod);
+			SetParam(strategy, "StochOverbought", overbought);
+			SetParam(strategy, "StochOversold", oversold);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var d = donchian.Process(candle);
+				var r = stochastic.Process(candle);
+				// The strategy only sees candles once no bound indicator returns an empty value.
+				if (d.IsEmpty || r.IsEmpty) return;
+				var upper = previousUpper;
+				var lower = previousLower;
+				if (d.IsFormed && d is IDonchianChannelsValue { UpperBand: decimal u, LowerBand: decimal l }) { previousUpper = u; previousLower = l; }
+				if (r is not IStochasticOscillatorValue { IsFormed: true, D: decimal value } || upper is not decimal high || lower is not decimal low) return;
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if ((close > high && value <= (decimal)overbought) || (close < low && value >= (decimal)oversold)) unconfirmed++;
+				if (close > high && value > (decimal)overbought && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; breakoutLevel = high; }
+				else if (close < low && value < (decimal)oversold && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; breakoutLevel = low; }
+				else if (position > 0m && close < breakoutLevel) { expectedSide = Sides.Sell; expectedVolume = position; failures++; }
+				else if (position < 0m && close > breakoutLevel) { expectedSide = Sides.Buy; expectedVolume = -position; failures++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a channel breakout confirmed by %K momentum, or close when the breakout fails.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && failures > 0, "The fixture must trade both sides and close failed breakouts.");
+		IsTrue(unconfirmed > 0, "The fixture must contain breakouts without %K confirmation that are not traded.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard03")]
+	public Task S0166_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0166_Donchian_Stochastic", TimeSpan.FromDays(31));
+
+	[TestMethod]
+	[TestCategory("Shard04")]
+	[DataRow(20, 14, 2.0, 14, 70.0, 30.0, false)]
+	[DataRow(14, 10, 1.5, 10, 65.0, 35.0, true)]
+	public async Task S0167_KeltnerAndRsiExtremesUntilPriceReturnsToTheEma(int emaPeriod, int atrPeriod, double multiplier, int rsiPeriod, double overbought, double oversold, bool secondary)
+	{
+		var ema = new ExponentialMovingAverage { Length = emaPeriod };
+		var atr = new AverageTrueRange { Length = atrPeriod };
+		var rsi = new RelativeStrengthIndex { Length = rsiPeriod };
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var emaExits = 0;
+		var violations = new List<string>();
+		await Replay("0167_Keltner_RSI", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["EmaPeriod"].Value);
+			AreEqual(14, strategy.Parameters["AtrPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["AtrMultiplier"].Value));
+			AreEqual(14, strategy.Parameters["RsiPeriod"].Value);
+			AreEqual(70m, Convert.ToDecimal(strategy.Parameters["RsiOverboughtLevel"].Value));
+			AreEqual(30m, Convert.ToDecimal(strategy.Parameters["RsiOversoldLevel"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "EmaPeriod", emaPeriod);
+			SetParam(strategy, "AtrPeriod", atrPeriod);
+			SetParam(strategy, "AtrMultiplier", multiplier);
+			SetParam(strategy, "RsiPeriod", rsiPeriod);
+			SetParam(strategy, "RsiOverboughtLevel", overbought);
+			SetParam(strategy, "RsiOversoldLevel", oversold);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var e = ema.Process(candle);
+				var a = atr.Process(candle);
+				var r = rsi.Process(candle);
+				if (!e.IsFormed || !a.IsFormed || !r.IsFormed) return;
+				var middle = e.GetValue<decimal>();
+				var range = a.GetValue<decimal>();
+				var value = r.GetValue<decimal>();
+				var upper = middle + (decimal)multiplier * range;
+				var lower = middle - (decimal)multiplier * range;
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (close < lower && value < (decimal)oversold && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (close > upper && value > (decimal)overbought && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && close >= middle) { expectedSide = Sides.Sell; expectedVolume = position; emaExits++; }
+				else if (position < 0m && close <= middle) { expectedSide = Sides.Buy; expectedVolume = -position; emaExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must fade a Keltner band confirmed by an RSI extreme, or close when price returns to the EMA.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && emaExits > 0, "The fixture must trade both sides and exit at the EMA.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard04")]
+	public Task S0167_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0167_Keltner_RSI", TimeSpan.FromDays(31));
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	[DataRow(9, 14, 20.0, 80.0, 2.0, 14, false)]
+	[DataRow(14, 9, 25.0, 75.0, 0.3, 10, true)]
+	public async Task S0169_HullTurnsWithStochasticExtremesUntilTheHullTurnsBackOrAnAtrStop(int hullPeriod, int stochPeriod, double oversold, double overbought, double stopAtr, int atrPeriod, bool secondary)
+	{
+		var hull = new HullMovingAverage { Length = hullPeriod };
+		var stochastic = new StochasticOscillator { K = { Length = stochPeriod }, D = { Length = 3 } };
+		var atr = new AverageTrueRange { Length = atrPeriod };
+		decimal? previousHull = null, beforePreviousHull = null;
+		var stopPrice = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var turnExits = 0;
+		var stopExits = 0;
+		var violations = new List<string>();
+		await Replay("0169_Hull_MA_Stochastic", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(9, strategy.Parameters["HmaPeriod"].Value);
+			AreEqual(14, strategy.Parameters["StochPeriod"].Value);
+			AreEqual(3, strategy.Parameters["StochK"].Value);
+			AreEqual(20m, Convert.ToDecimal(strategy.Parameters["StochOversold"].Value));
+			AreEqual(80m, Convert.ToDecimal(strategy.Parameters["StochOverbought"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossAtr"].Value));
+			AreEqual(14, strategy.Parameters["AtrPeriod"].Value);
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "HmaPeriod", hullPeriod);
+			SetParam(strategy, "StochPeriod", stochPeriod);
+			SetParam(strategy, "StochOversold", oversold);
+			SetParam(strategy, "StochOverbought", overbought);
+			SetParam(strategy, "StopLossAtr", stopAtr);
+			SetParam(strategy, "AtrPeriod", atrPeriod);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var h = hull.Process(candle);
+				var r = stochastic.Process(candle);
+				var a = atr.Process(candle);
+				// The strategy only sees candles once no bound indicator returns an empty value.
+				if (h.IsEmpty || r.IsEmpty || a.IsEmpty) return;
+				if (!h.IsFormed || !a.IsFormed || r is not IStochasticOscillatorValue { IsFormed: true, D: decimal level }) return;
+				var value = h.GetValue<decimal>();
+				var last = previousHull;
+				var beforeLast = beforePreviousHull;
+				beforePreviousHull = last;
+				previousHull = value;
+				if (last is not decimal l1 || beforeLast is not decimal l2) return;
+				var range = a.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var rising = value > l1;
+				var falling = value < l1;
+				var position = strategy.Position;
+				if (rising && l1 < l2 && level < (decimal)oversold && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; stopPrice = close - (decimal)stopAtr * range; }
+				else if (falling && l1 > l2 && level > (decimal)overbought && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; stopPrice = close + (decimal)stopAtr * range; }
+				else if (position > 0m && (falling || close <= stopPrice)) { expectedSide = Sides.Sell; expectedVolume = position; if (falling) turnExits++; else stopExits++; }
+				else if (position < 0m && (rising || close >= stopPrice)) { expectedSide = Sides.Buy; expectedVolume = -position; if (rising) turnExits++; else stopExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a Hull turn with a %K extreme, or close when the Hull average turns back or at the ATR stop.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && turnExits > 0, "The fixture must trade both sides and exit when the Hull average turns back.");
+		if (secondary) IsTrue(stopExits > 0, "TON must close a position at the ATR stop.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard06")]
+	[DataRow(14, 25.0, 20, -100.0, 100.0, false)]
+	[DataRow(10, 20.0, 14, -80.0, 80.0, true)]
+	public async Task S0170_CciExtremesUnderStrongAdxUntilAdxWeakensOrCciCrossesZero(int adxPeriod, double threshold, int cciPeriod, double oversold, double overbought, bool secondary)
+	{
+		var adx = new AverageDirectionalIndex { Length = adxPeriod };
+		var cci = new CommodityChannelIndex { Length = cciPeriod };
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var weakExits = 0;
+		var zeroExits = 0;
+		var violations = new List<string>();
+		await Replay("0170_ADX_CCI", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(14, strategy.Parameters["AdxPeriod"].Value);
+			AreEqual(25m, Convert.ToDecimal(strategy.Parameters["AdxThreshold"].Value));
+			AreEqual(20, strategy.Parameters["CciPeriod"].Value);
+			AreEqual(-100m, Convert.ToDecimal(strategy.Parameters["CciOversold"].Value));
+			AreEqual(100m, Convert.ToDecimal(strategy.Parameters["CciOverbought"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "AdxPeriod", adxPeriod);
+			SetParam(strategy, "AdxThreshold", threshold);
+			SetParam(strategy, "CciPeriod", cciPeriod);
+			SetParam(strategy, "CciOversold", oversold);
+			SetParam(strategy, "CciOverbought", overbought);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var a = adx.Process(candle);
+				var c = cci.Process(candle);
+				if (!a.IsFormed || !c.IsFormed || a is not AverageDirectionalIndexValue { MovingAverage: decimal strength }) return;
+				var value = c.GetValue<decimal>();
+				var strong = strength > (decimal)threshold;
+				var weak = strength < (decimal)threshold;
+				var position = strategy.Position;
+				if (strong && value < (decimal)oversold && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (strong && value > (decimal)overbought && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && (weak || value >= 0m)) { expectedSide = Sides.Sell; expectedVolume = position; if (weak) weakExits++; else zeroExits++; }
+				else if (position < 0m && (weak || value <= 0m)) { expectedSide = Sides.Buy; expectedVolume = -position; if (weak) weakExits++; else zeroExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a CCI extreme under strong ADX, or close when ADX weakens or CCI crosses zero.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && zeroExits > 0, "The fixture must trade both sides and exit when CCI crosses zero.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard06")]
+	public Task S0170_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0170_ADX_CCI", TimeSpan.FromDays(31));
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(12, 26, 9, 14, -80.0, -20.0, false)]
+	[DataRow(8, 21, 5, 10, -75.0, -25.0, true)]
+	public async Task S0171_WilliamsExtremesOnTheMacdSideUntilMacdCrossesBack(int fast, int slow, int signalPeriod, int williamsPeriod, double oversold, double overbought, bool secondary)
+	{
+		var macd = new MovingAverageConvergenceDivergenceSignal { Macd = { ShortMa = { Length = fast }, LongMa = { Length = slow } }, SignalMa = { Length = signalPeriod } };
+		var williams = new WilliamsR { Length = williamsPeriod };
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var crossExits = 0;
+		var violations = new List<string>();
+		await Replay("0171_MACD_Williams_R", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(12, strategy.Parameters["MacdFast"].Value);
+			AreEqual(26, strategy.Parameters["MacdSlow"].Value);
+			AreEqual(9, strategy.Parameters["MacdSignal"].Value);
+			AreEqual(14, strategy.Parameters["WilliamsRPeriod"].Value);
+			AreEqual(-80m, Convert.ToDecimal(strategy.Parameters["WilliamsROversold"].Value));
+			AreEqual(-20m, Convert.ToDecimal(strategy.Parameters["WilliamsROverbought"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "MacdFast", fast);
+			SetParam(strategy, "MacdSlow", slow);
+			SetParam(strategy, "MacdSignal", signalPeriod);
+			SetParam(strategy, "WilliamsRPeriod", williamsPeriod);
+			SetParam(strategy, "WilliamsROversold", oversold);
+			SetParam(strategy, "WilliamsROverbought", overbought);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var m = (MovingAverageConvergenceDivergenceSignalValue)macd.Process(candle);
+				var c = williams.Process(candle);
+				// The strategy only sees candles once no bound indicator returns an empty value.
+				if (m.IsEmpty || c.IsEmpty) return;
+				if (!m.IsFormed || !c.IsFormed || m.Macd is not decimal line || m.Signal is not decimal sig) return;
+				var value = c.GetValue<decimal>();
+				var position = strategy.Position;
+				if (line > sig && value < (decimal)oversold && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (line < sig && value > (decimal)overbought && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && line < sig) { expectedSide = Sides.Sell; expectedVolume = position; crossExits++; }
+				else if (position < 0m && line > sig) { expectedSide = Sides.Buy; expectedVolume = -position; crossExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a Williams %R extreme on the MACD side, or close when MACD crosses back.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && crossExits > 0, "The fixture must trade both sides and exit on the MACD cross.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0171_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0171_MACD_Williams_R", TimeSpan.FromDays(31));
+
+	[TestMethod]
+	[TestCategory("Shard00")]
+	[DataRow(20, 2.0, 14, -80.0, -20.0, 2.0, 14, false)]
+	[DataRow(14, 1.5, 10, -75.0, -25.0, 0.3, 10, true)]
+	public async Task S0172_BandAndWilliamsExtremesUntilTheMiddleBandOrAnAtrStop(int period, double width, int williamsPeriod, double oversold, double overbought, double stopAtr, int atrPeriod, bool secondary)
+	{
+		var bollinger = new BollingerBands { Length = period, Width = (decimal)width };
+		var williams = new WilliamsR { Length = williamsPeriod };
+		var atr = new AverageTrueRange { Length = atrPeriod };
+		var stopPrice = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var middleExits = 0;
+		var stopExits = 0;
+		var violations = new List<string>();
+		await Replay("0172_Bollinger_Williams_R", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["BollingerPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["BollingerDeviation"].Value));
+			AreEqual(14, strategy.Parameters["WilliamsRPeriod"].Value);
+			AreEqual(-80m, Convert.ToDecimal(strategy.Parameters["WilliamsROversold"].Value));
+			AreEqual(-20m, Convert.ToDecimal(strategy.Parameters["WilliamsROverbought"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["AtrMultiplier"].Value));
+			AreEqual(14, strategy.Parameters["AtrPeriod"].Value);
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "BollingerPeriod", period);
+			SetParam(strategy, "BollingerDeviation", width);
+			SetParam(strategy, "WilliamsRPeriod", williamsPeriod);
+			SetParam(strategy, "WilliamsROversold", oversold);
+			SetParam(strategy, "WilliamsROverbought", overbought);
+			SetParam(strategy, "AtrMultiplier", stopAtr);
+			SetParam(strategy, "AtrPeriod", atrPeriod);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var b = (BollingerBandsValue)bollinger.Process(candle);
+				var c = williams.Process(candle);
+				var r = atr.Process(candle);
+				// The strategy only sees candles once no bound indicator returns an empty value.
+				if (b.IsEmpty || c.IsEmpty || r.IsEmpty) return;
+				if (!b.IsFormed || !c.IsFormed || !r.IsFormed || b.UpBand is not decimal upper || b.LowBand is not decimal lower || b.MovingAverage is not decimal middle) return;
+				var value = c.GetValue<decimal>();
+				var range = r.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (close < lower && value < (decimal)oversold && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; stopPrice = close - (decimal)stopAtr * range; }
+				else if (close > upper && value > (decimal)overbought && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; stopPrice = close + (decimal)stopAtr * range; }
+				else if (position > 0m && (close >= middle || close <= stopPrice)) { expectedSide = Sides.Sell; expectedVolume = position; if (close >= middle) middleExits++; else stopExits++; }
+				else if (position < 0m && (close <= middle || close >= stopPrice)) { expectedSide = Sides.Buy; expectedVolume = -position; if (close <= middle) middleExits++; else stopExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must fade a band close confirmed by a Williams %R extreme, or close at the middle band or the ATR stop.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && middleExits > 0, "The fixture must trade both sides and exit at the middle band.");
+		if (secondary) IsTrue(stopExits > 0, "TON must close a position at the ATR stop.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard01")]
+	[DataRow(12, 26, 9, false)]
+	[DataRow(8, 21, 5, true)]
+	public async Task S0174_MacdSideAgreeingWithTheDailyVwapUntilMacdCrossesBack(int fast, int slow, int signalPeriod, bool secondary)
+	{
+		var macd = new MovingAverageConvergenceDivergenceSignal { Macd = { ShortMa = { Length = fast }, LongMa = { Length = slow } }, SignalMa = { Length = signalPeriod } };
+		DateTime? day = null;
+		decimal priceVolume = 0m, volume = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var crossExits = 0;
+		var violations = new List<string>();
+		await Replay("0174_MACD_VWAP", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(12, strategy.Parameters["MacdFast"].Value);
+			AreEqual(26, strategy.Parameters["MacdSlow"].Value);
+			AreEqual(9, strategy.Parameters["MacdSignal"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "MacdFast", fast);
+			SetParam(strategy, "MacdSlow", slow);
+			SetParam(strategy, "MacdSignal", signalPeriod);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var m = (MovingAverageConvergenceDivergenceSignalValue)macd.Process(candle);
+				// The strategy only sees candles once the bound indicator returns a value.
+				if (m.IsEmpty) return;
+				if (day != candle.OpenTime.Date) { day = candle.OpenTime.Date; priceVolume = 0m; volume = 0m; }
+				priceVolume += (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3 * candle.TotalVolume;
+				volume += candle.TotalVolume;
+				if (!m.IsFormed || volume <= 0m || m.Macd is not decimal line || m.Signal is not decimal sig) return;
+				var vwap = priceVolume / volume;
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (line > sig && close > vwap && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (line < sig && close < vwap && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && line < sig) { expectedSide = Sides.Sell; expectedVolume = position; crossExits++; }
+				else if (position < 0m && line > sig) { expectedSide = Sides.Buy; expectedVolume = -position; crossExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow MACD agreeing with the close against the UTC-day VWAP, or close when MACD crosses back.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && crossExits > 0, "The fixture must trade both sides and exit on the MACD cross.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard01")]
+	public Task S0174_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0174_MACD_VWAP", TimeSpan.FromDays(31));
+
+	[TestMethod]
+	[TestCategory("Shard02")]
+	[DataRow(10, 3.0, 14, 40.0, 60.0, false)]
+	[DataRow(7, 2.0, 10, 35.0, 65.0, true)]
+	public async Task S0175_RsiExtremesOnTheSupertrendSideUntilItFlips(int period, double multiplier, int rsiPeriod, double oversold, double overbought, bool secondary)
+	{
+		var supertrend = new SuperTrend { Length = period, Multiplier = (decimal)multiplier };
+		var rsi = new RelativeStrengthIndex { Length = rsiPeriod };
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var flipExits = 0;
+		var violations = new List<string>();
+		await Replay("0175_RSI_Supertrend", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(10, strategy.Parameters["SupertrendPeriod"].Value);
+			AreEqual(3m, Convert.ToDecimal(strategy.Parameters["SupertrendMultiplier"].Value));
+			AreEqual(14, strategy.Parameters["RsiPeriod"].Value);
+			AreEqual(40m, Convert.ToDecimal(strategy.Parameters["RsiOversold"].Value));
+			AreEqual(60m, Convert.ToDecimal(strategy.Parameters["RsiOverbought"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "SupertrendPeriod", period);
+			SetParam(strategy, "SupertrendMultiplier", multiplier);
+			SetParam(strategy, "RsiPeriod", rsiPeriod);
+			SetParam(strategy, "RsiOversold", oversold);
+			SetParam(strategy, "RsiOverbought", overbought);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var st = supertrend.Process(candle);
+				var r = rsi.Process(candle);
+				if (st is not SuperTrendIndicatorValue { IsFormed: true } trend || !r.IsFormed) return;
+				var line = trend.Value;
+				var value = r.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (close > line && value < (decimal)oversold && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (close < line && value > (decimal)overbought && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && !trend.IsUpTrend) { expectedSide = Sides.Sell; expectedVolume = position; flipExits++; }
+				else if (position < 0m && trend.IsUpTrend) { expectedSide = Sides.Buy; expectedVolume = -position; flipExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow an RSI extreme on the Supertrend side, or close when Supertrend flips.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && flipExits > 0, "The fixture must trade both sides and exit on a Supertrend flip.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard03")]
+	[DataRow(20, 2.0, 14, 25.0, 2.0, 14, false)]
+	[DataRow(14, 1.5, 10, 20.0, 0.5, 10, true)]
+	public async Task S0176_BandExtremesWithStrongAdxUntilTheMiddleBandOrAnAtrStop(int period, double width, int adxPeriod, double threshold, double stopAtr, int atrPeriod, bool secondary)
+	{
+		var bollinger = new BollingerBands { Length = period, Width = (decimal)width };
+		var adx = new AverageDirectionalIndex { Length = adxPeriod };
+		var atr = new AverageTrueRange { Length = atrPeriod };
+		var stopPrice = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var middleExits = 0;
+		var stopExits = 0;
+		var violations = new List<string>();
+		await Replay("0176_ADX_Bollinger", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["BollingerPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["BollingerDeviation"].Value));
+			AreEqual(14, strategy.Parameters["AdxPeriod"].Value);
+			AreEqual(25m, Convert.ToDecimal(strategy.Parameters["AdxThreshold"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["AtrMultiplier"].Value));
+			AreEqual(14, strategy.Parameters["AtrPeriod"].Value);
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "BollingerPeriod", period);
+			SetParam(strategy, "BollingerDeviation", width);
+			SetParam(strategy, "AdxPeriod", adxPeriod);
+			SetParam(strategy, "AdxThreshold", threshold);
+			SetParam(strategy, "AtrMultiplier", stopAtr);
+			SetParam(strategy, "AtrPeriod", atrPeriod);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var b = (BollingerBandsValue)bollinger.Process(candle);
+				var a = adx.Process(candle);
+				var r = atr.Process(candle);
+				if (!b.IsFormed || !a.IsFormed || !r.IsFormed || b.UpBand is not decimal upper || b.LowBand is not decimal lower || b.MovingAverage is not decimal middle || a is not AverageDirectionalIndexValue { MovingAverage: decimal strength }) return;
+				var range = r.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var strong = strength > (decimal)threshold;
+				var position = strategy.Position;
+				if (close < lower && strong && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; stopPrice = close - (decimal)stopAtr * range; }
+				else if (close > upper && strong && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; stopPrice = close + (decimal)stopAtr * range; }
+				else if (position > 0m && (close >= middle || close <= stopPrice)) { expectedSide = Sides.Sell; expectedVolume = position; if (close >= middle) middleExits++; else stopExits++; }
+				else if (position < 0m && (close <= middle || close >= stopPrice)) { expectedSide = Sides.Buy; expectedVolume = -position; if (close <= middle) middleExits++; else stopExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must fade a band extreme under strong ADX, or close at the middle band or the ATR stop.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && middleExits > 0, "The fixture must trade both sides and exit at the middle band.");
+		if (secondary) IsTrue(stopExits > 0, "TON must close a position at the ATR stop.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard04")]
+	[DataRow(9, 26, 52, 14, 20.0, 80.0, false)]
+	[DataRow(7, 22, 44, 9, 25.0, 75.0, true)]
+	public async Task S0177_StochasticExtremesBeyondTheCloudUntilAnOppositeCloudBreak(int tenkanPeriod, int kijunPeriod, int senkouPeriod, int stochPeriod, double oversold, double overbought, bool secondary)
+	{
+		var ichimoku = new Ichimoku { Tenkan = { Length = tenkanPeriod }, Kijun = { Length = kijunPeriod }, SenkouB = { Length = senkouPeriod } };
+		var stochastic = new StochasticOscillator { K = { Length = stochPeriod }, D = { Length = 3 } };
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var cloudExits = 0;
+		var violations = new List<string>();
+		await Replay("0177_Ichimoku_Stochastic", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(9, strategy.Parameters["TenkanPeriod"].Value);
+			AreEqual(26, strategy.Parameters["KijunPeriod"].Value);
+			AreEqual(52, strategy.Parameters["SenkouPeriod"].Value);
+			AreEqual(14, strategy.Parameters["StochPeriod"].Value);
+			AreEqual(3, strategy.Parameters["StochK"].Value);
+			AreEqual(20m, Convert.ToDecimal(strategy.Parameters["StochOversold"].Value));
+			AreEqual(80m, Convert.ToDecimal(strategy.Parameters["StochOverbought"].Value));
+			AreEqual(TimeSpan.FromMinutes(30).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "TenkanPeriod", tenkanPeriod);
+			SetParam(strategy, "KijunPeriod", kijunPeriod);
+			SetParam(strategy, "SenkouPeriod", senkouPeriod);
+			SetParam(strategy, "StochPeriod", stochPeriod);
+			SetParam(strategy, "StochOversold", oversold);
+			SetParam(strategy, "StochOverbought", overbought);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var cloud = ichimoku.Process(candle);
+				var st = stochastic.Process(candle);
+				if (cloud is not IIchimokuValue { Tenkan: decimal tenkan, Kijun: decimal kijun, SenkouA: decimal a, SenkouB: decimal b } || st is not IStochasticOscillatorValue { IsFormed: true, D: decimal k }) return;
+				var close = candle.ClosePrice;
+				var top = Math.Max(a, b);
+				var bottom = Math.Min(a, b);
+				var position = strategy.Position;
+				if (close > top && tenkan > kijun && k < (decimal)oversold && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (close < bottom && tenkan < kijun && k > (decimal)overbought && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && close < bottom) { expectedSide = Sides.Sell; expectedVolume = position; cloudExits++; }
+				else if (position < 0m && close > top) { expectedSide = Sides.Buy; expectedVolume = -position; cloudExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a %K extreme beyond the cloud with Tenkan/Kijun agreement, or close on an opposite cloud break.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && cloudExits > 0, "The fixture must trade both sides and exit on an opposite cloud break.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard06")]
+	[DataRow(10, 3.0, 14, 20.0, 80.0, false)]
+	[DataRow(7, 2.0, 9, 25.0, 75.0, true)]
+	public async Task S0185_StochasticExtremesOnTheSupertrendSideUntilItFlips(int period, double multiplier, int stochPeriod, double oversold, double overbought, bool secondary)
+	{
+		var supertrend = new SuperTrend { Length = period, Multiplier = (decimal)multiplier };
+		var stochastic = new StochasticOscillator { K = { Length = stochPeriod }, D = { Length = 3 } };
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var flipExits = 0;
+		var violations = new List<string>();
+		await Replay("0185_Supertrend_Stochastic", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(10, strategy.Parameters["SupertrendPeriod"].Value);
+			AreEqual(3m, Convert.ToDecimal(strategy.Parameters["SupertrendMultiplier"].Value));
+			AreEqual(14, strategy.Parameters["StochPeriod"].Value);
+			AreEqual(3, strategy.Parameters["StochK"].Value);
+			AreEqual(20m, Convert.ToDecimal(strategy.Parameters["StochOversold"].Value));
+			AreEqual(80m, Convert.ToDecimal(strategy.Parameters["StochOverbought"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "SupertrendPeriod", period);
+			SetParam(strategy, "SupertrendMultiplier", multiplier);
+			SetParam(strategy, "StochPeriod", stochPeriod);
+			SetParam(strategy, "StochOversold", oversold);
+			SetParam(strategy, "StochOverbought", overbought);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var st = supertrend.Process(candle);
+				var r = stochastic.Process(candle);
+				if (st is not SuperTrendIndicatorValue { IsFormed: true } trend || r is not IStochasticOscillatorValue { IsFormed: true, D: decimal value }) return;
+				var line = trend.Value;
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (close > line && value < (decimal)oversold && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (close < line && value > (decimal)overbought && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && !trend.IsUpTrend) { expectedSide = Sides.Sell; expectedVolume = position; flipExits++; }
+				else if (position < 0m && trend.IsUpTrend) { expectedSide = Sides.Buy; expectedVolume = -position; flipExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a %K extreme on the Supertrend side, or close when Supertrend flips.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && flipExits > 0, "The fixture must trade both sides and exit on a Supertrend flip.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(20, 12, 26, 9, false)]
+	[DataRow(30, 8, 21, 5, true)]
+	public async Task S0187_ChannelBreakoutsConfirmedByMacdUntilMacdCrossesBack(int period, int fast, int slow, int signalPeriod, bool secondary)
+	{
+		var donchian = new DonchianChannels { Length = period };
+		var macd = new MovingAverageConvergenceDivergenceSignal { Macd = { ShortMa = { Length = fast }, LongMa = { Length = slow } }, SignalMa = { Length = signalPeriod } };
+		decimal? previousUpper = null, previousLower = null;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var crossExits = 0;
+		var violations = new List<string>();
+		await Replay("0187_Donchian_MACD", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["DonchianPeriod"].Value);
+			AreEqual(12, strategy.Parameters["MacdFast"].Value);
+			AreEqual(26, strategy.Parameters["MacdSlow"].Value);
+			AreEqual(9, strategy.Parameters["MacdSignal"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "DonchianPeriod", period);
+			SetParam(strategy, "MacdFast", fast);
+			SetParam(strategy, "MacdSlow", slow);
+			SetParam(strategy, "MacdSignal", signalPeriod);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var d = donchian.Process(candle);
+				var m = (MovingAverageConvergenceDivergenceSignalValue)macd.Process(candle);
+				// The strategy only sees candles once no bound indicator returns an empty value.
+				if (d.IsEmpty || m.IsEmpty) return;
+				var upper = previousUpper;
+				var lower = previousLower;
+				if (d.IsFormed && d is IDonchianChannelsValue { UpperBand: decimal u, LowerBand: decimal l }) { previousUpper = u; previousLower = l; }
+				if (!m.IsFormed || upper is not decimal high || lower is not decimal low || m.Macd is not decimal line || m.Signal is not decimal sig) return;
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (close > high && line > sig && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (close < low && line < sig && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && line < sig) { expectedSide = Sides.Sell; expectedVolume = position; crossExits++; }
+				else if (position < 0m && line > sig) { expectedSide = Sides.Buy; expectedVolume = -position; crossExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a channel breakout confirmed by MACD, or close when MACD crosses back.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && crossExits > 0, "The fixture must trade both sides and exit on the MACD cross.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0187_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0187_Donchian_MACD", TimeSpan.FromDays(31));
+
+	[TestMethod]
+	[TestCategory("Shard00")]
+	[DataRow(0.02, 0.2, 20, false)]
+	[DataRow(0.03, 0.3, 10, true)]
+	public async Task S0188_SarSideOnAboveAverageVolumeUntilTheSarFlips(double af, double maxAf, int volumePeriod, bool secondary)
+	{
+		var sar = new ParabolicSar { Acceleration = (decimal)af, AccelerationMax = (decimal)maxAf };
+		var volumes = new List<decimal>();
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var sarExits = 0;
+		var violations = new List<string>();
+		await Replay("0188_Parabolic_SAR_Volume", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(0.02m, Convert.ToDecimal(strategy.Parameters["Acceleration"].Value));
+			AreEqual(0.2m, Convert.ToDecimal(strategy.Parameters["MaxAcceleration"].Value));
+			AreEqual(20, strategy.Parameters["VolumePeriod"].Value);
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "Acceleration", af);
+			SetParam(strategy, "MaxAcceleration", maxAf);
+			SetParam(strategy, "VolumePeriod", volumePeriod);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var s = sar.Process(candle);
+				// The strategy only sees candles once the bound indicator returns a value.
+				if (s.IsEmpty) return;
+				decimal? average = volumes.Count == volumePeriod ? volumes.Average() : null;
+				volumes.Add(candle.TotalVolume);
+				if (volumes.Count > volumePeriod) volumes.RemoveAt(0);
+				if (!s.IsFormed || average is not decimal avg) return;
+				var level = s.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var surge = candle.TotalVolume > avg;
+				var position = strategy.Position;
+				if (close > level && surge && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (close < level && surge && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && close < level) { expectedSide = Sides.Sell; expectedVolume = position; sarExits++; }
+				else if (position < 0m && close > level) { expectedSide = Sides.Buy; expectedVolume = -position; sarExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow the SAR side on above-average volume, or close when the SAR flips.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && sarExits > 0, "The fixture must trade both sides and exit on a SAR flip.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard02")]
+	[DataRow(14, 25.0, 20.0, false)]
+	[DataRow(10, 22.0, 18.0, true)]
+	public async Task S0190_DailyVwapSideUnderStrongAdxUntilAdxDropsBelowTheExitLevel(int adxPeriod, double threshold, double exitThreshold, bool secondary)
+	{
+		var adx = new AverageDirectionalIndex { Length = adxPeriod };
+		DateTime? day = null;
+		decimal priceVolume = 0m, volume = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var reversals = 0;
+		var weakExits = 0;
+		var violations = new List<string>();
+		await Replay("0190_VWAP_ADX", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(14, strategy.Parameters["AdxPeriod"].Value);
+			AreEqual(25m, Convert.ToDecimal(strategy.Parameters["AdxThreshold"].Value));
+			AreEqual(20m, Convert.ToDecimal(strategy.Parameters["AdxExitThreshold"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "AdxPeriod", adxPeriod);
+			SetParam(strategy, "AdxThreshold", threshold);
+			SetParam(strategy, "AdxExitThreshold", exitThreshold);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var a = adx.Process(candle);
+				// The strategy only sees candles once the bound indicator returns a value.
+				if (a.IsEmpty) return;
+				if (day != candle.OpenTime.Date) { day = candle.OpenTime.Date; priceVolume = 0m; volume = 0m; }
+				priceVolume += (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3 * candle.TotalVolume;
+				volume += candle.TotalVolume;
+				if (!a.IsFormed || volume <= 0m || a is not AverageDirectionalIndexValue { MovingAverage: decimal strength }) return;
+				var vwap = priceVolume / volume;
+				var close = candle.ClosePrice;
+				var strong = strength > (decimal)threshold;
+				var position = strategy.Position;
+				if (strong && close > vwap && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; if (position != 0m) reversals++; }
+				else if (strong && close < vwap && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; if (position != 0m) reversals++; }
+				else if (position != 0m && strength < (decimal)exitThreshold) { expectedSide = position > 0m ? Sides.Sell : Sides.Buy; expectedVolume = Math.Abs(position); weakExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow the close against the UTC-day VWAP under strong ADX, or close when ADX drops below the exit level.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && weakExits > 0 && reversals > 0, "The fixture must trade both sides, reverse and exit when ADX drops.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard02")]
+	public Task S0190_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0190_VWAP_ADX", TimeSpan.FromDays(31));
+
+	[TestMethod]
+	[TestCategory("Shard03")]
+	[DataRow(10, 3.0, 14, 25.0, false)]
+	[DataRow(7, 2.0, 10, 20.0, true)]
+	public async Task S0193_SupertrendSideUnderStrongAdxUntilSupertrendFlips(int period, double multiplier, int adxPeriod, double threshold, bool secondary)
+	{
+		var supertrend = new SuperTrend { Length = period, Multiplier = (decimal)multiplier };
+		var adx = new AverageDirectionalIndex { Length = adxPeriod };
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var flipExits = 0;
+		var violations = new List<string>();
+		await Replay("0193_Supertrend_ADX", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(10, strategy.Parameters["SupertrendPeriod"].Value);
+			AreEqual(3m, Convert.ToDecimal(strategy.Parameters["SupertrendMultiplier"].Value));
+			AreEqual(14, strategy.Parameters["AdxPeriod"].Value);
+			AreEqual(25m, Convert.ToDecimal(strategy.Parameters["AdxThreshold"].Value));
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "SupertrendPeriod", period);
+			SetParam(strategy, "SupertrendMultiplier", multiplier);
+			SetParam(strategy, "AdxPeriod", adxPeriod);
+			SetParam(strategy, "AdxThreshold", threshold);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var st = supertrend.Process(candle);
+				var a = adx.Process(candle);
+				if (st is not SuperTrendIndicatorValue { IsFormed: true } trend || !a.IsFormed || a is not AverageDirectionalIndexValue { MovingAverage: decimal strength }) return;
+				var close = candle.ClosePrice;
+				var strong = strength > (decimal)threshold;
+				var position = strategy.Position;
+				if (close > trend.Value && strong && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (close < trend.Value && strong && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && !trend.IsUpTrend) { expectedSide = Sides.Sell; expectedVolume = position; flipExits++; }
+				else if (position < 0m && trend.IsUpTrend) { expectedSide = Sides.Buy; expectedVolume = -position; flipExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow the Supertrend side under strong ADX, or close when Supertrend flips.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && flipExits > 0, "The fixture must trade both sides and exit when Supertrend flips.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard04")]
+	[DataRow(20, 2.0, 14, 12, 26, 9, 2.0, false)]
+	[DataRow(14, 1.5, 10, 8, 21, 5, 0.5, true)]
+	public async Task S0194_KeltnerBreakoutsConfirmedByMacdUntilMacdCrossesBackOrAnAtrStop(int emaPeriod, double multiplier, int atrPeriod, int fast, int slow, int signalPeriod, double stopAtr, bool secondary)
+	{
+		var ema = new ExponentialMovingAverage { Length = emaPeriod };
+		var atr = new AverageTrueRange { Length = atrPeriod };
+		var macd = new MovingAverageConvergenceDivergenceSignal { Macd = { ShortMa = { Length = fast }, LongMa = { Length = slow } }, SignalMa = { Length = signalPeriod } };
+		var stopPrice = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var crossExits = 0;
+		var stopExits = 0;
+		var violations = new List<string>();
+		await Replay("0194_Keltner_MACD", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["EmaPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["Multiplier"].Value));
+			AreEqual(14, strategy.Parameters["AtrPeriod"].Value);
+			AreEqual(12, strategy.Parameters["MacdFastPeriod"].Value);
+			AreEqual(26, strategy.Parameters["MacdSlowPeriod"].Value);
+			AreEqual(9, strategy.Parameters["MacdSignalPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["AtrMultiplier"].Value));
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "EmaPeriod", emaPeriod);
+			SetParam(strategy, "Multiplier", multiplier);
+			SetParam(strategy, "AtrPeriod", atrPeriod);
+			SetParam(strategy, "MacdFastPeriod", fast);
+			SetParam(strategy, "MacdSlowPeriod", slow);
+			SetParam(strategy, "MacdSignalPeriod", signalPeriod);
+			SetParam(strategy, "AtrMultiplier", stopAtr);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var e = ema.Process(candle);
+				var a = atr.Process(candle);
+				var m = (MovingAverageConvergenceDivergenceSignalValue)macd.Process(candle);
+				if (!e.IsFormed || !a.IsFormed || !m.IsFormed || m.Macd is not decimal line || m.Signal is not decimal sig) return;
+				var middle = e.GetValue<decimal>();
+				var range = a.GetValue<decimal>();
+				var upper = middle + (decimal)multiplier * range;
+				var lower = middle - (decimal)multiplier * range;
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (close > upper && line > sig && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; stopPrice = close - (decimal)stopAtr * range; }
+				else if (close < lower && line < sig && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; stopPrice = close + (decimal)stopAtr * range; }
+				else if (position > 0m && (line < sig || close <= stopPrice)) { expectedSide = Sides.Sell; expectedVolume = position; if (line < sig) crossExits++; else stopExits++; }
+				else if (position < 0m && (line > sig || close >= stopPrice)) { expectedSide = Sides.Buy; expectedVolume = -position; if (line > sig) crossExits++; else stopExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a Keltner breakout confirmed by MACD, or close on the opposite MACD cross or the ATR stop.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && crossExits > 0, "The fixture must trade both sides and exit on the MACD cross.");
+		if (secondary) IsTrue(stopExits > 0, "TON must close a position at the ATR stop.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	[DataRow(9, 14, 25.0, 20.0, 2.0, 14, false)]
+	[DataRow(14, 10, 20.0, 15.0, 0.3, 10, true)]
+	public async Task S0197_HullTurnsUnderStrongAdxUntilTheHullTurnsBackAdxWeakensOrAnAtrStop(int hullPeriod, int adxPeriod, double threshold, double exitThreshold, double stopAtr, int atrPeriod, bool secondary)
+	{
+		var hull = new HullMovingAverage { Length = hullPeriod };
+		var adx = new AverageDirectionalIndex { Length = adxPeriod };
+		var atr = new AverageTrueRange { Length = atrPeriod };
+		decimal? previousHull = null, beforePreviousHull = null;
+		var stopPrice = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var turnExits = 0;
+		var stopExits = 0;
+		var violations = new List<string>();
+		await Replay("0197_Hull_MA_ADX", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(9, strategy.Parameters["HmaPeriod"].Value);
+			AreEqual(14, strategy.Parameters["AdxPeriod"].Value);
+			AreEqual(25m, Convert.ToDecimal(strategy.Parameters["AdxThreshold"].Value));
+			AreEqual(20m, Convert.ToDecimal(strategy.Parameters["AdxExitThreshold"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["AtrMultiplier"].Value));
+			AreEqual(14, strategy.Parameters["AtrPeriod"].Value);
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "HmaPeriod", hullPeriod);
+			SetParam(strategy, "AdxPeriod", adxPeriod);
+			SetParam(strategy, "AdxThreshold", threshold);
+			SetParam(strategy, "AdxExitThreshold", exitThreshold);
+			SetParam(strategy, "AtrMultiplier", stopAtr);
+			SetParam(strategy, "AtrPeriod", atrPeriod);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var h = hull.Process(candle);
+				var a = adx.Process(candle);
+				var r = atr.Process(candle);
+				// The strategy only sees candles once no bound indicator returns an empty value.
+				if (h.IsEmpty || a.IsEmpty || r.IsEmpty) return;
+				if (!h.IsFormed || !a.IsFormed || !r.IsFormed || a is not AverageDirectionalIndexValue { MovingAverage: decimal strength }) return;
+				var value = h.GetValue<decimal>();
+				var last = previousHull;
+				var beforeLast = beforePreviousHull;
+				beforePreviousHull = last;
+				previousHull = value;
+				if (last is not decimal l1 || beforeLast is not decimal l2) return;
+				var range = r.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var rising = value > l1;
+				var falling = value < l1;
+				var strong = strength > (decimal)threshold;
+				var weak = strength < (decimal)exitThreshold;
+				var position = strategy.Position;
+				if (rising && l1 < l2 && strong && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; stopPrice = close - (decimal)stopAtr * range; }
+				else if (falling && l1 > l2 && strong && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; stopPrice = close + (decimal)stopAtr * range; }
+				else if (position > 0m && (falling || weak || close <= stopPrice)) { expectedSide = Sides.Sell; expectedVolume = position; if (falling || weak) turnExits++; else stopExits++; }
+				else if (position < 0m && (rising || weak || close >= stopPrice)) { expectedSide = Sides.Buy; expectedVolume = -position; if (rising || weak) turnExits++; else stopExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a Hull turn under strong ADX, or close on the Hull reversal, weak ADX or the ATR stop.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && turnExits > 0, "The fixture must trade both sides and exit when the Hull average turns back.");
+		if (secondary) IsTrue(stopExits > 0, "TON must close a position at the ATR stop.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard06")]
+	[DataRow(12, 26, 9, false)]
+	[DataRow(8, 21, 5, true)]
+	public async Task S0198_MacdSideAgreeingWithTheDailyVwapUntilMacdCrossesBack(int fast, int slow, int signalPeriod, bool secondary)
+	{
+		var macd = new MovingAverageConvergenceDivergenceSignal { Macd = { ShortMa = { Length = fast }, LongMa = { Length = slow } }, SignalMa = { Length = signalPeriod } };
+		DateTime? day = null;
+		decimal priceVolume = 0m, volume = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var crossExits = 0;
+		var violations = new List<string>();
+		await Replay("0198_VWAP_MACD", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(12, strategy.Parameters["MacdFastPeriod"].Value);
+			AreEqual(26, strategy.Parameters["MacdSlowPeriod"].Value);
+			AreEqual(9, strategy.Parameters["MacdSignalPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "MacdFastPeriod", fast);
+			SetParam(strategy, "MacdSlowPeriod", slow);
+			SetParam(strategy, "MacdSignalPeriod", signalPeriod);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var m = (MovingAverageConvergenceDivergenceSignalValue)macd.Process(candle);
+				// The strategy only sees candles once the bound indicator returns a value.
+				if (m.IsEmpty) return;
+				if (day != candle.OpenTime.Date) { day = candle.OpenTime.Date; priceVolume = 0m; volume = 0m; }
+				priceVolume += (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3 * candle.TotalVolume;
+				volume += candle.TotalVolume;
+				if (!m.IsFormed || volume <= 0m || m.Macd is not decimal line || m.Signal is not decimal sig) return;
+				var vwap = priceVolume / volume;
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (line > sig && close > vwap && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (line < sig && close < vwap && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && line < sig) { expectedSide = Sides.Sell; expectedVolume = position; crossExits++; }
+				else if (position < 0m && line > sig) { expectedSide = Sides.Buy; expectedVolume = -position; crossExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow MACD agreeing with the close against the UTC-day VWAP, or close when MACD crosses back.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && crossExits > 0, "The fixture must trade both sides and exit on the MACD cross.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard06")]
+	public Task S0198_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0198_VWAP_MACD", TimeSpan.FromDays(31));
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(9, 26, 52, 14, 25.0, false)]
+	[DataRow(7, 22, 44, 10, 20.0, true)]
+	public async Task S0200_CloudAndTenkanTrendsUnderStrongAdxUntilAnOppositeCloudBreak(int tenkanPeriod, int kijunPeriod, int senkouPeriod, int adxPeriod, double threshold, bool secondary)
+	{
+		var ichimoku = new Ichimoku { Tenkan = { Length = tenkanPeriod }, Kijun = { Length = kijunPeriod }, SenkouB = { Length = senkouPeriod } };
+		var adx = new AverageDirectionalIndex { Length = adxPeriod };
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var cloudExits = 0;
+		var violations = new List<string>();
+		await Replay("0200_Ichimoku_ADX", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(9, strategy.Parameters["TenkanPeriod"].Value);
+			AreEqual(26, strategy.Parameters["KijunPeriod"].Value);
+			AreEqual(52, strategy.Parameters["SenkouSpanBPeriod"].Value);
+			AreEqual(14, strategy.Parameters["AdxPeriod"].Value);
+			AreEqual(25m, Convert.ToDecimal(strategy.Parameters["AdxThreshold"].Value));
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "TenkanPeriod", tenkanPeriod);
+			SetParam(strategy, "KijunPeriod", kijunPeriod);
+			SetParam(strategy, "SenkouSpanBPeriod", senkouPeriod);
+			SetParam(strategy, "AdxPeriod", adxPeriod);
+			SetParam(strategy, "AdxThreshold", threshold);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var cloud = ichimoku.Process(candle);
+				var a = adx.Process(candle);
+				if (cloud is not IIchimokuValue { Tenkan: decimal tenkan, Kijun: decimal kijun, SenkouA: decimal sa, SenkouB: decimal sb }) return;
+				if (!a.IsFormed || a is not AverageDirectionalIndexValue { MovingAverage: decimal strength }) return;
+				var close = candle.ClosePrice;
+				var top = Math.Max(sa, sb);
+				var bottom = Math.Min(sa, sb);
+				var strong = strength > (decimal)threshold;
+				var position = strategy.Position;
+				if (close > top && tenkan > kijun && strong && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (close < bottom && tenkan < kijun && strong && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && close < bottom) { expectedSide = Sides.Sell; expectedVolume = position; cloudExits++; }
+				else if (position < 0m && close > top) { expectedSide = Sides.Buy; expectedVolume = -position; cloudExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow price beyond the cloud with Tenkan/Kijun agreement under strong ADX, or close on an opposite cloud break.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && cloudExits > 0, "The fixture must trade both sides and exit on an opposite cloud break.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(20, 20, 100.0, -100.0, false)]
+	[DataRow(30, 14, 80.0, -80.0, true)]
+	public async Task S0202_ChannelBreakoutsWithCciMomentumUntilTheMiddleOfTheChannel(int period, int cciPeriod, double overbought, double oversold, bool secondary)
+	{
+		var cci = new CommodityChannelIndex { Length = cciPeriod };
+		var highs = new List<decimal>();
+		var lows = new List<decimal>();
+		var seen = false;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var middleExits = 0;
+		var violations = new List<string>();
+		await Replay("0202_Donchian_CCI", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["DonchianPeriod"].Value);
+			AreEqual(20, strategy.Parameters["CciPeriod"].Value);
+			AreEqual(100m, Convert.ToDecimal(strategy.Parameters["CciOverbought"].Value));
+			AreEqual(-100m, Convert.ToDecimal(strategy.Parameters["CciOversold"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "DonchianPeriod", period);
+			SetParam(strategy, "CciPeriod", cciPeriod);
+			SetParam(strategy, "CciOverbought", overbought);
+			SetParam(strategy, "CciOversold", oversold);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var c = cci.Process(candle);
+				decimal? upper = highs.Count == period ? highs.Max() : null;
+				decimal? lower = lows.Count == period ? lows.Min() : null;
+				highs.Add(candle.HighPrice);
+				lows.Add(candle.LowPrice);
+				if (highs.Count > period) { highs.RemoveAt(0); lows.RemoveAt(0); }
+				// The channel keeps measuring while the CCI is empty, but the strategy only sees bands it was handed.
+				if (c.IsEmpty) { seen = false; return; }
+				if (!seen) { seen = true; upper = lower = null; }
+				if (!c.IsFormed || upper is not decimal high || lower is not decimal low) return;
+				var value = c.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var middle = (high + low) / 2;
+				var position = strategy.Position;
+				if (close > high && value > (decimal)overbought && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (close < low && value < (decimal)oversold && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && close < middle) { expectedSide = Sides.Sell; expectedVolume = position; middleExits++; }
+				else if (position < 0m && close > middle) { expectedSide = Sides.Buy; expectedVolume = -position; middleExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a close beyond the previous channel with CCI momentum, or close at the middle of the channel.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && middleExits > 0, "The fixture must trade both sides and exit at the middle of the channel.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0202_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0202_Donchian_CCI", TimeSpan.FromDays(31));
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(20, 2.0, 14, 14, -80.0, -20.0, false)]
+	[DataRow(14, 1.5, 10, 10, -85.0, -15.0, true)]
+	public async Task S0203_KeltnerBandFadesWithWilliamsRUntilTheMiddleBand(int emaPeriod, double multiplier, int atrPeriod, int williamsPeriod, double oversold, double overbought, bool secondary)
+	{
+		var ema = new ExponentialMovingAverage { Length = emaPeriod };
+		var atr = new AverageTrueRange { Length = atrPeriod };
+		var williams = new WilliamsR { Length = williamsPeriod };
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var middleExits = 0;
+		var violations = new List<string>();
+		await Replay("0203_Keltner_Williams_R", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["EmaPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["KeltnerMultiplier"].Value));
+			AreEqual(14, strategy.Parameters["AtrPeriod"].Value);
+			AreEqual(14, strategy.Parameters["WilliamsRPeriod"].Value);
+			AreEqual(-80m, Convert.ToDecimal(strategy.Parameters["WilliamsROversold"].Value));
+			AreEqual(-20m, Convert.ToDecimal(strategy.Parameters["WilliamsROverbought"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "EmaPeriod", emaPeriod);
+			SetParam(strategy, "KeltnerMultiplier", multiplier);
+			SetParam(strategy, "AtrPeriod", atrPeriod);
+			SetParam(strategy, "WilliamsRPeriod", williamsPeriod);
+			SetParam(strategy, "WilliamsROversold", oversold);
+			SetParam(strategy, "WilliamsROverbought", overbought);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var e = ema.Process(candle);
+				var a = atr.Process(candle);
+				var w = williams.Process(candle);
+				if (!e.IsFormed || !a.IsFormed || !w.IsFormed) return;
+				var middle = e.GetValue<decimal>();
+				var range = a.GetValue<decimal>();
+				var r = w.GetValue<decimal>();
+				var upper = middle + (decimal)multiplier * range;
+				var lower = middle - (decimal)multiplier * range;
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (close < lower && r < (decimal)oversold && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (close > upper && r > (decimal)overbought && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && close >= middle) { expectedSide = Sides.Sell; expectedVolume = position; middleExits++; }
+				else if (position < 0m && close <= middle) { expectedSide = Sides.Buy; expectedVolume = -position; middleExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must fade a close beyond a Keltner band with Williams %R at an extreme, or close at the middle band.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && middleExits > 0, "The fixture must trade both sides and exit at the middle band.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0203_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0203_Keltner_Williams_R", TimeSpan.FromDays(31));
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(0.02, 0.2, 20, -100.0, 100.0, false)]
+	[DataRow(0.03, 0.3, 14, -80.0, 80.0, true)]
+	public async Task S0204_CciPullbacksOnTheSarSideWithTheSarAsTrailingExit(double af, double maxAf, int cciPeriod, double oversold, double overbought, bool secondary)
+	{
+		var sar = new ParabolicSar { Acceleration = (decimal)af, AccelerationMax = (decimal)maxAf };
+		var cci = new CommodityChannelIndex { Length = cciPeriod };
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var sarExits = 0;
+		var violations = new List<string>();
+		await Replay("0204_Parabolic_SAR_CCI", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(0.02m, Convert.ToDecimal(strategy.Parameters["SarAccelerationFactor"].Value));
+			AreEqual(0.2m, Convert.ToDecimal(strategy.Parameters["SarMaxAccelerationFactor"].Value));
+			AreEqual(20, strategy.Parameters["CciPeriod"].Value);
+			AreEqual(-100m, Convert.ToDecimal(strategy.Parameters["CciOversold"].Value));
+			AreEqual(100m, Convert.ToDecimal(strategy.Parameters["CciOverbought"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "SarAccelerationFactor", af);
+			SetParam(strategy, "SarMaxAccelerationFactor", maxAf);
+			SetParam(strategy, "CciPeriod", cciPeriod);
+			SetParam(strategy, "CciOversold", oversold);
+			SetParam(strategy, "CciOverbought", overbought);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var s = sar.Process(candle);
+				var r = cci.Process(candle);
+				if (!s.IsFormed || s.IsEmpty || !r.IsFormed) return;
+				var level = s.GetValue<decimal>();
+				var value = r.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (close > level && value < (decimal)oversold && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (close < level && value > (decimal)overbought && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && close < level) { expectedSide = Sides.Sell; expectedVolume = position; sarExits++; }
+				else if (position < 0m && close > level) { expectedSide = Sides.Buy; expectedVolume = -position; sarExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a CCI pullback on the SAR side, or close when price crosses the SAR.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] + entries[Sides.Sell] > 1 && sarExits > 0, "The fixture must enter and exit at the SAR.");
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "The fixture must trade both sides.");
+	}
+
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(9, 20, -100.0, 100.0, 14, 2.0, false)]
+	[DataRow(16, 14, -80.0, 80.0, 10, 0.3, true)]
+	public async Task S0205_CciExtremesAlongTheHullSlopeUntilItTurnsOrAnAtrStop(int hullPeriod, int cciPeriod, double oversold, double overbought, int atrPeriod, double stopAtr, bool secondary)
+	{
+		var hull = new HullMovingAverage { Length = hullPeriod };
+		var cci = new CommodityChannelIndex { Length = cciPeriod };
+		var atr = new AverageTrueRange { Length = atrPeriod };
+		decimal? prevHull = null;
+		var stopPrice = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var slopeExits = 0;
+		var stopExits = 0;
+		var violations = new List<string>();
+		await Replay("0205_Hull_MA_CCI", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(9, strategy.Parameters["HullPeriod"].Value);
+			AreEqual(20, strategy.Parameters["CciPeriod"].Value);
+			AreEqual(-100m, Convert.ToDecimal(strategy.Parameters["CciOversold"].Value));
+			AreEqual(100m, Convert.ToDecimal(strategy.Parameters["CciOverbought"].Value));
+			AreEqual(14, strategy.Parameters["AtrPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["AtrMultiplier"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "HullPeriod", hullPeriod);
+			SetParam(strategy, "CciPeriod", cciPeriod);
+			SetParam(strategy, "CciOversold", oversold);
+			SetParam(strategy, "CciOverbought", overbought);
+			SetParam(strategy, "AtrPeriod", atrPeriod);
+			SetParam(strategy, "AtrMultiplier", stopAtr);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var h = hull.Process(candle);
+				var c = cci.Process(candle);
+				var a = atr.Process(candle);
+				// The strategy is not called while any value is empty.
+				if (h.IsEmpty || c.IsEmpty || a.IsEmpty || !h.IsFormed) return;
+				var current = h.GetValue<decimal>();
+				var previous = prevHull;
+				prevHull = current;
+				if (previous is not decimal last || !c.IsFormed || !a.IsFormed) return;
+				var value = c.GetValue<decimal>();
+				var range = a.GetValue<decimal>();
+				var rising = current > last;
+				var falling = current < last;
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (rising && value < (decimal)oversold && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; stopPrice = close - (decimal)stopAtr * range; }
+				else if (falling && value > (decimal)overbought && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; stopPrice = close + (decimal)stopAtr * range; }
+				else if (position > 0m && (falling || close <= stopPrice)) { expectedSide = Sides.Sell; expectedVolume = position; if (falling) slopeExits++; else stopExits++; }
+				else if (position < 0m && (rising || close >= stopPrice)) { expectedSide = Sides.Buy; expectedVolume = -position; if (rising) slopeExits++; else stopExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a CCI extreme along the Hull slope, or close when the slope turns or the ATR stop is hit.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && slopeExits > 0, "The fixture must trade both sides and exit when the Hull slope turns.");
+		if (stopAtr < 1) IsTrue(stopExits > 0, "A tight ATR stop must be hit.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(12, 26, 9, 20, 2.0, 14, 2.0, false)]
+	[DataRow(8, 21, 5, 14, 1.5, 10, 0.3, true)]
+	public async Task S0206_BandExtremesAgainstMacdUntilTheMiddleBandOrAnAtrStop(int fast, int slow, int signalPeriod, int period, double width, int atrPeriod, double stopAtr, bool secondary)
+	{
+		var macd = new MovingAverageConvergenceDivergenceSignal { Macd = { ShortMa = { Length = fast }, LongMa = { Length = slow } }, SignalMa = { Length = signalPeriod } };
+		var bollinger = new BollingerBands { Length = period, Width = (decimal)width };
+		var atr = new AverageTrueRange { Length = atrPeriod };
+		var stopPrice = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var middleExits = 0;
+		var stopExits = 0;
+		var violations = new List<string>();
+		await Replay("0206_MACD_Bollinger", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(12, strategy.Parameters["MacdFast"].Value);
+			AreEqual(26, strategy.Parameters["MacdSlow"].Value);
+			AreEqual(9, strategy.Parameters["MacdSignal"].Value);
+			AreEqual(20, strategy.Parameters["BollingerPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["BollingerDeviation"].Value));
+			AreEqual(14, strategy.Parameters["AtrPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["AtrMultiplier"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "MacdFast", fast);
+			SetParam(strategy, "MacdSlow", slow);
+			SetParam(strategy, "MacdSignal", signalPeriod);
+			SetParam(strategy, "BollingerPeriod", period);
+			SetParam(strategy, "BollingerDeviation", width);
+			SetParam(strategy, "AtrPeriod", atrPeriod);
+			SetParam(strategy, "AtrMultiplier", stopAtr);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var m = (MovingAverageConvergenceDivergenceSignalValue)macd.Process(candle);
+				var b = (BollingerBandsValue)bollinger.Process(candle);
+				var a = atr.Process(candle);
+				if (!m.IsFormed || !b.IsFormed || !a.IsFormed || m.Macd is not decimal line || m.Signal is not decimal sig) return;
+				if (b.UpBand is not decimal upper || b.LowBand is not decimal lower || b.MovingAverage is not decimal middle) return;
+				var range = a.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (line > sig && close < lower && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; stopPrice = close - (decimal)stopAtr * range; }
+				else if (line < sig && close > upper && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; stopPrice = close + (decimal)stopAtr * range; }
+				else if (position > 0m && (close >= middle || close <= stopPrice)) { expectedSide = Sides.Sell; expectedVolume = position; if (close >= middle) middleExits++; else stopExits++; }
+				else if (position < 0m && (close <= middle || close >= stopPrice)) { expectedSide = Sides.Buy; expectedVolume = -position; if (close <= middle) middleExits++; else stopExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a close beyond a Bollinger band against MACD, or close at the middle band or the ATR stop.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && middleExits > 0, "The fixture must trade both sides and exit at the middle band.");
+		if (stopAtr < 1) IsTrue(stopExits > 0, "A tight ATR stop must be hit.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(14, 30.0, 70.0, 9, 14, 2.0, false)]
+	[DataRow(10, 35.0, 65.0, 16, 10, 0.3, true)]
+	public async Task S0207_RsiExtremesAlongTheHullSlopeUntilRsiIsNeutralOrAnAtrStop(int rsiPeriod, double oversold, double overbought, int hullPeriod, int atrPeriod, double stopAtr, bool secondary)
+	{
+		var hull = new HullMovingAverage { Length = hullPeriod };
+		var rsi = new RelativeStrengthIndex { Length = rsiPeriod };
+		var atr = new AverageTrueRange { Length = atrPeriod };
+		decimal? prevHull = null;
+		var stopPrice = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var neutralExits = 0;
+		var stopExits = 0;
+		var violations = new List<string>();
+		await Replay("0207_RSI_Hull_MA", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(9, strategy.Parameters["HullPeriod"].Value);
+			AreEqual(14, strategy.Parameters["RsiPeriod"].Value);
+			AreEqual(30m, Convert.ToDecimal(strategy.Parameters["RsiOversold"].Value));
+			AreEqual(70m, Convert.ToDecimal(strategy.Parameters["RsiOverbought"].Value));
+			AreEqual(14, strategy.Parameters["AtrPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["AtrMultiplier"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "HullPeriod", hullPeriod);
+			SetParam(strategy, "RsiPeriod", rsiPeriod);
+			SetParam(strategy, "RsiOversold", oversold);
+			SetParam(strategy, "RsiOverbought", overbought);
+			SetParam(strategy, "AtrPeriod", atrPeriod);
+			SetParam(strategy, "AtrMultiplier", stopAtr);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var h = hull.Process(candle);
+				var c = rsi.Process(candle);
+				var a = atr.Process(candle);
+				// The strategy is not called while any value is empty.
+				if (h.IsEmpty || c.IsEmpty || a.IsEmpty || !h.IsFormed) return;
+				var current = h.GetValue<decimal>();
+				var previous = prevHull;
+				prevHull = current;
+				if (previous is not decimal last || !c.IsFormed || !a.IsFormed) return;
+				var value = c.GetValue<decimal>();
+				var range = a.GetValue<decimal>();
+				var rising = current > last;
+				var falling = current < last;
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (value < (decimal)oversold && rising && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; stopPrice = close - (decimal)stopAtr * range; }
+				else if (value > (decimal)overbought && falling && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; stopPrice = close + (decimal)stopAtr * range; }
+				else if (position > 0m && (value >= 50m || close <= stopPrice)) { expectedSide = Sides.Sell; expectedVolume = position; if (value >= 50m) neutralExits++; else stopExits++; }
+				else if (position < 0m && (value <= 50m || close >= stopPrice)) { expectedSide = Sides.Buy; expectedVolume = -position; if (value <= 50m) neutralExits++; else stopExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow an RSI extreme along the Hull slope, or close once RSI is back at 50 or the ATR stop is hit.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && neutralExits > 0, "The fixture must trade both sides and exit once RSI is neutral.");
+		if (stopAtr < 1) IsTrue(stopExits > 0, "A tight ATR stop must be hit.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(14, 3, 20.0, 80.0, 20, 2.0, 14, 2.0, false)]
+	[DataRow(10, 2, 25.0, 75.0, 14, 1.5, 10, 0.3, true)]
+	public async Task S0208_KeltnerBandFadesWithStochasticUntilTheMiddleBandOrAnAtrStop(int stochPeriod, int smoothing, double oversold, double overbought, int emaPeriod, double multiplier, int atrPeriod, double stopAtr, bool secondary)
+	{
+		var stochastic = new StochasticOscillator { K = { Length = stochPeriod }, D = { Length = smoothing } };
+		var ema = new ExponentialMovingAverage { Length = emaPeriod };
+		var atr = new AverageTrueRange { Length = atrPeriod };
+		var stopPrice = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var middleExits = 0;
+		var stopExits = 0;
+		var violations = new List<string>();
+		await Replay("0208_Stochastic_Keltner", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(14, strategy.Parameters["StochPeriod"].Value);
+			AreEqual(3, strategy.Parameters["StochK"].Value);
+			AreEqual(20m, Convert.ToDecimal(strategy.Parameters["StochOversold"].Value));
+			AreEqual(80m, Convert.ToDecimal(strategy.Parameters["StochOverbought"].Value));
+			AreEqual(20, strategy.Parameters["EmaPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["KeltnerMultiplier"].Value));
+			AreEqual(14, strategy.Parameters["AtrPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["AtrMultiplier"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "StochPeriod", stochPeriod);
+			SetParam(strategy, "StochK", smoothing);
+			SetParam(strategy, "StochOversold", oversold);
+			SetParam(strategy, "StochOverbought", overbought);
+			SetParam(strategy, "EmaPeriod", emaPeriod);
+			SetParam(strategy, "KeltnerMultiplier", multiplier);
+			SetParam(strategy, "AtrPeriod", atrPeriod);
+			SetParam(strategy, "AtrMultiplier", stopAtr);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var s = stochastic.Process(candle);
+				var e = ema.Process(candle);
+				var a = atr.Process(candle);
+				if (!s.IsFormed || !e.IsFormed || !a.IsFormed || s is not IStochasticOscillatorValue { D: decimal k }) return;
+				var middle = e.GetValue<decimal>();
+				var range = a.GetValue<decimal>();
+				var upper = middle + (decimal)multiplier * range;
+				var lower = middle - (decimal)multiplier * range;
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (k < (decimal)oversold && close < lower && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; stopPrice = close - (decimal)stopAtr * range; }
+				else if (k > (decimal)overbought && close > upper && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; stopPrice = close + (decimal)stopAtr * range; }
+				else if (position > 0m && (close >= middle || close <= stopPrice)) { expectedSide = Sides.Sell; expectedVolume = position; if (close >= middle) middleExits++; else stopExits++; }
+				else if (position < 0m && (close <= middle || close >= stopPrice)) { expectedSide = Sides.Buy; expectedVolume = -position; if (close <= middle) middleExits++; else stopExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must fade a close beyond a Keltner band with %K at an extreme, or close at the middle band or the ATR stop.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && middleExits > 0, "The fixture must trade both sides and exit at the middle band.");
+		if (stopAtr < 1) IsTrue(stopExits > 0, "A tight ATR stop must be hit.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(20, 10, 3.0, false)]
+	[DataRow(14, 7, 2.0, true)]
+	public async Task S0209_VolumeSurgesOnTheSupertrendSideUntilTheTrendTurns(int volumePeriod, int period, double multiplier, bool secondary)
+	{
+		var supertrend = new SuperTrend { Length = period, Multiplier = (decimal)multiplier };
+		var volumes = new List<decimal>();
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var turnExits = 0;
+		var violations = new List<string>();
+		await Replay("0209_Volume_Supertrend", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["VolumeAvgPeriod"].Value);
+			AreEqual(10, strategy.Parameters["SupertrendPeriod"].Value);
+			AreEqual(3m, Convert.ToDecimal(strategy.Parameters["SupertrendMultiplier"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "VolumeAvgPeriod", volumePeriod);
+			SetParam(strategy, "SupertrendPeriod", period);
+			SetParam(strategy, "SupertrendMultiplier", multiplier);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var result = supertrend.Process(candle);
+				// The strategy is not called while the value is empty.
+				if (result.IsEmpty) return;
+				decimal? average = volumes.Count == volumePeriod ? volumes.Average() : null;
+				volumes.Add(candle.TotalVolume);
+				if (volumes.Count > volumePeriod) volumes.RemoveAt(0);
+				if (result is not SuperTrendIndicatorValue { IsFormed: true } value || average is not decimal avg) return;
+				var close = candle.ClosePrice;
+				var surge = candle.TotalVolume > avg;
+				var position = strategy.Position;
+				if (surge && close > value.Value && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (surge && close < value.Value && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && !value.IsUpTrend) { expectedSide = Sides.Sell; expectedVolume = position; turnExits++; }
+				else if (position < 0m && value.IsUpTrend) { expectedSide = Sides.Buy; expectedVolume = -position; turnExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow above-average volume on the Supertrend side, or close once the Supertrend turns.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && turnExits > 0, "The fixture must trade both sides and exit when the Supertrend turns.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0209_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0209_Volume_Supertrend", TimeSpan.FromDays(31));
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(14, 5, 10, 0.1, false)]
+	[DataRow(10, 10, 20, 0.05, true)]
+	public async Task S0210_ChannelBordersUnderStrongAdxUntilAdxFades(int adxPeriod, int period, int threshold, double shift, bool secondary)
+	{
+		var adx = new AverageDirectionalIndex { Length = adxPeriod };
+		var highs = new List<decimal>();
+		var lows = new List<decimal>();
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var fadeExits = 0;
+		var violations = new List<string>();
+		await Replay("0210_ADX_Donchian", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(14, strategy.Parameters["AdxPeriod"].Value);
+			AreEqual(5, strategy.Parameters["DonchianPeriod"].Value);
+			AreEqual(10, strategy.Parameters["AdxThreshold"].Value);
+			AreEqual(0.1m, Convert.ToDecimal(strategy.Parameters["Multiplier"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "AdxPeriod", adxPeriod);
+			SetParam(strategy, "DonchianPeriod", period);
+			SetParam(strategy, "AdxThreshold", threshold);
+			SetParam(strategy, "Multiplier", shift);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				highs.Add(candle.HighPrice);
+				lows.Add(candle.LowPrice);
+				if (highs.Count > period) { highs.RemoveAt(0); lows.RemoveAt(0); }
+				var a = adx.Process(candle);
+				if (highs.Count < period || !a.IsFormed || a is not AverageDirectionalIndexValue { MovingAverage: decimal strength }) return;
+				// The channel includes the current candle.
+				var upperBorder = highs.Max() * (1 - (decimal)shift / 100);
+				var lowerBorder = lows.Min() * (1 + (decimal)shift / 100);
+				var strong = strength > threshold;
+				var weak = strength < threshold - 5;
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (strong && close >= upperBorder && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (strong && close <= lowerBorder && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && weak) { expectedSide = Sides.Sell; expectedVolume = position; fadeExits++; }
+				else if (position < 0m && weak) { expectedSide = Sides.Buy; expectedVolume = -position; fadeExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a close at a channel border under strong ADX, or close once ADX fades below the threshold minus 5.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "The fixture must trade both sides.");
+		if (secondary) IsTrue(fadeExits > 0, "A higher threshold must see ADX fade.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0210_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0210_ADX_Donchian", TimeSpan.FromDays(31));
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(20, -100.0, 100.0, false)]
+	[DataRow(14, -80.0, 80.0, true)]
+	public async Task S0211_CciExtremesAcrossTheDailyVwapUntilPriceReclaimsIt(int cciPeriod, double oversold, double overbought, bool secondary)
+	{
+		var cci = new CommodityChannelIndex { Length = cciPeriod };
+		DateTime? day = null;
+		decimal priceVolume = 0m, volume = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var vwapExits = 0;
+		var violations = new List<string>();
+		await Replay("0211_CCI_VWAP", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["CciPeriod"].Value);
+			AreEqual(-100m, Convert.ToDecimal(strategy.Parameters["CciOversold"].Value));
+			AreEqual(100m, Convert.ToDecimal(strategy.Parameters["CciOverbought"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "CciPeriod", cciPeriod);
+			SetParam(strategy, "CciOversold", oversold);
+			SetParam(strategy, "CciOverbought", overbought);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var m = cci.Process(candle);
+				// The strategy only sees candles once the bound indicator returns a value.
+				if (m.IsEmpty) return;
+				if (day != candle.OpenTime.Date) { day = candle.OpenTime.Date; priceVolume = 0m; volume = 0m; }
+				priceVolume += (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3 * candle.TotalVolume;
+				volume += candle.TotalVolume;
+				if (!m.IsFormed || volume <= 0m) return;
+				var value = m.GetValue<decimal>();
+				var vwap = priceVolume / volume;
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (value < (decimal)oversold && close < vwap && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (value > (decimal)overbought && close > vwap && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && close > vwap) { expectedSide = Sides.Sell; expectedVolume = position; vwapExits++; }
+				else if (position < 0m && close < vwap) { expectedSide = Sides.Buy; expectedVolume = -position; vwapExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a CCI extreme on the stretched side of the UTC-day VWAP, or close once price closes back across it.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && vwapExits > 0, "The fixture must trade both sides and exit across VWAP.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0211_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0211_CCI_VWAP", TimeSpan.FromDays(31));
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(9, 26, 52, 14, -80.0, -20.0, false)]
+	[DataRow(7, 22, 44, 10, -75.0, -25.0, true)]
+	public async Task S0212_WilliamsRPullbacksInCloudTrendsUntilAnOppositeCloudBreak(int tenkanPeriod, int kijunPeriod, int senkouPeriod, int williamsPeriod, double oversold, double overbought, bool secondary)
+	{
+		var ichimoku = new Ichimoku { Tenkan = { Length = tenkanPeriod }, Kijun = { Length = kijunPeriod }, SenkouB = { Length = senkouPeriod } };
+		var williams = new WilliamsR { Length = williamsPeriod };
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var cloudExits = 0;
+		var violations = new List<string>();
+		await Replay("0212_Williams_R_Ichimoku", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(9, strategy.Parameters["TenkanPeriod"].Value);
+			AreEqual(26, strategy.Parameters["KijunPeriod"].Value);
+			AreEqual(52, strategy.Parameters["SenkouSpanBPeriod"].Value);
+			AreEqual(14, strategy.Parameters["WilliamsRPeriod"].Value);
+			AreEqual(-80m, Convert.ToDecimal(strategy.Parameters["WilliamsROversold"].Value));
+			AreEqual(-20m, Convert.ToDecimal(strategy.Parameters["WilliamsROverbought"].Value));
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "TenkanPeriod", tenkanPeriod);
+			SetParam(strategy, "KijunPeriod", kijunPeriod);
+			SetParam(strategy, "SenkouSpanBPeriod", senkouPeriod);
+			SetParam(strategy, "WilliamsRPeriod", williamsPeriod);
+			SetParam(strategy, "WilliamsROversold", oversold);
+			SetParam(strategy, "WilliamsROverbought", overbought);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var cloud = ichimoku.Process(candle);
+				var w = williams.Process(candle);
+				if (cloud is not IIchimokuValue { Tenkan: decimal tenkan, Kijun: decimal kijun, SenkouA: decimal sa, SenkouB: decimal sb }) return;
+				if (!w.IsFormed) return;
+				var r = w.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var top = Math.Max(sa, sb);
+				var bottom = Math.Min(sa, sb);
+				var position = strategy.Position;
+				if (r < (decimal)oversold && close > top && tenkan > kijun && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (r > (decimal)overbought && close < bottom && tenkan < kijun && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && close < bottom) { expectedSide = Sides.Sell; expectedVolume = position; cloudExits++; }
+				else if (position < 0m && close > top) { expectedSide = Sides.Buy; expectedVolume = -position; cloudExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a Williams %R extreme beyond the cloud with Tenkan/Kijun agreement, or close on an opposite cloud break.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && cloudExits > 0, "The fixture must trade both sides and exit on an opposite cloud break.");
+	}
+
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(20, 0.02, 0.2, false)]
+	[DataRow(50, 0.03, 0.3, true)]
+	public async Task S0213_ClosesBeyondTheMaAndSarWithTheSarAsTrailingExit(int maPeriod, double af, double maxAf, bool secondary)
+	{
+		var sar = new ParabolicSar { Acceleration = (decimal)af, AccelerationMax = (decimal)maxAf };
+		var ma = new SimpleMovingAverage { Length = maPeriod };
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var sarExits = 0;
+		var violations = new List<string>();
+		await Replay("0213_MA_Parabolic_SAR", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["MaPeriod"].Value);
+			AreEqual(0.02m, Convert.ToDecimal(strategy.Parameters["SarStep"].Value));
+			AreEqual(0.2m, Convert.ToDecimal(strategy.Parameters["SarMaxStep"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "MaPeriod", maPeriod);
+			SetParam(strategy, "SarStep", af);
+			SetParam(strategy, "SarMaxStep", maxAf);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var m = ma.Process(candle);
+				var s = sar.Process(candle);
+				if (!m.IsFormed || !s.IsFormed || s.IsEmpty) return;
+				var level = s.GetValue<decimal>();
+				var average = m.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (close > average && close > level && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (close < average && close < level && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && close < level) { expectedSide = Sides.Sell; expectedVolume = position; sarExits++; }
+				else if (position < 0m && close > level) { expectedSide = Sides.Buy; expectedVolume = -position; sarExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a close beyond both the MA and the SAR, or close when price crosses the SAR.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] + entries[Sides.Sell] > 1 && sarExits > 0, "The fixture must enter and exit at the SAR.");
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "The fixture must trade both sides.");
+	}
+
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0213_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0213_MA_Parabolic_SAR", TimeSpan.FromDays(31));
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(20, 2.0, 10, 3.0, false)]
+	[DataRow(14, 1.5, 7, 2.0, true)]
+	public async Task S0214_BandBreakoutsOnTheSupertrendSideWithTheSupertrendAsTrailingExit(int period, double width, int supertrendPeriod, double multiplier, bool secondary)
+	{
+		var bollinger = new BollingerBands { Length = period, Width = (decimal)width };
+		var supertrend = new SuperTrend { Length = supertrendPeriod, Multiplier = (decimal)multiplier };
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var trailExits = 0;
+		var violations = new List<string>();
+		await Replay("0214_Bollinger_Supertrend", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["BollingerPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["BollingerDeviation"].Value));
+			AreEqual(10, strategy.Parameters["SupertrendPeriod"].Value);
+			AreEqual(3m, Convert.ToDecimal(strategy.Parameters["SupertrendMultiplier"].Value));
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "BollingerPeriod", period);
+			SetParam(strategy, "BollingerDeviation", width);
+			SetParam(strategy, "SupertrendPeriod", supertrendPeriod);
+			SetParam(strategy, "SupertrendMultiplier", multiplier);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var b = (BollingerBandsValue)bollinger.Process(candle);
+				var t = supertrend.Process(candle);
+				if (!b.IsFormed || b.UpBand is not decimal upper || b.LowBand is not decimal lower) return;
+				if (t is not SuperTrendIndicatorValue { IsFormed: true } trend) return;
+				var line = trend.Value;
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (close > upper && close > line && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (close < lower && close < line && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && close < line) { expectedSide = Sides.Sell; expectedVolume = position; trailExits++; }
+				else if (position < 0m && close > line) { expectedSide = Sides.Buy; expectedVolume = -position; trailExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a close beyond a Bollinger band on the Supertrend side, or close when price crosses the Supertrend.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && trailExits > 0, "The fixture must trade both sides and exit at the Supertrend.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(20, 14, 70.0, 30.0, false)]
+	[DataRow(30, 10, 65.0, 35.0, true)]
+	public async Task S0215_ChannelBreakoutsWithRsiMomentumUntilTheMiddleOfTheChannel(int period, int rsiPeriod, double overbought, double oversold, bool secondary)
+	{
+		var rsi = new RelativeStrengthIndex { Length = rsiPeriod };
+		var highs = new List<decimal>();
+		var lows = new List<decimal>();
+		var seen = false;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var middleExits = 0;
+		var violations = new List<string>();
+		await Replay("0215_RSI_Donchian", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["DonchianPeriod"].Value);
+			AreEqual(14, strategy.Parameters["RsiPeriod"].Value);
+			AreEqual(70m, Convert.ToDecimal(strategy.Parameters["RsiOverbought"].Value));
+			AreEqual(30m, Convert.ToDecimal(strategy.Parameters["RsiOversold"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "DonchianPeriod", period);
+			SetParam(strategy, "RsiPeriod", rsiPeriod);
+			SetParam(strategy, "RsiOverbought", overbought);
+			SetParam(strategy, "RsiOversold", oversold);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var c = rsi.Process(candle);
+				decimal? upper = highs.Count == period ? highs.Max() : null;
+				decimal? lower = lows.Count == period ? lows.Min() : null;
+				highs.Add(candle.HighPrice);
+				lows.Add(candle.LowPrice);
+				if (highs.Count > period) { highs.RemoveAt(0); lows.RemoveAt(0); }
+				// The channel keeps measuring while RSI is empty, but the strategy only sees bands it was handed.
+				if (c.IsEmpty) { seen = false; return; }
+				if (!seen) { seen = true; upper = lower = null; }
+				if (!c.IsFormed || upper is not decimal high || lower is not decimal low) return;
+				var value = c.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var middle = (high + low) / 2;
+				var position = strategy.Position;
+				if (close > high && value > (decimal)overbought && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (close < low && value < (decimal)oversold && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && close < middle) { expectedSide = Sides.Sell; expectedVolume = position; middleExits++; }
+				else if (position < 0m && close > middle) { expectedSide = Sides.Buy; expectedVolume = -position; middleExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a close beyond the previous channel with RSI momentum, or close at the middle of the channel.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && middleExits > 0, "The fixture must trade both sides and exit at the middle of the channel.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0215_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0215_RSI_Donchian", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(15));
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(20, 2.0, false)]
+	[DataRow(30, 1.5, true)]
+	public async Task S0216_DeviationBandFadesUntilPriceIsBackAcrossTheAverage(int period, double multiplier, bool secondary)
+	{
+		var ma = new SimpleMovingAverage { Length = period };
+		var stdev = new StandardDeviation { Length = period };
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var meanExits = 0;
+		var violations = new List<string>();
+		await Replay("0216_Mean_Reversion", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["MovingAveragePeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["DeviationMultiplier"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "MovingAveragePeriod", period);
+			SetParam(strategy, "DeviationMultiplier", multiplier);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var m = ma.Process(candle);
+				var d = stdev.Process(candle);
+				if (!m.IsFormed || !d.IsFormed) return;
+				var mean = m.GetValue<decimal>();
+				var width = d.GetValue<decimal>() * (decimal)multiplier;
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (close < mean - width && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (close > mean + width && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && close > mean) { expectedSide = Sides.Sell; expectedVolume = position; meanExits++; }
+				else if (position < 0m && close < mean) { expectedSide = Sides.Buy; expectedVolume = -position; meanExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must fade a close beyond a deviation band, or close once price is back across the average.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && meanExits > 0, "The fixture must trade both sides and exit at the average.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0216_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0216_Mean_Reversion", TimeSpan.FromDays(31));
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(20, 2.0, 2.0, false)]
+	[DataRow(30, 1.5, 0.3, true)]
+	public async Task S0217_SpreadExtremesTradeBothLegsUntilTheMeanOrASpreadStop(int period, double multiplier, double stopPercent, bool swapped)
+	{
+		var firsts = new Dictionary<DateTime, decimal>();
+		var seconds = new Dictionary<DateTime, decimal>();
+		var spreads = new Queue<decimal>();
+		var side = 0;
+		var entrySpread = 0m;
+		var expected = new Queue<(SecurityId security, Sides side, decimal volume)>();
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<int, int> { [1] = 0, [-1] = 0 };
+		var meanExits = 0;
+		var stopExits = 0;
+		var legs = new HashSet<SecurityId>();
+		var violations = new List<string>();
+		await Replay("0217_Pairs_Trading", (strategy, alternateSecurity) =>
+		{
+			var first = swapped ? alternateSecurity : strategy.Security;
+			var second = swapped ? strategy.Security : alternateSecurity;
+			strategy.Security = first;
+			AreEqual(20, strategy.Parameters["LookbackPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["DeviationMultiplier"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "SecondSecurity", second);
+			SetParam(strategy, "LookbackPeriod", period);
+			SetParam(strategy, "DeviationMultiplier", multiplier);
+			SetParam(strategy, "StopLossPercent", stopPercent);
+			var firstId = first.ToSecurityId();
+			var secondId = second.ToSecurityId();
+			void Move(int target)
+			{
+				side = target;
+				var firstChange = target * strategy.Volume - strategy.Position;
+				if (firstChange != 0m) expected.Enqueue((firstId, firstChange > 0m ? Sides.Buy : Sides.Sell, Math.Abs(firstChange)));
+				var secondChange = -target * strategy.Volume - (strategy.GetPositionValue(second, strategy.Portfolio) ?? 0m);
+				if (secondChange != 0m) expected.Enqueue((secondId, secondChange > 0m ? Sides.Buy : Sides.Sell, Math.Abs(secondChange)));
+			}
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				(candle.SecurityId == firstId ? firsts : seconds)[candle.OpenTime] = candle.ClosePrice;
+				if (!firsts.TryGetValue(candle.OpenTime, out var a) || !seconds.TryGetValue(candle.OpenTime, out var b)) return;
+				foreach (var t in firsts.Keys.Where(t => t <= candle.OpenTime).ToArray()) firsts.Remove(t);
+				foreach (var t in seconds.Keys.Where(t => t <= candle.OpenTime).ToArray()) seconds.Remove(t);
+				var spread = a - b;
+				spreads.Enqueue(spread);
+				if (spreads.Count > period) spreads.Dequeue();
+				if (spreads.Count < period) return;
+				var mean = spreads.Average();
+				var deviation = (decimal)Math.Sqrt((double)spreads.Average(s => (s - mean) * (s - mean)));
+				var upper = mean + (decimal)multiplier * deviation;
+				var lower = mean - (decimal)multiplier * deviation;
+				var stopDistance = Math.Abs(entrySpread) * (decimal)stopPercent / 100;
+				var before = expected.Count;
+				if (spread < lower && side <= 0) { Move(1); entrySpread = spread; entries[1]++; }
+				else if (spread > upper && side >= 0) { Move(-1); entrySpread = spread; entries[-1]++; }
+				else if (side > 0 && (spread >= mean || spread <= entrySpread - stopDistance)) { if (spread >= mean) meanExits++; else stopExits++; Move(0); }
+				else if (side < 0 && (spread <= mean || spread >= entrySpread + stopDistance)) { if (spread <= mean) meanExits++; else stopExits++; Move(0); }
+				expectedOrders += expected.Count - before;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				var id = order.Security.ToSecurityId();
+				legs.Add(id);
+				if (!expected.TryDequeue(out var next) || next.security != id || next.side != order.Side || next.volume != order.Volume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {id} {order.Side} {order.Volume}, expected {next.security} {next.side} {next.volume}. Every order must move both legs to the pair the spread calls for.");
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		AreEqual(2, legs.Count, "Both instruments of the pair must be traded.");
+		IsTrue(entries[1] > 0 && entries[-1] > 0 && meanExits > 0, "The fixture must trade both sides of the spread and exit at the mean.");
+		if (stopPercent < 1) IsTrue(stopExits > 0, "A tight spread stop must be hit.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(20, 2.0, false)]
+	[DataRow(30, 1.5, true)]
+	public async Task S0218_ZScoreExtremesUntilTheZScoreCrossesZero(int period, double threshold, bool secondary)
+	{
+		var ma = new SimpleMovingAverage { Length = period };
+		var stdev = new StandardDeviation { Length = period };
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var zeroExits = 0;
+		var violations = new List<string>();
+		await Replay("0218_ZScore_Reversal", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["LookbackPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["ZScoreThreshold"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(10).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "LookbackPeriod", period);
+			SetParam(strategy, "ZScoreThreshold", threshold);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var m = ma.Process(candle);
+				var d = stdev.Process(candle);
+				if (!m.IsFormed || !d.IsFormed) return;
+				var deviation = d.GetValue<decimal>();
+				if (deviation == 0m) return;
+				var z = (candle.ClosePrice - m.GetValue<decimal>()) / deviation;
+				var position = strategy.Position;
+				if (z < -(decimal)threshold && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (z > (decimal)threshold && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && z > 0m) { expectedSide = Sides.Sell; expectedVolume = position; zeroExits++; }
+				else if (position < 0m && z < 0m) { expectedSide = Sides.Buy; expectedVolume = -position; zeroExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a Z-Score beyond the threshold, or close once the Z-Score crosses zero.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && zeroExits > 0, "The fixture must trade both sides and exit at zero.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0218_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0218_ZScore_Reversal", TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(10));
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(20, 2.0, false)]
+	[DataRow(30, 0.3, true)]
+	public async Task S0219_OpposedAverageSidesTradeBothLegsUntilTheFirstCrossesBackOrASpreadStop(int period, double stopPercent, bool swapped)
+	{
+		var firsts = new Dictionary<DateTime, decimal>();
+		var seconds = new Dictionary<DateTime, decimal>();
+		var firstHistory = new Queue<decimal>();
+		var secondHistory = new Queue<decimal>();
+		var side = 0;
+		var entrySpread = 0m;
+		var expected = new Queue<(SecurityId security, Sides side, decimal volume)>();
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<int, int> { [1] = 0, [-1] = 0 };
+		var averageExits = 0;
+		var stopExits = 0;
+		var legs = new HashSet<SecurityId>();
+		var violations = new List<string>();
+		await Replay("0219_Statistical_Arbitrage", (strategy, alternateSecurity) =>
+		{
+			var first = swapped ? alternateSecurity : strategy.Security;
+			var second = swapped ? strategy.Security : alternateSecurity;
+			strategy.Security = first;
+			AreEqual(20, strategy.Parameters["LookbackPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "SecondSecurity", second);
+			SetParam(strategy, "LookbackPeriod", period);
+			SetParam(strategy, "StopLossPercent", stopPercent);
+			var firstId = first.ToSecurityId();
+			var secondId = second.ToSecurityId();
+			void Move(int target)
+			{
+				side = target;
+				var firstChange = target * strategy.Volume - strategy.Position;
+				if (firstChange != 0m) expected.Enqueue((firstId, firstChange > 0m ? Sides.Buy : Sides.Sell, Math.Abs(firstChange)));
+				var secondChange = -target * strategy.Volume - (strategy.GetPositionValue(second, strategy.Portfolio) ?? 0m);
+				if (secondChange != 0m) expected.Enqueue((secondId, secondChange > 0m ? Sides.Buy : Sides.Sell, Math.Abs(secondChange)));
+			}
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				(candle.SecurityId == firstId ? firsts : seconds)[candle.OpenTime] = candle.ClosePrice;
+				if (!firsts.TryGetValue(candle.OpenTime, out var a) || !seconds.TryGetValue(candle.OpenTime, out var b)) return;
+				foreach (var t in firsts.Keys.Where(t => t <= candle.OpenTime).ToArray()) firsts.Remove(t);
+				foreach (var t in seconds.Keys.Where(t => t <= candle.OpenTime).ToArray()) seconds.Remove(t);
+				firstHistory.Enqueue(a);
+				secondHistory.Enqueue(b);
+				if (firstHistory.Count > period) { firstHistory.Dequeue(); secondHistory.Dequeue(); }
+				if (firstHistory.Count < period) return;
+				var firstAverage = firstHistory.Average();
+				var secondAverage = secondHistory.Average();
+				var spread = a - b;
+				var stopDistance = Math.Abs(entrySpread) * (decimal)stopPercent / 100;
+				var before = expected.Count;
+				if (a < firstAverage && b > secondAverage && side <= 0) { Move(1); entrySpread = spread; entries[1]++; }
+				else if (a > firstAverage && b < secondAverage && side >= 0) { Move(-1); entrySpread = spread; entries[-1]++; }
+				else if (side > 0 && (a > firstAverage || spread <= entrySpread - stopDistance)) { if (a > firstAverage) averageExits++; else stopExits++; Move(0); }
+				else if (side < 0 && (a < firstAverage || spread >= entrySpread + stopDistance)) { if (a < firstAverage) averageExits++; else stopExits++; Move(0); }
+				expectedOrders += expected.Count - before;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				var id = order.Security.ToSecurityId();
+				legs.Add(id);
+				if (!expected.TryDequeue(out var next) || next.security != id || next.side != order.Side || next.volume != order.Volume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {id} {order.Side} {order.Volume}, expected {next.security} {next.side} {next.volume}. Every order must move both legs to the pair the two averages call for.");
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		AreEqual(2, legs.Count, "Both instruments of the pair must be traded.");
+		IsTrue(entries[1] > 0 && entries[-1] > 0 && averageExits > 0, "The fixture must trade both sides of the pair and exit at the first average.");
+		if (stopPercent < 1) IsTrue(stopExits > 0, "A tight spread stop must be hit.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(20, 2.0, false)]
+	[DataRow(14, 1.5, true)]
+	public async Task S0220_AtrBreakoutsFromTheAverageUntilTheOppositeBreakoutOrAnAtrStop(int period, double multiplier, bool secondary)
+	{
+		var sma = new SimpleMovingAverage { Length = period };
+		var atr = new AverageTrueRange { Length = period };
+		var stopPrice = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var reversals = 0;
+		var stopExits = 0;
+		var violations = new List<string>();
+		await Replay("0220_Volatility_Breakout", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["Period"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["Multiplier"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "Period", period);
+			SetParam(strategy, "Multiplier", multiplier);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var m = sma.Process(candle);
+				var a = atr.Process(candle);
+				if (!m.IsFormed || !a.IsFormed) return;
+				var mean = m.GetValue<decimal>();
+				var distance = (decimal)multiplier * a.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (close > mean + distance && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; if (position < 0m) reversals++; stopPrice = close - distance; }
+				else if (close < mean - distance && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; if (position > 0m) reversals++; stopPrice = close + distance; }
+				else if (position > 0m && close <= stopPrice) { expectedSide = Sides.Sell; expectedVolume = position; stopExits++; }
+				else if (position < 0m && close >= stopPrice) { expectedSide = Sides.Buy; expectedVolume = -position; stopExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a close an ATR multiple beyond the average, or close at the ATR stop.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && stopExits > 0, "The fixture must trade both sides and hit the ATR stop.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(20, 2.0, 20, 14, 2.0, false)]
+	[DataRow(14, 1.5, 30, 10, 0.5, true)]
+	public async Task S0221_SqueezeBreakoutsUntilPriceIsBackInsideTheBandsOrAnAtrStop(int period, double width, int lookback, int atrPeriod, double stopAtr, bool secondary)
+	{
+		var bollinger = new BollingerBands { Length = period, Width = (decimal)width };
+		var atr = new AverageTrueRange { Length = atrPeriod };
+		var widths = new Queue<decimal>();
+		var stopPrice = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var insideExits = 0;
+		var violations = new List<string>();
+		await Replay("0221_Bollinger_Band_Squeeze", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["BollingerPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["BollingerMultiplier"].Value));
+			AreEqual(20, strategy.Parameters["LookbackPeriod"].Value);
+			AreEqual(14, strategy.Parameters["AtrPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["AtrMultiplier"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "BollingerPeriod", period);
+			SetParam(strategy, "BollingerMultiplier", width);
+			SetParam(strategy, "LookbackPeriod", lookback);
+			SetParam(strategy, "AtrPeriod", atrPeriod);
+			SetParam(strategy, "AtrMultiplier", stopAtr);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var b = (BollingerBandsValue)bollinger.Process(candle);
+				var a = atr.Process(candle);
+				// The strategy is not called while any value is empty.
+				if (b.IsEmpty || a.IsEmpty) return;
+				if (!b.IsFormed || b.UpBand is not decimal upper || b.LowBand is not decimal lower) return;
+				var bandWidth = upper - lower;
+				widths.Enqueue(bandWidth);
+				if (widths.Count > lookback) widths.Dequeue();
+				if (widths.Count < lookback || !a.IsFormed) return;
+				var squeeze = bandWidth < widths.Average();
+				var range = a.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (squeeze && close > upper && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; stopPrice = close - (decimal)stopAtr * range; }
+				else if (squeeze && close < lower && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; stopPrice = close + (decimal)stopAtr * range; }
+				else if (position > 0m && (close <= upper || close <= stopPrice)) { expectedSide = Sides.Sell; expectedVolume = position; if (close <= upper) insideExits++; }
+				else if (position < 0m && (close >= lower || close >= stopPrice)) { expectedSide = Sides.Buy; expectedVolume = -position; if (close >= lower) insideExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a band breakout during a squeeze, or close once price is back inside the bands or at the ATR stop.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && insideExits > 0, "The fixture must trade both sides and exit back inside the bands.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(20, 2.0, 0.5, 1.0, 2.0, false)]
+	[DataRow(30, 1.5, 0.3, 2.0, 0.3, true)]
+	public async Task S0222_ResidualZScoresTradeBothLegsUntilTheyNormalizeOrAResidualStop(int period, double entry, double exit, double beta, double stopPercent, bool swapped)
+	{
+		var firsts = new Dictionary<DateTime, decimal>();
+		var seconds = new Dictionary<DateTime, decimal>();
+		var residuals = new Queue<decimal>();
+		var side = 0;
+		var entryResidual = 0m;
+		var expected = new Queue<(SecurityId security, Sides side, decimal volume)>();
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<int, int> { [1] = 0, [-1] = 0 };
+		var normalExits = 0;
+		var stopExits = 0;
+		var legs = new HashSet<SecurityId>();
+		var violations = new List<string>();
+		await Replay("0222_Cointegration_Pairs", (strategy, alternateSecurity) =>
+		{
+			var first = swapped ? alternateSecurity : strategy.Security;
+			var second = swapped ? strategy.Security : alternateSecurity;
+			strategy.Security = first;
+			AreEqual(20, strategy.Parameters["Period"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["EntryThreshold"].Value));
+			AreEqual(0.5m, Convert.ToDecimal(strategy.Parameters["ExitThreshold"].Value));
+			AreEqual(1m, Convert.ToDecimal(strategy.Parameters["Beta"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "Asset2", second);
+			SetParam(strategy, "Period", period);
+			SetParam(strategy, "EntryThreshold", entry);
+			SetParam(strategy, "ExitThreshold", exit);
+			SetParam(strategy, "Beta", beta);
+			SetParam(strategy, "StopLossPercent", stopPercent);
+			var firstId = first.ToSecurityId();
+			var secondId = second.ToSecurityId();
+			void Move(int target)
+			{
+				side = target;
+				var firstChange = target * strategy.Volume - strategy.Position;
+				if (firstChange != 0m) expected.Enqueue((firstId, firstChange > 0m ? Sides.Buy : Sides.Sell, Math.Abs(firstChange)));
+				var secondChange = -target * strategy.Volume * (decimal)beta - (strategy.GetPositionValue(second, strategy.Portfolio) ?? 0m);
+				if (secondChange != 0m) expected.Enqueue((secondId, secondChange > 0m ? Sides.Buy : Sides.Sell, Math.Abs(secondChange)));
+			}
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				(candle.SecurityId == firstId ? firsts : seconds)[candle.OpenTime] = candle.ClosePrice;
+				if (!firsts.TryGetValue(candle.OpenTime, out var a) || !seconds.TryGetValue(candle.OpenTime, out var b)) return;
+				foreach (var t in firsts.Keys.Where(t => t <= candle.OpenTime).ToArray()) firsts.Remove(t);
+				foreach (var t in seconds.Keys.Where(t => t <= candle.OpenTime).ToArray()) seconds.Remove(t);
+				var residual = a - (decimal)beta * b;
+				residuals.Enqueue(residual);
+				if (residuals.Count > period) residuals.Dequeue();
+				if (residuals.Count < period) return;
+				var mean = residuals.Average();
+				var deviation = (decimal)Math.Sqrt((double)residuals.Average(r => (r - mean) * (r - mean)));
+				if (deviation == 0m) return;
+				var z = (residual - mean) / deviation;
+				var normal = Math.Abs(z) < (decimal)exit;
+				var stopDistance = Math.Abs(entryResidual) * (decimal)stopPercent / 100;
+				var before = expected.Count;
+				if (z < -(decimal)entry && side <= 0) { Move(1); entryResidual = residual; entries[1]++; }
+				else if (z > (decimal)entry && side >= 0) { Move(-1); entryResidual = residual; entries[-1]++; }
+				else if (side > 0 && (normal || residual <= entryResidual - stopDistance)) { if (normal) normalExits++; else stopExits++; Move(0); }
+				else if (side < 0 && (normal || residual >= entryResidual + stopDistance)) { if (normal) normalExits++; else stopExits++; Move(0); }
+				expectedOrders += expected.Count - before;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				var id = order.Security.ToSecurityId();
+				legs.Add(id);
+				if (!expected.TryDequeue(out var next) || next.security != id || next.side != order.Side || next.volume != order.Volume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {id} {order.Side} {order.Volume}, expected {next.security} {next.side} {next.volume}. Every order must move both legs, the second by Beta, to the pair the residual z-score calls for.");
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		AreEqual(2, legs.Count, "Both instruments of the pair must be traded.");
+		IsTrue(entries[1] > 0 && entries[-1] > 0 && normalExits > 0, "The fixture must trade both sides of the pair and exit once the z-score normalizes.");
+		if (stopPercent < 1) IsTrue(stopExits > 0, "A tight residual stop must be hit.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(14, false)]
+	[DataRow(10, true)]
+	public async Task S0223_CloseAndMomentumDivergencesUntilMomentumCrossesZero(int period, bool secondary)
+	{
+		var momentum = new Momentum { Length = period };
+		decimal? prevClose = null, prevMomentum = null;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var zeroExits = 0;
+		var violations = new List<string>();
+		await Replay("0223_Momentum_Divergence", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(14, strategy.Parameters["MomentumPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			IsFalse(strategy.Parameters.ContainsKey("MaPeriod"), "No rule uses a moving average.");
+			SetParam(strategy, "MomentumPeriod", period);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var m = momentum.Process(candle);
+				if (m.IsEmpty || !m.IsFormed) return;
+				var close = candle.ClosePrice;
+				var value = m.GetValue<decimal>();
+				var lastClose = prevClose;
+				var lastMomentum = prevMomentum;
+				prevClose = close;
+				prevMomentum = value;
+				if (lastClose is not decimal c || lastMomentum is not decimal lm) return;
+				var position = strategy.Position;
+				if (close < c && value > lm && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (close > c && value < lm && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && lm >= 0m && value < 0m) { expectedSide = Sides.Sell; expectedVolume = position; zeroExits++; }
+				else if (position < 0m && lm <= 0m && value > 0m) { expectedSide = Sides.Buy; expectedVolume = -position; zeroExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow a close/momentum divergence, or close when momentum crosses zero.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && zeroExits > 0, "The fixture must trade both sides and exit on a zero cross.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0223_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0223_Momentum_Divergence", TimeSpan.FromDays(31));
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(20, 14, 2.0, false)]
+	[DataRow(30, 10, 1.0, true)]
+	public async Task S0224_AtrStretchesFromTheAverageUntilTheAverageOrAnAtrStop(int period, int atrPeriod, double multiplier, bool secondary)
+	{
+		var sma = new SimpleMovingAverage { Length = period };
+		var atr = new AverageTrueRange { Length = atrPeriod };
+		var stopPrice = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var meanExits = 0;
+		var stopExits = 0;
+		var violations = new List<string>();
+		await Replay("0224_ATR_Mean_Reversion", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["MaPeriod"].Value);
+			AreEqual(14, strategy.Parameters["AtrPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["Multiplier"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "MaPeriod", period);
+			SetParam(strategy, "AtrPeriod", atrPeriod);
+			SetParam(strategy, "Multiplier", multiplier);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var m = sma.Process(candle);
+				var a = atr.Process(candle);
+				if (!m.IsFormed || !a.IsFormed) return;
+				var mean = m.GetValue<decimal>();
+				var distance = (decimal)multiplier * a.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (close < mean - distance && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; stopPrice = close - distance; }
+				else if (close > mean + distance && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; stopPrice = close + distance; }
+				else if (position > 0m && (close >= mean || close <= stopPrice)) { expectedSide = Sides.Sell; expectedVolume = position; if (close >= mean) meanExits++; else stopExits++; }
+				else if (position < 0m && (close <= mean || close >= stopPrice)) { expectedSide = Sides.Buy; expectedVolume = -position; if (close <= mean) meanExits++; else stopExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must fade a close an ATR multiple beyond the average, or close at the average or the ATR stop.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && meanExits > 0 && stopExits > 0, "The fixture must trade both sides, exit at the average and hit the ATR stop.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(0.01, 0.1, 14, 2.0, false)]
+	[DataRow(0.05, 0.5, 10, 0.5, true)]
+	public async Task S0225_ClosesAcrossTheKalmanLineFlipThePositionOrHitAnAtrStop(double processNoise, double measurementNoise, int atrPeriod, double stopAtr, bool secondary)
+	{
+		var kalman = new KalmanFilter { ProcessNoise = (decimal)processNoise, MeasurementNoise = (decimal)measurementNoise };
+		var atr = new AverageTrueRange { Length = atrPeriod };
+		var stopPrice = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var stopExits = 0;
+		var violations = new List<string>();
+		await Replay("0225_Kalman_Filter_Trend", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(0.01m, Convert.ToDecimal(strategy.Parameters["ProcessNoise"].Value));
+			AreEqual(0.1m, Convert.ToDecimal(strategy.Parameters["MeasurementNoise"].Value));
+			AreEqual(14, strategy.Parameters["AtrPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["AtrMultiplier"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "ProcessNoise", processNoise);
+			SetParam(strategy, "MeasurementNoise", measurementNoise);
+			SetParam(strategy, "AtrPeriod", atrPeriod);
+			SetParam(strategy, "AtrMultiplier", stopAtr);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var k = kalman.Process(candle);
+				var a = atr.Process(candle);
+				if (!k.IsFormed || !a.IsFormed) return;
+				var line = k.GetValue<decimal>();
+				var range = a.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (close > line && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; stopPrice = close - (decimal)stopAtr * range; }
+				else if (close < line && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; stopPrice = close + (decimal)stopAtr * range; }
+				else if (position > 0m && close <= stopPrice) { expectedSide = Sides.Sell; expectedVolume = position; stopExits++; }
+				else if (position < 0m && close >= stopPrice) { expectedSide = Sides.Buy; expectedVolume = -position; stopExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow the close's side of the Kalman line, or close at the ATR stop.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "The fixture must trade both sides.");
+		if (stopAtr < 1) IsTrue(stopExits > 0, "A tight ATR stop must be hit.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(20, 2.0, false)]
+	[DataRow(30, 1.0, true)]
+	public async Task S0226_AdjustedStretchesFromTheAverageUntilTheAverageOrAnAtrStop(int period, double multiplier, bool secondary)
+	{
+		var sma = new SimpleMovingAverage { Length = period };
+		var atr = new AverageTrueRange { Length = period };
+		var stdev = new StandardDeviation { Length = period };
+		var stopPrice = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var meanExits = 0;
+		var stopExits = 0;
+		var violations = new List<string>();
+		await Replay("0226_Volatility_Adjusted_Mean_Reversion", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["Period"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["Multiplier"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "Period", period);
+			SetParam(strategy, "Multiplier", multiplier);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var m = sma.Process(candle);
+				var a = atr.Process(candle);
+				var d = stdev.Process(candle);
+				if (!m.IsFormed || !a.IsFormed || !d.IsFormed) return;
+				var range = a.GetValue<decimal>();
+				var deviation = d.GetValue<decimal>();
+				if (range <= 0m || deviation <= 0m) return;
+				var mean = m.GetValue<decimal>();
+				var distance = (decimal)multiplier * range / (range / deviation);
+				var stopDistance = (decimal)multiplier * range;
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (close < mean - distance && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; stopPrice = close - stopDistance; }
+				else if (close > mean + distance && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; stopPrice = close + stopDistance; }
+				else if (position > 0m && (close >= mean || close <= stopPrice)) { expectedSide = Sides.Sell; expectedVolume = position; if (close >= mean) meanExits++; else stopExits++; }
+				else if (position < 0m && (close <= mean || close >= stopPrice)) { expectedSide = Sides.Buy; expectedVolume = -position; if (close <= mean) meanExits++; else stopExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must fade a close beyond the volatility-adjusted threshold, or close at the average or the ATR stop.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && meanExits > 0 && stopExits > 0, "The fixture must trade both sides, exit at the average and hit the ATR stop.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(100, 20, 0.55, false)]
+	[DataRow(60, 30, 0.7, true)]
+	public async Task S0227_AverageSidesWhileHurstTrendsUntilTheAverageOrHurstFades(int hurstPeriod, int maPeriod, double threshold, bool secondary)
+	{
+		var hurst = new HurstExponent { Length = hurstPeriod };
+		var sma = new SimpleMovingAverage { Length = maPeriod };
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var fadeExits = 0;
+		var violations = new List<string>();
+		await Replay("0227_Hurst_Exponent_Trend", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(100, strategy.Parameters["HurstPeriod"].Value);
+			AreEqual(20, strategy.Parameters["MaPeriod"].Value);
+			AreEqual(0.55m, Convert.ToDecimal(strategy.Parameters["HurstThreshold"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "HurstPeriod", hurstPeriod);
+			SetParam(strategy, "MaPeriod", maPeriod);
+			SetParam(strategy, "HurstThreshold", threshold);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var h = hurst.Process(candle);
+				var m = sma.Process(candle);
+				if (!h.IsFormed || !m.IsFormed) return;
+				var exponent = h.GetValue<decimal>();
+				var mean = m.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var trending = exponent > (decimal)threshold;
+				var position = strategy.Position;
+				if (trending && close > mean && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (trending && close < mean && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && (close < mean || exponent < (decimal)threshold)) { expectedSide = Sides.Sell; expectedVolume = position; fadeExits++; }
+				else if (position < 0m && (close > mean || exponent < (decimal)threshold)) { expectedSide = Sides.Buy; expectedVolume = -position; fadeExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow the close's side of the average while Hurst trends, or close once price crosses the average or Hurst fades.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "The fixture must trade both sides.");
+		// The exponent stays above 0.55 on the archive, so only a higher threshold sees it fade.
+		if (threshold > 0.6) IsTrue(fadeExits > 0, "A high threshold must close positions on a fading exponent or the average.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0227_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0227_Hurst_Exponent_Trend", TimeSpan.FromDays(31));
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(100, 20, 0.7, false)]
+	[DataRow(60, 30, 0.75, true)]
+	public async Task S0228_FadesAcrossTheAverageWhileHurstRevertsUntilTheAverageOrHurstRises(int hurstPeriod, int maPeriod, double threshold, bool secondary)
+	{
+		var hurst = new HurstExponent { Length = hurstPeriod };
+		var sma = new SimpleMovingAverage { Length = maPeriod };
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var fadeExits = 0;
+		var violations = new List<string>();
+		await Replay("0228_Hurst_Exponent_Reversion", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(100, strategy.Parameters["HurstPeriod"].Value);
+			AreEqual(20, strategy.Parameters["AveragePeriod"].Value);
+			AreEqual(0.7m, Convert.ToDecimal(strategy.Parameters["HurstThreshold"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "HurstPeriod", hurstPeriod);
+			SetParam(strategy, "AveragePeriod", maPeriod);
+			SetParam(strategy, "HurstThreshold", threshold);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var h = hurst.Process(candle);
+				var m = sma.Process(candle);
+				if (!h.IsFormed || !m.IsFormed) return;
+				var exponent = h.GetValue<decimal>();
+				var mean = m.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var reverting = exponent < (decimal)threshold;
+				var position = strategy.Position;
+				if (reverting && close < mean && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (reverting && close > mean && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && (close >= mean || exponent > (decimal)threshold)) { expectedSide = Sides.Sell; expectedVolume = position; fadeExits++; }
+				else if (position < 0m && (close <= mean || exponent > (decimal)threshold)) { expectedSide = Sides.Buy; expectedVolume = -position; fadeExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must fade the close's side of the average while Hurst reverts, or close once price is back at the average or Hurst rises.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && fadeExits > 0, "The fixture must trade both sides and exit.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0228_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0228_Hurst_Exponent_Reversion", TimeSpan.FromDays(31));
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(20, -0.3, false)]
+	[DataRow(30, -0.2, true)]
+	public async Task S0229_FadesAcrossTheAverageUnderNegativeAutocorrelationUntilTheAverageOrItRises(int period, double threshold, bool secondary)
+	{
+		var sma = new SimpleMovingAverage { Length = period };
+		var closes = new Queue<decimal>();
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var exits = 0;
+		var violations = new List<string>();
+		await Replay("0229_Autocorrelation_Reversal", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["AutoCorrPeriod"].Value);
+			AreEqual(-0.3m, Convert.ToDecimal(strategy.Parameters["AutoCorrThreshold"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "AutoCorrPeriod", period);
+			SetParam(strategy, "AutoCorrThreshold", threshold);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var m = sma.Process(candle);
+				// The strategy is not called while the average is empty.
+				if (m.IsEmpty) return;
+				var close = candle.ClosePrice;
+				closes.Enqueue(close);
+				if (closes.Count > period) closes.Dequeue();
+				if (closes.Count < period || !m.IsFormed) return;
+				var prices = closes.ToArray();
+				var changes = prices.Skip(1).Select((p, i) => p - prices[i]).ToArray();
+				var mean = changes.Average();
+				var denominator = changes.Sum(c => (c - mean) * (c - mean));
+				var numerator = changes.Skip(1).Select((c, i) => (changes[i] - mean) * (c - mean)).Sum();
+				var autocorrelation = denominator == 0m ? 0m : numerator / denominator;
+				var average = m.GetValue<decimal>();
+				var reverting = autocorrelation < (decimal)threshold;
+				var position = strategy.Position;
+				if (reverting && close < average && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (reverting && close > average && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && (close > average || autocorrelation > (decimal)threshold)) { expectedSide = Sides.Sell; expectedVolume = position; exits++; }
+				else if (position < 0m && (close < average || autocorrelation > (decimal)threshold)) { expectedSide = Sides.Buy; expectedVolume = -position; exits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must fade the close's side of the average under negative autocorrelation, or close once price crosses the average or the autocorrelation rises.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && exits > 0, "The fixture must trade both sides and exit.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0229_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0229_Autocorrelation_Reversal", TimeSpan.FromDays(31));
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(20, 2.0, 2.0, false)]
+	[DataRow(30, 1.5, 0.3, true)]
+	public async Task S0230_SpreadZScoresTradeBothLegsUntilTheMeanOrASpreadStop(int period, double threshold, double stopPercent, bool swapped)
+	{
+		var firsts = new Dictionary<DateTime, decimal>();
+		var seconds = new Dictionary<DateTime, decimal>();
+		var spreads = new Queue<decimal>();
+		var side = 0;
+		var entrySpread = 0m;
+		var expected = new Queue<(SecurityId security, Sides side, decimal volume)>();
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<int, int> { [1] = 0, [-1] = 0 };
+		var meanExits = 0;
+		var stopExits = 0;
+		var legs = new HashSet<SecurityId>();
+		var violations = new List<string>();
+		await Replay("0230_Delta_Neutral_Arbitrage", (strategy, alternateSecurity) =>
+		{
+			var first = swapped ? alternateSecurity : strategy.Security;
+			var second = swapped ? strategy.Security : alternateSecurity;
+			strategy.Security = first;
+			AreEqual(20, strategy.Parameters["LookbackPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["EntryThreshold"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "Asset2Security", second);
+			SetParam(strategy, "Asset2Portfolio", strategy.Portfolio);
+			SetParam(strategy, "LookbackPeriod", period);
+			SetParam(strategy, "EntryThreshold", threshold);
+			SetParam(strategy, "StopLossPercent", stopPercent);
+			var firstId = first.ToSecurityId();
+			var secondId = second.ToSecurityId();
+			void Move(int target)
+			{
+				side = target;
+				var firstChange = target * strategy.Volume - strategy.Position;
+				if (firstChange != 0m) expected.Enqueue((firstId, firstChange > 0m ? Sides.Buy : Sides.Sell, Math.Abs(firstChange)));
+				var secondChange = -target * strategy.Volume - (strategy.GetPositionValue(second, strategy.Portfolio) ?? 0m);
+				if (secondChange != 0m) expected.Enqueue((secondId, secondChange > 0m ? Sides.Buy : Sides.Sell, Math.Abs(secondChange)));
+			}
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				(candle.SecurityId == firstId ? firsts : seconds)[candle.OpenTime] = candle.ClosePrice;
+				if (!firsts.TryGetValue(candle.OpenTime, out var a) || !seconds.TryGetValue(candle.OpenTime, out var b)) return;
+				foreach (var t in firsts.Keys.Where(t => t <= candle.OpenTime).ToArray()) firsts.Remove(t);
+				foreach (var t in seconds.Keys.Where(t => t <= candle.OpenTime).ToArray()) seconds.Remove(t);
+				var spread = a - b;
+				spreads.Enqueue(spread);
+				if (spreads.Count > period) spreads.Dequeue();
+				if (spreads.Count < period) return;
+				var mean = spreads.Average();
+				var deviation = (decimal)Math.Sqrt((double)spreads.Average(s => (s - mean) * (s - mean)));
+				if (deviation == 0m) return;
+				var z = (spread - mean) / deviation;
+				var stopDistance = Math.Abs(entrySpread) * (decimal)stopPercent / 100;
+				var before = expected.Count;
+				if (z < -(decimal)threshold && side <= 0) { Move(1); entrySpread = spread; entries[1]++; }
+				else if (z > (decimal)threshold && side >= 0) { Move(-1); entrySpread = spread; entries[-1]++; }
+				else if (side > 0 && (spread >= mean || spread <= entrySpread - stopDistance)) { if (spread >= mean) meanExits++; else stopExits++; Move(0); }
+				else if (side < 0 && (spread <= mean || spread >= entrySpread + stopDistance)) { if (spread <= mean) meanExits++; else stopExits++; Move(0); }
+				expectedOrders += expected.Count - before;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				var id = order.Security.ToSecurityId();
+				legs.Add(id);
+				if (!expected.TryDequeue(out var next) || next.security != id || next.side != order.Side || next.volume != order.Volume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {id} {order.Side} {order.Volume}, expected {next.security} {next.side} {next.volume}. Every order must move both legs to the pair the spread z-score calls for.");
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		AreEqual(2, legs.Count, "Both instruments of the pair must be traded.");
+		IsTrue(entries[1] > 0 && entries[-1] > 0 && meanExits > 0, "The fixture must trade both sides of the spread and exit at the mean.");
+		if (stopPercent < 1) IsTrue(stopExits > 0, "A tight spread stop must be hit.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(2.0, 14, false)]
+	[DataRow(1.5, 10, true)]
+	public async Task S0235_AtrStretchesFromTheDailyVwapUntilVwapOrAnAtrStop(double k, int atrPeriod, bool secondary)
+	{
+		var atr = new AverageTrueRange { Length = atrPeriod };
+		DateTime? day = null;
+		decimal priceVolume = 0m, volume = 0m;
+		var stopPrice = 0m;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var vwapExits = 0;
+		var violations = new List<string>();
+		await Replay("0235_VWAP_Mean_Reversion", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["K"].Value));
+			AreEqual(14, strategy.Parameters["AtrPeriod"].Value);
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "K", k);
+			SetParam(strategy, "AtrPeriod", atrPeriod);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				var a = atr.Process(candle);
+				// The strategy only sees candles once the bound indicator returns a value.
+				if (a.IsEmpty) return;
+				if (day != candle.OpenTime.Date) { day = candle.OpenTime.Date; priceVolume = 0m; volume = 0m; }
+				priceVolume += (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3 * candle.TotalVolume;
+				volume += candle.TotalVolume;
+				if (!a.IsFormed || volume <= 0m) return;
+				var vwap = priceVolume / volume;
+				var distance = (decimal)k * a.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var position = strategy.Position;
+				if (close < vwap - distance && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; stopPrice = close - distance; }
+				else if (close > vwap + distance && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; stopPrice = close + distance; }
+				else if (position > 0m && (close >= vwap || close <= stopPrice)) { expectedSide = Sides.Sell; expectedVolume = position; if (close >= vwap) vwapExits++; }
+				else if (position < 0m && (close <= vwap || close >= stopPrice)) { expectedSide = Sides.Buy; expectedVolume = -position; if (close <= vwap) vwapExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must fade a close K ATR beyond the UTC-day VWAP, or close at VWAP or the ATR stop.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && vwapExits > 0, "The fixture must trade both sides and exit at VWAP.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(14, 20, 2.0, false)]
+	[DataRow(10, 30, 1.5, true)]
+	public async Task S0236_RsiBeyondItsDeviationBandsUntilItsAverage(int a0, int period, double multiplier, bool secondary)
+	{
+		var ind = new RelativeStrengthIndex { Length = a0 };
+		var values = new Queue<decimal>();
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var meanExits = 0;
+		var violations = new List<string>();
+		await Replay("0236_RSI_Mean_Reversion", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(14, strategy.Parameters["RsiPeriod"].Value);
+			AreEqual(20, strategy.Parameters["AveragePeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["Multiplier"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "RsiPeriod", a0);
+			SetParam(strategy, "AveragePeriod", period);
+			SetParam(strategy, "Multiplier", multiplier);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				// The strategy is not called while a bound value is empty.
+				var r = ind.Process(candle);
+				if (r.IsEmpty) return;
+				if (!r.IsFormed) return;
+				var x = r.GetValue<decimal>();
+				values.Enqueue(x);
+				if (values.Count > period) values.Dequeue();
+				if (values.Count < period) return;
+				var mean = values.Average();
+				var deviation = (decimal)Math.Sqrt((double)values.Average(v => (v - mean) * (v - mean)));
+				var upper = mean + (decimal)multiplier * deviation;
+				var lower = mean - (decimal)multiplier * deviation;
+				var position = strategy.Position;
+				if (x < lower && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (x > upper && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && x > mean) { expectedSide = Sides.Sell; expectedVolume = position; meanExits++; }
+				else if (position < 0m && x < mean) { expectedSide = Sides.Buy; expectedVolume = -position; meanExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow the indicator beyond a deviation band around its average, or close once it is back at the average.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && meanExits > 0, "The fixture must trade both sides and exit at the average.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0236_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0236_RSI_Mean_Reversion", TimeSpan.FromDays(31));
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(14, 3, 20, 2.0, false)]
+	[DataRow(10, 3, 30, 1.5, true)]
+	public async Task S0237_SmoothedKBeyondItsDeviationBandsUntilItsAverage(int a0, int a1, int period, double multiplier, bool secondary)
+	{
+		var ind = new StochasticOscillator { K = { Length = a0 }, D = { Length = a1 } };
+		var values = new Queue<decimal>();
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var meanExits = 0;
+		var violations = new List<string>();
+		await Replay("0237_Stochastic_Mean_Reversion", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(14, strategy.Parameters["StochPeriod"].Value);
+			AreEqual(3, strategy.Parameters["KPeriod"].Value);
+			AreEqual(20, strategy.Parameters["AveragePeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["Multiplier"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "StochPeriod", a0);
+			SetParam(strategy, "KPeriod", a1);
+			SetParam(strategy, "AveragePeriod", period);
+			SetParam(strategy, "Multiplier", multiplier);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				// The strategy is not called while a bound value is empty.
+				var r = ind.Process(candle);
+				if (r.IsEmpty) return;
+				if (!r.IsFormed || r is not IStochasticOscillatorValue { D: decimal x }) return;
+				values.Enqueue(x);
+				if (values.Count > period) values.Dequeue();
+				if (values.Count < period) return;
+				var mean = values.Average();
+				var deviation = (decimal)Math.Sqrt((double)values.Average(v => (v - mean) * (v - mean)));
+				var upper = mean + (decimal)multiplier * deviation;
+				var lower = mean - (decimal)multiplier * deviation;
+				var position = strategy.Position;
+				if (x < lower && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (x > upper && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && x > mean) { expectedSide = Sides.Sell; expectedVolume = position; meanExits++; }
+				else if (position < 0m && x < mean) { expectedSide = Sides.Buy; expectedVolume = -position; meanExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow the indicator beyond a deviation band around its average, or close once it is back at the average.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && meanExits > 0, "The fixture must trade both sides and exit at the average.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0237_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0237_Stochastic_Mean_Reversion", TimeSpan.FromDays(31));
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(20, 20, 2.0, false)]
+	[DataRow(14, 30, 1.5, true)]
+	public async Task S0238_CciBeyondItsDeviationBandsUntilItsAverage(int a0, int period, double multiplier, bool secondary)
+	{
+		var ind = new CommodityChannelIndex { Length = a0 };
+		var values = new Queue<decimal>();
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var meanExits = 0;
+		var violations = new List<string>();
+		await Replay("0238_CCI_Mean_Reversion", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(20, strategy.Parameters["CciPeriod"].Value);
+			AreEqual(20, strategy.Parameters["AveragePeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["DeviationMultiplier"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "CciPeriod", a0);
+			SetParam(strategy, "AveragePeriod", period);
+			SetParam(strategy, "DeviationMultiplier", multiplier);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				// The strategy is not called while a bound value is empty.
+				var r = ind.Process(candle);
+				if (r.IsEmpty) return;
+				if (!r.IsFormed) return;
+				var x = r.GetValue<decimal>();
+				values.Enqueue(x);
+				if (values.Count > period) values.Dequeue();
+				if (values.Count < period) return;
+				var mean = values.Average();
+				var deviation = (decimal)Math.Sqrt((double)values.Average(v => (v - mean) * (v - mean)));
+				var upper = mean + (decimal)multiplier * deviation;
+				var lower = mean - (decimal)multiplier * deviation;
+				var position = strategy.Position;
+				if (x < lower && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (x > upper && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && x > mean) { expectedSide = Sides.Sell; expectedVolume = position; meanExits++; }
+				else if (position < 0m && x < mean) { expectedSide = Sides.Buy; expectedVolume = -position; meanExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow the indicator beyond a deviation band around its average, or close once it is back at the average.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && meanExits > 0, "The fixture must trade both sides and exit at the average.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0238_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0238_CCI_Mean_Reversion", TimeSpan.FromDays(31));
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(14, 20, 2.0, false)]
+	[DataRow(10, 30, 1.5, true)]
+	public async Task S0239_WilliamsRBeyondItsDeviationBandsUntilItsAverage(int a0, int period, double multiplier, bool secondary)
+	{
+		var ind = new WilliamsR { Length = a0 };
+		var values = new Queue<decimal>();
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var meanExits = 0;
+		var violations = new List<string>();
+		await Replay("0239_Williams_R_Mean_Reversion", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(14, strategy.Parameters["WilliamsRPeriod"].Value);
+			AreEqual(20, strategy.Parameters["AveragePeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["DeviationMultiplier"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "WilliamsRPeriod", a0);
+			SetParam(strategy, "AveragePeriod", period);
+			SetParam(strategy, "DeviationMultiplier", multiplier);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				// The strategy is not called while a bound value is empty.
+				var r = ind.Process(candle);
+				if (r.IsEmpty) return;
+				if (!r.IsFormed) return;
+				var x = r.GetValue<decimal>();
+				values.Enqueue(x);
+				if (values.Count > period) values.Dequeue();
+				if (values.Count < period) return;
+				var mean = values.Average();
+				var deviation = (decimal)Math.Sqrt((double)values.Average(v => (v - mean) * (v - mean)));
+				var upper = mean + (decimal)multiplier * deviation;
+				var lower = mean - (decimal)multiplier * deviation;
+				var position = strategy.Position;
+				if (x < lower && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (x > upper && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && x > mean) { expectedSide = Sides.Sell; expectedVolume = position; meanExits++; }
+				else if (position < 0m && x < mean) { expectedSide = Sides.Buy; expectedVolume = -position; meanExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow the indicator beyond a deviation band around its average, or close once it is back at the average.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && meanExits > 0, "The fixture must trade both sides and exit at the average.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0239_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0239_Williams_R_Mean_Reversion", TimeSpan.FromDays(31));
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(12, 26, 9, 20, 2.0, false)]
+	[DataRow(8, 21, 5, 30, 1.5, true)]
+	public async Task S0240_HistogramBeyondItsDeviationBandsUntilItsAverage(int a0, int a1, int a2, int period, double multiplier, bool secondary)
+	{
+		var ind = new MovingAverageConvergenceDivergenceSignal { Macd = { ShortMa = { Length = a0 }, LongMa = { Length = a1 } }, SignalMa = { Length = a2 } };
+		var values = new Queue<decimal>();
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var meanExits = 0;
+		var violations = new List<string>();
+		await Replay("0240_MACD_Mean_Reversion", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(12, strategy.Parameters["FastMacdPeriod"].Value);
+			AreEqual(26, strategy.Parameters["SlowMacdPeriod"].Value);
+			AreEqual(9, strategy.Parameters["SignalPeriod"].Value);
+			AreEqual(20, strategy.Parameters["AveragePeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["DeviationMultiplier"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "FastMacdPeriod", a0);
+			SetParam(strategy, "SlowMacdPeriod", a1);
+			SetParam(strategy, "SignalPeriod", a2);
+			SetParam(strategy, "AveragePeriod", period);
+			SetParam(strategy, "DeviationMultiplier", multiplier);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				// The strategy is not called while a bound value is empty.
+				var r = ind.Process(candle);
+				if (r.IsEmpty) return;
+				if (!r.IsFormed || r is not MovingAverageConvergenceDivergenceSignalValue { Macd: decimal line, Signal: decimal sig }) return;
+				var x = line - sig;
+				values.Enqueue(x);
+				if (values.Count > period) values.Dequeue();
+				if (values.Count < period) return;
+				var mean = values.Average();
+				var deviation = (decimal)Math.Sqrt((double)values.Average(v => (v - mean) * (v - mean)));
+				var upper = mean + (decimal)multiplier * deviation;
+				var lower = mean - (decimal)multiplier * deviation;
+				var position = strategy.Position;
+				if (x < lower && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (x > upper && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && x > mean) { expectedSide = Sides.Sell; expectedVolume = position; meanExits++; }
+				else if (position < 0m && x < mean) { expectedSide = Sides.Buy; expectedVolume = -position; meanExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow the indicator beyond a deviation band around its average, or close once it is back at the average.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && meanExits > 0, "The fixture must trade both sides and exit at the average.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0240_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0240_MACD_Mean_Reversion", TimeSpan.FromDays(31));
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(14, 20, 2.0, false)]
+	[DataRow(10, 30, 1.0, true)]
+	public async Task S0241_AdxBeyondItsDeviationBandsAgainstTheAverageUntilItsMean(int a0, int period, double multiplier, bool secondary)
+	{
+		var ind = new AverageDirectionalIndex { Length = a0 };
+		var sma = new SimpleMovingAverage { Length = period };
+		var values = new Queue<decimal>();
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var meanExits = 0;
+		var violations = new List<string>();
+		await Replay("0241_ADX_Mean_Reversion", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(14, strategy.Parameters["AdxPeriod"].Value);
+			AreEqual(20, strategy.Parameters["AveragePeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["DeviationMultiplier"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "AdxPeriod", a0);
+			SetParam(strategy, "AveragePeriod", period);
+			SetParam(strategy, "DeviationMultiplier", multiplier);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				// The strategy is not called while a bound value is empty.
+				var m = sma.Process(candle);
+				var r = ind.Process(candle);
+				if (r.IsEmpty || m.IsEmpty) return;
+				if (!r.IsFormed || r is not AverageDirectionalIndexValue { MovingAverage: decimal x }) return;
+				if (!m.IsFormed) return;
+				values.Enqueue(x);
+				if (values.Count > period) values.Dequeue();
+				if (values.Count < period) return;
+				var average = m.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var mean = values.Average();
+				var deviation = (decimal)Math.Sqrt((double)values.Average(v => (v - mean) * (v - mean)));
+				var upper = mean + (decimal)multiplier * deviation;
+				var lower = mean - (decimal)multiplier * deviation;
+				var position = strategy.Position;
+				if (x < lower && close < average && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (x > upper && close > average && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && x > mean) { expectedSide = Sides.Sell; expectedVolume = position; meanExits++; }
+				else if (position < 0m && x < mean) { expectedSide = Sides.Buy; expectedVolume = -position; meanExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow the indicator beyond a deviation band around its average, or close once it is back at the average.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && meanExits > 0, "The fixture must trade both sides and exit at the average.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0241_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0241_ADX_Mean_Reversion", TimeSpan.FromDays(31));
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(14, 20, 2.0, false)]
+	[DataRow(10, 30, 1.0, true)]
+	public async Task S0242_AtrBeyondItsDeviationBandsAgainstTheAverageUntilItsMean(int a0, int period, double multiplier, bool secondary)
+	{
+		var ind = new AverageTrueRange { Length = a0 };
+		var sma = new SimpleMovingAverage { Length = period };
+		var values = new Queue<decimal>();
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var meanExits = 0;
+		var violations = new List<string>();
+		await Replay("0242_Volatility_Mean_Reversion", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(14, strategy.Parameters["AtrPeriod"].Value);
+			AreEqual(20, strategy.Parameters["AveragePeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["DeviationMultiplier"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "AtrPeriod", a0);
+			SetParam(strategy, "AveragePeriod", period);
+			SetParam(strategy, "DeviationMultiplier", multiplier);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				// The strategy is not called while a bound value is empty.
+				var m = sma.Process(candle);
+				var r = ind.Process(candle);
+				if (r.IsEmpty || m.IsEmpty) return;
+				if (!r.IsFormed) return;
+				var x = r.GetValue<decimal>();
+				if (!m.IsFormed) return;
+				values.Enqueue(x);
+				if (values.Count > period) values.Dequeue();
+				if (values.Count < period) return;
+				var average = m.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var mean = values.Average();
+				var deviation = (decimal)Math.Sqrt((double)values.Average(v => (v - mean) * (v - mean)));
+				var upper = mean + (decimal)multiplier * deviation;
+				var lower = mean - (decimal)multiplier * deviation;
+				var position = strategy.Position;
+				if (x < lower && close < average && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (x > upper && close > average && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && x > mean) { expectedSide = Sides.Sell; expectedVolume = position; meanExits++; }
+				else if (position < 0m && x < mean) { expectedSide = Sides.Buy; expectedVolume = -position; meanExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow the indicator beyond a deviation band around its average, or close once it is back at the average.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && meanExits > 0, "The fixture must trade both sides and exit at the average.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0242_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0242_Volatility_Mean_Reversion", TimeSpan.FromDays(31));
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(20, 2.0, false)]
+	[DataRow(30, 1.0, true)]
+	public async Task S0243_VolumeBeyondItsDeviationBandsAgainstTheAverageUntilItsMean(int period, double multiplier, bool secondary)
+	{
+		
+		var sma = new SimpleMovingAverage { Length = period };
+		var values = new Queue<decimal>();
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var meanExits = 0;
+		var violations = new List<string>();
+		await Replay("0243_Volume_Mean_Reversion", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+
+			AreEqual(20, strategy.Parameters["AveragePeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["DeviationMultiplier"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+
+			SetParam(strategy, "AveragePeriod", period);
+			SetParam(strategy, "DeviationMultiplier", multiplier);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				// The strategy is not called while a bound value is empty.
+				var m = sma.Process(candle);
+				if (m.IsEmpty) return;
+				var x = candle.TotalVolume;
+				values.Enqueue(x);
+				if (values.Count > period) values.Dequeue();
+				if (values.Count < period) return;
+				if (!m.IsFormed) return;
+				var average = m.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var mean = values.Average();
+				var deviation = (decimal)Math.Sqrt((double)values.Average(v => (v - mean) * (v - mean)));
+				var upper = mean + (decimal)multiplier * deviation;
+				var lower = mean - (decimal)multiplier * deviation;
+				var position = strategy.Position;
+				if (x < lower && close < average && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (x > upper && close > average && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && x > mean) { expectedSide = Sides.Sell; expectedVolume = position; meanExits++; }
+				else if (position < 0m && x < mean) { expectedSide = Sides.Buy; expectedVolume = -position; meanExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow the indicator beyond a deviation band around its average, or close once it is back at the average.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] + entries[Sides.Sell] > 0 && meanExits > 0, "The fixture must trade and exit at the average.");
+		// The lower band of a skewed series sits below zero by default, so only the narrower fixture reaches it.
+		if (secondary) IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0, "The narrower fixture must trade both sides.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0243_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0243_Volume_Mean_Reversion", TimeSpan.FromDays(31));
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(20, 2.0, false)]
+	[DataRow(30, 1.0, true)]
+	public async Task S0244_ObvBeyondItsDeviationBandsAgainstTheAverageUntilItsMean(int period, double multiplier, bool secondary)
+	{
+		var ind = new OnBalanceVolume();
+		var sma = new SimpleMovingAverage { Length = period };
+		var values = new Queue<decimal>();
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var meanExits = 0;
+		var violations = new List<string>();
+		await Replay("0244_OBV_Mean_Reversion", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+
+			AreEqual(20, strategy.Parameters["AveragePeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["Multiplier"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+
+			SetParam(strategy, "AveragePeriod", period);
+			SetParam(strategy, "Multiplier", multiplier);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				// The strategy is not called while a bound value is empty.
+				var m = sma.Process(candle);
+				var r = ind.Process(candle);
+				if (r.IsEmpty || m.IsEmpty) return;
+				if (!r.IsFormed) return;
+				var x = r.GetValue<decimal>();
+				if (!m.IsFormed) return;
+				values.Enqueue(x);
+				if (values.Count > period) values.Dequeue();
+				if (values.Count < period) return;
+				var average = m.GetValue<decimal>();
+				var close = candle.ClosePrice;
+				var mean = values.Average();
+				var deviation = (decimal)Math.Sqrt((double)values.Average(v => (v - mean) * (v - mean)));
+				var upper = mean + (decimal)multiplier * deviation;
+				var lower = mean - (decimal)multiplier * deviation;
+				var position = strategy.Position;
+				if (x < lower && close < average && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (x > upper && close > average && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && x > mean) { expectedSide = Sides.Sell; expectedVolume = position; meanExits++; }
+				else if (position < 0m && x < mean) { expectedSide = Sides.Buy; expectedVolume = -position; meanExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow the indicator beyond a deviation band around its average, or close once it is back at the average.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && meanExits > 0, "The fixture must trade both sides and exit at the average.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0244_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0244_OBV_Mean_Reversion", TimeSpan.FromDays(31));
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(14, 20, 2.0, false)]
+	[DataRow(10, 30, 1.5, true)]
+	public async Task S0245_MomentumBreakoutsOfItsDeviationBandsUntilItsAverage(int a0, int period, double multiplier, bool secondary)
+	{
+		var ind = new Momentum { Length = a0 };
+		var values = new Queue<decimal>();
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var meanExits = 0;
+		var violations = new List<string>();
+		await Replay("0245_Momentum_Breakout", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(14, strategy.Parameters["MomentumPeriod"].Value);
+			AreEqual(20, strategy.Parameters["AveragePeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["Multiplier"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "MomentumPeriod", a0);
+			SetParam(strategy, "AveragePeriod", period);
+			SetParam(strategy, "Multiplier", multiplier);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				// The strategy is not called while a bound value is empty.
+				var r = ind.Process(candle);
+				if (r.IsEmpty) return;
+				if (!r.IsFormed) return;
+				var x = r.GetValue<decimal>();
+				values.Enqueue(x);
+				if (values.Count > period) values.Dequeue();
+				if (values.Count < period) return;
+				var mean = values.Average();
+				var deviation = (decimal)Math.Sqrt((double)values.Average(v => (v - mean) * (v - mean)));
+				var upper = mean + (decimal)multiplier * deviation;
+				var lower = mean - (decimal)multiplier * deviation;
+				var position = strategy.Position;
+				if (x > upper && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (x < lower && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && x < mean) { expectedSide = Sides.Sell; expectedVolume = position; meanExits++; }
+				else if (position < 0m && x > mean) { expectedSide = Sides.Buy; expectedVolume = -position; meanExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow the indicator beyond a deviation band around its average, or close once it is back at the average.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && meanExits > 0, "The fixture must trade both sides and exit at the average.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0245_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0245_Momentum_Breakout", TimeSpan.FromDays(31));
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(14, 20, 2.0, false)]
+	[DataRow(10, 30, 1.5, true)]
+	public async Task S0247_RsiBreakoutsOfItsDeviationBandsUntilItsAverage(int a0, int period, double multiplier, bool secondary)
+	{
+		var ind = new RelativeStrengthIndex { Length = a0 };
+		var values = new Queue<decimal>();
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var meanExits = 0;
+		var violations = new List<string>();
+		await Replay("0247_RSI_Breakout", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(14, strategy.Parameters["RsiPeriod"].Value);
+			AreEqual(20, strategy.Parameters["AveragePeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["Multiplier"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "RsiPeriod", a0);
+			SetParam(strategy, "AveragePeriod", period);
+			SetParam(strategy, "Multiplier", multiplier);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				// The strategy is not called while a bound value is empty.
+				var r = ind.Process(candle);
+				if (r.IsEmpty) return;
+				if (!r.IsFormed) return;
+				var x = r.GetValue<decimal>();
+				values.Enqueue(x);
+				if (values.Count > period) values.Dequeue();
+				if (values.Count < period) return;
+				var mean = values.Average();
+				var deviation = (decimal)Math.Sqrt((double)values.Average(v => (v - mean) * (v - mean)));
+				var upper = mean + (decimal)multiplier * deviation;
+				var lower = mean - (decimal)multiplier * deviation;
+				var position = strategy.Position;
+				if (x > upper && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (x < lower && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && x < mean) { expectedSide = Sides.Sell; expectedVolume = position; meanExits++; }
+				else if (position < 0m && x > mean) { expectedSide = Sides.Buy; expectedVolume = -position; meanExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow the indicator beyond a deviation band around its average, or close once it is back at the average.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && meanExits > 0, "The fixture must trade both sides and exit at the average.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0247_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0247_RSI_Breakout", TimeSpan.FromDays(31));
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(14, 3, 20, 2.0, false)]
+	[DataRow(10, 3, 30, 1.5, true)]
+	public async Task S0248_SmoothedKBreakoutsOfItsDeviationBandsUntilItsAverage(int a0, int a1, int period, double multiplier, bool secondary)
+	{
+		var ind = new StochasticOscillator { K = { Length = a0 }, D = { Length = a1 } };
+		var values = new Queue<decimal>();
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var meanExits = 0;
+		var violations = new List<string>();
+		await Replay("0248_Stochastic_Breakout", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(14, strategy.Parameters["StochasticPeriod"].Value);
+			AreEqual(3, strategy.Parameters["KPeriod"].Value);
+			AreEqual(20, strategy.Parameters["LookbackPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["DeviationMultiplier"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "StochasticPeriod", a0);
+			SetParam(strategy, "KPeriod", a1);
+			SetParam(strategy, "LookbackPeriod", period);
+			SetParam(strategy, "DeviationMultiplier", multiplier);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				// The strategy is not called while a bound value is empty.
+				var r = ind.Process(candle);
+				if (r.IsEmpty) return;
+				if (!r.IsFormed || r is not IStochasticOscillatorValue { D: decimal x }) return;
+				values.Enqueue(x);
+				if (values.Count > period) values.Dequeue();
+				if (values.Count < period) return;
+				var mean = values.Average();
+				var deviation = (decimal)Math.Sqrt((double)values.Average(v => (v - mean) * (v - mean)));
+				var upper = mean + (decimal)multiplier * deviation;
+				var lower = mean - (decimal)multiplier * deviation;
+				var position = strategy.Position;
+				if (x > upper && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (x < lower && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && x < mean) { expectedSide = Sides.Sell; expectedVolume = position; meanExits++; }
+				else if (position < 0m && x > mean) { expectedSide = Sides.Buy; expectedVolume = -position; meanExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow the indicator beyond a deviation band around its average, or close once it is back at the average.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && meanExits > 0, "The fixture must trade both sides and exit at the average.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0248_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0248_Stochastic_Breakout", TimeSpan.FromDays(31));
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(14, 20, 2.0, false)]
+	[DataRow(10, 30, 1.5, true)]
+	public async Task S0250_WilliamsRBreakoutsOfItsDeviationBandsUntilItsAverage(int a0, int period, double multiplier, bool secondary)
+	{
+		var ind = new WilliamsR { Length = a0 };
+		var values = new Queue<decimal>();
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var meanExits = 0;
+		var violations = new List<string>();
+		await Replay("0250_Williams_R_Breakout", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(14, strategy.Parameters["WilliamsRPeriod"].Value);
+			AreEqual(20, strategy.Parameters["AvgPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["Multiplier"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "WilliamsRPeriod", a0);
+			SetParam(strategy, "AvgPeriod", period);
+			SetParam(strategy, "Multiplier", multiplier);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				// The strategy is not called while a bound value is empty.
+				var r = ind.Process(candle);
+				if (r.IsEmpty) return;
+				if (!r.IsFormed) return;
+				var x = r.GetValue<decimal>();
+				values.Enqueue(x);
+				if (values.Count > period) values.Dequeue();
+				if (values.Count < period) return;
+				var mean = values.Average();
+				var deviation = (decimal)Math.Sqrt((double)values.Average(v => (v - mean) * (v - mean)));
+				var upper = mean + (decimal)multiplier * deviation;
+				var lower = mean - (decimal)multiplier * deviation;
+				var position = strategy.Position;
+				if (x > upper && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (x < lower && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && x < mean) { expectedSide = Sides.Sell; expectedVolume = position; meanExits++; }
+				else if (position < 0m && x > mean) { expectedSide = Sides.Buy; expectedVolume = -position; meanExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow the indicator beyond a deviation band around its average, or close once it is back at the average.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && meanExits > 0, "The fixture must trade both sides and exit at the average.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0250_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0250_Williams_R_Breakout", TimeSpan.FromDays(31));
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(12, 26, 9, 20, 2.0, false)]
+	[DataRow(8, 21, 5, 30, 1.5, true)]
+	public async Task S0251_MacdLineBreakoutsOfItsDeviationBandsUntilItsAverage(int a0, int a1, int a2, int period, double multiplier, bool secondary)
+	{
+		var ind = new MovingAverageConvergenceDivergenceSignal { Macd = { ShortMa = { Length = a0 }, LongMa = { Length = a1 } }, SignalMa = { Length = a2 } };
+		var values = new Queue<decimal>();
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var meanExits = 0;
+		var violations = new List<string>();
+		await Replay("0251_MACD_Breakout", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(12, strategy.Parameters["FastEmaPeriod"].Value);
+			AreEqual(26, strategy.Parameters["SlowEmaPeriod"].Value);
+			AreEqual(9, strategy.Parameters["SignalPeriod"].Value);
+			AreEqual(20, strategy.Parameters["SmaPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["DeviationMultiplier"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "FastEmaPeriod", a0);
+			SetParam(strategy, "SlowEmaPeriod", a1);
+			SetParam(strategy, "SignalPeriod", a2);
+			SetParam(strategy, "SmaPeriod", period);
+			SetParam(strategy, "DeviationMultiplier", multiplier);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				// The strategy is not called while a bound value is empty.
+				var r = ind.Process(candle);
+				if (r.IsEmpty) return;
+				if (!r.IsFormed || r is not MovingAverageConvergenceDivergenceSignalValue { Macd: decimal line, Signal: decimal sig }) return;
+				var x = line;
+				values.Enqueue(x);
+				if (values.Count > period) values.Dequeue();
+				if (values.Count < period) return;
+				var mean = values.Average();
+				var deviation = (decimal)Math.Sqrt((double)values.Average(v => (v - mean) * (v - mean)));
+				var upper = mean + (decimal)multiplier * deviation;
+				var lower = mean - (decimal)multiplier * deviation;
+				var position = strategy.Position;
+				if (x > upper && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (x < lower && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && x < mean) { expectedSide = Sides.Sell; expectedVolume = position; meanExits++; }
+				else if (position < 0m && x > mean) { expectedSide = Sides.Buy; expectedVolume = -position; meanExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow the indicator beyond a deviation band around its average, or close once it is back at the average.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && meanExits > 0, "The fixture must trade both sides and exit at the average.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0251_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0251_MACD_Breakout", TimeSpan.FromDays(31));
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(14, 20, 0.1, false)]
+	[DataRow(10, 30, 0.5, true)]
+	public async Task S0252_AdxExpansionsOnTheCandleSideUntilAdxIsBackBelowItsAverage(int a0, int period, double multiplier, bool secondary)
+	{
+		var ind = new AverageDirectionalIndex { Length = a0 };
+		var values = new Queue<decimal>();
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var meanExits = 0;
+		var violations = new List<string>();
+		await Replay("0252_ADX_Breakout", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+			AreEqual(14, strategy.Parameters["ADXPeriod"].Value);
+			AreEqual(20, strategy.Parameters["AvgPeriod"].Value);
+			AreEqual(0.1m, Convert.ToDecimal(strategy.Parameters["Multiplier"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "ADXPeriod", a0);
+			SetParam(strategy, "AvgPeriod", period);
+			SetParam(strategy, "Multiplier", multiplier);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				// The strategy is not called while a bound value is empty.
+				var r = ind.Process(candle);
+				if (r.IsEmpty) return;
+				if (!r.IsFormed || r is not AverageDirectionalIndexValue { MovingAverage: decimal x }) return;
+				values.Enqueue(x);
+				if (values.Count > period) values.Dequeue();
+				if (values.Count < period) return;
+				var mean = values.Average();
+				var deviation = (decimal)Math.Sqrt((double)values.Average(v => (v - mean) * (v - mean)));
+				var upper = mean + (decimal)multiplier * deviation;
+				var lower = mean - (decimal)multiplier * deviation;
+				var position = strategy.Position;
+				if (x > upper && candle.ClosePrice > candle.OpenPrice && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (x > upper && candle.ClosePrice < candle.OpenPrice && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && x < mean) { expectedSide = Sides.Sell; expectedVolume = position; meanExits++; }
+				else if (position < 0m && x < mean) { expectedSide = Sides.Buy; expectedVolume = -position; meanExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow the indicator beyond a deviation band around its average, or close once it is back at the average.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && meanExits > 0, "The fixture must trade both sides and exit at the average.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0252_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0252_ADX_Breakout", TimeSpan.FromDays(31));
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	[DataRow(20, 2.0, false)]
+	[DataRow(30, 1.5, true)]
+	public async Task S0254_VolumeExpansionsOnTheCandleSideUntilVolumeIsBackBelowItsAverage(int period, double multiplier, bool secondary)
+	{
+		
+		var values = new Queue<decimal>();
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedOrders = 0;
+		var actualOrders = 0;
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var meanExits = 0;
+		var violations = new List<string>();
+		await Replay("0254_Volume_Breakout", (strategy, alternateSecurity) =>
+		{
+			if (secondary) strategy.Security = alternateSecurity;
+
+			AreEqual(20, strategy.Parameters["AvgPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["Multiplier"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+
+			SetParam(strategy, "AvgPeriod", period);
+			SetParam(strategy, "Multiplier", multiplier);
+			SetParam(strategy, "StopLossPercent", 0m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				expectedSide = null;
+				// The strategy is not called while a bound value is empty.
+				var x = candle.TotalVolume;
+				values.Enqueue(x);
+				if (values.Count > period) values.Dequeue();
+				if (values.Count < period) return;
+				var mean = values.Average();
+				var deviation = (decimal)Math.Sqrt((double)values.Average(v => (v - mean) * (v - mean)));
+				var upper = mean + (decimal)multiplier * deviation;
+				var lower = mean - (decimal)multiplier * deviation;
+				var position = strategy.Position;
+				if (x > upper && candle.ClosePrice > candle.OpenPrice && position <= 0m) { expectedSide = Sides.Buy; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Buy]++; }
+				else if (x > upper && candle.ClosePrice < candle.OpenPrice && position >= 0m) { expectedSide = Sides.Sell; expectedVolume = strategy.Volume + Math.Abs(position); entries[Sides.Sell]++; }
+				else if (position > 0m && x < mean) { expectedSide = Sides.Sell; expectedVolume = position; meanExits++; }
+				else if (position < 0m && x < mean) { expectedSide = Sides.Buy; expectedVolume = -position; meanExits++; }
+				if (expectedSide is not null) expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume}. Every order must follow the indicator beyond a deviation band around its average, or close once it is back at the average.");
+				expectedSide = null;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		AreEqual(expectedOrders, actualOrders);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && meanExits > 0, "The fixture must trade both sides and exit at the average.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard07")]
+	public Task S0254_PercentStopWorksBetweenFinishedBars()
+		=> CheckPercentStopBetweenBars("0254_Volume_Breakout", TimeSpan.FromDays(31));
 
 	private const string Williams = "0017_Williams_R";
 	private const string Roc = "0018_ROC_Impulce";

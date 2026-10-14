@@ -105,7 +105,7 @@ public class BackboneStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Max Risk", "Maximum risk fraction shared across trades", "Risk");
 
-		_maxTrades = Param(nameof(MaxTrades), 1)
+		_maxTrades = Param(nameof(MaxTrades), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Trades", "Maximum number of layered entries", "Risk");
 

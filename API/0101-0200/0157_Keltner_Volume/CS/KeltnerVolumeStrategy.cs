@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using Ecng.Common;
 
@@ -11,34 +12,26 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy combining Keltner Channels with volume confirmation.
-/// Buys on upper channel breakout with above-average volume,
-/// sells on lower channel breakdown with above-average volume.
+/// Keltner Volume strategy.
+/// The Keltner Channel is the EmaPeriod EMA plus and minus Multiplier times the AtrPeriod ATR. A close below the lower band on volume above
+/// the average of the previous VolumeAvgPeriod candles goes long and a close above the upper band on such volume goes short, reversing
+/// an opposite position. The position closes when price crosses the EMA. The stop lies StopLossAtr ATR from the entry close
+/// and is checked on candle closes.
 /// </summary>
 public class KeltnerVolumeStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _emaPeriod;
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<decimal> _multiplier;
 	private readonly StrategyParam<int> _volumeAvgPeriod;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLossAtr;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _averageVolume;
-	private int _volumeCounter;
-	private int _cooldown;
-
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	private readonly List<decimal> _volumes = [];
+	private decimal _stopPrice;
 
 	/// <summary>
-	/// EMA period for center line.
+	/// Period of the channel EMA.
 	/// </summary>
 	public int EmaPeriod
 	{
@@ -47,7 +40,7 @@ public class KeltnerVolumeStrategy : Strategy
 	}
 
 	/// <summary>
-	/// ATR period for channel width.
+	/// Period of the channel and stop ATR.
 	/// </summary>
 	public int AtrPeriod
 	{
@@ -56,7 +49,7 @@ public class KeltnerVolumeStrategy : Strategy
 	}
 
 	/// <summary>
-	/// ATR multiplier for channel width.
+	/// ATR multiplier of the channel width.
 	/// </summary>
 	public decimal Multiplier
 	{
@@ -65,7 +58,7 @@ public class KeltnerVolumeStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Volume average period.
+	/// Previous candles the volume is averaged over.
 	/// </summary>
 	public int VolumeAvgPeriod
 	{
@@ -74,40 +67,50 @@ public class KeltnerVolumeStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Cooldown bars between trades.
+	/// Stop distance from the entry in ATRs.
 	/// </summary>
-	public int CooldownBars
+	public decimal StopLossAtr
 	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
+		get => _stopLossAtr.Value;
+		set => _stopLossAtr.Value = value;
 	}
 
 	/// <summary>
-	/// Initialize strategy.
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
 	/// </summary>
 	public KeltnerVolumeStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
 		_emaPeriod = Param(nameof(EmaPeriod), 20)
-			.SetRange(10, 40)
-			.SetDisplay("EMA Period", "EMA period for center line", "Keltner");
+			.SetGreaterThanZero()
+			.SetDisplay("EMA Period", "Period of the channel EMA", "Keltner");
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
-			.SetRange(7, 21)
-			.SetDisplay("ATR Period", "ATR period for channel width", "Keltner");
+			.SetGreaterThanZero()
+			.SetDisplay("ATR Period", "Period of the channel and stop ATR", "Keltner");
 
-		_multiplier = Param(nameof(Multiplier), 2.0m)
-			.SetDisplay("ATR Multiplier", "Multiplier for ATR", "Keltner");
+		_multiplier = Param(nameof(Multiplier), 2m)
+			.SetGreaterThanZero()
+			.SetDisplay("Multiplier", "ATR multiplier of the channel width", "Keltner");
 
 		_volumeAvgPeriod = Param(nameof(VolumeAvgPeriod), 20)
-			.SetRange(10, 50)
-			.SetDisplay("Volume Avg Period", "Period for volume average", "Volume");
+			.SetGreaterThanZero()
+			.SetDisplay("Volume Average Period", "Previous candles the volume is averaged over", "Volume");
 
-		_cooldownBars = Param(nameof(CooldownBars), 100)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "General")
-			.SetRange(5, 500);
+		_stopLossAtr = Param(nameof(StopLossAtr), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss ATR", "Stop distance from the entry in ATRs", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -120,9 +123,8 @@ public class KeltnerVolumeStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_averageVolume = 0;
-		_volumeCounter = 0;
-		_cooldown = 0;
+		_volumes.Clear();
+		_stopPrice = default;
 	}
 
 	/// <inheritdoc />
@@ -130,13 +132,15 @@ public class KeltnerVolumeStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
+		_volumes.Clear();
+		_stopPrice = default;
+
 		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
 		var atr = new AverageTrueRange { Length = AtrPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-
 		subscription
-			.Bind(ema, atr, ProcessCandle)
+			.BindEx(ema, atr, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -148,68 +152,49 @@ public class KeltnerVolumeStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal emaValue, decimal atrValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue emaValue, IIndicatorValue atrValue)
 	{
 		if (candle.State != CandleStates.Finished)
+			return;
+
+		// Volume is compared with the candles before this one.
+		var average = _volumes.Count == VolumeAvgPeriod ? _volumes.Average() : (decimal?)null;
+
+		_volumes.Add(candle.TotalVolume);
+
+		if (_volumes.Count > VolumeAvgPeriod)
+			_volumes.RemoveAt(0);
+
+		if (!emaValue.IsFormed || !atrValue.IsFormed || average is not decimal avgVolume)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
+		var middle = emaValue.GetValue<decimal>();
+		var atr = atrValue.GetValue<decimal>();
+		var upper = middle + Multiplier * atr;
+		var lower = middle - Multiplier * atr;
 		var close = candle.ClosePrice;
-		var volume = candle.TotalVolume;
+		var surge = candle.TotalVolume > avgVolume;
 
-		if (_volumeCounter < VolumeAvgPeriod)
+		if (close < lower && surge && Position <= 0)
 		{
-			_volumeCounter++;
-			_averageVolume = ((_averageVolume * (_volumeCounter - 1)) + volume) / _volumeCounter;
+			BuyMarket(Volume + Math.Abs(Position));
+			_stopPrice = close - StopLossAtr * atr;
 		}
-		else
+		else if (close > upper && surge && Position >= 0)
 		{
-			_averageVolume = (_averageVolume * (VolumeAvgPeriod - 1) + volume) / VolumeAvgPeriod;
+			SellMarket(Volume + Math.Abs(Position));
+			_stopPrice = close + StopLossAtr * atr;
 		}
-
-		if (_volumeCounter < VolumeAvgPeriod)
+		else if (Position > 0 && (close > middle || (StopLossAtr > 0 && close <= _stopPrice)))
 		{
-			if (_cooldown > 0)
-				_cooldown--;
-			return;
+			SellMarket(Position);
 		}
-
-		var upperBand = emaValue + Multiplier * atrValue;
-		var lowerBand = emaValue - Multiplier * atrValue;
-		var highVolume = volume > _averageVolume;
-
-		if (_cooldown > 0)
+		else if (Position < 0 && (close < middle || (StopLossAtr > 0 && close >= _stopPrice)))
 		{
-			_cooldown--;
-			return;
-		}
-
-		// Buy: price above upper band + high volume
-		if (close > upperBand && highVolume && Position == 0)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-		// Sell: price below lower band + high volume
-		else if (close < lowerBand && highVolume && Position == 0)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-
-		// Exit long: price below EMA
-		if (Position > 0 && close < emaValue)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		// Exit short: price above EMA
-		else if (Position < 0 && close > emaValue)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
+			BuyMarket(-Position);
 		}
 	}
 }

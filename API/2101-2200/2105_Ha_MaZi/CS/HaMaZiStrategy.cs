@@ -41,7 +41,7 @@ public class HaMaZiStrategy : Strategy
 			.SetDisplay("MA Period", "EMA period", "General");
 		_zigzagLength = Param(nameof(ZigzagLength), 13)
 			.SetDisplay("ZigZag Length", "Lookback for pivot search", "ZigZag");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 		_stopLossPct = Param(nameof(StopLossPct), 2m)
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");

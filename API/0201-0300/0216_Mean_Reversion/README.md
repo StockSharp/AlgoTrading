@@ -20,8 +20,9 @@ The method appeals to traders who prefer a contrarian style and want clearly def
 - **Stops**: Yes.
 - **Default Values**:
   - `MovingAveragePeriod` = 20
-  - `DeviationMultiplier` = 2.0m
-  - `StopLossPercent` = 2m
+  - `DeviationMultiplier` = 2
+  - `StopLossPercent` = 2
+    MA is the simple moving average and StdDev the standard deviation of closes over the same MovingAveragePeriod candles, and k is DeviationMultiplier. The stop is a fixed StopLossPercent of the entry price, watched between candles as well. An entry signal against an open position reverses it.
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **Filters**:
   - Category: Mean Reversion

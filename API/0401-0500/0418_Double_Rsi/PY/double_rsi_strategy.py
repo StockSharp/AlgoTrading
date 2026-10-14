@@ -5,98 +5,134 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates
+from System import TimeSpan, Decimal
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
 
 
 class double_rsi_strategy(Strategy):
-    """Double RSI Strategy. Uses short and long RSI for entry/exit signals."""
+    """
+    Double RSI strategy.
+    An RSI on the trading timeframe and another on MTFTimeframe. A long opens when the trading RSI crosses up out of
+    the oversold zone while the higher-timeframe RSI is rising (bullish); a short opens when it crosses down out of the
+    overbought zone while the higher-timeframe RSI is falling (bearish). The opposite RSI exit closes the position and an
+    optional percent take-profit locks in gains.
+    """
 
     def __init__(self):
         super(double_rsi_strategy, self).__init__()
-
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
-            .SetDisplay("Candle type", "Candle type for strategy calculation.", "General")
-        self._rsi_short_length = self.Param("RSIShortLength", 7) \
-            .SetDisplay("Short RSI", "Short RSI period", "RSI")
-        self._rsi_long_length = self.Param("RSILongLength", 21) \
-            .SetDisplay("Long RSI", "Long RSI period", "RSI")
-        self._oversold = self.Param("Oversold", 35.0) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+            .SetDisplay("Candle type", "Trading timeframe", "General")
+        self._rsi_length = self.Param("RSILength", 14) \
+            .SetGreaterThanZero() \
+            .SetDisplay("RSI Length", "RSI period on both timeframes", "RSI")
+        self._mtf_timeframe = self.Param("MTFTimeframe", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
+            .SetDisplay("MTF Timeframe", "Higher timeframe for the confirming RSI", "RSI")
+        self._oversold = self.Param("Oversold", 30.0) \
             .SetDisplay("Oversold", "RSI oversold level", "RSI")
-        self._overbought = self.Param("Overbought", 65.0) \
+        self._overbought = self.Param("Overbought", 70.0) \
             .SetDisplay("Overbought", "RSI overbought level", "RSI")
-        self._cooldown_bars = self.Param("CooldownBars", 10) \
-            .SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk")
+        self._use_tp = self.Param("UseTP", False) \
+            .SetDisplay("Use Take Profit", "Enable the percent take-profit", "Risk")
+        self._take_profit_percent = self.Param("TakeProfitPercent", 2.0) \
+            .SetGreaterThanZero() \
+            .SetDisplay("Take Profit %", "Take-profit percentage from the entry price", "Risk")
 
-        self._rsi_short = None
-        self._rsi_long = None
-        self._cooldown_remaining = 0
+        self._prev_rsi = None
+        self._mtf_rsi = None
+        self._prev_mtf_rsi = None
 
     @property
-    def candle_type(self):
+    def CandleType(self):
         return self._candle_type.Value
+
+    @property
+    def MTFTimeframe(self):
+        return self._mtf_timeframe.Value
+
+    def GetWorkingSecurities(self):
+        return [(self.Security, self.CandleType), (self.Security, self.MTFTimeframe)]
 
     def OnReseted(self):
         super(double_rsi_strategy, self).OnReseted()
-        self._rsi_short = None
-        self._rsi_long = None
-        self._cooldown_remaining = 0
+        self._prev_rsi = None
+        self._mtf_rsi = None
+        self._prev_mtf_rsi = None
 
     def OnStarted2(self, time):
         super(double_rsi_strategy, self).OnStarted2(time)
 
-        self._rsi_short = RelativeStrengthIndex()
-        self._rsi_short.Length = int(self._rsi_short_length.Value)
+        self._prev_rsi = None
+        self._mtf_rsi = None
+        self._prev_mtf_rsi = None
 
-        self._rsi_long = RelativeStrengthIndex()
-        self._rsi_long.Length = int(self._rsi_long_length.Value)
+        rsi = RelativeStrengthIndex()
+        rsi.Length = self._rsi_length.Value
+        mtf_rsi = RelativeStrengthIndex()
+        mtf_rsi.Length = self._rsi_length.Value
 
-        subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(self._rsi_short, self._rsi_long, self._on_process).Start()
+        subscription = self.SubscribeCandles(self.CandleType)
+        subscription.BindEx(rsi, self._process_candle).Start()
+
+        self.SubscribeCandles(self.MTFTimeframe).BindEx(mtf_rsi, self._process_mtf_candle).Start()
+
+        if self._use_tp.Value:
+            self.StartProtection(Unit(Decimal(self._take_profit_percent.Value), UnitTypes.Percent), Unit(), useMarketOrders=True)
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
             self.DrawOwnTrades(area)
+            rsi_area = self.CreateChartArea()
+            if rsi_area is not None:
+                self.DrawIndicator(rsi_area, rsi)
+                self.DrawIndicator(rsi_area, mtf_rsi)
 
-    def _on_process(self, candle, rsi_short_val, rsi_long_val):
+    def _process_mtf_candle(self, candle, rsi_value):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self._rsi_short.IsFormed or not self._rsi_long.IsFormed:
+        if not rsi_value.IsFormed:
+            return
+
+        self._prev_mtf_rsi = self._mtf_rsi
+        self._mtf_rsi = float(rsi_value.GetValue[Decimal](None))
+
+    def _process_candle(self, candle, rsi_value):
+        if candle.State != CandleStates.Finished:
+            return
+
+        if not rsi_value.IsFormed:
+            return
+
+        rsi = float(rsi_value.GetValue[Decimal](None))
+        prev_rsi = self._prev_rsi
+        self._prev_rsi = rsi
+
+        if prev_rsi is None or self._mtf_rsi is None or self._prev_mtf_rsi is None:
             return
 
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        if self._cooldown_remaining > 0:
-            self._cooldown_remaining -= 1
-            return
-
-        rs = float(rsi_short_val)
-        rl = float(rsi_long_val)
         oversold = float(self._oversold.Value)
         overbought = float(self._overbought.Value)
-        cooldown = int(self._cooldown_bars.Value)
 
-        if rs < oversold and rl < oversold and self.Position <= 0:
-            if self.Position < 0:
-                self.BuyMarket(Math.Abs(self.Position))
-            self.BuyMarket(self.Volume)
-            self._cooldown_remaining = cooldown
-        elif rs > overbought and rl > overbought and self.Position >= 0:
-            if self.Position > 0:
-                self.SellMarket(Math.Abs(self.Position))
-            self.SellMarket(self.Volume)
-            self._cooldown_remaining = cooldown
-        elif self.Position > 0 and rs > overbought:
-            self.SellMarket(Math.Abs(self.Position))
-            self._cooldown_remaining = cooldown
-        elif self.Position < 0 and rs < oversold:
-            self.BuyMarket(Math.Abs(self.Position))
-            self._cooldown_remaining = cooldown
+        exits_oversold = prev_rsi < oversold and rsi >= oversold
+        exits_overbought = prev_rsi > overbought and rsi <= overbought
+
+        long_signal = exits_oversold and self._mtf_rsi > self._prev_mtf_rsi
+        short_signal = exits_overbought and self._mtf_rsi < self._prev_mtf_rsi
+
+        if long_signal and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+        elif short_signal and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
+        elif self.Position > 0 and exits_overbought:
+            self.SellMarket(self.Position)
+        elif self.Position < 0 and exits_oversold:
+            self.BuyMarket(-self.Position)
 
     def CreateClone(self):
         return double_rsi_strategy()

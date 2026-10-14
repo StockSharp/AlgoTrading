@@ -18,7 +18,9 @@ Stops werden unterhalb des jüngsten Supports platziert, um sich gegen unerwarte
 - **Stops**: Ja, prozentbasiert
 - **Standardwerte**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `DaysBeforeMonthEnd` = 3
+  - `StopLossPercent` = 2
+    Tage sind UTC-Tage, da der Markt rund um die Uhr handelt; Einstiege erfolgen zum Schluss der ersten Kerze des Tages. Der Kauf öffnet an jedem der letzten DaysBeforeMonthEnd Tage des Monats, wenn keine Position besteht, und schließt mit der ersten Kerze des neuen Monats.
 - **Filter**:
   - Kategorie: Saisonalität
   - Richtung: Beide

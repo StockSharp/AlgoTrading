@@ -21,9 +21,12 @@ Bollinger Bands はボラティリティのブレイクアウトを明らかに�
   - `BollingerPeriod` = 20
   - `BollingerDeviation` = 2.0m
   - `WilliamsRPeriod` = 14
+  - `WilliamsROversold` = -80
+  - `WilliamsROverbought` = -20
   - `AtrPeriod` = 14
   - `AtrMultiplier` = 2.0m
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    ルール中の-80と-20はWilliamsROversoldとWilliamsROverboughtの既定値です。ストップはエントリー時の終値からAtrMultiplier倍のATR（AtrPeriod）の位置にあり、足の終値で判定します。 保有ポジションと逆方向のエントリーシグナルはドテンになります。
 - **フィルター**:
   - カテゴリ: 平均回帰
   - 方向: 両方

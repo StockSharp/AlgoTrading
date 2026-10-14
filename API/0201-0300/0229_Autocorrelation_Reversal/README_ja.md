@@ -20,8 +20,9 @@
 - **ストップ**: あり、パーセンテージストップロス。
 - **デフォルト値**:
   - `AutoCorrPeriod` = 20
-  - `AutoCorrThreshold` = -0.3m
-  - `StopLossPercent` = 2m
+  - `AutoCorrThreshold` = -0.3
+  - `StopLossPercent` = 2
+    自己相関は直近AutoCorrPeriod本の終値変化のラグ1自己相関で、MAは同じAutoCorrPeriod本の単純移動平均です。ストップはエントリー価格の固定StopLossPercentで、ローソク足の間も監視されます。0で無効になります。 保有ポジションと逆方向のエントリーシグナルはドテンになります。
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **フィルター**:
   - カテゴリ: 平均回帰

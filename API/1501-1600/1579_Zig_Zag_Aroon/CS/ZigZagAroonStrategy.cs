@@ -46,7 +46,7 @@ public class ZigZagAroonStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Aroon Period", "Aroon indicator period", "Aroon");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 

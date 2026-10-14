@@ -1,25 +1,20 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Implementation of strategy - MA + Williams %R.
-/// Buy when price is above MA and Williams %R is below -80 (oversold).
-/// Sell when price is below MA and Williams %R is above -20 (overbought).
+/// MA Williams %R strategy.
+/// A close above the MaPeriod moving average of type MaType with Williams %R below WilliamsROversold goes long and a close below it with
+/// %R above WilliamsROverbought goes short, reversing an opposite position. A long closes once %R returns to the -50 middle from below
+/// and a short once it returns from above, and a percent stop limits the loss.
 /// </summary>
 public class MaWilliamsRStrategy : Strategy
 {
@@ -28,14 +23,11 @@ public class MaWilliamsRStrategy : Strategy
 	private readonly StrategyParam<int> _williamsRPeriod;
 	private readonly StrategyParam<decimal> _williamsROversold;
 	private readonly StrategyParam<decimal> _williamsROverbought;
-	private readonly StrategyParam<int> _cooldownBars;
-	private readonly StrategyParam<Unit> _stopLoss;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private int _cooldown;
-
 	/// <summary>
-	/// Moving Average period.
+	/// Period of the moving average.
 	/// </summary>
 	public int MaPeriod
 	{
@@ -44,7 +36,7 @@ public class MaWilliamsRStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Moving Average type.
+	/// Type of the moving average.
 	/// </summary>
 	public MovingAverageTypes MaType
 	{
@@ -53,7 +45,7 @@ public class MaWilliamsRStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Williams %R period.
+	/// Period of Williams %R.
 	/// </summary>
 	public int WilliamsRPeriod
 	{
@@ -62,7 +54,7 @@ public class MaWilliamsRStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Williams %R oversold level (usually below -80).
+	/// Williams %R level for longs.
 	/// </summary>
 	public decimal WilliamsROversold
 	{
@@ -71,7 +63,7 @@ public class MaWilliamsRStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Williams %R overbought level (usually above -20).
+	/// Williams %R level for shorts.
 	/// </summary>
 	public decimal WilliamsROverbought
 	{
@@ -80,25 +72,16 @@ public class MaWilliamsRStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Bars to wait between trades.
+	/// Stop loss percentage from entry price.
 	/// </summary>
-	public int CooldownBars
+	public decimal StopLossPercent
 	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
 	}
 
 	/// <summary>
-	/// Stop-loss value.
-	/// </summary>
-	public Unit StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used for strategy.
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -107,197 +90,149 @@ public class MaWilliamsRStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initialize <see cref="MaWilliamsRStrategy"/>.
+	/// Constructor.
 	/// </summary>
 	public MaWilliamsRStrategy()
 	{
 		_maPeriod = Param(nameof(MaPeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("MA Period", "Period for Moving Average", "MA Parameters");
+			.SetDisplay("MA Period", "Period of the moving average", "Indicators");
 
 		_maType = Param(nameof(MaType), MovingAverageTypes.Simple)
-			.SetDisplay("MA Type", "Type of Moving Average", "MA Parameters");
+			.SetDisplay("MA Type", "Type of the moving average", "Indicators");
 
 		_williamsRPeriod = Param(nameof(WilliamsRPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("Williams %R Period", "Period for Williams %R", "Williams %R Parameters");
+			.SetDisplay("Williams %R Period", "Period of Williams %R", "Indicators");
 
-		_williamsROversold = Param(nameof(WilliamsROversold), -70m)
-			.SetRange(-100, 0)
-			.SetDisplay("Williams %R Oversold", "Williams %R level to consider market oversold", "Williams %R Parameters");
+		_williamsROversold = Param(nameof(WilliamsROversold), -80m)
+			.SetDisplay("Williams %R Oversold", "Williams %R level for longs", "Indicators");
 
-		_williamsROverbought = Param(nameof(WilliamsROverbought), -30m)
-			.SetRange(-100, 0)
-			.SetDisplay("Williams %R Overbought", "Williams %R level to consider market overbought", "Williams %R Parameters");
+		_williamsROverbought = Param(nameof(WilliamsROverbought), -20m)
+			.SetDisplay("Williams %R Overbought", "Williams %R level for shorts", "Indicators");
 
-		_cooldownBars = Param(nameof(CooldownBars), 120)
-			.SetRange(5, 500)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "General");
-
-		_stopLoss = Param(nameof(StopLoss), new Unit(2, UnitTypes.Percent))
-			.SetDisplay("Stop Loss", "Stop loss percent or value", "Risk Management");
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Candle type for strategy", "General");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
-public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-{
-	return [(Security, CandleType)];
-}
-
-	/// <inheritdoc />
-	protected override void OnReseted()
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		base.OnReseted();
-		_cooldown = 0;
+		return [(Security, CandleType)];
 	}
 
-/// <inheritdoc />
-protected override void OnStarted2(DateTime time)
-{
-	base.OnStarted2(time);
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
 
-		// Create indicators
-		DecimalLengthIndicator ma;
-		
-		// Create MA based on selected type
-		switch (MaType)
-		{
-			case MovingAverageTypes.Exponential:
-				ma = new EMA { Length = MaPeriod };
-				break;
-			case MovingAverageTypes.Weighted:
-				ma = new WeightedMovingAverage { Length = MaPeriod };
-				break;
-			case MovingAverageTypes.Smoothed:
-				ma = new SmoothedMovingAverage { Length = MaPeriod };
-				break;
-			case MovingAverageTypes.HullMA:
-				ma = new HullMovingAverage { Length = MaPeriod };
-				break;
-			case MovingAverageTypes.Simple:
-			default:
-				ma = new SMA { Length = MaPeriod };
-				break;
-		}
-		
-		var williamsR = new WilliamsR { Length = WilliamsRPeriod };
+		var ma = CreateMovingAverage();
+		var williams = new WilliamsR { Length = WilliamsRPeriod };
 
-		// Setup candle subscription
 		var subscription = SubscribeCandles(CandleType);
-		
-		// Bind indicators to candles
 		subscription
-			.Bind(ma, williamsR, ProcessCandle)
+			.BindEx(ma, williams, ProcessCandle)
 			.Start();
 
-		// Setup chart visualization if available
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, ma);
-			
-			// Create separate area for Williams %R
-			var oscillatorArea = CreateChartArea();
-			if (oscillatorArea != null)
-			{
-				DrawIndicator(oscillatorArea, williamsR);
-			}
-			
 			DrawOwnTrades(area);
-		}
 
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, williams);
+			}
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal maValue, decimal williamsRValue)
+	private DecimalLengthIndicator CreateMovingAverage()
+	{
+		return MaType switch
+		{
+			MovingAverageTypes.Exponential => new ExponentialMovingAverage { Length = MaPeriod },
+			MovingAverageTypes.Weighted => new WeightedMovingAverage { Length = MaPeriod },
+			MovingAverageTypes.Smoothed => new SmoothedMovingAverage { Length = MaPeriod },
+			MovingAverageTypes.HullMA => new HullMovingAverage { Length = MaPeriod },
+			_ => new SimpleMovingAverage { Length = MaPeriod },
+		};
+	}
+
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// The high-level handler activates native protection before this callback, also between signal bars.
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue maValue, IIndicatorValue williamsValue)
 	{
 		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (!maValue.IsFormed || !williamsValue.IsFormed)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		// Current price
-		var price = candle.ClosePrice;
-		
-		// Determine if price is above or below MA
-		var isPriceAboveMA = price > maValue;
+		var ma = maValue.GetValue<decimal>();
+		var williams = williamsValue.GetValue<decimal>();
+		var close = candle.ClosePrice;
 
-		LogInfo($"Candle: {candle.OpenTime}, Close: {price}, " +
-			$"MA: {maValue}, Price > MA: {isPriceAboveMA}, " +
-			$"Williams %R: {williamsRValue}");
-
-		if (_cooldown > 0)
-		{
-			_cooldown--;
-			return;
-		}
-
-		// Trading rules
-		if (isPriceAboveMA && williamsRValue <= WilliamsROversold && Position == 0)
-		{
-			// Buy signal - price above MA and Williams %R oversold
-			BuyMarket();
-			_cooldown = CooldownBars;
-			
-			LogInfo($"Buy signal: Price above MA and Williams %R oversold ({williamsRValue} <= {WilliamsROversold}).");
-		}
-		else if (!isPriceAboveMA && williamsRValue >= WilliamsROverbought && Position == 0)
-		{
-			// Sell signal - price below MA and Williams %R overbought
-			SellMarket();
-			_cooldown = CooldownBars;
-			
-			LogInfo($"Sell signal: Price below MA and Williams %R overbought ({williamsRValue} >= {WilliamsROverbought}).");
-		}
-		// Exit conditions
-		else if (!isPriceAboveMA && Position > 0)
-		{
-			// Exit long position when price falls below MA
-			SellMarket();
-			_cooldown = CooldownBars;
-			LogInfo($"Exit long: Price fell below MA. Position: {Position}");
-		}
-		else if (isPriceAboveMA && Position < 0)
-		{
-			// Exit short position when price rises above MA
-			BuyMarket();
-			_cooldown = CooldownBars;
-			LogInfo($"Exit short: Price rose above MA. Position: {Position}");
-		}
+		if (close > ma && williams < WilliamsROversold && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (close < ma && williams > WilliamsROverbought && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
+		else if (Position > 0 && williams >= -50m)
+			SellMarket(Position);
+		else if (Position < 0 && williams <= -50m)
+			BuyMarket(-Position);
 	}
-	
+
 	/// <summary>
-	/// Enum for Moving Average types.
+	/// Moving average types.
 	/// </summary>
 	public enum MovingAverageTypes
 	{
 		/// <summary>
-		/// Simple Moving Average
+		/// Simple moving average.
 		/// </summary>
 		Simple,
-		
+
 		/// <summary>
-		/// Exponential Moving Average
+		/// Exponential moving average.
 		/// </summary>
 		Exponential,
-		
+
 		/// <summary>
-		/// Weighted Moving Average
+		/// Weighted moving average.
 		/// </summary>
 		Weighted,
-		
+
 		/// <summary>
-		/// Smoothed Moving Average
+		/// Smoothed moving average.
 		/// </summary>
 		Smoothed,
-		
+
 		/// <summary>
-		/// Hull Moving Average
+		/// Hull moving average.
 		/// </summary>
-		HullMA
+		HullMA,
 	}
 }

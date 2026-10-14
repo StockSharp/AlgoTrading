@@ -34,15 +34,15 @@ public class VolatilityArbitrageSpreadOscillatorModelStrategy : Strategy
 
 	public VolatilityArbitrageSpreadOscillatorModelStrategy()
 	{
-		_rsiPeriod = Param(nameof(RsiPeriod), 14)
+		_rsiPeriod = Param(nameof(RsiPeriod), 2)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "Length of RSI", "Parameters");
 
-		_longThreshold = Param(nameof(LongThreshold), 35)
+		_longThreshold = Param(nameof(LongThreshold), 46)
 			.SetRange(0, 100)
 			.SetDisplay("Long Threshold", "RSI level to enter long", "Parameters");
 
-		_exitThreshold = Param(nameof(ExitThreshold), 65)
+		_exitThreshold = Param(nameof(ExitThreshold), 76)
 			.SetRange(0, 100)
 			.SetDisplay("Exit Threshold", "RSI level to exit", "Parameters");
 

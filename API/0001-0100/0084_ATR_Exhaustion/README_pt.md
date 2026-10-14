@@ -5,7 +5,7 @@ Um aumento repentino no Average True Range indica uma expansão da volatilidade 
 
 Os testes indicam um retorno anual médio de aproximadamente 139%. Funciona melhor no mercado de ações.
 
-Cada barra atualiza o ATR e sua própria média. Se o ATR exceder a média pelo multiplicador e o candle fechar na direção oposta ao movimento anterior, uma operação é aberta. O stop-loss também usa um múltiplo do ATR, ancorando o risco aos níveis de volatilidade atuais.
+Cada barra atualiza o ATR e sua própria média. Se o ATR exceder a média pelo multiplicador e o candle fechar na direção oposta ao movimento anterior, uma operação é aberta. O stop é uma porcentagem do preço que acompanha a posição (trailing) enquanto o pico de volatilidade se dissipa.
 
 As posições tipicamente dependem do stop para a saída, buscando uma retração rápida após o pico de volatilidade se dissipar.
 
@@ -14,13 +14,13 @@ As posições tipicamente dependem do stop para a saída, buscando uma retraçã
 - **Critérios de entrada**: Pico de ATR acima da média com candle de reversão.
 - **Comprado/Vendido**: Ambos.
 - **Critérios de saída**: Stop-loss.
-- **Stops**: Sim, baseado em ATR.
+- **Stops**: Sim, percentual com trailing.
 - **Valores padrão**:
   - `AtrPeriod` = 14
   - `AtrAvgPeriod` = 20
   - `AtrMultiplier` = 1.5
   - `MaPeriod` = 20
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
   - `CandleType` = 5 minute
 - **Filtros**:
   - Categoria: Reversão

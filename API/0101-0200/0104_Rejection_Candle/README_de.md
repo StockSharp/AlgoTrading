@@ -18,7 +18,9 @@ Stops werden außerhalb des abgelehnten Hochs oder Tiefs gesetzt, um das Risiko 
 - **Stops**: Ja, prozentbasiert
 - **Standardwerte**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `WickRatio` = 1.5
+  - `StopLossPercent` = 2
+    Eine Ablehnungskerze sticht unter das Tief (über das Hoch) der Vorkerze, schließt in die Gegenrichtung und hat einen Docht länger als WickRatio Körper. Der Stop liegt StopLossPercent jenseits des abgelehnten Tiefs oder Hochs, und ein Schluss dahinter schließt die Position.
 - **Filter**:
   - Kategorie: Muster
   - Richtung: Beide

@@ -18,7 +18,13 @@ MA Stochastic は、移動平均のトレンドフィルターとストキャス
 - **ストップ**: はい、パーセントベース
 - **デフォルト値**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `MaPeriod` = 50
+  - `StochPeriod` = 14
+  - `StochDPeriod` = 3
+  - `StochOversold` = 20
+  - `StochOverbought` = 80
+    価格がSMAより上なら上昇トレンド、下なら下降トレンドです。上昇トレンドで%KがStochOversoldを下回ると買いを準備し、価格がSMAの上にある間に%Kが次に上昇した足で買います。下降トレンドで%KがStochOverboughtを上回ると売りを準備し、%Kの次の下落で売ります。トレンドを外れると準備は取り消され、反対シグナルでドテンします。
 - **フィルター**:
   - カテゴリ: トレンドフォロー
   - 方向: 両方

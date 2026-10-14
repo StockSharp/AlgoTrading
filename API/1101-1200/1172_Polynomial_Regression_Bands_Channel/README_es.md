@@ -15,7 +15,8 @@ Esta estrategia ajusta una línea de regresión polinomial a los precios recient
 - **Valores predeterminados**:
   - `Length` = 100.
   - `Degree` = 2.
-  - `Std Dev Multiplier` = 2.
+  - `StdDevMultiplier` = 2.
+  - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame().
 - **Filtros**:
   - Categoría: Reversión a la media
   - Dirección: Ambos
@@ -27,3 +28,11 @@ Esta estrategia ajusta una línea de regresión polinomial a los precios recient
   - Redes neuronales: No
   - Divergencia: No
   - Nivel de riesgo: Medio
+
+## Cálculo y ejecución
+
+Cada vela terminada ajusta por mínimos cuadrados un polinomio de grado `Degree` a los últimos `Length` cierres, incluido el actual, en una cuadrícula uniforme de -1 a 1. El centro del canal es el valor ajustado de la observación más reciente. Anchura: `StdDevMultiplier * sqrt(sum((close[i] - fitted[i])^2) / Length)`, desviación poblacional de los residuos sin corrección por grados de libertad.
+
+Un cierre estrictamente inferior a la banda baja abre largo; superior a la banda alta abre corto. La entrada opuesta invierte toda la posición con una orden de mercado de `Volume + abs(Position)`; sin posición usa `Volume`. Dentro de las bandas mantiene la posición. Solo opera con la ventana completa, sin espera ni stops protectores.
+
+Configuración válida: `0 <= Degree <= 6`, `Length >= Degree + 2`, `StdDevMultiplier` positivo. Grado cero es una constante. La cuadrícula normalizada fija usa una base polinomial ortonormal precalculada con dos pasadas de ortogonalización; cada ventana proyecta desplazamientos de precio sobre ella en precisión double. C# y Python calculan igual; cantidades de órdenes en decimal.

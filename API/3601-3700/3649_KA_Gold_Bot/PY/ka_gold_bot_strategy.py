@@ -17,7 +17,7 @@ class ka_gold_bot_strategy(Strategy):
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5)))
         self._keltner_period = self.Param("KeltnerPeriod", 50)
         self._fast_ema_period = self.Param("FastEmaPeriod", 10)
-        self._slow_ema_period = self.Param("SlowEmaPeriod", 30)
+        self._slow_ema_period = self.Param("SlowEmaPeriod", 200)
         self._band_multiplier = self.Param("BandMultiplier", 3.0)
 
         self._keltner_ema_value = None

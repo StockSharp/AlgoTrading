@@ -16,7 +16,7 @@ class basic_cci_rsi_strategy(Strategy):
         super(basic_cci_rsi_strategy, self).__init__()
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
             .SetDisplay("Candle Type", "Timeframe", "General")
-        self._cci_period = self.Param("CciPeriod", 20) \
+        self._cci_period = self.Param("CciPeriod", 12) \
             .SetDisplay("CCI Period", "CCI lookback", "Indicators")
         self._prev_cci = None
 

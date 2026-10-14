@@ -106,7 +106,7 @@ public class ReduceRisksStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Take Profit", "Target distance in pips", "Risk");
 
-		_initialDeposit = Param(nameof(InitialDeposit), 1000000m)
+		_initialDeposit = Param(nameof(InitialDeposit), 10000m)
 			.SetGreaterThanZero()
 			.SetDisplay("Initial Deposit", "Reference equity for drawdown protection", "Risk");
 

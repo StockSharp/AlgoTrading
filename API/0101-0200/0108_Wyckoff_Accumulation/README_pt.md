@@ -18,7 +18,9 @@ Um stop protetor fica logo abaixo da base para limitar perdas caso o rompimento 
 - **Stops**: Sim, baseado em percentual
 - **Valores padrão**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `RangePeriod` = 20
+  - `StopLossPercent` = 2
+    A faixa de acumulação é a máxima mais alta e a mínima mais baixa das RangePeriod velas anteriores. A estratégia só compra, com um fechamento acima da faixa; o stop fica StopLossPercent abaixo da base e a posição fecha quando uma vela fecha abaixo dele.
 - **Filtros**:
   - Categoria: Seguidor de tendência
   - Direção: Ambos

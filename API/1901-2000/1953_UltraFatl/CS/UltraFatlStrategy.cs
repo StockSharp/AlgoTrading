@@ -58,7 +58,7 @@ public class UltraFatlStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
-		_length = Param(nameof(Length), 8)
+		_length = Param(nameof(Length), 3)
 			.SetDisplay("Length", "Smoothing period", "UltraFATL")
 			.SetOptimize(4, 20, 1);
 

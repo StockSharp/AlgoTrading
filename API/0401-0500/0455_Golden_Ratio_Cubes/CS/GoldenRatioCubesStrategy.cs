@@ -12,60 +12,63 @@ using StockSharp.Messages;
 
 /// <summary>
 /// Golden Ratio Cubes Strategy.
-/// Uses BB width as a range proxy and golden ratio extensions for breakout levels.
-/// Buys when price breaks above upper golden ratio level.
-/// Sells when price breaks below lower golden ratio level.
+/// The range spans the highest high and lowest low of the previous Lookback candles. Its golden ratio extensions are
+/// lowest + Phi * range above and highest - Phi * range below. A close above the upper extension buys and a close below the
+/// lower extension sells; an opposite breakout reverses the position.
 /// </summary>
 public class GoldenRatioCubesStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _bbLength;
+	private readonly StrategyParam<int> _lookback;
 	private readonly StrategyParam<decimal> _phi;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private BollingerBands _bb;
-	private ExponentialMovingAverage _ema;
+	private Highest _highest;
+	private Lowest _lowest;
+	private decimal? _prevHighest;
+	private decimal? _prevLowest;
 
-	private int _cooldownRemaining;
-
-	public DataType CandleType
+	/// <summary>
+	/// Candles the range spans.
+	/// </summary>
+	public int Lookback
 	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
+		get => _lookback.Value;
+		set => _lookback.Value = value;
 	}
 
-	public int BbLength
-	{
-		get => _bbLength.Value;
-		set => _bbLength.Value = value;
-	}
-
+	/// <summary>
+	/// Golden ratio of the extensions.
+	/// </summary>
 	public decimal Phi
 	{
 		get => _phi.Value;
 		set => _phi.Value = value;
 	}
 
-	public int CooldownBars
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
 	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
+	/// <summary>
+	/// Constructor.
+	/// </summary>
 	public GoldenRatioCubesStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_bbLength = Param(nameof(BbLength), 34)
+		_lookback = Param(nameof(Lookback), 34)
 			.SetGreaterThanZero()
-			.SetDisplay("BB Length", "Bollinger Bands period", "Golden Ratio");
+			.SetDisplay("Lookback", "Candles the range spans", "Indicators");
 
 		_phi = Param(nameof(Phi), 1.618m)
-			.SetDisplay("Phi", "Golden ratio multiplier", "Golden Ratio");
+			.SetGreaterThanZero()
+			.SetDisplay("Phi", "Golden ratio of the extensions", "Indicators");
 
-		_cooldownBars = Param(nameof(CooldownBars), 10)
-			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -76,10 +79,8 @@ public class GoldenRatioCubesStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_bb = null;
-		_ema = null;
-		_cooldownRemaining = 0;
+		_prevHighest = null;
+		_prevLowest = null;
 	}
 
 	/// <inheritdoc />
@@ -87,78 +88,57 @@ public class GoldenRatioCubesStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_bb = new BollingerBands { Length = BbLength, Width = 2.0m };
-		_ema = new ExponentialMovingAverage { Length = BbLength };
+		_prevHighest = null;
+		_prevLowest = null;
+
+		_highest = new Highest { Length = Lookback };
+		_lowest = new Lowest { Length = Lookback };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.BindEx(_bb, _ema, OnProcess)
+			.Bind(ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _bb);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void OnProcess(ICandleMessage candle, IIndicatorValue bbValue, IIndicatorValue emaValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_bb.IsFormed || !_ema.IsFormed)
-			return;
+		// The range is measured on the candles before this one.
+		var rangeHigh = _prevHighest;
+		var rangeLow = _prevLowest;
 
-		if (bbValue.IsEmpty || emaValue.IsEmpty)
-			return;
+		var highest = _highest.Process(candle.HighPrice, candle.OpenTime, true).ToDecimal();
+		var lowest = _lowest.Process(candle.LowPrice, candle.OpenTime, true).ToDecimal();
 
-		var bb = (BollingerBandsValue)bbValue;
-		if (bb.UpBand is not decimal upper || bb.LowBand is not decimal lower || bb.MovingAverage is not decimal mid)
+		if (_highest.IsFormed && _lowest.IsFormed)
+		{
+			_prevHighest = highest;
+			_prevLowest = lowest;
+		}
+
+		if (rangeHigh is not decimal high || rangeLow is not decimal low)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (_cooldownRemaining > 0)
-		{
-			_cooldownRemaining--;
-			return;
-		}
+		var range = high - low;
+		var upperExtension = low + Phi * range;
+		var lowerExtension = high - Phi * range;
+		var close = candle.ClosePrice;
 
-		var range = upper - lower;
-		var price = candle.ClosePrice;
-
-		// Use BB bands directly as breakout levels
-		// Buy: price breaks above upper BB
-		if (price > upper && Position <= 0)
-		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-			BuyMarket(Volume);
-			_cooldownRemaining = CooldownBars;
-		}
-		// Sell: price breaks below lower BB
-		else if (price < lower && Position >= 0)
-		{
-			if (Position > 0)
-				SellMarket(Math.Abs(Position));
-			SellMarket(Volume);
-			_cooldownRemaining = CooldownBars;
-		}
-		// Exit long: price returns to middle
-		else if (Position > 0 && price < mid)
-		{
-			SellMarket(Math.Abs(Position));
-			_cooldownRemaining = CooldownBars;
-		}
-		// Exit short: price returns to middle
-		else if (Position < 0 && price > mid)
-		{
-			BuyMarket(Math.Abs(Position));
-			_cooldownRemaining = CooldownBars;
-		}
+		if (close > upperExtension && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (close < lowerExtension && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
 	}
 }

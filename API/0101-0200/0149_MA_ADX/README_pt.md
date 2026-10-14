@@ -7,7 +7,7 @@ Os testes indicam um retorno anual médio de aproximadamente 184%. Funciona melh
 
 A média móvel dita a tendência e o ADX verifica se é forte o suficiente para operar. As entradas seguem os cruzamentos de preço da MA quando o ADX excede um limiar.
 
-Esta abordagem de tendência clássica atrai traders sistemáticos. As perdas são gerenciadas com um stop baseado em ATR.
+Esta abordagem de tendência clássica atrai traders sistemáticos. As perdas são gerenciadas com um stop percentual e os lucros realizados em um alvo baseado em ATR.
 
 ## Detalhes
 
@@ -23,6 +23,9 @@ Esta abordagem de tendência clássica atrai traders sistemáticos. As perdas s�
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
   - `StopLossPercent` = 2m
   - `TakeProfitAtrMultiplier` = 2m
+  - `AdxThreshold` = 25
+  - `AtrPeriod` = 14
+    A entrada exige que o fechamento cruze a SMA naquele candle com o ADX acima de AdxThreshold; o cruzamento inverso encerra a posição e, se o ADX continuar forte, abre o lado oposto. O alvo fica a TakeProfitAtrMultiplier ATR (AtrPeriod) do fechamento de entrada e é verificado nos fechamentos dos candles.
 - **Filtros**:
   - Categoria: Tendência
   - Direção: Ambos

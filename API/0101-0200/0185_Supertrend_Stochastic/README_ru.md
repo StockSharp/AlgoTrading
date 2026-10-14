@@ -22,8 +22,10 @@ Supertrend отмечает тренд, а Stochastic показывает вр�
   - `SupertrendMultiplier` = 3.0m
   - `StochPeriod` = 14
   - `StochK` = 3
-  - `StochD` = 3
+  - `StochOversold` = 20
+  - `StochOverbought` = 80
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    Значения 20 и 80 в правилах — это значения по умолчанию StochOversold и StochOverbought. %K — стохастик за StochPeriod свечей, сглаженный за StochK свечей; линия %D не участвует. Стоп — сама линия Supertrend, расстояние до которой задаёт её ATR: лонг закрывается, когда Supertrend разворачивается вниз, шорт — когда вверх. Сигнал на вход против открытой позиции разворачивает её.
 - **Фильтры**:
   - Категория: Mean reversion
   - Направление: Оба

@@ -43,7 +43,7 @@ public class ZigzagCandlesStrategy : Strategy
 	{
 		_zigzagLength = Param(nameof(ZigzagLength), 5)
 			.SetDisplay("ZigZag Length", "Lookback for pivot search", "ZigZag");
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 

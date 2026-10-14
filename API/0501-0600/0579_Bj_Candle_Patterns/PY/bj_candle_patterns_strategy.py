@@ -2,68 +2,66 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
-clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan
+from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 
 
 class bj_candle_patterns_strategy(Strategy):
+    """
+    Bj Candle Patterns strategy.
+    A doji has a body of at most DojiThreshold of its high-low range. A Dragonfly Doji also has an upper wick of at most
+    DojiThreshold of the range (a long lower wick) and goes long; a Gravestone Doji has a lower wick of at most DojiThreshold of the
+    range (a long upper wick) and goes short. The opposite pattern reverses the position.
+    """
+
     def __init__(self):
         super(bj_candle_patterns_strategy, self).__init__()
-        self._fast_ema_period = self.Param("FastEmaPeriod", 120)             .SetDisplay("Fast EMA", "Fast EMA period", "Indicators")
-        self._slow_ema_period = self.Param("SlowEmaPeriod", 450)             .SetDisplay("Slow EMA", "Slow EMA period", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1)))             .SetDisplay("Candle Type", "Type of candles to use", "General")
-        self._prev_fast_ema = 0.0
-        self._prev_slow_ema = 0.0
+        self._doji_threshold = self.Param("DojiThreshold", 0.1).SetRange(0.0, 1.0).SetDisplay("Doji Threshold", "Maximum body and short-wick size as a fraction of the range", "Patterns")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))).SetDisplay("Candle Type", "Type of candles to use", "General")
 
-    @property
-    def fast_ema_period(self):
-        return self._fast_ema_period.Value
-    @property
-    def slow_ema_period(self):
-        return self._slow_ema_period.Value
     @property
     def candle_type(self):
         return self._candle_type.Value
 
-    def OnReseted(self):
-        super(bj_candle_patterns_strategy, self).OnReseted()
-        self._prev_fast_ema = 0.0
-        self._prev_slow_ema = 0.0
-
     def OnStarted2(self, time):
         super(bj_candle_patterns_strategy, self).OnStarted2(time)
-        fast_ema = ExponentialMovingAverage()
-        fast_ema.Length = self.fast_ema_period
-        slow_ema = ExponentialMovingAverage()
-        slow_ema.Length = self.slow_ema_period
+
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(fast_ema, slow_ema, self.OnProcess).Start()
+        subscription.Bind(self._process_candle).Start()
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, fast_ema)
-            self.DrawIndicator(area, slow_ema)
             self.DrawOwnTrades(area)
 
-    def OnProcess(self, candle, fast_ema_value, slow_ema_value):
+    def _process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
-        if self._prev_fast_ema == 0 or self._prev_slow_ema == 0:
-            self._prev_fast_ema = float(fast_ema_value)
-            self._prev_slow_ema = float(slow_ema_value)
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
-        if self._prev_fast_ema <= self._prev_slow_ema and fast_ema_value > slow_ema_value and self.Position <= 0:
-            self.BuyMarket()
-        elif self._prev_fast_ema >= self._prev_slow_ema and fast_ema_value < slow_ema_value and self.Position >= 0:
-            self.SellMarket()
-        self._prev_fast_ema = float(fast_ema_value)
-        self._prev_slow_ema = float(slow_ema_value)
+
+        rng = candle.HighPrice - candle.LowPrice
+        if rng <= 0:
+            return
+
+        body_top = max(candle.OpenPrice, candle.ClosePrice)
+        body_bottom = min(candle.OpenPrice, candle.ClosePrice)
+        limit = Decimal(self._doji_threshold.Value) * rng
+
+        if body_top - body_bottom > limit:
+            return
+
+        dragonfly = candle.HighPrice - body_top <= limit
+        gravestone = body_bottom - candle.LowPrice <= limit
+
+        if dragonfly and not gravestone and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+        elif gravestone and not dragonfly and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
 
     def CreateClone(self):
         return bj_candle_patterns_strategy()
-

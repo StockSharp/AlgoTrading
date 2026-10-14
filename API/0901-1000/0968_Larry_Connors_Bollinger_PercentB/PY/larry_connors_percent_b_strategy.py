@@ -20,7 +20,7 @@ class larry_connors_percent_b_strategy(Strategy):
         self._bollinger_deviation = self.Param("BollingerDeviation", 2.0) \
             .SetGreaterThanZero() \
             .SetDisplay("Bollinger Deviation", "Standard deviation for Bollinger Bands", "Bollinger")
-        self._low_percent_b = self.Param("LowPercentB", 0.35) \
+        self._low_percent_b = self.Param("LowPercentB", 0.2) \
             .SetDisplay("Low PctB", "Lower threshold for percent B", "Signals")
         self._high_percent_b = self.Param("HighPercentB", 0.8) \
             .SetDisplay("High PctB", "Upper threshold for percent B to exit", "Signals")
@@ -30,7 +30,7 @@ class larry_connors_percent_b_strategy(Strategy):
         self._cooldown_bars = self.Param("CooldownBars", 100) \
             .SetGreaterThanZero() \
             .SetDisplay("Cooldown Bars", "Minimum bars between entries", "Risk")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromDays(1))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
         self._prev_pct_b1 = None
         self._prev_pct_b2 = None

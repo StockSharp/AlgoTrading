@@ -19,9 +19,10 @@ Testing indicates an average annual return of about 64%. It performs best in the
 - **Default Values**:
   - `VolumeAvgPeriod` = 20
   - `SupertrendPeriod` = 10
-  - `SupertrendMultiplier` = 3m
+  - `SupertrendMultiplier` = 3
   - `CandleType` = TimeSpan.FromMinutes(5)
-  - `StopLossPercent` = 2.0m
+  - `StopLossPercent` = 2
+    Avg(Volume) is the average volume of the previous VolumeAvgPeriod candles. A long closes once the Supertrend turns down and a short once it turns up; the stop is a fixed StopLossPercent of the entry price, watched between candles as well. An entry signal against an open position reverses it.
 - **Filters**:
   - Category: Trend
   - Direction: Both

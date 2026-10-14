@@ -7,7 +7,7 @@ Las pruebas indican un rendimiento anual promedio de aproximadamente 79%. Funcio
 
 La media móvil muestra la dirección de la tendencia predominante. El Williams %R busca puntos sobrecomprados o sobrevendidos en relación con esa tendencia.
 
-Adecuado para traders de swing que esperan retrocesos hacia la media. La distancia del stop-loss proviene del ATR.
+Adecuado para traders de swing que esperan retrocesos hacia la media. La distancia del stop-loss es un porcentaje fijo del precio de entrada.
 
 ## Detalles
 
@@ -17,15 +17,16 @@ Adecuado para traders de swing que esperan retrocesos hacia la media. La distanc
 - **Largo/Corto**: Ambos
 - **Criterios de salida**:
   - Williams %R regresa al medio
-- **Stops**: Basados en porcentaje usando `StopLoss`
+- **Stops**: Basados en porcentaje usando `StopLossPercent`
 - **Valores predeterminados**:
   - `MaPeriod` = 20
   - `MaType` = MovingAverageTypeEnum.Simple
   - `WilliamsRPeriod` = 14
   - `WilliamsROversold` = -80m
   - `WilliamsROverbought` = -20m
-  - `StopLoss` = new Unit(2, UnitTypes.Percent)
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    MaType elige una media simple, exponencial, ponderada, suavizada o de Hull. El centro de Williams %R es -50: un largo se cierra cuando %R vuelve a subir a ese nivel y un corto cuando vuelve a bajar. Una señal de entrada contra una posición abierta la invierte.
 - **Filtros**:
   - Categoría: Reversión a la media
   - Dirección: Ambos

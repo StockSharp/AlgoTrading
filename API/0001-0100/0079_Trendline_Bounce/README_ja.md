@@ -19,6 +19,7 @@
   - `TrendlinePeriod` = 20
   - `MAPeriod` = 20
   - `BounceThresholdPercent` = 0.5
+    安値（高値）がサポート（レジスタンス）ラインからこの割合（％）以内に入った足を、ラインへのタッチとみなします。
   - `CandleType` = 5 minute
   - `StopLossPercent` = 2
 - **フィルター**:

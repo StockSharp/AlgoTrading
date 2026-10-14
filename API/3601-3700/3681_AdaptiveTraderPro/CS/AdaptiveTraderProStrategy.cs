@@ -189,7 +189,7 @@ public class AdaptiveTraderProStrategy : Strategy
 		
 		.SetOptimize(1.0m, 3.0m, 0.5m);
 
-		_trailingStopMultiplier = Param(nameof(TrailingStopMultiplier), 3.0m)
+		_trailingStopMultiplier = Param(nameof(TrailingStopMultiplier), 1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Trailing Stop Multiplier", "ATR multiplier for trailing stop", "Risk Management")
 		
@@ -213,7 +213,7 @@ public class AdaptiveTraderProStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Break Even Multiplier", "ATR multiplier that activates break even", "Risk Management");
 
-		_partialCloseFraction = Param(nameof(PartialCloseFraction), 0m)
+		_partialCloseFraction = Param(nameof(PartialCloseFraction), 0.5m)
 		.SetDisplay("Partial Close Fraction", "Fraction of the volume closed at the first target", "Risk Management");
 
 		_maxSpreadPoints = Param(nameof(MaxSpreadPoints), 20m)

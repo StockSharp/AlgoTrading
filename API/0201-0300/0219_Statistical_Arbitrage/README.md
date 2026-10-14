@@ -20,8 +20,10 @@ The method is ideal for market-neutral traders comfortable balancing exposure ac
 - **Stops**: Yes, percent stop-loss on spread.
 - **Default Values**:
   - `LookbackPeriod` = 20
-  - `StopLossPercent` = 2m
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(15)
+  - `SecondSecurity` — required, no default
+    Asset1 is the strategy's Security and Asset2 is SecondSecurity; MA1 and MA2 are the simple moving averages of their last LookbackPeriod closes on candles of the same time. A long buys Asset1 and sells Asset2, a short does the opposite, each leg by Volume, and an opposite signal reverses both legs. The stop closes both legs once the spread, Asset1 minus Asset2, moves StopLossPercent of its entry value against the pair, checked on candle closes; 0 disables it.
 - **Filters**:
   - Category: Arbitrage
   - Direction: Both

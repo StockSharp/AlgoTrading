@@ -1,7 +1,7 @@
 # Supertrend RSI 戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
-Supertrend + RSI 戦略の実装。価格が Supertrend より上にあり RSI が 30 未満（売られすぎ）のときに買い。価格が Supertrend より下にあり RSI が 70 超（買われすぎ）のときに売り。
+Supertrend + RSI 戦略の実装。価格が Supertrend より上にあり RSI が RsiOversold 未満のときに買い。価格が Supertrend より下にあり RSI が RsiOverbought 超のときに売り。
 
 テストでは年平均リターン約 43% を示しています。株式市場で最も優れたパフォーマンスを発揮します。
 
@@ -22,9 +22,10 @@ Supertrend インジケーターは現在のトレンドを示し、RSI は価�
   - `SupertrendPeriod` = 10
   - `SupertrendMultiplier` = 3.0m
   - `RsiPeriod` = 14
-  - `RsiOversold` = 30m
-  - `RsiOverbought` = 70m
+  - `RsiOversold` = 40
+  - `RsiOverbought` = 60
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    5分足では、価格がSupertrendより上にある間にRSIが30まで下がる（下にある間に70まで上がる）ことはほとんどなく、2024年3月のBTCアーカイブにはそのような足が1本もありません。そのため既定値は40と60とし、トレンドに逆らう押し目・戻りを示しつつ両方向で取引します。 保有ポジションと逆方向のエントリーシグナルはドテンになります。
 - **フィルター**:
   - カテゴリ: 平均回帰
   - 方向: 両方

@@ -133,11 +133,11 @@ public class CorrelationMeanReversionStrategy : Strategy
 			.SetRange(5, 100)
 			.SetDisplay("Correlation Period", "Rolling period for the correlation indicator", "Indicators");
 
-		_lookbackPeriod = Param(nameof(LookbackPeriod), 30)
+		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
 			.SetRange(10, 150)
 			.SetDisplay("Lookback Period", "Lookback period for correlation statistics", "Indicators");
 
-		_deviationThreshold = Param(nameof(DeviationThreshold), 1.1m)
+		_deviationThreshold = Param(nameof(DeviationThreshold), 2m)
 			.SetRange(0.25m, 3m)
 			.SetDisplay("Deviation Threshold", "Absolute Z-score required for entry", "Signals");
 

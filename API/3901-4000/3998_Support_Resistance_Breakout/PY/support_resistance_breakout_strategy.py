@@ -16,7 +16,7 @@ class support_resistance_breakout_strategy(Strategy):
 
         self._range_length = self.Param("RangeLength", 55) \
             .SetDisplay("Range Length", "Candles used to form support/resistance", "General")
-        self._ema_period = self.Param("EmaPeriod", 50) \
+        self._ema_period = self.Param("EmaPeriod", 500) \
             .SetDisplay("EMA Period", "Length of the EMA trend filter", "General")
         self._stop_loss_points = self.Param("StopLossPoints", 500.0) \
             .SetDisplay("Stop Loss", "Stop loss in absolute points", "Risk")

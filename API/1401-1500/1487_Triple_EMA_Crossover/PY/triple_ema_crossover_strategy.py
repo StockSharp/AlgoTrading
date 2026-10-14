@@ -14,9 +14,9 @@ class triple_ema_crossover_strategy(Strategy):
     """Triple SMA crossover: trade on SMA1/SMA2 cross with cooldown."""
     def __init__(self):
         super(triple_ema_crossover_strategy, self).__init__()
-        self._sma1_period = self.Param("Sma1Period", 5).SetDisplay("SMA1 Period", "Short SMA", "Indicators")
-        self._sma2_period = self.Param("Sma2Period", 13).SetDisplay("SMA2 Period", "Middle SMA", "Indicators")
-        self._sma3_period = self.Param("Sma3Period", 21).SetDisplay("SMA3 Period", "Long SMA", "Indicators")
+        self._sma1_period = self.Param("Sma1Period", 9).SetDisplay("SMA1 Period", "Short SMA", "Indicators")
+        self._sma2_period = self.Param("Sma2Period", 21).SetDisplay("SMA2 Period", "Middle SMA", "Indicators")
+        self._sma3_period = self.Param("Sma3Period", 55).SetDisplay("SMA3 Period", "Long SMA", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles", "General")
 
     @property

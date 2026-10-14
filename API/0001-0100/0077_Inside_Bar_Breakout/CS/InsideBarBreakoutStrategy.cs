@@ -12,32 +12,30 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Inside Bar Breakout strategy.
-/// Detects inside bar patterns (high lower than previous high, low higher than previous low).
-/// Enters on breakout of the inside bar's high (buy) or low (sell).
-/// Uses SMA for exit signals.
+/// An inside bar's range lies within the previous candle's high and low. While flat, a close above the latest inside bar's
+/// high buys and a close below its low sells. The stop lies StopLossPercent percent beyond the opposite side of the pattern,
+/// and a close beyond the previous candle's extreme against the position also exits.
 /// </summary>
 public class InsideBarBreakoutStrategy : Strategy
 {
-	private readonly StrategyParam<int> _maPeriod;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
 
-	private ICandleMessage _prevCandle;
-	private ICandleMessage _insideBar;
-	private bool _waitingForBreakout;
-	private int _cooldown;
+	private (decimal High, decimal Low)? _prevCandle;
+	private (decimal High, decimal Low)? _insideBar;
+	private decimal _stopPrice;
 
 	/// <summary>
-	/// MA Period.
+	/// Distance of the stop beyond the pattern, in percent.
 	/// </summary>
-	public int MAPeriod
+	public decimal StopLossPercent
 	{
-		get => _maPeriod.Value;
-		set => _maPeriod.Value = value;
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
 	}
 
 	/// <summary>
-	/// Candle type.
+	/// Candle type and timeframe.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -46,29 +44,16 @@ public class InsideBarBreakoutStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Cooldown bars.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
 	/// Constructor.
 	/// </summary>
 	public InsideBarBreakoutStrategy()
 	{
-		_maPeriod = Param(nameof(MAPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("MA Period", "Period for SMA", "Indicators");
+		_stopLossPercent = Param(nameof(StopLossPercent), 1m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Distance of the stop beyond the pattern, in percent", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_cooldownBars = Param(nameof(CooldownBars), 500)
-			.SetRange(1, 1000)
-			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 	}
 
 	/// <inheritdoc />
@@ -83,8 +68,7 @@ public class InsideBarBreakoutStrategy : Strategy
 		base.OnReseted();
 		_prevCandle = null;
 		_insideBar = null;
-		_waitingForBreakout = false;
-		_cooldown = default;
+		_stopPrice = default;
 	}
 
 	/// <inheritdoc />
@@ -94,83 +78,66 @@ public class InsideBarBreakoutStrategy : Strategy
 
 		_prevCandle = null;
 		_insideBar = null;
-		_waitingForBreakout = false;
-		_cooldown = 0;
-
-		var sma = new SimpleMovingAverage { Length = MAPeriod };
+		_stopPrice = default;
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(sma, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		var previous = _prevCandle;
+		var pattern = _insideBar;
+
+		_prevCandle = (candle.HighPrice, candle.LowPrice);
+
+		var isInside = previous is { } prev && candle.HighPrice <= prev.High && candle.LowPrice >= prev.Low;
+		var close = candle.ClosePrice;
+
+		// A close outside the pattern uses it up; a new inside bar replaces it.
+		if (pattern is { } bar && (close > bar.High || close < bar.Low))
+			_insideBar = null;
+
+		if (isInside)
+			_insideBar = (candle.HighPrice, candle.LowPrice);
+
+		if (previous is not { } prior || !IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (_cooldown > 0)
+		if (Position > 0)
 		{
-			_cooldown--;
-			_prevCandle = candle;
-			_waitingForBreakout = false;
-			return;
+			if (close <= _stopPrice || close < prior.Low)
+				SellMarket(Position);
 		}
-
-		if (_prevCandle == null)
+		else if (Position < 0)
 		{
-			_prevCandle = candle;
-			return;
+			if (close >= _stopPrice || close > prior.High)
+				BuyMarket(-Position);
 		}
-
-		// Check for breakout of a previously detected inside bar
-		if (_waitingForBreakout && _insideBar != null && Position == 0)
+		else if (pattern is { } inside)
 		{
-			if (candle.HighPrice > _insideBar.HighPrice)
+			if (close > inside.High)
 			{
-				BuyMarket();
-				_cooldown = CooldownBars;
-				_waitingForBreakout = false;
+				BuyMarket(Volume);
+				_stopPrice = inside.Low * (1 - StopLossPercent / 100m);
 			}
-			else if (candle.LowPrice < _insideBar.LowPrice)
+			else if (close < inside.Low)
 			{
-				SellMarket();
-				_cooldown = CooldownBars;
-				_waitingForBreakout = false;
+				SellMarket(Volume);
+				_stopPrice = inside.High * (1 + StopLossPercent / 100m);
 			}
 		}
-
-		// Check if current candle is an inside bar
-		if (candle.HighPrice < _prevCandle.HighPrice && candle.LowPrice > _prevCandle.LowPrice)
-		{
-			_insideBar = candle;
-			_waitingForBreakout = true;
-		}
-
-		// Exit logic using SMA
-		if (Position > 0 && candle.ClosePrice < smaValue)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position < 0 && candle.ClosePrice > smaValue)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-
-		_prevCandle = candle;
 	}
 }

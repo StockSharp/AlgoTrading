@@ -1,7 +1,7 @@
 # Estrategia Keltner Volume
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-Implementación de la estrategia Keltner Channels + Volume. Comprar cuando el precio rompe por encima del canal Keltner superior con volumen superior al promedio. Vender cuando el precio rompe por debajo del canal Keltner inferior con volumen superior al promedio.
+Implementación de la estrategia Keltner Channels + Volume. Comprar cuando el precio cierra por debajo del canal Keltner inferior con volumen superior al promedio. Vender cuando el precio cierra por encima del canal Keltner superior con volumen superior al promedio.
 
 Las pruebas indican un retorno anual promedio de aproximadamente el 58%. Funciona mejor en el mercado de acciones.
 
@@ -17,14 +17,15 @@ Los traders que buscan confirmación de volumen alrededor de bandas de volatilid
 - **Largo/Corto**: Ambos
 - **Criterios de salida**:
   - El precio cruza la EMA
-- **Stops**: Basados en ATR usando `StopLoss`
+- **Stops**: Basados en ATR usando `StopLossAtr`
 - **Valores predeterminados**:
   - `EmaPeriod` = 20
   - `AtrPeriod` = 14
   - `Multiplier` = 2.0m
   - `VolumeAvgPeriod` = 20
-  - `StopLoss` = new Unit(2, UnitTypes.Absolute)
+  - `StopLossAtr` = 2
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    El canal es la EMA más y menos Multiplier ATR, y AvgVolume es el volumen medio de las VolumeAvgPeriod velas anteriores. El stop está a StopLossAtr ATR del cierre de entrada y se comprueba en los cierres de vela. Una señal de entrada contra una posición abierta la invierte.
 - **Filtros**:
   - Categoría: Reversión a la media
   - Dirección: Ambos

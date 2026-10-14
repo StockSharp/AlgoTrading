@@ -31,7 +31,7 @@ public class FractureStrategy : Strategy
 
 	public FractureStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle", "Candle type", "General");
 		_fastPeriod = Param(nameof(FastPeriod), 10)
 			.SetGreaterThanZero()

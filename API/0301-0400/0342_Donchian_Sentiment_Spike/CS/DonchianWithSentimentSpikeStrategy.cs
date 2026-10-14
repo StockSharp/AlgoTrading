@@ -89,19 +89,19 @@ public class DonchianWithSentimentSpikeStrategy : Strategy
 	/// </summary>
 	public DonchianWithSentimentSpikeStrategy()
 	{
-		_donchianPeriod = Param(nameof(DonchianPeriod), 10)
+		_donchianPeriod = Param(nameof(DonchianPeriod), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("Donchian Period", "Donchian channel period", "Donchian Settings")
 		
 		.SetOptimize(10, 30, 5);
 
-		_sentimentPeriod = Param(nameof(SentimentPeriod), 10)
+		_sentimentPeriod = Param(nameof(SentimentPeriod), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("Sentiment Period", "Sentiment averaging period", "Sentiment Settings")
 		
 		.SetOptimize(10, 30, 5);
 
-		_sentimentMultiplier = Param(nameof(SentimentMultiplier), 0.5m)
+		_sentimentMultiplier = Param(nameof(SentimentMultiplier), 2m)
 		.SetGreaterThanZero()
 		.SetDisplay("Sentiment StdDev Multiplier", "Multiplier for sentiment standard deviation", "Sentiment Settings")
 		
@@ -113,7 +113,7 @@ public class DonchianWithSentimentSpikeStrategy : Strategy
 		
 		.SetOptimize(1m, 3m, 0.5m);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 

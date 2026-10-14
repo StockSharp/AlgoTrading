@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan
+from System import Decimal, TimeSpan
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import SimpleMovingAverage, ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
@@ -14,7 +14,7 @@ class phase_cross_with_zone_strategy(Strategy):
     def __init__(self):
         super(phase_cross_with_zone_strategy, self).__init__()
         self._length = self.Param("Length", 20).SetGreaterThanZero().SetDisplay("Length", "Smoothing length", "General")
-        self._offset = self.Param("Offset", 0.5).SetDisplay("Offset", "Phase offset", "General")
+        self._offset = self.Param("Offset", Decimal.Parse("0.5")).SetDisplay("Offset", "Phase offset", "General")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles", "General")
 
     @property
@@ -60,10 +60,10 @@ class phase_cross_with_zone_strategy(Strategy):
             crossed_up = self._prev_lead <= self._prev_lag and lead > lag
             crossed_down = self._prev_lead >= self._prev_lag and lead < lag
 
-            if crossed_up and self.Position <= 0:
+            if crossed_up and self.Position == 0:
                 self.BuyMarket()
-            elif crossed_down and self.Position >= 0:
-                self.SellMarket()
+            elif crossed_down and self.Position > 0:
+                self.SellMarket(self.Position)
 
         self._prev_lead = lead
         self._prev_lag = lag

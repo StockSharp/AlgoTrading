@@ -4,30 +4,31 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import SimpleMovingAverage
+from System import TimeSpan, Math, Decimal
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, Level1Fields
+from StockSharp.BusinessEntities import Subscription
 from StockSharp.Algo.Strategies import Strategy
 
 class pivot_point_reversal_strategy(Strategy):
     """
     Pivot Point Reversal strategy.
-    Calculates pivot points from a rolling window of highs, lows, closes.
-    P = (H + L + C) / 3, S1 = 2*P - H, R1 = 2*P - L
-    Buys on bounce off S1, sells on bounce off R1, exits at pivot.
+    Each day the classic floor pivots come from the previous day's high, low and close: P = (H + L + C) / 3, R1 = 2P - L, S1 = 2P - H.
+    While flat, a bullish candle that dips to S1 and closes above it buys, and a bearish candle that reaches R1 and closes below it sells.
+    The position closes when the close reaches the central pivot or at the percent stop.
     """
 
     def __init__(self):
         super(pivot_point_reversal_strategy, self).__init__()
-        self._lookback = self.Param("Lookback", 60).SetDisplay("Lookback", "Lookback for pivot calc", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Type of candles to use", "General")
-        self._cooldown_bars = self.Param("CooldownBars", 500).SetDisplay("Cooldown Bars", "Bars to wait between trades", "General")
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0).SetNotNegative().SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles to use", "General")
 
-        self._highs = []
-        self._lows = []
-        self._closes = []
-        self._cooldown = 0
+        self._day = None
+        self._day_high = Decimal(0)
+        self._day_low = Decimal(0)
+        self._day_close = Decimal(0)
+        self._levels = None
 
     @property
     def candle_type(self):
@@ -35,86 +36,72 @@ class pivot_point_reversal_strategy(Strategy):
 
     def OnReseted(self):
         super(pivot_point_reversal_strategy, self).OnReseted()
-        self._highs = []
-        self._lows = []
-        self._closes = []
-        self._cooldown = 0
+        self._day = None
+        self._day_high = Decimal(0)
+        self._day_low = Decimal(0)
+        self._day_close = Decimal(0)
+        self._levels = None
 
     def OnStarted2(self, time):
         super(pivot_point_reversal_strategy, self).OnStarted2(time)
 
-        self._highs = []
-        self._lows = []
-        self._closes = []
-        self._cooldown = 0
-
-        sma = SimpleMovingAverage()
-        sma.Length = 20
+        self._day = None
+        self._levels = None
 
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(sma, self._process_candle).Start()
+        subscription.Bind(self._process_candle).Start()
+
+        self.StartProtection(Unit(), Unit(Decimal(self._stop_loss_percent.Value), UnitTypes.Percent), useMarketOrders=True, isLocalStop=True)
+
+        # The stop has to see prices between candles, not only at their close.
+        for field in (Level1Fields.BestBidPrice, Level1Fields.BestAskPrice):
+            quotes = Subscription(DataType.Level1, self.Security)
+            quotes.MarketData.BuildField = field
+            self.SubscribeLevel1(quotes).Bind(self._observe_protection_quote).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, sma)
             self.DrawOwnTrades(area)
 
-    def _process_candle(self, candle, sma_val):
+    def _observe_protection_quote(self, quote):
+        # The high-level handler activates native protection before the callback, including between bars.
+        pass
+
+    def _process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
 
-        self._highs.append(float(candle.HighPrice))
-        self._lows.append(float(candle.LowPrice))
-        self._closes.append(float(candle.ClosePrice))
+        day = candle.OpenTime.Date
+        if self._day is None or self._day != day:
+            # A new day takes its pivots from the day that has just ended.
+            if self._day is not None:
+                pivot = (self._day_high + self._day_low + self._day_close) / Decimal(3)
+                self._levels = (pivot, Decimal(2) * pivot - self._day_low, Decimal(2) * pivot - self._day_high)
+            self._day = day
+            self._day_high = candle.HighPrice
+            self._day_low = candle.LowPrice
+        else:
+            self._day_high = Math.Max(self._day_high, candle.HighPrice)
+            self._day_low = Math.Min(self._day_low, candle.LowPrice)
+        self._day_close = candle.ClosePrice
 
-        lb = self._lookback.Value
-
-        if len(self._highs) > lb:
-            self._highs.pop(0)
-            self._lows.pop(0)
-            self._closes.pop(0)
-
-        if len(self._highs) < lb:
+        if self._levels is None or not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        if self._cooldown > 0:
-            self._cooldown -= 1
-            return
+        pivot, r1, s1 = self._levels
+        close = candle.ClosePrice
 
-        # Calculate pivot points from lookback window
-        high = max(self._highs)
-        low = min(self._lows)
-        close = self._closes[-1]
-
-        pivot = (high + low + close) / 3.0
-        r1 = 2.0 * pivot - low
-        s1 = 2.0 * pivot - high
-        buffer = (r1 - s1) * 0.02
-
-        if buffer <= 0:
-            return
-
-        is_bullish = candle.ClosePrice > candle.OpenPrice
-        is_bearish = candle.ClosePrice < candle.OpenPrice
-
-        cd = self._cooldown_bars.Value
-
-        # Bounce off S1 (buy)
-        if self.Position == 0 and float(candle.LowPrice) <= s1 + buffer and is_bullish:
-            self.BuyMarket()
-            self._cooldown = cd
-        # Bounce off R1 (sell)
-        elif self.Position == 0 and float(candle.HighPrice) >= r1 - buffer and is_bearish:
-            self.SellMarket()
-            self._cooldown = cd
-        # Exit at pivot
-        elif self.Position > 0 and float(candle.ClosePrice) > pivot:
-            self.SellMarket()
-            self._cooldown = cd
-        elif self.Position < 0 and float(candle.ClosePrice) < pivot:
-            self.BuyMarket()
-            self._cooldown = cd
+        if self.Position > 0:
+            if close >= pivot:
+                self.SellMarket(self.Position)
+        elif self.Position < 0:
+            if close <= pivot:
+                self.BuyMarket(-self.Position)
+        elif close > candle.OpenPrice and candle.LowPrice <= s1 and close > s1:
+            self.BuyMarket(self.Volume)
+        elif close < candle.OpenPrice and candle.HighPrice >= r1 and close < r1:
+            self.SellMarket(self.Volume)
 
     def CreateClone(self):
         return pivot_point_reversal_strategy()

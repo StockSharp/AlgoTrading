@@ -18,7 +18,7 @@ class cspa143_strategy(Strategy):
 
         self._strength_period = self.Param("StrengthPeriod", 14) \
             .SetDisplay("Strength Period", "RSI period", "Parameters")
-        self._threshold = self.Param("Threshold", 18.0) \
+        self._threshold = self.Param("Threshold", 10.0) \
             .SetDisplay("Threshold", "RSI distance from 50", "Parameters")
         self._cooldown_bars = self.Param("CooldownBars", 2) \
             .SetDisplay("Cooldown Bars", "Bars to wait after a completed trade", "Parameters")

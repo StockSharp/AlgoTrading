@@ -14,7 +14,7 @@ from StockSharp.Algo.Strategies import Strategy
 class anomalous_holonomy_field_theory_strategy(Strategy):
     def __init__(self):
         super(anomalous_holonomy_field_theory_strategy, self).__init__()
-        self._signal_threshold = self.Param("SignalThreshold", 0.1) \
+        self._signal_threshold = self.Param("SignalThreshold", 2.0) \
             .SetDisplay("Signal Threshold", "Absolute signal level required for trades", "Parameters")
         self._cooldown_bars = self.Param("CooldownBars", 50) \
             .SetDisplay("Cooldown Bars", "Bars between trades", "Trading")

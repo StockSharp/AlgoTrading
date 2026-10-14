@@ -273,7 +273,7 @@ public class ExpHansIndicatorCloudSystemTmPlusStrategy : Strategy
 		.SetDisplay("Holding Minutes", "Maximum position lifetime in minutes", "Risk")
 		.SetNotNegative();
 
-		_pipsForEntry = Param(nameof(PipsForEntry), 5)
+		_pipsForEntry = Param(nameof(PipsForEntry), 100)
 		.SetDisplay("Pips For Entry", "Offset added above/below the breakout range", "Indicator")
 		.SetNotNegative();
 
@@ -284,7 +284,7 @@ public class ExpHansIndicatorCloudSystemTmPlusStrategy : Strategy
 		_localTimeZone = Param(nameof(LocalTimeZone), 0)
 		.SetDisplay("Local Time Zone", "Broker/server time zone", "Indicator");
 
-		_destinationTimeZone = Param(nameof(DestinationTimeZone), 0)
+		_destinationTimeZone = Param(nameof(DestinationTimeZone), 4)
 		.SetDisplay("Destination Time Zone", "Target time zone for sessions", "Indicator");
 
 		_entryCooldownBars = Param(nameof(EntryCooldownBars), 10)

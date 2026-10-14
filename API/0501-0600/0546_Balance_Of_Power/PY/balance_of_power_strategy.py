@@ -5,97 +5,74 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan
+from System import TimeSpan, Decimal
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage
+from StockSharp.Algo.Indicators import BalanceOfPower
 from StockSharp.Algo.Strategies import Strategy
 
 
 class balance_of_power_strategy(Strategy):
+    """
+    Balance of Power strategy.
+    Long only: buys when Balance of Power crosses above Threshold and closes the long when it crosses below -Threshold.
+    """
+
     def __init__(self):
         super(balance_of_power_strategy, self).__init__()
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
-            .SetDisplay("Candle Type", "Type of candles to use", "General")
-        self._fast_ema_length = self.Param("FastEmaLength", 12) \
-            .SetDisplay("Fast EMA", "Fast EMA period", "Indicators")
-        self._slow_ema_length = self.Param("SlowEmaLength", 40) \
-            .SetDisplay("Slow EMA", "Slow EMA period", "Indicators")
-        self._cooldown_bars = self.Param("CooldownBars", 350) \
-            .SetDisplay("Cooldown Bars", "Bars between trades", "Trading")
-        self._prev_fast = 0.0
-        self._prev_slow = 0.0
-        self._bar_index = 0
-        self._last_trade_bar = 0
+        self._threshold = self.Param("Threshold", 0.8).SetNotNegative().SetDisplay("Threshold", "Balance of Power level whose upward cross opens a long", "Indicators")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._prev_bop = None
 
     @property
     def candle_type(self):
         return self._candle_type.Value
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
-
-    @property
-    def fast_ema_length(self):
-        return self._fast_ema_length.Value
-    @fast_ema_length.setter
-    def fast_ema_length(self, value):
-        self._fast_ema_length.Value = value
-
-    @property
-    def slow_ema_length(self):
-        return self._slow_ema_length.Value
-    @slow_ema_length.setter
-    def slow_ema_length(self, value):
-        self._slow_ema_length.Value = value
-
-    @property
-    def cooldown_bars(self):
-        return self._cooldown_bars.Value
-    @cooldown_bars.setter
-    def cooldown_bars(self, value):
-        self._cooldown_bars.Value = value
 
     def OnReseted(self):
         super(balance_of_power_strategy, self).OnReseted()
-        self._prev_fast = 0.0
-        self._prev_slow = 0.0
-        self._bar_index = 0
-        self._last_trade_bar = 0
+        self._prev_bop = None
 
     def OnStarted2(self, time):
         super(balance_of_power_strategy, self).OnStarted2(time)
-        fast_ema = ExponentialMovingAverage()
-        fast_ema.Length = self.fast_ema_length
-        slow_ema = ExponentialMovingAverage()
-        slow_ema.Length = self.slow_ema_length
+
+        self._prev_bop = None
+
+        bop = BalanceOfPower()
+
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(fast_ema, slow_ema, self.OnProcess).Start()
+        subscription.BindEx(bop, self._process_candle).Start()
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, fast_ema)
-            self.DrawIndicator(area, slow_ema)
             self.DrawOwnTrades(area)
+            oscillators = self.CreateChartArea()
+            if oscillators is not None:
+                self.DrawIndicator(oscillators, bop)
 
-    def OnProcess(self, candle, fast_value, slow_value):
+    def _process_candle(self, candle, bop_value):
         if candle.State != CandleStates.Finished:
             return
 
-        self._bar_index += 1
-        cooldown_ok = self._bar_index - self._last_trade_bar > self.cooldown_bars
+        # A candle without range has no Balance of Power value.
+        if not bop_value.IsFormed or bop_value.IsEmpty:
+            return
 
-        cross_up = self._prev_fast > 0 and self._prev_fast <= self._prev_slow and fast_value > slow_value
-        cross_down = self._prev_fast > 0 and self._prev_fast >= self._prev_slow and fast_value < slow_value
+        bop = bop_value.GetValue[Decimal](None)
+        prev = self._prev_bop
+        self._prev_bop = bop
 
-        if cross_up and self.Position <= 0 and cooldown_ok:
-            self.BuyMarket()
-            self._last_trade_bar = self._bar_index
-        elif cross_down and self.Position >= 0 and cooldown_ok:
-            self.SellMarket()
-            self._last_trade_bar = self._bar_index
+        if prev is None:
+            return
 
-        self._prev_fast = float(fast_value)
-        self._prev_slow = float(slow_value)
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+
+        threshold = Decimal(self._threshold.Value)
+
+        if self.Position == 0 and prev <= threshold and bop > threshold:
+            self.BuyMarket(self.Volume)
+        elif self.Position > 0 and prev >= -threshold and bop < -threshold:
+            self.SellMarket(self.Position)
 
     def CreateClone(self):
         return balance_of_power_strategy()

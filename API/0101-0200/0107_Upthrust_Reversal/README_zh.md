@@ -16,7 +16,9 @@
 - **止损**：是，按百分比
 - **默认值**:
   - `CandleType` = 15分钟
-  - `StopLoss` = 2%
+  - `LookbackPeriod` = 20
+  - `StopLossPercent` = 2
+    阻力位为之前 LookbackPeriod 根K线的最高价。策略只做空：一根突破阻力后收回其下方的阴线。止损设在上冲高点上方 StopLossPercent 处，K线收盘突破即平仓。
 - **过滤器**:
   - 类别：反转
   - 方向：双向

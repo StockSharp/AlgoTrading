@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using Ecng.Common;
 
@@ -11,34 +12,24 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy combining Ichimoku (manual Tenkan/Kijun) with volume filter.
-/// Buys when price above Kumo, Tenkan above Kijun, volume above average.
-/// Sells when price below Kumo, Tenkan below Kijun, volume above average.
+/// Ichimoku Volume strategy.
+/// A close above the cloud with Tenkan-sen above Kijun-sen on volume above the average of the previous VolumeAvgPeriod candles goes long;
+/// a close below the cloud with Tenkan-sen below Kijun-sen on such volume goes short, reversing an opposite position.
+/// A long closes when price closes below the cloud and a short when it closes above it, and a percent stop limits the loss.
 /// </summary>
 public class IchimokuVolumeStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _tenkanPeriod;
 	private readonly StrategyParam<int> _kijunPeriod;
+	private readonly StrategyParam<int> _senkouSpanPeriod;
 	private readonly StrategyParam<int> _volumeAvgPeriod;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly List<decimal> _highs = new();
-	private readonly List<decimal> _lows = new();
-	private readonly List<decimal> _vols = new();
-	private int _cooldown;
+	private readonly List<decimal> _volumes = [];
 
 	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Tenkan-sen period.
+	/// Period of Tenkan-sen.
 	/// </summary>
 	public int TenkanPeriod
 	{
@@ -47,7 +38,7 @@ public class IchimokuVolumeStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Kijun-sen period.
+	/// Period of Kijun-sen.
 	/// </summary>
 	public int KijunPeriod
 	{
@@ -56,7 +47,16 @@ public class IchimokuVolumeStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Volume average period.
+	/// Period of Senkou Span B.
+	/// </summary>
+	public int SenkouSpanPeriod
+	{
+		get => _senkouSpanPeriod.Value;
+		set => _senkouSpanPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Previous candles the volume is averaged over.
 	/// </summary>
 	public int VolumeAvgPeriod
 	{
@@ -65,37 +65,50 @@ public class IchimokuVolumeStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Cooldown bars between trades.
+	/// Stop loss percentage from entry price.
 	/// </summary>
-	public int CooldownBars
+	public decimal StopLossPercent
 	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
 	}
 
 	/// <summary>
-	/// Initialize strategy.
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
 	/// </summary>
 	public IchimokuVolumeStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
 		_tenkanPeriod = Param(nameof(TenkanPeriod), 9)
-			.SetRange(5, 20)
-			.SetDisplay("Tenkan Period", "Tenkan-sen period (fast)", "Ichimoku");
+			.SetGreaterThanZero()
+			.SetDisplay("Tenkan Period", "Period of Tenkan-sen", "Ichimoku");
 
 		_kijunPeriod = Param(nameof(KijunPeriod), 26)
-			.SetRange(15, 40)
-			.SetDisplay("Kijun Period", "Kijun-sen period (slow)", "Ichimoku");
+			.SetGreaterThanZero()
+			.SetDisplay("Kijun Period", "Period of Kijun-sen", "Ichimoku");
+
+		_senkouSpanPeriod = Param(nameof(SenkouSpanPeriod), 52)
+			.SetGreaterThanZero()
+			.SetDisplay("Senkou Span Period", "Period of Senkou Span B", "Ichimoku");
 
 		_volumeAvgPeriod = Param(nameof(VolumeAvgPeriod), 20)
-			.SetRange(10, 50)
-			.SetDisplay("Volume Average Period", "Period for volume moving average", "Volume");
+			.SetGreaterThanZero()
+			.SetDisplay("Volume Average Period", "Previous candles the volume is averaged over", "Volume");
 
-		_cooldownBars = Param(nameof(CooldownBars), 100)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "General")
-			.SetRange(5, 500);
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -108,10 +121,7 @@ public class IchimokuVolumeStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_highs.Clear();
-		_lows.Clear();
-		_vols.Clear();
-		_cooldown = 0;
+		_volumes.Clear();
 	}
 
 	/// <inheritdoc />
@@ -119,125 +129,75 @@ public class IchimokuVolumeStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var ema = new ExponentialMovingAverage { Length = KijunPeriod };
+		_volumes.Clear();
+
+		var ichimoku = new Ichimoku
+		{
+			Tenkan = { Length = TenkanPeriod },
+			Kijun = { Length = KijunPeriod },
+			SenkouB = { Length = SenkouSpanPeriod }
+		};
 
 		var subscription = SubscribeCandles(CandleType);
-
 		subscription
-			.Bind(ema, ProcessCandle)
+			.BindEx(ichimoku, ProcessCandle)
 			.Start();
+
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
+			DrawIndicator(area, ichimoku);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal emaValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// The high-level handler activates native protection before this callback, also between signal bars.
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue ichimokuValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		// Volume is compared with the candles before this one.
+		var average = _volumes.Count == VolumeAvgPeriod ? _volumes.Average() : (decimal?)null;
+
+		_volumes.Add(candle.TotalVolume);
+
+		if (_volumes.Count > VolumeAvgPeriod)
+			_volumes.RemoveAt(0);
+
+		if (ichimokuValue is not IIchimokuValue { Tenkan: decimal tenkan, Kijun: decimal kijun, SenkouA: decimal senkouA, SenkouB: decimal senkouB })
 			return;
 
-		var high = candle.HighPrice;
-		var low = candle.LowPrice;
+		if (average is not decimal avgVolume || !IsFormedAndOnlineAndAllowTrading())
+			return;
+
 		var close = candle.ClosePrice;
-		var vol = candle.TotalVolume;
+		var cloudTop = Math.Max(senkouA, senkouB);
+		var cloudBottom = Math.Min(senkouA, senkouB);
+		var surge = candle.TotalVolume > avgVolume;
 
-		_highs.Add(high);
-		_lows.Add(low);
-		_vols.Add(vol);
-
-		var tenkanPrd = TenkanPeriod;
-		var kijunPrd = KijunPeriod;
-		var volPrd = VolumeAvgPeriod;
-		var minBars = Math.Max(kijunPrd, volPrd);
-
-		if (_highs.Count < minBars)
-		{
-			if (_cooldown > 0) _cooldown--;
-			return;
-		}
-
-		// Manual Tenkan-sen: (highest high + lowest low) / 2 over tenkan period
-		var count = _highs.Count;
-		decimal tenkanHH = decimal.MinValue, tenkanLL = decimal.MaxValue;
-		for (int i = count - tenkanPrd; i < count; i++)
-		{
-			if (_highs[i] > tenkanHH) tenkanHH = _highs[i];
-			if (_lows[i] < tenkanLL) tenkanLL = _lows[i];
-		}
-		var tenkan = (tenkanHH + tenkanLL) / 2m;
-
-		// Manual Kijun-sen
-		decimal kijunHH = decimal.MinValue, kijunLL = decimal.MaxValue;
-		for (int i = count - kijunPrd; i < count; i++)
-		{
-			if (_highs[i] > kijunHH) kijunHH = _highs[i];
-			if (_lows[i] < kijunLL) kijunLL = _lows[i];
-		}
-		var kijun = (kijunHH + kijunLL) / 2m;
-
-		// Senkou Span A = (Tenkan + Kijun) / 2
-		var senkouA = (tenkan + kijun) / 2m;
-
-		// Senkou Span B = (highest high + lowest low) / 2 over 2*kijun period (use kijun period for simplicity)
-		var senkouB = kijun; // simplified: use Kijun as proxy for Senkou B
-
-		var upperKumo = Math.Max(senkouA, senkouB);
-		var lowerKumo = Math.Min(senkouA, senkouB);
-
-		// Volume average
-		decimal sumVol = 0;
-		for (int i = count - volPrd; i < count; i++)
-			sumVol += _vols[i];
-		var avgVol = sumVol / volPrd;
-		var highVolume = vol > avgVol;
-
-		// Trim lists
-		var maxKeep = minBars * 3;
-		if (_highs.Count > maxKeep)
-		{
-			var trim = _highs.Count - minBars * 2;
-			_highs.RemoveRange(0, trim);
-			_lows.RemoveRange(0, trim);
-			_vols.RemoveRange(0, trim);
-		}
-
-		if (_cooldown > 0)
-		{
-			_cooldown--;
-			return;
-		}
-
-		// Buy: price above cloud + Tenkan above Kijun + high volume
-		if (close > upperKumo && tenkan > kijun && highVolume && Position == 0)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-		// Sell: price below cloud + Tenkan below Kijun + high volume
-		else if (close < lowerKumo && tenkan < kijun && highVolume && Position == 0)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-
-		// Exit long: price drops below kijun
-		if (Position > 0 && close < kijun)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		// Exit short: price rises above kijun
-		else if (Position < 0 && close > kijun)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
+		if (close > cloudTop && tenkan > kijun && surge && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (close < cloudBottom && tenkan < kijun && surge && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
+		else if (Position > 0 && close < cloudBottom)
+			SellMarket(Position);
+		else if (Position < 0 && close > cloudTop)
+			BuyMarket(-Position);
 	}
 }

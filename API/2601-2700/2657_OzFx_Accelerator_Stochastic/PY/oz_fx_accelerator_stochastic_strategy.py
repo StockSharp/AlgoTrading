@@ -26,14 +26,14 @@ class oz_fx_accelerator_stochastic_strategy(Strategy):
         self._max_layers = self.Param("MaxLayers", 1) \
             .SetGreaterThanZero() \
             .SetDisplay("Max Layers", "Maximum number of layered positions", "Risk")
-        self._order_volume = self.Param("OrderVolume", 1.0) \
+        self._order_volume = self.Param("OrderVolume", 0.1) \
             .SetGreaterThanZero() \
             .SetDisplay("Volume", "Order volume for each layer", "Trading")
-        self._stop_loss_pips = self.Param("StopLossPips", 10.0) \
+        self._stop_loss_pips = self.Param("StopLossPips", 100.0) \
             .SetDisplay("Stop Loss (pips)", "Protective stop distance in pips", "Risk")
-        self._take_profit_pips = self.Param("TakeProfitPips", 5.0) \
+        self._take_profit_pips = self.Param("TakeProfitPips", 50.0) \
             .SetDisplay("Take Profit (pips)", "Base take profit increment in pips", "Risk")
-        self._trailing_stop_pips = self.Param("TrailingStopPips", 5.0) \
+        self._trailing_stop_pips = self.Param("TrailingStopPips", 50.0) \
             .SetDisplay("Trailing Stop (pips)", "Trailing stop distance in pips", "Risk")
         self._trailing_step_pips = self.Param("TrailingStepPips", 5.0) \
             .SetDisplay("Trailing Step (pips)", "Extra move required before advancing trailing stop", "Risk")

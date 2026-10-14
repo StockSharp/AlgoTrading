@@ -1,8 +1,9 @@
-
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using Ecng.Common;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -11,7 +12,11 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Breakout strategy based on pivot highs and lows with dynamic risk management.
+/// LANZ Strategy 4.0 Backtest.
+/// A pivot high (low) is a candle whose high (low) is the extreme of the SwingLength candles on each side of it. A close crossing above
+/// the last pivot high goes long and a close crossing below the last pivot low goes short, reversing an opposite position. The stop sits
+/// SlBufferPoints price steps beyond the opposite pivot, the target RiskReward times the stop distance away, and the volume risks
+/// RiskPercent of equity with PipValueUsd per price step and lot.
 /// </summary>
 public class Lanz40BacktestStrategy : Strategy
 {
@@ -20,282 +25,235 @@ public class Lanz40BacktestStrategy : Strategy
 	private readonly StrategyParam<decimal> _riskReward;
 	private readonly StrategyParam<decimal> _riskPercent;
 	private readonly StrategyParam<decimal> _pipValueUsd;
-	private readonly StrategyParam<int> _maxEntries;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private Highest _highest;
-	private Lowest _lowest;
+	private readonly List<decimal> _highs = [];
+	private readonly List<decimal> _lows = [];
 
-	private decimal? _lastTop;
-	private decimal? _lastBottom;
-	private decimal? _prevHigh;
-	private decimal? _prevLow;
-	private int _trendDir;
-	private bool _topCrossed;
-	private bool _bottomCrossed;
-	private bool _topWasStrong;
-	private bool _bottomWasStrong;
-
-	private decimal? _entryPriceBuy;
-	private decimal? _entryPriceSell;
-	private bool _signalTriggeredBuy;
-	private bool _signalTriggeredSell;
-	private decimal _stopPrice;
-	private decimal _takeProfitPrice;
-	private int _entriesExecuted;
+	private decimal? _pivotHigh;
+	private decimal? _pivotLow;
+	private decimal? _prevClose;
+	private decimal? _stopPrice;
+	private decimal? _takePrice;
 
 	/// <summary>
-	/// Pivot swing length.
+	/// Candles on each side of a pivot.
 	/// </summary>
 	public int SwingLength
 	{
-	    get => _swingLength.Value;
-	    set => _swingLength.Value = value;
+		get => _swingLength.Value;
+		set => _swingLength.Value = value;
 	}
 
 	/// <summary>
-	/// Stop loss buffer in points.
+	/// Stop buffer beyond the pivot in price steps.
 	/// </summary>
 	public decimal SlBufferPoints
 	{
-	    get => _slBufferPoints.Value;
-	    set => _slBufferPoints.Value = value;
+		get => _slBufferPoints.Value;
+		set => _slBufferPoints.Value = value;
 	}
 
 	/// <summary>
-	/// Risk reward multiplier.
+	/// Take profit as a multiple of the stop distance.
 	/// </summary>
 	public decimal RiskReward
 	{
-	    get => _riskReward.Value;
-	    set => _riskReward.Value = value;
+		get => _riskReward.Value;
+		set => _riskReward.Value = value;
 	}
 
 	/// <summary>
-	/// Risk percent of equity.
+	/// Percent of equity risked per trade.
 	/// </summary>
 	public decimal RiskPercent
 	{
-	    get => _riskPercent.Value;
-	    set => _riskPercent.Value = value;
+		get => _riskPercent.Value;
+		set => _riskPercent.Value = value;
 	}
 
 	/// <summary>
-	/// Pip value in USD for one lot.
+	/// Money value of one price step for one lot.
 	/// </summary>
 	public decimal PipValueUsd
 	{
-	    get => _pipValueUsd.Value;
-	    set => _pipValueUsd.Value = value;
+		get => _pipValueUsd.Value;
+		set => _pipValueUsd.Value = value;
 	}
 
 	/// <summary>
-	/// Candle type for strategy calculation.
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
-	    get => _candleType.Value;
-	    set => _candleType.Value = value;
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
 	/// <summary>
-	/// Maximum entries per run.
-	/// </summary>
-	public int MaxEntries
-	{
-	    get => _maxEntries.Value;
-	    set => _maxEntries.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="Lanz40BacktestStrategy"/>.
+	/// Initialize <see cref="Lanz40BacktestStrategy"/>.
 	/// </summary>
 	public Lanz40BacktestStrategy()
 	{
-	    _swingLength = Param(nameof(SwingLength), 180)
-	        .SetDisplay("Swing Length", "Pivot swing length", "General")
-	        .SetGreaterThanZero();
+		_swingLength = Param(nameof(SwingLength), 180)
+			.SetGreaterThanZero()
+			.SetDisplay("Swing Length", "Candles on each side of a pivot", "General");
 
-	    _slBufferPoints = Param(nameof(SlBufferPoints), 50m)
-	        .SetDisplay("SL Buffer", "Stop loss buffer (points)", "Risk")
-	        .SetGreaterThanZero();
+		_slBufferPoints = Param(nameof(SlBufferPoints), 50m)
+			.SetNotNegative()
+			.SetDisplay("SL Buffer", "Stop buffer beyond the pivot in price steps", "Risk");
 
-	    _riskReward = Param(nameof(RiskReward), 1m)
-	        .SetDisplay("TP RR", "Take profit risk-reward", "Risk")
-	        .SetGreaterThanZero();
+		_riskReward = Param(nameof(RiskReward), 1m)
+			.SetGreaterThanZero()
+			.SetDisplay("Risk Reward", "Take profit as a multiple of the stop distance", "Risk");
 
-	    _riskPercent = Param(nameof(RiskPercent), 1m)
-	        .SetDisplay("Risk %", "Risk percent per trade", "Risk")
-	        .SetGreaterThanZero();
+		_riskPercent = Param(nameof(RiskPercent), 1m)
+			.SetGreaterThanZero()
+			.SetDisplay("Risk %", "Percent of equity risked per trade", "Risk");
 
-	    _pipValueUsd = Param(nameof(PipValueUsd), 10m)
-	        .SetDisplay("Pip Value USD", "Pip value for one lot", "Risk")
-	        .SetGreaterThanZero();
+		_pipValueUsd = Param(nameof(PipValueUsd), 10m)
+			.SetGreaterThanZero()
+			.SetDisplay("Pip Value USD", "Money value of one price step for one lot", "Risk");
 
-	    _maxEntries = Param(nameof(MaxEntries), 45)
-	        .SetDisplay("Max Entries", "Maximum entries per run", "Risk")
-	        .SetGreaterThanZero();
-
-	    _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-	        .SetDisplay("Candle Type", "Type of candles", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	    => [(Security, CandleType)];
+	{
+		return [(Security, CandleType)];
+	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
-	    base.OnReseted();
-	    _lastTop = null;
-	    _lastBottom = null;
-	    _prevHigh = null;
-	    _prevLow = null;
-	    _trendDir = 0;
-	    _topCrossed = false;
-	    _bottomCrossed = false;
-	    _topWasStrong = false;
-	    _bottomWasStrong = false;
-	    _entryPriceBuy = null;
-	    _entryPriceSell = null;
-	    _signalTriggeredBuy = false;
-	    _signalTriggeredSell = false;
-	    _stopPrice = 0m;
-	    _takeProfitPrice = 0m;
-	    _entriesExecuted = 0;
+		base.OnReseted();
+		ResetState();
+	}
+
+	private void ResetState()
+	{
+		_highs.Clear();
+		_lows.Clear();
+		_pivotHigh = _pivotLow = null;
+		_prevClose = null;
+		_stopPrice = _takePrice = null;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
-	    base.OnStarted2(time);
+		base.OnStarted2(time);
 
-	    _highest = new Highest { Length = SwingLength };
-	    _lowest = new Lowest { Length = SwingLength };
+		ResetState();
 
-	    var subscription = SubscribeCandles(CandleType);
-	    subscription
-	        .Bind(_highest, _lowest, ProcessCandle)
-	        .Start();
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(ProcessCandle)
+			.Start();
 
-	    var area = CreateChartArea();
-	    if (area != null)
-	    {
-	        DrawCandles(area, subscription);
-	        DrawIndicator(area, _highest);
-	        DrawIndicator(area, _lowest);
-	        DrawOwnTrades(area);
-	    }
-
-	    StartProtection(null, null);
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal highValue, decimal lowValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
-	    if (candle.State != CandleStates.Finished)
-	        return;
+		if (candle.State != CandleStates.Finished)
+			return;
 
-	    if (!IsFormedAndOnlineAndAllowTrading())
-	        return;
+		UpdatePivots(candle);
 
-	    if (!_highest.IsFormed || !_lowest.IsFormed)
-	        return;
+		var prevClose = _prevClose;
+		var close = candle.ClosePrice;
+		_prevClose = close;
 
-	    if (!_lastTop.HasValue || highValue != _lastTop.Value)
-	    {
-	        _prevHigh = _lastTop;
-	        _lastTop = highValue;
-	        if (_prevHigh.HasValue && highValue < _prevHigh.Value)
-	            _trendDir = -1;
-	        _topWasStrong = _trendDir == -1;
-	        _topCrossed = false;
-	    }
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
 
-	    if (!_lastBottom.HasValue || lowValue != _lastBottom.Value)
-	    {
-	        _prevLow = _lastBottom;
-	        _lastBottom = lowValue;
-	        if (_prevLow.HasValue && lowValue > _prevLow.Value)
-	            _trendDir = 1;
-	        _bottomWasStrong = _trendDir == 1;
-	        _bottomCrossed = false;
-	    }
+		if (Position > 0 && _stopPrice is decimal longStop && _takePrice is decimal longTake
+			&& (candle.LowPrice <= longStop || candle.HighPrice >= longTake))
+		{
+			SellMarket(Position);
+			_stopPrice = _takePrice = null;
+			return;
+		}
 
-	    var buySignal = !_topCrossed && _prevHigh.HasValue && candle.ClosePrice > _prevHigh.Value;
-	    var sellSignal = !_bottomCrossed && _prevLow.HasValue && candle.ClosePrice < _prevLow.Value;
+		if (Position < 0 && _stopPrice is decimal shortStop && _takePrice is decimal shortTake
+			&& (candle.HighPrice >= shortStop || candle.LowPrice <= shortTake))
+		{
+			BuyMarket(-Position);
+			_stopPrice = _takePrice = null;
+			return;
+		}
 
-	    if (Position == 0)
-	    {
-	        _signalTriggeredBuy = false;
-	        _signalTriggeredSell = false;
-	        _entryPriceBuy = null;
-	        _entryPriceSell = null;
-	        _stopPrice = 0m;
-	        _takeProfitPrice = 0m;
-	    }
+		if (prevClose is not decimal last || _pivotHigh is not decimal pivotHigh || _pivotLow is not decimal pivotLow)
+			return;
 
-	    if (buySignal && !_signalTriggeredBuy && Position == 0)
-	    {
-	        _entryPriceBuy = candle.ClosePrice;
-	        _signalTriggeredBuy = true;
-	    }
+		var step = Security.PriceStep ?? 1m;
+		var buffer = SlBufferPoints * step;
 
-	    if (sellSignal && !_signalTriggeredSell && Position == 0)
-	    {
-	        _entryPriceSell = candle.ClosePrice;
-	        _signalTriggeredSell = true;
-	    }
+		if (last <= pivotHigh && close > pivotHigh && Position <= 0)
+		{
+			var stop = pivotLow - buffer;
+			if (stop >= close)
+				return;
 
-	    var pip = (Security.PriceStep ?? 0m) * 10m;
-	    var buffer = SlBufferPoints * pip;
+			BuyMarket(CalculateVolume(close - stop, step) + Math.Abs(Position));
+			_stopPrice = stop;
+			_takePrice = close + (close - stop) * RiskReward;
+		}
+		else if (last >= pivotLow && close < pivotLow && Position >= 0)
+		{
+			var stop = pivotHigh + buffer;
+			if (stop <= close)
+				return;
 
-	    if (_signalTriggeredBuy && Position == 0 && _entriesExecuted < MaxEntries && _entryPriceBuy.HasValue)
-	    {
-	        var sl = candle.LowPrice - buffer;
-	        var tp = _entryPriceBuy.Value + (_entryPriceBuy.Value - sl) * RiskReward;
-	        var qty = CalculateQty(_entryPriceBuy.Value, sl, pip);
-	        if (qty > 0m)
-	        {
-	            BuyMarket(qty);
-	            _stopPrice = sl;
-	            _takeProfitPrice = tp;
-	            _topCrossed = true;
-	            _entriesExecuted++;
-	        }
-	    }
-	    else if (_signalTriggeredSell && Position == 0 && _entriesExecuted < MaxEntries && _entryPriceSell.HasValue)
-	    {
-	        var sl = candle.HighPrice + buffer;
-	        var tp = _entryPriceSell.Value - (sl - _entryPriceSell.Value) * RiskReward;
-	        var qty = CalculateQty(_entryPriceSell.Value, sl, pip);
-	        if (qty > 0m)
-	        {
-	            SellMarket(qty);
-	            _stopPrice = sl;
-	            _takeProfitPrice = tp;
-	            _bottomCrossed = true;
-	            _entriesExecuted++;
-	        }
-	    }
-
-	    if (Position > 0 && (_stopPrice > 0m || _takeProfitPrice > 0m))
-	    {
-	        if (candle.LowPrice <= _stopPrice || candle.HighPrice >= _takeProfitPrice)
-	            SellMarket(Math.Abs(Position));
-	    }
-	    else if (Position < 0 && (_stopPrice > 0m || _takeProfitPrice > 0m))
-	    {
-	        if (candle.HighPrice >= _stopPrice || candle.LowPrice <= _takeProfitPrice)
-	            BuyMarket(Math.Abs(Position));
-	    }
+			SellMarket(CalculateVolume(stop - close, step) + Math.Abs(Position));
+			_stopPrice = stop;
+			_takePrice = close - (stop - close) * RiskReward;
+		}
 	}
 
-	private decimal CalculateQty(decimal entry, decimal sl, decimal pip)
+	private void UpdatePivots(ICandleMessage candle)
 	{
-	    var equity = Portfolio?.CurrentValue ?? 0m;
-	    var riskUsd = equity * RiskPercent / 100m;
-	    var slPips = Math.Abs(entry - sl) / (pip == 0m ? 1m : pip);
-	    return slPips > 0m ? riskUsd / (slPips * PipValueUsd) : 0m;
+		var window = SwingLength * 2 + 1;
+
+		_highs.Add(candle.HighPrice);
+		_lows.Add(candle.LowPrice);
+
+		if (_highs.Count > window)
+		{
+			_highs.RemoveAt(0);
+			_lows.RemoveAt(0);
+		}
+
+		if (_highs.Count < window)
+			return;
+
+		// The candle in the middle of the window is a pivot once SwingLength candles have closed after it.
+		var high = _highs[SwingLength];
+		if (high == _highs.Max())
+			_pivotHigh = high;
+
+		var low = _lows[SwingLength];
+		if (low == _lows.Min())
+			_pivotLow = low;
+	}
+
+	private decimal CalculateVolume(decimal stopDistance, decimal step)
+	{
+		var equity = Portfolio?.CurrentValue ?? 0m;
+		var steps = stopDistance / step;
+		var volume = steps > 0m ? equity * RiskPercent / 100m / (steps * PipValueUsd) : 0m;
+
+		if (Security.VolumeStep is decimal volumeStep && volumeStep > 0m)
+			volume = Math.Floor(volume / volumeStep) * volumeStep;
+
+		return volume > 0m ? volume : Volume;
 	}
 }

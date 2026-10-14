@@ -18,6 +18,7 @@ Should price fail to break out immediately, the strategy manages existing positi
 - **Default Values**:
   - `CandleType` = 5 minute
   - `StopLossPercent` = 1
+    The stop lies this many percent beyond the opposite side of the inside bar; both it and the previous-candle exit are checked on candle closes.
 - **Filters**:
   - Category: Breakout
   - Direction: Both

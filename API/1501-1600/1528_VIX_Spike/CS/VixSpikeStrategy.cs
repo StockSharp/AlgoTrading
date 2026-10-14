@@ -36,7 +36,7 @@ public class VixSpikeStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("BB Width", "Bollinger Bands width multiplier", "Parameters");
 
-		_exitPeriods = Param(nameof(ExitPeriods), 15)
+		_exitPeriods = Param(nameof(ExitPeriods), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Exit Bars", "Bars to hold position", "Parameters");
 

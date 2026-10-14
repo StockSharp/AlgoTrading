@@ -29,7 +29,7 @@ public class BollingerRsiMaStrategy : Strategy
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
-		_rsiPeriod = Param(nameof(RsiPeriod), 14)
+		_rsiPeriod = Param(nameof(RsiPeriod), 13)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "RSI period", "Indicators");
 		_bbPeriod = Param(nameof(BbPeriod), 20)

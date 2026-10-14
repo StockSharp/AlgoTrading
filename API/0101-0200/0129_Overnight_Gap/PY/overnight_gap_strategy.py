@@ -4,93 +4,98 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import SimpleMovingAverage
+from System import TimeSpan, Decimal
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, Level1Fields
+from StockSharp.BusinessEntities import Subscription
 from StockSharp.Algo.Strategies import Strategy
 
 class overnight_gap_strategy(Strategy):
     """
-    Overnight Gap trading strategy.
-    Trades on gaps between current open and previous close, using MA trend filter.
+    Overnight Gap strategy.
+    The market trades around the clock, so the session is the UTC day.
+    The gap is the distance between the previous UTC day's last close and the new day's first open. A gap of at least MinGapPercent
+    is faded at the close of the day's first candle; the stop lies StopLossPercent beyond the first candle's extreme in the gap's direction,
+    and the position closes at the day's last candle.
     """
 
     def __init__(self):
         super(overnight_gap_strategy, self).__init__()
-        self._ma_period = self.Param("MaPeriod", 20).SetDisplay("MA Period", "Moving average period", "Strategy")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles for strategy", "Strategy")
-        self._cooldown_bars = self.Param("CooldownBars", 30).SetDisplay("Cooldown Bars", "Bars between trades", "General")
-
-        self._prev_close = 0.0
-        self._cooldown = 0
+        self._min_gap_percent = self.Param("MinGapPercent", 0.01).SetGreaterThanZero().SetDisplay("Min Gap %", "Smallest gap to fade, in percent", "Session")
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0).SetNotNegative().SetDisplay("Stop Loss %", "Distance of the stop beyond the first candle's extreme, in percent", "Risk")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._reset_state()
 
     @property
     def candle_type(self):
         return self._candle_type.Value
 
+    def _reset_state(self):
+        self._day = None
+        self._prev_close = None
+        self._stop_price = Decimal(0)
+
     def OnReseted(self):
         super(overnight_gap_strategy, self).OnReseted()
-        self._prev_close = 0.0
-        self._cooldown = 0
+        self._reset_state()
 
     def OnStarted2(self, time):
         super(overnight_gap_strategy, self).OnStarted2(time)
 
-        self._prev_close = 0.0
-        self._cooldown = 0
-
-        sma = SimpleMovingAverage()
-        sma.Length = self._ma_period.Value
+        self._reset_state()
 
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(sma, self._process_candle).Start()
+        subscription.Bind(self._process_candle).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, sma)
             self.DrawOwnTrades(area)
 
-    def _process_candle(self, candle, ma_val):
+    def _close_position(self):
+        if self.Position > 0:
+            self.SellMarket(self.Position)
+        elif self.Position < 0:
+            self.BuyMarket(-self.Position)
+
+    def _process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
 
-        close = float(candle.ClosePrice)
-        open_price = float(candle.OpenPrice)
-        ma = float(ma_val)
-        cd = self._cooldown_bars.Value
+        day = candle.OpenTime.Date
+        first_of_day = self._day is None or self._day != day
+        if first_of_day:
+            self._day = day
 
-        if self._prev_close == 0:
-            self._prev_close = close
+        frame = self.candle_type.Arg
+        last_of_day = (candle.OpenTime + frame).Date != day
+
+        prev_close = self._prev_close
+        self._prev_close = candle.ClosePrice
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        if self._cooldown > 0:
-            self._cooldown -= 1
-            self._prev_close = close
+        close = candle.ClosePrice
+        if self.Position != 0:
+            stopped = close <= self._stop_price if self.Position > 0 else close >= self._stop_price
+            if last_of_day or stopped:
+                self._close_position()
             return
 
-        # Calculate gap
-        gap = open_price - self._prev_close
+        if not first_of_day or prev_close is None or prev_close <= 0:
+            return
 
-        # Gap up + above MA = Buy
-        if gap > 0 and open_price > ma and self.Position == 0:
-            self.BuyMarket()
-            self._cooldown = cd
-        # Gap down + below MA = Sell short
-        elif gap < 0 and open_price < ma and self.Position == 0:
-            self.SellMarket()
-            self._cooldown = cd
-
-        # Exit: MA cross
-        if self.Position > 0 and close < ma:
-            self.SellMarket()
-            self._cooldown = cd
-        elif self.Position < 0 and close > ma:
-            self.BuyMarket()
-            self._cooldown = cd
-
-        self._prev_close = close
+        gap = (candle.OpenPrice - prev_close) / prev_close * Decimal(100)
+        min_gap = Decimal(self._min_gap_percent.Value)
+        percent = Decimal(self._stop_loss_percent.Value) / Decimal(100)
+        if gap >= min_gap:
+            self.SellMarket(self.Volume)
+            self._stop_price = candle.HighPrice * (Decimal(1) + percent)
+        elif -gap >= min_gap:
+            self.BuyMarket(self.Volume)
+            self._stop_price = candle.LowPrice * (Decimal(1) - percent)
 
     def CreateClone(self):
         return overnight_gap_strategy()

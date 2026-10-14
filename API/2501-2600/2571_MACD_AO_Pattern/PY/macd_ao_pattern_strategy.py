@@ -23,8 +23,8 @@ class macd_ao_pattern_strategy(Strategy):
         self._macd_signal_period = self.Param("MacdSignalPeriod", 9)
         self._bearish_extreme_level = self.Param("BearishExtremeLevel", -100.0)
         self._bearish_neutral_level = self.Param("BearishNeutralLevel", -30.0)
-        self._bullish_extreme_level = self.Param("BullishExtremeLevel", 100.0)
-        self._bullish_neutral_level = self.Param("BullishNeutralLevel", 30.0)
+        self._bullish_extreme_level = self.Param("BullishExtremeLevel", 0.0015)
+        self._bullish_neutral_level = self.Param("BullishNeutralLevel", 0.0005)
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5)))
 
         self._macd_prev1 = None

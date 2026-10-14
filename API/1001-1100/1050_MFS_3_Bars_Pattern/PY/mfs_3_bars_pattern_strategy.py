@@ -17,7 +17,7 @@ class mfs_3_bars_pattern_strategy(Strategy):
         self._sma_length = self.Param("SmaLength", 30) \
             .SetGreaterThanZero() \
             .SetDisplay("SMA Length", "SMA period", "General")
-        self._risk_reward = self.Param("RiskReward", 2.5) \
+        self._risk_reward = self.Param("RiskReward", 2.0) \
             .SetGreaterThanZero() \
             .SetDisplay("Risk Reward", "Target reward to risk ratio", "General")
         self._signal_cooldown_bars = self.Param("SignalCooldownBars", 50) \

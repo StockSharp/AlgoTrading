@@ -32,10 +32,10 @@ class ai_volume_strategy(Strategy):
             .SetGreaterThanZero() \
             .SetDisplay("Volume EMA Length", "Length for volume EMA", "Parameters")
 
-        self._volume_multiplier = self.Param("VolumeMultiplier", 1.0) \
+        self._volume_multiplier = self.Param("VolumeMultiplier", 2.0) \
             .SetDisplay("Volume Multiplier", "Multiplier for volume spike detection", "Parameters")
 
-        self._exit_bars = self.Param("ExitBars", 20) \
+        self._exit_bars = self.Param("ExitBars", 5) \
             .SetGreaterThanZero() \
             .SetDisplay("Exit Bars", "Exit position after this many bars", "Risk")
 

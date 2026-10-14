@@ -23,6 +23,7 @@ For those aiming to ride strong trends with trailing stops. ATR determines stop 
   - `AdxPeriod` = 14
   - `AdxThreshold` = 25m
   - `CandleType` = TimeSpan.FromMinutes(15).TimeFrame()
+    An entry signal against an open position reverses it.
 - **Filters**:
   - Category: Trend
   - Direction: Both

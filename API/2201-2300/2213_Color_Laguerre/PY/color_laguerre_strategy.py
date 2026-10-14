@@ -32,7 +32,7 @@ class color_laguerre_strategy(Strategy):
             .SetDisplay("Sell Close", "Allow closing shorts", "Trading")
         self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
             .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
         self._prev_signal = None
 

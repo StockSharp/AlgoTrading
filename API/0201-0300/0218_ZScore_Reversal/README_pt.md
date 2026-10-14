@@ -20,8 +20,9 @@ Esta técnica é atraente para traders de reversão à média que preferem níve
 - **Stops**: Sim, stop-loss percentual.
 - **Valores padrão**:
   - `LookbackPeriod` = 20
-  - `ZScoreThreshold` = 2.0m
-  - `StopLossPercent` = 2m
+  - `ZScoreThreshold` = 2
+  - `StopLossPercent` = 2
+    O Z-Score é (fechamento - SMA) / StdDev, com a média móvel simples e o desvio padrão dos fechamentos sobre os mesmos LookbackPeriod candles. O stop é um StopLossPercent fixo do preço de entrada, vigiado também entre os candles. Um sinal de entrada contra uma posição aberta a inverte.
   - `CandleType` = TimeSpan.FromMinutes(10)
 - **Filtros**:
   - Categoria: Reversão à média

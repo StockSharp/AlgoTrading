@@ -16,13 +16,13 @@ class z_score_buy_sell_strategy(Strategy):
         super(z_score_buy_sell_strategy, self).__init__()
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
-        self._rolling_window = self.Param("RollingWindow", 300) \
+        self._rolling_window = self.Param("RollingWindow", 80) \
             .SetGreaterThanZero() \
             .SetDisplay("Rolling Window", "Lookback period", "Parameters")
         self._z_threshold = self.Param("ZThreshold", 2.8) \
             .SetGreaterThanZero() \
             .SetDisplay("Z Threshold", "Z-score trigger level", "Parameters")
-        self._cool_down = self.Param("CoolDown", 50) \
+        self._cool_down = self.Param("CoolDown", 5) \
             .SetGreaterThanZero() \
             .SetDisplay("Cool Down", "Bars to wait after trade", "Parameters")
         self._buy_cooldown_counter = 0

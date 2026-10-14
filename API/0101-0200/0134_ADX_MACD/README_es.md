@@ -18,7 +18,12 @@ Un stop porcentual moderado contiene las pérdidas durante mercados erráticos.
 - **Stops**: Sí, basado en porcentaje
 - **Valores predeterminados**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `AdxPeriod` = 14
+  - `MacdFast` = 12
+  - `MacdSlow` = 26
+  - `MacdSignal` = 9
+    Sin posición, un cruce del MACD por encima de su línea de señal abre un largo y por debajo un corto, pero solo mientras el ADX supera su valor anterior. La posición se cierra cuando el ADX cae por debajo de su valor anterior o el MACD vuelve al otro lado de la línea de señal.
 - **Filtros**:
   - Categoría: Seguimiento de tendencia
   - Dirección: Ambos

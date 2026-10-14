@@ -103,7 +103,7 @@ public class IuRangeTradingStrategy : Strategy
 		_cooldownDays = Param(nameof(CooldownDays), 3)
 			.SetDisplay("Cooldown Days", "Minimum days between entries.", "Parameters");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use.", "General");
 	}
 

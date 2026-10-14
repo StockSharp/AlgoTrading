@@ -4,182 +4,120 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage
+from System import TimeSpan, Decimal
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, Level1Fields
+from StockSharp.BusinessEntities import Subscription
+from StockSharp.Algo.Indicators import SimpleMovingAverage, AverageDirectionalIndex, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-
 
 class ma_adx_strategy(Strategy):
     """
-    Strategy combining MA trend filter with manual ADX-like trend strength.
-    Enters when price crosses MA with strong directional movement.
+    MA ADX strategy.
+    A close crossing above the MaPeriod SMA while ADX is above AdxThreshold goes long and a cross below goes short; the reverse cross
+    closes the position and, with ADX still strong, opens the other side. The target lies TakeProfitAtrMultiplier ATR from the entry close
+    and is checked on candle closes, and a percent stop limits the loss.
     """
 
     def __init__(self):
         super(ma_adx_strategy, self).__init__()
-
-        self._candle_type = self.Param("CandleType", tf(5)) \
-            .SetDisplay("Candle Type", "Type of candles to use", "General")
-
-        self._ma_period = self.Param("MaPeriod", 20) \
-            .SetRange(10, 50) \
-            .SetDisplay("MA Period", "Period of the Moving Average", "Indicators")
-
-        self._adx_period = self.Param("AdxPeriod", 14) \
-            .SetRange(7, 21) \
-            .SetDisplay("ADX Period", "Period of the ADX indicator", "Indicators")
-
-        self._adx_threshold = self.Param("AdxThreshold", 25.0) \
-            .SetDisplay("ADX Threshold", "ADX level for strong trend", "Indicators")
-
-        self._cooldown_bars = self.Param("CooldownBars", 100) \
-            .SetDisplay("Cooldown Bars", "Bars between trades", "General") \
-            .SetRange(5, 500)
-
-        self._highs = []
-        self._lows = []
-        self._closes = []
-        self._cooldown = 0
+        self._ma_period = self.Param("MaPeriod", 20).SetGreaterThanZero().SetDisplay("MA Period", "Period of the SMA", "Indicators")
+        self._adx_period = self.Param("AdxPeriod", 14).SetGreaterThanZero().SetDisplay("ADX Period", "Period of ADX", "Indicators")
+        self._adx_threshold = self.Param("AdxThreshold", 25.0).SetDisplay("ADX Threshold", "ADX level of a strong trend", "Indicators")
+        self._take_profit_atr_multiplier = self.Param("TakeProfitAtrMultiplier", 2.0).SetNotNegative().SetDisplay("Take Profit ATR", "Target distance from the entry in ATRs", "Risk")
+        self._atr_period = self.Param("AtrPeriod", 14).SetGreaterThanZero().SetDisplay("ATR Period", "Period of the target ATR", "Risk")
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0).SetNotNegative().SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._reset_state()
 
     @property
     def candle_type(self):
         return self._candle_type.Value
 
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
+    def _reset_state(self):
+        self._prev_close = None
+        self._prev_ma = Decimal(0)
+        self._target_price = Decimal(0)
 
-    @property
-    def ma_period(self):
-        return self._ma_period.Value
-
-    @property
-    def adx_period(self):
-        return self._adx_period.Value
-
-    @property
-    def adx_threshold(self):
-        return self._adx_threshold.Value
-
-    @property
-    def cooldown_bars(self):
-        return self._cooldown_bars.Value
+    def OnReseted(self):
+        super(ma_adx_strategy, self).OnReseted()
+        self._reset_state()
 
     def OnStarted2(self, time):
         super(ma_adx_strategy, self).OnStarted2(time)
 
-        self._highs = []
-        self._lows = []
-        self._closes = []
-        self._cooldown = 0
+        self._reset_state()
 
-        ma = ExponentialMovingAverage()
-        ma.Length = self.ma_period
+        sma = SimpleMovingAverage()
+        sma.Length = self._ma_period.Value
+        adx = AverageDirectionalIndex()
+        adx.Length = self._adx_period.Value
+        atr = AverageTrueRange()
+        atr.Length = self._atr_period.Value
 
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(ma, self.ProcessCandle).Start()
+        subscription.BindEx(sma, adx, atr, self._process_candle).Start()
+
+        self.StartProtection(Unit(), Unit(Decimal(self._stop_loss_percent.Value), UnitTypes.Percent), useMarketOrders=True, isLocalStop=True)
+
+        # The stop has to see prices between candles, not only at their close.
+        for field in (Level1Fields.BestBidPrice, Level1Fields.BestAskPrice):
+            quotes = Subscription(DataType.Level1, self.Security)
+            quotes.MarketData.BuildField = field
+            self.SubscribeLevel1(quotes).Bind(self._observe_protection_quote).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, ma)
+            self.DrawIndicator(area, sma)
             self.DrawOwnTrades(area)
+            oscillators = self.CreateChartArea()
+            if oscillators is not None:
+                self.DrawIndicator(oscillators, adx)
 
-    def ProcessCandle(self, candle, ma_value):
+    def _observe_protection_quote(self, quote):
+        # The high-level handler activates native protection before the callback, including between bars.
+        pass
+
+    def _process_candle(self, candle, sma_value, adx_value, atr_value):
         if candle.State != CandleStates.Finished:
             return
 
-        high = float(candle.HighPrice)
-        low = float(candle.LowPrice)
-        close = float(candle.ClosePrice)
-        mv = float(ma_value)
-
-        self._highs.append(high)
-        self._lows.append(low)
-        self._closes.append(close)
-
-        adx_p = self.adx_period
-
-        # Need at least adxPeriod+2 bars
-        if len(self._closes) < adx_p + 2:
-            if self._cooldown > 0:
-                self._cooldown -= 1
+        if not sma_value.IsFormed or not adx_value.IsFormed or not atr_value.IsFormed:
+            return
+        if adx_value.MovingAverage is None:
             return
 
-        # Manual ADX-like trend strength calculation
-        sum_tr = 0.0
-        sum_dm_plus = 0.0
-        sum_dm_minus = 0.0
+        ma = sma_value.GetValue[Decimal](None)
+        close = candle.ClosePrice
+        prev_close = self._prev_close
+        prev_ma = self._prev_ma
+        self._prev_close = close
+        self._prev_ma = ma
 
-        count = len(self._highs)
-        start = count - adx_p
-
-        for i in range(start, count):
-            h = self._highs[i]
-            l = self._lows[i]
-            prev_c = self._closes[i - 1]
-            prev_h = self._highs[i - 1]
-            prev_l = self._lows[i - 1]
-
-            tr = max(h - l, max(abs(h - prev_c), abs(l - prev_c)))
-            sum_tr += tr
-
-            up_move = h - prev_h
-            down_move = prev_l - l
-
-            if up_move > down_move and up_move > 0:
-                sum_dm_plus += up_move
-
-            if down_move > up_move and down_move > 0:
-                sum_dm_minus += down_move
-
-        trend_strength = 0.0
-        if sum_tr > 0:
-            di_plus = 100.0 * sum_dm_plus / sum_tr
-            di_minus = 100.0 * sum_dm_minus / sum_tr
-            di_sum = di_plus + di_minus
-            trend_strength = 100.0 * abs(di_plus - di_minus) / di_sum if di_sum > 0 else 0.0
-
-        # Keep lists manageable
-        if len(self._highs) > adx_p * 3:
-            trim = len(self._highs) - adx_p * 2
-            self._highs = self._highs[trim:]
-            self._lows = self._lows[trim:]
-            self._closes = self._closes[trim:]
-
-        strong_trend = trend_strength > self.adx_threshold
-
-        if self._cooldown > 0:
-            self._cooldown -= 1
+        if prev_close is None:
             return
 
-        # Long: price above MA + strong trend
-        if close > mv and strong_trend and self.Position == 0:
-            self.BuyMarket()
-            self._cooldown = self.cooldown_bars
-        # Short: price below MA + strong trend
-        elif close < mv and strong_trend and self.Position == 0:
-            self.SellMarket()
-            self._cooldown = self.cooldown_bars
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
-        # Exit long: price crosses below MA
-        if self.Position > 0 and close < mv:
-            self.SellMarket()
-            self._cooldown = self.cooldown_bars
-        # Exit short: price crosses above MA
-        elif self.Position < 0 and close > mv:
-            self.BuyMarket()
-            self._cooldown = self.cooldown_bars
+        atr = atr_value.GetValue[Decimal](None)
+        cross_up = prev_close <= prev_ma and close > ma
+        cross_down = prev_close >= prev_ma and close < ma
+        strong = adx_value.MovingAverage > Decimal(self._adx_threshold.Value)
 
-    def OnReseted(self):
-        super(ma_adx_strategy, self).OnReseted()
-        self._highs = []
-        self._lows = []
-        self._closes = []
-        self._cooldown = 0
+        target_atr = Decimal(self._take_profit_atr_multiplier.Value)
+        if cross_up and strong and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+            self._target_price = close + target_atr * atr
+        elif cross_down and strong and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
+            self._target_price = close - target_atr * atr
+        elif self.Position > 0 and (cross_down or (target_atr > 0 and close >= self._target_price)):
+            self.SellMarket(self.Position)
+        elif self.Position < 0 and (cross_up or (target_atr > 0 and close <= self._target_price)):
+            self.BuyMarket(-self.Position)
 
     def CreateClone(self):
         return ma_adx_strategy()

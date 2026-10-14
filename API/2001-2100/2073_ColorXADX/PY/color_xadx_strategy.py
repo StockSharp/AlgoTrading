@@ -16,7 +16,7 @@ class color_xadx_strategy(Strategy):
         super(color_xadx_strategy, self).__init__()
         self._adx_period = self.Param("AdxPeriod", 14) \
             .SetDisplay("ADX Period", "Period for ADX calculation", "Indicators")
-        self._adx_threshold = self.Param("AdxThreshold", 20.0) \
+        self._adx_threshold = self.Param("AdxThreshold", 30.0) \
             .SetDisplay("ADX Threshold", "Minimum ADX level for trades", "Indicators")
         self._stop_loss_pct = self.Param("StopLossPct", 2.0) \
             .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk")

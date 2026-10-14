@@ -83,12 +83,12 @@ public class ChandelExitReopenStrategy : Strategy
 			.SetDisplay("Signal Bar", "How many bars back to read signals", "Trading")
 			.SetNotNegative();
 
-		_priceStepPoints = Param(nameof(PriceStepPoints), 1000m)
+		_priceStepPoints = Param(nameof(PriceStepPoints), 300m)
 			.SetDisplay("Re-entry Distance", "Minimum favorable move in price steps before adding", "Position Management")
 			.SetNotNegative()
 			;
 
-		_maxAdditions = Param(nameof(MaxAdditions), 1)
+		_maxAdditions = Param(nameof(MaxAdditions), 10)
 			.SetDisplay("Max Additions", "Maximum number of re-entries after the initial position", "Position Management")
 			.SetNotNegative();
 

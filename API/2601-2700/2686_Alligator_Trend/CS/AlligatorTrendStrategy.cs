@@ -222,23 +222,23 @@ public class AlligatorTrendStrategy : Strategy
 		_enableShort = Param(nameof(EnableShort), true)
 			.SetDisplay("Enable Short", "Allow short entries", "Trading");
 
-		_stopLossPips = Param(nameof(StopLossPips), 500m)
+		_stopLossPips = Param(nameof(StopLossPips), 45m)
 			.SetDisplay("Stop Loss", "Stop-loss distance in pips", "Risk")
 			;
 
-		_takeProfitPips = Param(nameof(TakeProfitPips), 2000m)
+		_takeProfitPips = Param(nameof(TakeProfitPips), 145m)
 			.SetDisplay("Take Profit", "Take-profit distance in pips", "Risk")
 			;
 
-		_zeroLevelPips = Param(nameof(ZeroLevelPips), 300m)
+		_zeroLevelPips = Param(nameof(ZeroLevelPips), 30m)
 			.SetDisplay("Zero Level", "Distance to move stop to break-even", "Risk")
 			;
 
-		_trailingStopPips = Param(nameof(TrailingStopPips), 500m)
+		_trailingStopPips = Param(nameof(TrailingStopPips), 50m)
 			.SetDisplay("Trailing Stop", "Trailing stop distance in pips", "Risk")
 			;
 
-		_trailingStepPips = Param(nameof(TrailingStepPips), 100m)
+		_trailingStepPips = Param(nameof(TrailingStepPips), 10m)
 			.SetDisplay("Trailing Step", "Minimum trailing stop increment in pips", "Risk")
 			;
 	}

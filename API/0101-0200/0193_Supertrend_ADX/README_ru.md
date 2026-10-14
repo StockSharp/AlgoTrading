@@ -23,6 +23,7 @@ Supertrend дает волатильно скорректированный пу
   - `AdxPeriod` = 14
   - `AdxThreshold` = 25m
   - `CandleType` = TimeSpan.FromMinutes(15).TimeFrame()
+    Сигнал на вход против открытой позиции разворачивает её.
 - **Фильтры**:
   - Категория: Trend
   - Направление: Оба

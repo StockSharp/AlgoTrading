@@ -18,7 +18,8 @@ Ein moderater Stop schützt vor Anomalien und schließt die Position vorzeitig, 
 - **Stops**: Ja, prozentbasiert
 - **Standardwerte**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+    Tage sind UTC-Tage, da der Markt rund um die Uhr handelt; Einstiege erfolgen zum Schluss der ersten Kerze des Tages. Dienstag bis Donnerstag wird gekauft, Montag und Freitag leerverkauft; die Position schließt mit der letzten Kerze des Tages, am Wochenende wird nicht gehandelt.
 - **Filter**:
   - Kategorie: Saisonalität
   - Richtung: Beide

@@ -20,7 +20,7 @@ class volatility_pulse_with_dynamic_exit_strategy(Strategy):
             .SetDisplay("StdDev Length", "Volatility period", "Parameters")
         self._momentum_length = self.Param("MomentumLength", 20) \
             .SetDisplay("Momentum Length", "Momentum lookback", "Parameters")
-        self._vol_threshold = self.Param("VolThreshold", 1.2) \
+        self._vol_threshold = self.Param("VolThreshold", 0.5) \
             .SetDisplay("Vol Threshold", "StdDev expansion multiplier", "Parameters")
         self._exit_bars = self.Param("ExitBars", 42) \
             .SetDisplay("Exit Bars", "Time-based exit after N bars", "Risk")

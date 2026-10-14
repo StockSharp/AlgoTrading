@@ -5,115 +5,116 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import CandleStates
-from StockSharp.Algo.Indicators import AverageTrueRange
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import SuperTrend, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
+from indicator_extensions import *
+
 
 class atr_god_strategy(Strategy):
     """
-    Strategy based on Supertrend indicator with ATR-based risk management.
-    Trades supertrend direction changes with cooldown.
+    ATR GOD strategy.
+    A Supertrend flip up goes long and a flip down goes short, reversing an opposite position. Each entry fixes a stop-loss
+    RiskMultiplier ATRs from the entry close and a take-profit RewardRiskRatio times that distance on the other side.
     """
 
     def __init__(self):
         super(atr_god_strategy, self).__init__()
-
         self._period = self.Param("Period", 10) \
-            .SetDisplay("Period", "ATR period for Supertrend", "Indicators")
+            .SetGreaterThanZero() \
+            .SetDisplay("Period", "ATR period of the Supertrend and the stops", "Supertrend")
         self._multiplier = self.Param("Multiplier", 3.0) \
-            .SetDisplay("Multiplier", "ATR multiplier for Supertrend", "Indicators")
-        self._cooldown_bars = self.Param("CooldownBars", 350) \
-            .SetDisplay("Cooldown Bars", "Bars between trades", "Trading")
-        self._candle_type = self.Param("CandleType", tf(1)) \
-            .SetDisplay("Candle Type", "Type of candles", "General")
+            .SetGreaterThanZero() \
+            .SetDisplay("Multiplier", "Supertrend ATR multiplier", "Supertrend")
+        self._risk_multiplier = self.Param("RiskMultiplier", 4.5) \
+            .SetNotNegative() \
+            .SetDisplay("Risk Multiplier", "Stop-loss distance in ATR multiples", "Risk")
+        self._reward_risk_ratio = self.Param("RewardRiskRatio", 1.5) \
+            .SetNotNegative() \
+            .SetDisplay("Reward/Risk", "Take-profit distance relative to the stop distance", "Risk")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+            .SetDisplay("Candle Type", "Type of candles to use", "General")
 
-        self._prev_is_above = False
-        self._prev_supertrend = 0.0
-        self._bar_index = 0
-        self._last_trade_bar = 0
+        self._reset_state()
 
     @property
-    def Period(self): return self._period.Value
-    @Period.setter
-    def Period(self, v): self._period.Value = v
-    @property
-    def Multiplier(self): return self._multiplier.Value
-    @Multiplier.setter
-    def Multiplier(self, v): self._multiplier.Value = v
-    @property
-    def CooldownBars(self): return self._cooldown_bars.Value
-    @CooldownBars.setter
-    def CooldownBars(self, v): self._cooldown_bars.Value = v
-    @property
-    def CandleType(self): return self._candle_type.Value
-    @CandleType.setter
-    def CandleType(self, v): self._candle_type.Value = v
+    def CandleType(self):
+        return self._candle_type.Value
+
+    def GetWorkingSecurities(self):
+        return [(self.Security, self.CandleType)]
+
+    def _reset_state(self):
+        self._prev_is_up_trend = None
+        self._stop_price = 0.0
+        self._take_price = 0.0
 
     def OnReseted(self):
         super(atr_god_strategy, self).OnReseted()
-        self._prev_is_above = False
-        self._prev_supertrend = 0.0
-        self._bar_index = 0
-        self._last_trade_bar = 0
+        self._reset_state()
 
     def OnStarted2(self, time):
         super(atr_god_strategy, self).OnStarted2(time)
 
+        self._reset_state()
+
+        super_trend = SuperTrend()
+        super_trend.Length = self._period.Value
+        super_trend.Multiplier = self._multiplier.Value
         atr = AverageTrueRange()
-        atr.Length = self.Period
+        atr.Length = self._period.Value
 
         subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(atr, self.ProcessCandle).Start()
+        subscription.BindEx(super_trend, atr, self._process_candle).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
+            self.DrawIndicator(area, super_trend)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle, atr_value):
+    def _process_candle(self, candle, super_trend_value, atr_value):
         if candle.State != CandleStates.Finished:
             return
 
-        self._bar_index += 1
-
-        high = float(candle.HighPrice)
-        low = float(candle.LowPrice)
-        close = float(candle.ClosePrice)
-        median = (high + low) / 2.0
-        basic_upper = median + self.Multiplier * atr_value
-        basic_lower = median - self.Multiplier * atr_value
-
-        if self._prev_supertrend == 0.0:
-            supertrend = basic_lower if close > median else basic_upper
-            self._prev_supertrend = supertrend
-            self._prev_is_above = close > supertrend
+        if not super_trend_value.IsFormed or not atr_value.IsFormed:
             return
 
-        if self._prev_supertrend <= high:
-            supertrend = max(basic_lower, self._prev_supertrend)
-        elif self._prev_supertrend >= low:
-            supertrend = min(basic_upper, self._prev_supertrend)
-        else:
-            supertrend = basic_lower if close > self._prev_supertrend else basic_upper
+        is_up_trend = bool(super_trend_value.IsUpTrend)
+        prev_up = self._prev_is_up_trend
+        self._prev_is_up_trend = is_up_trend
 
-        is_above = close > supertrend
-        crossed_above = is_above and not self._prev_is_above
-        crossed_below = not is_above and self._prev_is_above
+        if prev_up is None:
+            return
 
-        cooldown_ok = self._bar_index - self._last_trade_bar > self.CooldownBars
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
 
-        if crossed_above and self.Position <= 0 and cooldown_ok:
-            self.BuyMarket()
-            self._last_trade_bar = self._bar_index
-        elif crossed_below and self.Position >= 0 and cooldown_ok:
-            self.SellMarket()
-            self._last_trade_bar = self._bar_index
+        close = float(candle.ClosePrice)
+        risk_multiplier = float(self._risk_multiplier.Value)
+        reward_ratio = float(self._reward_risk_ratio.Value)
+        risk = risk_multiplier * float(to_decimal(atr_value))
+        reward = risk * reward_ratio
 
-        self._prev_supertrend = supertrend
-        self._prev_is_above = is_above
+        if not prev_up and is_up_trend and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+            self._stop_price = close - risk
+            self._take_price = close + reward
+        elif prev_up and not is_up_trend and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
+            self._stop_price = close + risk
+            self._take_price = close - reward
+        elif self.Position != 0:
+            use_stop = risk_multiplier > 0
+            use_take = risk_multiplier > 0 and reward_ratio > 0
+            high = float(candle.HighPrice)
+            low = float(candle.LowPrice)
+
+            if self.Position > 0 and ((use_stop and low <= self._stop_price) or (use_take and high >= self._take_price)):
+                self.SellMarket(self.Position)
+            elif self.Position < 0 and ((use_stop and high >= self._stop_price) or (use_take and low <= self._take_price)):
+                self.BuyMarket(-self.Position)
 
     def CreateClone(self):
-        """!! REQUIRED!! Creates a new instance of the strategy."""
         return atr_god_strategy()

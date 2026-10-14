@@ -5,34 +5,32 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates
+from System import TimeSpan, Decimal
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import ExponentialMovingAverage, RelativeStrengthIndex, MovingAverageConvergenceDivergence
 from StockSharp.Algo.Strategies import Strategy
 
 
 class vela_superada_strategy(Strategy):
-    """Vela Superada Strategy."""
+    """
+    Vela Superada Strategy.
+    A bearish candle followed by a bullish one that closes above the prior open, with both closes above the EMA, RSI below 65
+    and a rising MACD line, is a long signal. The mirrored pattern below the EMA with RSI above 35 and a falling MACD line is
+    a short signal. ShowLong and ShowShort enable each side; an opposite signal closes or reverses the position. A trailing
+    SlPercent stop and a TpPercent take profit protect the trade.
+    """
 
     def __init__(self):
         super(vela_superada_strategy, self).__init__()
-
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
-            .SetDisplay("Candle Type", "Type of candles to use", "General")
-        self._ema_length = self.Param("EmaLength", 10) \
-            .SetDisplay("EMA Length", "EMA period", "Moving Averages")
-        self._rsi_length = self.Param("RsiLength", 14) \
-            .SetDisplay("RSI Length", "RSI period", "RSI")
-        self._cooldown_bars = self.Param("CooldownBars", 10) \
-            .SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk")
-
-        self._ema = None
-        self._rsi = None
-        self._macd = None
-        self._prev_close = 0.0
-        self._prev_open = 0.0
-        self._prev_macd = 0.0
-        self._cooldown_remaining = 0
+        self._ema_length = self.Param("EmaLength", 10).SetGreaterThanZero().SetDisplay("EMA Length", "EMA period", "Indicators")
+        self._rsi_length = self.Param("RsiLength", 14).SetGreaterThanZero().SetDisplay("RSI Length", "RSI period", "Indicators")
+        self._show_long = self.Param("ShowLong", True).SetDisplay("Long Trades", "Allow long trades", "Trading")
+        self._show_short = self.Param("ShowShort", False).SetDisplay("Short Trades", "Allow short trades", "Trading")
+        self._tp_percent = self.Param("TpPercent", 1.2).SetNotNegative().SetDisplay("TP %", "Take profit percentage from entry price", "Risk")
+        self._sl_percent = self.Param("SlPercent", 1.8).SetNotNegative().SetDisplay("SL %", "Trailing stop loss percentage", "Risk")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._prev_candle = None
+        self._prev_macd = None
 
     @property
     def candle_type(self):
@@ -40,97 +38,85 @@ class vela_superada_strategy(Strategy):
 
     def OnReseted(self):
         super(vela_superada_strategy, self).OnReseted()
-        self._ema = None
-        self._rsi = None
-        self._macd = None
-        self._prev_close = 0.0
-        self._prev_open = 0.0
-        self._prev_macd = 0.0
-        self._cooldown_remaining = 0
+        self._prev_candle = None
+        self._prev_macd = None
 
     def OnStarted2(self, time):
         super(vela_superada_strategy, self).OnStarted2(time)
 
-        self._ema = ExponentialMovingAverage()
-        self._ema.Length = int(self._ema_length.Value)
+        self._prev_candle = None
+        self._prev_macd = None
 
-        self._rsi = RelativeStrengthIndex()
-        self._rsi.Length = int(self._rsi_length.Value)
-
-        self._macd = MovingAverageConvergenceDivergence()
+        ema = ExponentialMovingAverage()
+        ema.Length = self._ema_length.Value
+        rsi = RelativeStrengthIndex()
+        rsi.Length = self._rsi_length.Value
+        macd = MovingAverageConvergenceDivergence()
 
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(self._ema, self._rsi, self._macd, self._on_process).Start()
+        subscription.BindEx(ema, rsi, macd, self._process_candle).Start()
+
+        tp = float(self._tp_percent.Value)
+        sl = float(self._sl_percent.Value)
+        self.StartProtection(
+            Unit(Decimal(tp), UnitTypes.Percent) if tp > 0 else Unit(),
+            Unit(Decimal(sl), UnitTypes.Percent) if sl > 0 else Unit(),
+            isStopTrailing=True,
+            useMarketOrders=True)
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, self._ema)
+            self.DrawIndicator(area, ema)
             self.DrawOwnTrades(area)
+            oscillators = self.CreateChartArea()
+            if oscillators is not None:
+                self.DrawIndicator(oscillators, rsi)
+                self.DrawIndicator(oscillators, macd)
 
-    def _on_process(self, candle, ema_val, rsi_val, macd_val):
+    def _process_candle(self, candle, ema_value, rsi_value, macd_value):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self._ema.IsFormed or not self._rsi.IsFormed or not self._macd.IsFormed:
-            self._prev_close = float(candle.ClosePrice)
-            self._prev_open = float(candle.OpenPrice)
-            self._prev_macd = float(macd_val)
+        prev_candle = self._prev_candle
+        self._prev_candle = candle
+
+        if not macd_value.IsFormed:
+            return
+
+        macd = float(macd_value.GetValue[Decimal](None))
+        prev_macd = self._prev_macd
+        self._prev_macd = macd
+
+        if prev_candle is None or prev_macd is None or not ema_value.IsFormed or not rsi_value.IsFormed:
             return
 
         if not self.IsFormedAndOnlineAndAllowTrading():
-            self._prev_close = float(candle.ClosePrice)
-            self._prev_open = float(candle.OpenPrice)
-            self._prev_macd = float(macd_val)
             return
 
-        close = float(candle.ClosePrice)
+        ema = float(ema_value.GetValue[Decimal](None))
+        rsi = float(rsi_value.GetValue[Decimal](None))
         open_price = float(candle.OpenPrice)
-        ema = float(ema_val)
-        rsi = float(rsi_val)
-        macd = float(macd_val)
+        close = float(candle.ClosePrice)
+        prev_open = float(prev_candle.OpenPrice)
+        prev_close = float(prev_candle.ClosePrice)
 
-        if self._cooldown_remaining > 0:
-            self._cooldown_remaining -= 1
-            self._prev_close = close
-            self._prev_open = open_price
-            self._prev_macd = macd
-            return
+        long_signal = (prev_close < prev_open and close > open_price and close > prev_open
+                       and close > ema and prev_close > ema and rsi < 65 and macd > prev_macd)
 
-        if self._prev_close == 0.0:
-            self._prev_close = close
-            self._prev_open = open_price
-            self._prev_macd = macd
-            return
+        short_signal = (prev_close > prev_open and close < open_price and close < prev_open
+                        and close < ema and prev_close < ema and rsi > 35 and macd < prev_macd)
 
-        cooldown = int(self._cooldown_bars.Value)
-
-        bullish_reversal = self._prev_close < self._prev_open and close > open_price
-        bearish_reversal = self._prev_close > self._prev_open and close < open_price
-
-        macd_rising = macd > self._prev_macd
-        macd_falling = macd < self._prev_macd
-
-        if bullish_reversal and close > ema and rsi < 65 and macd_rising and self.Position <= 0:
-            if self.Position < 0:
-                self.BuyMarket(Math.Abs(self.Position))
-            self.BuyMarket(self.Volume)
-            self._cooldown_remaining = cooldown
-        elif bearish_reversal and close < ema and rsi > 35 and macd_falling and self.Position >= 0:
-            if self.Position > 0:
-                self.SellMarket(Math.Abs(self.Position))
-            self.SellMarket(self.Volume)
-            self._cooldown_remaining = cooldown
-        elif self.Position > 0 and bearish_reversal and close < ema:
-            self.SellMarket(Math.Abs(self.Position))
-            self._cooldown_remaining = cooldown
-        elif self.Position < 0 and bullish_reversal and close > ema:
-            self.BuyMarket(Math.Abs(self.Position))
-            self._cooldown_remaining = cooldown
-
-        self._prev_close = close
-        self._prev_open = open_price
-        self._prev_macd = macd
+        if long_signal:
+            if self._show_long.Value and self.Position <= 0:
+                self.BuyMarket(self.Volume + abs(self.Position))
+            elif self.Position < 0:
+                self.BuyMarket(-self.Position)
+        elif short_signal:
+            if self._show_short.Value and self.Position >= 0:
+                self.SellMarket(self.Volume + abs(self.Position))
+            elif self.Position > 0:
+                self.SellMarket(self.Position)
 
     def CreateClone(self):
         return vela_superada_strategy()

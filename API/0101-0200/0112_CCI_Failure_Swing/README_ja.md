@@ -18,7 +18,10 @@ CCI Failure Swing は、コモディティチャネルインデックスが +100
 - **ストップ**: はい、パーセントベース
 - **デフォルト値**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `CciPeriod` = 20
+  - `OversoldLevel` = -100
+  - `OverboughtLevel` = 100
+  - `StopLossPercent` = 2
 - **フィルター**:
   - カテゴリ: リバーサル
   - 方向: 両方

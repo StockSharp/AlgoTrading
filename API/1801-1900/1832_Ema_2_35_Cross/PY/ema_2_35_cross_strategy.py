@@ -14,7 +14,7 @@ from StockSharp.Algo.Strategies import Strategy
 class ema_2_35_cross_strategy(Strategy):
     def __init__(self):
         super(ema_2_35_cross_strategy, self).__init__()
-        self._fast_length = self.Param("FastLength", 10) \
+        self._fast_length = self.Param("FastLength", 2) \
             .SetDisplay("Fast EMA", "Fast EMA length", "Parameters")
         self._slow_length = self.Param("SlowLength", 35) \
             .SetDisplay("Slow EMA", "Slow EMA length", "Parameters")

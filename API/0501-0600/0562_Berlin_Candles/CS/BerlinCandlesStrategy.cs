@@ -56,7 +56,7 @@ public class BerlinCandlesStrategy : Strategy
 			.SetDisplay("Baseline Period", "Donchian baseline period", "Berlin")
 			.SetOptimize(10, 50, 5);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 

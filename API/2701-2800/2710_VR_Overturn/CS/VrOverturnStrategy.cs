@@ -94,12 +94,12 @@ public class VrOverturnStrategy : Strategy
 			.SetDisplay("Base Volume", "Initial order size", "Risk")
 			;
 
-		_stopLossPips = Param(nameof(StopLossPips), 300)
+		_stopLossPips = Param(nameof(StopLossPips), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss (pips)", "Distance to stop loss in pips", "Risk")
 			;
 
-		_takeProfitPips = Param(nameof(TakeProfitPips), 900)
+		_takeProfitPips = Param(nameof(TakeProfitPips), 90)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit (pips)", "Distance to take profit in pips", "Risk")
 			;

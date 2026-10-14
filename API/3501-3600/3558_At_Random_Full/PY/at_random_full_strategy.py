@@ -15,8 +15,8 @@ class at_random_full_strategy(Strategy):
         super(at_random_full_strategy, self).__init__()
 
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(60)))
-        self._max_positions = self.Param("MaxPositions", 3)
-        self._random_seed = self.Param("RandomSeed", 123)
+        self._max_positions = self.Param("MaxPositions", 5)
+        self._random_seed = self.Param("RandomSeed", 0)
 
         self._rng = None
         self._last_entry_price = 0.0

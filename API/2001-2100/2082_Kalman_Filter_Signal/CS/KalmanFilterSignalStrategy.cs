@@ -35,7 +35,7 @@ public class KalmanFilterSignalStrategy : Strategy
 		_takeProfitPct = Param(nameof(TakeProfitPct), 3m)
 			.SetDisplay("Take Profit %", "Take profit percentage", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(3).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for calculations", "General");
 	}
 

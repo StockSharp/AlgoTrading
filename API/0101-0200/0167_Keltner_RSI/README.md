@@ -7,7 +7,7 @@ Testing indicates an average annual return of about 88%. It performs best in the
 
 Keltner Channels map recent volatility while RSI measures momentum extremes. Entries occur when RSI supports a move beyond the channel.
 
-Great for bounce traders around volatility envelopes. Stops rely on an ATR multiplier.
+Great for bounce traders around volatility envelopes. The ATR multiplier sets the channel width, while the stop is a fixed percentage of the entry price.
 
 ## Details
 
@@ -27,6 +27,7 @@ Great for bounce traders around volatility envelopes. Stops rely on an ATR multi
   - `RsiOversoldLevel` = 30m
   - `StopLossPercent` = 2.0m
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    The channel is the EMA plus and minus AtrMultiplier ATRs; a long closes once price closes back at or above the EMA and a short at or below it. An entry signal against an open position reverses it.
 - **Filters**:
   - Category: Mean reversion
   - Direction: Both

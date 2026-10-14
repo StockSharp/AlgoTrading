@@ -18,6 +18,7 @@ La configuración busca reversiones rápidas tras un impulso agotador y se usa m
 - **Valores predeterminados**:
   - `CandleType` = 5 minute
   - `StopLossPercent` = 1
+    Un stop de protección a este porcentaje del precio de entrada, vigilado también entre velas; la posición también se cierra cuando un cierre rompe el extremo opuesto de la barra exterior.
 - **Filtros**:
   - Categoría: Patrón
   - Dirección: Ambos

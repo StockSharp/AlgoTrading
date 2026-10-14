@@ -59,12 +59,12 @@ public class MaCrossStrategy : Strategy
 	/// </summary>
 	public MaCrossStrategy()
 	{
-		_fastPeriod = Param(nameof(FastPeriod), 5)
+		_fastPeriod = Param(nameof(FastPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast Period", "Period for the fast moving average", "Moving Averages")
 			.SetOptimize(2, 20, 1);
 
-		_slowPeriod = Param(nameof(SlowPeriod), 21)
+		_slowPeriod = Param(nameof(SlowPeriod), 13)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Period", "Period for the slow moving average", "Moving Averages")
 			.SetOptimize(5, 60, 1);

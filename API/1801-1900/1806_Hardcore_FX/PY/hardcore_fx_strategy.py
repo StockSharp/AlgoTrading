@@ -13,7 +13,7 @@ class hardcore_fx_strategy(Strategy):
         super(hardcore_fx_strategy, self).__init__()
         self._channel_period = self.Param("ChannelPeriod", 12) \
             .SetDisplay("Channel Period", "Highest/Lowest lookback", "Parameters")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
             .SetDisplay("Candle Type", "Candle type", "General")
         self._prev_high = 0.0
         self._prev_low = 0.0

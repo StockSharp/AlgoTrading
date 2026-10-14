@@ -18,7 +18,7 @@ class aver4_stoch_post_zig_zag_strategy(Strategy):
             .SetDisplay("RSI Length", "RSI period", "Indicators")
         self._pivot_length = self.Param("PivotLength", 20) \
             .SetDisplay("Pivot Length", "Highest/Lowest period", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
         self._prev_rsi = 0.0
         self._has_prev = False

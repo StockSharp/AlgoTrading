@@ -21,8 +21,10 @@
 - **デフォルト値**:
   - `WilliamsRPeriod` = 14
   - `AvgPeriod` = 20
-  - `Multiplier` = 2.0m
+  - `Multiplier` = 2
+  - `StopLossPercent` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
+    AvgとStdDevは現在値を含む直近AvgPeriod個の%Rの平均と標準偏差です。 ストップはエントリー価格の固定StopLossPercentで、ローソク足の間も監視されます。0で無効になります。 保有ポジションと逆方向のエントリーシグナルはドテンになります。
 - **フィルター**:
   - カテゴリ: ブレイクアウト
   - 方向: 両方

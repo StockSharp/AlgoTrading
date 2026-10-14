@@ -18,17 +18,17 @@ class liquidex_strategy(Strategy):
             .SetDisplay("KC Period", "Keltner Channels period", "Parameters")
         self._use_kc_filter = self.Param("UseKcFilter", True) \
             .SetDisplay("Use KC Filter", "Enable Keltner Channels breakout filter", "Parameters")
-        self._stop_loss = self.Param("StopLoss", 60.0) \
+        self._stop_loss = self.Param("StopLoss", 30.0) \
             .SetDisplay("Stop Loss", "Stop loss in price units", "Risk")
-        self._take_profit = self.Param("TakeProfit", 120.0) \
+        self._take_profit = self.Param("TakeProfit", 0.0) \
             .SetDisplay("Take Profit", "Take profit in price units, 0 disables", "Risk")
-        self._move_to_be = self.Param("MoveToBe", 30.0) \
+        self._move_to_be = self.Param("MoveToBe", 15.0) \
             .SetDisplay("Move To BE", "Profit to move stop to break-even, 0 disables", "Risk")
-        self._move_to_be_offset = self.Param("MoveToBeOffset", 4.0) \
+        self._move_to_be_offset = self.Param("MoveToBeOffset", 2.0) \
             .SetDisplay("BE Offset", "Offset when moving stop to break-even", "Risk")
-        self._trailing_distance = self.Param("TrailingDistance", 15.0) \
+        self._trailing_distance = self.Param("TrailingDistance", 5.0) \
             .SetDisplay("Trailing", "Trailing stop distance, 0 disables", "Risk")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
             .SetDisplay("Candle", "Candle type", "General")
         self._breakout_percent = self.Param("BreakoutPercent", 0.0025) \
             .SetDisplay("Breakout %", "Minimum breakout beyond Keltner boundary", "Filters")

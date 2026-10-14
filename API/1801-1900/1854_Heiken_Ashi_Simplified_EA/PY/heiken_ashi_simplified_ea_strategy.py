@@ -13,9 +13,9 @@ from StockSharp.Algo.Strategies import Strategy
 class heiken_ashi_simplified_ea_strategy(Strategy):
     def __init__(self):
         super(heiken_ashi_simplified_ea_strategy, self).__init__()
-        self._max_positions = self.Param("MaxPositions", 1) \
+        self._max_positions = self.Param("MaxPositions", 3) \
             .SetDisplay("Max Positions", "Maximum number of positions in direction", "General")
-        self._distance_points = self.Param("DistancePoints", 400) \
+        self._distance_points = self.Param("DistancePoints", 300) \
             .SetDisplay("Distance Points", "Minimum distance in price steps from last HA open", "General")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Timeframe for Heikin Ashi calculation", "General")

@@ -20,11 +20,11 @@ class fast2_crossover_strategy(Strategy):
 
     def __init__(self):
         super(fast2_crossover_strategy, self).__init__()
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(8))) \
             .SetDisplay("Candle Type", "Candle type", "General")
-        self._fast_length = self.Param("FastLength", 5) \
+        self._fast_length = self.Param("FastLength", 3) \
             .SetDisplay("Fast length", "Fast length", "General")
-        self._slow_length = self.Param("SlowLength", 13) \
+        self._slow_length = self.Param("SlowLength", 9) \
             .SetDisplay("Slow length", "Slow length", "General")
 
         self._prev_fast = 0.0

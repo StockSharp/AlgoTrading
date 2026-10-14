@@ -18,7 +18,9 @@ Un stop justo por encima del máximo del upthrust gestiona el riesgo y las posic
 - **Stops**: Sí, basados en porcentaje
 - **Valores predeterminados**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `LookbackPeriod` = 20
+  - `StopLossPercent` = 2
+    La resistencia es el máximo más alto de las LookbackPeriod velas anteriores. La estrategia solo vende: una vela bajista que supera la resistencia y cierra de nuevo por debajo. El stop se coloca StopLossPercent por encima del máximo del upthrust y la posición se cierra cuando una vela cierra por encima.
 - **Filtros**:
   - Categoría: Reversión
   - Dirección: Ambos

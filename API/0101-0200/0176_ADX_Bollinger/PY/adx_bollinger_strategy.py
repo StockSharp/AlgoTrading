@@ -5,120 +5,98 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates, Sides
-from StockSharp.Algo.Indicators import AverageDirectionalIndex, BollingerBands, AverageTrueRange
+from System import TimeSpan, Decimal
+from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import BollingerBands, AverageDirectionalIndex, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
-from indicator_extensions import *
 
 class adx_bollinger_strategy(Strategy):
     """
-    Strategy based on ADX and Bollinger Bands indicators.
-    Enters long when ADX > 25 and price breaks above upper Bollinger band
-    Enters short when ADX > 25 and price breaks below lower Bollinger band
+    ADX Bollinger strategy.
+    A close below the lower band while ADX is above AdxThreshold goes long and a close above the upper band goes short, reversing
+    an opposite position. The position closes when price reverts to the middle band. The stop lies AtrMultiplier ATR from the entry close
+    and is checked on candle closes.
     """
 
     def __init__(self):
         super(adx_bollinger_strategy, self).__init__()
-
-        self._adx_period = self.Param("AdxPeriod", 14) \
-            .SetDisplay("ADX Period", "Period for ADX indicator", "Indicators")
-
-        self._bollinger_period = self.Param("BollingerPeriod", 20) \
-            .SetDisplay("Bollinger Period", "Period for Bollinger Bands", "Indicators")
-
-        self._bollinger_deviation = self.Param("BollingerDeviation", 2.0) \
-            .SetDisplay("Bollinger Deviation", "Deviation multiplier for Bollinger Bands", "Indicators")
-
-        self._atr_period = self.Param("AtrPeriod", 14) \
-            .SetDisplay("ATR Period", "Period for ATR indicator for stop-loss", "Risk Management")
-
-        self._atr_multiplier = self.Param("AtrMultiplier", 2.0) \
-            .SetDisplay("ATR Multiplier", "Multiplier for ATR-based stop-loss", "Risk Management")
-
-        self._candle_type = self.Param("CandleType", tf(5)) \
-            .SetDisplay("Candle Type", "Timeframe for strategy", "General")
+        self._adx_period = self.Param("AdxPeriod", 14).SetGreaterThanZero().SetDisplay("ADX Period", "Period of ADX", "Indicators")
+        self._adx_threshold = self.Param("AdxThreshold", 25.0).SetDisplay("ADX Threshold", "ADX level of a strong trend", "Indicators")
+        self._bollinger_period = self.Param("BollingerPeriod", 20).SetGreaterThanZero().SetDisplay("Bollinger Period", "Period of the Bollinger Bands", "Indicators")
+        self._bollinger_deviation = self.Param("BollingerDeviation", 2.0).SetGreaterThanZero().SetDisplay("Bollinger Deviation", "Standard deviation multiplier of the bands", "Indicators")
+        self._atr_period = self.Param("AtrPeriod", 14).SetGreaterThanZero().SetDisplay("ATR Period", "Period of the stop ATR", "Risk")
+        self._atr_multiplier = self.Param("AtrMultiplier", 2.0).SetNotNegative().SetDisplay("ATR Multiplier", "Stop distance from the entry in ATRs", "Risk")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles to use", "General")
+        self._reset_state()
 
     @property
     def candle_type(self):
         return self._candle_type.Value
 
+    def _reset_state(self):
+        self._stop_price = Decimal(0)
+
     def OnReseted(self):
         super(adx_bollinger_strategy, self).OnReseted()
+        self._reset_state()
 
     def OnStarted2(self, time):
         super(adx_bollinger_strategy, self).OnStarted2(time)
 
-        adx = AverageDirectionalIndex()
-        adx.Length = self._adx_period.Value
+        self._reset_state()
 
         bollinger = BollingerBands()
         bollinger.Length = self._bollinger_period.Value
-        bollinger.Width = self._bollinger_deviation.Value
-
+        bollinger.Width = Decimal(self._bollinger_deviation.Value)
+        adx = AverageDirectionalIndex()
+        adx.Length = self._adx_period.Value
         atr = AverageTrueRange()
         atr.Length = self._atr_period.Value
 
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.BindEx(adx, bollinger, atr, self.ProcessCandle).Start()
+        subscription.BindEx(bollinger, adx, atr, self._process_candle).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
             self.DrawIndicator(area, bollinger)
-
-            adx_area = self.CreateChartArea()
-            if adx_area is not None:
-                self.DrawIndicator(adx_area, adx)
-
             self.DrawOwnTrades(area)
+            oscillators = self.CreateChartArea()
+            if oscillators is not None:
+                self.DrawIndicator(oscillators, adx)
 
-    def ProcessCandle(self, candle, adx_value, bollinger_value, atr_value):
+    def _process_candle(self, candle, bollinger_value, adx_value, atr_value):
         if candle.State != CandleStates.Finished:
+            return
+
+        if not bollinger_value.IsFormed or not adx_value.IsFormed or not atr_value.IsFormed:
+            return
+        if bollinger_value.UpBand is None or bollinger_value.LowBand is None or bollinger_value.MovingAverage is None:
+            return
+        if adx_value.MovingAverage is None:
             return
 
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        if bollinger_value.UpBand is None or bollinger_value.LowBand is None:
-            return
+        upper = bollinger_value.UpBand
+        lower = bollinger_value.LowBand
+        middle = bollinger_value.MovingAverage
+        atr = atr_value.GetValue[Decimal](None)
+        close = candle.ClosePrice
+        strong = adx_value.MovingAverage > Decimal(self._adx_threshold.Value)
 
-        adx_ma = adx_value.MovingAverage
-        if adx_ma is None:
-            return
-        adx_ma_f = float(adx_ma)
-
-        upper_band = float(bollinger_value.UpBand)
-        lower_band = float(bollinger_value.LowBand)
-        middle_band = (upper_band - lower_band) / 2.0 + lower_band
-
-        price = float(candle.ClosePrice)
-        stop_size = float(atr_value) * float(self._atr_multiplier.Value)
-
-        # Trading logic
-        if adx_ma_f > 25:  # Strong trend
-            if price > upper_band and self.Position <= 0:
-                self.BuyMarket(self.Volume + abs(self.Position))
-
-                stop_price = price - stop_size
-                stop_vol = max(abs(self.Position + self.Volume), self.Volume)
-                self.RegisterOrder(self.CreateOrder(Sides.Sell, stop_price, stop_vol))
-            elif price < lower_band and self.Position >= 0:
-                self.SellMarket(self.Volume + abs(self.Position))
-
-                stop_price = price + stop_size
-                stop_vol = max(abs(self.Position + self.Volume), self.Volume)
-                self.RegisterOrder(self.CreateOrder(Sides.Buy, stop_price, stop_vol))
-        elif adx_ma_f < 20:
-            if self.Position > 0:
-                self.SellMarket(self.Position)
-            elif self.Position < 0:
-                self.BuyMarket(abs(self.Position))
-        elif price < middle_band and self.Position > 0:
+        stop_atr = Decimal(self._atr_multiplier.Value)
+        if close < lower and strong and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+            self._stop_price = close - stop_atr * atr
+        elif close > upper and strong and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
+            self._stop_price = close + stop_atr * atr
+        elif self.Position > 0 and (close >= middle or (stop_atr > 0 and close <= self._stop_price)):
             self.SellMarket(self.Position)
-        elif price > middle_band and self.Position < 0:
-            self.BuyMarket(abs(self.Position))
+        elif self.Position < 0 and (close <= middle or (stop_atr > 0 and close >= self._stop_price)):
+            self.BuyMarket(-self.Position)
 
     def CreateClone(self):
         return adx_bollinger_strategy()

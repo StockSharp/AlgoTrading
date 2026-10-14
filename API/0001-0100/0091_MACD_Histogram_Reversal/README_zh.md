@@ -19,7 +19,7 @@ MACD 直方图表示 MACD 线与信号线的差值。当直方图穿越零轴时
   - `FastPeriod` = 12
   - `SlowPeriod` = 26
   - `SignalPeriod` = 9
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
   - `CandleType` = 15 分钟
 - **过滤条件**：
   - 类别: 动量

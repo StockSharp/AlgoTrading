@@ -80,7 +80,7 @@ public class RenkoLevelEaStrategy : Strategy
 	/// </summary>
 	public RenkoLevelEaStrategy()
 	{
-		_brickSize = Param(nameof(BrickSize), 3000)
+		_brickSize = Param(nameof(BrickSize), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("Brick Size", "Renko block size in price steps", "Renko Levels")
 			

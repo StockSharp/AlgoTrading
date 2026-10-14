@@ -11,31 +11,25 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that uses VWAP as a reference point and RSI for oversold/overbought conditions.
-/// Enters when price is below VWAP and RSI oversold (longs) or above VWAP and RSI overbought (shorts).
+/// VWAP RSI strategy.
+/// The market trades around the clock, so the session VWAP restarts with each UTC day and weighs each candle's typical price by its volume.
+/// A close below VWAP with RSI below RsiOversold goes long and a close above VWAP with RSI above RsiOverbought goes short,
+/// expecting the price to revert toward VWAP. An opposite signal reverses the position, and a percent stop limits the loss.
 /// </summary>
 public class VwapRsiStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<decimal> _rsiOversold;
 	private readonly StrategyParam<decimal> _rsiOverbought;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _vwapValue;
-	private int _cooldown;
-
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	private DateTime? _day;
+	private decimal _cumulativePriceVolume;
+	private decimal _cumulativeVolume;
 
 	/// <summary>
-	/// RSI period.
+	/// Period of RSI.
 	/// </summary>
 	public int RsiPeriod
 	{
@@ -44,7 +38,7 @@ public class VwapRsiStrategy : Strategy
 	}
 
 	/// <summary>
-	/// RSI oversold level.
+	/// RSI level for longs below VWAP.
 	/// </summary>
 	public decimal RsiOversold
 	{
@@ -53,7 +47,7 @@ public class VwapRsiStrategy : Strategy
 	}
 
 	/// <summary>
-	/// RSI overbought level.
+	/// RSI level for shorts above VWAP.
 	/// </summary>
 	public decimal RsiOverbought
 	{
@@ -62,35 +56,44 @@ public class VwapRsiStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Cooldown bars between trades.
+	/// Stop loss percentage from entry price.
 	/// </summary>
-	public int CooldownBars
+	public decimal StopLossPercent
 	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
 	}
 
 	/// <summary>
-	/// Strategy constructor.
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
 	/// </summary>
 	public VwapRsiStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
-			.SetRange(7, 21)
-			.SetDisplay("RSI Period", "Period of the RSI indicator", "Indicators");
+			.SetGreaterThanZero()
+			.SetDisplay("RSI Period", "Period of RSI", "Indicators");
 
 		_rsiOversold = Param(nameof(RsiOversold), 30m)
-			.SetDisplay("RSI Oversold", "RSI oversold level", "Indicators");
+			.SetDisplay("RSI Oversold", "RSI level for longs below VWAP", "Indicators");
 
 		_rsiOverbought = Param(nameof(RsiOverbought), 70m)
-			.SetDisplay("RSI Overbought", "RSI overbought level", "Indicators");
+			.SetDisplay("RSI Overbought", "RSI level for shorts above VWAP", "Indicators");
 
-		_cooldownBars = Param(nameof(CooldownBars), 100)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "General")
-			.SetRange(5, 500);
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -103,8 +106,9 @@ public class VwapRsiStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_vwapValue = 0;
-		_cooldown = 0;
+		_day = null;
+		_cumulativePriceVolume = 0;
+		_cumulativeVolume = 0;
 	}
 
 	/// <inheritdoc />
@@ -112,81 +116,83 @@ public class VwapRsiStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var vwap = new VolumeWeightedMovingAverage();
+		_day = null;
+		_cumulativePriceVolume = 0;
+		_cumulativeVolume = 0;
+
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-
-		// Bind VWAP to capture value (candle-input indicator)
-		subscription.BindEx(vwap, OnVwap);
-
-		// Bind RSI for main logic
 		subscription
-			.Bind(rsi, ProcessCandle)
+			.BindEx(rsi, ProcessCandle)
 			.Start();
+
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, vwap);
 			DrawOwnTrades(area);
 
-			var rsiArea = CreateChartArea();
-			if (rsiArea != null)
-				DrawIndicator(rsiArea, rsi);
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, rsi);
+			}
 		}
 	}
 
-	private void OnVwap(ICandleMessage candle, IIndicatorValue vwapValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
 	{
-		if (vwapValue.IsFormed)
-			_vwapValue = vwapValue.ToDecimal();
+		// The high-level handler activates native protection before this callback, also between signal bars.
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue rsiValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		var day = candle.OpenTime.Date;
+
+		if (_day != day)
+		{
+			_day = day;
+			_cumulativePriceVolume = 0;
+			_cumulativeVolume = 0;
+		}
+
+		var typicalPrice = (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3;
+		_cumulativePriceVolume += typicalPrice * candle.TotalVolume;
+		_cumulativeVolume += candle.TotalVolume;
+
+		if (!rsiValue.IsFormed || _cumulativeVolume <= 0)
 			return;
 
-		if (_vwapValue == 0)
-			return;
-
+		var vwap = _cumulativePriceVolume / _cumulativeVolume;
+		var rsi = rsiValue.GetValue<decimal>();
 		var close = candle.ClosePrice;
+		var signal = 0;
 
-		if (_cooldown > 0)
-		{
-			_cooldown--;
+		if (close < vwap && rsi < RsiOversold)
+			signal = 1;
+		else if (close > vwap && rsi > RsiOverbought)
+			signal = -1;
+
+		if (signal == 0 || !IsFormedAndOnlineAndAllowTrading())
 			return;
-		}
 
-		// Long: price below VWAP + RSI oversold
-		if (close < _vwapValue && rsiValue < RsiOversold && Position == 0)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-		// Short: price above VWAP + RSI overbought
-		else if (close > _vwapValue && rsiValue > RsiOverbought && Position == 0)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-
-		// Exit long: price above VWAP
-		if (Position > 0 && close > _vwapValue)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		// Exit short: price below VWAP
-		else if (Position < 0 && close < _vwapValue)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
+		if (signal > 0 && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (signal < 0 && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
 	}
 }

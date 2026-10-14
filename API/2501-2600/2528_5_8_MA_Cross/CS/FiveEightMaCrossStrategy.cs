@@ -100,13 +100,13 @@ public class FiveEightMaCrossStrategy : Strategy
 	/// </summary>
 	public FiveEightMaCrossStrategy()
 	{
-		_fastLength = Param(nameof(FastLength), 8)
+		_fastLength = Param(nameof(FastLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA Length", "Length of the EMA calculated on closing prices", "Indicators")
 			
 			.SetOptimize(3, 20, 1);
 
-		_slowLength = Param(nameof(SlowLength), 21)
+		_slowLength = Param(nameof(SlowLength), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA Length", "Length of the EMA calculated on opening prices", "Indicators")
 			

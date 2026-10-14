@@ -22,7 +22,7 @@ class hawaiian_tsunami_surfer_strategy(Strategy):
             .SetDisplay("Take Profit Points", "Take profit distance in price steps", "Risk Management")
         self._stop_loss_points = self.Param("StopLossPoints", 700) \
             .SetDisplay("Stop Loss Points", "Stop loss distance in price steps", "Risk Management")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
     @property

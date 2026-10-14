@@ -68,7 +68,7 @@ public class StochasticMartingaleGridStrategy : Strategy
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance applied per entry", "Risk")
 			;
 
-		_maxOrders = Param(nameof(MaxOrders), 2)
+		_maxOrders = Param(nameof(MaxOrders), 7)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Orders", "Maximum number of simultaneous averaging entries", "Martingale");
 
@@ -92,11 +92,11 @@ public class StochasticMartingaleGridStrategy : Strategy
 			.SetDisplay("Slowing", "Additional smoothing applied to %K", "Indicators")
 			;
 
-		_zoneBuy = Param(nameof(ZoneBuy), 50m)
+		_zoneBuy = Param(nameof(ZoneBuy), 30m)
 			.SetDisplay("Buy Zone", "Upper limit that allows long setups when %K is above %D", "Indicators")
 			;
 
-		_zoneSell = Param(nameof(ZoneSell), 50m)
+		_zoneSell = Param(nameof(ZoneSell), 70m)
 			.SetDisplay("Sell Zone", "Lower limit that allows short setups when %K is below %D", "Indicators")
 			;
 	}

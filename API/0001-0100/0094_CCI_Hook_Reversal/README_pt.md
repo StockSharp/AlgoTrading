@@ -17,7 +17,10 @@ Cada operação carrega um pequeno stop fixo e é encerrada quando o CCI enganch
 - **Stops**: Sim, baseado em percentual
 - **Valores padrão**:
   - `CandleType` = 15 minutos
-  - `StopLoss` = 2%
+  - `CciPeriod` = 20
+  - `OversoldLevel` = -100
+  - `OverboughtLevel` = 100
+  - `StopLossPercent` = 2
 - **Filtros**:
   - Categoria: Reversão
   - Direção: Ambos

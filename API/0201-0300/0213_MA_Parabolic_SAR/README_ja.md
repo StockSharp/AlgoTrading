@@ -20,11 +20,11 @@ MA Parabolic SAR戦略は、単純移動平均で優勢な方向を決定し、P
 - **ストップ**: はい、Parabolic SARによる動的ストップとオプションの固定ストップ。
 - **デフォルト値**:
   - `MaPeriod` = 20
-  - `SarStep` = 0.02m
-  - `SarMaxStep` = 0.2m
+  - `SarStep` = 0.02
+  - `SarMaxStep` = 0.2
   - `CandleType` = TimeSpan.FromMinutes(5)
-  - `TakeValue` = new Unit(0, UnitTypes.Absolute)
-  - `StopValue` = new Unit(2, UnitTypes.Percent)
+  - `StopLossPercent` = 2
+    エントリーにはローソク足の終値で両方の条件が必要で、SARの反転と移動平均のクロスのどちらが後でも構いません。任意の固定ストップはエントリー価格のStopLossPercentで、ローソク足の間も監視されます。0で無効になります。ルールに利益目標はないため、ゼロのTakeValueは削除しました。 保有ポジションと逆方向のエントリーシグナルはドテンになります。
 - **フィルター**:
   - カテゴリ: トレンド
   - 方向: 両方

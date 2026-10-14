@@ -79,7 +79,7 @@ public class EmaMacdRsiStrategy : Strategy
 
 	public EmaMacdRsiStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		_fastEmaLength = Param(nameof(FastEmaLength), 50)
@@ -94,10 +94,10 @@ public class EmaMacdRsiStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "RSI period", "Indicators");
 
-		_rsiBuyLevel = Param(nameof(RsiBuyLevel), 40m)
+		_rsiBuyLevel = Param(nameof(RsiBuyLevel), 45m)
 			.SetDisplay("RSI Buy Level", "Min RSI for buy", "Trading");
 
-		_rsiSellLevel = Param(nameof(RsiSellLevel), 60m)
+		_rsiSellLevel = Param(nameof(RsiSellLevel), 55m)
 			.SetDisplay("RSI Sell Level", "Max RSI for sell", "Trading");
 
 		_cooldownBars = Param(nameof(CooldownBars), 10)

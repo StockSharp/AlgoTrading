@@ -7,7 +7,7 @@ Tests zeigen eine durchschnittliche Jahresrendite von etwa 88%. Die Strategie fu
 
 Keltner Channels kartieren die jüngste Volatilität, während der RSI Momentum-Extreme misst. Einstiege erfolgen, wenn der RSI eine Bewegung über den Kanal hinaus unterstützt.
 
-Gut für Bounce-Trader rund um Volatilitätshüllen. Stops basieren auf einem ATR-Multiplikator.
+Gut für Bounce-Trader rund um Volatilitätshüllen. Der ATR-Multiplikator bestimmt die Kanalbreite, der Stop ist ein fester Prozentsatz des Einstiegspreises.
 
 ## Details
 
@@ -27,6 +27,7 @@ Gut für Bounce-Trader rund um Volatilitätshüllen. Stops basieren auf einem AT
   - `RsiOversoldLevel` = 30m
   - `StopLossPercent` = 2.0m
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    Der Kanal ist der EMA plus und minus AtrMultiplier ATR; ein Long schließt, sobald der Kurs auf oder über dem EMA schließt, ein Short auf oder darunter. Ein Einstiegssignal gegen eine offene Position dreht sie.
 - **Filter**:
   - Kategorie: Mean Reversion
   - Richtung: Beide

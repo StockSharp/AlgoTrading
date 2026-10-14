@@ -16,7 +16,11 @@
 - **止损**：是，按百分比
 - **默认值**:
   - `CandleType` = 15分钟
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `SupertrendPeriod` = 10
+  - `SupertrendMultiplier` = 3
+  - `VolumePeriod` = 20
+    Supertrend翻转（收盘价位于线的另一侧）会平掉逆向持仓。仅当该K线成交量高于前VolumePeriod根K线均值时，才按翻转方向开仓，因此得到确认的翻转会反转持仓。
 - **过滤器**:
   - 类别：趋势跟随
   - 方向：双向

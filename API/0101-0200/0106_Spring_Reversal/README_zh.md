@@ -16,7 +16,9 @@
 - **止损**：是，按百分比
 - **默认值**:
   - `CandleType` = 15分钟
-  - `StopLoss` = 2%
+  - `LookbackPeriod` = 20
+  - `StopLossPercent` = 2
+    支撑位为之前 LookbackPeriod 根K线的最低价。策略只做多：一根跌破支撑后收回其上方的阳线。止损设在弹簧低点下方 StopLossPercent 处，K线收盘跌破即平仓。
 - **过滤器**:
   - 类别：反转
   - 方向：双向

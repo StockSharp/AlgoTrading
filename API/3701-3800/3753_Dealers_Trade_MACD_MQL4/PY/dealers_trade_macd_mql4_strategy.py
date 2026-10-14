@@ -33,9 +33,9 @@ class dealers_trade_macd_mql4_strategy(Strategy):
             .SetDisplay("Max Volume", "Upper cap for any single order", "Risk")
         self._lot_multiplier = self.Param("LotMultiplier", 1.5) \
             .SetDisplay("Lot Multiplier", "Multiplier applied to subsequent entries", "Money Management")
-        self._max_trades = self.Param("MaxTrades", 1) \
+        self._max_trades = self.Param("MaxTrades", 5) \
             .SetDisplay("Max Trades", "Maximum simultaneous positions", "Money Management")
-        self._spacing_pips = self.Param("SpacingPips", 200) \
+        self._spacing_pips = self.Param("SpacingPips", 4) \
             .SetDisplay("Spacing (pips)", "Minimum price movement before adding", "Money Management")
         self._orders_to_protect = self.Param("OrdersToProtect", 3) \
             .SetDisplay("Orders To Protect", "Number of trades kept when protection triggers", "Money Management")
@@ -43,11 +43,11 @@ class dealers_trade_macd_mql4_strategy(Strategy):
             .SetDisplay("Account Protection", "Close last trade once secure profit is reached", "Money Management")
         self._secure_profit = self.Param("SecureProfit", 50.0) \
             .SetDisplay("Secure Profit", "Currency profit required to lock gains", "Money Management")
-        self._take_profit_pips = self.Param("TakeProfitPips", 200) \
+        self._take_profit_pips = self.Param("TakeProfitPips", 30) \
             .SetDisplay("Take Profit (pips)", "Take profit distance from entry", "Risk")
-        self._stop_loss_pips = self.Param("StopLossPips", 500) \
+        self._stop_loss_pips = self.Param("StopLossPips", 90) \
             .SetDisplay("Stop Loss (pips)", "Initial stop loss distance", "Risk")
-        self._trailing_stop_pips = self.Param("TrailingStopPips", 100) \
+        self._trailing_stop_pips = self.Param("TrailingStopPips", 15) \
             .SetDisplay("Trailing Stop (pips)", "Trailing distance after activation", "Risk")
         self._reverse_condition = self.Param("ReverseCondition", False) \
             .SetDisplay("Reverse Condition", "Invert MACD slope interpretation", "General")

@@ -130,20 +130,20 @@ public class FractalsAtClosePricesStrategy : Strategy
 		.SetDisplay("Order Volume", "Volume used for entries", "General")
 		;
 
-		_startHour = Param(nameof(StartHour), 0)
+		_startHour = Param(nameof(StartHour), 10)
 		.SetRange(0, 23)
 		.SetDisplay("Start Hour", "Hour when trading can start (0-23)", "Trading Hours");
 
-		_endHour = Param(nameof(EndHour), 0)
+		_endHour = Param(nameof(EndHour), 22)
 		.SetRange(0, 23)
 		.SetDisplay("End Hour", "Hour when trading stops (0-23)", "Trading Hours");
 
-		_stopLossPips = Param(nameof(StopLossPips), 200)
+		_stopLossPips = Param(nameof(StopLossPips), 30)
 		.SetRange(0, 1000)
 		.SetDisplay("Stop Loss (pips)", "Stop-loss distance in pips", "Risk Management")
 		;
 
-		_takeProfitPips = Param(nameof(TakeProfitPips), 400)
+		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
 		.SetRange(0, 1000)
 		.SetDisplay("Take Profit (pips)", "Take-profit distance in pips", "Risk Management")
 		;

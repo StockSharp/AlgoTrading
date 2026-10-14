@@ -1,10 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,25 +12,23 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// RSI Mean Reversion Strategy.
-/// Enter when RSI deviates from its average by a certain multiple of standard deviation.
-/// Exit when RSI returns to its average.
+/// RSI Mean Reversion strategy.
+/// The bands lie Multiplier standard deviations around the average of the last AveragePeriod RSI values, the current one included.
+/// RSI below the lower band goes long and RSI above the upper band goes short,
+/// reversing an opposite position. A long closes once RSI is back above its average and a short once it is back below it, and a percent stop limits the loss.
 /// </summary>
 public class RsiMeanReversionStrategy : Strategy
 {
 	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<int> _averagePeriod;
 	private readonly StrategyParam<decimal> _multiplier;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private RelativeStrengthIndex _rsi;
-	private SimpleMovingAverage _rsiAverage;
-	private StandardDeviation _rsiStdDev;
-	
-	private decimal _prevRsiValue;
+	private readonly Queue<decimal> _values = [];
 
 	/// <summary>
-	/// RSI period.
+	/// Period of RSI.
 	/// </summary>
 	public int RsiPeriod
 	{
@@ -41,7 +37,7 @@ public class RsiMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Period for RSI average calculation.
+	/// Values of RSI the average and the standard deviation span.
 	/// </summary>
 	public int AveragePeriod
 	{
@@ -50,7 +46,7 @@ public class RsiMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Standard deviation multiplier for entry.
+	/// Standard deviations between the average and a band.
 	/// </summary>
 	public decimal Multiplier
 	{
@@ -59,7 +55,16 @@ public class RsiMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Type of candles to use.
+	/// Stop loss percentage from entry price.
+	/// </summary>
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -68,30 +73,28 @@ public class RsiMeanReversionStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="RsiMeanReversionStrategy"/>.
+	/// Constructor.
 	/// </summary>
 	public RsiMeanReversionStrategy()
 	{
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay("RSI Period", "Period for RSI calculation", "Strategy Parameters")
-			
-			.SetOptimize(10, 20, 2);
+			.SetDisplay("RSI Period", "Period of RSI", "Indicators");
 
 		_averagePeriod = Param(nameof(AveragePeriod), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Average Period", "Period for RSI average calculation", "Strategy Parameters")
-			
-			.SetOptimize(10, 30, 5);
+			.SetDisplay("Average Period", "Values of RSI the average and the standard deviation span", "Indicators");
 
-		_multiplier = Param(nameof(Multiplier), 2.0m)
+		_multiplier = Param(nameof(Multiplier), 2m)
 			.SetGreaterThanZero()
-			.SetDisplay("StdDev Multiplier", "Standard deviation multiplier for entry", "Strategy Parameters")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
+			.SetDisplay("Multiplier", "Standard deviations between the average and a band", "Indicators");
+
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "Strategy Parameters");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -104,7 +107,7 @@ public class RsiMeanReversionStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevRsiValue = 0;
+		_values.Clear();
 	}
 
 	/// <inheritdoc />
@@ -112,73 +115,77 @@ public class RsiMeanReversionStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
+		_values.Clear();
 
-		// Create indicators
-		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-		_rsiAverage = new SMA { Length = AveragePeriod };
-		_rsiStdDev = new StandardDeviation { Length = AveragePeriod };
+		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
-		// Create candle subscription
 		var subscription = SubscribeCandles(CandleType);
-
-		// Define custom indicator chain processing
 		subscription
-			.Bind(_rsi, ProcessRsi)
+			.BindEx(rsi, ProcessCandle)
 			.Start();
 
-		// Setup chart visualization if available
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _rsi);
 			DrawOwnTrades(area);
-		}
 
-		// Enable position protection
-		StartProtection(
-			takeProfit: new Unit(5, UnitTypes.Percent),
-			stopLoss: new Unit(2, UnitTypes.Percent)
-		);
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, rsi);
+			}
+		}
 	}
 
-	private void ProcessRsi(ICandleMessage candle, decimal rsiValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// The high-level handler activates native protection before this callback, also between signal bars.
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue rsiValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Process RSI through average and standard deviation indicators
-		var rsiAvgValue = _rsiAverage.Process(new DecimalIndicatorValue(_rsiAverage, rsiValue, candle.ServerTime) { IsFinal = true }).ToDecimal();
-		var rsiStdDevValue = _rsiStdDev.Process(new DecimalIndicatorValue(_rsiStdDev, rsiValue, candle.ServerTime) { IsFinal = true }).ToDecimal();
-		
-		// Store previous RSI value for changes detection
-		decimal currentRsiValue = rsiValue;
-		
-		if (!_rsiAverage.IsFormed || !_rsiStdDev.IsFormed)
-		{
-			_prevRsiValue = currentRsiValue;
+		if (!rsiValue.IsFormed)
 			return;
-		}
 
-		// Calculate bands
-		var upperBand = rsiAvgValue + Multiplier * rsiStdDevValue;
-		var lowerBand = rsiAvgValue - Multiplier * rsiStdDevValue;
+		var value = rsiValue.GetValue<decimal>();
 
-		LogInfo($"RSI: {currentRsiValue}, RSI Avg: {rsiAvgValue}, Upper: {upperBand}, Lower: {lowerBand}");
+		_values.Enqueue(value);
 
-		// Entry logic - mean reversion
-		if (Position == 0)
-		{
-			if (currentRsiValue < lowerBand)
-			{
-				BuyMarket();
-			}
-			else if (currentRsiValue > upperBand)
-			{
-				SellMarket();
-			}
-		}
-		
-		_prevRsiValue = currentRsiValue;
+		if (_values.Count > AveragePeriod)
+			_values.Dequeue();
+
+		if (_values.Count < AveragePeriod)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		var mean = _values.Average();
+		var deviation = (decimal)Math.Sqrt((double)_values.Average(v => (v - mean) * (v - mean)));
+		var upper = mean + Multiplier * deviation;
+		var lower = mean - Multiplier * deviation;
+
+		if (value < lower && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (value > upper && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
+		else if (Position > 0 && value > mean)
+			SellMarket(Position);
+		else if (Position < 0 && value < mean)
+			BuyMarket(-Position);
 	}
 }

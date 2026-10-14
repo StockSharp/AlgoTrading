@@ -7,13 +7,13 @@ Las pruebas indican un retorno anual promedio de aproximadamente el 55%. Funcion
 
 Los canales Donchian identifican los niveles de ruptura, mientras que el RSI verifica si el momentum respalda el movimiento. Las posiciones se abren cuando una ruptura se alinea con la dirección del RSI.
 
-Ideal para traders que esperan una ruptura sostenida en lugar de una trampa. El riesgo se limita mediante un stop basado en ATR.
+Ideal para traders que esperan una ruptura sostenida en lugar de una trampa. El riesgo se limita mediante un stop porcentual.
 
 ## Detalles
 
 - **Criterios de entrada**:
-  - Largo: `Close > DonchianHigh && RSI < RsiOversoldLevel`
-  - Corto: `Close < DonchianLow && RSI > RsiOverboughtLevel`
+  - Largo: `Close > DonchianHigh && RSI < RsiOverboughtLevel`
+  - Corto: `Close < DonchianLow && RSI > RsiOversoldLevel`
 - **Largo/Corto**: Ambos
 - **Criterios de salida**:
   - Fallo de ruptura o señal opuesta
@@ -25,6 +25,7 @@ Ideal para traders que esperan una ruptura sostenida en lugar de una trampa. El 
   - `RsiOversoldLevel` = 30m
   - `StopLossPercent` = 2.0m
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    Una ruptura no está sobreextendida mientras el RSI siga por debajo de RsiOverboughtLevel (largo) o por encima de RsiOversoldLevel (corto); el canal abarca las DonchianPeriod velas anteriores. La ruptura falla, y la posición se cierra, cuando el precio vuelve a cerrar al otro lado del nivel roto. Una señal de entrada contra una posición abierta la invierte.
 - **Filtros**:
   - Categoría: Ruptura
   - Dirección: Ambos

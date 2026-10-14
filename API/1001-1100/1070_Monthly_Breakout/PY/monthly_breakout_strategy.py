@@ -19,7 +19,7 @@ class monthly_breakout_strategy(Strategy):
         self._holding_period = self.Param("HoldingPeriod", 5) \
             .SetGreaterThanZero() \
             .SetDisplay("Holding Period", "Bars to hold position", "General")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromDays(1))) \
             .SetDisplay("Candle Type", "Working candle timeframe", "General")
         self._monthly_high = 0.0
         self._monthly_low = 0.0

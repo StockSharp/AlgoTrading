@@ -18,7 +18,7 @@ class anti_fragile_strategy(Strategy):
             .SetDisplay("Fast Period", "Fast EMA period", "EMA")
         self._slow_period = self.Param("SlowPeriod", 26) \
             .SetDisplay("Slow Period", "Slow EMA period", "EMA")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
             .SetDisplay("Candle Type", "Candle type", "General")
         self._prev_fast = 0.0
         self._prev_slow = 0.0

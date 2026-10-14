@@ -19,6 +19,7 @@ Al operar solo en la dirección predominante y esperar una reacción clara en so
   - `TrendlinePeriod` = 20
   - `MAPeriod` = 20
   - `BounceThresholdPercent` = 0.5
+    Una vela toca una línea cuando su mínimo (máximo) queda a menos de este porcentaje de la línea de soporte (resistencia).
   - `CandleType` = 5 minute
   - `StopLossPercent` = 2
 - **Filtros**:

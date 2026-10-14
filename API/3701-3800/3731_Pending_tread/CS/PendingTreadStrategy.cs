@@ -35,19 +35,19 @@ public class PendingTreadStrategy : Strategy
 
 	public PendingTreadStrategy()
 	{
-		_pipStep = Param(nameof(PipStep), 200000m)
+		_pipStep = Param(nameof(PipStep), 12m)
 			.SetGreaterThanZero()
 			.SetDisplay("Grid step (pips)", "Distance between adjacent pending orders expressed in pips", "Trading");
 
-		_takeProfitPips = Param(nameof(TakeProfitPips), 150000m)
+		_takeProfitPips = Param(nameof(TakeProfitPips), 10m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take profit (pips)", "Individual take-profit distance assigned to every pending order", "Trading");
 
-		_orderVolume = Param(nameof(OrderVolume), 1m)
+		_orderVolume = Param(nameof(OrderVolume), 0.01m)
 			.SetGreaterThanZero()
 			.SetDisplay("Order volume", "Volume sent with each pending order", "Trading");
 
-		_ordersPerSide = Param(nameof(OrdersPerSide), 2)
+		_ordersPerSide = Param(nameof(OrdersPerSide), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Orders per side", "Maximum number of grid levels maintained above and below the anchor", "Trading");
 

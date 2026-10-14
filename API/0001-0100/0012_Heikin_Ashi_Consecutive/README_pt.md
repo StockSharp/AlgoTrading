@@ -5,9 +5,9 @@ Estratégia baseada em velas Heikin Ashi consecutivas
 
 Os testes indicam um retorno anual médio de aproximadamente 73%. Funciona melhor no mercado de criptomoedas.
 
-Heikin Ashi Consecutive aguarda várias velas Heikin Ashi da mesma cor para confirmar o momentum. Após uma sequência de barras de alta ou de baixa, a estratégia adere ao movimento e sai na primeira vela oposta ou por um stop ATR.
+Heikin Ashi Consecutive aguarda várias velas Heikin Ashi da mesma cor para confirmar o momentum. Após uma sequência de barras de alta ou de baixa, a estratégia adere ao movimento e sai na primeira vela oposta ou por um stop percentual.
 
-Como os gráficos Heikin Ashi suavizam os dados de preço, uma série de velas da mesma cor destaca um movimento direcional forte. O stop ATR Trailing tenta preservar os ganhos se a sequência se reverter abruptamente.
+Como os gráficos Heikin Ashi suavizam os dados de preço, uma série de velas da mesma cor destaca um movimento direcional forte. O stop percentual limita a perda se a sequência se reverter abruptamente.
 
 
 ## Detalhes

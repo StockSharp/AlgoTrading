@@ -24,9 +24,9 @@ class ultra_wpr_cross_strategy(Strategy):
             .SetDisplay("Fast Length", "Fast smoothing length", "Indicators")
         self._slow_length = self.Param("SlowLength", 53) \
             .SetDisplay("Slow Length", "Slow smoothing length", "Indicators")
-        self._take_profit = self.Param("TakeProfit", 900.0) \
+        self._take_profit = self.Param("TakeProfit", 0.2) \
             .SetDisplay("Take Profit", "Take profit in price", "Risk")
-        self._stop_loss = self.Param("StopLoss", 450.0) \
+        self._stop_loss = self.Param("StopLoss", 0.1) \
             .SetDisplay("Stop Loss", "Stop loss in price", "Risk")
         self._cooldown_bars = self.Param("CooldownBars", 1) \
             .SetDisplay("Cooldown Bars", "Bars to wait after a completed trade", "Risk")

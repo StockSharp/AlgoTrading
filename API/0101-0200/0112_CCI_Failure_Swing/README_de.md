@@ -18,7 +18,10 @@ Ein prozentualer Stop hält das Risiko gering, und Trades werden beendet, wenn d
 - **Stops**: Ja, prozentbasiert
 - **Standardwerte**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `CciPeriod` = 20
+  - `OversoldLevel` = -100
+  - `OverboughtLevel` = 100
+  - `StopLossPercent` = 2
 - **Filter**:
   - Kategorie: Umkehr
   - Richtung: Beide

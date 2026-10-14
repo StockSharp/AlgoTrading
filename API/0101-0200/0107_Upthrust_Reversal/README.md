@@ -18,7 +18,9 @@ A stop just above the upthrust high manages risk and positions exit if price rec
 - **Stops**: Yes, percent based
 - **Default Values**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `LookbackPeriod` = 20
+  - `StopLossPercent` = 2
+    Resistance is the highest high of the previous LookbackPeriod candles. The strategy only sells: a bearish candle that breaks above resistance and closes back below it. The stop lies StopLossPercent above the upthrust high and the position closes when a candle closes above it.
 - **Filters**:
   - Category: Reversal
   - Direction: Both

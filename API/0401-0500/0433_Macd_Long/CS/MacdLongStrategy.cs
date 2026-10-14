@@ -1,5 +1,3 @@
-namespace StockSharp.Samples.Strategies;
-
 using System;
 using System.Collections.Generic;
 
@@ -10,85 +8,121 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
+namespace StockSharp.Samples.Strategies;
+
 /// <summary>
-/// MACD Long Strategy.
-/// Uses MACD crossover with RSI oversold/overbought lookback for timing.
-/// Buys when RSI was recently oversold and MACD turns positive.
-/// Sells when RSI was recently overbought and MACD turns negative.
+/// MACD Long strategy.
+/// An RSI reading below Oversold arms a long and a reading above Overbought arms a short. The next MACD crossover
+/// confirms or cancels the setup: a bullish MACD/signal cross opens an armed long, a bearish cross opens an armed short.
+/// Every opposite crossover closes the current position, or reverses it when the opposite side is armed.
 /// </summary>
 public class MacdLongStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleTypeParam;
 	private readonly StrategyParam<int> _rsiLength;
-	private readonly StrategyParam<int> _rsiOversold;
-	private readonly StrategyParam<int> _rsiOverbought;
-	private readonly StrategyParam<int> _lookbackBars;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _oversold;
+	private readonly StrategyParam<decimal> _overbought;
+	private readonly StrategyParam<int> _macdFast;
+	private readonly StrategyParam<int> _macdSlow;
+	private readonly StrategyParam<int> _macdSignal;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private RelativeStrengthIndex _rsi;
-	private MovingAverageConvergenceDivergence _macd;
+	private bool _longArmed;
+	private bool _shortArmed;
+	private decimal? _prevMacd;
+	private decimal? _prevSignal;
 
-	private int _barsSinceOversold;
-	private int _barsSinceOverbought;
-	private decimal _prevMacd;
-	private int _cooldownRemaining;
-
-	public MacdLongStrategy()
-	{
-		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
-			.SetDisplay("Candle type", "Candle type for strategy calculation.", "General");
-
-		_rsiLength = Param(nameof(RsiLength), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("RSI Length", "RSI period", "RSI");
-
-		_rsiOversold = Param(nameof(RsiOversold), 40)
-			.SetDisplay("RSI Oversold", "Oversold level", "RSI");
-
-		_rsiOverbought = Param(nameof(RsiOverbought), 60)
-			.SetDisplay("RSI Overbought", "Overbought level", "RSI");
-
-		_lookbackBars = Param(nameof(LookbackBars), 20)
-			.SetDisplay("Lookback Bars", "Bars to look back for RSI conditions", "Strategy");
-
-		_cooldownBars = Param(nameof(CooldownBars), 10)
-			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "Risk");
-	}
-
-	public DataType CandleType
-	{
-		get => _candleTypeParam.Value;
-		set => _candleTypeParam.Value = value;
-	}
-
+	/// <summary>
+	/// RSI period.
+	/// </summary>
 	public int RsiLength
 	{
 		get => _rsiLength.Value;
 		set => _rsiLength.Value = value;
 	}
 
-	public int RsiOversold
+	/// <summary>
+	/// RSI oversold level.
+	/// </summary>
+	public decimal Oversold
 	{
-		get => _rsiOversold.Value;
-		set => _rsiOversold.Value = value;
+		get => _oversold.Value;
+		set => _oversold.Value = value;
 	}
 
-	public int RsiOverbought
+	/// <summary>
+	/// RSI overbought level.
+	/// </summary>
+	public decimal Overbought
 	{
-		get => _rsiOverbought.Value;
-		set => _rsiOverbought.Value = value;
+		get => _overbought.Value;
+		set => _overbought.Value = value;
 	}
 
-	public int LookbackBars
+	/// <summary>
+	/// MACD fast EMA period.
+	/// </summary>
+	public int MacdFast
 	{
-		get => _lookbackBars.Value;
-		set => _lookbackBars.Value = value;
+		get => _macdFast.Value;
+		set => _macdFast.Value = value;
 	}
 
-	public int CooldownBars
+	/// <summary>
+	/// MACD slow EMA period.
+	/// </summary>
+	public int MacdSlow
 	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
+		get => _macdSlow.Value;
+		set => _macdSlow.Value = value;
+	}
+
+	/// <summary>
+	/// MACD signal line period.
+	/// </summary>
+	public int MacdSignal
+	{
+		get => _macdSignal.Value;
+		set => _macdSignal.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type for strategy calculation.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
+	/// </summary>
+	public MacdLongStrategy()
+	{
+		_rsiLength = Param(nameof(RsiLength), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("RSI Length", "RSI period", "RSI");
+
+		_oversold = Param(nameof(Oversold), 30m)
+			.SetDisplay("Oversold", "RSI oversold level", "RSI");
+
+		_overbought = Param(nameof(Overbought), 70m)
+			.SetDisplay("Overbought", "RSI overbought level", "RSI");
+
+		_macdFast = Param(nameof(MacdFast), 12)
+			.SetGreaterThanZero()
+			.SetDisplay("MACD Fast", "MACD fast EMA period", "MACD");
+
+		_macdSlow = Param(nameof(MacdSlow), 26)
+			.SetGreaterThanZero()
+			.SetDisplay("MACD Slow", "MACD slow EMA period", "MACD");
+
+		_macdSignal = Param(nameof(MacdSignal), 9)
+			.SetGreaterThanZero()
+			.SetDisplay("MACD Signal", "MACD signal line period", "MACD");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+			.SetDisplay("Candle type", "Candle type for strategy calculation", "General");
 	}
 
 	/// <inheritdoc />
@@ -100,12 +134,10 @@ public class MacdLongStrategy : Strategy
 	{
 		base.OnReseted();
 
-		_rsi = null;
-		_macd = null;
-		_barsSinceOversold = int.MaxValue;
-		_barsSinceOverbought = int.MaxValue;
-		_prevMacd = 0;
-		_cooldownRemaining = 0;
+		_longArmed = false;
+		_shortArmed = false;
+		_prevMacd = null;
+		_prevSignal = null;
 	}
 
 	/// <inheritdoc />
@@ -113,12 +145,25 @@ public class MacdLongStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		_rsi = new RelativeStrengthIndex { Length = RsiLength };
-		_macd = new MovingAverageConvergenceDivergence();
+		_longArmed = false;
+		_shortArmed = false;
+		_prevMacd = null;
+		_prevSignal = null;
+
+		var rsi = new RelativeStrengthIndex { Length = RsiLength };
+		var macd = new MovingAverageConvergenceDivergenceSignal
+		{
+			Macd =
+			{
+				ShortMa = { Length = MacdFast },
+				LongMa = { Length = MacdSlow },
+			},
+			SignalMa = { Length = MacdSignal },
+		};
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_rsi, _macd, OnProcess)
+			.BindEx(rsi, macd, ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
@@ -126,80 +171,67 @@ public class MacdLongStrategy : Strategy
 		{
 			DrawCandles(area, subscription);
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, rsi);
+				DrawIndicator(oscillators, macd);
+			}
 		}
 	}
 
-	private void OnProcess(ICandleMessage candle, decimal rsi, decimal macdVal)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue rsiValue, IIndicatorValue macdValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_rsi.IsFormed || !_macd.IsFormed)
-		{
-			_prevMacd = macdVal;
+		if (!rsiValue.IsFormed || !macdValue.IsFormed)
 			return;
-		}
 
-		// Track RSI oversold/overbought
-		if (rsi <= RsiOversold)
-			_barsSinceOversold = 0;
-		else
-			_barsSinceOversold = Math.Min(_barsSinceOversold + 1, int.MaxValue - 1);
+		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
+		if (macdTyped.Macd is not decimal macd || macdTyped.Signal is not decimal signal)
+			return;
 
-		if (rsi >= RsiOverbought)
-			_barsSinceOverbought = 0;
-		else
-			_barsSinceOverbought = Math.Min(_barsSinceOverbought + 1, int.MaxValue - 1);
+		var rsi = rsiValue.ToDecimal();
+
+		if (rsi < Oversold)
+			_longArmed = true;
+
+		if (rsi > Overbought)
+			_shortArmed = true;
+
+		var prevMacd = _prevMacd;
+		var prevSignal = _prevSignal;
+		_prevMacd = macd;
+		_prevSignal = signal;
+
+		if (prevMacd is not decimal lastMacd || prevSignal is not decimal lastSignal)
+			return;
+
+		var crossUp = lastMacd <= lastSignal && macd > signal;
+		var crossDown = lastMacd >= lastSignal && macd < signal;
+
+		var longSignal = crossUp && _longArmed;
+		var shortSignal = crossDown && _shortArmed;
+
+		// The first crossover after the RSI extreme decides the setup either way.
+		if (crossUp)
+			_longArmed = false;
+
+		if (crossDown)
+			_shortArmed = false;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
-		{
-			_prevMacd = macdVal;
 			return;
-		}
 
-		if (_cooldownRemaining > 0)
-		{
-			_cooldownRemaining--;
-			_prevMacd = macdVal;
-			return;
-		}
-
-		var wasOversold = _barsSinceOversold <= LookbackBars;
-		var wasOverbought = _barsSinceOverbought <= LookbackBars;
-
-		// MACD zero cross
-		var macdCrossUp = macdVal > 0 && _prevMacd <= 0 && _prevMacd != 0;
-		var macdCrossDown = macdVal < 0 && _prevMacd >= 0 && _prevMacd != 0;
-
-		// Buy: RSI was recently oversold + MACD crosses above zero
-		if (wasOversold && macdCrossUp && Position <= 0)
-		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-			BuyMarket(Volume);
-			_cooldownRemaining = CooldownBars;
-		}
-		// Sell: RSI was recently overbought + MACD crosses below zero
-		else if (wasOverbought && macdCrossDown && Position >= 0)
-		{
-			if (Position > 0)
-				SellMarket(Math.Abs(Position));
-			SellMarket(Volume);
-			_cooldownRemaining = CooldownBars;
-		}
-		// Exit long on MACD cross down
-		else if (Position > 0 && macdCrossDown)
-		{
-			SellMarket(Math.Abs(Position));
-			_cooldownRemaining = CooldownBars;
-		}
-		// Exit short on MACD cross up
-		else if (Position < 0 && macdCrossUp)
-		{
-			BuyMarket(Math.Abs(Position));
-			_cooldownRemaining = CooldownBars;
-		}
-
-		_prevMacd = macdVal;
+		if (longSignal && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (shortSignal && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
+		else if (Position > 0 && crossDown)
+			SellMarket(Position);
+		else if (Position < 0 && crossUp)
+			BuyMarket(-Position);
 	}
 }

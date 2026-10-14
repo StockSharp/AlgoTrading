@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using Ecng.Common;
 
@@ -11,19 +12,80 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy that uses ATR for volatility detection and MACD for trend direction.
-/// Enters when MACD confirms trend direction.
+/// ATR MACD strategy.
+/// A MACD cross above its signal line goes long and a cross below goes short, the opposite cross reversing the position.
+/// Each new position is sized as Volume times the average of the last AtrAvgPeriod ATR values divided by the current ATR,
+/// rounded down to the volume step, so higher volatility trades smaller. A percent stop limits the loss.
 /// </summary>
 public class AtrMacdStrategy : Strategy
 {
+	private readonly StrategyParam<int> _macdFast;
+	private readonly StrategyParam<int> _macdSlow;
+	private readonly StrategyParam<int> _macdSignal;
+	private readonly StrategyParam<int> _atrPeriod;
+	private readonly StrategyParam<int> _atrAvgPeriod;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
 
-	private decimal _atrValue;
-	private int _cooldown;
+	private bool? _prevAbove;
+	private readonly List<decimal> _atrs = [];
 
 	/// <summary>
-	/// Candle type for strategy calculation.
+	/// Fast EMA period of MACD.
+	/// </summary>
+	public int MacdFast
+	{
+		get => _macdFast.Value;
+		set => _macdFast.Value = value;
+	}
+
+	/// <summary>
+	/// Slow EMA period of MACD.
+	/// </summary>
+	public int MacdSlow
+	{
+		get => _macdSlow.Value;
+		set => _macdSlow.Value = value;
+	}
+
+	/// <summary>
+	/// Signal line period of MACD.
+	/// </summary>
+	public int MacdSignal
+	{
+		get => _macdSignal.Value;
+		set => _macdSignal.Value = value;
+	}
+
+	/// <summary>
+	/// Period of ATR.
+	/// </summary>
+	public int AtrPeriod
+	{
+		get => _atrPeriod.Value;
+		set => _atrPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// ATR values the typical volatility is averaged over.
+	/// </summary>
+	public int AtrAvgPeriod
+	{
+		get => _atrAvgPeriod.Value;
+		set => _atrAvgPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Stop loss percentage from entry price.
+	/// </summary>
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -32,25 +94,36 @@ public class AtrMacdStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Cooldown bars between trades.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
-	/// Strategy constructor.
+	/// Constructor.
 	/// </summary>
 	public AtrMacdStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
+		_macdFast = Param(nameof(MacdFast), 12)
+			.SetGreaterThanZero()
+			.SetDisplay("MACD Fast", "Fast EMA period of MACD", "MACD");
 
-		_cooldownBars = Param(nameof(CooldownBars), 100)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "General")
-			.SetRange(5, 500);
+		_macdSlow = Param(nameof(MacdSlow), 26)
+			.SetGreaterThanZero()
+			.SetDisplay("MACD Slow", "Slow EMA period of MACD", "MACD");
+
+		_macdSignal = Param(nameof(MacdSignal), 9)
+			.SetGreaterThanZero()
+			.SetDisplay("MACD Signal", "Signal line period of MACD", "MACD");
+
+		_atrPeriod = Param(nameof(AtrPeriod), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("ATR Period", "Period of ATR", "Sizing");
+
+		_atrAvgPeriod = Param(nameof(AtrAvgPeriod), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("ATR Average Period", "ATR values the typical volatility is averaged over", "Sizing");
+
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -63,8 +136,8 @@ public class AtrMacdStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_atrValue = 0;
-		_cooldown = 0;
+		_prevAbove = null;
+		_atrs.Clear();
 	}
 
 	/// <inheritdoc />
@@ -72,18 +145,34 @@ public class AtrMacdStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var atr = new AverageTrueRange { Length = 14 };
-		var macd = new MovingAverageConvergenceDivergenceSignal();
+		_prevAbove = null;
+		_atrs.Clear();
+
+		var macd = new MovingAverageConvergenceDivergenceSignal
+		{
+			Macd =
+			{
+				ShortMa = { Length = MacdFast },
+				LongMa = { Length = MacdSlow },
+			},
+			SignalMa = { Length = MacdSignal }
+		};
+		var atr = new AverageTrueRange { Length = AtrPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-
-		// Bind ATR to capture value
-		subscription.BindEx(atr, OnAtr);
-
-		// Bind MACD for main logic
 		subscription
-			.BindEx(macd, ProcessCandle)
+			.BindEx(macd, atr, ProcessCandle)
 			.Start();
+
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -91,65 +180,61 @@ public class AtrMacdStrategy : Strategy
 			DrawCandles(area, subscription);
 			DrawOwnTrades(area);
 
-			var atrArea = CreateChartArea();
-			if (atrArea != null)
-				DrawIndicator(atrArea, atr);
-
-			var macdArea = CreateChartArea();
-			if (macdArea != null)
-				DrawIndicator(macdArea, macd);
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, macd);
+				DrawIndicator(oscillators, atr);
+			}
 		}
 	}
 
-	private void OnAtr(ICandleMessage candle, IIndicatorValue atrValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
 	{
-		if (atrValue.IsFormed)
-			_atrValue = atrValue.ToDecimal();
+		// The high-level handler activates native protection before this callback, also between signal bars.
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue, IIndicatorValue atrValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (atrValue.IsFormed)
+		{
+			_atrs.Add(atrValue.GetValue<decimal>());
+
+			if (_atrs.Count > AtrAvgPeriod)
+				_atrs.RemoveAt(0);
+		}
+
+		if (!macdValue.IsFormed)
 			return;
 
-		if (macdValue is not MovingAverageConvergenceDivergenceSignalValue macdTyped)
+		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
+
+		if (macdTyped.Macd is not decimal macd || macdTyped.Signal is not decimal signal)
 			return;
 
-		if (macdTyped.Macd is not decimal macdLine || macdTyped.Signal is not decimal signalLine)
+		var isAbove = macd > signal;
+		var wasAbove = _prevAbove;
+		_prevAbove = isAbove;
+
+		if (wasAbove is not bool was || was == isAbove || _atrs.Count < AtrAvgPeriod)
 			return;
 
-		if (_cooldown > 0)
-		{
-			_cooldown--;
+		var currentAtr = _atrs[^1];
+
+		if (currentAtr <= 0 || !IsFormedAndOnlineAndAllowTrading())
 			return;
-		}
 
-		// Entry: MACD bullish crossover
-		if (macdLine > signalLine && Position == 0)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-		// Entry: MACD bearish crossover
-		else if (macdLine < signalLine && Position == 0)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
+		var size = Volume * _atrs.Average() / currentAtr;
 
-		// Exit on MACD crossover against position
-		if (Position > 0 && macdLine < signalLine)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position < 0 && macdLine > signalLine)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
+		if (Security?.VolumeStep is decimal step && step > 0)
+			size = Math.Max(step, Math.Floor(size / step) * step);
+
+		if (isAbove && Position <= 0)
+			BuyMarket(size + Math.Abs(Position));
+		else if (!isAbove && Position >= 0)
+			SellMarket(size + Math.Abs(Position));
 	}
 }

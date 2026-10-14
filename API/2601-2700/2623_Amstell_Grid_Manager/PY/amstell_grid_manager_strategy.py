@@ -16,7 +16,7 @@ class amstell_grid_manager_strategy(Strategy):
     def __init__(self):
         super(amstell_grid_manager_strategy, self).__init__()
 
-        self._order_volume = self.Param("OrderVolume", 1.0) \
+        self._order_volume = self.Param("OrderVolume", 0.01) \
             .SetGreaterThanZero() \
             .SetDisplay("Order Volume", "Quantity submitted with each grid order", "Trading")
         self._take_profit_pips = self.Param("TakeProfitPips", 30) \

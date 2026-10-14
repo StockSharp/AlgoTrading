@@ -18,7 +18,14 @@ Los stops basados en un porcentaje del precio ayudan a contener las pérdidas si
 - **Stops**: Sí, basado en porcentaje
 - **Valores predeterminados**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
+  - `MacdFast` = 12
+  - `MacdSlow` = 26
+  - `MacdSignal` = 9
+  - `RsiPeriod` = 14
+  - `RsiOversold` = 30
+  - `RsiOverbought` = 70
+    Un RSI por debajo de RsiOversold prepara un largo y por encima de RsiOverbought un corto; vale el extremo más reciente. El siguiente cruce del MACD en esa dirección lo confirma y entra, invirtiendo una posición opuesta; cada extremo confirma un solo cruce.
 - **Filtros**:
   - Categoría: Seguimiento de tendencia
   - Dirección: Ambos

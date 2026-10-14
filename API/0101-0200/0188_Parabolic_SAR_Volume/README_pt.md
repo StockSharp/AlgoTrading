@@ -7,7 +7,7 @@ Os testes indicam um retorno anual médio de aproximadamente 151%. Funciona melh
 
 O Parabolic SAR identifica mudanças de tendência e o volume mais alto valida o sinal. As operações começam quando a inversão do SAR vem acompanhada de expansão de volume.
 
-Útil para traders que acompanham movimentos baseados em volume. O rastro do SAR e um fator ATR protegem contra grandes perdas.
+Útil para traders que acompanham movimentos baseados em volume. O rastro do SAR protege contra grandes perdas.
 
 ## Detalhes
 
@@ -22,6 +22,7 @@ O Parabolic SAR identifica mudanças de tendência e o volume mais alto valida o
   - `MaxAcceleration` = 0.2m
   - `VolumePeriod` = 20
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    AvgVolume é o volume médio dos VolumePeriod candles anteriores. Uma compra é encerrada quando o SAR passa acima do preço e uma venda quando passa abaixo. Um sinal de entrada contra uma posição aberta a inverte.
 - **Filtros**:
   - Categoria: Rompimento
   - Direção: Ambos

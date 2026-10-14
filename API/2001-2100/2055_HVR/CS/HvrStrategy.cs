@@ -44,7 +44,7 @@ public class HvrStrategy : Strategy
 		_ratioThreshold = Param(nameof(RatioThreshold), 1m)
 			.SetDisplay("Ratio Threshold", "HVR level for trade direction", "Trading");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for calculation", "General");
 	}
 

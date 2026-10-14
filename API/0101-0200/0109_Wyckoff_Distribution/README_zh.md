@@ -16,7 +16,9 @@
 - **止损**：是，按百分比
 - **默认值**:
   - `CandleType` = 15分钟
-  - `StopLoss` = 2%
+  - `RangePeriod` = 20
+  - `StopLossPercent` = 2
+    派发区间为之前 RangePeriod 根K线的最高价和最低价。策略只做空，在收盘跌破区间下沿时卖出；止损设在结构顶部上方 StopLossPercent 处，K线收盘突破即平仓。
 - **过滤器**:
   - 类别：趋势跟随
   - 方向：双向

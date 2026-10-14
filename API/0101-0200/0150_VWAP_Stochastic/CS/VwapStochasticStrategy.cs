@@ -11,36 +11,27 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy combining VWAP and manual Stochastic %K.
-/// Buys when price is below VWAP and Stochastic is oversold.
-/// Sells when price is above VWAP and Stochastic is overbought.
+/// VWAP Stochastic strategy.
+/// The market trades around the clock, so the session VWAP restarts with each UTC day and weighs each candle's typical price by its volume.
+/// A close below VWAP with %K below OversoldLevel goes long and a close above VWAP with %K above OverboughtLevel goes short, reversing
+/// an opposite position; %K is the stochastic over StochPeriod candles smoothed over StochKPeriod candles. A long closes above VWAP
+/// and a short below it, and a percent stop limits the loss.
 /// </summary>
 public class VwapStochasticStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _stochPeriod;
+	private readonly StrategyParam<int> _stochKPeriod;
 	private readonly StrategyParam<decimal> _overboughtLevel;
 	private readonly StrategyParam<decimal> _oversoldLevel;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly List<decimal> _highs = new();
-	private readonly List<decimal> _lows = new();
-	private readonly List<decimal> _closes = new();
-	private readonly List<decimal> _volumes = new();
-	private readonly List<decimal> _typicalPriceVol = new();
-	private int _cooldown;
+	private DateTime? _day;
+	private decimal _cumulativePriceVolume;
+	private decimal _cumulativeVolume;
 
 	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Stochastic lookback period.
+	/// Lookback period of the raw stochastic.
 	/// </summary>
 	public int StochPeriod
 	{
@@ -49,7 +40,16 @@ public class VwapStochasticStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Overbought level for stochastic (0-100).
+	/// Smoothing period of %K.
+	/// </summary>
+	public int StochKPeriod
+	{
+		get => _stochKPeriod.Value;
+		set => _stochKPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// %K level for shorts.
 	/// </summary>
 	public decimal OverboughtLevel
 	{
@@ -58,7 +58,7 @@ public class VwapStochasticStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Oversold level for stochastic (0-100).
+	/// %K level for longs.
 	/// </summary>
 	public decimal OversoldLevel
 	{
@@ -67,35 +67,48 @@ public class VwapStochasticStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Cooldown bars between trades.
+	/// Stop loss percentage from entry price.
 	/// </summary>
-	public int CooldownBars
+	public decimal StopLossPercent
 	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
 	}
 
 	/// <summary>
-	/// Initialize strategy.
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
 	/// </summary>
 	public VwapStochasticStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
 		_stochPeriod = Param(nameof(StochPeriod), 14)
-			.SetRange(5, 30)
-			.SetDisplay("Stoch Period", "Lookback period for Stochastic %K", "Indicators");
+			.SetGreaterThanZero()
+			.SetDisplay("Stochastic Period", "Lookback period of the raw stochastic", "Stochastic");
+
+		_stochKPeriod = Param(nameof(StochKPeriod), 3)
+			.SetGreaterThanZero()
+			.SetDisplay("Stochastic %K", "Smoothing period of %K", "Stochastic");
 
 		_overboughtLevel = Param(nameof(OverboughtLevel), 80m)
-			.SetDisplay("Overbought Level", "Level considered overbought", "Trading Levels");
+			.SetDisplay("Overbought Level", "%K level for shorts", "Stochastic");
 
 		_oversoldLevel = Param(nameof(OversoldLevel), 20m)
-			.SetDisplay("Oversold Level", "Level considered oversold", "Trading Levels");
+			.SetDisplay("Oversold Level", "%K level for longs", "Stochastic");
 
-		_cooldownBars = Param(nameof(CooldownBars), 100)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "General")
-			.SetRange(5, 500);
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -108,12 +121,9 @@ public class VwapStochasticStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_highs.Clear();
-		_lows.Clear();
-		_closes.Clear();
-		_volumes.Clear();
-		_typicalPriceVol.Clear();
-		_cooldown = 0;
+		_day = null;
+		_cumulativePriceVolume = 0;
+		_cumulativeVolume = 0;
 	}
 
 	/// <inheritdoc />
@@ -121,111 +131,88 @@ public class VwapStochasticStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Use EMA as binding indicator
-		var ema = new ExponentialMovingAverage { Length = 20 };
+		_day = null;
+		_cumulativePriceVolume = 0;
+		_cumulativeVolume = 0;
+
+		// The D line of the core oscillator is the smoothed %K.
+		var stochastic = new StochasticOscillator
+		{
+			K = { Length = StochPeriod },
+			D = { Length = StochKPeriod },
+		};
 
 		var subscription = SubscribeCandles(CandleType);
-
 		subscription
-			.Bind(ema, ProcessCandle)
+			.BindEx(stochastic, ProcessCandle)
 			.Start();
+
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, stochastic);
+			}
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal emaValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
+	{
+		// The high-level handler activates native protection before this callback, also between signal bars.
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochasticValue)
 	{
 		if (candle.State != CandleStates.Finished)
+			return;
+
+		var day = candle.OpenTime.Date;
+
+		if (_day != day)
+		{
+			_day = day;
+			_cumulativePriceVolume = 0;
+			_cumulativeVolume = 0;
+		}
+
+		var typicalPrice = (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3;
+		_cumulativePriceVolume += typicalPrice * candle.TotalVolume;
+		_cumulativeVolume += candle.TotalVolume;
+
+		if (!stochasticValue.IsFormed || _cumulativeVolume <= 0)
+			return;
+
+		if (stochasticValue is not IStochasticOscillatorValue { D: decimal k })
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var high = candle.HighPrice;
-		var low = candle.LowPrice;
+		var vwap = _cumulativePriceVolume / _cumulativeVolume;
 		var close = candle.ClosePrice;
-		var volume = candle.TotalVolume;
-		var typicalPrice = (high + low + close) / 3m;
 
-		_highs.Add(high);
-		_lows.Add(low);
-		_closes.Add(close);
-		_volumes.Add(volume);
-		_typicalPriceVol.Add(typicalPrice * volume);
-
-		var period = StochPeriod;
-
-		if (_closes.Count < period)
-		{
-			if (_cooldown > 0) _cooldown--;
-			return;
-		}
-
-		// Manual VWAP (cumulative)
-		decimal sumTpv = 0;
-		decimal sumVol = 0;
-		for (int i = 0; i < _typicalPriceVol.Count; i++)
-		{
-			sumTpv += _typicalPriceVol[i];
-			sumVol += _volumes[i];
-		}
-		var vwapValue = sumVol > 0 ? sumTpv / sumVol : close;
-
-		// Manual Stochastic %K
-		decimal highestHigh = decimal.MinValue;
-		decimal lowestLow = decimal.MaxValue;
-		var count = _highs.Count;
-		for (int i = count - period; i < count; i++)
-		{
-			if (_highs[i] > highestHigh) highestHigh = _highs[i];
-			if (_lows[i] < lowestLow) lowestLow = _lows[i];
-		}
-
-		var range = highestHigh - lowestLow;
-		var stochK = range > 0 ? 100m * (close - lowestLow) / range : 50m;
-
-		// Keep stochastic lists manageable (but keep all data for VWAP)
-		if (_highs.Count > period * 3)
-		{
-			// For VWAP we need all data, but for stochastic just recent
-			// Keep all volumes/tpv for VWAP, trim only H/L/C for stochastic
-		}
-
-		if (_cooldown > 0)
-		{
-			_cooldown--;
-			return;
-		}
-
-		// Buy: price below VWAP + Stochastic oversold
-		if (close < vwapValue && stochK < OversoldLevel && Position == 0)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-		// Sell: price above VWAP + Stochastic overbought
-		else if (close > vwapValue && stochK > OverboughtLevel && Position == 0)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-
-		// Exit long: price above VWAP or stoch overbought
-		if (Position > 0 && (close > vwapValue || stochK > OverboughtLevel))
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		// Exit short: price below VWAP or stoch oversold
-		else if (Position < 0 && (close < vwapValue || stochK < OversoldLevel))
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
+		if (close < vwap && k < OversoldLevel && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (close > vwap && k > OverboughtLevel && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
+		else if (Position > 0 && close > vwap)
+			SellMarket(Position);
+		else if (Position < 0 && close < vwap)
+			BuyMarket(-Position);
 	}
 }

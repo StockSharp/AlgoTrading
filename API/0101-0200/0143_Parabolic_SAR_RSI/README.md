@@ -26,6 +26,7 @@ The combination is appealing to those who like trailing stops, since SAR also pr
   - `RsiOversold` = 30m
   - `RsiOverbought` = 70m
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    An entry signal against an open position reverses it.
 - **Filters**:
   - Category: Mean reversion
   - Direction: Both

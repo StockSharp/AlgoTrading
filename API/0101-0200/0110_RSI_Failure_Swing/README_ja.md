@@ -18,7 +18,10 @@ RSIフェイラー・スイングは、RSIが売られすぎ圏でより高い�
 - **ストップ**: はい、パーセントベース
 - **デフォルト値**:
   - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `RsiPeriod` = 14
+  - `OversoldLevel` = 30
+  - `OverboughtLevel` = 70
+  - `StopLossPercent` = 2
 - **フィルター**:
   - カテゴリ: リバーサル
   - 方向: 両方

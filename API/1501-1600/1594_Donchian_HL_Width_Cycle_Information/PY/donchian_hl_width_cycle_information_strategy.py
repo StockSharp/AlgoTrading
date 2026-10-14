@@ -14,7 +14,7 @@ from StockSharp.Algo.Strategies import Strategy
 class donchian_hl_width_cycle_information_strategy(Strategy):
     def __init__(self):
         super(donchian_hl_width_cycle_information_strategy, self).__init__()
-        self._length = self.Param("Length", 20) \
+        self._length = self.Param("Length", 28) \
             .SetDisplay("Donchian Length", "Lookback for Donchian channel", "Donchian")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")

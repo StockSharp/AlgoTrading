@@ -14,11 +14,11 @@ from StockSharp.Algo.Strategies import Strategy
 class yesterdays_high_strategy(Strategy):
     def __init__(self):
         super(yesterdays_high_strategy, self).__init__()
-        self._gap = self.Param("Gap", 0.5) \
+        self._gap = self.Param("Gap", 1.0) \
             .SetDisplay("Gap%", "Entry gap percent above prev high", "Entry")
-        self._stop_loss = self.Param("StopLoss", 2) \
+        self._stop_loss = self.Param("StopLoss", 3) \
             .SetDisplay("Stop-loss", "Stop-loss percent", "Risk")
-        self._take_profit = self.Param("TakeProfit", 5) \
+        self._take_profit = self.Param("TakeProfit", 9) \
             .SetDisplay("Take-profit", "Take-profit percent", "Risk")
         self._trail_offset = self.Param("TrailOffset", 1) \
             .SetDisplay("Trail Offset", "Trailing stop offset percent", "Risk")

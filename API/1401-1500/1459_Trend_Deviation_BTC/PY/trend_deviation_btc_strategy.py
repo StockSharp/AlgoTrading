@@ -16,7 +16,7 @@ class trend_deviation_btc_strategy(Strategy):
         super(trend_deviation_btc_strategy, self).__init__()
         self._slow_length = self.Param("SlowLength", 40) \
             .SetDisplay("Slow Length", "Slow EMA period", "General")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
             .SetDisplay("Candle Type", "Candle type", "General")
 
     @property

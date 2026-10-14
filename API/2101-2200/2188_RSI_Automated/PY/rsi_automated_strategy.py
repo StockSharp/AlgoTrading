@@ -28,7 +28,7 @@ class rsi_automated_strategy(Strategy):
             .SetDisplay("Take Profit", "Take profit distance in points", "Risk")
         self._trailing_stop_points = self.Param("TrailingStopPoints", 25.0) \
             .SetDisplay("Trailing", "Trailing stop distance in points", "Risk")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
         self._entry_price = 0.0
         self._stop_price = 0.0

@@ -16,7 +16,7 @@ class random_bias_trader_strategy(Strategy):
         super(random_bias_trader_strategy, self).__init__()
 
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(60)))
-        self._reward_risk_ratio = self.Param("RewardRiskRatio", 3.0)
+        self._reward_risk_ratio = self.Param("RewardRiskRatio", 2.0)
         self._atr_multiplier = self.Param("AtrMultiplier", 3.0)
         self._atr_period = self.Param("AtrPeriod", 14)
 

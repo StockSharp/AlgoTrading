@@ -22,7 +22,7 @@ class natuseko_protrader_4h_strategy(Strategy):
         self._slow_ema_period = self.Param("SlowEmaPeriod", 21).SetGreaterThanZero().SetDisplay("Slow EMA period", "Slow EMA length.", "Indicator")
         self._trend_ema_period = self.Param("TrendEmaPeriod", 55).SetGreaterThanZero().SetDisplay("Trend EMA period", "Trend EMA length.", "Indicator")
         self._macd_fast_period = self.Param("MacdFastPeriod", 5).SetGreaterThanZero().SetDisplay("MACD fast period", "MACD fast EMA.", "Indicator")
-        self._macd_slow_period = self.Param("MacdSlowPeriod", 26).SetGreaterThanZero().SetDisplay("MACD slow period", "MACD slow EMA.", "Indicator")
+        self._macd_slow_period = self.Param("MacdSlowPeriod", 200).SetGreaterThanZero().SetDisplay("MACD slow period", "MACD slow EMA.", "Indicator")
         self._rsi_period = self.Param("RsiPeriod", 21).SetGreaterThanZero().SetDisplay("RSI period", "RSI length.", "Indicator")
         self._rsi_entry_level = self.Param("RsiEntryLevel", 50.0).SetDisplay("RSI neutral level", "Central RSI threshold.", "Trading")
         self._rsi_tp_long = self.Param("RsiTakeProfitLong", 65.0).SetDisplay("RSI TP long", "RSI partial exit long.", "Trading")

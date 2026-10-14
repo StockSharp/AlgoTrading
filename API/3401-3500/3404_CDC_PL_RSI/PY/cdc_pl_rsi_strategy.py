@@ -15,7 +15,7 @@ class cdc_pl_rsi_strategy(Strategy):
     def __init__(self):
         super(cdc_pl_rsi_strategy, self).__init__()
 
-        self._rsi_period = self.Param("RsiPeriod", 14) \
+        self._rsi_period = self.Param("RsiPeriod", 20) \
             .SetDisplay("RSI Period", "RSI period", "Indicators")
         self._oversold_level = self.Param("OversoldLevel", 40.0) \
             .SetDisplay("Oversold Level", "RSI below this for long entry", "Signals")

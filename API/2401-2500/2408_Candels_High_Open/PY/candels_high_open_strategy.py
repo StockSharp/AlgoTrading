@@ -15,7 +15,7 @@ class candels_high_open_strategy(Strategy):
     def __init__(self):
         super(candels_high_open_strategy, self).__init__()
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4)))
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5)))
         self._reverse_signals = self.Param("ReverseSignals", False)
         self._stop_level = self.Param("StopLevel", 50.0)
         self._take_level = self.Param("TakeLevel", 50.0)

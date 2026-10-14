@@ -7,7 +7,7 @@ Testing indicates an average annual return of about 184%. It performs best in th
 
 The moving average dictates the trend, and ADX verifies whether it's strong enough to trade. Entries follow price crossings of the MA when ADX exceeds a threshold.
 
-This classic trend approach appeals to systematic traders. Losses are managed with an ATR-based stop.
+This classic trend approach appeals to systematic traders. Losses are managed with a percent stop and profits taken at an ATR-based target.
 
 ## Details
 
@@ -23,6 +23,9 @@ This classic trend approach appeals to systematic traders. Losses are managed wi
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
   - `StopLossPercent` = 2m
   - `TakeProfitAtrMultiplier` = 2m
+  - `AdxThreshold` = 25
+  - `AtrPeriod` = 14
+    Entries need the close to cross the SMA on that candle while ADX is above AdxThreshold; the reverse cross closes the position and, with ADX still strong, opens the other side. The target lies TakeProfitAtrMultiplier ATRs (AtrPeriod) from the entry close and is checked on candle closes.
 - **Filters**:
   - Category: Trend
   - Direction: Both

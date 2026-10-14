@@ -11,7 +11,7 @@ from StockSharp.Algo.Strategies import Strategy
 class graal_fractal_channel_strategy(Strategy):
     def __init__(self):
         super(graal_fractal_channel_strategy, self).__init__()
-        self._channel_period = self.Param("ChannelPeriod", 20).SetDisplay("Channel Period", "Highest/Lowest lookback", "Indicators")
+        self._channel_period = self.Param("ChannelPeriod", 14).SetDisplay("Channel Period", "Highest/Lowest lookback", "Indicators")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))).SetDisplay("Candle Type", "Candle timeframe", "General")
         self._prev_close = 0.0
         self._prev_mid = 0.0

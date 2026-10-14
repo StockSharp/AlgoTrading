@@ -40,7 +40,7 @@ class macd_slope_breakout_strategy(Strategy):
             .SetDisplay("Slope Period", "Period for slope statistics calculation", "Strategy Parameters") \
             .SetOptimize(10, 50, 5)
 
-        self._breakout_multiplier = self.Param("BreakoutMultiplier", 2.5) \
+        self._breakout_multiplier = self.Param("BreakoutMultiplier", 2.0) \
             .SetGreaterThanZero() \
             .SetDisplay("Breakout Multiplier", "Standard deviation multiplier for breakout detection", "Strategy Parameters") \
             .SetOptimize(1.5, 4.0, 0.5)

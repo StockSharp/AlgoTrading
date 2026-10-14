@@ -1,50 +1,35 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-using StockSharp.Algo;
-using StockSharp.Algo.Candles;
-
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on VWAP and ADX indicators.
-/// Enters long when price is above VWAP and ADX > 25.
-/// Enters short when price is below VWAP and ADX > 25.
-/// Exits when ADX < 20.
+/// VWAP ADX strategy.
+/// The market trades around the clock, so the session VWAP restarts with each UTC day and weighs each candle's typical price by its volume.
+/// While ADX is above AdxThreshold, a close above VWAP goes long and a close below it goes short, reversing an opposite position.
+/// The position closes once ADX drops below AdxExitThreshold, and a percent stop limits the loss.
 /// </summary>
 public class VwapAdxStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<int> _adxPeriod;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _adxThreshold;
+	private readonly StrategyParam<decimal> _adxExitThreshold;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private AverageDirectionalIndex _adx;
-	private VolumeWeightedMovingAverage _vwap;
-	private decimal _prevAdxValue;
-	private int _cooldown;
+	private DateTime? _day;
+	private decimal _cumulativePriceVolume;
+	private decimal _cumulativeVolume;
 
 	/// <summary>
-	/// Stop loss percentage value.
-	/// </summary>
-	public decimal StopLossPercent
-	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
-	}
-
-	/// <summary>
-	/// ADX indicator period.
+	/// Period of ADX.
 	/// </summary>
 	public int AdxPeriod
 	{
@@ -53,16 +38,34 @@ public class VwapAdxStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Bars to wait between trades.
+	/// ADX level required to enter.
 	/// </summary>
-	public int CooldownBars
+	public decimal AdxThreshold
 	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
+		get => _adxThreshold.Value;
+		set => _adxThreshold.Value = value;
 	}
 
 	/// <summary>
-	/// Candle type for strategy.
+	/// ADX level below which the position closes.
+	/// </summary>
+	public decimal AdxExitThreshold
+	{
+		get => _adxExitThreshold.Value;
+		set => _adxExitThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Stop loss percentage from entry price.
+	/// </summary>
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
@@ -71,39 +74,41 @@ public class VwapAdxStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="VwapAdxStrategy"/>.
+	/// Constructor.
 	/// </summary>
 	public VwapAdxStrategy()
 	{
-		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-			.SetDisplay("Stop loss (%)", "Stop loss percentage from entry price", "Risk Management");
-
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
-			.SetDisplay("ADX Period", "Period for Average Directional Movement Index", "Indicators")
-			
-			.SetOptimize(10, 20, 1);
+			.SetGreaterThanZero()
+			.SetDisplay("ADX Period", "Period of ADX", "ADX");
 
-		_cooldownBars = Param(nameof(CooldownBars), 25)
-			.SetRange(1, 200)
-			.SetDisplay("Cooldown Bars", "Bars between entries", "General");
+		_adxThreshold = Param(nameof(AdxThreshold), 25m)
+			.SetDisplay("ADX Threshold", "ADX level required to enter", "ADX");
+
+		_adxExitThreshold = Param(nameof(AdxExitThreshold), 20m)
+			.SetDisplay("ADX Exit Threshold", "ADX level below which the position closes", "ADX");
+
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Timeframe of data for strategy", "General");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
-	public override IEnumerable<(Security, DataType)> GetWorkingSecurities()
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}
+
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevAdxValue = default;
-		_cooldown = 0;
-		_adx = null;
-		_vwap = null;
+		_day = null;
+		_cumulativePriceVolume = 0;
+		_cumulativeVolume = 0;
 	}
 
 	/// <inheritdoc />
@@ -111,86 +116,84 @@ public class VwapAdxStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Create ADX indicator
-		_adx = new() { Length = AdxPeriod };
-		_vwap = new() { Length = AdxPeriod };
-		var dummyEma = new ExponentialMovingAverage { Length = 10 };
+		_day = null;
+		_cumulativePriceVolume = 0;
+		_cumulativeVolume = 0;
 
-		// Create subscription and subscribe to VWAP
+		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
+
 		var subscription = SubscribeCandles(CandleType);
-
-		// Process candles with ADX + dummy EMA (BindEx needs 2+ indicators)
 		subscription
-			.BindEx(_adx, dummyEma, ProcessCandle)
+			.BindEx(adx, ProcessCandle)
 			.Start();
 
-		// Setup chart visualization
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
+
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _adx);
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, adx);
+			}
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue adxValue, IIndicatorValue dummyValue)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
 	{
-		// Skip unfinished candles
+		// The high-level handler activates native protection before this callback, also between signal bars.
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue adxValue)
+	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		decimal vwap;
-		try
-		{
-			var vwapValue = _vwap.Process(candle);
-			if (vwapValue == null || !_vwap.IsFormed)
-				return;
+		var day = candle.OpenTime.Date;
 
-			vwap = vwapValue.ToDecimal();
-		}
-		catch (IndexOutOfRangeException)
+		if (_day != day)
 		{
-			return;
+			_day = day;
+			_cumulativePriceVolume = 0;
+			_cumulativeVolume = 0;
 		}
 
-		// Get current ADX value
-		var typedAdx = (AverageDirectionalIndexValue)adxValue;
+		var typicalPrice = (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3;
+		_cumulativePriceVolume += typicalPrice * candle.TotalVolume;
+		_cumulativeVolume += candle.TotalVolume;
 
-		if (typedAdx.MovingAverage is not decimal currentAdxValue)
+		if (!adxValue.IsFormed || _cumulativeVolume <= 0)
 			return;
 
-		// Trading logic
-		if (_cooldown > 0)
-		{
-			_cooldown--;
-		}
+		if (adxValue is not AverageDirectionalIndexValue { MovingAverage: decimal strength })
+			return;
 
-		var adxImpulseUp = _prevAdxValue <= 25 && currentAdxValue > 25;
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
 
-		if (_cooldown == 0 && adxImpulseUp)
-		{
-			if (candle.ClosePrice > vwap * 1.001m && Position <= 0)
-			{
-				BuyMarket();
-				_cooldown = CooldownBars;
-			}
-			else if (candle.ClosePrice < vwap * 0.999m && Position >= 0)
-			{
-				SellMarket();
-				_cooldown = CooldownBars;
-			}
-		}
-		else if (currentAdxValue < 18 && Position != 0)
-		{
-			if (Position > 0)
-				SellMarket();
-			else
-				BuyMarket();
-			_cooldown = CooldownBars;
-		}
+		var vwap = _cumulativePriceVolume / _cumulativeVolume;
+		var close = candle.ClosePrice;
+		var strong = strength > AdxThreshold;
 
-		// Store current ADX value for next candle
-		_prevAdxValue = currentAdxValue;
+		if (strong && close > vwap && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (strong && close < vwap && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
+		else if (Position > 0 && strength < AdxExitThreshold)
+			SellMarket(Position);
+		else if (Position < 0 && strength < AdxExitThreshold)
+			BuyMarket(-Position);
 	}
 }

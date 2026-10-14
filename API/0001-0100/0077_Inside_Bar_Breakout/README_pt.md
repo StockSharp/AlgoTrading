@@ -18,6 +18,7 @@ Caso o preço não rompa imediatamente, a estratégia gerencia as posições exi
 - **Valores padrão**:
   - `CandleType` = 5 minute
   - `StopLossPercent` = 1
+    O stop fica essa porcentagem além do lado oposto da barra interna; ele e a saída pelo extremo da vela anterior são verificados no fechamento das velas.
 - **Filtros**:
   - Categoria: Rompimento
   - Direção: Ambos

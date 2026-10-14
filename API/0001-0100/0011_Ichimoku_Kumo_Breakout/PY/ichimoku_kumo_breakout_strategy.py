@@ -5,25 +5,27 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan
+from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import Highest, Lowest
+from StockSharp.Algo.Indicators import Ichimoku
 from StockSharp.Algo.Strategies import Strategy
 
 class ichimoku_kumo_breakout_strategy(Strategy):
     """
-    Ichimoku Kumo breakout. Tenkan/Kijun cross with cloud confirmation.
+    Strategy based on Ichimoku Kumo (cloud) breakout.
+    Buys when the close is above the cloud with Tenkan-sen above Kijun-sen, sells when it is below the cloud with Tenkan-sen
+    below Kijun-sen, acting when the last of the two conditions appears. A position is held until the close goes through the cloud.
     """
 
     def __init__(self):
         super(ichimoku_kumo_breakout_strategy, self).__init__()
-        self._tenkan_period = self.Param("TenkanPeriod", 9).SetDisplay("Tenkan Period", "Tenkan-sen period", "Indicators")
-        self._kijun_period = self.Param("KijunPeriod", 26).SetDisplay("Kijun Period", "Kijun-sen period", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Timeframe", "General")
+        self._tenkan_period = self.Param("TenkanPeriod", 9).SetGreaterThanZero().SetDisplay("Tenkan Period", "Tenkan-sen period", "Indicators")
+        self._kijun_period = self.Param("KijunPeriod", 26).SetGreaterThanZero().SetDisplay("Kijun Period", "Kijun-sen period", "Indicators")
+        self._senkou_span_period = self.Param("SenkouSpanPeriod", 52).SetGreaterThanZero().SetDisplay("Senkou Span B Period", "Period for Senkou Span B", "Indicators")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))).SetDisplay("Candle Type", "Timeframe", "General")
 
-        self._prev_tenkan_above = False
-        self._has_prev = False
-        self._candles_since_trade = 0
+        self._prev_long_setup = None
+        self._prev_short_setup = None
 
     @property
     def candle_type(self):
@@ -31,52 +33,64 @@ class ichimoku_kumo_breakout_strategy(Strategy):
 
     def OnReseted(self):
         super(ichimoku_kumo_breakout_strategy, self).OnReseted()
-        self._prev_tenkan_above = False
-        self._has_prev = False
-        self._candles_since_trade = 0
+        self._prev_long_setup = None
+        self._prev_short_setup = None
 
     def OnStarted2(self, time):
         super(ichimoku_kumo_breakout_strategy, self).OnStarted2(time)
-        tenkan_h = Highest()
-        tenkan_h.Length = self._tenkan_period.Value
-        tenkan_l = Lowest()
-        tenkan_l.Length = self._tenkan_period.Value
-        kijun_h = Highest()
-        kijun_h.Length = self._kijun_period.Value
-        kijun_l = Lowest()
-        kijun_l.Length = self._kijun_period.Value
+
+        ichimoku = Ichimoku()
+        ichimoku.Tenkan.Length = self._tenkan_period.Value
+        ichimoku.Kijun.Length = self._kijun_period.Value
+        ichimoku.SenkouB.Length = self._senkou_span_period.Value
+
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(tenkan_h, tenkan_l, kijun_h, kijun_l, self._process_candle).Start()
+        subscription.BindEx(ichimoku, self._process_candle).Start()
+
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
+            self.DrawIndicator(area, ichimoku)
             self.DrawOwnTrades(area)
 
-    def _process_candle(self, candle, th, tl, kh, kl):
+    def _process_candle(self, candle, value):
         if candle.State != CandleStates.Finished:
             return
-        tenkan = (float(th) + float(tl)) / 2.0
-        kijun = (float(kh) + float(kl)) / 2.0
-        if tenkan == 0 or kijun == 0:
+
+        # The cloud is plotted ahead, so the spans of this candle were set Kijun periods ago.
+        tenkan = value.Tenkan
+        kijun = value.Kijun
+        span_a = value.SenkouA
+        span_b = value.SenkouB
+        if tenkan is None or kijun is None or span_a is None or span_b is None:
             return
-        tenkan_above = tenkan > kijun
-        self._candles_since_trade += 1
-        if not self._has_prev:
-            self._has_prev = True
-            self._prev_tenkan_above = tenkan_above
+
+        close = candle.ClosePrice
+        cloud_top = Math.Max(span_a, span_b)
+        cloud_bottom = Math.Min(span_a, span_b)
+
+        long_setup = close > cloud_top and tenkan > kijun
+        short_setup = close < cloud_bottom and tenkan < kijun
+
+        was_long = self._prev_long_setup
+        was_short = self._prev_short_setup
+        self._prev_long_setup = long_setup
+        self._prev_short_setup = short_setup
+
+        if was_long is None or was_short is None:
             return
-        is_cross = tenkan_above != self._prev_tenkan_above
-        self._prev_tenkan_above = tenkan_above
-        if not is_cross:
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
-        if self._candles_since_trade < 4:
-            return
-        if tenkan_above and self.Position <= 0:
-            self.BuyMarket()
-            self._candles_since_trade = 0
-        elif not tenkan_above and self.Position >= 0:
-            self.SellMarket()
-            self._candles_since_trade = 0
+
+        position = self.Position
+        if long_setup and not was_long and position <= 0:
+            self.BuyMarket(self.Volume + Math.Abs(position))
+        elif short_setup and not was_short and position >= 0:
+            self.SellMarket(self.Volume + Math.Abs(position))
+        elif position > 0 and close < cloud_bottom:
+            self.SellMarket(position)
+        elif position < 0 and close > cloud_top:
+            self.BuyMarket(-position)
 
     def CreateClone(self):
         return ichimoku_kumo_breakout_strategy()

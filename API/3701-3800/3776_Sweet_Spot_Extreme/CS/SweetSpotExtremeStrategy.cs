@@ -61,13 +61,13 @@ public class SweetSpotExtremeStrategy : Strategy
 		_emaPeriod = Param(nameof(EmaPeriod), 50)
 			.SetDisplay("EMA Period", "Trend EMA period", "Indicators");
 
-		_cciPeriod = Param(nameof(CciPeriod), 14)
+		_cciPeriod = Param(nameof(CciPeriod), 12)
 			.SetDisplay("CCI Period", "CCI lookback", "Indicators");
 
-		_buyCciLevel = Param(nameof(BuyCciLevel), -50m)
+		_buyCciLevel = Param(nameof(BuyCciLevel), -200m)
 			.SetDisplay("Buy CCI", "Oversold CCI level for buy", "Indicators");
 
-		_sellCciLevel = Param(nameof(SellCciLevel), 50m)
+		_sellCciLevel = Param(nameof(SellCciLevel), 200m)
 			.SetDisplay("Sell CCI", "Overbought CCI level for sell", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())

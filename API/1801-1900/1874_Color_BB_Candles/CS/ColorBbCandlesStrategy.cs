@@ -68,7 +68,7 @@ public class ColorBbCandlesStrategy : Strategy
 			.SetDisplay("Bollinger Period", "Length of Bollinger Bands", "General")
 			.SetOptimize(50, 200, 25);
 
-		_bollingerDeviation = Param(nameof(BollingerDeviation), 1.5m)
+		_bollingerDeviation = Param(nameof(BollingerDeviation), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Deviation", "Width of Bollinger Bands", "General")
 			.SetOptimize(0.5m, 3m, 0.5m);

@@ -35,7 +35,7 @@ public class Mfs3BarsPatternStrategy : Strategy
 		_smaLength = Param(nameof(SmaLength), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("SMA Length", "SMA period", "General");
-		_riskReward = Param(nameof(RiskReward), 2.5m)
+		_riskReward = Param(nameof(RiskReward), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Risk Reward", "Target reward to risk ratio", "General");
 		_signalCooldownBars = Param(nameof(SignalCooldownBars), 50)

@@ -11,33 +11,27 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Combined strategy that uses Bollinger Bands and RSI indicators
-/// for mean reversion trading.
+/// Bollinger RSI strategy.
+/// A close above the upper band that is higher than the previous close above that band while RSI is lower than it was then
+/// is a bearish divergence and goes short; the mirror below the lower band goes long, reversing an opposite position.
+/// The position closes once price closes back inside the bands or RSI crosses back over 50, and a percent stop limits the loss.
 /// </summary>
 public class BollingerRsiStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _bollingerPeriod;
 	private readonly StrategyParam<decimal> _bollingerDeviation;
 	private readonly StrategyParam<int> _rsiPeriod;
-	private readonly StrategyParam<decimal> _rsiOversold;
-	private readonly StrategyParam<decimal> _rsiOverbought;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _rsiValue;
-	private int _cooldown;
-
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	// The previous close outside each band and RSI at that close.
+	private decimal? _upperClose;
+	private decimal _upperRsi;
+	private decimal? _lowerClose;
+	private decimal _lowerRsi;
 
 	/// <summary>
-	/// Bollinger Bands period.
+	/// Period of the Bollinger Bands.
 	/// </summary>
 	public int BollingerPeriod
 	{
@@ -46,7 +40,7 @@ public class BollingerRsiStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Bollinger Bands standard deviation multiplier.
+	/// Standard deviation multiplier of the bands.
 	/// </summary>
 	public decimal BollingerDeviation
 	{
@@ -55,7 +49,7 @@ public class BollingerRsiStrategy : Strategy
 	}
 
 	/// <summary>
-	/// RSI period.
+	/// Period of RSI.
 	/// </summary>
 	public int RsiPeriod
 	{
@@ -64,60 +58,46 @@ public class BollingerRsiStrategy : Strategy
 	}
 
 	/// <summary>
-	/// RSI oversold level.
+	/// Stop loss percentage from entry price.
 	/// </summary>
-	public decimal RsiOversold
+	public decimal StopLossPercent
 	{
-		get => _rsiOversold.Value;
-		set => _rsiOversold.Value = value;
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
 	}
 
 	/// <summary>
-	/// RSI overbought level.
+	/// Candle type.
 	/// </summary>
-	public decimal RsiOverbought
+	public DataType CandleType
 	{
-		get => _rsiOverbought.Value;
-		set => _rsiOverbought.Value = value;
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
 	/// <summary>
-	/// Cooldown bars between trades.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
-	/// Strategy constructor.
+	/// Constructor.
 	/// </summary>
 	public BollingerRsiStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
-			.SetRange(10, 50)
-			.SetDisplay("Bollinger Period", "Period of the Bollinger Bands indicator", "Indicators");
+			.SetGreaterThanZero()
+			.SetDisplay("Bollinger Period", "Period of the Bollinger Bands", "Indicators");
 
-		_bollingerDeviation = Param(nameof(BollingerDeviation), 2.0m)
-			.SetDisplay("Bollinger Deviation", "Standard deviation multiplier", "Indicators");
+		_bollingerDeviation = Param(nameof(BollingerDeviation), 2m)
+			.SetGreaterThanZero()
+			.SetDisplay("Bollinger Deviation", "Standard deviation multiplier of the bands", "Indicators");
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
-			.SetRange(7, 21)
-			.SetDisplay("RSI Period", "Period of the RSI indicator", "Indicators");
+			.SetGreaterThanZero()
+			.SetDisplay("RSI Period", "Period of RSI", "Indicators");
 
-		_rsiOversold = Param(nameof(RsiOversold), 30m)
-			.SetDisplay("RSI Oversold", "RSI oversold level", "Indicators");
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk");
 
-		_rsiOverbought = Param(nameof(RsiOverbought), 70m)
-			.SetDisplay("RSI Overbought", "RSI overbought level", "Indicators");
-
-		_cooldownBars = Param(nameof(CooldownBars), 100)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "General")
-			.SetRange(5, 500);
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -130,8 +110,10 @@ public class BollingerRsiStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_rsiValue = 50;
-		_cooldown = 0;
+		_upperClose = null;
+		_upperRsi = default;
+		_lowerClose = null;
+		_lowerRsi = default;
 	}
 
 	/// <inheritdoc />
@@ -139,23 +121,28 @@ public class BollingerRsiStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var bollinger = new BollingerBands
-		{
-			Length = BollingerPeriod,
-			Width = BollingerDeviation
-		};
+		_upperClose = null;
+		_upperRsi = default;
+		_lowerClose = null;
+		_lowerRsi = default;
 
+		var bollinger = new BollingerBands { Length = BollingerPeriod, Width = BollingerDeviation };
 		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-
-		// Bind RSI to capture value
-		subscription.Bind(rsi, OnRsi);
-
-		// Bind Bollinger for main logic
 		subscription
-			.BindEx(bollinger, ProcessCandle)
+			.BindEx(bollinger, rsi, ProcessCandle)
 			.Start();
+
+		StartProtection(new Unit(), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+
+		// The stop has to see prices between candles, not only at their close.
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Bind(ObserveProtectionQuote).Start();
+		}
 
 		var area = CreateChartArea();
 		if (area != null)
@@ -164,64 +151,75 @@ public class BollingerRsiStrategy : Strategy
 			DrawIndicator(area, bollinger);
 			DrawOwnTrades(area);
 
-			var rsiArea = CreateChartArea();
-			if (rsiArea != null)
-				DrawIndicator(rsiArea, rsi);
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, rsi);
+			}
 		}
 	}
 
-	private void OnRsi(ICandleMessage candle, decimal rsi)
+	private void ObserveProtectionQuote(Level1ChangeMessage quote)
 	{
-		_rsiValue = rsi;
+		// The high-level handler activates native protection before this callback, also between signal bars.
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue, IIndicatorValue rsiValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		if (!bollingerValue.IsFormed || !rsiValue.IsFormed)
+			return;
+
+		var bands = (BollingerBandsValue)bollingerValue;
+
+		if (bands.UpBand is not decimal upper || bands.LowBand is not decimal lower)
+			return;
+
+		var rsi = rsiValue.GetValue<decimal>();
+		var close = candle.ClosePrice;
+		var signal = 0;
+
+		if (close > upper)
+		{
+			if (_upperClose is decimal previousClose && close > previousClose && rsi < _upperRsi)
+				signal = -1;
+
+			_upperClose = close;
+			_upperRsi = rsi;
+		}
+		else if (close < lower)
+		{
+			if (_lowerClose is decimal previousClose && close < previousClose && rsi > _lowerRsi)
+				signal = 1;
+
+			_lowerClose = close;
+			_lowerRsi = rsi;
+		}
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var bollingerTyped = (BollingerBandsValue)bollingerValue;
-
-		if (bollingerTyped.UpBand is not decimal upperBand ||
-			bollingerTyped.LowBand is not decimal lowerBand ||
-			bollingerTyped.MovingAverage is not decimal middleBand)
-			return;
-
-		var close = candle.ClosePrice;
-
-		if (_cooldown > 0)
+		if (signal > 0)
 		{
-			_cooldown--;
-			return;
+			if (Position <= 0)
+				BuyMarket(Volume + Math.Abs(Position));
 		}
-
-		// Long entry: price below lower band + RSI oversold
-		if (close < lowerBand && _rsiValue < RsiOversold && Position == 0)
+		else if (signal < 0)
 		{
-			BuyMarket();
-			_cooldown = CooldownBars;
+			if (Position >= 0)
+				SellMarket(Volume + Math.Abs(Position));
 		}
-		// Short entry: price above upper band + RSI overbought
-		else if (close > upperBand && _rsiValue > RsiOverbought && Position == 0)
+		else if (Position > 0)
 		{
-			SellMarket();
-			_cooldown = CooldownBars;
+			if (close >= lower || rsi > 50m)
+				SellMarket(Position);
 		}
-
-		// Exit long: price returns to middle band
-		if (Position > 0 && close > middleBand)
+		else if (Position < 0)
 		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		// Exit short: price returns below middle band
-		else if (Position < 0 && close < middleBand)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
+			if (close <= upper || rsi < 50m)
+				BuyMarket(-Position);
 		}
 	}
 }

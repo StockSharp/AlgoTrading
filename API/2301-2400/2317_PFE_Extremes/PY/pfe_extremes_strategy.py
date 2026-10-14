@@ -15,11 +15,11 @@ from StockSharp.Algo.Strategies import Strategy
 class pfe_extremes_strategy(Strategy):
     def __init__(self):
         super(pfe_extremes_strategy, self).__init__()
-        self._pfe_period = self.Param("PfePeriod", 9) \
+        self._pfe_period = self.Param("PfePeriod", 5) \
             .SetDisplay("PFE Period", "Number of bars for PFE calculation", "Indicator")
-        self._up_level = self.Param("UpLevel", 20.0) \
+        self._up_level = self.Param("UpLevel", 0.5) \
             .SetDisplay("Upper Level", "PFE value to trigger long entries", "Signal")
-        self._down_level = self.Param("DownLevel", -20.0) \
+        self._down_level = self.Param("DownLevel", -0.5) \
             .SetDisplay("Lower Level", "PFE value to trigger short entries", "Signal")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Timeframe for indicator calculation", "General")

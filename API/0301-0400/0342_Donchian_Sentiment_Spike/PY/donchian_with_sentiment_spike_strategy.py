@@ -19,19 +19,19 @@ class donchian_with_sentiment_spike_strategy(Strategy):
     def __init__(self):
         super(donchian_with_sentiment_spike_strategy, self).__init__()
 
-        self._donchian_period = self.Param("DonchianPeriod", 10) \
+        self._donchian_period = self.Param("DonchianPeriod", 20) \
             .SetGreaterThanZero() \
             .SetDisplay("Donchian Period", "Donchian channel period", "Donchian Settings") \
             .SetCanOptimize(True) \
             .SetOptimize(10, 30, 5)
 
-        self._sentiment_period = self.Param("SentimentPeriod", 10) \
+        self._sentiment_period = self.Param("SentimentPeriod", 20) \
             .SetGreaterThanZero() \
             .SetDisplay("Sentiment Period", "Sentiment averaging period", "Sentiment Settings") \
             .SetCanOptimize(True) \
             .SetOptimize(10, 30, 5)
 
-        self._sentiment_multiplier = self.Param("SentimentMultiplier", 0.5) \
+        self._sentiment_multiplier = self.Param("SentimentMultiplier", 2.0) \
             .SetGreaterThanZero() \
             .SetDisplay("Sentiment StdDev Multiplier", "Multiplier for sentiment standard deviation", "Sentiment Settings") \
             .SetCanOptimize(True) \
@@ -43,7 +43,7 @@ class donchian_with_sentiment_spike_strategy(Strategy):
             .SetCanOptimize(True) \
             .SetOptimize(1.0, 3.0, 0.5)
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._sentiment_history = []

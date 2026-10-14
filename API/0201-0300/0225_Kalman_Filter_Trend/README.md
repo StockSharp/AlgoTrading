@@ -19,8 +19,11 @@ Traders who prefer systematic approaches may find the Kalman filter useful for r
   - **Short**: Exit on close > Kalman Filter
 - **Stops**: Yes, ATR-based stop-loss.
 - **Default Values**:
-  - `ProcessNoise` = 0.01m
-  - `MeasurementNoise` = 0.1m
+  - `ProcessNoise` = 0.01
+  - `MeasurementNoise` = 0.1
+  - `AtrPeriod` = 14
+  - `AtrMultiplier` = 2
+    An entry on the other side of the line reverses the position. The stop is set AtrMultiplier times the AtrPeriod ATR from the entry close and checked on candle closes; after it the next close beyond the line opens a new position. 0 disables it.
   - `CandleType` = TimeSpan.FromMinutes(5)
 - **Filters**:
   - Category: Trend

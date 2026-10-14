@@ -26,6 +26,7 @@ Gut für Trader, die Volatilitätsexpansionen mit Momentum-Rückenwind verfolgen
   - `MacdSignalPeriod` = 9
   - `AtrMultiplier` = 2m
   - `CandleType` = TimeSpan.FromMinutes(15).TimeFrame()
+    Der Kanal ist der EMA plus und minus Multiplier ATR. Der Stop liegt AtrMultiplier ATR vom Einstiegsschluss entfernt und wird auf Kerzenschlüssen geprüft. Ein Einstiegssignal gegen eine offene Position dreht sie.
 - **Filter**:
   - Kategorie: Mean Reversion
   - Richtung: Beide

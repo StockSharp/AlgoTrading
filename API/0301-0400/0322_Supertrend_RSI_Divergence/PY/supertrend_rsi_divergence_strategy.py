@@ -28,7 +28,7 @@ class supertrend_rsi_divergence_strategy(Strategy):
         self._rsi_period = self.Param("RsiPeriod", 14) \
             .SetDisplay("RSI Period", "RSI period for divergence detection", "RSI")
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._prices = []

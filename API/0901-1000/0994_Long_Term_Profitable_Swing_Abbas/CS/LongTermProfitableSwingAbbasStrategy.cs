@@ -121,7 +121,7 @@ public class LongTermProfitableSwingAbbasStrategy : Strategy
 			
 			.SetOptimize(5, 50, 1);
 
-		_slowEmaLength = Param(nameof(SlowEmaLength), 25)
+		_slowEmaLength = Param(nameof(SlowEmaLength), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA", "Slow EMA length", "Indicators")
 			.SetOptimize(20, 100, 5);
@@ -144,12 +144,12 @@ public class LongTermProfitableSwingAbbasStrategy : Strategy
 			
 			.SetOptimize(40m, 60m, 1m);
 
-		_atrStopMult = Param(nameof(AtrStopMult), 15m)
+		_atrStopMult = Param(nameof(AtrStopMult), 8m)
 			.SetRange(0.1m, 30m)
 			.SetDisplay("ATR Stop Mult", "ATR stop loss multiplier", "Risk")
 			.SetOptimize(1m, 15m, 0.5m);
 
-		_atrTpMult = Param(nameof(AtrTpMult), 20m)
+		_atrTpMult = Param(nameof(AtrTpMult), 11m)
 			.SetRange(0.1m, 30m)
 			.SetDisplay("ATR TP Mult", "ATR take profit multiplier", "Risk")
 			.SetOptimize(1m, 20m, 0.5m);

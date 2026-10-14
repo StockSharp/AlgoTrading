@@ -19,7 +19,7 @@ Los stops se usan para contener las pérdidas si el momentum no continúa en la 
   - `FastPeriod` = 12
   - `SlowPeriod` = 26
   - `SignalPeriod` = 9
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
   - `CandleType` = 15 minute
 - **Filtros**:
   - Categoría: Momentum

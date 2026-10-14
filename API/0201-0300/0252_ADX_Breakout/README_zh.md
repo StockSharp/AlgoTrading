@@ -17,9 +17,10 @@
 - **默认值**:
   - `ADXPeriod` = 14
   - `AvgPeriod` = 20
-  - `Multiplier` = 0.1m
+  - `Multiplier` = 0.1
   - `CandleType` = TimeSpan.FromMinutes(5)
-  - `StopLoss` = 2.0m
+  - `StopLossPercent` = 2
+    Avg和StdDev为最近AvgPeriod个ADX值（含当前值）的平均值和标准差。止损为入场价的固定StopLossPercent百分比，在K线之间同样监控；设为0则关闭。通道为平均值加Multiplier倍标准差：ADX在阳线上突破通道时做多，在阴线上突破时做空；ADX回落到平均值以下时平仓。与持仓方向相反的入场信号会反转持仓。
 - **筛选条件**:
   - 类别: 突破
   - 方向: 双向

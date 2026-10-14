@@ -16,11 +16,11 @@ class sma_trend_filter_strategy(Strategy):
         super(sma_trend_filter_strategy, self).__init__()
         self._cooldown_bars = self.Param("CooldownBars", 200) \
             .SetDisplay("Cooldown Bars", "Minimum number of primary timeframe bars between orders", "Trading")
-        self._candle_type1 = self.Param("CandleType1", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type1 = self.Param("CandleType1", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
             .SetDisplay("Candle Type 1", "Primary timeframe", "General")
-        self._candle_type2 = self.Param("CandleType2", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
+        self._candle_type2 = self.Param("CandleType2", DataType.TimeFrame(TimeSpan.FromHours(1))) \
             .SetDisplay("Candle Type 2", "Secondary timeframe", "General")
-        self._candle_type3 = self.Param("CandleType3", DataType.TimeFrame(TimeSpan.FromHours(1))) \
+        self._candle_type3 = self.Param("CandleType3", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type 3", "Tertiary timeframe", "General")
 
         self._periods = [5, 8, 13, 21, 34]

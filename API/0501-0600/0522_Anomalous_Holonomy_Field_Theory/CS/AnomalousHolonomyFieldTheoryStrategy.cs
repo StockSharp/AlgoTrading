@@ -55,7 +55,7 @@ public class AnomalousHolonomyFieldTheoryStrategy : Strategy
 	/// </summary>
 	public AnomalousHolonomyFieldTheoryStrategy()
 	{
-		_signalThreshold = Param(nameof(SignalThreshold), 0.1m)
+		_signalThreshold = Param(nameof(SignalThreshold), 2m)
 			.SetDisplay("Signal Threshold", "Absolute signal level required for trades", "Parameters")
 			.SetRange(0.1m, 10m);
 

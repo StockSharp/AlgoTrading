@@ -5,7 +5,7 @@ A sudden surge in Average True Range indicates expanding volatility that can qui
 
 Testing indicates an average annual return of about 139%. It performs best in the stocks market.
 
-Each bar updates ATR and its own average. If ATR exceeds the average by the multiplier and the candle closes opposite the prior move, a trade is opened. The stop-loss uses an ATR multiple as well, anchoring risk to current volatility levels.
+Each bar updates ATR and its own average. If ATR exceeds the average by the multiplier and the candle closes opposite the prior move, a trade is opened. The stop is a trailing percentage of price, so it follows the position as the volatility burst fades.
 
 Positions typically rely on the stop for exit, seeking a swift retracement after the volatility burst subsides.
 
@@ -14,13 +14,13 @@ Positions typically rely on the stop for exit, seeking a swift retracement after
 - **Entry Criteria**: ATR spike above average with reversal candle.
 - **Long/Short**: Both.
 - **Exit Criteria**: Stop-loss.
-- **Stops**: Yes, ATR based.
+- **Stops**: Yes, trailing percentage.
 - **Default Values**:
   - `AtrPeriod` = 14
   - `AtrAvgPeriod` = 20
   - `AtrMultiplier` = 1.5
   - `MaPeriod` = 20
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
   - `CandleType` = 5 minute
 - **Filters**:
   - Category: Reversal

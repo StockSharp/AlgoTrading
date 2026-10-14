@@ -18,11 +18,11 @@
 - **止损**: 动态，根据Parabolic SAR，可选固定止损
 - **默认值**:
   - `MaPeriod` = 20
-  - `SarStep` = 0.02m
-  - `SarMaxStep` = 0.2m
+  - `SarStep` = 0.02
+  - `SarMaxStep` = 0.2
   - `CandleType` = TimeSpan.FromMinutes(5)
-  - `TakeValue` = new Unit(0, UnitTypes.Absolute)
-  - `StopValue` = new Unit(2, UnitTypes.Percent)
+  - `StopLossPercent` = 2
+    入场要求两个条件在K线收盘时同时成立，无论最后发生的是SAR翻转还是均线交叉。可选的固定止损为入场价的StopLossPercent百分比，在K线之间同样监控；设为0则关闭。规则没有设定止盈目标，因此去掉了为零的TakeValue。与持仓方向相反的入场信号会反转持仓。
 - **过滤器**:
   - 类别: Trend
   - 方向: 双向

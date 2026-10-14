@@ -18,9 +18,10 @@
   - **做空**: Exit when close <= VWAP
 - **止损**: 是
 - **默认值**:
-  - `K` = 2.0m
+  - `K` = 2
   - `CandleType` = TimeSpan.FromMinutes(5)
   - `AtrPeriod` = 14
+    市场全天候交易，因此时段VWAP在每个UTC日重新开始，并按成交量加权每根K线的典型价格。止损距入场收盘价K倍AtrPeriod周期ATR，按K线收盘检查。与持仓方向相反的入场信号会反转持仓。
 - **筛选条件**:
   - 类别: 均值回归
   - 方向: 双向

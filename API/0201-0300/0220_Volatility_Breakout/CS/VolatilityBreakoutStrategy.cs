@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -12,47 +9,46 @@ using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
-	
+
 /// <summary>
-/// Volatility Breakout strategy. Enters trades when price breaks out from average price with volatility threshold.
+/// Volatility Breakout strategy.
+/// A close more than Multiplier times the Period ATR above the Period simple moving average goes long and one that far below it goes short,
+/// reversing an opposite position. The position stays open until the opposite breakout, or until the stop Multiplier ATR from the entry
+/// close is hit, checked on candle closes.
 /// </summary>
 public class VolatilityBreakoutStrategy : Strategy
 {
-	private readonly StrategyParam<int> _periodParam;
-	private readonly StrategyParam<decimal> _multiplierParam;
-	private readonly StrategyParam<DataType> _candleTypeParam;
+	private readonly StrategyParam<int> _period;
+	private readonly StrategyParam<decimal> _multiplier;
+	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage _sma;
-	private AverageTrueRange _atr;
-	
-	private decimal _prevSma;
-	private decimal _prevAtr;
+	private decimal _stopPrice;
 
 	/// <summary>
-	/// Period for SMA and ATR calculations.
+	/// Period for SMA and ATR.
 	/// </summary>
 	public int Period
 	{
-		get => _periodParam.Value;
-		set => _periodParam.Value = value;
+		get => _period.Value;
+		set => _period.Value = value;
 	}
 
 	/// <summary>
-	/// Volatility multiplier for breakout threshold.
+	/// ATR multiplier for the breakout threshold and the stop.
 	/// </summary>
 	public decimal Multiplier
 	{
-		get => _multiplierParam.Value;
-		set => _multiplierParam.Value = value;
+		get => _multiplier.Value;
+		set => _multiplier.Value = value;
 	}
 
 	/// <summary>
-	/// Candle type for strategy.
+	/// Candle type.
 	/// </summary>
 	public DataType CandleType
 	{
-		get => _candleTypeParam.Value;
-		set => _candleTypeParam.Value = value;
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
 
 	/// <summary>
@@ -60,20 +56,16 @@ public class VolatilityBreakoutStrategy : Strategy
 	/// </summary>
 	public VolatilityBreakoutStrategy()
 	{
-		_periodParam = Param(nameof(Period), 20)
+		_period = Param(nameof(Period), 20)
 			.SetGreaterThanZero()
-			.SetDisplay("Period", "Period for SMA and ATR", "Parameters")
-			
-			.SetOptimize(10, 50, 5);
+			.SetDisplay("Period", "Period for SMA and ATR", "Parameters");
 
-		_multiplierParam = Param(nameof(Multiplier), 2.0m)
-			.SetRange(0.1m, decimal.MaxValue)
-			.SetDisplay("Multiplier", "Volatility multiplier for breakout threshold", "Parameters")
-			
-			.SetOptimize(1.0m, 3.0m, 0.5m);
+		_multiplier = Param(nameof(Multiplier), 2m)
+			.SetGreaterThanZero()
+			.SetDisplay("Multiplier", "ATR multiplier for the breakout threshold and the stop", "Parameters");
 
-		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Candle type for strategy", "Common");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />
@@ -86,11 +78,7 @@ public class VolatilityBreakoutStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_sma = null;
-		_atr = null;
-		_prevSma = 0;
-		_prevAtr = 0;
+		_stopPrice = default;
 	}
 
 	/// <inheritdoc />
@@ -98,71 +86,63 @@ public class VolatilityBreakoutStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-// Create indicators
-		_sma = new SMA { Length = Period };
-		_atr = new AverageTrueRange { Length = Period };
+		_stopPrice = default;
 
-		// Create subscription and bind indicators
+		var sma = new SimpleMovingAverage { Length = Period };
+		var atr = new AverageTrueRange { Length = Period };
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_sma, _atr, ProcessCandle)
+			.BindEx(sma, atr, ProcessCandle)
 			.Start();
 
-		// Setup chart visualization if available
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, _sma);
+			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
+
+			var oscillators = CreateChartArea();
+			if (oscillators != null)
+			{
+				DrawIndicator(oscillators, atr);
+			}
 		}
-		
-		// Enable position protection
-		StartProtection(
-			takeProfit: new Unit(0, UnitTypes.Absolute), // No take profit
-			stopLoss: new Unit(Multiplier, UnitTypes.Absolute) // Stop loss at 2*ATR
-		);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal smaValue, decimal atrValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue smaValue, IIndicatorValue atrValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
+		if (!smaValue.IsFormed || !atrValue.IsFormed)
+			return;
+
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
-		
-		// Save values for the next candle
-		var currentSma = smaValue;
-		var currentAtr = atrValue;
-		
-		// Skip first candle after indicators become formed
-		if (_prevSma == 0 || _prevAtr == 0)
+
+		var sma = smaValue.GetValue<decimal>();
+		var distance = Multiplier * atrValue.GetValue<decimal>();
+		var close = candle.ClosePrice;
+
+		if (close > sma + distance && Position <= 0)
 		{
-			_prevSma = currentSma;
-			_prevAtr = currentAtr;
-			return;
-		}
-		
-		// Calculate volatility threshold
-		var threshold = Multiplier * currentAtr;
-		
-		// Check for long setup - price breaks above SMA + threshold
-		if (candle.ClosePrice > currentSma + threshold && Position <= 0)
-		{
-			// Close any short position and open long
 			BuyMarket(Volume + Math.Abs(Position));
+			_stopPrice = close - distance;
 		}
-		// Check for short setup - price breaks below SMA - threshold
-		else if (candle.ClosePrice < currentSma - threshold && Position >= 0)
+		else if (close < sma - distance && Position >= 0)
 		{
-			// Close any long position and open short
 			SellMarket(Volume + Math.Abs(Position));
+			_stopPrice = close + distance;
 		}
-		
-		// Update previous values for next candle
-		_prevSma = currentSma;
-		_prevAtr = currentAtr;
+		else if (Position > 0 && close <= _stopPrice)
+		{
+			SellMarket(Position);
+		}
+		else if (Position < 0 && close >= _stopPrice)
+		{
+			BuyMarket(-Position);
+		}
 	}
 }
-	

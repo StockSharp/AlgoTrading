@@ -3,7 +3,6 @@ using System.Collections.Generic;
 
 using Ecng.Common;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -11,31 +10,50 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// DowTheoryTrendStrategy using EMA crossover for trend timing.
-/// Enters long on golden cross, short on death cross.
+/// Dow Theory Trend strategy.
+/// A pivot high is a candle whose high is above the highs of the PivotLookback candles on each side, a pivot low mirrors it with
+/// lows; a pivot is confirmed PivotLookback candles after it formed. When the last pivot high is above the one before it and the
+/// last pivot low is above the one before it, the trend is up and the strategy goes long; lower highs and lower lows go short.
+/// The opposite signal reverses the position.
 /// </summary>
 public class DowTheoryTrendStrategy : Strategy
 {
-	private readonly StrategyParam<int> _fastEmaPeriod;
-	private readonly StrategyParam<int> _slowEmaPeriod;
+	private readonly StrategyParam<int> _pivotLookback;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevFastEma;
-	private decimal _prevSlowEma;
+	private readonly List<decimal> _highs = [];
+	private readonly List<decimal> _lows = [];
+	private decimal? _lastPivotHigh;
+	private decimal? _prevPivotHigh;
+	private decimal? _lastPivotLow;
+	private decimal? _prevPivotLow;
 
-	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
-	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	/// <summary>
+	/// Candles on each side of a pivot.
+	/// </summary>
+	public int PivotLookback
+	{
+		get => _pivotLookback.Value;
+		set => _pivotLookback.Value = value;
+	}
 
+	/// <summary>
+	/// Candle type.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
+	/// </summary>
 	public DowTheoryTrendStrategy()
 	{
-		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
+		_pivotLookback = Param(nameof(PivotLookback), 10)
 			.SetGreaterThanZero()
-			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
-
-		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
-			.SetGreaterThanZero()
-			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+			.SetDisplay("Pivot Lookback", "Candles on each side of a pivot", "Pivots");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -51,8 +69,17 @@ public class DowTheoryTrendStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevFastEma = 0m;
-		_prevSlowEma = 0m;
+		ResetState();
+	}
+
+	private void ResetState()
+	{
+		_highs.Clear();
+		_lows.Clear();
+		_lastPivotHigh = null;
+		_prevPivotHigh = null;
+		_lastPivotLow = null;
+		_prevPivotLow = null;
 	}
 
 	/// <inheritdoc />
@@ -60,46 +87,83 @@ public class DowTheoryTrendStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
-		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
+		ResetState();
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(fastEma, slowEma, ProcessCandle)
+			.Bind(ProcessCandle)
 			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, fastEma);
-			DrawIndicator(area, slowEma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_prevFastEma == 0m || _prevSlowEma == 0m)
+		var lookback = PivotLookback;
+		var size = lookback * 2 + 1;
+
+		_highs.Add(candle.HighPrice);
+		_lows.Add(candle.LowPrice);
+
+		if (_highs.Count > size)
 		{
-			_prevFastEma = fastEmaValue;
-			_prevSlowEma = slowEmaValue;
+			_highs.RemoveAt(0);
+			_lows.RemoveAt(0);
+		}
+
+		if (_highs.Count < size)
 			return;
+
+		var centerHigh = _highs[lookback];
+		var centerLow = _lows[lookback];
+		var isPivotHigh = true;
+		var isPivotLow = true;
+
+		for (var i = 0; i < size; i++)
+		{
+			if (i == lookback)
+				continue;
+
+			if (_highs[i] >= centerHigh)
+				isPivotHigh = false;
+
+			if (_lows[i] <= centerLow)
+				isPivotLow = false;
 		}
 
-		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
+		if (isPivotHigh)
 		{
-			BuyMarket();
-		}
-		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
-		{
-			SellMarket();
+			_prevPivotHigh = _lastPivotHigh;
+			_lastPivotHigh = centerHigh;
 		}
 
-		_prevFastEma = fastEmaValue;
-		_prevSlowEma = slowEmaValue;
+		if (isPivotLow)
+		{
+			_prevPivotLow = _lastPivotLow;
+			_lastPivotLow = centerLow;
+		}
+
+		if (_lastPivotHigh is not decimal lastHigh || _prevPivotHigh is not decimal prevHigh
+			|| _lastPivotLow is not decimal lastLow || _prevPivotLow is not decimal prevLow)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		var upTrend = lastHigh > prevHigh && lastLow > prevLow;
+		var downTrend = lastHigh < prevHigh && lastLow < prevLow;
+
+		if (upTrend && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (downTrend && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
 	}
 }

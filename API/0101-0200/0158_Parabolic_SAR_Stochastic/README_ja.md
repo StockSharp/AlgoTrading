@@ -7,7 +7,7 @@ Parabolic SAR + Stochastic 戦略の実装。価格が SAR より上にあり St
 
 Parabolic SAR がトレンドを示し、Stochastic が押し目でのエントリーを精査します。SAR がサイドを変えるとシグナルが反転します。
 
-組み込みの SAR ストップを備えたシンプルなトレンド戦略です。ATR 設定が追加のリスク管理を担います。
+組み込みの SAR ストップを備えたシンプルなトレンド戦略です。SARの転換が唯一のエグジットなので、追加のストップ設定は不要です。
 
 ## 詳細
 
@@ -22,11 +22,11 @@ Parabolic SAR がトレンドを示し、Stochastic が押し目でのエント�
   - `AccelerationFactor` = 0.02m
   - `MaxAccelerationFactor` = 0.2m
   - `StochK` = 3
-  - `StochD` = 3
   - `StochPeriod` = 14
   - `StochOversold` = 20m
   - `StochOverbought` = 80m
   - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    ルール中のStochKは%Kで、StochPeriod本のストキャスティクスをStochK本で平滑化した値です。%Dはルールに関与しないため設定はありません。 保有ポジションと逆方向のエントリーシグナルはドテンになります。
 - **フィルター**:
   - カテゴリ: 平均回帰
   - 方向: 両方

@@ -18,7 +18,7 @@ class robot_danu_strategy(Strategy):
             .SetDisplay("Fast ZigZag Length", "Lookback for fast ZigZag", "ZigZag")
         self._slow_length = self.Param("SlowLength", 56) \
             .SetDisplay("Slow ZigZag Length", "Lookback for slow ZigZag", "ZigZag")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
         self._last_fast = 0.0
         self._last_fast_high = 0.0

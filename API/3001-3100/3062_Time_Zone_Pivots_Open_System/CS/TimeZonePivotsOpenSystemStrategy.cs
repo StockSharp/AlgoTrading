@@ -62,11 +62,11 @@ public class TimeZonePivotsOpenSystemStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Start hour", "Hour (0-23) whose opening price anchors the bands.", "Indicator");
 
-		_offsetPoints = Param(nameof(OffsetPoints), 250m)
+		_offsetPoints = Param(nameof(OffsetPoints), 100m)
 			.SetNotNegative()
 			.SetDisplay("Offset (points)", "Distance from the anchor price expressed in price steps.", "Indicator");
 
-		_signalBar = Param(nameof(SignalBar), 2)
+		_signalBar = Param(nameof(SignalBar), 1)
 			.SetNotNegative()
 			.SetDisplay("Signal bar", "Shift of the confirmation candle used to trigger trades.", "Signals");
 

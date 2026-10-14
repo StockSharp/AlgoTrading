@@ -17,7 +17,7 @@ Indem nur nach einem gescheiterten Ausbruch gehandelt wird, versucht dieser Ansa
 - **Stops**: Ja, prozentbasiert.
 - **Standardwerte**:
   - `Period` = 20
-  - `StopLoss` = 2%
+  - `StopLossPercent` = 2
   - `CandleType` = 15 minute
 - **Filter**:
   - Kategorie: Umkehr

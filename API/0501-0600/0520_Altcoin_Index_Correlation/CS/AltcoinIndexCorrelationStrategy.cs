@@ -112,11 +112,11 @@ public class AltcoinIndexCorrelationStrategy : Strategy
 	/// </summary>
 	public AltcoinIndexCorrelationStrategy()
 	{
-		_fastEmaLen = Param(nameof(FastEmaLength), 7)
+		_fastEmaLen = Param(nameof(FastEmaLength), 47)
 			.SetDisplay("Fast EMA", "Fast EMA length", "EMA Settings")
 			.SetOptimize(5, 50, 5);
 
-		_slowEmaLen = Param(nameof(SlowEmaLength), 18)
+		_slowEmaLen = Param(nameof(SlowEmaLength), 50)
 			.SetDisplay("Slow EMA", "Slow EMA length", "EMA Settings")
 			.SetOptimize(10, 100, 5);
 
