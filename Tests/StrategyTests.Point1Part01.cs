@@ -136,4 +136,36 @@ public abstract partial class StrategyTests
         => CheckPercentStopBetweenBars("0122_January_Effect",
             duration: TimeSpan.FromDays(31));
 
+    [TestMethod]
+    [TestCategory("Shard07")]
+    public async Task Point1Part01_0303_PublishedMarchSeasonalityForbidsNewShorts()
+    {
+        // The packaged fixture spans March 2024. March's published seasonal
+        // score equals +0.5, so short entries are forbidden at threshold 0.5.
+        // This probes REAL order registration and fills in both languages.
+        var entries = 0;
+        var fills = 0;
+        await Replay("0303_Seasonality_Adjusted_Momentum", (strategy, _) =>
+        {
+            AreEqual(14, Convert.ToInt32(strategy.Parameters["MomentumPeriod"].Value));
+            AreEqual(0.5m, Convert.ToDecimal(strategy.Parameters["SeasonalityThreshold"].Value));
+            AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+            AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+            strategy.OrderRegistering += order =>
+            {
+                if (strategy.Position != 0m)
+                    return;
+                AreEqual(Sides.Buy, order.Side, "March +0.5 must never initiate a short at the original threshold.");
+                entries++;
+            };
+            strategy.Trades.TradeAdded += trade =>
+            {
+                if (trade.Order.Side == Sides.Buy && strategy.Position > 0m)
+                    fills++;
+            };
+        }, replayDuration: TimeSpan.FromDays(31));
+        IsTrue(entries > 0 && fills > 0,
+            "The unchanged default must produce at least one real March long entry and fill.");
+    }
+
 }
