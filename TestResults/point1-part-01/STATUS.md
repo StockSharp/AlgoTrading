@@ -5,7 +5,7 @@ Source: user-provided `TZ-01.md`. Exact strategy keys only; **315** keys, **630 
 ## Current results
 
 - **0333_Keltner_Seasonal_Filter** — partial: C#/Python source was inspected; the use of `candle.OpenTime.Month` was confirmed in both implementations. All seven localized READMEs now specify formulas, calendar gating, manual bar-close stop semantics, and entry/exit rules. Two test methods were authored in `Tests/StrategyTests.Point1Part01.cs`; **neither compiled nor executed here**. The Python two-start-month replay is unverified. The packaged BTC/TON fixture spans **March 1–31, 2024** (StockSharp.Configuration/Paths.cs), so it cannot observe a forbidden-season candle or a September short. An independent positive/forbidden breakout fixture and actual stop-fill proof are still outstanding. **Status: not complete.**
-- The remaining **314** exact keys have not been audited or independently tested in this work; no code changes for them are claimed.
+- The remaining **311** exact keys have not been audited or independently tested. In 0103, 0121 and 0122, missing percent protection was found in both languages and changes were authored, but the new tests have not been executed; none is certified complete. Other fixes/README changes are noted below.
 - No red → green result was obtained; no build, MSTest or Python replay results are available. No history was downloaded or modified. No other part of the master TZ was started.
 - Environment limitation: the linked GitHub source is accessible through the connector, but this sandbox has neither `dotnet` nor the StockSharp project/reference checkout and packaged BTC/TON history. Reproducing a full test run here is therefore not possible.
 - Workspace rules `AGENTS.md` and `configs/instructions.md` were not present in the published main checkout accessible through GitHub; verify them against `D:\stocksharp` before integrating these edits.
@@ -23,14 +23,30 @@ After the above, add independent **fully observed execution** checks for positiv
 
 **Shared files:** created `Tests/StrategyTests.Point1Part01.cs` only; `Tests/StrategyInventory.cs`, `Tests.csproj`, and shared helpers were not edited.
 
+## Additional changes in 0103, 0121 and 0122 (not yet validated)
+
+- Test-first source commit `0b3a79c`: shared filtered MSTest methods `Point1Part01_0103_DarkPoolPublishedStopExecutes`, `Point1Part01_0121_SantaClausPublishedStopExecutes`, `Point1Part01_0122_JanuaryEffectPublishedStopExecutes` use the existing `CheckPercentStopBetweenBars` helper: enforce 2% default parameter, 0.00001% real stop, real entry, real stop fill before next finished signal candle, and exact close volume. Source-level expectation was red because none of the strategies previously had `StopLossPercent` or `StartProtection`; **no actual red test run exists**.
+- Production commit `de543188`: `StopLossPercent` added in all six implementations; `StartProtection(0 absolute take-profit, configured percent stop-loss)` installed on start. Dark-pool SMA exits are checked even on quiet-volume and cooldown bars.
+- Production commit `4429da19`: calendar strategies' C#/Python close orders now use the actual signed position size instead of a default trade volume.
+- 21 localized READMEs (7 each) explain specific implemented gates, stop semantics and actual one-/five-minute timeframes, and explicitly distinguish the monthly calendar generalizations from true year-end seasonality. Published annual returns remain unverified.
+- Filter commands (run **serially**, one worker, with a timeout and existing BTC/TON archive):
+
+```powershell
+$env:MSBUILDDISABLENODEREUSE = '1'
+dotnet test Tests/Tests.csproj --filter 'FullyQualifiedName~CSharpTests.Point1Part01_0103_DarkPoolPublishedStopExecutes|FullyQualifiedName~CSharpTests.Point1Part01_0121_SantaClausPublishedStopExecutes|FullyQualifiedName~CSharpTests.Point1Part01_0122_JanuaryEffectPublishedStopExecutes' -- RunConfiguration.TestSessionTimeout=900000
+dotnet test Tests/Tests.csproj --filter 'FullyQualifiedName~PythonTests.Point1Part01_0103_DarkPoolPublishedStopExecutes|FullyQualifiedName~PythonTests.Point1Part01_0121_SantaClausPublishedStopExecutes|FullyQualifiedName~PythonTests.Point1Part01_0122_JanuaryEffectPublishedStopExecutes' -- RunConfiguration.TestSessionTimeout=900000
+```
+
+Neither command has been executed in this environment (no dotnet SDK, sibling StockSharp projects or packaged archive). Treat all three as **incomplete** until the above checks and independent signal oracle are green.
+
 ## Per-key coverage
 
 | Key | Task kind | Status and specific outstanding reason |
 |---|---|---|
 | `0333_Keltner_Seasonal_Filter` | конкретная задача | Частично: README обновлены, тесты написаны, но C#/Python replay не запущен; мартовские входы и стопы на эталоне не подтверждены; других месяцев в BTC/TON-архиве нет. |
-| `0103_Dark_Pool_Prints` | проверка замечаний | Не проверено: требуется независимая проверка контракта и реальных исполнений C#/Python по назначенному замечанию. |
-| `0121_Santa_Claus_Rally` | проверка замечаний | Не проверено: требуется независимая проверка контракта и реальных исполнений C#/Python по назначенному замечанию. |
-| `0122_January_Effect` | проверка замечаний | Не проверено: требуется независимая проверка контракта и реальных исполнений C#/Python по назначенному замечанию. |
+| `0103_Dark_Pool_Prints` | проверка замечаний | Код C#/Python исправлен: добавлен параметр `StopLossPercent=2%` и нативная защита; Также устранено блокирование выхода SMA фильтром объёма/кулдауном. Семь README приведены к исполняемым формулам/defaults. Тест реальных intrabar-исполнений добавлен, но **не запускался**. Не подтверждены C#/Python red→green, объёмы фактических исполнений и выполнение контракта на BTC/TON. |
+| `0121_Santa_Claus_Rally` | проверка замечаний | Код C#/Python исправлен: добавлен параметр `StopLossPercent=2%` и нативная защита; Выход теперь использует фактический остаток позиции. Семь README приведены к исполняемым формулам/defaults. Тест реальных intrabar-исполнений добавлен, но **не запускался**. Не подтверждены C#/Python red→green, объёмы фактических исполнений и выполнение контракта на BTC/TON. |
+| `0122_January_Effect` | проверка замечаний | Код C#/Python исправлен: добавлен параметр `StopLossPercent=2%` и нативная защита; Выход теперь использует фактический остаток позиции. Семь README приведены к исполняемым формулам/defaults. Тест реальных intrabar-исполнений добавлен, но **не запускался**. Не подтверждены C#/Python red→green, объёмы фактических исполнений и выполнение контракта на BTC/TON. |
 | `0299_Beta_Adjusted_Pairs_Trading` | проверка замечаний | Не проверено: требуется независимая проверка контракта и реальных исполнений C#/Python по назначенному замечанию. |
 | `0321_Ichimoku_Hurst_Exponent` | проверка замечаний | Не проверено: требуется независимая проверка контракта и реальных исполнений C#/Python по назначенному замечанию. |
 | `0341_Supertrend_Put_Call_Ratio` | проверка замечаний | Не проверено: требуется независимая проверка контракта и реальных исполнений C#/Python по назначенному замечанию. |
