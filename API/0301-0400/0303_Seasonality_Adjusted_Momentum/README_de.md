@@ -5,9 +5,9 @@ Die **Seasonality Adjusted Momentum**-Strategie basiert auf einem Momentum-Indik
 
 Tests zeigen eine durchschnittliche Jahresrendite von etwa 172%. Sie funktioniert am besten am Devisenmarkt.
 
-Signale werden ausgelöst, wenn die Saisonalität Momentum-Verschiebungen bei Tagesdaten bestätigt. Dies macht die Methode für aktive Trader geeignet.
+Gehandelt wird auf **abgeschlossenen 5-Minuten-Kerzen**, nicht Tagesdaten. `M = Momentum(14)`, `A = SMA(14) von M`, `s = score[candle.OpenTime.Month]`. Aus Flat Long bei `s >= 0.5` und `M > A`, Short bei `s <= -0.5` und `M < A`. Long-Ausgang bei `s < 0.5` oder `M < A`; Short-Ausgang bei `s > -0.5` oder `M > A`. Nach Signalen warten 120 abgeschlossene Kerzen. Schutz durch **nativen 2%-Stop**, nicht ATR.
 
-Stops basieren auf ATR-Vielfachen und Faktoren wie MomentumPeriod, SeasonalityThreshold. Passen Sie diese Standardwerte an, um Risiko und Ertrag auszubalancieren.
+Monatliche s-Werte Jan–Dez: `0.8, 0.2, 0.5, 0.7, 0.3, -0.2, -0.3, -0.4, -0.7, 0.4, 0.6, 0.9`. BTC/TON enthält nur März (s=0.5): Long erlaubt, neue Shorts verboten. Die genannten 172% sind **nicht verifiziert**.
 
 ## Details
 - **Einstiegskriterien**: Implementierung für Indikatorbedingungen prüfen.

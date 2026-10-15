@@ -5,9 +5,9 @@ La estrategia **Seasonality Adjusted Momentum** está construida alrededor del i
 
 Las pruebas indican un retorno anual promedio de aproximadamente el 172%. Funciona mejor en el mercado de divisas.
 
-Las señales se disparan cuando la Estacionalidad confirma cambios de momentum en datos diarios. Esto hace que el método sea adecuado para traders activos.
+Se ejecuta sobre **velas terminadas de 5 minutos**, no diarias. `M = Momentum(14)`, `A = SMA(14) de M`, `s = score[candle.OpenTime.Month]`. Desde plano, comprar si `s >= 0.5` y `M > A`; vender si `s <= -0.5` y `M < A`. Cerrar largo si `s < 0.5` o `M < A`; corto si `s > -0.5` o `M > A`. Espera de 120 velas tras una orden. La protección es un **stop nativo del 2%**, no ATR.
 
-Los stops se basan en múltiplos de ATR y factores como MomentumPeriod, SeasonalityThreshold. Ajuste estos valores predeterminados para equilibrar el riesgo y la recompensa.
+Valores de s de enero a diciembre: `0.8, 0.2, 0.5, 0.7, 0.3, -0.2, -0.3, -0.4, -0.7, 0.4, 0.6, 0.9`. BTC/TON solo cubre marzo (s=0.5): permite largos pero no nuevos cortos. El retorno del 172% **no está verificado**.
 
 ## Detalles
 - **Criterios de entrada**: ver implementación para las condiciones del indicador.
