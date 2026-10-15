@@ -201,4 +201,20 @@ public abstract partial class StrategyTests
             "A short signal may reverse an existing long.");
     }
 
+    [TestMethod]
+    [TestCategory("Shard01")]
+    public async Task Point1Part01_0305_DynamicRsiUsesActualPercentStop()
+    {
+        await Replay("0305_RSI_Dynamic_Overbought_Oversold", (strategy, _) =>
+        {
+            AreEqual(14, Convert.ToInt32(strategy.Parameters["RsiPeriod"].Value));
+            AreEqual(50, Convert.ToInt32(strategy.Parameters["MovingAvgPeriod"].Value));
+            AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StdDevMultiplier"].Value));
+            AreEqual(48, Convert.ToInt32(strategy.Parameters["CooldownBars"].Value));
+            AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+        }, replayDuration: TimeSpan.FromDays(31));
+        await CheckPercentStopBetweenBars("0305_RSI_Dynamic_Overbought_Oversold",
+            duration: TimeSpan.FromDays(31));
+    }
+
 }
