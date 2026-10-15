@@ -1,6 +1,0 @@
-# Out of the Noise 日内策略与 VWAP
-[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
-
-该策略通过计算过去 *Period* 天每根柱子的平均绝对波动，在当日开盘价周围构建动态上下边界。
-
-当价格突破上边界时做多，跌破下边界时做空。仓位在价格与 VWAP 或相反边界交叉时平仓。可选地，可根据按日收益率标准差计算的波动率目标调整仓位大小。

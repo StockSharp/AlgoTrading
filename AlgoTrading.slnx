@@ -1,5 +1,0 @@
-<Solution>
-  <Project Path="Backtester/Backtester.csproj" />
-  <Project Path="Tests/Tests.csproj" />
-  <Project Path="Tools/PythonIsolation/PythonIsolation.csproj" />
-</Solution>

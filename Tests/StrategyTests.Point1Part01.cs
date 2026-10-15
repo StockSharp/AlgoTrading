@@ -115,4 +115,25 @@ public abstract partial class StrategyTests
         var september = await ReplayWithStartedMonth(9);
         january.AssertSameAs(september);
     }
+    // Tests are required to fail against the pre-fix sources because all three
+    // examples publish a real two-percent stop yet previously registered none.
+    // Real entry and intrabar exit fills are checked by the shared helper.
+    [TestMethod]
+    [TestCategory("Shard07")]
+    public Task Point1Part01_0103_DarkPoolPublishedStopExecutes()
+        => CheckPercentStopBetweenBars("0103_Dark_Pool_Prints",
+            duration: TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(1));
+
+    [TestMethod]
+    [TestCategory("Shard01")]
+    public Task Point1Part01_0121_SantaClausPublishedStopExecutes()
+        => CheckPercentStopBetweenBars("0121_Santa_Claus_Rally",
+            duration: TimeSpan.FromDays(31));
+
+    [TestMethod]
+    [TestCategory("Shard02")]
+    public Task Point1Part01_0122_JanuaryEffectPublishedStopExecutes()
+        => CheckPercentStopBetweenBars("0122_January_Effect",
+            duration: TimeSpan.FromDays(31));
+
 }

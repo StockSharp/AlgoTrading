@@ -1,6 +1,0 @@
-# 等量图叠加 - 成交量条形策略
-[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
-
-该策略将成交量显示为不同宽度的矩形，模拟等量图。每个矩形的宽度取决于当前成交量在指定周期内成交量总和中的比例。还可配置成交量均线。
-
-策略不执行交易，仅用于演示如何在 StockSharp API 中进行自定义图表绘制。
