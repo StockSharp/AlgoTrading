@@ -5,8 +5,8 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
+from System import TimeSpan, Math
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 
@@ -25,6 +25,7 @@ class dark_pool_prints_strategy(Strategy):
         self._volume_multiplier = self.Param("VolumeMultiplier", 1.5).SetDisplay("Volume Multiplier", "Threshold multiplier for high volume", "Volume")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type", "Type of candles to use", "General")
         self._cooldown_bars = self.Param("CooldownBars", 500).SetDisplay("Cooldown Bars", "Bars to wait between trades", "General")
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0).SetGreaterThanZero().SetDisplay("Stop Loss %", "Percentage stop applied to actual filled positions", "Risk")
 
         self._volume_history = []
         self._cooldown = 0
@@ -56,8 +57,13 @@ class dark_pool_prints_strategy(Strategy):
             self.DrawIndicator(area, sma)
             self.DrawOwnTrades(area)
 
+        self.StartProtection(Unit(0.0, UnitTypes.Absolute), Unit(float(self._stop_loss_percent.Value), UnitTypes.Percent))
+
     def _process_candle(self, candle, sma_val):
         if candle.State != CandleStates.Finished:
+            return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
         lookback = self._volume_lookback.Value
@@ -70,17 +76,10 @@ class dark_pool_prints_strategy(Strategy):
         if len(self._volume_history) < lookback:
             return
 
-        if self._cooldown > 0:
-            self._cooldown -= 1
-            return
-
         # Calculate average volume (excluding last entry)
         avg_volume = sum(self._volume_history[:-1]) / (len(self._volume_history) - 1)
 
         is_high_volume = float(candle.TotalVolume) > avg_volume * self._volume_multiplier.Value
-        if not is_high_volume:
-            return
-
         sv = float(sma_val)
         cd = self._cooldown_bars.Value
         is_bullish = candle.ClosePrice > candle.OpenPrice
@@ -88,17 +87,20 @@ class dark_pool_prints_strategy(Strategy):
         is_above_sma = float(candle.ClosePrice) > sv
         is_below_sma = float(candle.ClosePrice) < sv
 
-        if self.Position == 0 and is_bullish and is_above_sma:
-            self.BuyMarket()
-            self._cooldown = cd
-        elif self.Position == 0 and is_bearish and is_below_sma:
-            self.SellMarket()
-            self._cooldown = cd
-        elif self.Position > 0 and is_below_sma:
-            self.SellMarket()
+        # A held position exits on a reversed SMA trend even on quiet/cooldown bars.
+        if self.Position > 0 and is_below_sma:
+            self.SellMarket(self.Position)
             self._cooldown = cd
         elif self.Position < 0 and is_above_sma:
+            self.BuyMarket(Math.Abs(self.Position))
+            self._cooldown = cd
+        elif self._cooldown > 0:
+            self._cooldown -= 1
+        elif self.Position == 0 and is_high_volume and is_bullish and is_above_sma:
             self.BuyMarket()
+            self._cooldown = cd
+        elif self.Position == 0 and is_high_volume and is_bearish and is_below_sma:
+            self.SellMarket()
             self._cooldown = cd
 
     def CreateClone(self):

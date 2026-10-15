@@ -20,6 +20,7 @@ public class SantaClausRallyStrategy : Strategy
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 
 	private SimpleMovingAverage _ma;
 
@@ -53,6 +54,14 @@ public class SantaClausRallyStrategy : Strategy
 		set => _cooldownBars.Value = value;
 	}
 
+
+	/// <summary>Percentage loss limit, executed by native protection on live price updates.</summary>
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
+	}
+
 	/// <summary>
 	/// Initializes a new instance of the <see cref="SantaClausRallyStrategy"/>.
 	/// </summary>
@@ -68,6 +77,10 @@ public class SantaClausRallyStrategy : Strategy
 		_cooldownBars = Param(nameof(CooldownBars), 50)
 			.SetDisplay("Cooldown Bars", "Bars between trades", "General")
 			.SetRange(5, 500);
+
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetGreaterThanZero()
+			.SetDisplay("Stop Loss %", "Percentage stop applied to actual filled positions", "Risk");
 	}
 
 	/// <inheritdoc />
@@ -104,6 +117,8 @@ public class SantaClausRallyStrategy : Strategy
 			DrawIndicator(area, _ma);
 			DrawOwnTrades(area);
 		}
+
+		StartProtection(new Unit(0m, UnitTypes.Absolute), new Unit(StopLossPercent, UnitTypes.Percent));
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal maValue)

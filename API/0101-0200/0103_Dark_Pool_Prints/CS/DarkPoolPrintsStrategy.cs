@@ -23,6 +23,7 @@ public class DarkPoolPrintsStrategy : Strategy
 	private readonly StrategyParam<decimal> _volumeMultiplier;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLossPercent;
 
 	private readonly List<decimal> _volumeHistory = new();
 	private int _cooldown;
@@ -72,6 +73,14 @@ public class DarkPoolPrintsStrategy : Strategy
 		set => _cooldownBars.Value = value;
 	}
 
+
+	/// <summary>Percentage loss limit, executed by native protection on live price updates.</summary>
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
+	}
+
 	/// <summary>
 	/// Constructor.
 	/// </summary>
@@ -95,6 +104,10 @@ public class DarkPoolPrintsStrategy : Strategy
 		_cooldownBars = Param(nameof(CooldownBars), 500)
 			.SetRange(1, 1000)
 			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
+
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+			.SetGreaterThanZero()
+			.SetDisplay("Stop Loss %", "Percentage stop applied to actual filled positions", "Risk");
 	}
 
 	/// <inheritdoc />
@@ -133,6 +146,8 @@ public class DarkPoolPrintsStrategy : Strategy
 			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
 		}
+
+		StartProtection(new Unit(0m, UnitTypes.Absolute), new Unit(StopLossPercent, UnitTypes.Percent));
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
@@ -151,11 +166,6 @@ public class DarkPoolPrintsStrategy : Strategy
 		if (_volumeHistory.Count < VolumeLookback)
 			return;
 
-		if (_cooldown > 0)
-		{
-			_cooldown--;
-			return;
-		}
 
 		// Calculate average volume
 		decimal avgVolume = 0;
@@ -164,32 +174,35 @@ public class DarkPoolPrintsStrategy : Strategy
 		avgVolume /= (_volumeHistory.Count - 1);
 
 		var isHighVolume = candle.TotalVolume > avgVolume * VolumeMultiplier;
-		if (!isHighVolume)
-			return;
 
 		var isBullish = candle.ClosePrice > candle.OpenPrice;
 		var isBearish = candle.ClosePrice < candle.OpenPrice;
 		var isAboveSma = candle.ClosePrice > smaValue;
 		var isBelowSma = candle.ClosePrice < smaValue;
 
-		if (Position == 0 && isBullish && isAboveSma)
+		// Exit on trend reversal regardless of entry-volume threshold and cooldown.
+		if (Position > 0 && isBelowSma)
 		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position == 0 && isBearish && isBelowSma)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position > 0 && isBelowSma)
-		{
-			SellMarket();
+			SellMarket(Position);
 			_cooldown = CooldownBars;
 		}
 		else if (Position < 0 && isAboveSma)
 		{
+			BuyMarket(Math.Abs(Position));
+			_cooldown = CooldownBars;
+		}
+		else if (_cooldown > 0)
+		{
+			_cooldown--;
+		}
+		else if (Position == 0 && isHighVolume && isBullish && isAboveSma)
+		{
 			BuyMarket();
+			_cooldown = CooldownBars;
+		}
+		else if (Position == 0 && isHighVolume && isBearish && isBelowSma)
+		{
+			SellMarket();
 			_cooldown = CooldownBars;
 		}
 	}

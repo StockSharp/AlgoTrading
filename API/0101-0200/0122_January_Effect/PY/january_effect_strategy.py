@@ -6,7 +6,7 @@ clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 
@@ -22,6 +22,7 @@ class january_effect_strategy(Strategy):
         self._ma_period = self.Param("MaPeriod", 20).SetDisplay("MA Period", "Moving average period for trend confirmation", "Strategy")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles for strategy", "Strategy")
         self._cooldown_bars = self.Param("CooldownBars", 50).SetDisplay("Cooldown Bars", "Bars between trades", "General")
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0).SetGreaterThanZero().SetDisplay("Stop Loss %", "Percentage stop applied to actual filled positions", "Risk")
 
         self._cooldown = 0
         self._prev_day_of_month = 0
@@ -53,8 +54,13 @@ class january_effect_strategy(Strategy):
             self.DrawIndicator(area, sma)
             self.DrawOwnTrades(area)
 
+        self.StartProtection(Unit(0.0, UnitTypes.Absolute), Unit(float(self._stop_loss_percent.Value), UnitTypes.Percent))
+
     def _process_candle(self, candle, ma_val):
         if candle.State != CandleStates.Finished:
+            return
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
         close = float(candle.ClosePrice)
