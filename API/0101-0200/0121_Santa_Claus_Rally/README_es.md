@@ -10,6 +10,11 @@ La estrategia compra al inicio del período y sale después del segundo día de 
 
 Los stops se mantienen pequeños para evitar grandes pérdidas si el mercado no repunta durante la ventana.
 
+### Reglas mensuales ejecutadas (C# y Python)
+
+Este ejemplo **generaliza** el patrón navideño a **todos los meses**, no exclusivamente a diciembre y enero. En el primer cierre de 5 minutos elegible de un nuevo día 25–31, abre un largo si está plano o cubre un corto. En días 3–7 cierra largos; en días 12–18 puede abrir corto, estando plano, si `Close < SMA20`. Las acciones requieren nuevo día y respetan 50 velas terminadas de espera. La protección nativa de pérdidas del 2% actúa sobre posiciones ejecutadas independientemente del calendario. La rentabilidad indicada arriba no ha sido validada con BTC/TON.
+
+
 ## Detalles
 
 - **Criterios de entrada**: desencadenadores de efecto calendario
@@ -17,8 +22,8 @@ Los stops se mantienen pequeños para evitar grandes pérdidas si el mercado no 
 - **Criterios de salida**: stop-loss o señal opuesta
 - **Stops**: Sí, basado en porcentaje
 - **Valores predeterminados**:
-  - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `CandleType` = 5 minute
+  - `StopLossPercent` = 2%
 - **Filtros**:
   - Categoría: Estacionalidad
   - Dirección: Ambos

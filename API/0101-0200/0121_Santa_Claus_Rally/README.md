@@ -10,6 +10,11 @@ The strategy buys at the start of the period and exits after the second trading 
 
 Stops are kept small to avoid large losses if the market fails to rally during the window.
 
+### Executed monthly calendar rules (C# and Python)
+
+This example **generalizes** the Santa Claus pattern to **every month**; it does not trade December/January exclusively. On the first eligible finished 5-minute candle of a day 25–31, it buys if flat and covers an existing short. On days 3–7, it sells a held long. On days 12–18, it may open a short when flat and `Close < SMA20`. Actions require a new calendar day and are subject to an entry/exit cooldown of 50 finished candles. Native 2% stop-loss protection also closes filled positions when reached, independently of the calendar. The claimed annual return above is not verified by the BTC/TON fixture.
+
+
 ## Details
 
 - **Entry Criteria**: calendar effect triggers
@@ -17,8 +22,8 @@ Stops are kept small to avoid large losses if the market fails to rally during t
 - **Exit Criteria**: stop-loss or opposite signal
 - **Stops**: Yes, percent based
 - **Default Values**:
-  - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `CandleType` = 5 minute
+  - `StopLossPercent` = 2%
 - **Filters**:
   - Category: Seasonality
   - Direction: Both

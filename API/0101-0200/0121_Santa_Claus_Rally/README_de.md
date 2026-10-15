@@ -10,6 +10,11 @@ Die Strategie kauft zu Beginn des Zeitraums und schließt nach dem zweiten Hande
 
 Stops werden klein gehalten, um große Verluste zu vermeiden, falls der Markt im Zeitfenster nicht steigt.
 
+### Tatsächliche Monatsregeln (C# und Python)
+
+Dieses Beispiel **überträgt** den Santa-Claus-Effekt auf **jeden Monat**; es handelt nicht nur im Dezember/Januar. Bei der ersten zulässigen abgeschlossenen 5-Minuten-Kerze eines neuen Tages zwischen dem 25. und 31. wird aus Flat Long eröffnet oder ein Short gedeckt. Am 3.–7. werden Longs geschlossen, am 12.–18. darf bei `Close < SMA20` aus Flat ein Short eröffnet werden. Handlungen benötigen einen neuen Tag und berücksichtigen 50 abgeschlossene Kerzen Pause. Ein nativer Stop-Loss von 2% schützt ausgeführte Positionen unabhängig vom Kalender. Die oben genannte Rendite ist im BTC/TON-Replay nicht bestätigt.
+
+
 ## Details
 
 - **Einstiegskriterien**: Kalendereffekt-Auslöser
@@ -17,8 +22,8 @@ Stops werden klein gehalten, um große Verluste zu vermeiden, falls der Markt im
 - **Ausstiegskriterien**: Stop-Loss oder entgegengesetztes Signal
 - **Stops**: Ja, prozentbasiert
 - **Standardwerte**:
-  - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `CandleType` = 5 minute
+  - `StopLossPercent` = 2%
 - **Filter**:
   - Kategorie: Saisonalität
   - Richtung: Beide

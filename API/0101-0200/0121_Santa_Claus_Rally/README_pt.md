@@ -10,6 +10,11 @@ A estratégia compra no início do período e sai após o segundo dia de negocia
 
 Os stops são mantidos pequenos para evitar grandes perdas caso o mercado não suba durante a janela.
 
+### Regras mensais executadas (C# e Python)
+
+Este exemplo **generaliza** o efeito de Natal para **todos os meses**, não apenas dezembro/janeiro. No primeiro candle concluído elegível de 5 minutos de um novo dia 25–31, abre long se estiver sem posição ou encerra short. Nos dias 3–7 encerra long; nos dias 12–18 pode abrir short, se estiver sem posição e `Close < SMA20`. As ações exigem novo dia e respeitam 50 candles concluídos de pausa. Stop nativo de 2% protege posições executadas independentemente do calendário. A rentabilidade citada acima não foi validada no replay BTC/TON.
+
+
 ## Detalhes
 
 - **Critérios de entrada**: gatilhos de efeito calendário
@@ -17,8 +22,8 @@ Os stops são mantidos pequenos para evitar grandes perdas caso o mercado não s
 - **Critérios de saída**: stop-loss ou sinal oposto
 - **Stops**: Sim, baseado em percentual
 - **Valores padrão**:
-  - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `CandleType` = 5 minute
+  - `StopLossPercent` = 2%
 - **Filtros**:
   - Categoria: Sazonalidade
   - Direção: Ambos
