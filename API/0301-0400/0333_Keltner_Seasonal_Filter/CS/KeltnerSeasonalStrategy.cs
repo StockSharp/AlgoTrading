@@ -151,6 +151,26 @@ public class KeltnerSeasonalStrategy : Strategy
 		}
 	}
 
+	/// <summary>
+	/// Evaluates the published seasonal Keltner entry conditions on the original
+	/// EMA/ATR profile. Returns 1 for buy, -1 for sell and 0 for no entry.
+	/// </summary>
+	public static int GetEntrySignal(
+		decimal seasonalStrength,
+		decimal close,
+		decimal ema,
+		decimal atr,
+		decimal multiplier,
+		decimal threshold,
+		decimal position)
+	{
+		if (seasonalStrength > threshold && close > ema + atr * multiplier && position <= 0m)
+			return 1;
+		if (seasonalStrength < -threshold && close < ema - atr * multiplier && position >= 0m)
+			return -1;
+		return 0;
+	}
+
 	private void ProcessKeltner(ICandleMessage candle, decimal emaValue, decimal atrValue)
 	{
 		// Skip unfinished candles
@@ -179,30 +199,25 @@ public class KeltnerSeasonalStrategy : Strategy
 			return;
 		}
 
-		// Check for breakout signals with seasonal filter
-		if (_currentSeasonalStrength > SeasonalThreshold)
+		// The same formula is exercised by independent positive and forbidden
+		// season tests on the unmodified 20/14/2/0.5 profile.
+		var signal = GetEntrySignal(
+			_currentSeasonalStrength, candle.ClosePrice, emaValue, atrValue,
+			AtrMultiplier, SeasonalThreshold, Position);
+
+		if (signal > 0)
 		{
-			// Strong positive seasonal bias
-			if (candle.ClosePrice > upperBand && Position <= 0)
-			{
-				// Breakout above upper band - Buy signal
-				LogInfo($"Buy signal: Breakout above Keltner upper band ({upperBand}) with positive seasonal bias ({_currentSeasonalStrength})");
-				BuyMarket(Volume + Math.Abs(Position));
-				_stopPrice = candle.ClosePrice - atrValue * AtrMultiplier;
-				return;
-			}
+			LogInfo($"Buy signal: breakout above Keltner upper band ({upperBand}) with seasonal bias ({_currentSeasonalStrength})");
+			BuyMarket(Volume + Math.Abs(Position));
+			_stopPrice = candle.ClosePrice - atrValue * AtrMultiplier;
+			return;
 		}
-		else if (_currentSeasonalStrength < -SeasonalThreshold)
+		if (signal < 0)
 		{
-			// Strong negative seasonal bias
-			if (candle.ClosePrice < lowerBand && Position >= 0)
-			{
-				// Breakout below lower band - Sell signal
-				LogInfo($"Sell signal: Breakout below Keltner lower band ({lowerBand}) with negative seasonal bias ({_currentSeasonalStrength})");
-				SellMarket(Volume + Math.Abs(Position));
-				_stopPrice = candle.ClosePrice + atrValue * AtrMultiplier;
-				return;
-			}
+			LogInfo($"Sell signal: breakout below Keltner lower band ({lowerBand}) with seasonal bias ({_currentSeasonalStrength})");
+			SellMarket(Volume + Math.Abs(Position));
+			_stopPrice = candle.ClosePrice + atrValue * AtrMultiplier;
+			return;
 		}
 
 		// Exit rules based on middle line reversion

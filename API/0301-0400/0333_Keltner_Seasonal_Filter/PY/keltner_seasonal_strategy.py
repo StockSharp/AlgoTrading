@@ -72,6 +72,15 @@ class keltner_seasonal_strategy(Strategy):
             self.DrawIndicator(area, ema)
             self.DrawOwnTrades(area)
 
+    @staticmethod
+    def _get_entry_signal(seasonal_strength, close_price, ema, atr, multiplier, threshold, position):
+        """Original directional Keltner breakout; +1 buy, -1 sell, 0 no entry."""
+        if seasonal_strength > threshold and close_price > ema + atr * multiplier and position <= 0:
+            return 1
+        if seasonal_strength < -threshold and close_price < ema - atr * multiplier and position >= 0:
+            return -1
+        return 0
+
     def _process_keltner(self, candle, ema_value, atr_value):
         if candle.State != CandleStates.Finished:
             return
@@ -98,16 +107,19 @@ class keltner_seasonal_strategy(Strategy):
             self._close_position()
             return
 
-        if self._current_seasonal_strength > threshold:
-            if close_price > upper_band and self.Position <= 0:
-                self.BuyMarket(self.Volume + Math.Abs(self.Position))
-                self._stop_price = close_price - atr_val * multiplier
-                return
-        elif self._current_seasonal_strength < -threshold:
-            if close_price < lower_band and self.Position >= 0:
-                self.SellMarket(self.Volume + Math.Abs(self.Position))
-                self._stop_price = close_price + atr_val * multiplier
-                return
+        signal = self._get_entry_signal(
+            self._current_seasonal_strength, close_price, ema_val, atr_val,
+            multiplier, threshold, self.Position
+        )
+
+        if signal > 0:
+            self.BuyMarket(self.Volume + Math.Abs(self.Position))
+            self._stop_price = close_price - atr_val * multiplier
+            return
+        if signal < 0:
+            self.SellMarket(self.Volume + Math.Abs(self.Position))
+            self._stop_price = close_price + atr_val * multiplier
+            return
 
         if (self.Position > 0 and close_price < ema_val) or \
            (self.Position < 0 and close_price > ema_val):
