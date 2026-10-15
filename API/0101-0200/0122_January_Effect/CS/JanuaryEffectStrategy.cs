@@ -156,7 +156,7 @@ public class JanuaryEffectStrategy : Strategy
 		// Exit long mid-month
 		else if (isMidMonth && isNewDay && Position > 0)
 		{
-			SellMarket();
+			SellMarket(Position);
 			_cooldown = CooldownBars;
 		}
 		// Short mid-month if below MA
@@ -168,7 +168,7 @@ public class JanuaryEffectStrategy : Strategy
 		// Cover short at end of month
 		else if (isEndOfMonth && isNewDay && Position < 0)
 		{
-			BuyMarket();
+			BuyMarket(Math.Abs(Position));
 			_cooldown = CooldownBars;
 		}
 

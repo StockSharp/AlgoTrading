@@ -156,7 +156,7 @@ public class SantaClausRallyStrategy : Strategy
 		// Exit long in early next month
 		else if (isExitZone && isNewDay && Position > 0)
 		{
-			SellMarket();
+			SellMarket(Position);
 			_cooldown = CooldownBars;
 		}
 		// Short mid-month if below MA
@@ -168,7 +168,7 @@ public class SantaClausRallyStrategy : Strategy
 		// Cover short before rally zone
 		else if (isRallyZone && isNewDay && Position < 0)
 		{
-			BuyMarket();
+			BuyMarket(Math.Abs(Position));
 			_cooldown = CooldownBars;
 		}
 

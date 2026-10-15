@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan
+from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
@@ -84,7 +84,7 @@ class santa_claus_rally_strategy(Strategy):
             self._cooldown = cd
         # Exit long in early next month
         elif is_exit_zone and is_new_day and self.Position > 0:
-            self.SellMarket()
+            self.SellMarket(self.Position)
             self._cooldown = cd
         # Short mid-month if below MA
         elif is_short_zone and is_new_day and self.Position == 0 and close < ma:
@@ -92,7 +92,7 @@ class santa_claus_rally_strategy(Strategy):
             self._cooldown = cd
         # Cover short before rally zone
         elif is_rally_zone and is_new_day and self.Position < 0:
-            self.BuyMarket()
+            self.BuyMarket(Math.Abs(self.Position))
             self._cooldown = cd
 
         self._prev_day_of_month = day_of_month
