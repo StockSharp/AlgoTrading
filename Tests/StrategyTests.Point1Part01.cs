@@ -12,6 +12,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using StockSharp.Algo.Compilation;
 using StockSharp.Algo.Strategies;
+using StockSharp.Samples.Strategies;
 using StockSharp.Messages;
 
 /// <summary>Behavioral checks reserved for Point 1 / Part 01. Both language runners inherit these tests.</summary>
@@ -166,6 +167,38 @@ public abstract partial class StrategyTests
         }, replayDuration: TimeSpan.FromDays(31));
         IsTrue(entries > 0 && fills > 0,
             "The unchanged default must produce at least one real March long entry and fill.");
+    }
+
+    [TestMethod]
+    [TestCategory("Shard05")]
+    public void Point1Part01_0333_OriginalSeasonalBreakoutConditions()
+    {
+        // Independent table from the published contract; no altered parameter
+        // profile, no fabricated candles and no second implementation as oracle.
+        const decimal ema = 100m;
+        const decimal atr = 2m;
+        const decimal multiplier = 2m;
+        const decimal threshold = 0.5m;
+        AreEqual(1, KeltnerSeasonalStrategy.GetEntrySignal(0.6m, 105m, ema, atr, multiplier, threshold, 0m),
+            "March: Close > EMA + 2 ATR and strength +0.6 must permit the long.");
+        AreEqual(0, KeltnerSeasonalStrategy.GetEntrySignal(0.3m, 105m, ema, atr, multiplier, threshold, 0m),
+            "February: exactly the same price breakout cannot trade under a weak seasonal score.");
+        AreEqual(0, KeltnerSeasonalStrategy.GetEntrySignal(0.5m, 105m, ema, atr, multiplier, threshold, 0m),
+            "Seasonal equality with threshold must not pass the strict gate.");
+        AreEqual(0, KeltnerSeasonalStrategy.GetEntrySignal(0.6m, 104m, ema, atr, multiplier, threshold, 0m),
+            "Exactly the Keltner upper band is not a breakout.");
+        AreEqual(-1, KeltnerSeasonalStrategy.GetEntrySignal(-0.8m, 95m, ema, atr, multiplier, threshold, 0m),
+            "September: Close < EMA - 2 ATR and seasonal -0.8 must permit the short.");
+        AreEqual(0, KeltnerSeasonalStrategy.GetEntrySignal(-0.4m, 95m, ema, atr, multiplier, threshold, 0m),
+            "August: identical downside breakout cannot enter short.");
+        AreEqual(0, KeltnerSeasonalStrategy.GetEntrySignal(-0.8m, 96m, ema, atr, multiplier, threshold, 0m),
+            "Exactly the lower Keltner band is not a breakout.");
+        AreEqual(0, KeltnerSeasonalStrategy.GetEntrySignal(0.6m, 105m, ema, atr, multiplier, threshold, 1m),
+            "A held long must not duplicate a long entry.");
+        AreEqual(1, KeltnerSeasonalStrategy.GetEntrySignal(0.6m, 105m, ema, atr, multiplier, threshold, -1m),
+            "A long signal may reverse an existing short.");
+        AreEqual(-1, KeltnerSeasonalStrategy.GetEntrySignal(-0.8m, 95m, ema, atr, multiplier, threshold, 1m),
+            "A short signal may reverse an existing long.");
     }
 
 }
