@@ -31,3 +31,16 @@ Os stops dependem de múltiplos de ATR e fatores como EmaPeriod, AtrPeriod. Ajus
   - Redes neurais: Não
   - Divergência: Não
   - Nível de risco: Médio
+
+## Regras exatas de negociação (C# e Python)
+
+Os sinais são avaliados apenas em candles **concluídos**, com indicadores formados e negociação permitida. Considere `C` = fechamento, `E = EMA(Close, EmaPeriod)`, `A = ATR(AtrPeriod)`, `M = AtrMultiplier`, `U = E + M × A` e `L = E − M × A`.
+
+O valor sazonal `S` depende do **mês de abertura do candle histórico** (`candle.OpenTime.Month`), nunca de `OnStarted2` ou do relógio local. Valores fixos de demonstração (não calculados do histórico): jan 0.8, fev 0.3, mar 0.6, abr 0.7, mai 0.2, jun −0.3, jul −0.1, ago −0.4, set −0.8, out 0.1, nov 0.9, dez 0.7.
+
+- **Compra / reversão de posição vendida:** `S > SeasonalThreshold && C > U && Position <= 0`: compra a mercado de `Volume + abs(Position)`; stop `C − M × A`.
+- **Venda / reversão de posição comprada:** `S < −SeasonalThreshold && C < L && Position >= 0`: venda a mercado de `Volume + abs(Position)`; stop `C + M × A`.
+- **Stop prioritário:** com stop armazenado positivo, encerrar compra se `C <= stop` ou venda se `C >= stop`; zerar o stop e parar o processamento desse candle.
+- **Saída pela EMA:** caso contrário, encerrar compra se `C < E` ou venda se `C > E`; zerar o stop. Não existe take-profit separado nem trailing automático.
+
+O stop é verificado **manualmente no fechamento do candle concluído**, não como ordem intrabar da bolsa, e parte do fechamento do candle de sinal, não do preço executado. Com limiar `0.5`, jan/mar/abr/nov/dez permitem sinais de compra, set sinais de venda, e os demais meses impedem novas entradas; a ruptura do canal continua obrigatória.
