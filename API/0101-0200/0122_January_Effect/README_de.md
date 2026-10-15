@@ -10,6 +10,11 @@ Die Strategie folgt diesem Zeitplan, tritt gegen Jahresende ein und steigt Mitte
 
 Ein Stop-Loss stellt sicher, dass Verluste beherrschbar bleiben, wenn der Effekt ausbleibt.
 
+### Tatsächliche Monatsregeln (C# und Python)
+
+Implementiert ist eine **monatliche** Variante, nicht ausschließlich ein Dezember/Januar-Handel. Bei der ersten zulässigen abgeschlossenen 5-Minuten-Kerze eines neuen Tages 1.–5. wird aus Flat bei `Close > SMA20` gekauft. Am 14.–17. werden Longs geschlossen; aus Flat kann bei `Close < SMA20` ein Short eröffnet werden. Am 26.–31. werden Shorts gedeckt. Aktionen benötigen einen neuen Kalendertag und beachten 50 abgeschlossene Kerzen Wartezeit. Ein nativer Stop-Loss von 2% schützt Long- und Short-Positionen unabhängig von den Datumssignalen. Die Rendite oben ist im BTC/TON-Replay nicht belegt.
+
+
 ## Details
 
 - **Einstiegskriterien**: Kalendereffekt-Auslöser
@@ -17,8 +22,8 @@ Ein Stop-Loss stellt sicher, dass Verluste beherrschbar bleiben, wenn der Effekt
 - **Ausstiegskriterien**: Stop-Loss oder entgegengesetztes Signal
 - **Stops**: Ja, prozentbasiert
 - **Standardwerte**:
-  - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `CandleType` = 5 minute
+  - `StopLossPercent` = 2%
 - **Filter**:
   - Kategorie: Saisonalität
   - Richtung: Beide

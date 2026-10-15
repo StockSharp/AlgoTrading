@@ -10,6 +10,11 @@ La estrategia sigue ese calendario, entrando cerca del fin de año y saliendo a 
 
 Un stop-loss garantiza que las pérdidas se mantengan manejables si el efecto no aparece.
 
+### Reglas mensuales ejecutadas (C# y Python)
+
+La implementación es una adaptación **mensual**, no exclusiva de diciembre/enero. En el primer cierre elegible de 5 minutos de un nuevo día 1–5, compra si está sin posición y `Close > SMA20`. En días 14–17 cierra largos y puede abrir cortos si está plano y `Close < SMA20`. En días 26–31 cubre cortos. Las acciones requieren un nuevo día y respetan 50 velas terminadas de espera. Un stop nativo del 2% protege largos y cortos ejecutados independientemente de estas fechas. La rentabilidad indicada arriba no está confirmada con BTC/TON.
+
+
 ## Detalles
 
 - **Criterios de entrada**: activadores de efecto de calendario
@@ -17,8 +22,8 @@ Un stop-loss garantiza que las pérdidas se mantengan manejables si el efecto no
 - **Criterios de salida**: stop-loss o señal opuesta
 - **Stops**: Sí, basado en porcentaje
 - **Valores predeterminados**:
-  - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `CandleType` = 5 minute
+  - `StopLossPercent` = 2%
 - **Filtros**:
   - Categoría: Estacionalidad
   - Dirección: Ambos

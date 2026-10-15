@@ -10,6 +10,11 @@ The strategy follows that schedule, entering near year-end and exiting mid-Janua
 
 A stop-loss ensures losses stay manageable if the effect fails to appear.
 
+### Executed monthly calendar rules (C# and Python)
+
+The implemented strategy is a **monthly** adaptation, not an exclusive December/January trade. On the first eligible finished 5-minute candle of a new day 1–5, a flat strategy buys when `Close > SMA20`. On days 14–17 it closes longs; if flat and `Close < SMA20`, it may instead open a short. On days 26–31, shorts are covered. These actions require a calendar-day change and are subject to a cooldown of 50 finished candles. A native 2% stop-loss protects filled long and short positions independently of these date windows. The published return above has not been confirmed on BTC/TON history.
+
+
 ## Details
 
 - **Entry Criteria**: calendar effect triggers
@@ -17,8 +22,8 @@ A stop-loss ensures losses stay manageable if the effect fails to appear.
 - **Exit Criteria**: stop-loss or opposite signal
 - **Stops**: Yes, percent based
 - **Default Values**:
-  - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - `CandleType` = 5 minute
+  - `StopLossPercent` = 2%
 - **Filters**:
   - Category: Seasonality
   - Direction: Both
