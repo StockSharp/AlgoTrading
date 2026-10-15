@@ -5,7 +5,7 @@ Source: user-provided `TZ-01.md`. Exact strategy keys only; **315** keys, **630 
 ## Current results
 
 - **0333_Keltner_Seasonal_Filter** — partial: C#/Python source was inspected; the use of `candle.OpenTime.Month` was confirmed in both implementations. All seven localized READMEs now specify formulas, calendar gating, manual bar-close stop semantics, and entry/exit rules. Two test methods were authored in `Tests/StrategyTests.Point1Part01.cs`; **neither compiled nor executed here**. The Python two-start-month replay is unverified. The packaged BTC/TON fixture spans **March 1–31, 2024** (StockSharp.Configuration/Paths.cs), so it cannot observe a forbidden-season candle or a September short. An independent positive/forbidden breakout fixture and actual stop-fill proof are still outstanding. **Status: not complete.**
-- The remaining **311** exact keys have not been audited or independently tested. In 0103, 0121 and 0122, missing percent protection was found in both languages and changes were authored, but the new tests have not been executed; none is certified complete. Other fixes/README changes are noted below.
+- The remaining **310** exact keys (all except 0333, 0103, 0121, 0122, 0303) lack authored regression tests in this branch. None of the five strategies is certified complete: no branch build or history replay was executed. 0302 and 0352 have additionally been inspected statically, revealing discrepancies but requiring an independent fix and executable proof.
 - No red → green result was obtained; no build, MSTest or Python replay results are available. No history was downloaded or modified. No other part of the master TZ was started.
 - Environment limitation: the linked GitHub source is accessible through the connector, but this sandbox has neither `dotnet` nor the StockSharp project/reference checkout and packaged BTC/TON history. Reproducing a full test run here is therefore not possible.
 - Workspace rules `AGENTS.md` and `configs/instructions.md` were not present in the published main checkout accessible through GitHub; verify them against `D:\stocksharp` before integrating these edits.
@@ -39,6 +39,16 @@ dotnet test Tests/Tests.csproj --filter 'FullyQualifiedName~PythonTests.Point1Pa
 
 Neither command has been executed in this environment (no dotnet SDK, sibling StockSharp projects or packaged archive). Treat all three as **incomplete** until the above checks and independent signal oracle are green.
 
+## Additional seasonal-momentum test
+
+- Method `Point1Part01_0303_PublishedMarchSeasonalityForbidsNewShorts` is authored in `Tests/StrategyTests.Point1Part01.cs` for both languages, asserting unchanged parameters, no short entries during the March-only fixture, and actual buy order registration/fill.
+- The exact tested calendar is March 2024 (score +0.5); negative seasonality months and annual performance cannot be inferred from this fixture. This is an *unexecuted* authored test, not a passing check.
+
+```powershell
+dotnet test Tests/Tests.csproj --filter 'FullyQualifiedName~CSharpTests.Point1Part01_0303_PublishedMarchSeasonalityForbidsNewShorts' -- RunConfiguration.TestSessionTimeout=600000
+dotnet test Tests/Tests.csproj --filter 'FullyQualifiedName~PythonTests.Point1Part01_0303_PublishedMarchSeasonalityForbidsNewShorts' -- RunConfiguration.TestSessionTimeout=600000
+```
+
 ## Per-key coverage
 
 | Key | Task kind | Status and specific outstanding reason |
@@ -52,7 +62,7 @@ Neither command has been executed in this environment (no dotnet SDK, sibling St
 | `0341_Supertrend_Put_Call_Ratio` | проверка замечаний | Не проверено: требуется независимая проверка контракта и реальных исполнений C#/Python по назначенному замечанию. |
 | `0344_Hull_MA_Implied_Volatility_Breakout` | проверка замечаний | Не проверено: требуется независимая проверка контракта и реальных исполнений C#/Python по назначенному замечанию. |
 | `0351_Accrual_Anomaly` | проверка замечаний | Не проверено: требуется независимая проверка контракта и реальных исполнений C#/Python по назначенному замечанию. |
-| `0352_Asset_Class_Trend_Following` | проверка замечаний | Не проверено: требуется независимая проверка контракта и реальных исполнений C#/Python по назначенному замечанию. |
+| `0352_Asset_Class_Trend_Following` | проверка замечаний | Статически выявлено: обе реализации имеют SmaLength=36 и 4-часовые свечи, README требует SMA210 на дневных свечах и MinTradeUsd=50; MinTradeUsd отсутствует в коде, а реализованный двухинструментный относительный фильтр отличается от описанного ежемесячного равного распределения. Не исправлено: требуется выбор верного контракта и независимые C#/Python тесты входов, выходов и перебалансировки. |
 | `0353_Asset_Growth_Effect` | проверка замечаний | Не проверено: требуется независимая проверка контракта и реальных исполнений C#/Python по назначенному замечанию. |
 | `0354_Betting_Against_Beta_Stocks` | проверка замечаний | Не проверено: требуется независимая проверка контракта и реальных исполнений C#/Python по назначенному замечанию. |
 | `0355_Betting_Against_Beta` | проверка замечаний | Не проверено: требуется независимая проверка контракта и реальных исполнений C#/Python по назначенному замечанию. |
@@ -232,8 +242,8 @@ Neither command has been executed in this environment (no dotnet SDK, sibling St
 | `0290_MACD_Slope_Mean_Reversion` | проверка контракта | Не проверено: требуется независимая проверка контракта и реальных исполнений C#/Python по назначенному замечанию. |
 | `0296_Z-Score_Volume_Filter` | проверка контракта | Не проверено: требуется независимая проверка контракта и реальных исполнений C#/Python по назначенному замечанию. |
 | `0298_Correlation_Mean_Reversion` | проверка контракта | Не проверено: требуется независимая проверка контракта и реальных исполнений C#/Python по назначенному замечанию. |
-| `0302_Volatility_Cluster_Breakout` | проверка контракта | Не проверено: требуется независимая проверка контракта и реальных исполнений C#/Python по назначенному замечанию. |
-| `0303_Seasonality_Adjusted_Momentum` | проверка контракта | Не проверено: требуется независимая проверка контракта и реальных исполнений C#/Python по назначенному замечанию. |
+| `0302_Volatility_Cluster_Breakout` | проверка контракта | Статически выявлено в C#/Python: StopMultiplier используется как множитель ATR для ручного выхода на закрытии, но в StartProtection тот же параметр передаётся в UnitTypes.Percent; это не эквивалентные уровни защиты. Не исправлено: нужна тестируемая схема фиксации ATR при входе и действительной intrabar-защиты; проверки исполнений не было. |
+| `0303_Seasonality_Adjusted_Momentum` | проверка контракта | Оба исходника статически сверены: M=Momentum14, SMA14(M), сезонный коэффициент candle.OpenTime.Month, закрытия по смещению/отмене разрешённой сезонности, нативный стоп 2%. Все семь README уточнены; добавлен реальный replay-тест мартовского запрета новых шортов, но **C#/Python тесты не запускались**; отрицательные месяцы и стоп-филлы не подтверждены. |
 | `0305_RSI_Dynamic_Overbought_Oversold` | проверка контракта | Не проверено: требуется независимая проверка контракта и реальных исполнений C#/Python по назначенному замечанию. |
 | `0306_Bollinger_Volatility_Breakout` | проверка контракта | Не проверено: требуется независимая проверка контракта и реальных исполнений C#/Python по назначенному замечанию. |
 | `0307_MACD_Adaptive_Histogram` | проверка контракта | Не проверено: требуется независимая проверка контракта и реальных исполнений C#/Python по назначенному замечанию. |
