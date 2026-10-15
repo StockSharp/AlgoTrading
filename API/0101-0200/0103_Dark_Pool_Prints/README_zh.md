@@ -20,7 +20,7 @@
 - **退出条件**：止损或反向信号
 - **止损**：是，按百分比
 - **默认值**:
-  - \`CandleType\` = 1 minute
+  - `CandleType` = 1 minute
   - `StopLossPercent` = 2%
 - **过滤器**:
   - 类别：成交量

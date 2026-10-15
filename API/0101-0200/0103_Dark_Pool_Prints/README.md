@@ -22,7 +22,7 @@ At the default one-minute candle interval, the 20-period SMA confirms direction.
 - **Exit Criteria**: stop-loss or opposite signal
 - **Stops**: Yes, percent based
 - **Default Values**:
-  - \`CandleType\` = 1 minute
+  - `CandleType` = 1 minute
   - `StopLossPercent` = 2%
 - **Filters**:
   - Category: Volume

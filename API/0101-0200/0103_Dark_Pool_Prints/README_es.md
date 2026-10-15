@@ -22,7 +22,7 @@ Por defecto se usan velas de 1 minuto y SMA20. Tras 20 observaciones de volumen,
 - **Criterios de salida**: stop-loss o señal opuesta
 - **Stops**: Sí, basados en porcentaje
 - **Valores predeterminados**:
-  - \`CandleType\` = 1 minute
+  - `CandleType` = 1 minute
   - `StopLossPercent` = 2%
 - **Filtros**:
   - Categoría: Volumen
