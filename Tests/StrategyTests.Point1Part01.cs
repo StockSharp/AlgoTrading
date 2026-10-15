@@ -25,10 +25,10 @@ public abstract partial class StrategyTests
 
     [TestMethod]
     [TestCategory("Shard05")]
-    public async Task Point1Part01_0333_DefaultCalendarGatesFilledEntries()
+    public async Task Point1Part01_0333_DefaultMarchCalendarGatesFilledEntries()
     {
         var flatEntries = 0;
-        var forbiddenCandleMonths = 0;
+        var observedHistoricalCandles = 0;
         await Replay(Point1Part01KeltnerKey, (strategy, _) =>
         {
             AreEqual(20, Convert.ToInt32(strategy.Parameters["EmaPeriod"].Value));
@@ -39,9 +39,12 @@ public abstract partial class StrategyTests
 
             strategy.CandleReceived += (_, candle) =>
             {
-                if (candle.State == CandleStates.Finished
-                    && Math.Abs(Point1Part01KeltnerCalendar[candle.OpenTime.Month]) <= 0.5m)
-                    forbiddenCandleMonths++;
+                if (candle.State == CandleStates.Finished)
+                {
+                    // The packaged BTC/TON fixture covers March 2024 only.
+                    AreEqual(3, candle.OpenTime.Month);
+                    observedHistoricalCandles++;
+                }
             };
             strategy.OrderRegistering += order =>
             {
@@ -60,7 +63,8 @@ public abstract partial class StrategyTests
             };
         });
         IsTrue(flatEntries > 0, "The default replay must actually exercise the seasonal entry gate with real orders and fills.");
-        IsTrue(forbiddenCandleMonths > 0, "The same historical replay must cover at least one forbidden month.");
+        IsTrue(observedHistoricalCandles > 0, "The published-length indicators must be exercised on actual finished March candles.");
+        // Other months cannot be claimed tested by this March-only fixture.
     }
 
     [TestMethod]

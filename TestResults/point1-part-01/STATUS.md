@@ -4,7 +4,7 @@ Source: user-provided `TZ-01.md`. Exact strategy keys only; **315** keys, **630 
 
 ## Current results
 
-- **0333_Keltner_Seasonal_Filter** — partial: C#/Python source was inspected; the use of `candle.OpenTime.Month` was confirmed in both implementations. All seven localized READMEs now specify formulas, calendar gating, manual bar-close stop semantics, and entry/exit rules. Two test methods were authored in `Tests/StrategyTests.Point1Part01.cs`; **neither compiled nor executed here**. The Python two-start-month replay is unverified, and no independent fully executed positive/forbidden breakout fixture has been demonstrated. **Status: not complete.**
+- **0333_Keltner_Seasonal_Filter** — partial: C#/Python source was inspected; the use of `candle.OpenTime.Month` was confirmed in both implementations. All seven localized READMEs now specify formulas, calendar gating, manual bar-close stop semantics, and entry/exit rules. Two test methods were authored in `Tests/StrategyTests.Point1Part01.cs`; **neither compiled nor executed here**. The Python two-start-month replay is unverified. The packaged BTC/TON fixture spans **March 1–31, 2024** (StockSharp.Configuration/Paths.cs), so it cannot observe a forbidden-season candle or a September short. An independent positive/forbidden breakout fixture and actual stop-fill proof are still outstanding. **Status: not complete.**
 - The remaining **314** exact keys have not been audited or independently tested in this work; no code changes for them are claimed.
 - No red → green result was obtained; no build, MSTest or Python replay results are available. No history was downloaded or modified. No other part of the master TZ was started.
 - Environment limitation: the linked GitHub source is accessible through the connector, but this sandbox has neither `dotnet` nor the StockSharp project/reference checkout and packaged BTC/TON history. Reproducing a full test run here is therefore not possible.
@@ -19,7 +19,7 @@ dotnet test Tests/Tests.csproj --filter "FullyQualifiedName~CSharpTests.S0333_Ke
 dotnet test Tests/Tests.csproj --filter "FullyQualifiedName~PythonTests.Point1Part01_0333" -- RunConfiguration.TestSessionTimeout=600000
 ```
 
-After the above, add independent **fully observed execution** checks for positive and seasonally forbidden breakouts using the original indicator lengths/multiplier, both entry sides, stop exits, and filled positions; maintain red-before-fix proof for any discovered defect. Do not replace default checks with a relaxed override or switch off `requireTrades`. Record command output, exact failures and SHA before marking any key tested.
+After the above, add independent **fully observed execution** checks for positive and seasonally forbidden breakouts using the original indicator lengths/multiplier, both entry sides, stop exits, and filled positions. March-only history cannot establish the forbidden-month scenario without a separate controlled candle-time fixture; maintain red-before-fix proof for any discovered defect. Do not replace default checks with a relaxed override or switch off `requireTrades`. Record command output, exact failures and SHA before marking any key tested.
 
 **Shared files:** created `Tests/StrategyTests.Point1Part01.cs` only; `Tests/StrategyInventory.cs`, `Tests.csproj`, and shared helpers were not edited.
 
@@ -27,7 +27,7 @@ After the above, add independent **fully observed execution** checks for positiv
 
 | Key | Task kind | Status and specific outstanding reason |
 |---|---|---|
-| `0333_Keltner_Seasonal_Filter` | конкретная задача | Частично: README обновлены, тесты написаны, но C#/Python replay не запущен; входы/стопы на эталоне не подтверждены. |
+| `0333_Keltner_Seasonal_Filter` | конкретная задача | Частично: README обновлены, тесты написаны, но C#/Python replay не запущен; мартовские входы и стопы на эталоне не подтверждены; других месяцев в BTC/TON-архиве нет. |
 | `0103_Dark_Pool_Prints` | проверка замечаний | Не проверено: требуется независимая проверка контракта и реальных исполнений C#/Python по назначенному замечанию. |
 | `0121_Santa_Claus_Rally` | проверка замечаний | Не проверено: требуется независимая проверка контракта и реальных исполнений C#/Python по назначенному замечанию. |
 | `0122_January_Effect` | проверка замечаний | Не проверено: требуется независимая проверка контракта и реальных исполнений C#/Python по назначенному замечанию. |
