@@ -10,6 +10,11 @@ Die Strategie tritt in dieselbe Richtung ein wie starke Dark Pool-Käufe oder -V
 
 Ein kleiner prozentualer Stop hält das Risiko begrenzt, und Positionen werden geschlossen, wenn der erwartete Impuls ausbleibt.
 
+### Tatsächlich ausgeführte Handelsregeln (C# und Python)
+
+Standard sind 1-Minuten-Kerzen und SMA20. Nach 20 Volumenwerten muss das aktuelle Volumen **strikt größer** als das 1,5-Fache des Mittelwerts der vorigen 19 Werte sein. Nur ohne Position: Kauf bei `Close > Open` und `Close > SMA20`; Verkauf bei `Close < Open` und `Close < SMA20`. Zwischen neuen Einstiegen gelten 500 abgeschlossene Kerzen Wartezeit. Long-Positionen werden bei `Close < SMA20`, Shorts bei `Close > SMA20` geschlossen; **Volumenspitzen und Einstiegspausen verhindern keine Ausstiege**. Ausgeführte Positionen erhalten einen nativen Stop-Loss von 2%, ohne Take-Profit. Die oben genannte Rendite ist durch den BTC/TON-Replay nicht unabhängig belegt.
+
+
 ## Details
 
 - **Einstiegskriterien**: Indikatorsignal
@@ -17,8 +22,8 @@ Ein kleiner prozentualer Stop hält das Risiko begrenzt, und Positionen werden g
 - **Ausstiegskriterien**: Stop-Loss oder entgegengesetztes Signal
 - **Stops**: Ja, prozentbasiert
 - **Standardwerte**:
-  - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - \`CandleType\` = 1 minute
+  - `StopLossPercent` = 2%
 - **Filter**:
   - Kategorie: Volumen
   - Richtung: Beide

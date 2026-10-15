@@ -10,6 +10,11 @@ A estratégia entra na mesma direção das grandes compras ou vendas do dark poo
 
 Um pequeno stop percentual mantém o risco contido e as posições são encerradas se o impulso esperado não se materializar.
 
+### Regras executadas (C# e Python)
+
+O padrão usa candles de 1 minuto e SMA20. Após 20 amostras de volume, o volume atual deve ser **estritamente maior** que 1,5 vez a média das 19 amostras anteriores. Apenas sem posição: compra se `Close > Open` e `Close > SMA20`; venda se `Close < Open` e `Close < SMA20`. Há espera de 500 candles concluídos entre novas entradas. Long é encerrado quando `Close < SMA20`, short quando `Close > SMA20`; **nem o volume nem a espera bloqueiam as saídas**. Posições executadas recebem stop nativo de 2%, sem take-profit. A rentabilidade citada acima não foi verificada independentemente no replay BTC/TON.
+
+
 ## Detalhes
 
 - **Critérios de entrada**: sinal de indicador
@@ -17,8 +22,8 @@ Um pequeno stop percentual mantém o risco contido e as posições são encerrad
 - **Critérios de saída**: stop-loss ou sinal oposto
 - **Stops**: Sim, baseado em percentual
 - **Valores padrão**:
-  - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - \`CandleType\` = 1 minute
+  - `StopLossPercent` = 2%
 - **Filtros**:
   - Categoria: Volume
   - Direção: Ambos

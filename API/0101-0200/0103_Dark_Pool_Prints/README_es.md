@@ -10,6 +10,11 @@ La estrategia entra en la misma dirección que las grandes compras o ventas del 
 
 Un pequeño stop porcentual mantiene el riesgo controlado y las posiciones se cierran si el impulso anticipado no llega a materializarse.
 
+### Reglas ejecutadas (C# y Python)
+
+Por defecto se usan velas de 1 minuto y SMA20. Tras 20 observaciones de volumen, el volumen actual debe superar **estrictamente** 1,5 veces la media de las 19 anteriores. Solo sin posición: compra si `Close > Open` y `Close > SMA20`; venta si `Close < Open` y `Close < SMA20`. Entre entradas hay 500 velas terminadas de espera. Se cierra el largo si `Close < SMA20` y el corto si `Close > SMA20`; **ni el volumen ni la espera bloquean las salidas**. Las posiciones ejecutadas tienen stop nativo del 2% y no tienen objetivo de beneficios. La rentabilidad citada arriba no está verificada por el replay BTC/TON.
+
+
 ## Detalles
 
 - **Criterios de entrada**: señal de indicador
@@ -17,8 +22,8 @@ Un pequeño stop porcentual mantiene el riesgo controlado y las posiciones se ci
 - **Criterios de salida**: stop-loss o señal opuesta
 - **Stops**: Sí, basados en porcentaje
 - **Valores predeterminados**:
-  - `CandleType` = 15 minute
-  - `StopLoss` = 2%
+  - \`CandleType\` = 1 minute
+  - `StopLossPercent` = 2%
 - **Filtros**:
   - Categoría: Volumen
   - Dirección: Ambos
