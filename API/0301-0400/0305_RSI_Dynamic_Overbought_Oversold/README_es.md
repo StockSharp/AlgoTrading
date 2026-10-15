@@ -5,9 +5,11 @@ La estrategia **RSI Dynamic Overbought Oversold** está construida alrededor del
 
 Las pruebas indican un retorno anual promedio de aproximadamente el 178%. Funciona mejor en el mercado de acciones.
 
-Las señales se disparan cuando la Sobrecompra confirma cambios de tendencia en datos intradía (5m). Esto hace que el método sea adecuado para traders activos.
+### Reglas ejecutadas (C# y Python)
 
-Los stops se basan en múltiplos de ATR y factores como RsiPeriod, MovingAvgPeriod. Ajuste estos valores predeterminados para equilibrar el riesgo y la recompensa.
+Con **velas terminadas de 5 minutos** se calculan RSI(14), SMA(50) del precio y SMA(50) más desviación estándar(50) del propio RSI. Bandas dinámicas: `upper = min(RSI_MA + 2 * RSI_STD, 85)`, `lower = max(RSI_MA - 2 * RSI_STD, 15)`. Estando plano, comprar solo si `RSI <= lower` y `Close >= Price_SMA * 0.995`; vender solo si `RSI >= upper` y `Close <= Price_SMA * 1.005`. Cerrar largo si `RSI >= RSI_MA` o `Close < Price_SMA * 0.995`; corto si `RSI <= RSI_MA` o `Close > Price_SMA * 1.005`. Tras cada orden esperar **48 velas terminadas**. Las posiciones ejecutadas usan un **stop nativo del 2%**, no ATR. La rentabilidad indicada arriba no está verificada por el histórico BTC/TON.
+
+
 
 ## Detalles
 - **Criterios de entrada**: ver implementación para las condiciones del indicador.

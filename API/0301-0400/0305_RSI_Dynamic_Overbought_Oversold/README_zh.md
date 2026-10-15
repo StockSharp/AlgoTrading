@@ -5,9 +5,11 @@
 
 测试表明年均收益约为 178%，该策略在股票市场表现最佳。
 
-当指标在指定周期的数据上确认条件时触发信号，适合积极交易者。
+### 实际交易规则（C# 与 Python）
 
-止损依赖ATR倍数及其他参数，可根据需要调整默认值以平衡风险和收益。
+使用**已完成的5分钟K线**，计算 RSI(14)、价格 SMA(50)，以及 RSI 本身的 SMA(50) 和标准差(50)。动态边界：`upper = min(RSI_MA + 2 * RSI_STD, 85)`，`lower = max(RSI_MA - 2 * RSI_STD, 15)`。空仓时仅在 `RSI <= lower` 且 `Close >= Price_SMA * 0.995` 时买入；仅在 `RSI >= upper` 且 `Close <= Price_SMA * 1.005` 时卖出。多仓在 `RSI >= RSI_MA` 或 `Close < Price_SMA * 0.995` 时平仓；空头在 `RSI <= RSI_MA` 或 `Close > Price_SMA * 1.005` 时平仓。发出订单后冷却**48根已完成K线**。已成交仓位采用**原生2%止损**，而不是 ATR 止损。以上收益率未通过 BTC/TON 回放核实。
+
+
 
 ## 详细信息
 - **入场条件**: see implementation for indicator conditions.
