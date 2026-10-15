@@ -1,0 +1,239 @@
+using System;
+using System.Linq;
+using System.Collections.Generic;
+
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
+
+using StockSharp.Algo.Indicators;
+using StockSharp.Algo.Strategies;
+using StockSharp.BusinessEntities;
+using StockSharp.Messages;
+
+namespace StockSharp.Samples.Strategies;
+
+/// <summary>
+/// Bollinger Bands and RSI strategy with trailing exit.
+/// </summary>
+public class BbRsiStrategy : Strategy
+{
+	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _bbPeriod;
+	private readonly StrategyParam<decimal> _bbDeviation;
+	private readonly StrategyParam<int> _rsiPeriod;
+	private readonly StrategyParam<decimal> _rsiBuyLevel;
+	private readonly StrategyParam<decimal> _rsiExitLevel;
+	private readonly StrategyParam<decimal> _trailingStep;
+
+	private BollingerBands _bollingerBands;
+	private RelativeStrengthIndex _rsi;
+
+	private bool _inTrade;
+	private decimal _peakPrice;
+
+	/// <summary>
+	/// Candle type for calculation.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Bollinger Bands period.
+	/// </summary>
+	public int BbPeriod
+	{
+		get => _bbPeriod.Value;
+		set => _bbPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Bollinger Bands deviation.
+	/// </summary>
+	public decimal BbDeviation
+	{
+		get => _bbDeviation.Value;
+		set => _bbDeviation.Value = value;
+	}
+
+	/// <summary>
+	/// RSI period.
+	/// </summary>
+	public int RsiPeriod
+	{
+		get => _rsiPeriod.Value;
+		set => _rsiPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// RSI level to enter long.
+	/// </summary>
+	public decimal RsiBuyLevel
+	{
+		get => _rsiBuyLevel.Value;
+		set => _rsiBuyLevel.Value = value;
+	}
+
+	/// <summary>
+	/// RSI level to exit long.
+	/// </summary>
+	public decimal RsiExitLevel
+	{
+		get => _rsiExitLevel.Value;
+		set => _rsiExitLevel.Value = value;
+	}
+
+	/// <summary>
+	/// Trailing step percentage.
+	/// </summary>
+	public decimal TrailingStep
+	{
+		get => _trailingStep.Value;
+		set => _trailingStep.Value = value;
+	}
+
+	/// <summary>
+	/// Constructor.
+	/// </summary>
+	public BbRsiStrategy()
+	{
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+		_bbPeriod = Param(nameof(BbPeriod), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("BB Period", "Bollinger Bands period", "Bollinger Bands")
+
+			.SetOptimize(10, 50, 5);
+
+		_bbDeviation = Param(nameof(BbDeviation), 1.5m)
+			.SetRange(0.5m, 5m)
+			.SetDisplay("BB Deviation", "Bollinger Bands deviation", "Bollinger Bands")
+
+			.SetOptimize(1m, 4m, 0.5m);
+
+		_rsiPeriod = Param(nameof(RsiPeriod), 13)
+			.SetGreaterThanZero()
+			.SetDisplay("RSI Period", "RSI calculation period", "RSI")
+			
+			.SetOptimize(7, 21, 2);
+
+		_rsiBuyLevel = Param(nameof(RsiBuyLevel), 48m)
+			.SetRange(0m, 100m)
+			.SetDisplay("RSI Buy Level", "RSI threshold to enter long", "RSI")
+
+			.SetOptimize(20m, 40m, 5m);
+
+		_rsiExitLevel = Param(nameof(RsiExitLevel), 52m)
+			.SetRange(0m, 100m)
+			.SetDisplay("RSI Exit Level", "RSI threshold to exit long", "RSI")
+
+			.SetOptimize(60m, 80m, 5m);
+
+		_trailingStep = Param(nameof(TrailingStep), 2m)
+			.SetRange(0.1m, 20m)
+			.SetDisplay("Trailing Step %", "Trailing stop step percent", "Risk")
+			
+			.SetOptimize(0.5m, 5m, 0.5m);
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_inTrade = default;
+		_peakPrice = default;
+	}
+
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
+
+		_bollingerBands = new BollingerBands { Length = BbPeriod, Width = BbDeviation };
+		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.BindEx([_bollingerBands, _rsi], ProcessCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, _bollingerBands);
+			DrawIndicator(area, _rsi);
+			DrawOwnTrades(area);
+		}
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue[] values)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (values[0] is not BollingerBandsValue bbValue ||
+			bbValue.UpBand is not decimal upperBand ||
+			bbValue.LowBand is not decimal lowerBand ||
+			!values[1].IsFormed)
+			return;
+
+		var rsiValue = values[1].GetValue<decimal>();
+		var closePrice = candle.ClosePrice;
+
+		if (Position == 0)
+		{
+			// Long entry: close below lower BB and RSI oversold
+			if (closePrice < lowerBand && rsiValue < RsiBuyLevel)
+			{
+				BuyMarket();
+				_peakPrice = closePrice;
+				_inTrade = true;
+			}
+			// Short entry: close above upper BB and RSI overbought
+			else if (closePrice > upperBand && rsiValue > RsiExitLevel)
+			{
+				SellMarket();
+				_peakPrice = closePrice;
+				_inTrade = true;
+			}
+		}
+		else if (Position > 0 && _inTrade)
+		{
+			if (closePrice > _peakPrice)
+				_peakPrice = closePrice;
+
+			var trailingDrop = _peakPrice * (1m - TrailingStep / 100m);
+
+			if (closePrice <= trailingDrop || rsiValue > RsiExitLevel)
+			{
+				SellMarket();
+				_inTrade = false;
+			}
+		}
+		else if (Position < 0 && _inTrade)
+		{
+			if (closePrice < _peakPrice)
+				_peakPrice = closePrice;
+
+			var trailingRise = _peakPrice * (1m + TrailingStep / 100m);
+
+			if (closePrice >= trailingRise || rsiValue < RsiBuyLevel)
+			{
+				BuyMarket();
+				_inTrade = false;
+			}
+		}
+	}
+}

@@ -1,0 +1,3106 @@
+﻿{
+  "Id": "fe4c4cfd-74fe-736e-ee2c-210b6112c010",
+  "Content": {
+    "Type": "Schema",
+    "Value": {
+      "Version": "1.0",
+      "Scheme": {
+        "SchemaVersion": 1,
+        "Category": "",
+        "DocUrl": "",
+        "Composition": {
+          "Id": "fe4c4cfd-74fe-736e-ee2c-210b6112c010",
+          "CanAutoName": false,
+          "Parameters": {
+            "Name": {
+              "Value": "Two_Leg_Spread_Divergence"
+            },
+            "LogLevel": {
+              "Value": "Inherit"
+            },
+            "ShowParameters": {
+              "Value": true
+            },
+            "ShowSockets": {
+              "Value": false
+            },
+            "ProcessNullValues": {
+              "Value": false
+            },
+            "0c2f5719-21ba-fb91-19be-8f6fb15b169bValue": {
+              "Value": "TONUSDT@BNBFT"
+            },
+            "a9ff8b58-fe5f-384b-773a-8747ea5ae9ceSeries": {
+              "Value": {
+                "type": "StockSharp.Messages.DataType, StockSharp.Messages",
+                "settings": {
+                  "MessageType": "StockSharp.Messages.TimeFrameCandleMessage, StockSharp.Messages",
+                  "Arg": {
+                    "type": "System.TimeSpan, System.Private.CoreLib",
+                    "value": "00-05-00"
+                  }
+                }
+              }
+            },
+            "5a375d39-23d8-c18e-7943-480947525390Series": {
+              "Value": {
+                "type": "StockSharp.Messages.DataType, StockSharp.Messages",
+                "settings": {
+                  "MessageType": "StockSharp.Messages.TimeFrameCandleMessage, StockSharp.Messages",
+                  "Arg": {
+                    "type": "System.TimeSpan, System.Private.CoreLib",
+                    "value": "00-05-00"
+                  }
+                }
+              }
+            },
+            "296f0623-b17a-4b1c-4002-5f59941676baShift": {
+              "Value": 12
+            },
+            "33cb1b60-ce6a-e936-0701-4f9545d20ef1Shift": {
+              "Value": 12
+            },
+            "f20c7456-6041-f32c-566a-d8e4209d0d4fValue": {
+              "Value": {
+                "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                "settings": {
+                  "Type": "Absolute",
+                  "Value": 0.0
+                }
+              }
+            },
+            "1fae7309-1f78-aef1-ab79-a8b6ad765936Value": {
+              "Value": {
+                "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                "settings": {
+                  "Type": "Absolute",
+                  "Value": 0.3
+                }
+              }
+            },
+            "292cae32-4522-11ed-962c-2c46f1bead59Value": {
+              "Value": {
+                "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                "settings": {
+                  "Type": "Absolute",
+                  "Value": 0.1
+                }
+              }
+            },
+            "43fee419-cbbe-ecc5-4016-5d86ab31d5c7Value": {
+              "Value": {
+                "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                "settings": {
+                  "Type": "Absolute",
+                  "Value": 1.0
+                }
+              }
+            },
+            "d4e30e6c-4ecd-2bba-c4a5-009f2095085cValue": {
+              "Value": {
+                "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                "settings": {
+                  "Type": "Absolute",
+                  "Value": 10.0
+                }
+              }
+            }
+          },
+          "TypeId": "0d7852bd-8fb6-44fe-84f0-f1db185c189d"
+        },
+        "Model": {
+          "Nodes": [
+            {
+              "Key": "secondLeg",
+              "Figure": "",
+              "X": 0.0,
+              "Y": 0.0,
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "0c2f5719-21ba-fb91-19be-8f6fb15b169b",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Second leg: TONUSDT@BNBFT"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.BusinessEntities.Security, StockSharp.BusinessEntities"
+                    }
+                  },
+                  "Value": {
+                    "Value": "TONUSDT@BNBFT"
+                  },
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "tradedCandles",
+              "Figure": "",
+              "X": 0.0,
+              "Y": 130.0,
+              "TypeId": "3d773273-0cee-4d40-8eef-acded2d07ab8",
+              "Settings": {
+                "Id": "a9ff8b58-fe5f-384b-773a-8747ea5ae9ce",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Traded leg, 5-minute candles"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "IsManuallySubscription": {
+                    "Value": false
+                  },
+                  "Series": {
+                    "Value": {
+                      "type": "StockSharp.Messages.DataType, StockSharp.Messages",
+                      "settings": {
+                        "MessageType": "StockSharp.Messages.TimeFrameCandleMessage, StockSharp.Messages",
+                        "Arg": {
+                          "type": "System.TimeSpan, System.Private.CoreLib",
+                          "value": "00-05-00"
+                        }
+                      }
+                    }
+                  },
+                  "IsFinishedOnly": {
+                    "Value": true
+                  },
+                  "IsCalcVolumeProfile": {
+                    "Value": false
+                  },
+                  "AllowBuildFromSmallerTimeFrame": {
+                    "Value": true
+                  },
+                  "IsRegularTradingHours": {},
+                  "BuildCandlesMode": {
+                    "Value": "LoadAndBuild"
+                  },
+                  "BuildCandlesFrom": {},
+                  "BuildCandlesField": {}
+                }
+              }
+            },
+            {
+              "Key": "secondCandles",
+              "Figure": "",
+              "X": 220.0,
+              "Y": 0.0,
+              "TypeId": "3d773273-0cee-4d40-8eef-acded2d07ab8",
+              "Settings": {
+                "Id": "5a375d39-23d8-c18e-7943-480947525390",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Second leg, 5-minute candles"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "IsManuallySubscription": {
+                    "Value": false
+                  },
+                  "Series": {
+                    "Value": {
+                      "type": "StockSharp.Messages.DataType, StockSharp.Messages",
+                      "settings": {
+                        "MessageType": "StockSharp.Messages.TimeFrameCandleMessage, StockSharp.Messages",
+                        "Arg": {
+                          "type": "System.TimeSpan, System.Private.CoreLib",
+                          "value": "00-05-00"
+                        }
+                      }
+                    }
+                  },
+                  "IsFinishedOnly": {
+                    "Value": true
+                  },
+                  "IsCalcVolumeProfile": {
+                    "Value": false
+                  },
+                  "AllowBuildFromSmallerTimeFrame": {
+                    "Value": true
+                  },
+                  "IsRegularTradingHours": {},
+                  "BuildCandlesMode": {
+                    "Value": "LoadAndBuild"
+                  },
+                  "BuildCandlesFrom": {},
+                  "BuildCandlesField": {}
+                }
+              }
+            },
+            {
+              "Key": "align",
+              "Figure": "",
+              "X": 440.0,
+              "Y": 0.0,
+              "TypeId": "e569d5c4-7b9b-4f42-a190-0e454876ac79",
+              "Settings": {
+                "Id": "c9a77460-13b8-48b6-85f4-b53f231225af",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Same bar on both instruments"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Interval": {
+                    "Value": "00:05:00"
+                  },
+                  "ClearSockets": {
+                    "Value": true
+                  }
+                },
+                "in": [
+                  {
+                    "Id": "in 1",
+                    "Type": "StockSharp.Messages.ICandleMessage, StockSharp.Messages"
+                  },
+                  {
+                    "Id": "in 2",
+                    "Type": "StockSharp.Messages.ICandleMessage, StockSharp.Messages"
+                  },
+                  {
+                    "Id": "in 3",
+                    "Type": "object"
+                  }
+                ]
+              }
+            },
+            {
+              "Key": "tradedClose",
+              "Figure": "",
+              "X": 660.0,
+              "Y": 0.0,
+              "TypeId": "35c046c4-1b0f-4074-ac08-0c70850a8dcf",
+              "Settings": {
+                "Id": "d0d970e7-a282-6f7b-60a3-5d3823c66212",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Traded leg close"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.ICandleMessage, StockSharp.Messages"
+                    }
+                  },
+                  "Property": {
+                    "Value": "ClosePrice"
+                  }
+                }
+              }
+            },
+            {
+              "Key": "secondClose",
+              "Figure": "",
+              "X": 660.0,
+              "Y": 130.0,
+              "TypeId": "35c046c4-1b0f-4074-ac08-0c70850a8dcf",
+              "Settings": {
+                "Id": "ddcd5821-e8d5-5519-ca8b-3530682409c1",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Second leg close"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.ICandleMessage, StockSharp.Messages"
+                    }
+                  },
+                  "Property": {
+                    "Value": "ClosePrice"
+                  }
+                }
+              }
+            },
+            {
+              "Key": "tradedPrevCandle",
+              "Figure": "",
+              "X": 660.0,
+              "Y": 260.0,
+              "TypeId": "835c9ae0-906a-48d6-9e20-a332b6350fd0",
+              "Settings": {
+                "Id": "296f0623-b17a-4b1c-4002-5f59941676ba",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Traded leg candle 12 bars back"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.ICandleMessage, StockSharp.Messages"
+                    }
+                  },
+                  "Shift": {
+                    "Value": 12
+                  },
+                  "IsFinishedOnly": {
+                    "Value": true
+                  }
+                }
+              }
+            },
+            {
+              "Key": "tradedPrevClose",
+              "Figure": "",
+              "X": 880.0,
+              "Y": 0.0,
+              "TypeId": "35c046c4-1b0f-4074-ac08-0c70850a8dcf",
+              "Settings": {
+                "Id": "9a2f07b5-f12f-38ae-d75a-84bda5e2f753",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Traded leg close 12 bars back"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.ICandleMessage, StockSharp.Messages"
+                    }
+                  },
+                  "Property": {
+                    "Value": "ClosePrice"
+                  }
+                }
+              }
+            },
+            {
+              "Key": "secondPrevCandle",
+              "Figure": "",
+              "X": 660.0,
+              "Y": 390.0,
+              "TypeId": "835c9ae0-906a-48d6-9e20-a332b6350fd0",
+              "Settings": {
+                "Id": "33cb1b60-ce6a-e936-0701-4f9545d20ef1",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Second leg candle 12 bars back"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.ICandleMessage, StockSharp.Messages"
+                    }
+                  },
+                  "Shift": {
+                    "Value": 12
+                  },
+                  "IsFinishedOnly": {
+                    "Value": true
+                  }
+                }
+              }
+            },
+            {
+              "Key": "secondPrevClose",
+              "Figure": "",
+              "X": 880.0,
+              "Y": 130.0,
+              "TypeId": "35c046c4-1b0f-4074-ac08-0c70850a8dcf",
+              "Settings": {
+                "Id": "30b63071-3b81-f8fe-53c7-c2ff6af9b7be",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Second leg close 12 bars back"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.ICandleMessage, StockSharp.Messages"
+                    }
+                  },
+                  "Property": {
+                    "Value": "ClosePrice"
+                  }
+                }
+              }
+            },
+            {
+              "Key": "tradedChange",
+              "Figure": "",
+              "X": 1100.0,
+              "Y": 0.0,
+              "TypeId": "f0edcbdf-41cb-442b-896c-332dac3caae3",
+              "Settings": {
+                "Id": "7b63af42-e08d-de9b-79dd-8f835857534d",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Traded leg change over the shift, %"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Expression": {
+                    "Value": "(a - b) / b * 100"
+                  },
+                  "Validation": {}
+                }
+              }
+            },
+            {
+              "Key": "secondChange",
+              "Figure": "",
+              "X": 1100.0,
+              "Y": 130.0,
+              "TypeId": "f0edcbdf-41cb-442b-896c-332dac3caae3",
+              "Settings": {
+                "Id": "4792ea58-b3e0-d798-73cc-edb9ca419ff0",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Second leg change over the shift, %"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Expression": {
+                    "Value": "(a - b) / b * 100"
+                  },
+                  "Validation": {}
+                }
+              }
+            },
+            {
+              "Key": "latchedTradedChange",
+              "Figure": "",
+              "X": 1320.0,
+              "Y": 0.0,
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "6ec569e8-deaa-8778-bb8e-dc6b9ebb35c5",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Traded leg change, read on the traded bar"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.Unit, StockSharp.Messages"
+                    }
+                  },
+                  "Value": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Absolute",
+                        "Value": 0.0
+                      }
+                    }
+                  },
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "latchedSecondChange",
+              "Figure": "",
+              "X": 1320.0,
+              "Y": 130.0,
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "973c6731-58bf-dbf4-a9f3-8dd3b4d5cfc7",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Second leg change, read on the traded bar"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.Unit, StockSharp.Messages"
+                    }
+                  },
+                  "Value": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Absolute",
+                        "Value": 0.0
+                      }
+                    }
+                  },
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "divergence",
+              "Figure": "",
+              "X": 1540.0,
+              "Y": 0.0,
+              "TypeId": "f0edcbdf-41cb-442b-896c-332dac3caae3",
+              "Settings": {
+                "Id": "132c16cb-296e-152e-4dcd-c89c994735da",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Divergence = traded change - second change"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Expression": {
+                    "Value": "a - b"
+                  },
+                  "Validation": {}
+                }
+              }
+            },
+            {
+              "Key": "absDivergence",
+              "Figure": "",
+              "X": 1760.0,
+              "Y": 0.0,
+              "TypeId": "f0edcbdf-41cb-442b-896c-332dac3caae3",
+              "Settings": {
+                "Id": "9c38708b-1aec-2d18-263b-629b3059b3f5",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Size of the divergence"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Expression": {
+                    "Value": "abs(a)"
+                  },
+                  "Validation": {}
+                }
+              }
+            },
+            {
+              "Key": "zero",
+              "Figure": "",
+              "X": 220.0,
+              "Y": 130.0,
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "f20c7456-6041-f32c-566a-d8e4209d0d4f",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Zero"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.Unit, StockSharp.Messages"
+                    }
+                  },
+                  "Value": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Absolute",
+                        "Value": 0.0
+                      }
+                    }
+                  },
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "divergenceThreshold",
+              "Figure": "",
+              "X": 220.0,
+              "Y": 260.0,
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "1fae7309-1f78-aef1-ab79-a8b6ad765936",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Divergence threshold = 0.3%"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.Unit, StockSharp.Messages"
+                    }
+                  },
+                  "Value": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Absolute",
+                        "Value": 0.3
+                      }
+                    }
+                  },
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "negativeThreshold",
+              "Figure": "",
+              "X": 440.0,
+              "Y": 130.0,
+              "TypeId": "f0edcbdf-41cb-442b-896c-332dac3caae3",
+              "Settings": {
+                "Id": "96637b50-9a4d-c562-ba2a-c7ac3429f6ec",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Lower edge of the band"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Expression": {
+                    "Value": "t * -1"
+                  },
+                  "Validation": {}
+                }
+              }
+            },
+            {
+              "Key": "exitThreshold",
+              "Figure": "",
+              "X": 220.0,
+              "Y": 390.0,
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "292cae32-4522-11ed-962c-2c46f1bead59",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Exit threshold = 0.1%"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.Unit, StockSharp.Messages"
+                    }
+                  },
+                  "Value": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Absolute",
+                        "Value": 0.1
+                      }
+                    }
+                  },
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "tradedVolume",
+              "Figure": "",
+              "X": 220.0,
+              "Y": 520.0,
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "43fee419-cbbe-ecc5-4016-5d86ab31d5c7",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Traded leg volume = 1"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.Unit, StockSharp.Messages"
+                    }
+                  },
+                  "Value": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Absolute",
+                        "Value": 1.0
+                      }
+                    }
+                  },
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "secondVolume",
+              "Figure": "",
+              "X": 220.0,
+              "Y": 650.0,
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "d4e30e6c-4ecd-2bba-c4a5-009f2095085c",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Second leg volume = 10"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.Unit, StockSharp.Messages"
+                    }
+                  },
+                  "Value": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Absolute",
+                        "Value": 10.0
+                      }
+                    }
+                  },
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "spreadBelow",
+              "Figure": "",
+              "X": 1760.0,
+              "Y": 130.0,
+              "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
+              "Settings": {
+                "Id": "5fc39e8e-9863-419c-5746-6690f8df0d77",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Traded leg lagging behind"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "LeftValue": {
+                    "Value": {
+                      "Id": "Input"
+                    }
+                  },
+                  "Operator": {
+                    "Value": "Less"
+                  },
+                  "RightValue": {
+                    "Value": {
+                      "Id": "SecondInput"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "Key": "spreadAbove",
+              "Figure": "",
+              "X": 1760.0,
+              "Y": 260.0,
+              "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
+              "Settings": {
+                "Id": "112d4c93-8d79-2f10-bd7a-033006288beb",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Traded leg running ahead"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "LeftValue": {
+                    "Value": {
+                      "Id": "Input"
+                    }
+                  },
+                  "Operator": {
+                    "Value": "Greater"
+                  },
+                  "RightValue": {
+                    "Value": {
+                      "Id": "SecondInput"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "Key": "spreadClosed",
+              "Figure": "",
+              "X": 1980.0,
+              "Y": 0.0,
+              "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
+              "Settings": {
+                "Id": "6daff879-0fd1-85b3-6651-aecbe7cf1c09",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Divergence back inside the exit threshold"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "LeftValue": {
+                    "Value": {
+                      "Id": "Input"
+                    }
+                  },
+                  "Operator": {
+                    "Value": "Less"
+                  },
+                  "RightValue": {
+                    "Value": {
+                      "Id": "SecondInput"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "Key": "tradedUp",
+              "Figure": "",
+              "X": 1540.0,
+              "Y": 130.0,
+              "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
+              "Settings": {
+                "Id": "22008f5c-0fa4-73ec-56c1-d79db1d8cf28",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Traded leg moved up"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "LeftValue": {
+                    "Value": {
+                      "Id": "Input"
+                    }
+                  },
+                  "Operator": {
+                    "Value": "Greater"
+                  },
+                  "RightValue": {
+                    "Value": {
+                      "Id": "SecondInput"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "Key": "secondUp",
+              "Figure": "",
+              "X": 1540.0,
+              "Y": 260.0,
+              "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
+              "Settings": {
+                "Id": "bba4109d-dd81-a8b0-1af9-d145629926d3",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Second leg moved up"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "LeftValue": {
+                    "Value": {
+                      "Id": "Input"
+                    }
+                  },
+                  "Operator": {
+                    "Value": "Greater"
+                  },
+                  "RightValue": {
+                    "Value": {
+                      "Id": "SecondInput"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "Key": "tradedDown",
+              "Figure": "",
+              "X": 1540.0,
+              "Y": 390.0,
+              "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
+              "Settings": {
+                "Id": "d99964c2-d990-73dd-a81b-bd03a6bbff66",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Traded leg moved down"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "LeftValue": {
+                    "Value": {
+                      "Id": "Input"
+                    }
+                  },
+                  "Operator": {
+                    "Value": "Less"
+                  },
+                  "RightValue": {
+                    "Value": {
+                      "Id": "SecondInput"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "Key": "secondDown",
+              "Figure": "",
+              "X": 1540.0,
+              "Y": 520.0,
+              "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
+              "Settings": {
+                "Id": "96a036d2-0fce-e10f-dc9c-84a1f77fdf0e",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Second leg moved down"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "LeftValue": {
+                    "Value": {
+                      "Id": "Input"
+                    }
+                  },
+                  "Operator": {
+                    "Value": "Less"
+                  },
+                  "RightValue": {
+                    "Value": {
+                      "Id": "SecondInput"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "Key": "bothUp",
+              "Figure": "",
+              "X": 1760.0,
+              "Y": 390.0,
+              "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
+              "Settings": {
+                "Id": "f4893fe8-699c-33e3-b066-ea33524dcc9d",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Both legs moved up"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Operator": {
+                    "Value": "And"
+                  }
+                },
+                "InputSocketIds": [
+                  "dynsock_traded",
+                  "dynsock_second",
+                  "5ec7120a93fa48e28e17f3b2c666928d"
+                ]
+              }
+            },
+            {
+              "Key": "bothDown",
+              "Figure": "",
+              "X": 1760.0,
+              "Y": 520.0,
+              "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
+              "Settings": {
+                "Id": "d55e361a-16cc-0be4-eb91-6f45e29f3692",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Both legs moved down"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Operator": {
+                    "Value": "And"
+                  }
+                },
+                "InputSocketIds": [
+                  "dynsock_traded",
+                  "dynsock_second",
+                  "40e557eabcdb4ee6a1de446837c64c45"
+                ]
+              }
+            },
+            {
+              "Key": "sameSign",
+              "Figure": "",
+              "X": 1980.0,
+              "Y": 130.0,
+              "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
+              "Settings": {
+                "Id": "500c624f-4b39-29f1-96ca-200c8190cce9",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Both legs moved the same way"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Operator": {
+                    "Value": "Or"
+                  }
+                },
+                "InputSocketIds": [
+                  "dynsock_up",
+                  "dynsock_down",
+                  "a47afd6b1a6a4c268dd42ea711900c5a"
+                ]
+              }
+            },
+            {
+              "Key": "position",
+              "Figure": "",
+              "X": 0.0,
+              "Y": 260.0,
+              "TypeId": "83bcd64c-0f75-4572-be49-3d771a456f76",
+              "Settings": {
+                "Id": "ce386583-0292-c7b5-12d3-3609bfb2ffa0",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Position on the traded leg"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "IsMoney": {
+                    "Value": false
+                  },
+                  "ShowPosition": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "positionAtBar",
+              "Figure": "",
+              "X": 220.0,
+              "Y": 780.0,
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "c9fec2fa-ab67-80a8-71a7-8b043e1f5f37",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Position at the bar"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.Unit, StockSharp.Messages"
+                    }
+                  },
+                  "Value": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Absolute",
+                        "Value": 0.0
+                      }
+                    }
+                  },
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "isFlat",
+              "Figure": "",
+              "X": 440.0,
+              "Y": 260.0,
+              "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
+              "Settings": {
+                "Id": "3c8f495d-a712-f6f2-eec4-cf8134920772",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Traded leg is flat"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "LeftValue": {
+                    "Value": {
+                      "Id": "Input"
+                    }
+                  },
+                  "Operator": {
+                    "Value": "Equal"
+                  },
+                  "RightValue": {
+                    "Value": {
+                      "Id": "SecondInput"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "Key": "hasPosition",
+              "Figure": "",
+              "X": 440.0,
+              "Y": 390.0,
+              "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
+              "Settings": {
+                "Id": "78fe6c8e-c79b-d67c-58b2-94cf541581c2",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Pair is open"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "LeftValue": {
+                    "Value": {
+                      "Id": "Input"
+                    }
+                  },
+                  "Operator": {
+                    "Value": "NotEqual"
+                  },
+                  "RightValue": {
+                    "Value": {
+                      "Id": "SecondInput"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "Key": "longSpreadGate",
+              "Figure": "",
+              "X": 2200.0,
+              "Y": 0.0,
+              "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
+              "Settings": {
+                "Id": "bc642a9a-bb8a-5a10-88f9-c6588d7bf42e",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Buy the lagging leg"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Operator": {
+                    "Value": "And"
+                  }
+                },
+                "InputSocketIds": [
+                  "dynsock_divergence",
+                  "dynsock_correlation",
+                  "dynsock_position",
+                  "4dabac027f9840e38098ffff3ffa53fe"
+                ]
+              }
+            },
+            {
+              "Key": "shortSpreadGate",
+              "Figure": "",
+              "X": 2200.0,
+              "Y": 130.0,
+              "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
+              "Settings": {
+                "Id": "3fa0592b-ee5c-b978-3bd9-5b733ed90638",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Sell the leading leg"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Operator": {
+                    "Value": "And"
+                  }
+                },
+                "InputSocketIds": [
+                  "dynsock_divergence",
+                  "dynsock_correlation",
+                  "dynsock_position",
+                  "df5aa24c815e48dd85bac7aa1b3caf42"
+                ]
+              }
+            },
+            {
+              "Key": "exitGate",
+              "Figure": "",
+              "X": 2200.0,
+              "Y": 260.0,
+              "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
+              "Settings": {
+                "Id": "9d55c6a9-4b74-a9ce-5ffd-a9937e664819",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Gap closed while the pair is open"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Operator": {
+                    "Value": "And"
+                  }
+                },
+                "InputSocketIds": [
+                  "dynsock_divergence",
+                  "dynsock_position",
+                  "690f6437ed394d25895723c74d0c9baf"
+                ]
+              }
+            },
+            {
+              "Key": "buyTraded",
+              "Figure": "",
+              "X": 2420.0,
+              "Y": 0.0,
+              "TypeId": "953961cd-a9ba-4afe-ac38-e8b61f84b3be",
+              "Settings": {
+                "Id": "578d3643-a974-3497-b0b2-5d50cdcb1198",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Buy the traded leg"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "OnlineOnly": {
+                    "Value": false
+                  },
+                  "TimeInForce": {},
+                  "ClientCode": {},
+                  "BrokerCode": {},
+                  "MarginMode": {},
+                  "IsMarketMaker": {},
+                  "IsManual": {},
+                  "Comment": {
+                    "Value": ""
+                  },
+                  "PosCondition": {
+                    "Value": "OpenPosition"
+                  },
+                  "Direction": {
+                    "Value": "Buy"
+                  },
+                  "Algorithm": {
+                    "Value": "MarketOrder"
+                  },
+                  "VolumePart": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Percent",
+                        "Value": 1.0
+                      }
+                    }
+                  },
+                  "TimeInterval": {
+                    "Value": "00:01:00"
+                  }
+                }
+              }
+            },
+            {
+              "Key": "sellSecond",
+              "Figure": "",
+              "X": 2420.0,
+              "Y": 130.0,
+              "TypeId": "953961cd-a9ba-4afe-ac38-e8b61f84b3be",
+              "Settings": {
+                "Id": "832dd89a-a3e8-f40a-1cc4-07405070c6b9",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Sell the second leg"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "OnlineOnly": {
+                    "Value": false
+                  },
+                  "TimeInForce": {},
+                  "ClientCode": {},
+                  "BrokerCode": {},
+                  "MarginMode": {},
+                  "IsMarketMaker": {},
+                  "IsManual": {},
+                  "Comment": {
+                    "Value": ""
+                  },
+                  "PosCondition": {
+                    "Value": "OpenPosition"
+                  },
+                  "Direction": {
+                    "Value": "Sell"
+                  },
+                  "Algorithm": {
+                    "Value": "MarketOrder"
+                  },
+                  "VolumePart": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Percent",
+                        "Value": 1.0
+                      }
+                    }
+                  },
+                  "TimeInterval": {
+                    "Value": "00:01:00"
+                  }
+                }
+              }
+            },
+            {
+              "Key": "sellTraded",
+              "Figure": "",
+              "X": 2420.0,
+              "Y": 260.0,
+              "TypeId": "953961cd-a9ba-4afe-ac38-e8b61f84b3be",
+              "Settings": {
+                "Id": "41e6d731-f7ff-3c25-0b90-ee868588ac44",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Sell the traded leg"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "OnlineOnly": {
+                    "Value": false
+                  },
+                  "TimeInForce": {},
+                  "ClientCode": {},
+                  "BrokerCode": {},
+                  "MarginMode": {},
+                  "IsMarketMaker": {},
+                  "IsManual": {},
+                  "Comment": {
+                    "Value": ""
+                  },
+                  "PosCondition": {
+                    "Value": "OpenPosition"
+                  },
+                  "Direction": {
+                    "Value": "Sell"
+                  },
+                  "Algorithm": {
+                    "Value": "MarketOrder"
+                  },
+                  "VolumePart": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Percent",
+                        "Value": 1.0
+                      }
+                    }
+                  },
+                  "TimeInterval": {
+                    "Value": "00:01:00"
+                  }
+                }
+              }
+            },
+            {
+              "Key": "buySecond",
+              "Figure": "",
+              "X": 2420.0,
+              "Y": 390.0,
+              "TypeId": "953961cd-a9ba-4afe-ac38-e8b61f84b3be",
+              "Settings": {
+                "Id": "ffb99773-a635-9d20-eec7-42f4e3897191",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Buy the second leg"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "OnlineOnly": {
+                    "Value": false
+                  },
+                  "TimeInForce": {},
+                  "ClientCode": {},
+                  "BrokerCode": {},
+                  "MarginMode": {},
+                  "IsMarketMaker": {},
+                  "IsManual": {},
+                  "Comment": {
+                    "Value": ""
+                  },
+                  "PosCondition": {
+                    "Value": "OpenPosition"
+                  },
+                  "Direction": {
+                    "Value": "Buy"
+                  },
+                  "Algorithm": {
+                    "Value": "MarketOrder"
+                  },
+                  "VolumePart": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Percent",
+                        "Value": 1.0
+                      }
+                    }
+                  },
+                  "TimeInterval": {
+                    "Value": "00:01:00"
+                  }
+                }
+              }
+            },
+            {
+              "Key": "closeTraded",
+              "Figure": "",
+              "X": 2420.0,
+              "Y": 520.0,
+              "TypeId": "953961cd-a9ba-4afe-ac38-e8b61f84b3be",
+              "Settings": {
+                "Id": "db0efe5c-9db5-88f7-d038-3c6e34d62cfb",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Close the traded leg"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "OnlineOnly": {
+                    "Value": false
+                  },
+                  "TimeInForce": {},
+                  "ClientCode": {},
+                  "BrokerCode": {},
+                  "MarginMode": {},
+                  "IsMarketMaker": {},
+                  "IsManual": {},
+                  "Comment": {
+                    "Value": ""
+                  },
+                  "PosCondition": {
+                    "Value": "ClosePosition"
+                  },
+                  "Direction": {},
+                  "Algorithm": {
+                    "Value": "MarketOrder"
+                  },
+                  "VolumePart": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Percent",
+                        "Value": 1.0
+                      }
+                    }
+                  },
+                  "TimeInterval": {
+                    "Value": "00:01:00"
+                  }
+                }
+              }
+            },
+            {
+              "Key": "closeSecond",
+              "Figure": "",
+              "X": 2420.0,
+              "Y": 650.0,
+              "TypeId": "953961cd-a9ba-4afe-ac38-e8b61f84b3be",
+              "Settings": {
+                "Id": "1118e913-9350-a7a3-293e-0f76f8dd9d7d",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Close the second leg"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "OnlineOnly": {
+                    "Value": false
+                  },
+                  "TimeInForce": {},
+                  "ClientCode": {},
+                  "BrokerCode": {},
+                  "MarginMode": {},
+                  "IsMarketMaker": {},
+                  "IsManual": {},
+                  "Comment": {
+                    "Value": ""
+                  },
+                  "PosCondition": {
+                    "Value": "ClosePosition"
+                  },
+                  "Direction": {},
+                  "Algorithm": {
+                    "Value": "MarketOrder"
+                  },
+                  "VolumePart": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Percent",
+                        "Value": 1.0
+                      }
+                    }
+                  },
+                  "TimeInterval": {
+                    "Value": "00:01:00"
+                  }
+                }
+              }
+            },
+            {
+              "Key": "chart",
+              "Figure": "",
+              "X": 2640.0,
+              "Y": 0.0,
+              "TypeId": "1926c40e-aaa3-4948-98e6-fba4b38b580e",
+              "Settings": {
+                "Id": "a6a2e4c0-83c2-745d-9ab8-30ab5ad05c0c",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Traded leg, reference price and fills"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "ShowNonFormedIndicators": {
+                    "Value": false
+                  },
+                  "ChartGroupId": {
+                    "Value": ""
+                  },
+                  "AreaName": {
+                    "Value": "Traded leg"
+                  }
+                },
+                "CandleElements": [
+                  {
+                    "Id": "fed044fe-3b02-5de9-ceef-58fbab8a6d66",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y",
+                    "DrawStyle": "CandleStick",
+                    "UpFillColor": -16744448,
+                    "UpBorderColor": -16744448,
+                    "DownFillColor": -65536,
+                    "DownBorderColor": -65536,
+                    "LineColor": -16777077,
+                    "AreaColor": -16728065,
+                    "StrokeThickness": 1,
+                    "AntiAliasing": false,
+                    "ShowAxisMarker": true,
+                    "ShowHorizontalVolumes": false,
+                    "LocalHorizontalVolumes": false,
+                    "HorizontalVolumeWidthFraction": 0.0,
+                    "DrawSeparateVolumes": false
+                  }
+                ],
+                "IndicatorElements": [
+                  {
+                    "Id": "22a58540-238b-ded4-bc52-c23271ba26a4",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y"
+                  }
+                ],
+                "OrderElements": [
+                  {
+                    "Id": "89962e3b-67fb-9792-5b67-b027ba435886",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y",
+                    "BuyColor": -16711936,
+                    "BuyStrokeColor": 0,
+                    "SellColor": -38476,
+                    "SellStrokeColor": 0,
+                    "UseAltIcon": false,
+                    "DrawSize": 0.0
+                  },
+                  {
+                    "Id": "cfe046f2-48b9-8cb9-5d36-b69f35b19176",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y",
+                    "BuyColor": -16711936,
+                    "BuyStrokeColor": 0,
+                    "SellColor": -38476,
+                    "SellStrokeColor": 0,
+                    "UseAltIcon": false,
+                    "DrawSize": 0.0
+                  },
+                  {
+                    "Id": "34c154ab-1056-96e6-8b2a-2cadb94b4133",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y",
+                    "BuyColor": -16711936,
+                    "BuyStrokeColor": 0,
+                    "SellColor": -38476,
+                    "SellStrokeColor": 0,
+                    "UseAltIcon": false,
+                    "DrawSize": 0.0
+                  }
+                ],
+                "TradeElements": [
+                  {
+                    "Id": "d82bea6e-3ef8-77c4-163a-481d4e33f726",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y",
+                    "BuyColor": -16711936,
+                    "BuyStrokeColor": -16711936,
+                    "SellColor": -38476,
+                    "SellStrokeColor": -38476,
+                    "UseAltIcon": false,
+                    "DrawSize": 0.0
+                  },
+                  {
+                    "Id": "b69b1903-48eb-160c-376b-b0288f52a1b8",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y",
+                    "BuyColor": -16711936,
+                    "BuyStrokeColor": -16711936,
+                    "SellColor": -38476,
+                    "SellStrokeColor": -38476,
+                    "UseAltIcon": false,
+                    "DrawSize": 0.0
+                  },
+                  {
+                    "Id": "eb6cd439-8143-44a8-2db5-e5b0de3ca5af",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y",
+                    "BuyColor": -16711936,
+                    "BuyStrokeColor": -16711936,
+                    "SellColor": -38476,
+                    "SellStrokeColor": -38476,
+                    "UseAltIcon": false,
+                    "DrawSize": 0.0
+                  }
+                ],
+                "XAxes": [
+                  {
+                    "Id": "X",
+                    "Title": "X",
+                    "IsVisible": true,
+                    "Group": "CategoryDateTimeX",
+                    "AutoRange": false,
+                    "DrawMinorTicks": false,
+                    "DrawMajorTicks": true,
+                    "DrawMajorGridLines": true,
+                    "DrawMinorGridLines": true,
+                    "DrawLabels": true,
+                    "TextFormatting": "G",
+                    "SubDayTextFormatting": "T",
+                    "SwitchAxisLocation": false,
+                    "AxisType": "CategoryDateTime",
+                    "TimeZone": "UTC"
+                  }
+                ],
+                "YAxes": [
+                  {
+                    "Id": "Y",
+                    "Title": "Y",
+                    "IsVisible": true,
+                    "Group": "NumericY2",
+                    "AutoRange": true,
+                    "DrawMinorTicks": false,
+                    "DrawMajorTicks": true,
+                    "DrawMajorGridLines": true,
+                    "DrawMinorGridLines": true,
+                    "DrawLabels": true,
+                    "TextFormatting": "#.####",
+                    "SubDayTextFormatting": "T",
+                    "SwitchAxisLocation": false,
+                    "AxisType": "Numeric",
+                    "TimeZone": "UTC"
+                  }
+                ]
+              }
+            },
+            {
+              "Key": "secondChart",
+              "Figure": "",
+              "X": 2640.0,
+              "Y": 130.0,
+              "TypeId": "1926c40e-aaa3-4948-98e6-fba4b38b580e",
+              "Settings": {
+                "Id": "b7fdde0d-9244-2584-5651-6664299b3e9b",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Second leg, reference price and fills"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "ShowNonFormedIndicators": {
+                    "Value": false
+                  },
+                  "ChartGroupId": {
+                    "Value": ""
+                  },
+                  "AreaName": {
+                    "Value": "Second leg"
+                  }
+                },
+                "CandleElements": [
+                  {
+                    "Id": "a594dc50-3190-d661-448a-ea362e34ddf8",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y",
+                    "DrawStyle": "CandleStick",
+                    "UpFillColor": -16744448,
+                    "UpBorderColor": -16744448,
+                    "DownFillColor": -65536,
+                    "DownBorderColor": -65536,
+                    "LineColor": -16777077,
+                    "AreaColor": -16728065,
+                    "StrokeThickness": 1,
+                    "AntiAliasing": false,
+                    "ShowAxisMarker": true,
+                    "ShowHorizontalVolumes": false,
+                    "LocalHorizontalVolumes": false,
+                    "HorizontalVolumeWidthFraction": 0.0,
+                    "DrawSeparateVolumes": false
+                  }
+                ],
+                "IndicatorElements": [
+                  {
+                    "Id": "4717302a-7126-daf1-a380-2a98ffe8404e",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y"
+                  }
+                ],
+                "OrderElements": [
+                  {
+                    "Id": "b2998489-084b-dbac-11dd-243fd7be7cf6",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y",
+                    "BuyColor": -16711936,
+                    "BuyStrokeColor": 0,
+                    "SellColor": -38476,
+                    "SellStrokeColor": 0,
+                    "UseAltIcon": false,
+                    "DrawSize": 0.0
+                  },
+                  {
+                    "Id": "3eabec5e-5714-c7cf-8dc2-459788ca917a",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y",
+                    "BuyColor": -16711936,
+                    "BuyStrokeColor": 0,
+                    "SellColor": -38476,
+                    "SellStrokeColor": 0,
+                    "UseAltIcon": false,
+                    "DrawSize": 0.0
+                  },
+                  {
+                    "Id": "987ddb36-c8c4-9cad-4560-0be2085c8a91",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y",
+                    "BuyColor": -16711936,
+                    "BuyStrokeColor": 0,
+                    "SellColor": -38476,
+                    "SellStrokeColor": 0,
+                    "UseAltIcon": false,
+                    "DrawSize": 0.0
+                  }
+                ],
+                "TradeElements": [
+                  {
+                    "Id": "3db8ded0-493f-9121-7474-dca97321c99a",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y",
+                    "BuyColor": -16711936,
+                    "BuyStrokeColor": -16711936,
+                    "SellColor": -38476,
+                    "SellStrokeColor": -38476,
+                    "UseAltIcon": false,
+                    "DrawSize": 0.0
+                  },
+                  {
+                    "Id": "eace9de8-076e-3ef6-e792-31d225bf3bd9",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y",
+                    "BuyColor": -16711936,
+                    "BuyStrokeColor": -16711936,
+                    "SellColor": -38476,
+                    "SellStrokeColor": -38476,
+                    "UseAltIcon": false,
+                    "DrawSize": 0.0
+                  },
+                  {
+                    "Id": "485c8c62-5c3a-7897-3719-b9922b6184fc",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y",
+                    "BuyColor": -16711936,
+                    "BuyStrokeColor": -16711936,
+                    "SellColor": -38476,
+                    "SellStrokeColor": -38476,
+                    "UseAltIcon": false,
+                    "DrawSize": 0.0
+                  }
+                ],
+                "XAxes": [
+                  {
+                    "Id": "X",
+                    "Title": "X",
+                    "IsVisible": true,
+                    "Group": "CategoryDateTimeX",
+                    "AutoRange": false,
+                    "DrawMinorTicks": false,
+                    "DrawMajorTicks": true,
+                    "DrawMajorGridLines": true,
+                    "DrawMinorGridLines": true,
+                    "DrawLabels": true,
+                    "TextFormatting": "G",
+                    "SubDayTextFormatting": "T",
+                    "SwitchAxisLocation": false,
+                    "AxisType": "CategoryDateTime",
+                    "TimeZone": "UTC"
+                  }
+                ],
+                "YAxes": [
+                  {
+                    "Id": "Y",
+                    "Title": "Y",
+                    "IsVisible": true,
+                    "Group": "NumericY2",
+                    "AutoRange": true,
+                    "DrawMinorTicks": false,
+                    "DrawMajorTicks": true,
+                    "DrawMajorGridLines": true,
+                    "DrawMinorGridLines": true,
+                    "DrawLabels": true,
+                    "TextFormatting": "#.####",
+                    "SubDayTextFormatting": "T",
+                    "SwitchAxisLocation": false,
+                    "AxisType": "Numeric",
+                    "TimeZone": "UTC"
+                  }
+                ]
+              }
+            },
+            {
+              "Key": "spreadChart",
+              "Figure": "",
+              "X": 1760.0,
+              "Y": 650.0,
+              "TypeId": "1926c40e-aaa3-4948-98e6-fba4b38b580e",
+              "Settings": {
+                "Id": "0dbd6746-82af-eac2-d3de-94b4cd472e2e",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Leg changes, divergence and the band"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "ShowNonFormedIndicators": {
+                    "Value": false
+                  },
+                  "ChartGroupId": {
+                    "Value": ""
+                  },
+                  "AreaName": {
+                    "Value": "Divergence"
+                  }
+                },
+                "CandleElements": [],
+                "IndicatorElements": [
+                  {
+                    "Id": "3dadb3f8-584e-eba3-0e0d-938d90fac890",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y"
+                  },
+                  {
+                    "Id": "0dc4f24c-052f-918f-e484-17ee2c1f3c34",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y"
+                  },
+                  {
+                    "Id": "c7b19ceb-fdf2-7742-a111-45f85410f4fd",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y"
+                  },
+                  {
+                    "Id": "f93b2184-5ba5-3c13-888a-6418e43128dd",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y"
+                  },
+                  {
+                    "Id": "e33aae14-0af3-7520-a798-9d1daa90d094",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y"
+                  }
+                ],
+                "OrderElements": [],
+                "TradeElements": [],
+                "XAxes": [
+                  {
+                    "Id": "X",
+                    "Title": "X",
+                    "IsVisible": true,
+                    "Group": "CategoryDateTimeX",
+                    "AutoRange": false,
+                    "DrawMinorTicks": false,
+                    "DrawMajorTicks": true,
+                    "DrawMajorGridLines": true,
+                    "DrawMinorGridLines": true,
+                    "DrawLabels": true,
+                    "TextFormatting": "G",
+                    "SubDayTextFormatting": "T",
+                    "SwitchAxisLocation": false,
+                    "AxisType": "CategoryDateTime",
+                    "TimeZone": "UTC"
+                  }
+                ],
+                "YAxes": [
+                  {
+                    "Id": "Y",
+                    "Title": "Y",
+                    "IsVisible": true,
+                    "Group": "NumericY2",
+                    "AutoRange": true,
+                    "DrawMinorTicks": false,
+                    "DrawMajorTicks": true,
+                    "DrawMajorGridLines": true,
+                    "DrawMinorGridLines": true,
+                    "DrawLabels": true,
+                    "TextFormatting": "#.####",
+                    "SubDayTextFormatting": "T",
+                    "SwitchAxisLocation": false,
+                    "AxisType": "Numeric",
+                    "TimeZone": "UTC"
+                  }
+                ]
+              }
+            }
+          ],
+          "Links": [
+            {
+              "From": "secondLeg",
+              "FromPort": "Output",
+              "To": "secondCandles",
+              "ToPort": "Security"
+            },
+            {
+              "From": "secondLeg",
+              "FromPort": "Output",
+              "To": "sellSecond",
+              "ToPort": "Security"
+            },
+            {
+              "From": "secondLeg",
+              "FromPort": "Output",
+              "To": "buySecond",
+              "ToPort": "Security"
+            },
+            {
+              "From": "secondLeg",
+              "FromPort": "Output",
+              "To": "closeSecond",
+              "ToPort": "Security"
+            },
+            {
+              "From": "tradedCandles",
+              "FromPort": "Output",
+              "To": "align",
+              "ToPort": "in 1"
+            },
+            {
+              "From": "secondCandles",
+              "FromPort": "Output",
+              "To": "align",
+              "ToPort": "in 2"
+            },
+            {
+              "From": "align",
+              "FromPort": "out 1",
+              "To": "tradedClose",
+              "ToPort": "Input"
+            },
+            {
+              "From": "align",
+              "FromPort": "out 1",
+              "To": "tradedPrevCandle",
+              "ToPort": "Input"
+            },
+            {
+              "From": "align",
+              "FromPort": "out 2",
+              "To": "secondClose",
+              "ToPort": "Input"
+            },
+            {
+              "From": "align",
+              "FromPort": "out 2",
+              "To": "secondPrevCandle",
+              "ToPort": "Input"
+            },
+            {
+              "From": "tradedPrevCandle",
+              "FromPort": "Output",
+              "To": "tradedPrevClose",
+              "ToPort": "Input"
+            },
+            {
+              "From": "secondPrevCandle",
+              "FromPort": "Output",
+              "To": "secondPrevClose",
+              "ToPort": "Input"
+            },
+            {
+              "From": "tradedClose",
+              "FromPort": "Output",
+              "To": "tradedChange",
+              "ToPort": "dynsock_a"
+            },
+            {
+              "From": "tradedPrevClose",
+              "FromPort": "Output",
+              "To": "tradedChange",
+              "ToPort": "dynsock_b"
+            },
+            {
+              "From": "secondClose",
+              "FromPort": "Output",
+              "To": "secondChange",
+              "ToPort": "dynsock_a"
+            },
+            {
+              "From": "secondPrevClose",
+              "FromPort": "Output",
+              "To": "secondChange",
+              "ToPort": "dynsock_b"
+            },
+            {
+              "From": "tradedChange",
+              "FromPort": "Output",
+              "To": "latchedTradedChange",
+              "ToPort": "Input"
+            },
+            {
+              "From": "tradedCandles",
+              "FromPort": "Output",
+              "To": "latchedTradedChange",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "secondChange",
+              "FromPort": "Output",
+              "To": "latchedSecondChange",
+              "ToPort": "Input"
+            },
+            {
+              "From": "tradedCandles",
+              "FromPort": "Output",
+              "To": "latchedSecondChange",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "latchedTradedChange",
+              "FromPort": "Output",
+              "To": "divergence",
+              "ToPort": "dynsock_a"
+            },
+            {
+              "From": "latchedSecondChange",
+              "FromPort": "Output",
+              "To": "divergence",
+              "ToPort": "dynsock_b"
+            },
+            {
+              "From": "divergence",
+              "FromPort": "Output",
+              "To": "absDivergence",
+              "ToPort": "dynsock_a"
+            },
+            {
+              "From": "tradedCandles",
+              "FromPort": "Output",
+              "To": "zero",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "tradedCandles",
+              "FromPort": "Output",
+              "To": "divergenceThreshold",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "tradedCandles",
+              "FromPort": "Output",
+              "To": "exitThreshold",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "tradedCandles",
+              "FromPort": "Output",
+              "To": "tradedVolume",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "tradedCandles",
+              "FromPort": "Output",
+              "To": "secondVolume",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "divergenceThreshold",
+              "FromPort": "Output",
+              "To": "negativeThreshold",
+              "ToPort": "dynsock_t"
+            },
+            {
+              "From": "divergence",
+              "FromPort": "Output",
+              "To": "spreadBelow",
+              "ToPort": "Input"
+            },
+            {
+              "From": "negativeThreshold",
+              "FromPort": "Output",
+              "To": "spreadBelow",
+              "ToPort": "SecondInput"
+            },
+            {
+              "From": "divergence",
+              "FromPort": "Output",
+              "To": "spreadAbove",
+              "ToPort": "Input"
+            },
+            {
+              "From": "divergenceThreshold",
+              "FromPort": "Output",
+              "To": "spreadAbove",
+              "ToPort": "SecondInput"
+            },
+            {
+              "From": "absDivergence",
+              "FromPort": "Output",
+              "To": "spreadClosed",
+              "ToPort": "Input"
+            },
+            {
+              "From": "exitThreshold",
+              "FromPort": "Output",
+              "To": "spreadClosed",
+              "ToPort": "SecondInput"
+            },
+            {
+              "From": "latchedTradedChange",
+              "FromPort": "Output",
+              "To": "tradedUp",
+              "ToPort": "Input"
+            },
+            {
+              "From": "zero",
+              "FromPort": "Output",
+              "To": "tradedUp",
+              "ToPort": "SecondInput"
+            },
+            {
+              "From": "latchedSecondChange",
+              "FromPort": "Output",
+              "To": "secondUp",
+              "ToPort": "Input"
+            },
+            {
+              "From": "zero",
+              "FromPort": "Output",
+              "To": "secondUp",
+              "ToPort": "SecondInput"
+            },
+            {
+              "From": "latchedTradedChange",
+              "FromPort": "Output",
+              "To": "tradedDown",
+              "ToPort": "Input"
+            },
+            {
+              "From": "zero",
+              "FromPort": "Output",
+              "To": "tradedDown",
+              "ToPort": "SecondInput"
+            },
+            {
+              "From": "latchedSecondChange",
+              "FromPort": "Output",
+              "To": "secondDown",
+              "ToPort": "Input"
+            },
+            {
+              "From": "zero",
+              "FromPort": "Output",
+              "To": "secondDown",
+              "ToPort": "SecondInput"
+            },
+            {
+              "From": "tradedUp",
+              "FromPort": "Signal",
+              "To": "bothUp",
+              "ToPort": "dynsock_traded"
+            },
+            {
+              "From": "secondUp",
+              "FromPort": "Signal",
+              "To": "bothUp",
+              "ToPort": "dynsock_second"
+            },
+            {
+              "From": "tradedDown",
+              "FromPort": "Signal",
+              "To": "bothDown",
+              "ToPort": "dynsock_traded"
+            },
+            {
+              "From": "secondDown",
+              "FromPort": "Signal",
+              "To": "bothDown",
+              "ToPort": "dynsock_second"
+            },
+            {
+              "From": "bothUp",
+              "FromPort": "Signal",
+              "To": "sameSign",
+              "ToPort": "dynsock_up"
+            },
+            {
+              "From": "bothDown",
+              "FromPort": "Signal",
+              "To": "sameSign",
+              "ToPort": "dynsock_down"
+            },
+            {
+              "From": "position",
+              "FromPort": "Output",
+              "To": "positionAtBar",
+              "ToPort": "Input"
+            },
+            {
+              "From": "tradedCandles",
+              "FromPort": "Output",
+              "To": "positionAtBar",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "positionAtBar",
+              "FromPort": "Output",
+              "To": "isFlat",
+              "ToPort": "Input"
+            },
+            {
+              "From": "zero",
+              "FromPort": "Output",
+              "To": "isFlat",
+              "ToPort": "SecondInput"
+            },
+            {
+              "From": "positionAtBar",
+              "FromPort": "Output",
+              "To": "hasPosition",
+              "ToPort": "Input"
+            },
+            {
+              "From": "zero",
+              "FromPort": "Output",
+              "To": "hasPosition",
+              "ToPort": "SecondInput"
+            },
+            {
+              "From": "spreadBelow",
+              "FromPort": "Signal",
+              "To": "longSpreadGate",
+              "ToPort": "dynsock_divergence"
+            },
+            {
+              "From": "sameSign",
+              "FromPort": "Signal",
+              "To": "longSpreadGate",
+              "ToPort": "dynsock_correlation"
+            },
+            {
+              "From": "isFlat",
+              "FromPort": "Signal",
+              "To": "longSpreadGate",
+              "ToPort": "dynsock_position"
+            },
+            {
+              "From": "spreadAbove",
+              "FromPort": "Signal",
+              "To": "shortSpreadGate",
+              "ToPort": "dynsock_divergence"
+            },
+            {
+              "From": "sameSign",
+              "FromPort": "Signal",
+              "To": "shortSpreadGate",
+              "ToPort": "dynsock_correlation"
+            },
+            {
+              "From": "isFlat",
+              "FromPort": "Signal",
+              "To": "shortSpreadGate",
+              "ToPort": "dynsock_position"
+            },
+            {
+              "From": "spreadClosed",
+              "FromPort": "Signal",
+              "To": "exitGate",
+              "ToPort": "dynsock_divergence"
+            },
+            {
+              "From": "hasPosition",
+              "FromPort": "Signal",
+              "To": "exitGate",
+              "ToPort": "dynsock_position"
+            },
+            {
+              "From": "tradedVolume",
+              "FromPort": "Output",
+              "To": "buyTraded",
+              "ToPort": "Volume"
+            },
+            {
+              "From": "secondVolume",
+              "FromPort": "Output",
+              "To": "sellSecond",
+              "ToPort": "Volume"
+            },
+            {
+              "From": "tradedVolume",
+              "FromPort": "Output",
+              "To": "sellTraded",
+              "ToPort": "Volume"
+            },
+            {
+              "From": "secondVolume",
+              "FromPort": "Output",
+              "To": "buySecond",
+              "ToPort": "Volume"
+            },
+            {
+              "From": "longSpreadGate",
+              "FromPort": "Signal",
+              "To": "buyTraded",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "longSpreadGate",
+              "FromPort": "Signal",
+              "To": "sellSecond",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "shortSpreadGate",
+              "FromPort": "Signal",
+              "To": "sellTraded",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "shortSpreadGate",
+              "FromPort": "Signal",
+              "To": "buySecond",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "exitGate",
+              "FromPort": "Signal",
+              "To": "closeTraded",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "exitGate",
+              "FromPort": "Signal",
+              "To": "closeSecond",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "tradedCandles",
+              "FromPort": "Output",
+              "To": "chart",
+              "ToPort": "dynsock_fed044fe3b025de9ceef58fbab8a6d66"
+            },
+            {
+              "From": "tradedPrevClose",
+              "FromPort": "Output",
+              "To": "chart",
+              "ToPort": "dynsock_22a58540238bded4bc52c23271ba26a4"
+            },
+            {
+              "From": "buyTraded",
+              "FromPort": "Order",
+              "To": "chart",
+              "ToPort": "dynsock_89962e3b67fb97925b67b027ba435886"
+            },
+            {
+              "From": "sellTraded",
+              "FromPort": "Order",
+              "To": "chart",
+              "ToPort": "dynsock_cfe046f248b98cb95d36b69f35b19176"
+            },
+            {
+              "From": "closeTraded",
+              "FromPort": "Order",
+              "To": "chart",
+              "ToPort": "dynsock_34c154ab105696e68b2a2cadb94b4133"
+            },
+            {
+              "From": "buyTraded",
+              "FromPort": "MyTrade",
+              "To": "chart",
+              "ToPort": "dynsock_d82bea6e3ef877c4163a481d4e33f726"
+            },
+            {
+              "From": "sellTraded",
+              "FromPort": "MyTrade",
+              "To": "chart",
+              "ToPort": "dynsock_b69b190348eb160c376bb0288f52a1b8"
+            },
+            {
+              "From": "closeTraded",
+              "FromPort": "MyTrade",
+              "To": "chart",
+              "ToPort": "dynsock_eb6cd439814344a82db5e5b0de3ca5af"
+            },
+            {
+              "From": "secondCandles",
+              "FromPort": "Output",
+              "To": "secondChart",
+              "ToPort": "dynsock_a594dc503190d661448aea362e34ddf8"
+            },
+            {
+              "From": "secondPrevClose",
+              "FromPort": "Output",
+              "To": "secondChart",
+              "ToPort": "dynsock_4717302a7126daf1a3802a98ffe8404e"
+            },
+            {
+              "From": "sellSecond",
+              "FromPort": "Order",
+              "To": "secondChart",
+              "ToPort": "dynsock_b2998489084bdbac11dd243fd7be7cf6"
+            },
+            {
+              "From": "buySecond",
+              "FromPort": "Order",
+              "To": "secondChart",
+              "ToPort": "dynsock_3eabec5e5714c7cf8dc2459788ca917a"
+            },
+            {
+              "From": "closeSecond",
+              "FromPort": "Order",
+              "To": "secondChart",
+              "ToPort": "dynsock_987ddb36c8c49cad45600be2085c8a91"
+            },
+            {
+              "From": "sellSecond",
+              "FromPort": "MyTrade",
+              "To": "secondChart",
+              "ToPort": "dynsock_3db8ded0493f91217474dca97321c99a"
+            },
+            {
+              "From": "buySecond",
+              "FromPort": "MyTrade",
+              "To": "secondChart",
+              "ToPort": "dynsock_eace9de8076e3ef6e79231d225bf3bd9"
+            },
+            {
+              "From": "closeSecond",
+              "FromPort": "MyTrade",
+              "To": "secondChart",
+              "ToPort": "dynsock_485c8c625c3a78973719b9922b6184fc"
+            },
+            {
+              "From": "latchedTradedChange",
+              "FromPort": "Output",
+              "To": "spreadChart",
+              "ToPort": "dynsock_3dadb3f8584eeba30e0d938d90fac890"
+            },
+            {
+              "From": "latchedSecondChange",
+              "FromPort": "Output",
+              "To": "spreadChart",
+              "ToPort": "dynsock_0dc4f24c052f918fe48417ee2c1f3c34"
+            },
+            {
+              "From": "divergence",
+              "FromPort": "Output",
+              "To": "spreadChart",
+              "ToPort": "dynsock_c7b19cebfdf27742a11145f85410f4fd"
+            },
+            {
+              "From": "divergenceThreshold",
+              "FromPort": "Output",
+              "To": "spreadChart",
+              "ToPort": "dynsock_f93b21845ba53c13888a6418e43128dd"
+            },
+            {
+              "From": "negativeThreshold",
+              "FromPort": "Output",
+              "To": "spreadChart",
+              "ToPort": "dynsock_e33aae140af37520a7989d1daa90d094"
+            }
+          ]
+        }
+      },
+      "Type": "Independent"
+    }
+  }
+}

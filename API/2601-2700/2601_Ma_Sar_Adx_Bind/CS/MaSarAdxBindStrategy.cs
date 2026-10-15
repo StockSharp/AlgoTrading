@@ -1,0 +1,256 @@
+using System;
+using System.Linq;
+using System.Collections.Generic;
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
+using StockSharp.Algo.Indicators;
+using StockSharp.Algo.Strategies;
+using StockSharp.BusinessEntities;
+using StockSharp.Messages;
+
+namespace StockSharp.Samples.Strategies;
+
+
+
+/// <summary>
+/// Conversion of the MaSarADX MetaTrader strategy to StockSharp high level API.
+/// Combines a moving average, ADX directional movement and Parabolic SAR for entries and exits.
+/// </summary>
+public class MaSarAdxBindStrategy : Strategy
+{
+	private readonly StrategyParam<int> _maPeriod;
+	private readonly StrategyParam<int> _adxPeriod;
+	private readonly StrategyParam<decimal> _sarStep;
+	private readonly StrategyParam<decimal> _sarMax;
+	private readonly StrategyParam<DataType> _candleType;
+
+	private decimal? _previousHigh;
+	private decimal? _previousLow;
+	private decimal? _previousClose;
+	private decimal _smoothedPlusDm;
+	private decimal _smoothedMinusDm;
+	private decimal _smoothedTrueRange;
+	private int _adxSamples;
+
+	/// <summary>
+	/// Moving average period used for the trend filter.
+	/// </summary>
+	public int MaPeriod
+	{
+		get => _maPeriod.Value;
+		set => _maPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Average Directional Index calculation period.
+	/// </summary>
+	public int AdxPeriod
+	{
+		get => _adxPeriod.Value;
+		set => _adxPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Acceleration step for the Parabolic SAR indicator.
+	/// </summary>
+	public decimal SarStep
+	{
+		get => _sarStep.Value;
+		set => _sarStep.Value = value;
+	}
+
+	/// <summary>
+	/// Maximum acceleration factor for the Parabolic SAR indicator.
+	/// </summary>
+	public decimal SarMax
+	{
+		get => _sarMax.Value;
+		set => _sarMax.Value = value;
+	}
+
+
+	/// <summary>
+	/// Type of candles processed by the strategy.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Initializes a new instance of <see cref="MaSarAdxBindStrategy"/>.
+	/// </summary>
+	public MaSarAdxBindStrategy()
+	{
+		_maPeriod = Param(nameof(MaPeriod), 100)
+		.SetGreaterThanZero()
+		.SetDisplay("MA Period", "Length of the trend moving average", "Indicators")
+		
+		.SetOptimize(20, 200, 10);
+
+		_adxPeriod = Param(nameof(AdxPeriod), 14)
+		.SetGreaterThanZero()
+		.SetDisplay("ADX Period", "Length of the Average Directional Index", "Indicators")
+		
+		.SetOptimize(7, 28, 1);
+
+		_sarStep = Param(nameof(SarStep), 0.02m)
+		.SetRange(0.005m, 0.2m)
+		.SetDisplay("SAR Step", "Acceleration step for Parabolic SAR", "Indicators")
+		;
+
+		_sarMax = Param(nameof(SarMax), 0.1m)
+		.SetRange(0.05m, 1m)
+		.SetDisplay("SAR Maximum", "Maximum acceleration for Parabolic SAR", "Indicators")
+		;
+
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(2).TimeFrame())
+		.SetDisplay("Candle Type", "Type of candles to request", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_previousHigh = null;
+		_previousLow = null;
+		_previousClose = null;
+		_smoothedPlusDm = 0m;
+		_smoothedMinusDm = 0m;
+		_smoothedTrueRange = 0m;
+		_adxSamples = 0;
+	}
+
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
+
+		// Instantiate indicators used in the original MetaTrader script.
+		var movingAverage = new SimpleMovingAverage
+		{
+			Length = MaPeriod
+		};
+
+		var parabolicSar = new ParabolicSar
+		{
+			Acceleration = SarStep,
+			AccelerationStep = SarStep,
+			AccelerationMax = SarMax
+		};
+
+		// Subscribe to candle data and bind indicator updates to a single handler.
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(movingAverage, parabolicSar, ProcessCandle)
+			.Start();
+
+		// Draw the trading context for visual debugging when charts are available.
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, movingAverage);
+			DrawIndicator(area, parabolicSar);
+			DrawOwnTrades(area);
+
+		}
+	}
+
+	private void ProcessCandle(ICandleMessage candle, decimal movingAverage, decimal sar)
+	{
+		// Work only with completed candles to mirror the original first-tick logic.
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		var (plusDi, minusDi, isReady) = UpdateDirectionalMovement(candle);
+		if (!isReady)
+			return;
+
+		// Always allow risk exits even if trading is temporarily disabled.
+		if (Position > 0 && candle.ClosePrice < sar)
+		{
+			SellMarket();
+			return;
+		}
+
+		if (Position < 0 && candle.ClosePrice > sar)
+		{
+			BuyMarket();
+			return;
+		}
+
+		// Entry conditions replicated from the MetaTrader version.
+		var bullishSignal = candle.ClosePrice > movingAverage && plusDi >= minusDi && candle.ClosePrice > sar;
+		var bearishSignal = candle.ClosePrice < movingAverage && plusDi <= minusDi && candle.ClosePrice < sar;
+
+		if (bullishSignal && Position <= 0)
+		{
+			BuyMarket();
+			return;
+		}
+
+		if (bearishSignal && Position >= 0)
+		{
+			SellMarket();
+		}
+	}
+
+	private (decimal plusDi, decimal minusDi, bool isReady) UpdateDirectionalMovement(ICandleMessage candle)
+	{
+		if (_previousHigh is not decimal previousHigh ||
+			_previousLow is not decimal previousLow ||
+			_previousClose is not decimal previousClose)
+		{
+			_previousHigh = candle.HighPrice;
+			_previousLow = candle.LowPrice;
+			_previousClose = candle.ClosePrice;
+			return (0m, 0m, false);
+		}
+
+		var upMove = candle.HighPrice - previousHigh;
+		var downMove = previousLow - candle.LowPrice;
+		var plusDm = upMove > downMove && upMove > 0m ? upMove : 0m;
+		var minusDm = downMove > upMove && downMove > 0m ? downMove : 0m;
+		var trueRange = Math.Max(
+			candle.HighPrice - candle.LowPrice,
+			Math.Max(
+				Math.Abs(candle.HighPrice - previousClose),
+				Math.Abs(candle.LowPrice - previousClose)));
+
+		if (_adxSamples < AdxPeriod)
+		{
+			_smoothedPlusDm += plusDm;
+			_smoothedMinusDm += minusDm;
+			_smoothedTrueRange += trueRange;
+			_adxSamples++;
+		}
+		else
+		{
+			_smoothedPlusDm = _smoothedPlusDm - (_smoothedPlusDm / AdxPeriod) + plusDm;
+			_smoothedMinusDm = _smoothedMinusDm - (_smoothedMinusDm / AdxPeriod) + minusDm;
+			_smoothedTrueRange = _smoothedTrueRange - (_smoothedTrueRange / AdxPeriod) + trueRange;
+		}
+
+		_previousHigh = candle.HighPrice;
+		_previousLow = candle.LowPrice;
+		_previousClose = candle.ClosePrice;
+
+		if (_adxSamples < AdxPeriod || _smoothedTrueRange <= 0m)
+			return (0m, 0m, false);
+
+		return (
+			100m * _smoothedPlusDm / _smoothedTrueRange,
+			100m * _smoothedMinusDm / _smoothedTrueRange,
+			true);
+	}
+}

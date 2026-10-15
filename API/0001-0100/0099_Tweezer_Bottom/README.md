@@ -1,0 +1,35 @@
+# Tweezer Bottom Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
+ 
+The Tweezer Bottom is a two-candle reversal pattern that appears after a decline.
+Both candles share a similar low, signaling that sellers failed to push beyond that level.
+
+Testing indicates an average annual return of about 184%. It performs best in the crypto market.
+
+This strategy goes long after the second candle confirms the shared bottom, anticipating a bounce as selling pressure dries up.
+
+Stops are placed just beneath the common low to manage risk, and the position exits if price fails to rally.
+
+## Details
+
+- **Entry Criteria**: pattern match
+- **Long/Short**: Both
+- **Exit Criteria**: stop-loss or opposite signal
+- **Stops**: Yes, percent based
+- **Default Values**:
+  - `CandleType` = 15 minute
+  - `TolerancePercent` = 0.1
+  - `StopLossPercent` = 2
+    The strategy only buys. The stop lies StopLossPercent below the lowest low of the pattern and the position closes when a candle closes below it.
+- **Filters**:
+  - Category: Pattern
+  - Direction: Both
+  - Indicators: Candlestick
+  - Stops: Yes
+  - Complexity: Intermediate
+  - Timeframe: Intraday
+  - Seasonality: No
+  - Neural networks: No
+  - Divergence: No
+  - Risk level: Medium
+

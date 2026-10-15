@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Williams Percent R Hook Reversal strategy logo for Python</title>
+  <desc id="description">An ice axe hooks the extreme wall and gives the Williams percent R path a firm point for reversal.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .language-mark { fill: #17323d; opacity: 0.07; }
+    .python-upper { fill: #2874a6; opacity: 0.07; }
+    .python-lower { fill: #aa8108; opacity: 0.07; }
+    .primary { fill: #0f8a82; } .primary-light { fill: #62cec1; } .primary-shade { fill: #08645f; }
+    .secondary { fill: #526f88; } .secondary-light { fill: #96aec3; } .secondary-shade { fill: #344d63; }
+    .accent { fill: #dfa23a; } .positive { fill: #168f70; } .positive-light { fill: #69cdaa; }
+    .negative { fill: #c64f66; } .negative-light { fill: #ef8798; }
+    .violet { fill: #725fa8; } .violet-light { fill: #ad9dd1; }
+    .neutral { fill: #29393f; } .pale { fill: #c9d5dc; } .shadow { fill: #14262c; opacity: 0.22; }
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill: #edf6f3; opacity: 0.08; }
+      .python-upper { fill: #7ec5ed; opacity: 0.08; }
+      .python-lower { fill: #f1ca50; opacity: 0.08; }
+      .primary { fill: #42c9bd; } .primary-light { fill: #86e0d5; } .primary-shade { fill: #20948a; }
+      .secondary { fill: #8aaac3; } .secondary-light { fill: #c0d2df; } .secondary-shade { fill: #5b7e99; }
+      .accent { fill: #f2c45d; } .positive { fill: #4acb9e; } .positive-light { fill: #89e1bd; }
+      .negative { fill: #f17c90; } .negative-light { fill: #ffabb7; }
+      .violet { fill: #a99adb; } .violet-light { fill: #d0c5ed; }
+      .neutral { fill: #e5efec; } .pale { fill: #728591; } .shadow { fill: #02090b; opacity: 0.34; }
+    }
+  </style>
+  <g aria-hidden="true">
+    <path class="python-upper" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" />
+    <path class="python-lower" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" transform="rotate(180 256 256)" />
+  </g>
+  <g aria-hidden="true">
+    <path class="secondary" d="M48 72 L467 72 L467 119 L48 119 Z" />
+    <path class="secondary-shade" d="M390 119 L467 119 L467 444 L390 444 Z" />
+    <path class="pale" d="M70 339 L390 339 L390 386 L70 386 Z" />
+    <path class="neutral" d="M293 94 L335 94 L294 333 L252 325 Z" />
+    <path class="accent" d="M235 310 L300 322 L291 369 L226 357 Z" />
+    <path class="neutral" d="M241 349 L276 355 L224 442 L188 423 Z" />
+    <path class="negative" d="M42 251 C120 218 185 227 244 273 L218 307 C169 271 120 267 58 292 Z" />
+    <path class="negative-light" d="M60 258 C121 238 174 246 220 279 L207 295 C165 267 121 261 66 278 Z" />
+    <path class="primary" d="M270 326 C315 304 347 270 372 222 L347 210 L421 180 L416 260 L395 242 C366 296 331 334 283 357 Z" />
+    <path class="primary-light" d="M287 328 C324 307 349 278 368 240 L385 249 C363 292 335 324 298 344 Z" />
+    <path class="accent" d="M398 187 L421 180 L416 260 L395 242 L404 216 Z" />
+  </g>
+</svg>

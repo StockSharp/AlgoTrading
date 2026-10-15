@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">VWAP Reversion strategy logo for Python</title>
+  <desc id="description">A displaced buoy is drawn back toward a volume-weighted anchor below.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .language-mark { fill: #17323d; opacity: 0.07; } .python-upper { fill: #2874a6; opacity: 0.07; } .python-lower { fill: #aa8108; opacity: 0.07; }
+    .primary { fill: #168a9a; } .primary-light { fill: #69c7d2; } .primary-shade { fill: #0d6472; }
+    .secondary { fill: #596d7b; } .secondary-light { fill: #9cabb3; } .secondary-shade { fill: #394a54; }
+    .accent { fill: #dfa23a; } .neutral { fill: #29393f; } .shadow { fill: #14262c; opacity: 0.22; }
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill: #edf6f3; opacity: 0.08; } .python-upper { fill: #7ec5ed; opacity: 0.08; } .python-lower { fill: #f1ca50; opacity: 0.08; }
+      .primary { fill: #45c4d2; } .primary-light { fill: #8de0e6; } .primary-shade { fill: #218d9b; }
+      .secondary { fill: #99abb4; } .secondary-light { fill: #cfd9dc; } .secondary-shade { fill: #687b83; }
+      .accent { fill: #f2c45d; } .neutral { fill: #e5efec; } .shadow { fill: #02090b; opacity: 0.34; }
+    }
+  </style>
+  <g aria-hidden="true">
+    <path class="python-upper" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" />
+    <path class="python-lower" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" transform="rotate(180 256 256)" />
+  </g>
+  <g aria-hidden="true">
+    <path class="primary" d="M23 177 C102 139 177 137 250 173 C324 209 397 208 489 162 L489 215 C397 257 317 255 238 217 C171 185 105 188 23 227 Z" />
+    <path class="primary-light" d="M23 177 C102 139 177 137 250 173 L236 192 C171 163 105 165 23 202 Z" />
+    <path class="accent" d="M368 72 A48 48 0 1 1 368 168 A48 48 0 1 1 368 72 Z" />
+    <path class="secondary-light" d="M362 80 A23 23 0 1 1 362 126 A23 23 0 1 1 362 80 Z" />
+    <path class="secondary" d="M354 162 C337 231 325 285 309 346 L281 337 C297 277 311 221 330 153 Z" />
+    <path class="neutral" d="M248 330 L291 330 L291 409 L348 381 L365 413 L270 470 L175 413 L192 381 L248 409 Z" />
+    <path class="secondary-shade" d="M234 316 L326 316 L326 346 L234 346 Z" />
+    <path class="primary-shade" d="M23 248 C107 217 178 219 247 252 C318 286 397 286 489 247 L489 279 C397 316 312 315 235 279 C170 248 106 247 23 277 Z" />
+  </g>
+</svg>

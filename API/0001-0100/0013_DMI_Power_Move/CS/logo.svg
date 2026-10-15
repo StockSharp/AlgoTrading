@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">DMI Power Move strategy logo for C#</title>
+  <desc id="description">One broad directional force compresses its opponent and drives through the center.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .language-mark { fill: #17323d; opacity: 0.07; }
+    .python-upper { fill: #2874a6; opacity: 0.07; }
+    .python-lower { fill: #aa8108; opacity: 0.07; }
+    .primary { fill: #0d8b83; } .primary-light { fill: #5ecabd; } .primary-shade { fill: #08655f; }
+    .secondary { fill: #c54b5d; } .secondary-light { fill: #ed8490; } .secondary-shade { fill: #963244; }
+    .accent { fill: #e2a63d; } .neutral { fill: #28383e; } .shadow { fill: #14262c; opacity: 0.22; }
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill: #edf6f3; opacity: 0.08; }
+      .python-upper { fill: #7ec5ed; opacity: 0.08; }
+      .python-lower { fill: #f1ca50; opacity: 0.08; }
+      .primary { fill: #3dc6ba; } .primary-light { fill: #81dfd3; } .primary-shade { fill: #1c9389; }
+      .secondary { fill: #ef6978; } .secondary-light { fill: #ffa0aa; } .secondary-shade { fill: #bd4758; }
+      .accent { fill: #f2c75e; } .neutral { fill: #e5efec; } .shadow { fill: #02090b; opacity: 0.34; }
+    }
+  </style>
+  <g class="language-mark" aria-hidden="true">
+    <path d="M327 108 A180 210 0 1 0 327 404 L278 348 A110 130 0 1 1 278 164 Z" />
+    <path d="M342 54 L397 54 L367 458 L312 458 Z M432 54 L487 54 L457 458 L402 458 Z M301 172 L499 172 L493 232 L295 232 Z M289 285 L487 285 L481 345 L283 345 Z" />
+  </g>
+  <g aria-hidden="true">
+    <path class="secondary-shade" d="M482 145 L365 194 L309 256 L365 318 L482 367 L446 293 L384 256 L446 219 Z" />
+    <path class="secondary" d="M456 181 L376 211 L335 256 L376 301 L456 331 L428 278 L388 256 L428 234 Z" />
+    <path class="primary" d="M25 198 L275 198 L275 145 L423 256 L275 367 L275 314 L25 314 L104 256 Z" />
+    <path class="primary-light" d="M54 216 L286 216 L286 185 L379 256 L286 327 L286 296 L54 296 L111 256 Z" />
+    <path class="primary-shade" d="M275 314 L423 256 L275 367 Z" />
+  </g>
+</svg>

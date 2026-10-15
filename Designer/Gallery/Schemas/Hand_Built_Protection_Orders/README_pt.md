@@ -1,0 +1,46 @@
+# Diagrama da estratégia com ordens de proteção construídas manualmente
+[English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
+
+Este diagrama abre ou reverte por completo uma posição após cruzamentos confirmados de EMA(14)/EMA(50) e monta a proteção com blocos explícitos do ciclo de vida da ordem. A execução de entrada aceita fixa os dois níveis de proteção. Após uma pausa de 100 candles, uma única ordem limite de take profit relativa à entrada é registrada; as substituições posteriores mantêm o mesmo preço-alvo, enquanto um stop ou uma reversão válida primeiro solicita o cancelamento do take ativo e depois aciona a mudança da posição a mercado sem aguardar a confirmação do cancelamento.
+
+![schema](schema.svg)
+
+## Visão geral da estratégia
+
+- Candles finalizados de cinco minutos alimentam valores formados da EMA rápida 14 e da EMA lenta 50. Crossing emite o evento de alta quando a EMA rápida cruza acima da lenta e o evento de baixa quando cruza abaixo.
+- Um cruzamento de alta só pode agir com Position <= 0, e um cruzamento de baixa só com Position >= 0. As comparações de posição encaminham um sinal a partir de zero para uma ordem a mercado de Volume fixo. Diante de uma posição oposta, o caminho de reversão aciona duas ordens a mercado consecutivas do mesmo Volume: a primeira fecha o lado existente e a segunda abre imediatamente o novo sem aguardar a primeira execução.
+- Cada nova execução de Strategy trades redefine o contador para 0 e reinicia a pausa. Exatamente os 100 candles finalizados seguintes bloqueiam novas entradas, registro e substituição do take e verificações de stop; o processamento volta no candle 101, salvo se outra execução reiniciar a janela.
+- Quando a pausa termina, um Flag de uso único registra um take de Volume fixo. A disponibilidade do lado necessário do livro não é exigida para esse primeiro registro; ela só permite substituições posteriores marcadas por candles finalizados. O lado comprado usa uma venda limite em Entry Price * (1 + Take Profit fraction); o lado vendido usa uma compra limite em Entry Price * (1 - Take Profit fraction).
+- Combination apenas combina a Order do primeiro registro e os clones de substituição em um único fluxo de ordens. As entradas conectadas replaceOrder.order e cancelOrder.order guardam a ordem encaminhada mais recente. O ramo do livro é deliberadamente simplificado: BestBid e BestAsk apenas permitem substituições posteriores marcadas por candles finalizados no mesmo alvo fixo e nunca deslocam esse alvo. Um stop ou uma reversão válida primeiro solicita o cancelamento e depois aciona a operação a mercado sem aguardar confirmação.
+
+## Regras de entrada e saída
+
+- **Entrada comprada**: Após um cruzamento confirmado das EMAs para cima, com Position <= 0 e a pausa concluída, o diagrama envia uma compra a mercado de Volume a partir de zero. A partir de uma posição vendida, primeiro solicita o cancelamento do take vendido e depois aciona duas compras a mercado do mesmo Volume: a primeira fecha a venda e a segunda abre imediatamente a compra sem aguardar a execução de fechamento. Entry Price vem apenas da execução de abertura a partir de zero ou da segunda execução, a de abertura, de uma reversão.
+- **Entrada vendida**: Após um cruzamento confirmado das EMAs para baixo, com Position >= 0 e a pausa concluída, o diagrama envia uma venda a mercado de Volume a partir de zero. A partir de uma posição comprada, primeiro solicita o cancelamento do take comprado e depois aciona duas vendas a mercado do mesmo Volume: a primeira fecha a compra e a segunda abre imediatamente a venda sem aguardar a execução de fechamento. Entry Price vem apenas da execução de abertura a partir de zero ou da segunda execução, a de abertura, de uma reversão.
+- **Saída**: Depois da pausa, o ramo comprado mantém uma venda limite de Volume fixo em Entry Price * (1 + 0.006), e o ramo vendido mantém uma compra limite de Volume fixo em Entry Price * (1 - 0.006). Um fechamento finalizado igual ou inferior a Entry Price * (1 - 0.003) interrompe o lado comprado; um fechamento igual ou superior a Entry Price * (1 + 0.003) interrompe o lado vendido. O stop primeiro solicita o cancelamento da ordem de take ativa e depois envia uma ordem a mercado oposta do mesmo Volume fixo sem aguardar confirmação. Um cruzamento contrário válido usa a mesma regra de solicitação e acionamento antes de sua reversão com duas ordens.
+
+## Parâmetros
+
+| Parâmetro | Padrão | Descrição |
+|---|---|---|
+| Candles | 00:05:00 | Período de cinco minutos; somente candles finalizados acionam sinais de EMA, contagem da pausa, verificações de stop e o relógio do ciclo da ordem. |
+| Fast EMA Length | 14 | Comprimento da ExponentialMovingAverage rápida; somente valores formados são emitidos. |
+| Slow EMA Length | 50 | Comprimento da ExponentialMovingAverage lenta; somente valores formados são emitidos. |
+| Take Profit fraction | 0.006 | Fração favorável medida a partir de Entry Price. O valor 0.006 equivale a 0.6% e produz uma relação stop-take de 1:2. |
+| Stop fraction | 0.003 | Fração adversa medida a partir de Entry Price. O valor 0.003 equivale a 0.3%. |
+| Volume | 1 | Quantidade fixa usada por cada perna de entrada, pelo registro e substituição do take e pelo stop a mercado. Uma reversão envia duas ordens a mercado separadas do mesmo Volume: primeiro fechar, depois abrir. |
+| Cooldown | 100 | Número de candles finalizados seguintes bloqueados após cada execução de Strategy trades. Cada nova execução redefine o contador para 0; o processamento volta no candle 101 se nenhuma execução posterior reiniciar a janela. |
+
+## Detalhes do diagrama
+
+- O bloco [Candles](https://doc.stocksharp.com/pt/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) emite somente candles finalizados de cinco minutos. Um conversor de fechamento e dois blocos de [Indicador](https://doc.stocksharp.com/pt/topics/designer/strategies/using_visual_designer/elements/common/indicator.html) limitados a valores formados fornecem o fechamento, ExponentialMovingAverage 14 e ExponentialMovingAverage 50.
+- [Crossing](https://doc.stocksharp.com/pt/topics/designer/strategies/using_visual_designer/elements/common/crossing.html), [Posição](https://doc.stocksharp.com/pt/topics/designer/strategies/using_visual_designer/elements/positions/current.html) e [Comparação](https://doc.stocksharp.com/pt/topics/designer/strategies/using_visual_designer/elements/common/comparison.html) formam as portas espelhadas Position <= 0 e Position >= 0.
+- Blocos separados de [Modificar posição](https://doc.stocksharp.com/pt/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) implementam OpenPosition a partir de zero e as pernas NoCondition de fechamento e abertura das reversões. Todos os blocos recebem o mesmo Volume fixo. A perna de fechamento é acionada primeiro, mas a de abertura segue imediatamente sem aguardar sua execução, portanto a execução assíncrona pode produzir uma corrida. Os blocos Formula calculam o estado da pausa e os valores de take e stop, nunca uma quantidade de ordem.
+- [Negócios da estratégia](https://doc.stocksharp.com/pt/topics/designer/strategies/using_visual_designer/elements/common/trades_by_strategy.html) é usado apenas para reiniciar a pausa após cada execução própria e enviar a operação ao gráfico. Somente a saída trade de um bloco de abertura a partir de zero e a saída trade da segunda perna, a de abertura, da reversão fornecem a Trade.Price aceita ao respectivo estado de proteção comprado ou vendido; a primeira execução, a de fechamento, da reversão é excluída.
+- A [Profundidade de mercado](https://doc.stocksharp.com/pt/topics/designer/strategies/using_visual_designer/elements/data_sources/market_depth.html) fornece a disponibilidade de BestBid e BestAsk. Nenhuma cotação participa das fórmulas do take: os dois alvos permanecem ancorados em Entry Price.
+- As fórmulas de preço dos lados comprado e vendido alimentam seus blocos limite de [Registro de ordem](https://doc.stocksharp.com/pt/topics/designer/strategies/using_visual_designer/elements/orders/register.html). O Flag permite um registro após a pausa, e cada substituição posterior reutiliza o mesmo preço calculado e o mesmo Volume fixo.
+- A Order do primeiro registro e cada clone de substituição entram em um barramento Combination<Order>, que apenas os combina e encaminha. As entradas replaceOrder.order conectadas e as entradas cancelOrder.order de [Cancelamento de ordem](https://doc.stocksharp.com/pt/topics/designer/strategies/using_visual_designer/elements/trading/cancel_order.html) guardam a ordem encaminhada mais recente. Enquanto um novo registro ainda está em andamento, o cancelamento pode, portanto, continuar apontando para a referência de ordem encaminhada anteriormente. Em um stop ou uma reversão, a solicitação de cancelamento é enviada primeiro e, logo depois, o stop a mercado de Volume fixo ou as duas pernas de reversão de Volume fixo são acionados sem aguardar a confirmação; a atomicidade não é garantida.
+
+## Uso
+
+Importe o arquivo `.json` no Designer, execute-o sobre dados históricos no backtester e depois ajuste os parâmetros ou os próprios blocos ao seu instrumento antes de operar ao vivo.

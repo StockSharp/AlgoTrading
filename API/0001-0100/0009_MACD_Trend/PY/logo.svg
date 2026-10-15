@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">MACD Trend strategy logo for Python</title>
+  <desc id="description">Two oscillating currents synchronize and feed one clean directional impulse.</desc>
+
+  <style>
+    :root { color-scheme: light dark; }
+
+    .language-mark { fill: #17323d; opacity: 0.07; }
+    .python-upper { fill: #2874a6; opacity: 0.07; }
+    .python-lower { fill: #aa8108; opacity: 0.07; }
+    .primary { fill: #0f8b84; }
+    .primary-light { fill: #62cbbd; }
+    .primary-shade { fill: #096760; }
+    .secondary { fill: #a34d86; }
+    .secondary-light { fill: #d18bbb; }
+    .secondary-shade { fill: #79345f; }
+    .accent { fill: #dd8b36; }
+    .neutral { fill: #27383f; }
+    .shadow { fill: #14262c; opacity: 0.22; }
+
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill: #edf6f3; opacity: 0.08; }
+      .python-upper { fill: #7ec5ed; opacity: 0.08; }
+      .python-lower { fill: #f1ca50; opacity: 0.08; }
+      .primary { fill: #3fc7bb; }
+      .primary-light { fill: #83e0d4; }
+      .primary-shade { fill: #1d948a; }
+      .secondary { fill: #d27ab5; }
+      .secondary-light { fill: #efabd2; }
+      .secondary-shade { fill: #a74f89; }
+      .accent { fill: #f1b258; }
+      .neutral { fill: #e5efec; }
+      .shadow { fill: #02090b; opacity: 0.34; }
+    }
+  </style>
+
+  <g aria-hidden="true">
+    <path class="python-upper" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" />
+    <path class="python-lower" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" transform="rotate(180 256 256)" />
+  </g>
+
+  <g aria-hidden="true" transform="translate(0 -64) scale(1 1.25)">
+    <path class="primary" d="M28 151 C99 91 162 94 220 157 C271 212 308 220 363 180 L397 216 C316 278 254 251 194 187 C152 142 115 139 66 180 Z" />
+    <path class="primary-light" d="M48 151 C101 113 151 117 201 171 C242 215 278 234 320 222 L298 239 C253 242 221 218 186 182 C142 136 105 131 64 160 Z" />
+    <path class="secondary" d="M28 361 C99 421 162 418 220 355 C271 300 308 292 363 332 L397 296 C316 234 254 261 194 325 C152 370 115 373 66 332 Z" />
+    <path class="secondary-light" d="M48 361 C101 399 151 395 201 341 C242 297 278 278 320 290 L298 273 C253 270 221 294 186 330 C142 376 105 381 64 352 Z" />
+    <path class="neutral" d="M338 229 L420 229 L399 194 L489 256 L399 319 L420 283 L338 283 L365 256 Z" />
+    <path class="accent" d="M378 242 L437 242 L458 256 L437 270 L378 270 L392 256 Z" />
+  </g>
+</svg>

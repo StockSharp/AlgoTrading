@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Accumulation Distribution strategy logo for C#</title>
+  <desc id="description">A central market silo visibly accumulates blocks from one side and distributes them through an outbound chute on the other.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .language-mark { fill: #17323d; opacity: 0.07; } .python-upper { fill: #2874a6; opacity: 0.07; } .python-lower { fill: #aa8108; opacity: 0.07; }
+    .primary { fill: #5b70a1; } .primary-light { fill: #9eafd0; } .primary-shade { fill: #3c4e7b; }
+    .secondary { fill: #168a82; } .secondary-light { fill: #67cabe; } .secondary-shade { fill: #0d655f; }
+    .accent { fill: #dfa23a; } .neutral { fill: #29393f; } .shadow { fill: #14262c; opacity: 0.22; }
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill: #edf6f3; opacity: 0.08; } .python-upper { fill: #7ec5ed; opacity: 0.08; } .python-lower { fill: #f1ca50; opacity: 0.08; }
+      .primary { fill: #91a5d7; } .primary-light { fill: #c4ceed; } .primary-shade { fill: #687aaf; }
+      .secondary { fill: #43c7ba; } .secondary-light { fill: #87e0d5; } .secondary-shade { fill: #20948a; }
+      .accent { fill: #f2c45d; } .neutral { fill: #e5efec; } .shadow { fill: #02090b; opacity: 0.34; }
+    }
+  </style>
+  <g class="language-mark" aria-hidden="true">
+    <path d="M327 108 A180 210 0 1 0 327 404 L278 348 A110 130 0 1 1 278 164 Z" />
+    <path d="M342 54 L397 54 L367 458 L312 458 Z M432 54 L487 54 L457 458 L402 458 Z M301 172 L499 172 L493 232 L295 232 Z M289 285 L487 285 L481 345 L283 345 Z" />
+  </g>
+  <g aria-hidden="true">
+    <path class="neutral" d="M154 58 L358 58 L358 90 L154 90 Z M154 418 L358 418 L358 450 L154 450 Z M154 90 L186 90 L186 418 L154 418 Z M326 90 L358 90 L358 418 L326 418 Z" />
+    <path class="secondary-light" d="M186 106 L326 106 L326 402 L186 402 Z" opacity="0.34" />
+    <path class="accent" d="M198 344 L254 344 L254 402 L198 402 Z M260 314 L316 314 L316 402 L260 402 Z M198 278 L254 278 L254 336 L198 336 Z M260 244 L316 244 L316 306 L260 306 Z" />
+    <path class="primary" d="M32 174 L116 174 L116 140 L178 204 L116 268 L116 234 L32 234 Z" />
+    <path class="primary-light" d="M55 191 L130 191 L130 177 L156 204 L130 231 L130 217 L55 217 Z" />
+    <path class="secondary" d="M334 282 L396 218 L396 252 L480 252 L480 312 L396 312 L396 346 Z" />
+    <path class="secondary-light" d="M356 282 L410 255 L410 270 L458 270 L458 294 L410 294 L410 309 Z" />
+  </g>
+</svg>

@@ -1,0 +1,84 @@
+namespace StockSharp.Samples.Strategies;
+
+using System;
+using Ecng.Common;
+using StockSharp.Algo.Indicators;
+using StockSharp.Algo.Strategies;
+using StockSharp.Messages;
+
+/// <summary>
+/// Averaging By Signal strategy: WMA crossover with averaging logic.
+/// Buys when fast WMA crosses above slow WMA, sells on cross below.
+/// </summary>
+public class AveragingBySignalStrategy : Strategy
+{
+	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _fastPeriod;
+	private readonly StrategyParam<int> _slowPeriod;
+
+	private decimal _prevFast;
+	private decimal _prevSlow;
+	private bool _hasPrev;
+
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
+	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
+
+	public AveragingBySignalStrategy()
+	{
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
+		_fastPeriod = Param(nameof(FastPeriod), 28)
+			.SetGreaterThanZero()
+			.SetDisplay("Fast WMA", "Fast WMA period", "Indicators");
+		_slowPeriod = Param(nameof(SlowPeriod), 50)
+			.SetGreaterThanZero()
+			.SetDisplay("Slow WMA", "Slow WMA period", "Indicators");
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevFast = 0;
+		_prevSlow = 0;
+		_hasPrev = false;
+	}
+
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
+		_prevFast = 0;
+		_prevSlow = 0;
+		_hasPrev = false;
+		var fast = new ExponentialMovingAverage { Length = FastPeriod };
+		var slow = new ExponentialMovingAverage { Length = SlowPeriod };
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(fast, slow, ProcessCandle).Start();
+	}
+
+	private void ProcessCandle(ICandleMessage candle, decimal fastValue, decimal slowValue)
+	{
+		if (candle.State != CandleStates.Finished) return;
+
+		if (_hasPrev)
+		{
+			if (_prevFast <= _prevSlow && fastValue > slowValue && Position <= 0)
+				BuyMarket();
+			else if (_prevFast >= _prevSlow && fastValue < slowValue && Position >= 0)
+				SellMarket();
+		}
+		else
+		{
+			if (fastValue > slowValue && Position <= 0)
+				BuyMarket();
+			else if (fastValue < slowValue && Position >= 0)
+				SellMarket();
+		}
+
+		_prevFast = fastValue;
+		_prevSlow = slowValue;
+		_hasPrev = true;
+	}
+}

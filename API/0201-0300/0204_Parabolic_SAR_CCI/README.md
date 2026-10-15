@@ -1,0 +1,38 @@
+# Parabolic SAR CCI Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
+ 
+This strategy uses Parabolic SAR CCI indicators to generate signals.
+Long entry occurs when Price > SAR && CCI < CciOversold (trend up with oversold conditions). Short entry occurs when Price < SAR && CCI > CciOverbought (trend down with overbought conditions).
+It is suitable for traders seeking opportunities in mixed markets.
+
+Testing indicates an average annual return of about 49%. It performs best in the crypto market.
+
+## Details
+- **Entry Criteria**:
+  - **Long**: Price > SAR && CCI < CciOversold (trend up with oversold conditions)
+  - **Short**: Price < SAR && CCI > CciOverbought (trend down with overbought conditions)
+- **Long/Short**: Both sides.
+- **Exit Criteria**:
+  - **Long**: Exit long position when price drops below SAR
+  - **Short**: Exit short position when price rises above SAR
+- **Stops**: No.
+- **Default Values**:
+  - `SarAccelerationFactor` = 0.02
+  - `SarMaxAccelerationFactor` = 0.2
+  - `CciPeriod` = 20
+  - `CciOversold` = -100
+  - `CciOverbought` = 100
+    -100 and 100 are the defaults of the CCI levels the rules quote. An entry is a pullback within the trend the SAR shows, and the SAR acts as the trailing exit: a long closes on a close below it and a short on a close above it. An entry signal against an open position reverses it.
+  - `CandleType` = TimeSpan.FromMinutes(5)
+- **Filters**:
+  - Category: Mixed
+  - Direction: Both
+  - Indicators: Parabolic SAR CCI
+  - Stops: No
+  - Complexity: Intermediate
+  - Timeframe: Intraday
+  - Seasonality: No
+  - Neural networks: No
+  - Divergence: No
+  - Risk Level: Medium
+

@@ -1,0 +1,219 @@
+using System;
+using System.Linq;
+using System.Collections.Generic;
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
+using StockSharp.Algo.Indicators;
+using StockSharp.Algo.Strategies;
+using StockSharp.BusinessEntities;
+using StockSharp.Messages;
+
+namespace StockSharp.Samples.Strategies;
+
+
+
+/// <summary>
+/// Bollinger breakout strategy inspired by DC2008 implementation.
+/// </summary>
+public class BollingerBreakoutDc2008Strategy : Strategy
+{
+	public enum AppliedPriceTypes
+	{
+		Close,
+		Open,
+		High,
+		Low,
+		Median,
+		Typical,
+		Weighted,
+		Average
+	}
+
+	private readonly StrategyParam<int> _bandsPeriod;
+	private readonly StrategyParam<decimal> _bandsDeviation;
+	private readonly StrategyParam<AppliedPriceTypes> _appliedPrice;
+	private readonly StrategyParam<DataType> _candleType;
+
+	private BollingerBands _bollinger;
+	private decimal _entryPrice;
+
+	public int BandsPeriod
+	{
+		get => _bandsPeriod.Value;
+		set => _bandsPeriod.Value = value;
+	}
+
+	public decimal BandsDeviation
+	{
+		get => _bandsDeviation.Value;
+		set => _bandsDeviation.Value = value;
+	}
+
+	public AppliedPriceTypes AppliedPrice
+	{
+		get => _appliedPrice.Value;
+		set => _appliedPrice.Value = value;
+	}
+
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	public BollingerBreakoutDc2008Strategy()
+	{
+		_bandsPeriod = Param(nameof(BandsPeriod), 80)
+			.SetDisplay("Bands Period", "Number of candles for Bollinger Bands", "Indicators")
+			.SetGreaterThanZero()
+			
+			.SetOptimize(10, 200, 10);
+
+		_bandsDeviation = Param(nameof(BandsDeviation), 3m)
+			.SetDisplay("Deviation", "Standard deviation multiplier", "Indicators")
+			.SetGreaterThanZero()
+			
+			.SetOptimize(1m, 5m, 0.5m);
+
+		_appliedPrice = Param(nameof(AppliedPrice), AppliedPriceTypes.Close)
+			.SetDisplay("Applied Price", "Candle price source for Bollinger Bands", "Indicators");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to analyze", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		yield return (Security, CandleType);
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_bollinger = null;
+		_entryPrice = 0m;
+	}
+
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
+
+		// Create Bollinger Bands indicator with the configured parameters.
+		_bollinger = new BollingerBands
+		{
+			Length = BandsPeriod,
+			Width = BandsDeviation
+		};
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(ProcessCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, _bollinger);
+			DrawOwnTrades(area);
+		}
+	}
+
+	private void ProcessCandle(ICandleMessage candle)
+	{
+		if (candle.State != CandleStates.Finished || _bollinger is null)
+			return;
+
+		// Calculate Bollinger Bands for the selected price source.
+		var indicatorValue = _bollinger.Process(new DecimalIndicatorValue(_bollinger, GetAppliedPrice(candle), candle.OpenTime) { IsFinal = true });
+
+		if (!indicatorValue.IsFinal)
+			return;
+
+		if (indicatorValue is not BollingerBandsValue bands)
+			return;
+
+		if (bands.UpBand is not decimal upper || bands.LowBand is not decimal lower || bands.MovingAverage is not decimal middle)
+			return;
+
+		var high = candle.HighPrice;
+		var low = candle.LowPrice;
+		var close = candle.ClosePrice;
+
+		// Determine breakout conditions based on Bollinger structure.
+		var buySignal = low < lower && high < middle;
+		var sellSignal = high > upper && low > middle;
+
+		if (!buySignal && !sellSignal)
+			return;
+
+		// Compute unrealized profit to mimic original position filter.
+		var unrealizedPnL = Position == 0 ? 0m : Position * (close - _entryPrice);
+
+		if (buySignal)
+		{
+			if (Position == 0)
+			{
+				// No position open, start a new long.
+				BuyMarket();
+				_entryPrice = close;
+			}
+			else
+			{
+				if (unrealizedPnL < 0m)
+					return;
+
+				if (Position < 0)
+				{
+					// Reverse from short to long while preserving target volume.
+					BuyMarket();
+					_entryPrice = close;
+				}
+			}
+
+			return;
+		}
+
+		if (sellSignal)
+		{
+			if (Position == 0)
+			{
+				// No position open, start a new short.
+				SellMarket();
+				_entryPrice = close;
+			}
+			else
+			{
+				if (unrealizedPnL < 0m)
+					return;
+
+				if (Position > 0)
+				{
+					// Reverse from long to short while preserving target volume.
+					SellMarket();
+					_entryPrice = close;
+				}
+			}
+		}
+	}
+
+	private decimal GetAppliedPrice(ICandleMessage candle)
+	{
+		return AppliedPrice switch
+		{
+			AppliedPriceTypes.Close => candle.ClosePrice,
+			AppliedPriceTypes.Open => candle.OpenPrice,
+			AppliedPriceTypes.High => candle.HighPrice,
+			AppliedPriceTypes.Low => candle.LowPrice,
+			AppliedPriceTypes.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPriceTypes.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPriceTypes.Weighted => (candle.HighPrice + candle.LowPrice + (2m * candle.ClosePrice)) / 4m,
+			AppliedPriceTypes.Average => (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m,
+			_ => candle.ClosePrice
+		};
+	}
+}

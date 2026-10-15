@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description"><title id="title">Hull MA Volatility Contraction strategy logo for C#</title><desc id="description">A Hull sailboat is visibly squeezed between the jaws of a closing vise.</desc>
+  <style>:root{color-scheme:light dark;--p:#b24f42;--pl:#e48b74;--ps:#7d342c;--s:#2a82a4;--sl:#7bbdd4;--a:#dca93e;--n:#2f383e;--pale:#d9c9bf}.language-mark{fill:#17323d;opacity:.07}.python-upper{fill:#2874a6;opacity:.07}.python-lower{fill:#aa8108;opacity:.07}@media(prefers-color-scheme:dark){:root{--p:#ed806d;--pl:#f7b09b;--ps:#a94f43;--s:#55b8d7;--sl:#9ed7e8;--a:#f2cb61;--n:#eff3f2;--pale:#8a786e}.language-mark{fill:#edf6f3;opacity:.08}.python-upper{fill:#7ec5ed;opacity:.08}.python-lower{fill:#f1ca50;opacity:.08}}</style>
+  <g class="language-mark" aria-hidden="true"><path d="M327 108 A180 210 0 1 0 327 404 L278 348 A110 130 0 1 1 278 164 Z"/><path d="M342 54 L397 54 L367 458 L312 458 Z M432 54 L487 54 L457 458 L402 458 Z M301 172 L499 172 L493 232 L295 232 Z M289 285 L487 285 L481 345 L283 345 Z"/></g>
+  <g aria-hidden="true" stroke-linecap="round" stroke-linejoin="round">
+    <path fill="var(--ps)" d="M28 119 H117 V202 H150 V310 H117 V393 H28 Z M484 119 H395 V202 H362 V310 H395 V393 H484 Z"/>
+    <path fill="var(--pl)" d="M52 144 H93 V228 H126 V284 H93 V368 H52 Z M460 144 H419 V228 H386 V284 H419 V368 H460 Z"/>
+    <path fill="var(--n)" d="M8 90 H136 V120 H8 Z M376 90 H504 V120 H376 Z M8 392 H136 V422 H8 Z M376 392 H504 V422 H376 Z"/>
+    <path fill="var(--s)" d="M187 347 H348 L319 397 H217 Z"/>
+    <path fill="none" stroke="var(--n)" stroke-width="17" d="M264 155 V351"/>
+    <path fill="var(--sl)" d="M251 167 L251 318 L164 318 Z"/>
+    <path fill="var(--a)" d="M278 181 L278 318 L354 318 Z"/>
+    <path fill="var(--p)" d="M118 234 L178 256 L118 278 Z M394 234 L334 256 L394 278 Z"/>
+    <path fill="none" stroke="var(--s)" stroke-width="16" d="M166 432 C204 410 231 452 267 430 C304 408 338 452 373 430"/>
+  </g>
+</svg>

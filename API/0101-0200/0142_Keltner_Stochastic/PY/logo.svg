@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Keltner Stochastic strategy logo for Python</title>
+  <desc id="description">Twin stochastic cords rebound from the lower rail of a flowing Keltner channel and carry price back through its center.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .language-mark { fill:#17323d; opacity:.07; } .python-upper { fill:#2874a6; opacity:.07; } .python-lower { fill:#aa8108; opacity:.07; }
+    .primary { fill:#3b5384; } .primary-light { fill:#8b9fcb; } .primary-shade { fill:#293a5d; } .secondary { fill:#ba4e79; } .secondary-light { fill:#e68cac; } .secondary-shade { fill:#823653; }
+    .accent { fill:#dfa63b; } .positive { fill:#378c6d; } .positive-light { fill:#7bc7aa; } .negative { fill:#bd4a4a; } .negative-light { fill:#eb8980; }
+    .violet { fill:#765aa8; } .violet-light { fill:#ad9ad1; } .neutral { fill:#293640; } .pale { fill:#ced4df; } .shadow { fill:#14262c; opacity:.22; }
+    .line-primary { fill:none; stroke:#3b5384; stroke-width:18; stroke-linecap:round; stroke-linejoin:round; } .line-secondary { fill:none; stroke:#ba4e79; stroke-width:18; stroke-linecap:round; stroke-linejoin:round; }
+    .line-neutral { fill:none; stroke:#293640; stroke-width:18; stroke-linecap:round; stroke-linejoin:round; } .line-accent { fill:none; stroke:#dfa63b; stroke-width:14; stroke-linecap:round; stroke-linejoin:round; }
+    .thin-primary { fill:none; stroke:#3b5384; stroke-width:10; stroke-linecap:round; stroke-linejoin:round; } .thin-secondary { fill:none; stroke:#ba4e79; stroke-width:10; stroke-linecap:round; stroke-linejoin:round; } .thin-neutral { fill:none; stroke:#293640; stroke-width:10; stroke-linecap:round; stroke-linejoin:round; }
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill:#edf6f3; opacity:.08; } .python-upper { fill:#7ec5ed; opacity:.08; } .python-lower { fill:#f1ca50; opacity:.08; }
+      .primary { fill:#718bc7; } .primary-light { fill:#b1c1e7; } .primary-shade { fill:#49639a; } .secondary { fill:#e675a4; } .secondary-light { fill:#ffacc8; } .secondary-shade { fill:#ac4a73; }
+      .accent { fill:#f2c75d; } .positive { fill:#63c49b; } .positive-light { fill:#a4dec2; } .negative { fill:#f17470; } .negative-light { fill:#ffada5; }
+      .violet { fill:#aa94db; } .violet-light { fill:#d1c2ec; } .neutral { fill:#edf1f5; } .pale { fill:#747f92; } .shadow { fill:#02090b; opacity:.34; }
+      .line-primary { stroke:#718bc7; } .line-secondary { stroke:#e675a4; } .line-neutral { stroke:#edf1f5; } .line-accent { stroke:#f2c75d; }
+      .thin-primary { stroke:#718bc7; } .thin-secondary { stroke:#e675a4; } .thin-neutral { stroke:#edf1f5; }
+    }
+  </style>
+  <g aria-hidden="true"><path class="python-upper" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z"/><path class="python-lower" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" transform="rotate(180 256 256)"/></g>
+  <g aria-hidden="true">
+    <path class="line-primary" d="M45 113 C149 77 338 86 466 136 M45 398 C161 438 345 428 466 374" />
+    <path class="primary-light" d="M48 239 C164 212 347 219 463 252 L463 280 C348 248 164 241 48 268 Z" />
+    <path class="line-secondary" d="M66 381 C126 399 172 421 220 402" />
+    <path class="line-accent" d="M66 412 C129 429 177 448 226 426" />
+    <path class="accent" d="M199 371 A38 38 0 1 0 275 371 A38 38 0 1 0 199 371 Z" />
+    <path class="thin-neutral" d="M216 338 C228 354 245 366 267 371" />
+    <path class="line-secondary" d="M260 342 C300 301 340 272 399 236" />
+    <path class="secondary" d="M370 225 L438 211 L407 274 L399 244 Z" />
+  </g>
+</svg>

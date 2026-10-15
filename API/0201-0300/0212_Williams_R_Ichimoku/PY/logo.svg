@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Williams R Ichimoku strategy logo for Python</title>
+  <desc id="description">A Williams-percent-R depth hook descends through an Ichimoku cloud and turns upward from its lower threshold.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .language-mark { fill:#17323d; opacity:.07; } .python-upper { fill:#2874a6; opacity:.07; } .python-lower { fill:#aa8108; opacity:.07; }
+    .primary { fill:#b24f42; } .primary-light { fill:#e48b74; } .primary-shade { fill:#7d342c; } .secondary { fill:#2a82a4; } .secondary-light { fill:#7bbdd4; } .secondary-shade { fill:#1c5d75; }
+    .accent { fill:#dca93e; } .positive { fill:#3c8e68; } .positive-light { fill:#82c8a5; } .negative { fill:#b94b4b; } .negative-light { fill:#e98b83; } .violet { fill:#745ba8; } .violet-light { fill:#af9ed2; } .neutral { fill:#2f383e; } .pale { fill:#d9c9bf; } .shadow { fill:#14262c; opacity:.22; }
+    .line-primary { fill:none; stroke:#b24f42; stroke-width:18; stroke-linecap:round; stroke-linejoin:round; } .line-secondary { fill:none; stroke:#2a82a4; stroke-width:18; stroke-linecap:round; stroke-linejoin:round; } .line-neutral { fill:none; stroke:#2f383e; stroke-width:18; stroke-linecap:round; stroke-linejoin:round; } .line-accent { fill:none; stroke:#dca93e; stroke-width:14; stroke-linecap:round; stroke-linejoin:round; } .thin-primary { fill:none; stroke:#b24f42; stroke-width:10; stroke-linecap:round; stroke-linejoin:round; } .thin-secondary { fill:none; stroke:#2a82a4; stroke-width:10; stroke-linecap:round; stroke-linejoin:round; } .thin-neutral { fill:none; stroke:#2f383e; stroke-width:10; stroke-linecap:round; stroke-linejoin:round; }
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill:#edf6f3; opacity:.08; } .python-upper { fill:#7ec5ed; opacity:.08; } .python-lower { fill:#f1ca50; opacity:.08; }
+      .primary { fill:#ed806d; } .primary-light { fill:#f7b09b; } .primary-shade { fill:#a94f43; } .secondary { fill:#55b8d7; } .secondary-light { fill:#9ed7e8; } .secondary-shade { fill:#2f819a; } .accent { fill:#f2cb61; } .positive { fill:#68c69a; } .positive-light { fill:#a9dfc2; } .negative { fill:#ef7474; } .negative-light { fill:#ffb0aa; } .violet { fill:#aa97da; } .violet-light { fill:#d1c4ec; } .neutral { fill:#eff3f2; } .pale { fill:#8a786e; } .shadow { fill:#02090b; opacity:.34; }
+      .line-primary { stroke:#ed806d; } .line-secondary { stroke:#55b8d7; } .line-neutral { stroke:#eff3f2; } .line-accent { stroke:#f2cb61; } .thin-primary { stroke:#ed806d; } .thin-secondary { stroke:#55b8d7; } .thin-neutral { stroke:#eff3f2; }
+    }
+  </style>
+  <g aria-hidden="true">
+    <path class="python-upper" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" />
+    <path class="python-lower" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" transform="rotate(180 256 256)" />
+  </g>
+  <g aria-hidden="true">
+    <path class="violet-light" d="M50 224 C31 194 48 157 84 146 C84 103 129 72 169 92 C194 50 261 53 282 100 C324 77 373 106 376 149 C420 151 444 199 418 231 L73 231 C64 230 56 228 50 224 Z" />
+    <path class="secondary-light" d="M74 207 C104 178 133 193 161 170 C196 141 225 189 258 167 C296 142 325 190 362 165 C389 146 417 169 424 198 L424 231 L65 231 Z" />
+    <path class="primary-shade" d="M202 239 L458 239 L458 461 L202 461 Z" />
+    <path class="pale" d="M222 259 L438 259 L438 441 L222 441 Z" />
+    <path class="primary-light" d="M222 259 L438 259 L438 294 L222 294 Z M222 406 L438 406 L438 441 L222 441 Z" />
+    <circle class="accent" cx="318" cy="282" r="23" />
+    <path class="line-secondary" d="M318 305 L318 381 C318 426 369 435 389 398 C400 377 386 358 364 364" />
+    <path class="secondary" d="M353 344 L407 357 L371 395 L369 365 Z" />
+    <path class="line-primary" d="M47 322 C108 300 155 270 210 221" />
+  </g>
+</svg>

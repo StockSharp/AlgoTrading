@@ -1,0 +1,935 @@
+using System;
+using System.Linq;
+using System.Collections.Generic;
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
+using StockSharp.Algo.Indicators;
+using StockSharp.Algo.Strategies;
+using StockSharp.BusinessEntities;
+using StockSharp.Messages;
+using StockSharp.Algo;
+
+namespace StockSharp.Samples.Strategies;
+
+
+
+public class IbsRsiCciV4X2Strategy : Strategy
+{
+	private readonly StrategyParam<decimal> _orderVolume;
+	private readonly StrategyParam<DataType> _trendCandleType;
+	private readonly StrategyParam<int> _trendIbsPeriod;
+	private readonly StrategyParam<IbsMovingAverageTypes> _trendIbsMaType;
+	private readonly StrategyParam<int> _trendRsiPeriod;
+	private readonly StrategyParam<AppliedPriceTypes> _trendRsiPrice;
+	private readonly StrategyParam<int> _trendCciPeriod;
+	private readonly StrategyParam<AppliedPriceTypes> _trendCciPrice;
+	private readonly StrategyParam<decimal> _trendThreshold;
+	private readonly StrategyParam<int> _trendRangePeriod;
+	private readonly StrategyParam<int> _trendSmoothPeriod;
+	private readonly StrategyParam<int> _trendSignalBar;
+	private readonly StrategyParam<bool> _allowLongEntries;
+	private readonly StrategyParam<bool> _allowShortEntries;
+	private readonly StrategyParam<bool> _closeLongOnTrendFlip;
+	private readonly StrategyParam<bool> _closeShortOnTrendFlip;
+	private readonly StrategyParam<decimal> _koefIbs;
+	private readonly StrategyParam<decimal> _koefRsi;
+	private readonly StrategyParam<decimal> _koefCci;
+	private readonly StrategyParam<decimal> _kibs;
+	private readonly StrategyParam<decimal> _kcci;
+	private readonly StrategyParam<decimal> _krsi;
+	private readonly StrategyParam<decimal> _posit;
+
+
+	private readonly StrategyParam<DataType> _signalCandleType;
+	private readonly StrategyParam<int> _signalIbsPeriod;
+	private readonly StrategyParam<IbsMovingAverageTypes> _signalIbsMaType;
+	private readonly StrategyParam<int> _signalRsiPeriod;
+	private readonly StrategyParam<AppliedPriceTypes> _signalRsiPrice;
+	private readonly StrategyParam<int> _signalCciPeriod;
+	private readonly StrategyParam<AppliedPriceTypes> _signalCciPrice;
+	private readonly StrategyParam<decimal> _signalThreshold;
+	private readonly StrategyParam<int> _signalRangePeriod;
+	private readonly StrategyParam<int> _signalSmoothPeriod;
+	private readonly StrategyParam<int> _signalSignalBar;
+	private readonly StrategyParam<int> _signalCooldownBars;
+	private readonly StrategyParam<bool> _closeLongOnSignalCross;
+	private readonly StrategyParam<bool> _closeShortOnSignalCross;
+
+	private readonly StrategyParam<int> _stopLossPoints;
+	private readonly StrategyParam<int> _takeProfitPoints;
+
+	private readonly List<IbsRsiCciValue> _trendValues = new();
+	private readonly List<IbsRsiCciValue> _signalValues = new();
+
+	private IbsRsiCciCalculator _trendCalculator;
+	private IbsRsiCciCalculator _signalCalculator;
+
+	private int _trendDirection;
+	private int _cooldownRemaining;
+
+	public IbsRsiCciV4X2Strategy()
+	{
+		_orderVolume = Param(nameof(OrderVolume), 1m)
+			.SetGreaterThanZero()
+			.SetDisplay("Volume", "Order volume", "Trading");
+
+		_trendCandleType = Param(nameof(TrendCandleType), TimeSpan.FromHours(4).TimeFrame())
+			.SetDisplay("Trend TF", "Trend timeframe", "Trend");
+
+		_trendIbsPeriod = Param(nameof(TrendIbsPeriod), 5)
+			.SetGreaterThanZero()
+			.SetDisplay("Trend IBS", "IBS smoothing period", "Trend");
+
+		_trendIbsMaType = Param(nameof(TrendIbsMaType), IbsMovingAverageTypes.Simple)
+			.SetDisplay("Trend IBS MA", "IBS smoothing type", "Trend");
+
+		_trendRsiPeriod = Param(nameof(TrendRsiPeriod), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("Trend RSI", "RSI period", "Trend");
+
+		_trendRsiPrice = Param(nameof(TrendRsiPrice), AppliedPriceTypes.Close)
+			.SetDisplay("Trend RSI Price", "RSI price type", "Trend");
+
+		_trendCciPeriod = Param(nameof(TrendCciPeriod), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("Trend CCI", "CCI period", "Trend");
+
+		_trendCciPrice = Param(nameof(TrendCciPrice), AppliedPriceTypes.Median)
+			.SetDisplay("Trend CCI Price", "CCI price type", "Trend");
+
+		_trendThreshold = Param(nameof(TrendThreshold), 50m)
+			.SetGreaterThanZero()
+			.SetDisplay("Trend Threshold", "Momentum clamp threshold", "Trend");
+
+		_trendRangePeriod = Param(nameof(TrendRangePeriod), 25)
+			.SetGreaterThanZero()
+			.SetDisplay("Trend Range", "Range period", "Trend");
+
+		_trendSmoothPeriod = Param(nameof(TrendSmoothPeriod), 3)
+			.SetGreaterThanZero()
+			.SetDisplay("Trend Smooth", "Range smoothing period", "Trend");
+
+		_trendSignalBar = Param(nameof(TrendSignalBar), 1)
+			.SetNotNegative()
+			.SetDisplay("Trend Shift", "Shift used to read indicator", "Trend");
+
+		_allowLongEntries = Param(nameof(AllowLongEntries), true)
+			.SetDisplay("Allow Long", "Enable long entries", "Trading");
+
+		_allowShortEntries = Param(nameof(AllowShortEntries), true)
+			.SetDisplay("Allow Short", "Enable short entries", "Trading");
+
+		_closeLongOnTrendFlip = Param(nameof(CloseLongOnTrendFlip), true)
+			.SetDisplay("Close Long Trend", "Close longs on bearish trend", "Trading");
+
+		_closeShortOnTrendFlip = Param(nameof(CloseShortOnTrendFlip), true)
+			.SetDisplay("Close Short Trend", "Close shorts on bullish trend", "Trading");
+
+		_koefIbs = Param(nameof(KoefIbs), 7m)
+		.SetDisplay("IBS Weight", "Weight applied to the IBS component", "Weights")
+		;
+
+		_koefRsi = Param(nameof(KoefRsi), 9m)
+		.SetDisplay("RSI Weight", "Weight applied to the RSI component", "Weights")
+		;
+
+		_koefCci = Param(nameof(KoefCci), 1m)
+		.SetDisplay("CCI Weight", "Weight applied to the CCI component", "Weights")
+		;
+
+		_kibs = Param(nameof(Kibs), -1m)
+		.SetDisplay("IBS Direction", "Directional multiplier for the IBS input", "Weights")
+		;
+
+		_kcci = Param(nameof(Kcci), -1m)
+		.SetDisplay("CCI Direction", "Directional multiplier for the CCI input", "Weights")
+		;
+
+		_krsi = Param(nameof(Krsi), -1m)
+		.SetDisplay("RSI Direction", "Directional multiplier for the RSI input", "Weights")
+		;
+
+		_posit = Param(nameof(Posit), -1m)
+		.SetDisplay("Output Direction", "Directional multiplier for the composite output", "Weights")
+		;
+
+		_signalCandleType = Param(nameof(SignalCandleType), TimeSpan.FromHours(2).TimeFrame())
+			.SetDisplay("Signal TF", "Signal timeframe", "Signal");
+
+		_signalIbsPeriod = Param(nameof(SignalIbsPeriod), 5)
+			.SetGreaterThanZero()
+			.SetDisplay("Signal IBS", "IBS smoothing period", "Signal");
+
+		_signalIbsMaType = Param(nameof(SignalIbsMaType), IbsMovingAverageTypes.Simple)
+			.SetDisplay("Signal IBS MA", "IBS smoothing type", "Signal");
+
+		_signalRsiPeriod = Param(nameof(SignalRsiPeriod), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("Signal RSI", "RSI period", "Signal");
+
+		_signalRsiPrice = Param(nameof(SignalRsiPrice), AppliedPriceTypes.Close)
+			.SetDisplay("Signal RSI Price", "RSI price type", "Signal");
+
+		_signalCciPeriod = Param(nameof(SignalCciPeriod), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("Signal CCI", "CCI period", "Signal");
+
+		_signalCciPrice = Param(nameof(SignalCciPrice), AppliedPriceTypes.Median)
+			.SetDisplay("Signal CCI Price", "CCI price type", "Signal");
+
+		_signalThreshold = Param(nameof(SignalThreshold), 50m)
+			.SetGreaterThanZero()
+			.SetDisplay("Signal Threshold", "Momentum clamp threshold", "Signal");
+
+		_signalRangePeriod = Param(nameof(SignalRangePeriod), 25)
+			.SetGreaterThanZero()
+			.SetDisplay("Signal Range", "Range period", "Signal");
+
+		_signalSmoothPeriod = Param(nameof(SignalSmoothPeriod), 3)
+			.SetGreaterThanZero()
+			.SetDisplay("Signal Smooth", "Range smoothing period", "Signal");
+
+		_signalSignalBar = Param(nameof(SignalSignalBar), 1)
+			.SetNotNegative()
+			.SetDisplay("Signal Shift", "Shift used to read indicator", "Signal");
+
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 10)
+			.SetNotNegative()
+			.SetDisplay("Signal Cooldown", "Closed signal candles to wait before the next entry", "Signal");
+
+		_closeLongOnSignalCross = Param(nameof(CloseLongOnSignalCross), false)
+			.SetDisplay("Close Long Signal", "Close longs on bearish cross", "Signal");
+
+		_closeShortOnSignalCross = Param(nameof(CloseShortOnSignalCross), false)
+			.SetDisplay("Close Short Signal", "Close shorts on bullish cross", "Signal");
+
+		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss", "Stop loss in points", "Protection");
+
+		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000)
+			.SetNotNegative()
+			.SetDisplay("Take Profit", "Take profit in points", "Protection");
+	}
+
+
+	public decimal OrderVolume
+	{
+		get => _orderVolume.Value;
+		set => _orderVolume.Value = value;
+	}
+
+	public DataType TrendCandleType
+	{
+		get => _trendCandleType.Value;
+		set => _trendCandleType.Value = value;
+	}
+
+	public int TrendIbsPeriod
+	{
+		get => _trendIbsPeriod.Value;
+		set => _trendIbsPeriod.Value = value;
+	}
+
+	public IbsMovingAverageTypes TrendIbsMaType
+	{
+		get => _trendIbsMaType.Value;
+		set => _trendIbsMaType.Value = value;
+	}
+
+	public int TrendRsiPeriod
+	{
+		get => _trendRsiPeriod.Value;
+		set => _trendRsiPeriod.Value = value;
+	}
+
+	public AppliedPriceTypes TrendRsiPrice
+	{
+		get => _trendRsiPrice.Value;
+		set => _trendRsiPrice.Value = value;
+	}
+
+	public int TrendCciPeriod
+	{
+		get => _trendCciPeriod.Value;
+		set => _trendCciPeriod.Value = value;
+	}
+
+	public AppliedPriceTypes TrendCciPrice
+	{
+		get => _trendCciPrice.Value;
+		set => _trendCciPrice.Value = value;
+	}
+
+	public decimal TrendThreshold
+	{
+		get => _trendThreshold.Value;
+		set => _trendThreshold.Value = value;
+	}
+
+	public int TrendRangePeriod
+	{
+		get => _trendRangePeriod.Value;
+		set => _trendRangePeriod.Value = value;
+	}
+
+	public int TrendSmoothPeriod
+	{
+		get => _trendSmoothPeriod.Value;
+		set => _trendSmoothPeriod.Value = value;
+	}
+
+	public int TrendSignalBar
+	{
+		get => _trendSignalBar.Value;
+		set => _trendSignalBar.Value = value;
+	}
+
+	public bool AllowLongEntries
+	{
+		get => _allowLongEntries.Value;
+		set => _allowLongEntries.Value = value;
+	}
+
+	public bool AllowShortEntries
+	{
+		get => _allowShortEntries.Value;
+		set => _allowShortEntries.Value = value;
+	}
+
+	public bool CloseLongOnTrendFlip
+	{
+		get => _closeLongOnTrendFlip.Value;
+		set => _closeLongOnTrendFlip.Value = value;
+	}
+
+	public bool CloseShortOnTrendFlip
+	{
+		get => _closeShortOnTrendFlip.Value;
+		set => _closeShortOnTrendFlip.Value = value;
+	}
+
+	public DataType SignalCandleType
+	{
+		get => _signalCandleType.Value;
+		set => _signalCandleType.Value = value;
+	}
+
+	public int SignalIbsPeriod
+	{
+		get => _signalIbsPeriod.Value;
+		set => _signalIbsPeriod.Value = value;
+	}
+
+	public IbsMovingAverageTypes SignalIbsMaType
+	{
+		get => _signalIbsMaType.Value;
+		set => _signalIbsMaType.Value = value;
+	}
+
+	public int SignalRsiPeriod
+	{
+		get => _signalRsiPeriod.Value;
+		set => _signalRsiPeriod.Value = value;
+	}
+
+	public AppliedPriceTypes SignalRsiPrice
+	{
+		get => _signalRsiPrice.Value;
+		set => _signalRsiPrice.Value = value;
+	}
+
+	public int SignalCciPeriod
+	{
+		get => _signalCciPeriod.Value;
+		set => _signalCciPeriod.Value = value;
+	}
+
+	public AppliedPriceTypes SignalCciPrice
+	{
+		get => _signalCciPrice.Value;
+		set => _signalCciPrice.Value = value;
+	}
+
+	public decimal SignalThreshold
+	{
+		get => _signalThreshold.Value;
+		set => _signalThreshold.Value = value;
+	}
+
+	public int SignalRangePeriod
+	{
+		get => _signalRangePeriod.Value;
+		set => _signalRangePeriod.Value = value;
+	}
+
+	public int SignalSmoothPeriod
+	{
+		get => _signalSmoothPeriod.Value;
+		set => _signalSmoothPeriod.Value = value;
+	}
+
+	public int SignalSignalBar
+	{
+		get => _signalSignalBar.Value;
+		set => _signalSignalBar.Value = value;
+	}
+
+	public bool CloseLongOnSignalCross
+	{
+		get => _closeLongOnSignalCross.Value;
+		set => _closeLongOnSignalCross.Value = value;
+	}
+
+	public bool CloseShortOnSignalCross
+	{
+		get => _closeShortOnSignalCross.Value;
+		set => _closeShortOnSignalCross.Value = value;
+	}
+
+	public int SignalCooldownBars
+	{
+		get => _signalCooldownBars.Value;
+		set => _signalCooldownBars.Value = value;
+	}
+
+	/// <summary>
+	/// Weight applied to the IBS component of the composite oscillator.
+	/// </summary>
+	public decimal KoefIbs
+	{
+		get => _koefIbs.Value;
+		set => _koefIbs.Value = value;
+	}
+
+	/// <summary>
+	/// Weight applied to the RSI component of the composite oscillator.
+	/// </summary>
+	public decimal KoefRsi
+	{
+		get => _koefRsi.Value;
+		set => _koefRsi.Value = value;
+	}
+
+	/// <summary>
+	/// Weight applied to the CCI component of the composite oscillator.
+	/// </summary>
+	public decimal KoefCci
+	{
+		get => _koefCci.Value;
+		set => _koefCci.Value = value;
+	}
+
+	/// <summary>
+	/// Directional multiplier applied to the IBS contribution.
+	/// </summary>
+	public decimal Kibs
+	{
+		get => _kibs.Value;
+		set => _kibs.Value = value;
+	}
+
+	/// <summary>
+	/// Directional multiplier applied to the CCI contribution.
+	/// </summary>
+	public decimal Kcci
+	{
+		get => _kcci.Value;
+		set => _kcci.Value = value;
+	}
+
+	/// <summary>
+	/// Directional multiplier applied to the RSI contribution.
+	/// </summary>
+	public decimal Krsi
+	{
+		get => _krsi.Value;
+		set => _krsi.Value = value;
+	}
+
+	/// <summary>
+	/// Directional multiplier applied to the final composite value.
+	/// </summary>
+	public decimal Posit
+	{
+		get => _posit.Value;
+		set => _posit.Value = value;
+	}
+
+	public int StopLossPoints
+	{
+		get => _stopLossPoints.Value;
+		set => _stopLossPoints.Value = value;
+	}
+
+	public int TakeProfitPoints
+	{
+		get => _takeProfitPoints.Value;
+		set => _takeProfitPoints.Value = value;
+	}
+
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> new[]
+		{
+			(Security, TrendCandleType),
+			(Security, SignalCandleType)
+		};
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_trendValues.Clear();
+		_signalValues.Clear();
+		_trendDirection = 0;
+		_cooldownRemaining = 0;
+		_trendCalculator?.Reset();
+		_signalCalculator?.Reset();
+		_trendCalculator = null;
+		_signalCalculator = null;
+	}
+
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
+
+		var priceStep = Security?.PriceStep ?? 0.0001m;
+
+		_trendCalculator = new IbsRsiCciCalculator(
+			TrendIbsPeriod,
+			TrendIbsMaType,
+			TrendRsiPeriod,
+			TrendRsiPrice,
+			TrendCciPeriod,
+			TrendCciPrice,
+			TrendThreshold,
+			TrendRangePeriod,
+			TrendSmoothPeriod,
+			priceStep, KoefIbs, KoefRsi, KoefCci, Kibs, Kcci, Krsi, Posit);
+
+		_signalCalculator = new IbsRsiCciCalculator(
+			SignalIbsPeriod,
+			SignalIbsMaType,
+			SignalRsiPeriod,
+			SignalRsiPrice,
+			SignalCciPeriod,
+			SignalCciPrice,
+			SignalThreshold,
+			SignalRangePeriod,
+			SignalSmoothPeriod,
+			priceStep, KoefIbs, KoefRsi, KoefCci, Kibs, Kcci, Krsi, Posit);
+
+		var trendSubscription = SubscribeCandles(TrendCandleType);
+		trendSubscription.Bind(ProcessTrend).Start();
+
+		var signalSubscription = SubscribeCandles(SignalCandleType);
+		signalSubscription.Bind(ProcessSignal).Start();
+
+		if (TakeProfitPoints > 0 || StopLossPoints > 0)
+		{
+			var takeProfit = new Unit(TakeProfitPoints * priceStep, UnitTypes.Absolute);
+			var stopLoss = new Unit(StopLossPoints * priceStep, UnitTypes.Absolute);
+			StartProtection(stopLoss, takeProfit);
+		}
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, signalSubscription);
+			DrawOwnTrades(area);
+		}
+	}
+
+	private void ProcessTrend(ICandleMessage candle)
+	{
+		if (candle.State != CandleStates.Finished || _trendCalculator == null)
+			return;
+
+		var value = _trendCalculator.Process(candle);
+		if (value == null)
+			return;
+
+		_trendValues.Add(value.Value);
+
+		var maxCount = Math.Max(TrendSignalBar + 5, 32);
+		if (_trendValues.Count > maxCount)
+			_trendValues.RemoveAt(0);
+
+		if (_trendValues.Count <= TrendSignalBar)
+			return;
+
+		var index = _trendValues.Count - (TrendSignalBar + 1);
+		if (index < 0)
+			return;
+
+		var selected = _trendValues[index];
+		if (selected.Up > selected.Down)
+			_trendDirection = 1;
+		else if (selected.Up < selected.Down)
+			_trendDirection = -1;
+		else
+			_trendDirection = 0;
+	}
+
+	private void ProcessSignal(ICandleMessage candle)
+	{
+		if (candle.State != CandleStates.Finished || _signalCalculator == null)
+			return;
+
+		if (_cooldownRemaining > 0)
+			_cooldownRemaining--;
+
+		var value = _signalCalculator.Process(candle);
+		if (value == null)
+			return;
+
+		_signalValues.Add(value.Value);
+
+		var maxCount = Math.Max(SignalSignalBar + 10, 48);
+		if (_signalValues.Count > maxCount)
+			_signalValues.RemoveAt(0);
+
+		if (_signalValues.Count <= SignalSignalBar + 1)
+			return;
+
+		var currentIndex = _signalValues.Count - (SignalSignalBar + 1);
+		var previousIndex = currentIndex - 1;
+		if (currentIndex < 0 || previousIndex < 0)
+			return;
+
+		var current = _signalValues[currentIndex];
+		var previous = _signalValues[previousIndex];
+
+		var closeLong = CloseLongOnSignalCross && previous.Up < previous.Down;
+		var closeShort = CloseShortOnSignalCross && previous.Up > previous.Down;
+		var openLong = false;
+		var openShort = false;
+
+		if (_trendDirection < 0)
+		{
+			if (CloseLongOnTrendFlip)
+				closeLong = true;
+
+			if (_cooldownRemaining == 0 && AllowShortEntries && current.Up >= current.Down && previous.Up < previous.Down)
+				openShort = true;
+		}
+		else if (_trendDirection > 0)
+		{
+			if (CloseShortOnTrendFlip)
+				closeShort = true;
+
+			if (_cooldownRemaining == 0 && AllowLongEntries && current.Up <= current.Down && previous.Up > previous.Down)
+				openLong = true;
+		}
+
+		var submitted = false;
+
+		if (closeLong && Position > 0)
+		{
+			CloseLong();
+			submitted = true;
+		}
+
+		if (closeShort && Position < 0)
+		{
+			CloseShort();
+			submitted = true;
+		}
+
+		if (openLong && Position <= 0 && AllowLongEntries)
+		{
+			EnterLong();
+			submitted = true;
+		}
+		else if (openShort && Position >= 0 && AllowShortEntries)
+		{
+			EnterShort();
+			submitted = true;
+		}
+
+		if (submitted)
+			_cooldownRemaining = SignalCooldownBars;
+	}
+
+	private void CloseLong()
+	{
+		if (Position <= 0)
+			return;
+
+		SellMarket();
+	}
+
+	private void CloseShort()
+	{
+		if (Position >= 0)
+			return;
+
+		BuyMarket();
+	}
+
+	private void EnterLong()
+	{
+		BuyMarket();
+	}
+
+	private void EnterShort()
+	{
+		SellMarket();
+	}
+
+	private readonly record struct IbsRsiCciValue(decimal Up, decimal Down);
+
+	private sealed class IbsRsiCciCalculator
+	{
+		private readonly decimal _koefIbs;
+		private readonly decimal _koefRsi;
+		private readonly decimal _koefCci;
+		private readonly decimal _kibs;
+		private readonly decimal _kcci;
+		private readonly decimal _krsi;
+		private readonly decimal _posit;
+
+		private readonly int _ibsPeriod;
+		private readonly AppliedPriceTypes _rsiPrice;
+		private readonly AppliedPriceTypes _cciPrice;
+		private readonly decimal _threshold;
+		private readonly decimal _priceStep;
+		private readonly DecimalLengthIndicator _ibsMa;
+		private readonly RelativeStrengthIndex _rsi;
+		private readonly CommodityChannelIndexCalculator _cci;
+		private readonly Highest _highest;
+		private readonly Lowest _lowest;
+		private readonly DecimalLengthIndicator _rangeHighMa;
+		private readonly DecimalLengthIndicator _rangeLowMa;
+
+		private decimal? _previousUp;
+
+		public IbsRsiCciCalculator(
+			int ibsPeriod,
+			IbsMovingAverageTypes ibsType,
+			int rsiPeriod,
+			AppliedPriceTypes rsiPrice,
+			int cciPeriod,
+			AppliedPriceTypes cciPrice,
+			decimal threshold,
+			int rangePeriod,
+			int smoothPeriod,
+			decimal priceStep,
+			decimal koefIbs,
+			decimal koefRsi,
+			decimal koefCci,
+			decimal kibs,
+			decimal kcci,
+			decimal krsi,
+			decimal posit)
+		{
+			_ibsPeriod = ibsPeriod;
+			_rsiPrice = rsiPrice;
+			_cciPrice = cciPrice;
+			_threshold = threshold;
+			_priceStep = priceStep;
+			_koefIbs = koefIbs;
+			_koefRsi = koefRsi;
+			_koefCci = koefCci;
+			_kibs = kibs;
+			_kcci = kcci;
+			_krsi = krsi;
+			_posit = posit;
+
+
+			_ibsMa = CreateMovingAverage(ibsType, ibsPeriod);
+			_rsi = new RelativeStrengthIndex { Length = rsiPeriod };
+			_cci = new CommodityChannelIndexCalculator(cciPeriod);
+			_highest = new Highest { Length = rangePeriod };
+			_lowest = new Lowest { Length = rangePeriod };
+			_rangeHighMa = CreateMovingAverage(IbsMovingAverageTypes.Smoothed, smoothPeriod);
+			_rangeLowMa = CreateMovingAverage(IbsMovingAverageTypes.Smoothed, smoothPeriod);
+		}
+
+		public IbsRsiCciValue? Process(ICandleMessage candle)
+		{
+			var range = Math.Abs(candle.HighPrice - candle.LowPrice);
+			if (range == 0m)
+				range = _priceStep;
+
+			if (range == 0m)
+				return null;
+
+			var ibsRaw = (candle.ClosePrice - candle.LowPrice) / range;
+			var ibsValue = _ibsMa.Process(new DecimalIndicatorValue(_ibsMa, ibsRaw, candle.OpenTime) { IsFinal = true });
+			if (!ibsValue.IsFinal)
+				return null;
+
+			var rsiInput = GetPrice(candle, _rsiPrice);
+			var rsiValue = _rsi.Process(new DecimalIndicatorValue(_rsi, rsiInput, candle.OpenTime) { IsFinal = true });
+			if (!rsiValue.IsFinal)
+				return null;
+
+			var cciInput = GetPrice(candle, _cciPrice);
+			var cciValue = _cci.Process(cciInput, candle.OpenTime, true);
+			if (cciValue == null)
+				return null;
+
+			var ibs = ibsValue.GetValue<decimal>();
+			var rsi = rsiValue.GetValue<decimal>();
+			var cci = cciValue.Value;
+
+			var sum = 0m;
+			sum += _kibs * (ibs - 0.5m) * 100m * _koefIbs;
+			sum += _kcci * cci * _koefCci;
+			sum += _krsi * (rsi - 50m) * _koefRsi;
+			sum /= 3m;
+
+			var target = _posit * sum;
+			var up = _previousUp ?? target;
+			var diff = target - up;
+
+			if (Math.Abs(diff) > _threshold)
+			{
+				if (diff > 0m)
+					up = target - _threshold;
+				else
+					up = target + _threshold;
+			}
+			else
+			{
+				up = target;
+			}
+
+			_previousUp = up;
+
+			var highestValue = _highest.Process(new DecimalIndicatorValue(_highest, up, candle.OpenTime) { IsFinal = true });
+			var lowestValue = _lowest.Process(new DecimalIndicatorValue(_lowest, up, candle.OpenTime) { IsFinal = true });
+			if (!highestValue.IsFinal || !lowestValue.IsFinal)
+				return null;
+
+			var highest = highestValue.GetValue<decimal>();
+			var lowest = lowestValue.GetValue<decimal>();
+
+			var highSmooth = _rangeHighMa.Process(new DecimalIndicatorValue(_rangeHighMa, highest, candle.OpenTime) { IsFinal = true });
+			var lowSmooth = _rangeLowMa.Process(new DecimalIndicatorValue(_rangeLowMa, lowest, candle.OpenTime) { IsFinal = true });
+			if (!highSmooth.IsFinal || !lowSmooth.IsFinal)
+				return null;
+
+			var upBand = highSmooth.GetValue<decimal>();
+			var lowBand = lowSmooth.GetValue<decimal>();
+			var signal = (upBand + lowBand) / 2m;
+
+			return new IbsRsiCciValue(up, signal);
+		}
+
+		public void Reset()
+		{
+			_previousUp = null;
+			_ibsMa.Reset();
+			_rsi.Reset();
+			_cci.Reset();
+			_highest.Reset();
+			_lowest.Reset();
+			_rangeHighMa.Reset();
+			_rangeLowMa.Reset();
+		}
+
+		private static DecimalLengthIndicator CreateMovingAverage(IbsMovingAverageTypes type, int length)
+		{
+			return type switch
+			{
+				IbsMovingAverageTypes.Simple => new SMA { Length = length },
+				IbsMovingAverageTypes.Exponential => new EMA { Length = length },
+				IbsMovingAverageTypes.Weighted => new WeightedMovingAverage { Length = length },
+				IbsMovingAverageTypes.Smoothed => new SmoothedMovingAverage { Length = length },
+				_ => new SMA { Length = length }
+			};
+		}
+
+		private static decimal GetPrice(ICandleMessage candle, AppliedPriceTypes type)
+		{
+			return type switch
+			{
+				AppliedPriceTypes.Close => candle.ClosePrice,
+				AppliedPriceTypes.Open => candle.OpenPrice,
+				AppliedPriceTypes.High => candle.HighPrice,
+				AppliedPriceTypes.Low => candle.LowPrice,
+				AppliedPriceTypes.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+				AppliedPriceTypes.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+				AppliedPriceTypes.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice + candle.ClosePrice) / 4m,
+				_ => candle.ClosePrice
+			};
+		}
+	}
+
+	public enum IbsMovingAverageTypes
+	{
+		Simple,
+		Exponential,
+		Smoothed,
+		Weighted
+	}
+
+	public enum AppliedPriceTypes
+	{
+		Close,
+		Open,
+		High,
+		Low,
+		Median,
+		Typical,
+		Weighted
+	}
+
+	private sealed class CommodityChannelIndexCalculator
+	{
+		private readonly int _period;
+		private readonly SimpleMovingAverage _sma;
+		private readonly Queue<decimal> _buffer = new();
+		private readonly object _sync = new();
+
+		public CommodityChannelIndexCalculator(int period)
+		{
+			_period = period;
+			_sma = new SMA { Length = period };
+		}
+
+		public decimal? Process(decimal price, DateTimeOffset time, bool isFinal)
+		{
+			lock (_sync)
+			{
+				var maValue = _sma.Process(new DecimalIndicatorValue(_sma, price, time.UtcDateTime) { IsFinal = true });
+				_buffer.Enqueue(price);
+				if (_buffer.Count > _period)
+					_buffer.Dequeue();
+
+				if (!maValue.IsFinal || _buffer.Count < _period)
+					return null;
+
+				var ma = maValue.GetValue<decimal>();
+				var snapshot = _buffer.ToArray();
+				decimal sum = 0m;
+				foreach (var value in snapshot)
+					sum += Math.Abs(value - ma);
+
+				if (sum == 0m)
+					return 0m;
+
+				var meanDeviation = sum / _period;
+				if (meanDeviation == 0m)
+					return 0m;
+
+				var cci = (price - ma) / (0.015m * meanDeviation);
+				return cci;
+			}
+		}
+
+		public void Reset()
+		{
+			lock (_sync)
+			{
+				_buffer.Clear();
+				_sma.Reset();
+			}
+		}
+	}
+}

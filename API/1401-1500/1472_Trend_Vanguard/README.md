@@ -1,0 +1,25 @@
+# Trend Vanguard Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
+
+Trend Vanguard uses a simple ZigZag on highs and lows to follow trend reversals.
+It flips direction when the ZigZag changes orientation.
+
+## Details
+
+- **Entry Criteria**: ZigZag reversal
+- **Long/Short**: Both
+- **Exit Criteria**: Opposite ZigZag signal
+- **Stops**: No
+- **Default Values**:
+  - `Depth` = 21
+- **Filters**:
+  - Category: Trend
+  - Direction: Both
+  - Indicators: Highest, Lowest
+  - Stops: No
+  - Complexity: Basic
+  - Timeframe: Intraday
+  - Seasonality: No
+  - Neural networks: No
+  - Divergence: No
+  - Risk level: Medium

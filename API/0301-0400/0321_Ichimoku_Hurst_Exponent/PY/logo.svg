@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description"><title id="title">Ichimoku Hurst Exponent strategy logo for Python</title><desc id="description">A linked memory chain keeps climbing through an Ichimoku cloud.</desc>
+  <style>:root{color-scheme:light dark;--p:#7650a4;--pl:#b59bd4;--ps:#513370;--s:#198f7c;--sl:#70cbb8;--a:#dda63e;--n:#303542;--pale:#d7cedd;--shadow:#19131f}.language-mark{fill:#17323d;opacity:.07}.python-upper{fill:#2874a6;opacity:.07}.python-lower{fill:#aa8108;opacity:.07}@media(prefers-color-scheme:dark){:root{--p:#aa8cdd;--pl:#d1bdeb;--ps:#7455a7;--s:#45c3aa;--sl:#91e2d1;--a:#f2ca61;--n:#f0eff5;--pale:#82778e;--shadow:#050308}.language-mark{fill:#edf6f3;opacity:.08}.python-upper{fill:#7ec5ed;opacity:.08}.python-lower{fill:#f1ca50;opacity:.08}}</style>
+  <g aria-hidden="true"><path class="python-upper" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z"/><path class="python-lower" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" transform="rotate(180 256 256)"/></g>
+  <g aria-hidden="true" stroke-linecap="round" stroke-linejoin="round">
+    <path fill="var(--sl)" d="M81 330 C47 330 29 306 38 279 C45 256 66 244 88 247 C89 208 119 180 157 184 C174 143 226 129 261 159 C296 128 349 141 367 183 C406 178 438 207 438 246 C469 249 489 272 483 301 C478 321 461 334 438 334 Z"/>
+    <path fill="var(--s)" opacity=".5" d="M70 306 C139 287 194 310 253 294 C315 277 373 310 455 289 L438 334 L81 330 Z"/>
+    <g fill="none" stroke="var(--p)" stroke-width="22"><rect x="76" y="292" width="126" height="64" rx="32" transform="rotate(-31 139 324)"/><rect x="171" y="229" width="126" height="64" rx="32" transform="rotate(-31 234 261)"/><rect x="266" y="166" width="126" height="64" rx="32" transform="rotate(-31 329 198)"/></g>
+    <path fill="var(--a)" d="M389 105 L447 124 L415 177 L407 151 L365 176 L347 146 L389 121 Z"/>
+    <path fill="var(--ps)" d="M89 377 C155 395 224 385 284 407 C342 429 400 420 454 389 L464 420 C398 455 327 462 263 437 C207 416 145 425 79 407 Z" opacity=".28"/>
+  </g>
+</svg>

@@ -1,0 +1,16 @@
+# STLMCandle 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
+
+该策略根据最新完成的K线方向进行交易。
+当收盘价高于开盘价时，策略开多并平空；
+当收盘价低于开盘价时，策略开空并平多。
+策略支持止损和止盈，并可配置K线周期。
+
+## 参数
+- `CandleType` – 用于分析的K线周期。
+- `StopLoss` – 以价格单位表示的绝对止损。
+- `TakeProfit` – 以价格单位表示的绝对止盈。
+
+## 注意
+该策略是原始 MQL `STLMCandle` 专家的简化版本，
+通过使用标准K线的开盘价和收盘价来近似原指标。

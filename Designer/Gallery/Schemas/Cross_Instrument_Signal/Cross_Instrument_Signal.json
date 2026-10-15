@@ -1,0 +1,2628 @@
+﻿{
+  "Id": "9cd4cffa-fb31-14a1-31b5-491d7f7d038d",
+  "Content": {
+    "Type": "Schema",
+    "Value": {
+      "Version": "1.0",
+      "Scheme": {
+        "SchemaVersion": 1,
+        "Category": "",
+        "DocUrl": "",
+        "Composition": {
+          "Id": "9cd4cffa-fb31-14a1-31b5-491d7f7d038d",
+          "CanAutoName": false,
+          "Parameters": {
+            "Name": {
+              "Value": "Cross_Instrument_Signal"
+            },
+            "LogLevel": {
+              "Value": "Inherit"
+            },
+            "ShowParameters": {
+              "Value": true
+            },
+            "ShowSockets": {
+              "Value": false
+            },
+            "ProcessNullValues": {
+              "Value": false
+            },
+            "3150e8d5-1923-fc0e-9cf4-d30380d14789Value": {
+              "Value": "BTCUSDT@BNBFT"
+            },
+            "a1a47f2e-c839-4885-eac7-2154069f8c80Value": {
+              "Value": "TONUSDT@BNBFT"
+            },
+            "b3ed8d43-9f96-60da-4c65-86bfcd7c6849Series": {
+              "Value": {
+                "type": "StockSharp.Messages.DataType, StockSharp.Messages",
+                "settings": {
+                  "MessageType": "StockSharp.Messages.TimeFrameCandleMessage, StockSharp.Messages",
+                  "Arg": {
+                    "type": "System.TimeSpan, System.Private.CoreLib",
+                    "value": "04-00-00"
+                  }
+                }
+              }
+            },
+            "678b3396-0d5a-b362-2838-115e51cf3052Series": {
+              "Value": {
+                "type": "StockSharp.Messages.DataType, StockSharp.Messages",
+                "settings": {
+                  "MessageType": "StockSharp.Messages.TimeFrameCandleMessage, StockSharp.Messages",
+                  "Arg": {
+                    "type": "System.TimeSpan, System.Private.CoreLib",
+                    "value": "04-00-00"
+                  }
+                }
+              }
+            },
+            "2783fce3-01a3-bb1d-0a50-13563a2789e6Length": {
+              "Value": 20
+            },
+            "2783fce3-01a3-bb1d-0a50-13563a2789e6Source": {},
+            "3c694c02-c93e-9840-2a5a-0ecd37b247e4Length": {
+              "Value": 20
+            },
+            "3c694c02-c93e-9840-2a5a-0ecd37b247e4Source": {},
+            "1313da68-02c6-d646-5d0e-98ce7fd34802Value": {
+              "Value": {
+                "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                "settings": {
+                  "Type": "Absolute",
+                  "Value": 0.0
+                }
+              }
+            },
+            "08c3b995-f29e-ee3e-aa05-245fa99917c9Value": {
+              "Value": {
+                "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                "settings": {
+                  "Type": "Absolute",
+                  "Value": 0.0
+                }
+              }
+            },
+            "8cf1bbc1-e00b-893d-1050-58fe3c35bc15Value": {
+              "Value": {
+                "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                "settings": {
+                  "Type": "Absolute",
+                  "Value": 1.0
+                }
+              }
+            },
+            "02639026-5fe1-572c-7983-271e7863cbbcValue": {
+              "Value": {
+                "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                "settings": {
+                  "Type": "Absolute",
+                  "Value": 0.0
+                }
+              }
+            },
+            "b0fd32ef-fc19-eb57-ea03-120252cd9d41Value": {
+              "Value": {
+                "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                "settings": {
+                  "Type": "Absolute",
+                  "Value": 1.0
+                }
+              }
+            },
+            "0932552f-a8f8-6b10-5bea-382b0f20da03Value": {
+              "Value": {
+                "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                "settings": {
+                  "Type": "Absolute",
+                  "Value": 1.0
+                }
+              }
+            },
+            "4c67cb9f-6892-568c-9272-d6f6f63ec748Value": {
+              "Value": {
+                "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                "settings": {
+                  "Type": "Absolute",
+                  "Value": 2.0
+                }
+              }
+            },
+            "f02e2723-24bb-4222-6af9-1cf4c7a0051bValue": {
+              "Value": {
+                "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                "settings": {
+                  "Type": "Absolute",
+                  "Value": 1.0
+                }
+              }
+            },
+            "9c2d7072-76fe-3cbd-3e73-77a1ff951792Value": {
+              "Value": {
+                "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                "settings": {
+                  "Type": "Absolute",
+                  "Value": 2.0
+                }
+              }
+            },
+            "4a104e29-ab1e-087d-a9e0-5d898d662ec3N": {
+              "Value": 8
+            },
+            "d9d7d496-f4ac-a7dd-b90d-56c09db2bbcdN": {
+              "Value": 8
+            },
+            "e0887d16-ac29-9c70-a14c-966faf10adafTakeValue": {
+              "Value": {
+                "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                "settings": {
+                  "Type": "Percent",
+                  "Value": 2.0
+                }
+              }
+            },
+            "e0887d16-ac29-9c70-a14c-966faf10adafStopValue": {
+              "Value": {
+                "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                "settings": {
+                  "Type": "Percent",
+                  "Value": 2.5
+                }
+              }
+            },
+            "e0887d16-ac29-9c70-a14c-966faf10adafIsTrailingStopLoss": {
+              "Value": false
+            },
+            "e0887d16-ac29-9c70-a14c-966faf10adafUseMarketOrders": {
+              "Value": true
+            },
+            "6bc7312b-9e56-e9a3-fdc0-6f76cba3e1a5Value": {
+              "Value": {
+                "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                "settings": {
+                  "Type": "Absolute",
+                  "Value": 0.0
+                }
+              }
+            },
+            "4a965e2d-4a2c-9988-d619-4e253db588f4Value": {
+              "Value": {
+                "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                "settings": {
+                  "Type": "Absolute",
+                  "Value": 1.0
+                }
+              }
+            }
+          },
+          "TypeId": "0d7852bd-8fb6-44fe-84f0-f1db185c189d"
+        },
+        "Model": {
+          "Nodes": [
+            {
+              "Key": "tradedSecurity",
+              "Figure": "",
+              "X": 0.0,
+              "Y": 0.0,
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "3150e8d5-1923-fc0e-9cf4-d30380d14789",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Traded: BTCUSDT@BNBFT"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.BusinessEntities.Security, StockSharp.BusinessEntities"
+                    }
+                  },
+                  "Value": {
+                    "Value": "BTCUSDT@BNBFT"
+                  },
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "signalSecurity",
+              "Figure": "",
+              "X": 0.0,
+              "Y": 130.0,
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "a1a47f2e-c839-4885-eac7-2154069f8c80",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Signal: TONUSDT@BNBFT"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.BusinessEntities.Security, StockSharp.BusinessEntities"
+                    }
+                  },
+                  "Value": {
+                    "Value": "TONUSDT@BNBFT"
+                  },
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "tradedCandles",
+              "Figure": "",
+              "X": 220.0,
+              "Y": 0.0,
+              "TypeId": "3d773273-0cee-4d40-8eef-acded2d07ab8",
+              "Settings": {
+                "Id": "b3ed8d43-9f96-60da-4c65-86bfcd7c6849",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "BTCUSDT 4-hour candles"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "IsManuallySubscription": {
+                    "Value": false
+                  },
+                  "Series": {
+                    "Value": {
+                      "type": "StockSharp.Messages.DataType, StockSharp.Messages",
+                      "settings": {
+                        "MessageType": "StockSharp.Messages.TimeFrameCandleMessage, StockSharp.Messages",
+                        "Arg": {
+                          "type": "System.TimeSpan, System.Private.CoreLib",
+                          "value": "04-00-00"
+                        }
+                      }
+                    }
+                  },
+                  "IsFinishedOnly": {
+                    "Value": true
+                  },
+                  "IsCalcVolumeProfile": {
+                    "Value": false
+                  },
+                  "AllowBuildFromSmallerTimeFrame": {
+                    "Value": true
+                  },
+                  "IsRegularTradingHours": {},
+                  "BuildCandlesMode": {
+                    "Value": "LoadAndBuild"
+                  },
+                  "BuildCandlesFrom": {},
+                  "BuildCandlesField": {}
+                }
+              }
+            },
+            {
+              "Key": "signalCandles",
+              "Figure": "",
+              "X": 220.0,
+              "Y": 130.0,
+              "TypeId": "3d773273-0cee-4d40-8eef-acded2d07ab8",
+              "Settings": {
+                "Id": "678b3396-0d5a-b362-2838-115e51cf3052",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "TONUSDT 4-hour candles"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "IsManuallySubscription": {
+                    "Value": false
+                  },
+                  "Series": {
+                    "Value": {
+                      "type": "StockSharp.Messages.DataType, StockSharp.Messages",
+                      "settings": {
+                        "MessageType": "StockSharp.Messages.TimeFrameCandleMessage, StockSharp.Messages",
+                        "Arg": {
+                          "type": "System.TimeSpan, System.Private.CoreLib",
+                          "value": "04-00-00"
+                        }
+                      }
+                    }
+                  },
+                  "IsFinishedOnly": {
+                    "Value": true
+                  },
+                  "IsCalcVolumeProfile": {
+                    "Value": false
+                  },
+                  "AllowBuildFromSmallerTimeFrame": {
+                    "Value": true
+                  },
+                  "IsRegularTradingHours": {},
+                  "BuildCandlesMode": {
+                    "Value": "LoadAndBuild"
+                  },
+                  "BuildCandlesFrom": {},
+                  "BuildCandlesField": {}
+                }
+              }
+            },
+            {
+              "Key": "tradedSma",
+              "Figure": "",
+              "X": 660.0,
+              "Y": 0.0,
+              "TypeId": "f56c74af-7c39-464a-8b90-4eff4c8760b1",
+              "Settings": {
+                "Id": "2783fce3-01a3-bb1d-0a50-13563a2789e6",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "BTC SMA 20"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Id": "StockSharp.Algo.Indicators.SimpleMovingAverage, StockSharp.Algo.Indicators"
+                    }
+                  },
+                  "IsFinal": {
+                    "Value": false
+                  },
+                  "IsFormed": {
+                    "Value": true
+                  },
+                  "IsEmpty": {
+                    "Value": false
+                  },
+                  "Length": {
+                    "Value": 20
+                  },
+                  "Source": {}
+                }
+              }
+            },
+            {
+              "Key": "signalRoc",
+              "Figure": "",
+              "X": 660.0,
+              "Y": 130.0,
+              "TypeId": "f56c74af-7c39-464a-8b90-4eff4c8760b1",
+              "Settings": {
+                "Id": "3c694c02-c93e-9840-2a5a-0ecd37b247e4",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "TON ROC 20, %"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Id": "StockSharp.Algo.Indicators.RateOfChange, StockSharp.Algo.Indicators"
+                    }
+                  },
+                  "IsFinal": {
+                    "Value": false
+                  },
+                  "IsFormed": {
+                    "Value": true
+                  },
+                  "IsEmpty": {
+                    "Value": false
+                  },
+                  "Length": {
+                    "Value": 20
+                  },
+                  "Source": {}
+                }
+              }
+            },
+            {
+              "Key": "tradedClose",
+              "Figure": "",
+              "X": 660.0,
+              "Y": 260.0,
+              "TypeId": "35c046c4-1b0f-4074-ac08-0c70850a8dcf",
+              "Settings": {
+                "Id": "36aa84bf-f0a9-5791-2bc7-fb7967782cff",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "BTC close price"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.ICandleMessage, StockSharp.Messages"
+                    }
+                  },
+                  "Property": {
+                    "Value": "ClosePrice"
+                  }
+                }
+              }
+            },
+            {
+              "Key": "threshold",
+              "Figure": "",
+              "X": 660.0,
+              "Y": 390.0,
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "1313da68-02c6-d646-5d0e-98ce7fd34802",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "TON ROC threshold = 0%"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.Unit, StockSharp.Messages"
+                    }
+                  },
+                  "Value": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Absolute",
+                        "Value": 0.0
+                      }
+                    }
+                  },
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "zero",
+              "Figure": "",
+              "X": 880.0,
+              "Y": 0.0,
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "08c3b995-f29e-ee3e-aa05-245fa99917c9",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Position zero"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.Unit, StockSharp.Messages"
+                    }
+                  },
+                  "Value": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Absolute",
+                        "Value": 0.0
+                      }
+                    }
+                  },
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "volume",
+              "Figure": "",
+              "X": 880.0,
+              "Y": 130.0,
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "8cf1bbc1-e00b-893d-1050-58fe3c35bc15",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "BTC order volume = 1"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.Unit, StockSharp.Messages"
+                    }
+                  },
+                  "Value": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Absolute",
+                        "Value": 1.0
+                      }
+                    }
+                  },
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "positionAtDecision",
+              "Figure": "",
+              "X": 880.0,
+              "Y": 260.0,
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "ed712890-9895-bb1f-64f9-9f1ed2fa8666",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Tracked BTC long/flat state"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.Unit, StockSharp.Messages"
+                    }
+                  },
+                  "Value": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Absolute",
+                        "Value": 0.0
+                      }
+                    }
+                  },
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "cooldownState",
+              "Figure": "",
+              "X": 880.0,
+              "Y": 390.0,
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "da49296a-dfb7-59e8-b179-afbc91e2d939",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Cooldown ready state"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.Unit, StockSharp.Messages"
+                    }
+                  },
+                  "Value": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Absolute",
+                        "Value": 1.0
+                      }
+                    }
+                  },
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "cooldownOff",
+              "Figure": "",
+              "X": 0.0,
+              "Y": 260.0,
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "02639026-5fe1-572c-7983-271e7863cbbc",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Block new entries = 0"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.Unit, StockSharp.Messages"
+                    }
+                  },
+                  "Value": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Absolute",
+                        "Value": 0.0
+                      }
+                    }
+                  },
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "cooldownOn",
+              "Figure": "",
+              "X": 0.0,
+              "Y": 390.0,
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "b0fd32ef-fc19-eb57-ea03-120252cd9d41",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Allow new entries = 1"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.Unit, StockSharp.Messages"
+                    }
+                  },
+                  "Value": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Absolute",
+                        "Value": 1.0
+                      }
+                    }
+                  },
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "entryActionCode",
+              "Figure": "",
+              "X": 0.0,
+              "Y": 520.0,
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "0932552f-a8f8-6b10-5bea-382b0f20da03",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Latest action: entry = 1"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.Unit, StockSharp.Messages"
+                    }
+                  },
+                  "Value": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Absolute",
+                        "Value": 1.0
+                      }
+                    }
+                  },
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "exitActionCode",
+              "Figure": "",
+              "X": 0.0,
+              "Y": 650.0,
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "4c67cb9f-6892-568c-9272-d6f6f63ec748",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Latest action: signal exit = 2"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.Unit, StockSharp.Messages"
+                    }
+                  },
+                  "Value": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Absolute",
+                        "Value": 2.0
+                      }
+                    }
+                  },
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "entryExpectedCode",
+              "Figure": "",
+              "X": 0.0,
+              "Y": 780.0,
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "f02e2723-24bb-4222-6af9-1cf4c7a0051b",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Entry timer code = 1"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.Unit, StockSharp.Messages"
+                    }
+                  },
+                  "Value": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Absolute",
+                        "Value": 1.0
+                      }
+                    }
+                  },
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "exitExpectedCode",
+              "Figure": "",
+              "X": 0.0,
+              "Y": 910.0,
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "9c2d7072-76fe-3cbd-3e73-77a1ff951792",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Exit timer code = 2"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.Unit, StockSharp.Messages"
+                    }
+                  },
+                  "Value": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Absolute",
+                        "Value": 2.0
+                      }
+                    }
+                  },
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "actionState",
+              "Figure": "",
+              "X": 220.0,
+              "Y": 260.0,
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "49057224-1725-8342-eac0-555d3a898f19",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Latest discretionary action"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.Unit, StockSharp.Messages"
+                    }
+                  },
+                  "Value": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Absolute",
+                        "Value": 0.0
+                      }
+                    }
+                  },
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "entryCooldown",
+              "Figure": "",
+              "X": 880.0,
+              "Y": 520.0,
+              "TypeId": "823a7255-f6e1-47b6-8186-4b58ffde0a78",
+              "Settings": {
+                "Id": "4a104e29-ab1e-087d-a9e0-5d898d662ec3",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Cooldown after entry: 8 paired closes"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "N": {
+                    "Value": 8
+                  },
+                  "IsFinishedOnly": {
+                    "Value": true
+                  }
+                }
+              }
+            },
+            {
+              "Key": "exitCooldown",
+              "Figure": "",
+              "X": 880.0,
+              "Y": 650.0,
+              "TypeId": "823a7255-f6e1-47b6-8186-4b58ffde0a78",
+              "Settings": {
+                "Id": "d9d7d496-f4ac-a7dd-b90d-56c09db2bbcd",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Cooldown after signal exit: 8 paired closes"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "N": {
+                    "Value": 8
+                  },
+                  "IsFinishedOnly": {
+                    "Value": true
+                  }
+                }
+              }
+            },
+            {
+              "Key": "entryTimerCurrent",
+              "Figure": "",
+              "X": 440.0,
+              "Y": 0.0,
+              "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
+              "Settings": {
+                "Id": "d951ff20-e125-926b-8b15-5d5a01547758",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Entry timer belongs to latest action"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "LeftValue": {
+                    "Value": {
+                      "Id": "Input"
+                    }
+                  },
+                  "Operator": {
+                    "Value": "Equal"
+                  },
+                  "RightValue": {
+                    "Value": {
+                      "Id": "SecondInput"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "Key": "exitTimerCurrent",
+              "Figure": "",
+              "X": 440.0,
+              "Y": 130.0,
+              "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
+              "Settings": {
+                "Id": "f1d7662c-241e-0b50-753e-7d93f86c7a13",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Exit timer belongs to latest action"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "LeftValue": {
+                    "Value": {
+                      "Id": "Input"
+                    }
+                  },
+                  "Operator": {
+                    "Value": "Equal"
+                  },
+                  "RightValue": {
+                    "Value": {
+                      "Id": "SecondInput"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "Key": "rocBull",
+              "Figure": "",
+              "X": 880.0,
+              "Y": 780.0,
+              "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
+              "Settings": {
+                "Id": "7db94abd-9d10-7ae1-0541-75437d5dd2e9",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "TON ROC > threshold"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "LeftValue": {
+                    "Value": {
+                      "Id": "Input"
+                    }
+                  },
+                  "Operator": {
+                    "Value": "Greater"
+                  },
+                  "RightValue": {
+                    "Value": {
+                      "Id": "SecondInput"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "Key": "trendBull",
+              "Figure": "",
+              "X": 880.0,
+              "Y": 910.0,
+              "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
+              "Settings": {
+                "Id": "531b09ed-cc9f-8703-3031-c85a7b50b662",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "BTC close >= SMA 20"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "LeftValue": {
+                    "Value": {
+                      "Id": "Input"
+                    }
+                  },
+                  "Operator": {
+                    "Value": "GreaterOrEqual"
+                  },
+                  "RightValue": {
+                    "Value": {
+                      "Id": "SecondInput"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "Key": "holdSignal",
+              "Figure": "",
+              "X": 1100.0,
+              "Y": 0.0,
+              "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
+              "Settings": {
+                "Id": "d97de6f8-436b-50c6-2ee9-8dbc964fe784",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "TON momentum and BTC trend agree"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Operator": {
+                    "Value": "And"
+                  }
+                },
+                "InputSocketIds": [
+                  "dynsock_trendbull",
+                  "dynsock_rocbull",
+                  "f2b6058534174430816b05f2ef6c3c91"
+                ]
+              }
+            },
+            {
+              "Key": "weakSignal",
+              "Figure": "",
+              "X": 1320.0,
+              "Y": 0.0,
+              "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
+              "Settings": {
+                "Id": "d6b71f2e-caa3-89f9-80b2-b174151cf23d",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "TON momentum or BTC trend has weakened"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Operator": {
+                    "Value": "Not"
+                  }
+                },
+                "InputSocketIds": [
+                  "dynsock_holdsignal"
+                ]
+              }
+            },
+            {
+              "Key": "isFlat",
+              "Figure": "",
+              "X": 1100.0,
+              "Y": 130.0,
+              "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
+              "Settings": {
+                "Id": "0249e66d-2ae2-2a01-c6ff-8681e9d306fe",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "BTC position = 0"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "LeftValue": {
+                    "Value": {
+                      "Id": "Input"
+                    }
+                  },
+                  "Operator": {
+                    "Value": "Equal"
+                  },
+                  "RightValue": {
+                    "Value": {
+                      "Id": "SecondInput"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "Key": "isLong",
+              "Figure": "",
+              "X": 1100.0,
+              "Y": 260.0,
+              "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
+              "Settings": {
+                "Id": "10b93c25-1b76-aa6c-0c1e-a2e65949e5aa",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "BTC position > 0"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "LeftValue": {
+                    "Value": {
+                      "Id": "Input"
+                    }
+                  },
+                  "Operator": {
+                    "Value": "Greater"
+                  },
+                  "RightValue": {
+                    "Value": {
+                      "Id": "SecondInput"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "Key": "cooldownReady",
+              "Figure": "",
+              "X": 1100.0,
+              "Y": 390.0,
+              "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
+              "Settings": {
+                "Id": "1e56dd0c-8da0-a938-acd9-9beac1aa1b21",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Cooldown is ready"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "LeftValue": {
+                    "Value": {
+                      "Id": "Input"
+                    }
+                  },
+                  "Operator": {
+                    "Value": "Greater"
+                  },
+                  "RightValue": {
+                    "Value": {
+                      "Id": "SecondInput"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "Key": "entryGate",
+              "Figure": "",
+              "X": 1320.0,
+              "Y": 130.0,
+              "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
+              "Settings": {
+                "Id": "d3fb8e27-5c8c-3671-56d9-e9892e109bbd",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Open BTC long"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Operator": {
+                    "Value": "And"
+                  }
+                },
+                "InputSocketIds": [
+                  "dynsock_isflat",
+                  "dynsock_cooldownready",
+                  "dynsock_holdsignal",
+                  "b8c30d2fd78d4a649c22055c08244bfe"
+                ]
+              }
+            },
+            {
+              "Key": "exitGate",
+              "Figure": "",
+              "X": 1540.0,
+              "Y": 0.0,
+              "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
+              "Settings": {
+                "Id": "11adfe24-ed43-24ef-5106-be51aa087a26",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Close BTC long on weak signal"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Operator": {
+                    "Value": "And"
+                  }
+                },
+                "InputSocketIds": [
+                  "dynsock_islong",
+                  "dynsock_weaksignal",
+                  "45b689f8e5ee48b7b1a64eb00f5b4b39"
+                ]
+              }
+            },
+            {
+              "Key": "buy",
+              "Figure": "",
+              "X": 1540.0,
+              "Y": 130.0,
+              "TypeId": "953961cd-a9ba-4afe-ac38-e8b61f84b3be",
+              "Settings": {
+                "Id": "1fa59558-fd2c-36d9-e950-55a1365dd383",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Buy BTCUSDT at market"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "OnlineOnly": {
+                    "Value": false
+                  },
+                  "TimeInForce": {},
+                  "ClientCode": {},
+                  "BrokerCode": {},
+                  "MarginMode": {},
+                  "IsMarketMaker": {},
+                  "IsManual": {},
+                  "Comment": {
+                    "Value": ""
+                  },
+                  "PosCondition": {
+                    "Value": "NoCondition"
+                  },
+                  "Direction": {
+                    "Value": "Buy"
+                  },
+                  "Algorithm": {
+                    "Value": "MarketOrder"
+                  },
+                  "VolumePart": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Percent",
+                        "Value": 1.0
+                      }
+                    }
+                  },
+                  "TimeInterval": {
+                    "Value": "00:01:00"
+                  }
+                }
+              }
+            },
+            {
+              "Key": "close",
+              "Figure": "",
+              "X": 1760.0,
+              "Y": 0.0,
+              "TypeId": "953961cd-a9ba-4afe-ac38-e8b61f84b3be",
+              "Settings": {
+                "Id": "13ca1579-35c9-78ac-df6f-3be4be4c786e",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Close BTCUSDT at market"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "OnlineOnly": {
+                    "Value": false
+                  },
+                  "TimeInForce": {},
+                  "ClientCode": {},
+                  "BrokerCode": {},
+                  "MarginMode": {},
+                  "IsMarketMaker": {},
+                  "IsManual": {},
+                  "Comment": {
+                    "Value": ""
+                  },
+                  "PosCondition": {
+                    "Value": "ReduceOnly"
+                  },
+                  "Direction": {
+                    "Value": "Sell"
+                  },
+                  "Algorithm": {
+                    "Value": "MarketOrder"
+                  },
+                  "VolumePart": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Percent",
+                        "Value": 1.0
+                      }
+                    }
+                  },
+                  "TimeInterval": {
+                    "Value": "00:01:00"
+                  }
+                }
+              }
+            },
+            {
+              "Key": "protection",
+              "Figure": "",
+              "X": 1980.0,
+              "Y": 0.0,
+              "TypeId": "7712ff8b-0270-49fa-9663-196a9a03bfe8",
+              "Settings": {
+                "Id": "e0887d16-ac29-9c70-a14c-966faf10adaf",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "BTC take 2% / stop 2.5%"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "TakeValue": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Percent",
+                        "Value": 2.0
+                      }
+                    }
+                  },
+                  "TakeProfitTimeOut": {
+                    "Value": "00:00:00"
+                  },
+                  "StopValue": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Percent",
+                        "Value": 2.5
+                      }
+                    }
+                  },
+                  "IsTrailingStopLoss": {
+                    "Value": false
+                  },
+                  "StopLossTimeOut": {
+                    "Value": "00:00:00"
+                  },
+                  "UseMarketOrders": {
+                    "Value": true
+                  },
+                  "UseServer": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "strategyTrades",
+              "Figure": "",
+              "X": 0.0,
+              "Y": 1040.0,
+              "TypeId": "7162155b-ecaa-4248-84ff-b1046e753562",
+              "Settings": {
+                "Id": "ad104deb-2982-0e0c-3ea6-1688a3ab73b8",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "All BTCUSDT fills"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "setTrackedBTCState",
+              "Figure": "",
+              "X": 2200.0,
+              "Y": 0.0,
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "6bc7312b-9e56-e9a3-fdc0-6f76cba3e1a5",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Set tracked BTC state: flat"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.Unit, StockSharp.Messages"
+                    }
+                  },
+                  "Value": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Absolute",
+                        "Value": 0.0
+                      }
+                    }
+                  },
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "setTrackedBTCState2",
+              "Figure": "",
+              "X": 1760.0,
+              "Y": 130.0,
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "4a965e2d-4a2c-9988-d619-4e253db588f4",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Set tracked BTC state: long"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.Unit, StockSharp.Messages"
+                    }
+                  },
+                  "Value": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Absolute",
+                        "Value": 1.0
+                      }
+                    }
+                  },
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "synchronizeBTCUSDTAndTONUSDT",
+              "Figure": "",
+              "X": 440.0,
+              "Y": 260.0,
+              "TypeId": "e569d5c4-7b9b-4f42-a190-0e454876ac79",
+              "Settings": {
+                "Id": "f083ad37-5368-f256-dc43-eb1473ae4aaa",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Synchronize BTCUSDT and TONUSDT candles"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Interval": {
+                    "Value": "04:00:00"
+                  },
+                  "ClearSockets": {
+                    "Value": true
+                  }
+                },
+                "in": [
+                  {
+                    "Id": "in 1",
+                    "Type": "StockSharp.Messages.ICandleMessage, StockSharp.Messages"
+                  },
+                  {
+                    "Id": "in 2",
+                    "Type": "StockSharp.Messages.ICandleMessage, StockSharp.Messages"
+                  },
+                  {
+                    "Id": "in 3",
+                    "Type": "object"
+                  }
+                ]
+              }
+            },
+            {
+              "Key": "BTCCloseForArmed",
+              "Figure": "",
+              "X": 1320.0,
+              "Y": 260.0,
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "49f81b58-bd06-d29c-d9ae-4b5a48f0dc42",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "BTC close for armed protection"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.Unit, StockSharp.Messages"
+                    }
+                  },
+                  "Value": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Absolute",
+                        "Value": 0.0
+                      }
+                    }
+                  },
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "alignedBTCAndTON",
+              "Figure": "",
+              "X": 2200.0,
+              "Y": 130.0,
+              "TypeId": "1926c40e-aaa3-4948-98e6-fba4b38b580e",
+              "Settings": {
+                "Id": "4960e5f9-ff03-86a0-8291-fa535a425037",
+                "CanAutoName": false,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Aligned BTC and TON signals, protection and fills"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "ShowNonFormedIndicators": {
+                    "Value": false
+                  },
+                  "ChartGroupId": {
+                    "Value": ""
+                  },
+                  "AreaName": {
+                    "Value": "Chart panel"
+                  }
+                },
+                "CandleElements": [
+                  {
+                    "Id": "cdb4b021-ba72-fee3-1798-f9d00272f7ed",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y",
+                    "DrawStyle": "CandleStick",
+                    "UpFillColor": -16744448,
+                    "UpBorderColor": -16744448,
+                    "DownFillColor": -65536,
+                    "DownBorderColor": -65536,
+                    "LineColor": -16777077,
+                    "AreaColor": -16728065,
+                    "StrokeThickness": 1,
+                    "AntiAliasing": false,
+                    "ShowAxisMarker": true,
+                    "ShowHorizontalVolumes": false,
+                    "LocalHorizontalVolumes": false,
+                    "HorizontalVolumeWidthFraction": 0.0,
+                    "DrawSeparateVolumes": false
+                  },
+                  {
+                    "Id": "d76b5ece-6159-57bd-4c64-3f0ab5645685",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y",
+                    "DrawStyle": "CandleStick",
+                    "UpFillColor": -16744448,
+                    "UpBorderColor": -16744448,
+                    "DownFillColor": -65536,
+                    "DownBorderColor": -65536,
+                    "LineColor": -16777077,
+                    "AreaColor": -16728065,
+                    "StrokeThickness": 1,
+                    "AntiAliasing": false,
+                    "ShowAxisMarker": true,
+                    "ShowHorizontalVolumes": false,
+                    "LocalHorizontalVolumes": false,
+                    "HorizontalVolumeWidthFraction": 0.0,
+                    "DrawSeparateVolumes": false
+                  }
+                ],
+                "IndicatorElements": [
+                  {
+                    "Id": "aa5c12f5-7fad-6373-c76a-688e293167ff",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y"
+                  },
+                  {
+                    "Id": "e9b4707b-0b7b-e98c-cd95-acb723edd8d5",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y"
+                  }
+                ],
+                "OrderElements": [
+                  {
+                    "Id": "0e2a847c-2dfb-1f34-76cc-5731a098f9f9",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y",
+                    "BuyColor": -16711936,
+                    "BuyStrokeColor": 0,
+                    "SellColor": -38476,
+                    "SellStrokeColor": 0,
+                    "UseAltIcon": false,
+                    "DrawSize": 0.0
+                  },
+                  {
+                    "Id": "ef1984f9-b378-7f33-dc46-8f7caa2c47ef",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y",
+                    "BuyColor": -16711936,
+                    "BuyStrokeColor": 0,
+                    "SellColor": -38476,
+                    "SellStrokeColor": 0,
+                    "UseAltIcon": false,
+                    "DrawSize": 0.0
+                  }
+                ],
+                "TradeElements": [
+                  {
+                    "Id": "35011aa8-81db-b617-ddd0-3112e403c231",
+                    "IsVisible": true,
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y",
+                    "BuyColor": -16711936,
+                    "BuyStrokeColor": -16711936,
+                    "SellColor": -38476,
+                    "SellStrokeColor": -38476,
+                    "UseAltIcon": false,
+                    "DrawSize": 0.0
+                  }
+                ],
+                "XAxes": [
+                  {
+                    "Id": "X",
+                    "Title": "X",
+                    "IsVisible": true,
+                    "Group": "CategoryDateTimeX",
+                    "AutoRange": false,
+                    "DrawMinorTicks": false,
+                    "DrawMajorTicks": true,
+                    "DrawMajorGridLines": true,
+                    "DrawMinorGridLines": true,
+                    "DrawLabels": true,
+                    "TextFormatting": "G",
+                    "SubDayTextFormatting": "T",
+                    "SwitchAxisLocation": false,
+                    "AxisType": "CategoryDateTime",
+                    "TimeZone": "UTC"
+                  }
+                ],
+                "YAxes": [
+                  {
+                    "Id": "Y",
+                    "Title": "Y",
+                    "IsVisible": true,
+                    "Group": "NumericY2",
+                    "AutoRange": true,
+                    "DrawMinorTicks": false,
+                    "DrawMajorTicks": true,
+                    "DrawMajorGridLines": true,
+                    "DrawMinorGridLines": true,
+                    "DrawLabels": true,
+                    "TextFormatting": "#.####",
+                    "SubDayTextFormatting": "T",
+                    "SwitchAxisLocation": false,
+                    "AxisType": "Numeric",
+                    "TimeZone": "UTC"
+                  }
+                ]
+              }
+            }
+          ],
+          "Links": [
+            {
+              "From": "tradedSecurity",
+              "FromPort": "Output",
+              "To": "tradedCandles",
+              "ToPort": "Security"
+            },
+            {
+              "From": "signalSecurity",
+              "FromPort": "Output",
+              "To": "signalCandles",
+              "ToPort": "Security"
+            },
+            {
+              "From": "tradedSma",
+              "FromPort": "Output",
+              "To": "trendBull",
+              "ToPort": "SecondInput"
+            },
+            {
+              "From": "tradedClose",
+              "FromPort": "Output",
+              "To": "trendBull",
+              "ToPort": "Input"
+            },
+            {
+              "From": "threshold",
+              "FromPort": "Output",
+              "To": "rocBull",
+              "ToPort": "SecondInput"
+            },
+            {
+              "From": "positionAtDecision",
+              "FromPort": "Output",
+              "To": "isFlat",
+              "ToPort": "Input"
+            },
+            {
+              "From": "positionAtDecision",
+              "FromPort": "Output",
+              "To": "isLong",
+              "ToPort": "Input"
+            },
+            {
+              "From": "zero",
+              "FromPort": "Output",
+              "To": "isFlat",
+              "ToPort": "SecondInput"
+            },
+            {
+              "From": "zero",
+              "FromPort": "Output",
+              "To": "isLong",
+              "ToPort": "SecondInput"
+            },
+            {
+              "From": "zero",
+              "FromPort": "Output",
+              "To": "cooldownReady",
+              "ToPort": "SecondInput"
+            },
+            {
+              "From": "cooldownState",
+              "FromPort": "Output",
+              "To": "cooldownReady",
+              "ToPort": "Input"
+            },
+            {
+              "From": "entryGate",
+              "FromPort": "Signal",
+              "To": "buy",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "exitGate",
+              "FromPort": "Signal",
+              "To": "close",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "buy",
+              "FromPort": "MyTrade",
+              "To": "protection",
+              "ToPort": "Trade"
+            },
+            {
+              "From": "cooldownOff",
+              "FromPort": "Output",
+              "To": "cooldownState",
+              "ToPort": "Input"
+            },
+            {
+              "From": "cooldownOff",
+              "FromPort": "Output",
+              "To": "cooldownState",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "cooldownOn",
+              "FromPort": "Output",
+              "To": "cooldownState",
+              "ToPort": "Input"
+            },
+            {
+              "From": "cooldownOn",
+              "FromPort": "Output",
+              "To": "cooldownState",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "entryGate",
+              "FromPort": "Signal",
+              "To": "cooldownOff",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "entryGate",
+              "FromPort": "Signal",
+              "To": "entryActionCode",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "entryGate",
+              "FromPort": "Signal",
+              "To": "entryCooldown",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "exitGate",
+              "FromPort": "Signal",
+              "To": "cooldownOff",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "exitGate",
+              "FromPort": "Signal",
+              "To": "exitActionCode",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "exitGate",
+              "FromPort": "Signal",
+              "To": "exitCooldown",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "entryActionCode",
+              "FromPort": "Output",
+              "To": "actionState",
+              "ToPort": "Input"
+            },
+            {
+              "From": "entryActionCode",
+              "FromPort": "Output",
+              "To": "actionState",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "exitActionCode",
+              "FromPort": "Output",
+              "To": "actionState",
+              "ToPort": "Input"
+            },
+            {
+              "From": "exitActionCode",
+              "FromPort": "Output",
+              "To": "actionState",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "entryCooldown",
+              "FromPort": "Output",
+              "To": "actionState",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "entryCooldown",
+              "FromPort": "Output",
+              "To": "entryExpectedCode",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "exitCooldown",
+              "FromPort": "Output",
+              "To": "actionState",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "exitCooldown",
+              "FromPort": "Output",
+              "To": "exitExpectedCode",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "actionState",
+              "FromPort": "Output",
+              "To": "entryTimerCurrent",
+              "ToPort": "Input"
+            },
+            {
+              "From": "entryExpectedCode",
+              "FromPort": "Output",
+              "To": "entryTimerCurrent",
+              "ToPort": "SecondInput"
+            },
+            {
+              "From": "actionState",
+              "FromPort": "Output",
+              "To": "exitTimerCurrent",
+              "ToPort": "Input"
+            },
+            {
+              "From": "exitExpectedCode",
+              "FromPort": "Output",
+              "To": "exitTimerCurrent",
+              "ToPort": "SecondInput"
+            },
+            {
+              "From": "entryTimerCurrent",
+              "FromPort": "Signal",
+              "To": "cooldownOn",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "exitTimerCurrent",
+              "FromPort": "Signal",
+              "To": "cooldownOn",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "volume",
+              "FromPort": "Output",
+              "To": "buy",
+              "ToPort": "Volume"
+            },
+            {
+              "From": "volume",
+              "FromPort": "Output",
+              "To": "close",
+              "ToPort": "Volume"
+            },
+            {
+              "From": "buy",
+              "FromPort": "MyTrade",
+              "To": "setTrackedBTCState2",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "setTrackedBTCState2",
+              "FromPort": "Output",
+              "To": "positionAtDecision",
+              "ToPort": "Input"
+            },
+            {
+              "From": "setTrackedBTCState2",
+              "FromPort": "Output",
+              "To": "positionAtDecision",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "close",
+              "FromPort": "MyTrade",
+              "To": "protection",
+              "ToPort": "Trade"
+            },
+            {
+              "From": "close",
+              "FromPort": "MyTrade",
+              "To": "setTrackedBTCState",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "protection",
+              "FromPort": "MyTrade",
+              "To": "setTrackedBTCState",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "protection",
+              "FromPort": "Take",
+              "To": "setTrackedBTCState",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "protection",
+              "FromPort": "Stop",
+              "To": "setTrackedBTCState",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "setTrackedBTCState",
+              "FromPort": "Output",
+              "To": "positionAtDecision",
+              "ToPort": "Input"
+            },
+            {
+              "From": "setTrackedBTCState",
+              "FromPort": "Output",
+              "To": "positionAtDecision",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "tradedCandles",
+              "FromPort": "Output",
+              "To": "synchronizeBTCUSDTAndTONUSDT",
+              "ToPort": "in 1"
+            },
+            {
+              "From": "signalCandles",
+              "FromPort": "Output",
+              "To": "synchronizeBTCUSDTAndTONUSDT",
+              "ToPort": "in 2"
+            },
+            {
+              "From": "synchronizeBTCUSDTAndTONUSDT",
+              "FromPort": "out 1",
+              "To": "tradedClose",
+              "ToPort": "Input"
+            },
+            {
+              "From": "synchronizeBTCUSDTAndTONUSDT",
+              "FromPort": "out 1",
+              "To": "tradedSma",
+              "ToPort": "Input"
+            },
+            {
+              "From": "tradedClose",
+              "FromPort": "Output",
+              "To": "BTCCloseForArmed",
+              "ToPort": "Input"
+            },
+            {
+              "From": "synchronizeBTCUSDTAndTONUSDT",
+              "FromPort": "out 2",
+              "To": "threshold",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "synchronizeBTCUSDTAndTONUSDT",
+              "FromPort": "out 2",
+              "To": "signalRoc",
+              "ToPort": "Input"
+            },
+            {
+              "From": "signalRoc",
+              "FromPort": "Output",
+              "To": "positionAtDecision",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "signalRoc",
+              "FromPort": "Output",
+              "To": "cooldownState",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "signalRoc",
+              "FromPort": "Output",
+              "To": "zero",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "signalRoc",
+              "FromPort": "Output",
+              "To": "volume",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "signalRoc",
+              "FromPort": "Output",
+              "To": "entryCooldown",
+              "ToPort": "Input"
+            },
+            {
+              "From": "signalRoc",
+              "FromPort": "Output",
+              "To": "exitCooldown",
+              "ToPort": "Input"
+            },
+            {
+              "From": "signalRoc",
+              "FromPort": "Output",
+              "To": "rocBull",
+              "ToPort": "Input"
+            },
+            {
+              "From": "trendBull",
+              "FromPort": "Signal",
+              "To": "holdSignal",
+              "ToPort": "dynsock_trendbull"
+            },
+            {
+              "From": "rocBull",
+              "FromPort": "Signal",
+              "To": "holdSignal",
+              "ToPort": "dynsock_rocbull"
+            },
+            {
+              "From": "holdSignal",
+              "FromPort": "Signal",
+              "To": "weakSignal",
+              "ToPort": "dynsock_holdsignal"
+            },
+            {
+              "From": "isFlat",
+              "FromPort": "Signal",
+              "To": "entryGate",
+              "ToPort": "dynsock_isflat"
+            },
+            {
+              "From": "cooldownReady",
+              "FromPort": "Signal",
+              "To": "entryGate",
+              "ToPort": "dynsock_cooldownready"
+            },
+            {
+              "From": "holdSignal",
+              "FromPort": "Signal",
+              "To": "entryGate",
+              "ToPort": "dynsock_holdsignal"
+            },
+            {
+              "From": "isLong",
+              "FromPort": "Signal",
+              "To": "exitGate",
+              "ToPort": "dynsock_islong"
+            },
+            {
+              "From": "weakSignal",
+              "FromPort": "Signal",
+              "To": "exitGate",
+              "ToPort": "dynsock_weaksignal"
+            },
+            {
+              "From": "holdSignal",
+              "FromPort": "Signal",
+              "To": "BTCCloseForArmed",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "BTCCloseForArmed",
+              "FromPort": "Output",
+              "To": "protection",
+              "ToPort": "Price"
+            },
+            {
+              "From": "synchronizeBTCUSDTAndTONUSDT",
+              "FromPort": "out 1",
+              "To": "alignedBTCAndTON",
+              "ToPort": "dynsock_cdb4b021ba72fee31798f9d00272f7ed"
+            },
+            {
+              "From": "synchronizeBTCUSDTAndTONUSDT",
+              "FromPort": "out 2",
+              "To": "alignedBTCAndTON",
+              "ToPort": "dynsock_d76b5ece615957bd4c643f0ab5645685"
+            },
+            {
+              "From": "tradedSma",
+              "FromPort": "Output",
+              "To": "alignedBTCAndTON",
+              "ToPort": "dynsock_aa5c12f57fad6373c76a688e293167ff"
+            },
+            {
+              "From": "signalRoc",
+              "FromPort": "Output",
+              "To": "alignedBTCAndTON",
+              "ToPort": "dynsock_e9b4707b0b7be98ccd95acb723edd8d5"
+            },
+            {
+              "From": "protection",
+              "FromPort": "Take",
+              "To": "alignedBTCAndTON",
+              "ToPort": "dynsock_0e2a847c2dfb1f3476cc5731a098f9f9"
+            },
+            {
+              "From": "protection",
+              "FromPort": "Stop",
+              "To": "alignedBTCAndTON",
+              "ToPort": "dynsock_ef1984f9b3787f33dc468f7caa2c47ef"
+            },
+            {
+              "From": "strategyTrades",
+              "FromPort": "Output",
+              "To": "alignedBTCAndTON",
+              "ToPort": "dynsock_35011aa881dbb617ddd03112e403c231"
+            }
+          ]
+        }
+      },
+      "Type": "Independent"
+    }
+  }
+}

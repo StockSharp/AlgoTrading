@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Keltner Channel Reversal strategy logo for C#</title>
+  <desc id="description">A narrow canoe touches the outer riverbank, pivots on its paddle, and returns toward the channel center.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .language-mark { fill: #17323d; opacity: 0.07; }
+    .python-upper { fill: #2874a6; opacity: 0.07; }
+    .python-lower { fill: #aa8108; opacity: 0.07; }
+    .primary { fill: #0f8a82; } .primary-light { fill: #62cec1; } .primary-shade { fill: #08645f; }
+    .secondary { fill: #526f88; } .secondary-light { fill: #96aec3; } .secondary-shade { fill: #344d63; }
+    .accent { fill: #dfa23a; } .positive { fill: #168f70; } .positive-light { fill: #69cdaa; }
+    .negative { fill: #c64f66; } .negative-light { fill: #ef8798; }
+    .violet { fill: #725fa8; } .violet-light { fill: #ad9dd1; }
+    .neutral { fill: #29393f; } .pale { fill: #c9d5dc; } .shadow { fill: #14262c; opacity: 0.22; }
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill: #edf6f3; opacity: 0.08; }
+      .python-upper { fill: #7ec5ed; opacity: 0.08; }
+      .python-lower { fill: #f1ca50; opacity: 0.08; }
+      .primary { fill: #42c9bd; } .primary-light { fill: #86e0d5; } .primary-shade { fill: #20948a; }
+      .secondary { fill: #8aaac3; } .secondary-light { fill: #c0d2df; } .secondary-shade { fill: #5b7e99; }
+      .accent { fill: #f2c45d; } .positive { fill: #4acb9e; } .positive-light { fill: #89e1bd; }
+      .negative { fill: #f17c90; } .negative-light { fill: #ffabb7; }
+      .violet { fill: #a99adb; } .violet-light { fill: #d0c5ed; }
+      .neutral { fill: #e5efec; } .pale { fill: #728591; } .shadow { fill: #02090b; opacity: 0.34; }
+    }
+  </style>
+  <g class="language-mark" aria-hidden="true">
+    <path d="M327 108 A180 210 0 1 0 327 404 L278 348 A110 130 0 1 1 278 164 Z" />
+    <path d="M342 54 L397 54 L367 458 L312 458 Z M432 54 L487 54 L457 458 L402 458 Z M301 172 L499 172 L493 232 L295 232 Z M289 285 L487 285 L481 345 L283 345 Z" />
+  </g>
+  <g aria-hidden="true">
+    <path class="secondary" d="M29 122 C143 76 273 78 483 151 L467 201 C277 137 158 132 48 174 Z" />
+    <path class="secondary" d="M29 390 C145 438 275 433 483 361 L466 311 C277 372 159 378 47 339 Z" />
+    <path class="primary-light" d="M53 226 C162 187 274 191 458 247 L448 282 C278 233 169 229 64 264 Z" />
+    <path class="primary" d="M75 264 C172 234 279 239 436 283 L417 322 C277 283 178 278 90 306 Z" />
+    <path class="accent" d="M186 264 L293 243 L354 277 L276 313 L174 294 Z" />
+    <path class="secondary-shade" d="M204 272 L289 255 L326 276 L270 299 L194 287 Z" />
+    <path class="neutral" d="M251 172 L275 183 L225 317 L201 306 Z" />
+    <path class="accent" d="M258 158 L288 172 L275 199 L245 185 Z" />
+    <path class="primary" d="M326 290 C370 279 405 255 434 215 L410 200 L482 175 L471 251 L451 235 C416 282 379 308 332 321 Z" />
+    <path class="primary-light" d="M342 296 C379 284 407 261 430 230 L444 240 C417 276 386 299 348 311 Z" />
+  </g>
+</svg>

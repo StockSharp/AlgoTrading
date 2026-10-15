@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description"><title id="title">Supertrend RSI Divergence strategy logo for C#</title><desc id="description">A Supertrend road climbs while an RSI cart descends inside its bounded lane.</desc>
+  <style>:root{color-scheme:light dark;--p:#078b84;--pl:#56c9b9;--ps:#056963;--s:#cf4455;--sl:#f07c72;--a:#e4a62d;--n:#233842;--pale:#c8d8d7;--shadow:#13272a}.language-mark{fill:#17323d;opacity:.07}.python-upper{fill:#2874a6;opacity:.07}.python-lower{fill:#aa8108;opacity:.07}@media(prefers-color-scheme:dark){:root{--p:#35bdb2;--pl:#79dfd0;--ps:#168e87;--s:#f0646c;--sl:#ff9b88;--a:#f2c45d;--n:#edf3f1;--pale:#71848a;--shadow:#02090b}.language-mark{fill:#edf6f3;opacity:.08}.python-upper{fill:#7ec5ed;opacity:.08}.python-lower{fill:#f1ca50;opacity:.08}}</style>
+  <g class="language-mark" aria-hidden="true"><path d="M327 108 A180 210 0 1 0 327 404 L278 348 A110 130 0 1 1 278 164 Z"/><path d="M342 54 L397 54 L367 458 L312 458 Z M432 54 L487 54 L457 458 L402 458 Z M301 172 L499 172 L493 232 L295 232 Z M289 285 L487 285 L481 345 L283 345 Z"/></g>
+  <g aria-hidden="true" stroke-linecap="round" stroke-linejoin="round">
+    <path fill="var(--s)" d="M47 235 L131 235 L131 205 L213 205 L213 172 L296 172 L296 137 L386 137 L386 102 L464 102 L464 155 L414 155 L414 190 L326 190 L326 225 L243 225 L243 258 L160 258 L160 289 L47 289 Z"/>
+    <path fill="var(--p)" d="M47 222 L119 222 L119 190 L201 190 L201 157 L284 157 L284 122 L374 122 L374 87 L426 87 L426 57 L484 111 L426 165 L426 135 L404 135 L404 170 L314 170 L314 205 L231 205 L231 238 L149 238 L149 269 L47 269 Z"/>
+    <path fill="var(--pale)" d="M52 335 L458 335 L458 370 L52 370 Z M52 424 L458 424 L458 459 L52 459 Z"/>
+    <path fill="var(--sl)" d="M88 342 L429 417 L418 467 L77 392 Z"/>
+    <path fill="var(--s)" d="M322 383 L378 395 L366 448 L310 436 L296 420 L307 395 Z"/>
+    <circle fill="var(--a)" cx="326" cy="421" r="17"/><circle fill="var(--a)" cx="357" cy="428" r="17"/>
+    <path fill="var(--n)" d="M70 315 L98 315 L98 479 L70 479 Z M436 315 L464 315 L464 479 L436 479 Z"/>
+  </g>
+</svg>

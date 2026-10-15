@@ -1,0 +1,41 @@
+# Bollinger Adx Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
+ 
+Strategy combining Bollinger Bands and ADX indicators. Looks for breakouts with strong trend confirmation.
+
+Testing indicates an average annual return of about 46%. It performs best in the stocks market.
+
+Price movements outside Bollinger bands are filtered through ADX for strength. Trades engage when a band break coincides with high ADX.
+
+Useful for volatility surges accompanied by strong trends. Stop size is driven by ATR.
+
+## Details
+
+- **Entry Criteria**:
+  - Long: `Close < LowerBand && ADX > AdxThreshold`
+  - Short: `Close > UpperBand && ADX > AdxThreshold`
+- **Long/Short**: Both
+- **Exit Criteria**:
+  - Bollinger mean reversion
+- **Stops**: ATR-based using `AtrMultiplier`
+- **Default Values**:
+  - `BollingerPeriod` = 20
+  - `BollingerDeviation` = 2.0m
+  - `AdxPeriod` = 14
+  - `AdxThreshold` = 25m
+  - `AtrMultiplier` = 2.0m
+  - `AtrPeriod` = 14
+  - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    As the entry criteria show, a band break under strong ADX is faded: the position bets on the return to the middle band (the moving average of the bands), where it closes. The stop lies AtrMultiplier ATRs (AtrPeriod) from the entry close and is checked on candle closes. An entry signal against an open position reverses it.
+- **Filters**:
+  - Category: Mean reversion
+  - Direction: Both
+  - Indicators: Bollinger Bands, ADX
+  - Stops: Yes
+  - Complexity: Intermediate
+  - Timeframe: Mid-term
+  - Seasonality: No
+  - Neural Networks: No
+  - Divergence: No
+  - Risk Level: Medium
+

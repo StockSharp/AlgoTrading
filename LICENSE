@@ -1,0 +1,30 @@
+StockSharp Custom License Notice
+
+Copyright (c) 2010-present StockSharp Platform LLC and/or its affiliates.
+All rights reserved.
+
+All source code, binaries, documentation, examples, media assets,
+configuration files, and other materials contained in this repository are
+the proprietary property of StockSharp, unless a file or third-party notice
+explicitly states otherwise.
+
+This repository is not licensed under the Apache License, the MIT License,
+or any other general-purpose open source license.
+Viewing, downloading, copying, building, modifying, using, distributing, or
+otherwise accessing any part of this repository is permitted only under the
+StockSharp End User License Agreement and other applicable StockSharp terms
+published on the official StockSharp website:
+
+https://stocksharp.com/en/products/eula/
+
+StockSharp may update its license terms on the official website. Users are
+responsible for monitoring the official StockSharp website and complying
+with the then-current terms. If this notice conflicts with the EULA or other
+terms published on the official StockSharp website, the website terms control.
+
+Nothing in this repository grants any rights to StockSharp trademarks,
+service marks, product names, logos, or other brand assets except as
+expressly permitted by StockSharp in writing.
+
+Third-party components, if any, remain subject to their respective license
+terms and notices.

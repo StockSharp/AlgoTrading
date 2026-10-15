@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">VIX Trigger strategy logo for C#</title>
+  <desc id="description">A sharp storm bolt strikes a pressure alarm and trips its warning mechanism.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .language-mark { fill: #17323d; opacity: 0.07; } .python-upper { fill: #2874a6; opacity: 0.07; } .python-lower { fill: #aa8108; opacity: 0.07; }
+    .primary { fill: #596f88; } .primary-light { fill: #9aafc1; } .primary-shade { fill: #394f66; }
+    .secondary { fill: #c84e5a; } .secondary-light { fill: #ef8790; } .secondary-shade { fill: #97333f; }
+    .accent { fill: #e5aa3d; } .neutral { fill: #29393f; } .shadow { fill: #14262c; opacity: 0.22; }
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill: #edf6f3; opacity: 0.08; } .python-upper { fill: #7ec5ed; opacity: 0.08; } .python-lower { fill: #f1ca50; opacity: 0.08; }
+      .primary { fill: #8eabc3; } .primary-light { fill: #c0d3e1; } .primary-shade { fill: #607f9d; }
+      .secondary { fill: #f06e78; } .secondary-light { fill: #ffa2aa; } .secondary-shade { fill: #be4753; }
+      .accent { fill: #f3ca61; } .neutral { fill: #e5efec; } .shadow { fill: #02090b; opacity: 0.34; }
+    }
+  </style>
+  <g class="language-mark" aria-hidden="true">
+    <path d="M327 108 A180 210 0 1 0 327 404 L278 348 A110 130 0 1 1 278 164 Z" />
+    <path d="M342 54 L397 54 L367 458 L312 458 Z M432 54 L487 54 L457 458 L402 458 Z M301 172 L499 172 L493 232 L295 232 Z M289 285 L487 285 L481 345 L283 345 Z" />
+  </g>
+  <g aria-hidden="true">
+    <path class="secondary-light" d="M55 194 C55 151 91 121 133 125 C154 78 207 56 254 77 C289 42 349 44 382 80 C403 102 411 130 403 156 C449 158 482 188 482 229 C482 270 451 296 408 296 H125 C83 296 55 268 55 228 Z" />
+    <path class="secondary" d="M79 218 C79 185 106 162 139 164 C162 130 204 120 239 138 C271 110 320 111 349 139 C367 156 374 178 368 198 C409 198 438 222 438 255 C438 272 429 285 413 296 H125 C96 296 79 267 79 242 Z" />
+    <path class="accent" d="M276 154 L225 273 L273 273 L229 389 L354 238 L303 238 L347 154 Z" />
+    <path class="primary-shade" d="M166 367 L337 367 L373 438 L130 438 Z" />
+    <path class="primary" d="M188 301 L316 301 L345 382 L159 382 Z" />
+    <path class="primary-light" d="M204 317 L300 317 L314 356 L190 356 Z" />
+    <path class="neutral" d="M112 438 L390 438 L390 466 L112 466 Z" />
+    <path class="accent" d="M235 382 L269 382 L269 414 L235 414 Z" />
+  </g>
+</svg>

@@ -1,0 +1,34 @@
+# Stochastic Slope 平均回帰戦略
+[English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
+ 
+Stochastic Slope 平均回帰戦略は、Stochasticの極端な値に着目して回帰を利用することに焦点を当てています。通常水準からの大きな乖離が長続きすることはほとんどありません。
+
+指標が平均から大きく乖離した後、反転し始めたときにトレードが発動します。ロングとショートの両方のセットアップに保護的なストップが含まれています。
+
+振動を期待するスウィングトレーダーに適しており、Stochasticが均衡に戻ったときにポジションを決済します。開始パラメータ `StochPeriod` = 14。
+
+## 詳細
+
+- **エントリー条件**: 指標が平均に向かって戻るクロス。
+- **ロング/ショート**: 両方向。
+- **エグジット条件**: 指標が平均に回帰する。
+- **ストップ**: はい。
+- **デフォルト値**:
+  - `StochPeriod` = 14
+  - `StochKPeriod` = 3
+  - `StochDPeriod` = 3
+  - `SlopeLookback` = 20
+  - `ThresholdMultiplier` = 2m
+  - `StopLossPercent` = 2m
+  - `CandleType` = TimeSpan.FromMinutes(5)
+- **フィルター**:
+  - カテゴリ: 平均回帰
+  - 方向: 両方
+  - インジケーター: Stochastic
+  - ストップ: はい
+  - 複雑さ: 中級
+  - 時間軸: 短期
+  - 季節性: いいえ
+  - ニューラルネットワーク: いいえ
+  - ダイバージェンス: いいえ
+  - リスクレベル: 中

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description"><title id="title">Bollinger Kalman Filter strategy logo for Python</title><desc id="description">Two elastic Bollinger bands hold a slotted Kalman strainer that smooths a jagged signal.</desc>
+  <style>:root{color-scheme:light dark;--p:#078b84;--pl:#56c9b9;--ps:#056963;--s:#cf4455;--sl:#f07c72;--a:#e4a62d;--n:#233842;--pale:#c8d8d7}.language-mark{fill:#17323d;opacity:.07}.python-upper{fill:#2874a6;opacity:.07}.python-lower{fill:#aa8108;opacity:.07}@media(prefers-color-scheme:dark){:root{--p:#35bdb2;--pl:#79dfd0;--ps:#168e87;--s:#f0646c;--sl:#ff9b88;--a:#f2c45d;--n:#edf3f1;--pale:#71848a}.language-mark{fill:#edf6f3;opacity:.08}.python-upper{fill:#7ec5ed;opacity:.08}.python-lower{fill:#f1ca50;opacity:.08}}</style>
+  <g aria-hidden="true"><path class="python-upper" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z"/><path class="python-lower" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" transform="rotate(180 256 256)"/></g>
+  <g aria-hidden="true" stroke-linecap="round" stroke-linejoin="round">
+    <path fill="none" stroke="var(--sl)" stroke-width="26" d="M31 119 C104 64 177 82 239 130 C302 178 376 132 481 83"/>
+    <path fill="none" stroke="var(--pl)" stroke-width="26" d="M31 407 C105 452 178 429 239 384 C305 336 379 384 481 433"/>
+    <path fill="none" stroke="var(--s)" stroke-width="18" d="M34 264 L77 188 L113 321 L153 207 L190 297 L226 227"/>
+    <path fill="var(--n)" d="M203 151 H352 L334 267 L294 310 V370 H260 V310 L220 267 Z"/>
+    <path fill="var(--pale)" d="M225 177 H330 L316 248 L277 285 L238 248 Z"/>
+    <path fill="none" stroke="var(--p)" stroke-width="12" d="M248 196 L253 252 M277 192 V269 M306 196 L300 252"/>
+    <path fill="none" stroke="var(--p)" stroke-width="20" d="M279 365 C330 342 358 317 394 293 C425 272 450 253 478 224"/>
+    <path fill="var(--p)" d="M454 204 L493 208 L478 245 Z"/>
+    <path fill="var(--a)" d="M19 84 H52 V151 H19 Z M460 53 H493 V120 H460 Z M19 378 H52 V445 H19 Z M460 405 H493 V472 H460 Z"/>
+  </g>
+</svg>

@@ -1,0 +1,271 @@
+using System;
+using System.Linq;
+using System.Collections.Generic;
+
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
+
+using StockSharp.Algo.Indicators;
+using StockSharp.Algo.Strategies;
+using StockSharp.BusinessEntities;
+using StockSharp.Messages;
+
+namespace StockSharp.Samples.Strategies;
+
+/// <summary>
+/// RSI filter combined with engulfing candle pattern taken from the SSEATwRSI expert advisor.
+/// </summary>
+public class SuperSimpleRsiEngulfingStrategy : Strategy
+{
+	public enum CandlePrices
+	{
+		Open,
+		High,
+		Low,
+		Close,
+		Median,
+		Typical,
+		Weighted
+	}
+
+	private readonly StrategyParam<decimal> _profitGoal;
+	private readonly StrategyParam<decimal> _maxLoss;
+	private readonly StrategyParam<int> _rsiPeriod;
+	private readonly StrategyParam<CandlePrices> _rsiPrice;
+	private readonly StrategyParam<decimal> _overboughtLevel;
+	private readonly StrategyParam<decimal> _oversoldLevel;
+	private readonly StrategyParam<DataType> _candleType;
+
+	private RelativeStrengthIndex _rsi = null!;
+
+	private decimal? _prevOpen;
+	private decimal? _prevClose;
+	private decimal? _prevPrevOpen;
+	private decimal? _prevPrevClose;
+
+
+	/// <summary>
+	/// Currency profit target that forces a flatten.
+	/// </summary>
+	public decimal ProfitGoal
+	{
+		get => _profitGoal.Value;
+		set => _profitGoal.Value = value;
+	}
+
+	/// <summary>
+	/// Maximum allowed currency loss before closing positions.
+	/// </summary>
+	public decimal MaxLoss
+	{
+		get => _maxLoss.Value;
+		set => _maxLoss.Value = value;
+	}
+
+	/// <summary>
+	/// RSI averaging period.
+	/// </summary>
+	public int RsiPeriod
+	{
+		get => _rsiPeriod.Value;
+		set => _rsiPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Price source used by the RSI indicator.
+	/// </summary>
+	public CandlePrices RsiPrice
+	{
+		get => _rsiPrice.Value;
+		set => _rsiPrice.Value = value;
+	}
+
+	/// <summary>
+	/// RSI level considered overbought.
+	/// </summary>
+	public decimal OverboughtLevel
+	{
+		get => _overboughtLevel.Value;
+		set => _overboughtLevel.Value = value;
+	}
+
+	/// <summary>
+	/// RSI level considered oversold.
+	/// </summary>
+	public decimal OversoldLevel
+	{
+		get => _oversoldLevel.Value;
+		set => _oversoldLevel.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type processed by the strategy.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Initializes a new instance of <see cref="SuperSimpleRsiEngulfingStrategy"/>.
+	/// </summary>
+	public SuperSimpleRsiEngulfingStrategy()
+	{
+
+		_profitGoal = Param(nameof(ProfitGoal), 190m)
+			.SetGreaterThanZero()
+			.SetDisplay("Profit Goal", "Currency profit target to flatten", "Risk");
+
+		_maxLoss = Param(nameof(MaxLoss), 10m)
+			.SetGreaterThanZero()
+			.SetDisplay("Max Loss", "Maximum currency drawdown before flattening", "Risk");
+
+		_rsiPeriod = Param(nameof(RsiPeriod), 7)
+			.SetGreaterThanZero()
+			.SetDisplay("RSI Period", "RSI averaging period", "Indicators");
+
+		_rsiPrice = Param(nameof(RsiPrice), CandlePrices.High)
+			.SetDisplay("RSI Price", "Price source for RSI", "Indicators");
+
+		_overboughtLevel = Param(nameof(OverboughtLevel), 88m)
+			.SetDisplay("Overbought Level", "RSI threshold for bullish reversals", "Indicators");
+
+		_oversoldLevel = Param(nameof(OversoldLevel), 37m)
+			.SetDisplay("Oversold Level", "RSI threshold for bearish reversals", "Indicators");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+			.SetDisplay("Candle Type", "Candle series to process", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_rsi = null!;
+		_prevOpen = null;
+		_prevClose = null;
+		_prevPrevOpen = null;
+		_prevPrevClose = null;
+	}
+
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
+
+		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(ProcessCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, _rsi);
+			DrawOwnTrades(area);
+		}
+	}
+
+	private void ProcessCandle(ICandleMessage candle)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		var price = GetPrice(candle, RsiPrice);
+		var rsiResult = _rsi.Process(new DecimalIndicatorValue(_rsi, price, candle.OpenTime) { IsFinal = true });
+
+		if (!_rsi.IsFormed)
+		{
+			UpdateHistory(candle);
+			return;
+		}
+
+		var rsiValue = rsiResult.ToDecimal();
+
+		if (_prevOpen is decimal prevOpen &&
+			_prevClose is decimal prevClose &&
+			_prevPrevOpen is decimal prevPrevOpen &&
+			_prevPrevClose is decimal prevPrevClose)
+		{
+			// Detect the two-candle engulfing pattern from the previous bars.
+			var bullishEngulfing = prevPrevOpen > prevPrevClose &&
+				prevOpen < prevClose &&
+				prevPrevOpen < prevClose;
+
+			var bearishEngulfing = prevPrevOpen < prevPrevClose &&
+				prevOpen > prevClose &&
+				prevPrevOpen > prevClose;
+
+			// Only enter long if RSI indicates overbought exhaustion and pattern flips to bullish.
+			var longSignal = rsiValue > OverboughtLevel && bullishEngulfing && Position <= 0m;
+
+			// Only enter short if RSI indicates oversold exhaustion and pattern flips to bearish.
+			var shortSignal = rsiValue < OversoldLevel && bearishEngulfing && Position >= 0m;
+
+			if (longSignal)
+			{
+				BuyMarket();
+			}
+			else if (shortSignal)
+			{
+				SellMarket();
+			}
+		}
+
+		if (Position != 0m)
+		{
+			// Flatten the position once floating PnL reaches the configured thresholds.
+			var totalPnL = PnL;
+
+			if (totalPnL >= ProfitGoal || totalPnL <= -MaxLoss)
+				ClosePosition();
+		}
+
+		UpdateHistory(candle);
+	}
+
+	private void ClosePosition()
+	{
+		if (Position > 0m)
+			SellMarket();
+		else if (Position < 0m)
+			BuyMarket();
+	}
+
+	private void UpdateHistory(ICandleMessage candle)
+	{
+		// Shift the last two completed candles so pattern checks use historical data only.
+		_prevPrevOpen = _prevOpen;
+		_prevPrevClose = _prevClose;
+		_prevOpen = candle.OpenPrice;
+		_prevClose = candle.ClosePrice;
+	}
+
+	private static decimal GetPrice(ICandleMessage candle, CandlePrices price)
+	{
+		// Support different RSI inputs without duplicating indicator logic.
+		return price switch
+		{
+			CandlePrices.Open => candle.OpenPrice,
+			CandlePrices.High => candle.HighPrice,
+			CandlePrices.Low => candle.LowPrice,
+			CandlePrices.Close => candle.ClosePrice,
+			CandlePrices.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			CandlePrices.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			CandlePrices.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
+			_ => candle.ClosePrice,
+		};
+	}
+}

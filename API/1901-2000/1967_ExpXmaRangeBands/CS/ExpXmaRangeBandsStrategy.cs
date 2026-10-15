@@ -1,0 +1,248 @@
+using System;
+using System.Linq;
+using System.Collections.Generic;
+
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
+
+using StockSharp.Algo.Indicators;
+using StockSharp.Algo.Strategies;
+using StockSharp.BusinessEntities;
+using StockSharp.Messages;
+
+namespace StockSharp.Samples.Strategies;
+
+/// <summary>
+/// Strategy converted from the MetaTrader example "Exp_XMA_Range_Bands".
+/// Uses an EMA and ATR to build dynamic bands and trades when price re-enters the channel.
+/// </summary>
+public class ExpXmaRangeBandsStrategy : Strategy
+{
+	private static readonly TimeSpan _signalCooldown = TimeSpan.FromHours(8);
+
+	private readonly StrategyParam<int> _maLength;
+	private readonly StrategyParam<int> _rangeLength;
+	private readonly StrategyParam<decimal> _deviation;
+	private readonly StrategyParam<decimal> _stopLoss;
+	private readonly StrategyParam<decimal> _takeProfit;
+	private readonly StrategyParam<DataType> _candleType;
+
+	private decimal _prevUpper;
+	private decimal _prevLower;
+	private decimal _prevClose;
+	private decimal _entryPrice;
+	private bool _isFirst = true;
+	private DateTime _lastSignalTime;
+
+	/// <summary>
+	/// EMA period for the channel center.
+	/// </summary>
+	public int MaLength
+	{
+		get => _maLength.Value;
+		set => _maLength.Value = value;
+	}
+
+	/// <summary>
+	/// ATR period used for channel width.
+	/// </summary>
+	public int RangeLength
+	{
+		get => _rangeLength.Value;
+		set => _rangeLength.Value = value;
+	}
+
+	/// <summary>
+	/// ATR multiplier for band width.
+	/// </summary>
+	public decimal Deviation
+	{
+		get => _deviation.Value;
+		set => _deviation.Value = value;
+	}
+
+	/// <summary>
+	/// Stop loss in points.
+	/// </summary>
+	public decimal StopLoss
+	{
+		get => _stopLoss.Value;
+		set => _stopLoss.Value = value;
+	}
+
+	/// <summary>
+	/// Take profit in points.
+	/// </summary>
+	public decimal TakeProfit
+	{
+		get => _takeProfit.Value;
+		set => _takeProfit.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type used for calculations.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Initializes a new instance of the <see cref="ExpXmaRangeBandsStrategy"/>.
+	/// </summary>
+	public ExpXmaRangeBandsStrategy()
+	{
+		_maLength = Param(nameof(MaLength), 100)
+			.SetGreaterThanZero()
+			.SetDisplay("MA Length", "EMA period for channel center", "Indicator")
+			
+			.SetOptimize(50, 200, 10);
+
+		_rangeLength = Param(nameof(RangeLength), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("ATR Length", "ATR period for channel width", "Indicator")
+			
+			.SetOptimize(10, 60, 5);
+
+		_deviation = Param(nameof(Deviation), 2m)
+			.SetGreaterThanZero()
+			.SetDisplay("Deviation", "ATR multiplier for channel width", "Indicator")
+			
+			.SetOptimize(1m, 5m, 0.5m);
+
+		_stopLoss = Param(nameof(StopLoss), 1000m)
+			.SetGreaterThanZero()
+			.SetDisplay("Stop Loss", "Stop loss in points", "Risk")
+			
+			.SetOptimize(500m, 2000m, 500m);
+
+		_takeProfit = Param(nameof(TakeProfit), 2000m)
+			.SetGreaterThanZero()
+			.SetDisplay("Take Profit", "Take profit in points", "Risk")
+			
+			.SetOptimize(1000m, 4000m, 500m);
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevUpper = 0;
+		_prevLower = 0;
+		_prevClose = 0;
+		_entryPrice = 0;
+		_isFirst = true;
+		_lastSignalTime = default;
+	}
+
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
+
+		var keltner = new KeltnerChannels(
+			new KeltnerChannelMiddle { Length = MaLength },
+			new AverageTrueRange { Length = RangeLength },
+			new KeltnerChannelBand { Length = MaLength },
+			new KeltnerChannelBand { Length = MaLength })
+		{
+			Multiplier = Deviation,
+		};
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.BindEx(keltner, ProcessCandle)
+			.Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, keltner);
+			DrawOwnTrades(area);
+		}
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue keltnerValue)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (keltnerValue is not IKeltnerChannelsValue keltnerTyped ||
+			keltnerTyped.Upper is not decimal upper ||
+			keltnerTyped.Lower is not decimal lower)
+			return;
+
+		if (_isFirst)
+		{
+			_prevUpper = upper;
+			_prevLower = lower;
+			_prevClose = candle.ClosePrice;
+			_isFirst = false;
+			return;
+		}
+
+		if (_prevClose > _prevUpper)
+		{
+			if (candle.ClosePrice <= upper && Position <= 0 && CanTrade(candle))
+			{
+				var volume = Position < 0 ? Volume + Math.Abs(Position) : Volume;
+				BuyMarket(volume);
+				_entryPrice = candle.ClosePrice;
+				_lastSignalTime = candle.CloseTime;
+			}
+		}
+		else if (_prevClose < _prevLower)
+		{
+			if (candle.ClosePrice >= lower && Position >= 0 && CanTrade(candle))
+			{
+				var volume = Position > 0 ? Volume + Position : Volume;
+				SellMarket(volume);
+				_entryPrice = candle.ClosePrice;
+				_lastSignalTime = candle.CloseTime;
+			}
+		}
+
+		var step = Security.PriceStep ?? 1m;
+		var sl = step * StopLoss;
+		var tp = step * TakeProfit;
+
+		if (Position > 0)
+		{
+			if (candle.ClosePrice <= _entryPrice - sl || candle.ClosePrice >= _entryPrice + tp)
+			{
+				SellMarket(Position);
+				_entryPrice = 0;
+			}
+		}
+		else if (Position < 0)
+		{
+			if (candle.ClosePrice >= _entryPrice + sl || candle.ClosePrice <= _entryPrice - tp)
+			{
+				BuyMarket(Math.Abs(Position));
+				_entryPrice = 0;
+			}
+		}
+
+		_prevUpper = upper;
+		_prevLower = lower;
+		_prevClose = candle.ClosePrice;
+	}
+
+	private bool CanTrade(ICandleMessage candle)
+		=> _lastSignalTime == default || candle.CloseTime >= _lastSignalTime + _signalCooldown;
+}

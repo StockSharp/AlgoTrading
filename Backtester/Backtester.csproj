@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\common.props" />
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="StockSharp.Samples.HistoryData" Version="$(StockSharpVer)" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Not used by this project's own code: the strategies it compiles at run time reference the
+         indicators, and they are resolved from this output directory. -->
+    <ProjectReference Include="$(StockSharpDir)Algo.Indicators\Algo.Indicators.csproj" />
+    <ProjectReference Include="$(StockSharpDir)Algo.Strategies\Algo.Strategies.csproj" />
+    <ProjectReference Include="$(StockSharpDir)Algo.Compilation\Algo.Compilation.csproj" />
+  </ItemGroup>
+
+</Project>

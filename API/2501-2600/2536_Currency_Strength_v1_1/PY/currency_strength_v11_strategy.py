@@ -1,0 +1,105 @@
+import clr
+
+clr.AddReference("StockSharp.Messages")
+clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
+
+from System import TimeSpan, Math
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from StockSharp.Algo.Strategies import Strategy
+
+
+class currency_strength_v11_strategy(Strategy):
+    def __init__(self):
+        super(currency_strength_v11_strategy, self).__init__()
+
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1)))
+        self._difference_threshold = self.Param("DifferenceThreshold", 0.2)
+
+        self._prev_change = None
+        self._prev_momentum = None
+        self._entry_price = 0.0
+        self._last_trade_time = None
+
+    @property
+    def CandleType(self):
+        return self._candle_type.Value
+
+    @CandleType.setter
+    def CandleType(self, value):
+        self._candle_type.Value = value
+
+    @property
+    def DifferenceThreshold(self):
+        return self._difference_threshold.Value
+
+    @DifferenceThreshold.setter
+    def DifferenceThreshold(self, value):
+        self._difference_threshold.Value = value
+
+    def OnStarted2(self, time):
+        super(currency_strength_v11_strategy, self).OnStarted2(time)
+
+        self._prev_change = None
+        self._prev_momentum = None
+        self._entry_price = 0.0
+        self._last_trade_time = None
+
+        subscription = self.SubscribeCandles(self.CandleType)
+        subscription.Bind(self.ProcessCandle).Start()
+
+    def ProcessCandle(self, candle):
+        if candle.State != CandleStates.Finished:
+            return
+
+        open_price = float(candle.OpenPrice)
+        close = float(candle.ClosePrice)
+
+        change = (close - open_price) / open_price * 100.0 if open_price != 0.0 else 0.0
+
+        if self._prev_change is None:
+            self._prev_change = change
+            return
+
+        momentum = change - self._prev_change
+        threshold = float(self.DifferenceThreshold)
+
+        long_signal = (self._prev_momentum is not None and
+                       self._prev_momentum <= threshold and
+                       momentum > threshold)
+
+        short_signal = (self._prev_momentum is not None and
+                        self._prev_momentum >= -threshold and
+                        momentum < -threshold)
+
+        cooldown_passed = (self._last_trade_time is None or
+                          candle.CloseTime - self._last_trade_time >= TimeSpan.FromHours(24))
+
+        if cooldown_passed and long_signal and self.Position <= 0:
+            if self.Position < 0:
+                self.BuyMarket(abs(self.Position))
+            vol = float(self.Volume) if float(self.Volume) > 0 else 1.0
+            self.BuyMarket(vol)
+            self._entry_price = float(candle.ClosePrice)
+            self._last_trade_time = candle.CloseTime
+        elif cooldown_passed and short_signal and self.Position >= 0:
+            if self.Position > 0:
+                self.SellMarket(self.Position)
+            vol = float(self.Volume) if float(self.Volume) > 0 else 1.0
+            self.SellMarket(vol)
+            self._entry_price = float(candle.ClosePrice)
+            self._last_trade_time = candle.CloseTime
+
+        self._prev_change = change
+        self._prev_momentum = momentum
+
+    def OnReseted(self):
+        super(currency_strength_v11_strategy, self).OnReseted()
+        self._prev_change = None
+        self._prev_momentum = None
+        self._entry_price = 0.0
+        self._last_trade_time = None
+
+    def CreateClone(self):
+        return currency_strength_v11_strategy()

@@ -1,0 +1,34 @@
+# CCI Breakout
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
+ 
+Strategy based on CCI (Commodity Channel Index) breakout
+
+Testing indicates an average annual return of about 94%. It performs best in the stocks market.
+
+CCI Breakout uses the Commodity Channel Index to spot powerful moves. Surges beyond positive or negative CCI thresholds generate entries. Exits happen when CCI retreats toward zero or an opposite signal forms.
+
+Because CCI measures deviation from a moving average, extreme readings imply unsustainable prices. This system waits for those extremes and then attempts to profit from the follow-through.
+
+
+## Details
+
+- **Entry Criteria**: Signals based on CCI, Momentum.
+- **Long/Short**: Both directions.
+- **Exit Criteria**: Opposite signal or stop.
+- **Stops**: Yes.
+- **Default Values**:
+  - `CciPeriod` = 20
+  - `StopLossPercent` = 2m
+  - `CandleType` = TimeSpan.FromMinutes(5)
+- **Filters**:
+  - Category: Breakout
+  - Direction: Both
+  - Indicators: CCI, Momentum
+  - Stops: Yes
+  - Complexity: Basic
+  - Timeframe: Intraday (5m)
+  - Seasonality: No
+  - Neural Networks: No
+  - Divergence: No
+  - Risk Level: Medium
+

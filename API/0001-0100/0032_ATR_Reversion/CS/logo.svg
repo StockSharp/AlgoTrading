@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">ATR Reversion strategy logo for C#</title>
+  <desc id="description">An overstretched spring releases a faceted weight back toward normal travel.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .language-mark { fill: #17323d; opacity: 0.07; } .python-upper { fill: #2874a6; opacity: 0.07; } .python-lower { fill: #aa8108; opacity: 0.07; }
+    .primary { fill: #b84b77; } .primary-light { fill: #e288ad; } .primary-shade { fill: #873154; }
+    .secondary { fill: #596d7b; } .secondary-light { fill: #9cabb3; } .secondary-shade { fill: #394a54; }
+    .accent { fill: #dfa23a; } .neutral { fill: #29393f; } .shadow { fill: #14262c; opacity: 0.22; }
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill: #edf6f3; opacity: 0.08; } .python-upper { fill: #7ec5ed; opacity: 0.08; } .python-lower { fill: #f1ca50; opacity: 0.08; }
+      .primary { fill: #e16fa0; } .primary-light { fill: #ffacd0; } .primary-shade { fill: #ad4778; }
+      .secondary { fill: #99abb4; } .secondary-light { fill: #cfd9dc; } .secondary-shade { fill: #687b83; }
+      .accent { fill: #f2c45d; } .neutral { fill: #e5efec; } .shadow { fill: #02090b; opacity: 0.34; }
+    }
+  </style>
+  <g class="language-mark" aria-hidden="true">
+    <path d="M327 108 A180 210 0 1 0 327 404 L278 348 A110 130 0 1 1 278 164 Z" />
+    <path d="M342 54 L397 54 L367 458 L312 458 Z M432 54 L487 54 L457 458 L402 458 Z M301 172 L499 172 L493 232 L295 232 Z M289 285 L487 285 L481 345 L283 345 Z" />
+  </g>
+  <g aria-hidden="true">
+    <path class="secondary-shade" d="M30 105 L100 105 L112 407 L42 407 Z" />
+    <path class="secondary" d="M47 123 L84 123 L95 389 L58 389 Z" />
+    <path class="primary" d="M89 239 L147 169 L198 237 L249 169 L300 237 L351 169 L405 239 L373 271 L351 242 L300 310 L249 242 L198 310 L147 242 L117 276 Z" />
+    <path class="primary-light" d="M109 236 L147 190 L198 258 L249 190 L300 258 L351 190 L385 236 L370 252 L351 227 L300 295 L249 227 L198 295 L147 227 L124 255 Z" />
+    <path class="secondary-shade" d="M389 191 L441 170 L482 205 L477 265 L429 292 L383 265 L369 224 Z" />
+    <path class="accent" d="M411 298 L350 298 L372 273 L299 256 L372 239 L350 214 L431 214 L431 298 Z" />
+    <path class="secondary-light" d="M397 199 L439 182 L468 207 L440 225 L390 224 Z" />
+  </g>
+</svg>

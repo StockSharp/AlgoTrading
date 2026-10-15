@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Volume Exhaustion strategy logo for C#</title>
+  <desc id="description">An overfilled volume battery spends its final charge in one large pulse, then folds into a reversal.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .language-mark { fill: #17323d; opacity: 0.07; }
+    .python-upper { fill: #2874a6; opacity: 0.07; }
+    .python-lower { fill: #aa8108; opacity: 0.07; }
+    .primary { fill: #0f8a82; } .primary-light { fill: #62cec1; } .primary-shade { fill: #08645f; }
+    .secondary { fill: #526f88; } .secondary-light { fill: #96aec3; } .secondary-shade { fill: #344d63; }
+    .accent { fill: #dfa23a; } .positive { fill: #168f70; } .positive-light { fill: #69cdaa; }
+    .negative { fill: #c64f66; } .negative-light { fill: #ef8798; }
+    .violet { fill: #725fa8; } .violet-light { fill: #ad9dd1; }
+    .neutral { fill: #29393f; } .pale { fill: #c9d5dc; } .shadow { fill: #14262c; opacity: 0.22; }
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill: #edf6f3; opacity: 0.08; }
+      .python-upper { fill: #7ec5ed; opacity: 0.08; }
+      .python-lower { fill: #f1ca50; opacity: 0.08; }
+      .primary { fill: #42c9bd; } .primary-light { fill: #86e0d5; } .primary-shade { fill: #20948a; }
+      .secondary { fill: #8aaac3; } .secondary-light { fill: #c0d2df; } .secondary-shade { fill: #5b7e99; }
+      .accent { fill: #f2c45d; } .positive { fill: #4acb9e; } .positive-light { fill: #89e1bd; }
+      .negative { fill: #f17c90; } .negative-light { fill: #ffabb7; }
+      .violet { fill: #a99adb; } .violet-light { fill: #d0c5ed; }
+      .neutral { fill: #e5efec; } .pale { fill: #728591; } .shadow { fill: #02090b; opacity: 0.34; }
+    }
+  </style>
+  <g class="language-mark" aria-hidden="true">
+    <path d="M327 108 A180 210 0 1 0 327 404 L278 348 A110 130 0 1 1 278 164 Z" />
+    <path d="M342 54 L397 54 L367 458 L312 458 Z M432 54 L487 54 L457 458 L402 458 Z M301 172 L499 172 L493 232 L295 232 Z M289 285 L487 285 L481 345 L283 345 Z" />
+  </g>
+  <g aria-hidden="true">
+    <path class="secondary-shade" d="M105 88 L407 88 L407 429 L105 429 Z" />
+    <path class="neutral" d="M201 49 L311 49 L327 88 L185 88 Z" />
+    <path class="pale" d="M137 120 L375 120 L375 397 L137 397 Z" />
+    <path class="positive" d="M158 309 L354 309 L354 373 L158 373 Z" />
+    <path class="accent" d="M158 230 L354 230 L354 294 L158 294 Z" />
+    <path class="negative" d="M158 151 L354 151 L354 215 L158 215 Z" />
+    <path class="negative-light" d="M174 165 L338 165 L338 185 L174 185 Z" />
+    <path class="primary" d="M372 195 C420 217 447 248 455 288 L482 278 L458 354 L397 302 L424 298 C416 270 397 250 365 234 Z" />
+    <path class="negative" d="M424 298 C422 337 400 367 363 391 L383 414 L304 420 L337 347 L349 373 C379 354 394 329 397 302 Z" />
+    <path class="shadow" d="M90 429 L422 429 L400 461 L112 461 Z" />
+  </g>
+</svg>

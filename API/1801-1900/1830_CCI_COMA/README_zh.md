@@ -1,0 +1,12 @@
+# CCI COMA 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
+
+该策略结合 CCI 指标和多时间框滑动平均线来顺应主要趋势。
+
+## 细节
+
+- **数据**：来自多个时间框的价格K线。
+- **入场**：当 CCI 大于零、RSI 超过50、K线收盘价高于开盘价且所有监控的时间框都呈上升趋势时做多；反向条件做空。
+- **出场**：出现反向信号时平仓。
+- **工具**：任意品种。
+- **风险**：无明确的止损或止盈。

@@ -1,0 +1,98 @@
+using System;
+using System.Linq;
+using System.Collections.Generic;
+
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
+
+using StockSharp.Algo.Indicators;
+using StockSharp.Algo.Strategies;
+using StockSharp.BusinessEntities;
+using StockSharp.Messages;
+
+namespace StockSharp.Samples.Strategies;
+
+/// <summary>
+/// Random direction trading strategy converted from the MetaTrader RndTrade EA.
+/// The strategy closes any open position on each interval and immediately opens a new random position.
+/// </summary>
+public class RndTradeStrategy : Strategy
+{
+	private readonly StrategyParam<int> _intervalMinutes;
+
+	/// <summary>
+	/// Interval in minutes between closing the current position and opening a new random one.
+	/// </summary>
+	public int IntervalMinutes
+	{
+		get => _intervalMinutes.Value;
+		set => _intervalMinutes.Value = value;
+	}
+
+	/// <summary>
+	/// Initializes a new instance of the <see cref="RndTradeStrategy"/> class.
+	/// </summary>
+	public RndTradeStrategy()
+	{
+		_intervalMinutes = Param(nameof(IntervalMinutes), 60)
+			.SetGreaterThanZero()
+			.SetDisplay("Interval Minutes", "Minutes between closing and opening positions", "General");
+
+		Volume = 1;
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, TimeSpan.FromMinutes(IntervalMinutes).TimeFrame())];
+	}
+
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
+
+		// Use time-based candles as a deterministic timer replacement.
+		var timeFrame = TimeSpan.FromMinutes(IntervalMinutes).TimeFrame();
+
+		var subscription = SubscribeCandles(timeFrame);
+		subscription
+			.Bind(ProcessCandle)
+			.Start();
+
+	}
+
+	private void ProcessCandle(ICandleMessage candle)
+	{
+		// Process only final candles to execute logic exactly once per interval.
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		// Always close the existing position before selecting a new random direction.
+		if (Position > 0)
+			SellMarket(Position);
+		else if (Position < 0)
+			BuyMarket(Math.Abs(Position));
+
+		// Derive a deterministic pseudo-random direction from the candle data.
+		if (ShouldBuy(candle))
+		{
+			// Enter long after flattening the previous position.
+			if (Position <= 0)
+				BuyMarket(Volume);
+		}
+		else
+		{
+			// Enter short after flattening the previous position.
+			if (Position >= 0)
+				SellMarket(Volume);
+		}
+	}
+
+	private static bool ShouldBuy(ICandleMessage candle)
+	{
+		var hash = HashCode.Combine(candle.OpenTime.Ticks, candle.ClosePrice, candle.TotalVolume);
+		return (hash & 1) == 0;
+	}
+}

@@ -1,0 +1,19 @@
+# Стратегия Color Schaff WPR Trend Cycle
+[English](README.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
+
+Данная стратегия представляет реализацию эксперта **Color Schaff WPR Trend Cycle** из MetaTrader.
+Она использует Schaff Trend Cycle, рассчитанный по быстрому и медленному Williams %R, чтобы определить развороты рынка.
+
+Алгоритм работает только на завершённых свечах. Когда значение индикатора пересекает верхний уровень, стратегия открывает длинную позицию и закрывает все короткие. При пересечении нижнего уровня открывается короткая позиция и закрываются все длинные.
+
+## Параметры
+- **Fast WPR** – период быстрого Williams %R.
+- **Slow WPR** – период медленного Williams %R.
+- **Cycle** – длина цикла для расчёта Schaff Trend.
+- **High Level** – верхний уровень для входа в покупку.
+- **Low Level** – нижний уровень для входа в продажу.
+- **Candle Type** – таймфрейм свечей для оценки индикатора.
+
+## Ссылки
+- Исходный MQL код: `MQL/13489/mql5/Experts/exp_colorschaffwprtrendcycle.mq5`
+- Индикатор: `MQL/13489/mql5/Indicators/colorschaffwprtrendcycle.mq5`

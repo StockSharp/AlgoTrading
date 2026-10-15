@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">MACD VWAP strategy logo for Python</title>
+  <desc id="description">MACD crossover waves and histogram bars pivot around a weighted VWAP anchor, aligning momentum with session value.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .language-mark { fill:#17323d; opacity:.07; } .python-upper { fill:#2874a6; opacity:.07; } .python-lower { fill:#aa8108; opacity:.07; }
+    .primary { fill:#3b5384; } .primary-light { fill:#8b9fcb; } .primary-shade { fill:#293a5d; } .secondary { fill:#ba4e79; } .secondary-light { fill:#e68cac; } .secondary-shade { fill:#823653; }
+    .accent { fill:#dfa63b; } .positive { fill:#378c6d; } .positive-light { fill:#7bc7aa; } .negative { fill:#bd4a4a; } .negative-light { fill:#eb8980; } .violet { fill:#765aa8; } .violet-light { fill:#ad9ad1; } .neutral { fill:#293640; } .pale { fill:#ced4df; } .shadow { fill:#14262c; opacity:.22; }
+    .line-primary { fill:none; stroke:#3b5384; stroke-width:18; stroke-linecap:round; stroke-linejoin:round; } .line-secondary { fill:none; stroke:#ba4e79; stroke-width:18; stroke-linecap:round; stroke-linejoin:round; } .line-neutral { fill:none; stroke:#293640; stroke-width:18; stroke-linecap:round; stroke-linejoin:round; } .line-accent { fill:none; stroke:#dfa63b; stroke-width:14; stroke-linecap:round; stroke-linejoin:round; } .thin-primary { fill:none; stroke:#3b5384; stroke-width:10; stroke-linecap:round; stroke-linejoin:round; } .thin-secondary { fill:none; stroke:#ba4e79; stroke-width:10; stroke-linecap:round; stroke-linejoin:round; } .thin-neutral { fill:none; stroke:#293640; stroke-width:10; stroke-linecap:round; stroke-linejoin:round; }
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill:#edf6f3; opacity:.08; } .python-upper { fill:#7ec5ed; opacity:.08; } .python-lower { fill:#f1ca50; opacity:.08; }
+      .primary { fill:#718bc7; } .primary-light { fill:#b1c1e7; } .primary-shade { fill:#49639a; } .secondary { fill:#e675a4; } .secondary-light { fill:#ffacc8; } .secondary-shade { fill:#ac4a73; } .accent { fill:#f2c75d; } .positive { fill:#63c49b; } .positive-light { fill:#a4dec2; } .negative { fill:#f17470; } .negative-light { fill:#ffada5; } .violet { fill:#aa94db; } .violet-light { fill:#d1c2ec; } .neutral { fill:#edf1f5; } .pale { fill:#747f92; } .shadow { fill:#02090b; opacity:.34; }
+      .line-primary { stroke:#718bc7; } .line-secondary { stroke:#e675a4; } .line-neutral { stroke:#edf1f5; } .line-accent { stroke:#f2c75d; } .thin-primary { stroke:#718bc7; } .thin-secondary { stroke:#e675a4; } .thin-neutral { stroke:#edf1f5; }
+    }
+  </style>
+  <g aria-hidden="true">
+    <path class="python-upper" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" />
+    <path class="python-lower" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" transform="rotate(180 256 256)" />
+  </g>
+  <g aria-hidden="true">
+    <path class="primary" d="M150 52 L190 52 L190 122 L226 122 L226 154 L190 154 L190 341 C228 333 251 311 268 275 L306 295 C281 354 237 386 170 386 C103 386 59 354 34 295 L72 275 C89 311 112 333 150 341 L150 154 L114 154 L114 122 L150 122 Z" />
+    <path class="accent" d="M38 183 C105 159 229 159 300 183 L300 219 C226 195 105 195 38 219 Z" />
+    <path class="secondary" d="M81 162 L113 162 L113 240 L81 240 Z M231 162 L263 162 L263 240 L231 240 Z" />
+    <circle class="primary-light" cx="170" cy="75" r="24" />
+    <path class="primary-shade" d="M250 429 L479 429 L479 449 L250 449 Z" />
+    <path class="positive-light" d="M268 364 L298 364 L298 429 L268 429 Z M307 310 L337 310 L337 429 L307 429 Z M346 253 L376 253 L376 429 L346 429 Z" />
+    <path class="negative-light" d="M385 429 L415 429 L415 468 L385 468 Z M424 429 L454 429 L454 451 L424 451 Z" />
+    <path class="line-primary" d="M251 341 C288 325 315 267 350 273 C389 279 416 359 468 311" />
+    <path class="line-secondary" d="M251 379 C291 362 320 305 356 311 C395 318 426 381 468 342" />
+  </g>
+</svg>

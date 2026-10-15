@@ -1,0 +1,11 @@
+# RK 的自动颜色渐变框架策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
+
+结合布林带%B和RSI形成单一振荡器，将其映射到颜色渐变并在越过中线时交易。
+
+## 逻辑
+- 计算布林带%B和相对强弱指数。
+- 通过随机过程归一化并求平均。
+- 将结果转换为可选择的颜色渐变。
+- 当平均值高于零时买入。
+- 当平均值低于零时卖出。

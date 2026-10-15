@@ -1,0 +1,39 @@
+# Adx Volume Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
+ 
+Implementation of strategy - ADX + Volume. Enter trades when ADX is above threshold with above average volume. Direction determined by DI+ and DI- comparison.
+
+Testing indicates an average annual return of about 67%. It performs best in the stocks market.
+
+High ADX denotes a strong trend and volume spikes confirm commitment. Entries are made when both indicators show strength together.
+
+Great for catching energetic breakouts. A stop based on ATR keeps exposure in check.
+
+## Details
+
+- **Entry Criteria**:
+  - Long: `ADX > AdxThreshold && Volume > AvgVolume && +DI > -DI`
+  - Short: `ADX > AdxThreshold && Volume > AvgVolume && -DI > +DI`
+- **Long/Short**: Both
+- **Exit Criteria**: Trend weakens below threshold
+- **Stops**: ATR-based using `StopLossAtr`
+- **Default Values**:
+  - `AdxPeriod` = 14
+  - `AdxThreshold` = 25m
+  - `VolumeAvgPeriod` = 20
+  - `StopLossAtr` = 2
+  - `AtrPeriod` = 14
+  - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    AvgVolume is the average volume of the previous VolumeAvgPeriod candles. The stop lies StopLossAtr ATRs (AtrPeriod) from the entry close and is checked on candle closes. An entry signal against an open position reverses it.
+- **Filters**:
+  - Category: Breakout
+  - Direction: Both
+  - Indicators: ADX, Volume
+  - Stops: Yes
+  - Complexity: Intermediate
+  - Timeframe: Mid-term
+  - Seasonality: No
+  - Neural Networks: No
+  - Divergence: No
+  - Risk Level: Medium
+

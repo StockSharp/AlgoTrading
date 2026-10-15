@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Keltner Channel Breakout strategy logo for C#</title>
+  <desc id="description">A compressed bolt opens a flexible tunnel and carries its force beyond the channel.</desc>
+
+  <style>
+    :root { color-scheme: light dark; }
+
+    .language-mark { fill: #17323d; opacity: 0.07; }
+    .python-upper { fill: #2874a6; opacity: 0.07; }
+    .python-lower { fill: #aa8108; opacity: 0.07; }
+    .primary { fill: #d6553f; }
+    .primary-light { fill: #f18a6e; }
+    .primary-shade { fill: #aa372b; }
+    .secondary { fill: #257e86; }
+    .secondary-light { fill: #72bec2; }
+    .secondary-shade { fill: #175b63; }
+    .accent { fill: #e4ad3e; }
+    .neutral { fill: #26383f; }
+    .shadow { fill: #14262c; opacity: 0.22; }
+
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill: #edf6f3; opacity: 0.08; }
+      .python-upper { fill: #7ec5ed; opacity: 0.08; }
+      .python-lower { fill: #f1ca50; opacity: 0.08; }
+      .primary { fill: #f2765f; }
+      .primary-light { fill: #ffa18a; }
+      .primary-shade { fill: #c64b3d; }
+      .secondary { fill: #54bcc3; }
+      .secondary-light { fill: #94dde0; }
+      .secondary-shade { fill: #2c8b93; }
+      .accent { fill: #f3c65e; }
+      .neutral { fill: #e5efec; }
+      .shadow { fill: #02090b; opacity: 0.34; }
+    }
+  </style>
+
+  <g class="language-mark" aria-hidden="true">
+    <path d="M327 108 A180 210 0 1 0 327 404 L278 348 A110 130 0 1 1 278 164 Z" />
+    <path d="M342 54 L397 54 L367 458 L312 458 Z M432 54 L487 54 L457 458 L402 458 Z M301 172 L499 172 L493 232 L295 232 Z M289 285 L487 285 L481 345 L283 345 Z" />
+  </g>
+
+  <g aria-hidden="true" transform="translate(0 -64) scale(1 1.25)">
+    <path class="secondary" d="M28 112 C137 137 217 171 305 210 L351 226 L327 251 C230 216 146 188 28 175 Z" />
+    <path class="secondary-light" d="M28 112 C138 137 218 170 305 210 L321 216 L307 232 C218 199 139 169 28 147 Z" />
+    <path class="secondary" d="M28 399 C139 374 219 339 305 299 L351 279 L329 255 C231 298 146 327 28 339 Z" />
+    <path class="secondary-shade" d="M28 372 C142 344 221 315 310 277 L329 255 C231 298 146 327 28 339 Z" />
+    <path class="secondary-shade" d="M293 204 L354 225 L326 252 L278 230 Z" />
+    <path class="secondary-light" d="M292 306 L354 280 L328 253 L278 279 Z" />
+    <path class="primary" d="M241 235 L406 225 L388 190 L486 256 L389 323 L406 286 L241 276 Z" />
+    <path class="primary-light" d="M265 244 L417 239 L445 256 L417 272 L265 267 Z" />
+    <path class="primary-shade" d="M388 190 L486 256 L389 323 L410 273 L448 256 L410 238 Z" />
+  </g>
+</svg>

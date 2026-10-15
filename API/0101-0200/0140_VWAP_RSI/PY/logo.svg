@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">VWAP RSI strategy logo for Python</title>
+  <desc id="description">A heavy VWAP anchor fixes fair value while an RSI ribbon stretches away, hooks at an extreme, and returns toward it.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .language-mark { fill: #17323d; opacity: 0.07; } .python-upper { fill: #2874a6; opacity: 0.07; } .python-lower { fill: #aa8108; opacity: 0.07; }
+    .primary { fill: #347858; } .primary-light { fill: #7fbc99; } .primary-shade { fill: #23513d; }
+    .secondary { fill: #c4872e; } .secondary-light { fill: #edbb69; } .secondary-shade { fill: #895b1e; }
+    .accent { fill: #7a65ad; } .positive { fill: #388960; } .positive-light { fill: #82c49f; } .negative { fill: #b94c46; } .negative-light { fill: #e78b7f; }
+    .violet { fill: #3f75a7; } .violet-light { fill: #8db7db; } .neutral { fill: #273a36; } .pale { fill: #cbd8cb; } .shadow { fill: #14262c; opacity: 0.22; }
+    .line-primary { fill:none; stroke:#347858; stroke-width:18; stroke-linecap:round; stroke-linejoin:round; }
+    .line-secondary { fill:none; stroke:#c4872e; stroke-width:18; stroke-linecap:round; stroke-linejoin:round; }
+    .line-neutral { fill:none; stroke:#273a36; stroke-width:18; stroke-linecap:round; stroke-linejoin:round; }
+    .line-accent { fill:none; stroke:#7a65ad; stroke-width:14; stroke-linecap:round; stroke-linejoin:round; }
+    .thin-primary { fill:none; stroke:#347858; stroke-width:10; stroke-linecap:round; stroke-linejoin:round; }
+    .thin-secondary { fill:none; stroke:#c4872e; stroke-width:10; stroke-linecap:round; stroke-linejoin:round; }
+    .thin-neutral { fill:none; stroke:#273a36; stroke-width:10; stroke-linecap:round; stroke-linejoin:round; }
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill:#edf6f3; opacity:0.08; } .python-upper { fill:#7ec5ed; opacity:0.08; } .python-lower { fill:#f1ca50; opacity:0.08; }
+      .primary { fill:#66bf91; } .primary-light { fill:#aae0be; } .primary-shade { fill:#3d8e69; }
+      .secondary { fill:#e6ad57; } .secondary-light { fill:#ffd08a; } .secondary-shade { fill:#a97735; }
+      .accent { fill:#ac9ae0; } .positive { fill:#67c391; } .positive-light { fill:#a7ddbb; } .negative { fill:#ee746c; } .negative-light { fill:#ffaea3; }
+      .violet { fill:#73ace0; } .violet-light { fill:#b5d5ee; } .neutral { fill:#edf3ef; } .pale { fill:#718378; } .shadow { fill:#02090b; opacity:0.34; }
+      .line-primary { stroke:#66bf91; } .line-secondary { stroke:#e6ad57; } .line-neutral { stroke:#edf3ef; } .line-accent { stroke:#ac9ae0; }
+      .thin-primary { stroke:#66bf91; } .thin-secondary { stroke:#e6ad57; } .thin-neutral { stroke:#edf3ef; }
+    }
+  </style>
+  <g aria-hidden="true"><path class="python-upper" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" /><path class="python-lower" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" transform="rotate(180 256 256)" /></g>
+  <g aria-hidden="true">
+    <path class="neutral" d="M242 62 L270 62 L270 132 L314 132 L314 162 L270 162 L270 354 C310 347 337 326 354 292 L390 312 C364 371 319 401 256 401 C193 401 148 371 122 312 L158 292 C175 326 202 347 242 354 L242 162 L198 162 L198 132 L242 132 Z" />
+    <path class="primary" d="M68 220 C164 184 348 184 444 220 L444 252 C348 216 164 216 68 252 Z" />
+    <path class="accent" d="M145 192 L177 192 L177 273 L145 273 Z M335 192 L367 192 L367 273 L335 273 Z" />
+    <path class="line-secondary" d="M57 111 C142 88 203 115 250 169 C305 231 363 338 447 333" />
+    <path class="secondary" d="M416 304 L478 337 L419 378 L439 340 Z" />
+  </g>
+</svg>
+

@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Wyckoff Accumulation strategy logo for Python</title>
+  <desc id="description">A declining conveyor feeds crates into a broad basin, where inventory stacks before a marked upward release.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .language-mark { fill: #17323d; opacity: 0.07; }
+    .python-upper { fill: #2874a6; opacity: 0.07; }
+    .python-lower { fill: #aa8108; opacity: 0.07; }
+    .primary { fill: #2867a8; } .primary-light { fill: #79b9e8; } .primary-shade { fill: #174575; }
+    .secondary { fill: #d87532; } .secondary-light { fill: #f1ad72; } .secondary-shade { fill: #9e4b20; }
+    .accent { fill: #e3b93f; } .positive { fill: #3d8b61; } .positive-light { fill: #83c5a3; }
+    .negative { fill: #bd4b43; } .negative-light { fill: #eb8b7d; }
+    .violet { fill: #6f62aa; } .violet-light { fill: #aaa0d4; }
+    .neutral { fill: #283743; } .pale { fill: #c9d5df; } .shadow { fill: #14262c; opacity: 0.22; }
+    .line-primary { fill: none; stroke: #2867a8; stroke-width: 18; stroke-linecap: round; stroke-linejoin: round; }
+    .line-secondary { fill: none; stroke: #d87532; stroke-width: 18; stroke-linecap: round; stroke-linejoin: round; }
+    .line-neutral { fill: none; stroke: #283743; stroke-width: 18; stroke-linecap: round; stroke-linejoin: round; }
+    .line-accent { fill: none; stroke: #e3b93f; stroke-width: 14; stroke-linecap: round; stroke-linejoin: round; }
+    .thin-primary { fill: none; stroke: #2867a8; stroke-width: 10; stroke-linecap: round; stroke-linejoin: round; }
+    .thin-secondary { fill: none; stroke: #d87532; stroke-width: 10; stroke-linecap: round; stroke-linejoin: round; }
+    .thin-neutral { fill: none; stroke: #283743; stroke-width: 10; stroke-linecap: round; stroke-linejoin: round; }
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill: #edf6f3; opacity: 0.08; }
+      .python-upper { fill: #7ec5ed; opacity: 0.08; }
+      .python-lower { fill: #f1ca50; opacity: 0.08; }
+      .primary { fill: #5db4ee; } .primary-light { fill: #a6d8f7; } .primary-shade { fill: #307daf; }
+      .secondary { fill: #f1a064; } .secondary-light { fill: #ffc394; } .secondary-shade { fill: #b96a3b; }
+      .accent { fill: #ffd166; } .positive { fill: #69c793; } .positive-light { fill: #aae0bd; }
+      .negative { fill: #f27769; } .negative-light { fill: #ffb2a3; }
+      .violet { fill: #a99bdd; } .violet-light { fill: #d2c8ee; }
+      .neutral { fill: #edf2f6; } .pale { fill: #738797; } .shadow { fill: #02090b; opacity: 0.34; }
+      .line-primary { stroke: #5db4ee; } .line-secondary { stroke: #f1a064; }
+      .line-neutral { stroke: #edf2f6; } .line-accent { stroke: #ffd166; }
+      .thin-primary { stroke: #5db4ee; } .thin-secondary { stroke: #f1a064; } .thin-neutral { stroke: #edf2f6; }
+    }
+  </style>
+  <g aria-hidden="true">
+    <path class="python-upper" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" />
+    <path class="python-lower" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" transform="rotate(180 256 256)" />
+  </g>
+  <g aria-hidden="true">
+    <path class="line-secondary" d="M47 105 C116 133 150 183 190 234" />
+    <path class="secondary" d="M154 213 L218 258 L152 290 L171 253 Z" />
+    <path class="neutral" d="M78 242 L112 242 L112 421 L400 421 L400 242 L434 242 L434 455 L78 455 Z" />
+    <path class="pale" d="M112 401 L400 401 L400 421 L112 421 Z" />
+    <path class="primary" d="M126 342 L196 342 L196 401 L126 401 Z M206 342 L276 342 L276 401 L206 401 Z M286 342 L356 342 L356 401 L286 401 Z" />
+    <path class="primary-light" d="M166 275 L236 275 L236 334 L166 334 Z M246 275 L316 275 L316 334 L246 334 Z" />
+    <path class="accent" d="M208 208 L278 208 L278 267 L208 267 Z" />
+    <path class="line-primary" d="M332 344 C371 294 392 220 407 138" />
+    <path class="primary" d="M372 151 L424 73 L455 162 L426 142 L416 188 L386 181 L395 137 Z" />
+  </g>
+</svg>
+

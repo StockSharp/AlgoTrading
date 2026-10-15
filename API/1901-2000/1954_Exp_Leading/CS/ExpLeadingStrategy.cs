@@ -1,0 +1,190 @@
+using System;
+using System.Linq;
+using System.Collections.Generic;
+
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
+
+using StockSharp.Algo.Indicators;
+using StockSharp.Algo.Strategies;
+using StockSharp.BusinessEntities;
+using StockSharp.Messages;
+
+using StockSharp.Algo;
+
+namespace StockSharp.Samples.Strategies;
+
+/// <summary>
+/// Strategy based on crossover of custom Leading indicator and its EMA.
+/// Opens long position when NetLead crosses below EMA and short when crosses above.
+/// </summary>
+public class ExpLeadingStrategy : Strategy
+{
+	private readonly StrategyParam<decimal> _alpha1;
+	private readonly StrategyParam<decimal> _alpha2;
+	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<decimal> _stopLoss;
+	private readonly StrategyParam<decimal> _takeProfit;
+	private readonly StrategyParam<int> _cooldownBars;
+
+	private bool _isInitialized;
+	private bool _hasPrev2;
+	private decimal _pricePrev;
+	private decimal _leadPrev;
+	private decimal _netLeadPrev;
+	private decimal _emaPrev;
+	private decimal _prevNetLead;
+	private decimal _prevEma;
+	private decimal _prev2NetLead;
+	private decimal _prev2Ema;
+	private int _barsSinceTrade;
+
+	/// <summary>
+	/// Alpha1 coefficient for Leading indicator.
+	/// </summary>
+	public decimal Alpha1 { get => _alpha1.Value; set => _alpha1.Value = value; }
+
+	/// <summary>
+	/// Alpha2 coefficient for Leading indicator.
+	/// </summary>
+	public decimal Alpha2 { get => _alpha2.Value; set => _alpha2.Value = value; }
+
+	/// <summary>
+	/// Candle type for calculations.
+	/// </summary>
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+
+	/// <summary>
+	/// Stop loss in price units.
+	/// </summary>
+	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
+
+	/// <summary>
+	/// Take profit in price units.
+	/// </summary>
+	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
+
+	/// <summary>
+	/// Bars to wait after a completed trade.
+	/// </summary>
+	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
+
+	/// <summary>
+	/// Initialize strategy parameters.
+	/// </summary>
+	public ExpLeadingStrategy()
+	{
+		_alpha1 = Param(nameof(Alpha1), 0.25m)
+			.SetDisplay("Alpha1", "Alpha1 coefficient", "Indicator");
+
+		_alpha2 = Param(nameof(Alpha2), 0.33m)
+			.SetDisplay("Alpha2", "Alpha2 coefficient", "Indicator");
+
+		_cooldownBars = Param(nameof(CooldownBars), 1)
+			.SetDisplay("Cooldown Bars", "Bars to wait after a completed trade", "Protection");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+			.SetDisplay("Candle Type", "Candle data type", "General");
+
+		_stopLoss = Param(nameof(StopLoss), 1000m)
+			.SetDisplay("Stop Loss", "Stop loss in price", "Protection");
+
+		_takeProfit = Param(nameof(TakeProfit), 2000m)
+			.SetDisplay("Take Profit", "Take profit in price", "Protection");
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_isInitialized = false;
+		_hasPrev2 = false;
+		_pricePrev = 0m;
+		_leadPrev = 0m;
+		_netLeadPrev = 0m;
+		_emaPrev = 0m;
+		_prevNetLead = 0m;
+		_prevEma = 0m;
+		_prev2NetLead = 0m;
+		_prev2Ema = 0m;
+		_barsSinceTrade = CooldownBars;
+	}
+
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
+
+		StartProtection(new Unit(TakeProfit, UnitTypes.Absolute), new Unit(StopLoss, UnitTypes.Absolute));
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(ProcessCandle)
+			.Start();
+	}
+
+	private void ProcessCandle(ICandleMessage candle)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		if (_barsSinceTrade < CooldownBars)
+			_barsSinceTrade++;
+
+		var price = (candle.HighPrice + candle.LowPrice) / 2m;
+
+		if (!_isInitialized)
+		{
+			_pricePrev = price;
+			_leadPrev = price;
+			_netLeadPrev = price;
+			_emaPrev = price;
+			_prevNetLead = price;
+			_prevEma = price;
+			_isInitialized = true;
+			return;
+		}
+
+		var lead = 2m * price + (Alpha1 - 2m) * _pricePrev + (1m - Alpha1) * _leadPrev;
+		var netLead = Alpha2 * lead + (1m - Alpha2) * _netLeadPrev;
+		var ema = 0.5m * price + 0.5m * _emaPrev;
+
+		if (_hasPrev2)
+		{
+			var buySignal = _prev2NetLead > _prev2Ema && _prevNetLead < _prevEma;
+			var sellSignal = _prev2NetLead < _prev2Ema && _prevNetLead > _prevEma;
+
+			if (_barsSinceTrade >= CooldownBars)
+			{
+				if (buySignal && Position <= 0)
+				{
+					BuyMarket(Volume + Math.Abs(Position));
+					_barsSinceTrade = 0;
+				}
+				else if (sellSignal && Position >= 0)
+				{
+					SellMarket(Volume + Math.Abs(Position));
+					_barsSinceTrade = 0;
+				}
+			}
+		}
+		else
+		{
+			_hasPrev2 = true;
+		}
+
+		_prev2NetLead = _prevNetLead;
+		_prev2Ema = _prevEma;
+		_prevNetLead = netLead;
+		_prevEma = ema;
+		_pricePrev = price;
+		_leadPrev = lead;
+		_netLeadPrev = netLead;
+		_emaPrev = ema;
+	}
+}

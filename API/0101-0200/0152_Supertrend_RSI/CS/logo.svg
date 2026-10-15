@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Supertrend RSI strategy logo for C#</title>
+  <desc id="description">A two-color Supertrend switch points the road while an RSI gauge at the extreme releases the matching directional arrow.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .language-mark { fill:#17323d; opacity:.07; } .python-upper { fill:#2874a6; opacity:.07; } .python-lower { fill:#aa8108; opacity:.07; }
+    .primary { fill:#b24f42; } .primary-light { fill:#e48b74; } .primary-shade { fill:#7d342c; } .secondary { fill:#2a82a4; } .secondary-light { fill:#7bbdd4; } .secondary-shade { fill:#1c5d75; }
+    .accent { fill:#dca93e; } .positive { fill:#3c8e68; } .positive-light { fill:#82c8a5; } .negative { fill:#b94b4b; } .negative-light { fill:#e98b83; }
+    .violet { fill:#745ba8; } .violet-light { fill:#af9ed2; } .neutral { fill:#2f383e; } .pale { fill:#d9c9bf; } .shadow { fill:#14262c; opacity:.22; }
+    .line-primary { fill:none; stroke:#b24f42; stroke-width:18; stroke-linecap:round; stroke-linejoin:round; } .line-secondary { fill:none; stroke:#2a82a4; stroke-width:18; stroke-linecap:round; stroke-linejoin:round; }
+    .line-neutral { fill:none; stroke:#2f383e; stroke-width:18; stroke-linecap:round; stroke-linejoin:round; } .line-accent { fill:none; stroke:#dca93e; stroke-width:14; stroke-linecap:round; stroke-linejoin:round; }
+    .thin-primary { fill:none; stroke:#b24f42; stroke-width:10; stroke-linecap:round; stroke-linejoin:round; } .thin-secondary { fill:none; stroke:#2a82a4; stroke-width:10; stroke-linecap:round; stroke-linejoin:round; } .thin-neutral { fill:none; stroke:#2f383e; stroke-width:10; stroke-linecap:round; stroke-linejoin:round; }
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill:#edf6f3; opacity:.08; } .python-upper { fill:#7ec5ed; opacity:.08; } .python-lower { fill:#f1ca50; opacity:.08; }
+      .primary { fill:#ed806d; } .primary-light { fill:#f7b09b; } .primary-shade { fill:#a94f43; } .secondary { fill:#55b8d7; } .secondary-light { fill:#9ed7e8; } .secondary-shade { fill:#2f819a; }
+      .accent { fill:#f2cb61; } .positive { fill:#68c69a; } .positive-light { fill:#a9dfc2; } .negative { fill:#ef7474; } .negative-light { fill:#ffb0aa; }
+      .violet { fill:#aa97da; } .violet-light { fill:#d1c4ec; } .neutral { fill:#eff3f2; } .pale { fill:#8a786e; } .shadow { fill:#02090b; opacity:.34; }
+      .line-primary { stroke:#ed806d; } .line-secondary { stroke:#55b8d7; } .line-neutral { stroke:#eff3f2; } .line-accent { stroke:#f2cb61; }
+      .thin-primary { stroke:#ed806d; } .thin-secondary { stroke:#55b8d7; } .thin-neutral { stroke:#eff3f2; }
+    }
+  </style>
+  <g class="language-mark" aria-hidden="true"><path d="M327 108 A180 210 0 1 0 327 404 L278 348 A110 130 0 1 1 278 164 Z"/><path d="M342 54 L397 54 L367 458 L312 458 Z M432 54 L487 54 L457 458 L402 458 Z M301 172 L499 172 L493 232 L295 232 Z M289 285 L487 285 L481 345 L283 345 Z"/></g>
+  <g aria-hidden="true">
+    <path class="negative" d="M42 256 L217 256 L217 294 L42 294 Z" />
+    <path class="positive" d="M286 218 L470 144 L470 184 L286 258 Z" />
+    <path class="neutral" d="M239 218 L281 218 L281 315 L239 315 Z" />
+    <path class="accent" d="M226 198 A34 34 0 1 0 294 198 A34 34 0 1 0 226 198 Z" />
+    <path class="neutral" d="M73 326 L257 326 L257 452 L73 452 Z" />
+    <path class="pale" d="M91 344 L239 344 L239 434 L91 434 Z" />
+    <path class="secondary-light" d="M91 344 L239 344 L239 370 L91 370 Z M91 408 L239 408 L239 434 L91 434 Z" />
+    <path class="line-secondary" d="M103 418 C128 421 137 386 160 387 C187 389 194 365 225 363" />
+    <path class="line-primary" d="M280 306 C339 280 378 231 421 170" />
+    <path class="primary" d="M390 166 L449 116 L452 192 L426 173 Z" />
+  </g>
+</svg>
+

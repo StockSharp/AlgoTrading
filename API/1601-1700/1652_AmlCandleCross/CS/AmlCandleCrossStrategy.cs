@@ -1,0 +1,180 @@
+using System;
+using System.Collections.Generic;
+
+using Ecng.Common;
+
+using StockSharp.Algo.Indicators;
+using StockSharp.Algo.Strategies;
+using StockSharp.BusinessEntities;
+using StockSharp.Messages;
+
+namespace StockSharp.Samples.Strategies;
+
+/// <summary>
+/// Adaptive Market Level candle cross strategy.
+/// Opens position when AML value lies between candle open and close.
+/// Reverses position if opposite condition occurs.
+/// </summary>
+public class AmlCandleCrossStrategy : Strategy
+{
+	private readonly StrategyParam<int> _fractal;
+	private readonly StrategyParam<int> _lag;
+	private readonly StrategyParam<DataType> _candleType;
+
+	public int Fractal { get => _fractal.Value; set => _fractal.Value = value; }
+	public int Lag { get => _lag.Value; set => _lag.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+
+	public AmlCandleCrossStrategy()
+	{
+		_fractal = Param(nameof(Fractal), 70)
+			.SetGreaterThanZero()
+			.SetDisplay("Fractal", "Fractal window size", "General");
+		_lag = Param(nameof(Lag), 18)
+			.SetGreaterThanZero()
+			.SetDisplay("Lag", "Lag for smoothing", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle Type", "General");
+	}
+
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
+
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
+
+		var aml = new AdaptiveMarketLevel
+		{
+			Fractal = Fractal,
+			Lag = Lag,
+		};
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(aml, ProcessCandle)
+			.Start();
+
+		StartProtection(
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent)
+		);
+	}
+
+	private void ProcessCandle(ICandleMessage candle, decimal amlValue)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (amlValue == 0)
+			return;
+
+		var open = candle.OpenPrice;
+		var close = candle.ClosePrice;
+
+		// Bullish: AML between open and close, bullish candle
+		var bullish = close > open && amlValue >= open && amlValue <= close;
+		// Bearish: AML between close and open, bearish candle
+		var bearish = close < open && amlValue >= close && amlValue <= open;
+
+		if (Position == 0)
+		{
+			if (bullish)
+				BuyMarket();
+			else if (bearish)
+				SellMarket();
+		}
+	}
+}
+
+/// <summary>
+/// Adaptive Market Level indicator.
+/// </summary>
+public class AdaptiveMarketLevel : BaseIndicator
+{
+	private int _pos;
+	private decimal[] _smooth = Array.Empty<decimal>();
+	private decimal _lastValue;
+
+	private readonly List<decimal> _highs = new();
+	private readonly List<decimal> _lows = new();
+
+	public int Fractal { get; set; } = 10;
+	public int Lag { get; set; } = 5;
+
+	public override void Reset()
+	{
+		base.Reset();
+		_pos = 0;
+		_smooth = new decimal[Lag + 1];
+		_lastValue = 0;
+		_highs.Clear();
+		_lows.Clear();
+	}
+
+	protected override IIndicatorValue OnProcess(IIndicatorValue input)
+	{
+		var candle = input.GetValue<ICandleMessage>();
+
+		_highs.Add(candle.HighPrice);
+		_lows.Add(candle.LowPrice);
+
+		if (_highs.Count < Fractal * 2 || _highs.Count <= Lag)
+			return new DecimalIndicatorValue(this, 0m, input.Time);
+
+		IsFormed = true;
+
+		decimal r1 = Range(Fractal, 0) / Fractal;
+		decimal r2 = Range(Fractal, Fractal) / Fractal;
+		decimal r3 = Range(Fractal * 2, 0) / (Fractal * 2);
+
+		double dim = 0;
+		if (r1 + r2 > 0 && r3 > 0)
+			dim = (Math.Log((double)(r1 + r2)) - Math.Log((double)r3)) * 1.44269504088896;
+
+		// Bounded while still a double: a dimension below one turns the exponent positive, and Math.Exp
+		// then returns a number no decimal can hold, so casting first would throw before any bound applies.
+		var smoothing = Math.Exp(-Lag * (dim - 1.0));
+		var alpha = smoothing >= 1.0 ? 1m : smoothing <= 0.01 ? 0.01m : (decimal)smoothing;
+
+		var price = (candle.HighPrice + candle.LowPrice + 2m * candle.OpenPrice + 2m * candle.ClosePrice) / 6m;
+
+		// The ring is sized here rather than only in Reset: nothing calls Reset on an indicator that is
+		// built and bound in one breath, and Lag may be set after construction.
+		if (_smooth.Length != Lag + 1)
+		{
+			_smooth = new decimal[Lag + 1];
+			_pos = 0;
+		}
+
+		var prevPos = (_pos - 1 + _smooth.Length) % _smooth.Length;
+		_smooth[_pos] = alpha * price + (1m - alpha) * _smooth[prevPos];
+
+		var lagPos = (_pos - Lag + _smooth.Length) % _smooth.Length;
+		var step = 0.01m;
+		var current = Math.Abs(_smooth[_pos] - _smooth[lagPos]) >= Lag * Lag * step ? _smooth[_pos] : _lastValue;
+
+		_lastValue = current;
+		_pos = (_pos + 1) % _smooth.Length;
+
+		return new DecimalIndicatorValue(this, current, input.Time);
+	}
+
+	private decimal Range(int count, int offset)
+	{
+		var end = _highs.Count - 1 - offset;
+		var start = end - count + 1;
+		if (start < 0) start = 0;
+
+		var max = decimal.MinValue;
+		var min = decimal.MaxValue;
+
+		for (var i = start; i <= end; i++)
+		{
+			if (_highs[i] > max) max = _highs[i];
+			if (_lows[i] < min) min = _lows[i];
+		}
+
+		return max - min;
+	}
+}

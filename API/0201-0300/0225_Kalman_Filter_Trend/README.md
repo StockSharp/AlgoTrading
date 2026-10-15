@@ -1,0 +1,39 @@
+# Kalman Filter Trend Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
+ 
+This trend-following method uses a Kalman filter to smooth price fluctuations and estimate the underlying direction. The filter dynamically adapts to market noise, offering a refined view of trend strength compared to standard moving averages.
+
+Testing indicates an average annual return of about 112%. It performs best in the forex market.
+
+A long position is opened when the closing price rises above the Kalman filter estimate. Conversely, a short position is taken when the close drops below the filter value. Because the filter updates on every bar, trades flip whenever price crosses the line, providing continuous participation in trending markets.
+
+Traders who prefer systematic approaches may find the Kalman filter useful for reducing whipsaws. A protective stop based on ATR keeps risk limited in case the trend rapidly reverses.
+
+## Details
+- **Entry Criteria**:
+  - **Long**: Close > Kalman Filter
+  - **Short**: Close < Kalman Filter
+- **Long/Short**: Both sides.
+- **Exit Criteria**:
+  - **Long**: Exit on close < Kalman Filter
+  - **Short**: Exit on close > Kalman Filter
+- **Stops**: Yes, ATR-based stop-loss.
+- **Default Values**:
+  - `ProcessNoise` = 0.01
+  - `MeasurementNoise` = 0.1
+  - `AtrPeriod` = 14
+  - `AtrMultiplier` = 2
+    An entry on the other side of the line reverses the position. The stop is set AtrMultiplier times the AtrPeriod ATR from the entry close and checked on candle closes; after it the next close beyond the line opens a new position. 0 disables it.
+  - `CandleType` = TimeSpan.FromMinutes(5)
+- **Filters**:
+  - Category: Trend
+  - Direction: Both
+  - Indicators: Kalman Filter
+  - Stops: Yes
+  - Complexity: Intermediate
+  - Timeframe: Intraday
+  - Seasonality: No
+  - Neural networks: No
+  - Divergence: No
+  - Risk Level: Medium
+

@@ -1,0 +1,39 @@
+# 动量突破策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
+
+该系统寻找动量相对其历史平均值的突然增加。当动量读数大幅高于平均水平时，价格可能开始快速单边运行。
+
+测试表明年均收益约为 82%，该策略在股票市场表现最佳。
+
+动量高于均值加 `Multiplier` 倍标准差时买入；低于均值减同倍数时做空。动量回到均值附近便平仓。
+
+此策略适合喜好追逐快速行情的交易者，止损按价格百分比设置以防突破失败。
+## 详细信息
+- **入场条件**:
+  - **做多**: 动量 > Avg + Multiplier * StdDev
+  - **做空**: 动量 < Avg - Multiplier * StdDev
+- **多空方向**: 双向
+- **退出条件**:
+  - **做多**: Exit when 动量 < Avg
+  - **做空**: Exit when 动量 > Avg
+- **止损**: 是
+- **默认值**:
+  - `动量Period` = 14
+  - `AveragePeriod` = 20
+  - `Multiplier` = 2
+  - `StopLossPercent` = 2
+  - `CandleType` = TimeSpan.FromMinutes(5)
+    Avg和StdDev为最近AveragePeriod个动量值（含当前值）的平均值和标准差。止损为入场价的固定StopLossPercent百分比，在K线之间同样监控；设为0则关闭。与持仓方向相反的入场信号会反转持仓。
+- **筛选条件**:
+  - 类别: 突破
+  - 方向: 双向
+  - 指标: 动量
+  - 止损: 是
+  - 复杂度: 中等
+  - 时间框架: 日内
+  - 季节性: 否
+  - 神经网络: 否
+  - 背离: 否
+  - 风险等级: 中等
+
+

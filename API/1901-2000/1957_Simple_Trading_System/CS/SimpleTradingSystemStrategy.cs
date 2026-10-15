@@ -1,0 +1,380 @@
+using System;
+using System.Linq;
+using System.Collections.Generic;
+
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
+
+using StockSharp.Algo.Indicators;
+using StockSharp.Algo.Strategies;
+using StockSharp.BusinessEntities;
+using StockSharp.Messages;
+
+namespace StockSharp.Samples.Strategies;
+
+/// <summary>
+/// Simple trading system based on shifted moving average and price comparisons.
+/// Generates buy and sell signals when the current close meets several conditions
+/// relative to previous closes and the moving average.
+/// </summary>
+public class SimpleTradingSystemStrategy : Strategy
+{
+	public enum MovingAverageTypes
+	{
+		/// <summary>
+		/// Simple Moving Average (SMA).
+		/// </summary>
+		SMA,
+		/// <summary>
+		/// Exponential Moving Average (EMA).
+		/// </summary>
+		EMA,
+		/// <summary>
+		/// Double Exponential Moving Average (DEMA).
+		/// </summary>
+		DEMA,
+		/// <summary>
+		/// Triple Exponential Moving Average (TEMA).
+		/// </summary>
+		TEMA,
+		/// <summary>
+		/// Weighted Moving Average (WMA).
+		/// </summary>
+		WMA,
+		/// <summary>
+		/// Volume Weighted Moving Average (VWMA).
+		/// </summary>
+		VWMA
+	}
+
+	public enum PriceTypes
+	{
+		/// <summary>
+		/// Close price.
+		/// </summary>
+		Close,
+		/// <summary>
+		/// High price.
+		/// </summary>
+		High,
+		/// <summary>
+		/// Open price.
+		/// </summary>
+		Open,
+		/// <summary>
+		/// Low price.
+		/// </summary>
+		Low,
+		/// <summary>
+		/// Typical price (HL + C) / 3.
+		/// </summary>
+		Typical,
+		/// <summary>
+		/// Center price (HL) / 2.
+		/// </summary>
+		Center
+	}
+
+	private readonly StrategyParam<MovingAverageTypes> _maType;
+	private readonly StrategyParam<int> _maPeriod;
+	private readonly StrategyParam<int> _maShift;
+	private readonly StrategyParam<PriceTypes> _priceType;
+	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<bool> _buyOpen;
+	private readonly StrategyParam<bool> _sellOpen;
+	private readonly StrategyParam<bool> _buyClose;
+	private readonly StrategyParam<bool> _sellClose;
+	private readonly StrategyParam<decimal> _takeProfit;
+	private readonly StrategyParam<decimal> _stopLoss;
+	private readonly StrategyParam<int> _cooldownBars;
+
+	private IIndicator _ma;
+	private decimal[] _maBuffer = Array.Empty<decimal>();
+	private decimal[] _closeBuffer = Array.Empty<decimal>();
+	private int _sign;
+	private int _barsSinceTrade;
+
+	/// <summary>
+	/// Moving average type.
+	/// </summary>
+	public MovingAverageTypes MaType
+	{
+		get => _maType.Value;
+		set => _maType.Value = value;
+	}
+
+	/// <summary>
+	/// Moving average period.
+	/// </summary>
+	public int MaPeriod
+	{
+		get => _maPeriod.Value;
+		set => _maPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Shift applied when comparing previous values.
+	/// </summary>
+	public int MaShift
+	{
+		get => _maShift.Value;
+		set => _maShift.Value = value;
+	}
+
+	/// <summary>
+	/// Price type for the moving average.
+	/// </summary>
+	public PriceTypes PriceType
+	{
+		get => _priceType.Value;
+		set => _priceType.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type used for calculations.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Allow opening long positions.
+	/// </summary>
+	public bool BuyPositionOpen
+	{
+		get => _buyOpen.Value;
+		set => _buyOpen.Value = value;
+	}
+
+	/// <summary>
+	/// Allow opening short positions.
+	/// </summary>
+	public bool SellPositionOpen
+	{
+		get => _sellOpen.Value;
+		set => _sellOpen.Value = value;
+	}
+
+	/// <summary>
+	/// Allow closing long positions on sell signal.
+	/// </summary>
+	public bool BuyPositionClose
+	{
+		get => _buyClose.Value;
+		set => _buyClose.Value = value;
+	}
+
+	/// <summary>
+	/// Allow closing short positions on buy signal.
+	/// </summary>
+	public bool SellPositionClose
+	{
+		get => _sellClose.Value;
+		set => _sellClose.Value = value;
+	}
+
+	/// <summary>
+	/// Take profit in absolute price units.
+	/// </summary>
+	public decimal TakeProfit
+	{
+		get => _takeProfit.Value;
+		set => _takeProfit.Value = value;
+	}
+
+	/// <summary>
+	/// Stop loss in absolute price units.
+	/// </summary>
+	public decimal StopLoss
+	{
+		get => _stopLoss.Value;
+		set => _stopLoss.Value = value;
+	}
+
+	/// <summary>
+	/// Bars to wait after a completed trade.
+	/// </summary>
+	public int CooldownBars
+	{
+		get => _cooldownBars.Value;
+		set => _cooldownBars.Value = value;
+	}
+
+
+	/// <summary>
+	/// Initializes <see cref="SimpleTradingSystemStrategy"/>.
+	/// </summary>
+	public SimpleTradingSystemStrategy()
+	{
+		_maType = Param(nameof(MaType), MovingAverageTypes.EMA)
+			.SetDisplay("MA Type", "Moving average type", "Parameters");
+
+		_maPeriod = Param(nameof(MaPeriod), 4)
+			.SetGreaterThanZero()
+			.SetDisplay("MA Period", "Moving average period", "Parameters")
+			;
+
+		_maShift = Param(nameof(MaShift), 4)
+			.SetNotNegative()
+			.SetDisplay("MA Shift", "Shift for comparisons", "Parameters")
+			;
+
+		_priceType = Param(nameof(PriceType), PriceTypes.Close)
+			.SetDisplay("Price Type", "Source price for MA", "Parameters");
+
+		_cooldownBars = Param(nameof(CooldownBars), 1)
+			.SetDisplay("Cooldown Bars", "Bars to wait after a completed trade", "Risk");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(6).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles", "General");
+
+		_buyOpen = Param(nameof(BuyPositionOpen), true)
+			.SetDisplay("Buy Open", "Allow opening long positions", "Trading");
+
+		_sellOpen = Param(nameof(SellPositionOpen), true)
+			.SetDisplay("Sell Open", "Allow opening short positions", "Trading");
+
+		_buyClose = Param(nameof(BuyPositionClose), true)
+			.SetDisplay("Buy Close", "Allow closing longs on sell signal", "Trading");
+
+		_sellClose = Param(nameof(SellPositionClose), true)
+			.SetDisplay("Sell Close", "Allow closing shorts on buy signal", "Trading");
+
+		_takeProfit = Param(nameof(TakeProfit), 2000m)
+			.SetDisplay("Take Profit", "Take profit in price units", "Risk");
+
+		_stopLoss = Param(nameof(StopLoss), 1000m)
+			.SetDisplay("Stop Loss", "Stop loss in price units", "Risk");
+
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_ma = null;
+		_maBuffer = Array.Empty<decimal>();
+		_closeBuffer = Array.Empty<decimal>();
+		_sign = 0;
+		_barsSinceTrade = CooldownBars;
+	}
+
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
+
+		_ma = CreateMa(MaType, MaPeriod);
+
+		_maBuffer = new decimal[MaShift + 1];
+		_closeBuffer = new decimal[MaPeriod + MaShift + 1];
+
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(ProcessCandle).Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, _ma);
+			DrawOwnTrades(area);
+		}
+
+		StartProtection(
+			takeProfit: new Unit(TakeProfit, UnitTypes.Absolute),
+			stopLoss: new Unit(StopLoss, UnitTypes.Absolute));
+	}
+
+	private void ProcessCandle(ICandleMessage candle)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		var price = GetPrice(candle);
+		var maValue = _ma!.Process(new DecimalIndicatorValue(_ma, price, candle.OpenTime) { IsFinal = true }).ToDecimal();
+
+		if (_barsSinceTrade < CooldownBars)
+			_barsSinceTrade++;
+
+		Shift(_maBuffer, maValue);
+		Shift(_closeBuffer, candle.ClosePrice);
+
+		if (_closeBuffer[0] == 0m)
+			return; // not enough history yet
+
+		var ma0 = _maBuffer[_maBuffer.Length - 1];
+		var ma1 = _maBuffer[_maBuffer.Length - 1 - MaShift];
+
+		var close = _closeBuffer[_closeBuffer.Length - 1];
+		var closeShift = _closeBuffer[_closeBuffer.Length - 1 - MaShift];
+		var closeSum = _closeBuffer[0];
+		var open = candle.OpenPrice;
+
+		var buySignal = _sign < 1 && ma0 <= ma1 && close >= closeShift && close <= closeSum && close < open;
+		var sellSignal = _sign > -1 && ma0 >= ma1 && close <= closeShift && close >= closeSum && close > open;
+
+		if (_barsSinceTrade >= CooldownBars && buySignal)
+		{
+			if (BuyPositionOpen && IsFormedAndOnlineAndAllowTrading() && Position <= 0)
+				BuyMarket(Volume + Math.Abs(Position));
+			else if (SellPositionClose && Position < 0)
+				BuyMarket(Math.Abs(Position));
+			_sign = 1;
+			_barsSinceTrade = 0;
+		}
+		else if (_barsSinceTrade >= CooldownBars && sellSignal)
+		{
+			if (SellPositionOpen && IsFormedAndOnlineAndAllowTrading() && Position >= 0)
+				SellMarket(Volume + Math.Abs(Position));
+			else if (BuyPositionClose && Position > 0)
+				SellMarket(Math.Abs(Position));
+			_sign = -1;
+			_barsSinceTrade = 0;
+		}
+	}
+
+	private static void Shift(decimal[] array, decimal value)
+	{
+		for (var i = 0; i < array.Length - 1; i++)
+			array[i] = array[i + 1];
+		array[array.Length - 1] = value;
+	}
+
+	private decimal GetPrice(ICandleMessage candle)
+	{
+		return PriceType switch
+		{
+			PriceTypes.Close => candle.ClosePrice,
+			PriceTypes.High => candle.HighPrice,
+			PriceTypes.Open => candle.OpenPrice,
+			PriceTypes.Low => candle.LowPrice,
+			PriceTypes.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			PriceTypes.Center => (candle.HighPrice + candle.LowPrice) / 2m,
+			_ => candle.ClosePrice
+		};
+	}
+
+	private static IIndicator CreateMa(MovingAverageTypes type, int length)
+	{
+		return type switch
+		{
+			MovingAverageTypes.SMA => new SimpleMovingAverage { Length = length },
+			MovingAverageTypes.EMA => new ExponentialMovingAverage { Length = length },
+			MovingAverageTypes.DEMA => new DoubleExponentialMovingAverage { Length = length },
+			MovingAverageTypes.TEMA => new TripleExponentialMovingAverage { Length = length },
+			MovingAverageTypes.WMA => new WeightedMovingAverage { Length = length },
+			MovingAverageTypes.VWMA => new VolumeWeightedMovingAverage { Length = length },
+			_ => new SimpleMovingAverage { Length = length }
+		};
+	}
+}

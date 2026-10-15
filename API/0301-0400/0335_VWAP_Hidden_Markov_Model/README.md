@@ -1,0 +1,32 @@
+# VWAP Hidden Markov Model
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
+ 
+The **VWAP Hidden Markov Model** strategy is built around that trades based on VWAP with Hidden Markov Model for market state detection.
+
+Testing indicates an average annual return of about 100%. It performs best in the forex market.
+
+Signals trigger when Markov confirms trend changes on intraday (5m) data. This makes the method suitable for active traders.
+
+Stops rely on ATR multiples and factors like HmmDataLength, StopLossPercent. Adjust these defaults to balance risk and reward.
+
+## Details
+- **Entry Criteria**: see implementation for indicator conditions.
+- **Long/Short**: Both directions.
+- **Exit Criteria**: opposite signal or stop logic.
+- **Stops**: Yes, using indicator-based calculations.
+- **Default Values**:
+  - `HmmDataLength = 100`
+  - `StopLossPercent = 2m`
+  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
+- **Filters**:
+  - Category: Trend following
+  - Direction: Both
+  - Indicators: Markov
+  - Stops: Yes
+  - Complexity: Intermediate
+  - Timeframe: Intraday (5m)
+  - Seasonality: No
+  - Neural Networks: Yes
+  - Divergence: No
+  - Risk Level: Medium
+

@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">False Breakout Trap strategy logo for Python</title>
+  <desc id="description">A price ribbon clears resistance, enters an open steel trap, and curls sharply back below the broken level.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .language-mark { fill: #17323d; opacity: 0.07; }
+    .python-upper { fill: #2874a6; opacity: 0.07; }
+    .python-lower { fill: #aa8108; opacity: 0.07; }
+    .primary { fill: #b24f42; } .primary-light { fill: #e48b74; } .primary-shade { fill: #7d342c; }
+    .secondary { fill: #2a82a4; } .secondary-light { fill: #7bbdd4; } .secondary-shade { fill: #1c5d75; }
+    .accent { fill: #dca93e; } .positive { fill: #3c8e68; } .positive-light { fill: #82c8a5; }
+    .negative { fill: #b94b4b; } .negative-light { fill: #e98b83; }
+    .violet { fill: #745ba8; } .violet-light { fill: #af9ed2; }
+    .neutral { fill: #2f383e; } .pale { fill: #d9c9bf; } .shadow { fill: #14262c; opacity: 0.22; }
+    .line-primary { fill: none; stroke: #b24f42; stroke-width: 18; stroke-linecap: round; stroke-linejoin: round; }
+    .line-secondary { fill: none; stroke: #2a82a4; stroke-width: 18; stroke-linecap: round; stroke-linejoin: round; }
+    .line-neutral { fill: none; stroke: #2f383e; stroke-width: 18; stroke-linecap: round; stroke-linejoin: round; }
+    .line-accent { fill: none; stroke: #dca93e; stroke-width: 14; stroke-linecap: round; stroke-linejoin: round; }
+    .thin-primary { fill: none; stroke: #b24f42; stroke-width: 10; stroke-linecap: round; stroke-linejoin: round; }
+    .thin-secondary { fill: none; stroke: #2a82a4; stroke-width: 10; stroke-linecap: round; stroke-linejoin: round; }
+    .thin-neutral { fill: none; stroke: #2f383e; stroke-width: 10; stroke-linecap: round; stroke-linejoin: round; }
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill: #edf6f3; opacity: 0.08; }
+      .python-upper { fill: #7ec5ed; opacity: 0.08; }
+      .python-lower { fill: #f1ca50; opacity: 0.08; }
+      .primary { fill: #ed806d; } .primary-light { fill: #f7b09b; } .primary-shade { fill: #a94f43; }
+      .secondary { fill: #55b8d7; } .secondary-light { fill: #9ed7e8; } .secondary-shade { fill: #2f819a; }
+      .accent { fill: #f2cb61; } .positive { fill: #68c69a; } .positive-light { fill: #a9dfc2; }
+      .negative { fill: #ef7474; } .negative-light { fill: #ffb0aa; }
+      .violet { fill: #aa97da; } .violet-light { fill: #d1c4ec; }
+      .neutral { fill: #eff3f2; } .pale { fill: #8a786e; } .shadow { fill: #02090b; opacity: 0.34; }
+      .line-primary { stroke: #ed806d; } .line-secondary { stroke: #55b8d7; }
+      .line-neutral { stroke: #eff3f2; } .line-accent { stroke: #f2cb61; }
+      .thin-primary { stroke: #ed806d; } .thin-secondary { stroke: #55b8d7; } .thin-neutral { stroke: #eff3f2; }
+    }
+  </style>
+  <g aria-hidden="true">
+    <path class="python-upper" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" />
+    <path class="python-lower" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" transform="rotate(180 256 256)" />
+  </g>
+  <g aria-hidden="true">
+    <path class="neutral" d="M38 278 L201 278 L201 312 L38 312 Z M311 278 L474 278 L474 312 L311 312 Z" />
+    <path class="pale" d="M38 278 L201 278 L201 290 L38 290 Z M311 278 L474 278 L474 290 L311 290 Z" />
+    <path class="line-primary" d="M54 408 C132 392 161 327 204 251 C247 176 304 137 387 149" />
+    <path class="primary" d="M365 118 L438 158 L373 205 L386 167 Z" />
+    <path class="line-secondary" d="M420 172 C443 239 401 342 309 382" />
+    <path class="secondary" d="M284 355 L295 426 L355 386 L319 385 Z" />
+    <path class="line-neutral" d="M278 170 C316 101 407 92 454 157 M278 242 C326 302 415 291 458 224" />
+    <path class="accent" d="M303 157 L326 169 L310 194 Z M344 132 L368 142 L351 169 Z M392 128 L415 141 L397 166 Z M310 241 L332 224 L340 253 Z M354 266 L375 244 L386 273 Z M403 264 L421 239 L436 267 Z" />
+    <path class="neutral" d="M374 226 L390 226 L390 279 L374 279 Z" />
+    <path class="negative" d="M354 181 A28 28 0 1 0 410 181 A28 28 0 1 0 354 181 Z" />
+    <path class="negative-light" d="M365 168 C377 159 393 161 402 173 C389 168 377 169 365 178 Z" />
+  </g>
+</svg>

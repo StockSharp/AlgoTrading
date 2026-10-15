@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description"><title id="title">Ichimoku Volatility Contraction strategy logo for C#</title><desc id="description">A recognizable Ichimoku cloud is compressed between the jaws of a heavy screw vise.</desc>
+  <style>:root{color-scheme:light dark;--p:#3b5384;--pl:#8b9fcb;--ps:#293a5d;--s:#ba4e79;--sl:#e68cac;--a:#dfa63b;--n:#293640;--pale:#ced4df}.language-mark{fill:#17323d;opacity:.07}.python-upper{fill:#2874a6;opacity:.07}.python-lower{fill:#aa8108;opacity:.07}@media(prefers-color-scheme:dark){:root{--p:#718bc7;--pl:#b1c1e7;--ps:#49639a;--s:#e675a4;--sl:#ffacc8;--a:#f2c75d;--n:#edf1f5;--pale:#747f92}.language-mark{fill:#edf6f3;opacity:.08}.python-upper{fill:#7ec5ed;opacity:.08}.python-lower{fill:#f1ca50;opacity:.08}}</style>
+  <g class="language-mark" aria-hidden="true"><path d="M327 108 A180 210 0 1 0 327 404 L278 348 A110 130 0 1 1 278 164 Z"/><path d="M342 54 L397 54 L367 458 L312 458 Z M432 54 L487 54 L457 458 L402 458 Z M301 172 L499 172 L493 232 L295 232 Z M289 285 L487 285 L481 345 L283 345 Z"/></g>
+  <g aria-hidden="true" stroke-linecap="round" stroke-linejoin="round">
+    <path fill="var(--sl)" d="M148 334 C113 334 92 312 99 282 C104 260 121 248 143 248 C139 213 164 188 196 190 C211 157 252 148 280 170 C310 149 351 161 362 197 C394 198 417 222 414 255 C438 263 451 286 443 309 C436 327 421 337 399 337 Z"/>
+    <path fill="var(--s)" opacity=".45" d="M113 304 C180 281 230 312 284 293 C333 276 374 302 430 286 L443 309 C436 327 421 337 399 337 H148 C130 337 117 326 113 304 Z"/>
+    <path fill="var(--ps)" d="M29 107 H124 V207 H158 V310 H124 V410 H29 Z M483 107 H388 V207 H354 V310 H388 V410 H483 Z"/>
+    <path fill="var(--pl)" d="M53 132 H100 V232 H134 V285 H100 V385 H53 Z M459 132 H412 V232 H378 V285 H412 V385 H459 Z"/>
+    <path fill="var(--n)" d="M12 77 H143 V108 H12 Z M369 77 H500 V108 H369 Z M12 409 H143 V440 H12 Z M369 409 H500 V440 H369 Z"/>
+    <path fill="var(--a)" d="M102 236 L166 258 L102 280 Z M410 236 L346 258 L410 280 Z"/>
+    <path fill="none" stroke="var(--n)" stroke-width="17" d="M399 442 V478 M352 478 H446"/>
+    <circle fill="var(--a)" cx="352" cy="478" r="19"/><circle fill="var(--a)" cx="446" cy="478" r="19"/>
+  </g>
+</svg>

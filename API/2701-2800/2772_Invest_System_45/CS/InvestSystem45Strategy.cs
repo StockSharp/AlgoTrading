@@ -1,0 +1,491 @@
+using System;
+using System.Linq;
+using System.Collections.Generic;
+
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
+
+using StockSharp.Algo.Indicators;
+using StockSharp.Algo.Strategies;
+using StockSharp.BusinessEntities;
+using StockSharp.Messages;
+
+namespace StockSharp.Samples.Strategies;
+
+/// <summary>
+/// Invest System 4.5 strategy converted from MetaTrader.
+/// Trades in the direction of the previous 4-hour candle within the first minutes of the new session.
+/// </summary>
+public class InvestSystem45Strategy : Strategy
+{
+	private readonly StrategyParam<int> _stopLossPips;
+	private readonly StrategyParam<int> _takeProfitPips;
+	private readonly StrategyParam<int> _entryWindowMinutes;
+	private readonly StrategyParam<DataType> _signalCandleType;
+	private readonly StrategyParam<DataType> _trendCandleType;
+	private readonly StrategyParam<decimal> _baseLot;
+
+	private decimal _pipSize;
+	private decimal _minBalance;
+	private decimal _maxBalance;
+	private int _lotStage;
+	private bool _planBActive;
+
+	private decimal _stageLot1;
+	private decimal _stageLot2;
+	private decimal _stageLot3;
+	private decimal _stageLot4;
+	private decimal _lotOption1;
+	private decimal _lotOption2;
+	private decimal _currentVolume;
+
+	private bool _needsPostTradeAdjustment;
+	private bool _hasOpenPosition;
+	private decimal _pnlAtEntry;
+	private decimal _lastTradePnL;
+
+	private int _trendDirection;
+	private DateTime? _entryWindowStart;
+	private DateTime? _entryWindowEnd;
+	private bool _entryWindowActive;
+
+	private decimal _entryPrice;
+	private decimal _stopPrice;
+	private decimal _takePrice;
+
+	/// <summary>
+	/// Stop loss distance expressed in pips.
+	/// </summary>
+	public int StopLossPips
+	{
+		get => _stopLossPips.Value;
+		set => _stopLossPips.Value = value;
+	}
+
+	/// <summary>
+	/// Take profit distance expressed in pips.
+	/// </summary>
+	public int TakeProfitPips
+	{
+		get => _takeProfitPips.Value;
+		set => _takeProfitPips.Value = value;
+	}
+
+	/// <summary>
+	/// Minutes allowed for entries after a new trend candle opens.
+	/// </summary>
+	public int EntryWindowMinutes
+	{
+		get => _entryWindowMinutes.Value;
+		set => _entryWindowMinutes.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type that drives entry timing.
+	/// </summary>
+	public DataType SignalCandleType
+	{
+		get => _signalCandleType.Value;
+		set => _signalCandleType.Value = value;
+	}
+
+	/// <summary>
+	/// Higher timeframe candle used to define trade direction.
+	/// </summary>
+	public DataType TrendCandleType
+	{
+		get => _trendCandleType.Value;
+		set => _trendCandleType.Value = value;
+	}
+
+	/// <summary>
+	/// Base lot size used to derive martingale steps.
+	/// </summary>
+	public decimal BaseLot
+	{
+		get => _baseLot.Value;
+		set => _baseLot.Value = value;
+	}
+
+	/// <summary>
+	/// Initialize <see cref="InvestSystem45Strategy"/>.
+	/// </summary>
+	public InvestSystem45Strategy()
+	{
+		_stopLossPips = Param(nameof(StopLossPips), 240)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss (pips)", "Stop loss distance in pips", "Risk")
+			
+			.SetOptimize(120, 360, 20);
+
+		_takeProfitPips = Param(nameof(TakeProfitPips), 40)
+			.SetNotNegative()
+			.SetDisplay("Take Profit (pips)", "Take profit distance in pips", "Risk")
+			
+			.SetOptimize(20, 80, 10);
+
+		_entryWindowMinutes = Param(nameof(EntryWindowMinutes), 15)
+			.SetGreaterThanZero()
+			.SetDisplay("Entry Window", "Minutes after 4H open when entries are allowed", "Timing")
+			
+			.SetOptimize(5, 30, 5);
+
+		_signalCandleType = Param(nameof(SignalCandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Signal Candles", "Candles used to time entries", "Timing");
+
+		_trendCandleType = Param(nameof(TrendCandleType), TimeSpan.FromHours(4).TimeFrame())
+			.SetDisplay("Trend Candles", "Higher timeframe candles for direction", "Timing");
+
+		_baseLot = Param(nameof(BaseLot), 0.1m)
+			.SetGreaterThanZero()
+			.SetDisplay("Base Lot", "Starting lot size before scaling", "Risk")
+			
+			.SetOptimize(0.05m, 0.3m, 0.05m);
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		if (Security is null)
+			yield break;
+
+		yield return (Security, SignalCandleType);
+
+		if (!SignalCandleType.Equals(TrendCandleType))
+			yield return (Security, TrendCandleType);
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		ResetState();
+	}
+
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
+
+		ResetState();
+		_pipSize = CalculatePipSize();
+		// Recreate lot options according to current stage and plan mode.
+		RecalculateLotOptions();
+
+		var trendSubscription = SubscribeCandles(TrendCandleType);
+		trendSubscription.Bind(ProcessTrendCandle).Start();
+
+		var entrySubscription = SubscribeCandles(SignalCandleType);
+		entrySubscription.Bind(ProcessEntryCandle).Start();
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, entrySubscription);
+			DrawOwnTrades(area);
+		}
+	}
+
+	/// <inheritdoc />
+	protected override void OnPositionReceived(Position position)
+	{
+		base.OnPositionReceived(position);
+
+		if (Position != 0m)
+		{
+			// Record entry state to compute realized PnL later.
+			if (!_hasOpenPosition)
+			{
+				_hasOpenPosition = true;
+				_needsPostTradeAdjustment = true;
+				_pnlAtEntry = PnL;
+			}
+
+			_entryWindowActive = false;
+			return;
+		}
+
+		if (!_hasOpenPosition)
+			return;
+
+		_hasOpenPosition = false;
+		_lastTradePnL = PnL - _pnlAtEntry;
+		// Mirror MetaTrader profit calculation for Plan B rules.
+
+		HandlePostTradeAdjustment();
+	}
+
+	private void ProcessTrendCandle(ICandleMessage candle)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		// Store direction from the last completed 4H candle.
+		if (candle.ClosePrice > candle.OpenPrice)
+		{
+			_trendDirection = 1;
+		}
+		else if (candle.ClosePrice < candle.OpenPrice)
+		{
+			_trendDirection = -1;
+		}
+
+		_entryWindowStart = candle.CloseTime;
+		_entryWindowEnd = _entryWindowStart?.AddMinutes(EntryWindowMinutes);
+		// Open a new entry window immediately at the next candle open.
+		_entryWindowActive = true;
+	}
+
+	private void ProcessEntryCandle(ICandleMessage candle)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		// Check SL/TP for open positions.
+		if (Position > 0m && _entryPrice > 0m)
+		{
+			if (_stopPrice > 0m && candle.LowPrice <= _stopPrice)
+			{
+				SellMarket(Position);
+				ResetTargets();
+				return;
+			}
+			if (_takePrice > 0m && candle.HighPrice >= _takePrice)
+			{
+				SellMarket(Position);
+				ResetTargets();
+				return;
+			}
+		}
+		else if (Position < 0m && _entryPrice > 0m)
+		{
+			if (_stopPrice > 0m && candle.HighPrice >= _stopPrice)
+			{
+				BuyMarket(Math.Abs(Position));
+				ResetTargets();
+				return;
+			}
+			if (_takePrice > 0m && candle.LowPrice <= _takePrice)
+			{
+				BuyMarket(Math.Abs(Position));
+				ResetTargets();
+				return;
+			}
+		}
+
+		// Update balance-dependent scaling before evaluating signals.
+		UpdateBalanceState();
+
+		if (!_entryWindowActive || !_entryWindowStart.HasValue || !_entryWindowEnd.HasValue)
+			return;
+
+		var openTime = candle.OpenTime;
+		if (openTime < _entryWindowStart.Value)
+			return;
+
+		if (openTime > _entryWindowEnd.Value)
+		{
+			_entryWindowActive = false;
+			return;
+		}
+
+		if (_trendDirection == 0)
+			return;
+
+		if (Position != 0m)
+			return;
+
+		// Lazy initialize volume when strategy is ready.
+		if (_currentVolume <= 0m)
+			_currentVolume = _lotOption1;
+
+		if (_currentVolume <= 0m)
+			return;
+
+		if (_trendDirection > 0)
+		{
+			BuyMarket(_currentVolume);
+		}
+		else
+		{
+			SellMarket(_currentVolume);
+		}
+
+		// Allow only one trade per 4H candle similar to MetaTrader logic.
+		_entryWindowActive = false;
+	}
+
+	private void HandlePostTradeAdjustment()
+	{
+		if (!_needsPostTradeAdjustment)
+			return;
+
+		_needsPostTradeAdjustment = false;
+
+		// Apply lot escalation rules after each closed trade.
+		UpdateBalanceState();
+
+		if (_lastTradePnL < 0m)
+		{
+			if (_currentVolume == _lotOption2 && !_planBActive)
+			{
+				_planBActive = true;
+				RecalculateLotOptions();
+			}
+			else if (_currentVolume == _lotOption1)
+			{
+				_currentVolume = _lotOption2;
+			}
+			else
+			{
+				_currentVolume = _lotOption2;
+			}
+		}
+		else if (_lastTradePnL > 0m)
+		{
+			_currentVolume = _lotOption1;
+		}
+	}
+
+	private void UpdateBalanceState()
+	{
+		var balance = Portfolio?.CurrentValue;
+		if (balance is null || balance.Value <= 0m)
+			return;
+
+		if (_minBalance <= 0m)
+		{
+			_minBalance = balance.Value;
+			_maxBalance = balance.Value;
+		}
+
+		if (balance.Value > _maxBalance)
+		{
+			_maxBalance = balance.Value;
+			if (_planBActive)
+			{
+				_planBActive = false;
+				RecalculateLotOptions();
+			}
+		}
+
+		var newStage = 1;
+		if (_minBalance > 0m)
+		{
+			// Check for equity milestones to scale base lots.
+			for (var stage = 6; stage >= 2; stage--)
+			{
+				if (balance.Value > _minBalance * stage)
+				{
+					newStage = stage;
+					break;
+				}
+			}
+		}
+
+		if (newStage != _lotStage)
+		{
+			_lotStage = newStage;
+			RecalculateLotOptions();
+		}
+	}
+
+	private decimal CalculatePipSize()
+	{
+		var step = Security?.PriceStep ?? 1m;
+		var decimals = Security?.Decimals ?? 0;
+
+		if (decimals == 3 || decimals == 5)
+			step *= 10m;
+
+		return step;
+	}
+
+	/// <inheritdoc />
+	protected override void OnOwnTradeReceived(MyTrade trade)
+	{
+		base.OnOwnTradeReceived(trade);
+		if (trade?.Trade == null) return;
+
+		if (Position != 0m && _entryPrice == 0m)
+		{
+			_entryPrice = trade.Trade.Price;
+			var slDist = StopLossPips * _pipSize;
+			var tpDist = TakeProfitPips * _pipSize;
+
+			if (Position > 0m)
+			{
+				_stopPrice = slDist > 0m ? _entryPrice - slDist : 0m;
+				_takePrice = tpDist > 0m ? _entryPrice + tpDist : 0m;
+			}
+			else
+			{
+				_stopPrice = slDist > 0m ? _entryPrice + slDist : 0m;
+				_takePrice = tpDist > 0m ? _entryPrice - tpDist : 0m;
+			}
+		}
+
+		if (Position == 0m)
+			ResetTargets();
+	}
+
+	private void ResetTargets()
+	{
+		_entryPrice = 0m;
+		_stopPrice = 0m;
+		_takePrice = 0m;
+	}
+
+	private void ResetState()
+	{
+		_pipSize = 0m;
+		_minBalance = 0m;
+		_maxBalance = 0m;
+		_lotStage = 1;
+		_planBActive = false;
+		_stageLot1 = 0m;
+		_stageLot2 = 0m;
+		_stageLot3 = 0m;
+		_stageLot4 = 0m;
+		_lotOption1 = 0m;
+		_lotOption2 = 0m;
+		_currentVolume = 0m;
+		_needsPostTradeAdjustment = false;
+		_hasOpenPosition = false;
+		_pnlAtEntry = 0m;
+		_lastTradePnL = 0m;
+		_trendDirection = 0;
+		_entryWindowStart = null;
+		_entryWindowEnd = null;
+		_entryWindowActive = false;
+		_entryPrice = 0m;
+		_stopPrice = 0m;
+		_takePrice = 0m;
+	}
+
+	private void RecalculateLotOptions()
+	{
+		var baseLot = BaseLot * _lotStage;
+
+		_stageLot1 = baseLot;
+		_stageLot2 = baseLot * 2m;
+		_stageLot3 = baseLot * 7m;
+		_stageLot4 = baseLot * 14m;
+
+		// Stage-specific lot multipliers replicate the original configuration.
+		if (_planBActive)
+		{
+			_lotOption1 = _stageLot2;
+			_lotOption2 = _stageLot4;
+		}
+		else
+		{
+			_lotOption1 = _stageLot1;
+			_lotOption2 = _stageLot3;
+		}
+
+		if (_currentVolume <= 0m)
+			_currentVolume = _lotOption1;
+	}
+}

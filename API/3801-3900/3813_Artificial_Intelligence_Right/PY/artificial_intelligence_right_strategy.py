@@ -1,0 +1,74 @@
+import clr
+
+clr.AddReference("StockSharp.Messages")
+clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.Algo.Indicators")
+clr.AddReference("StockSharp.Algo.Strategies")
+
+from System import TimeSpan
+from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Algo.Indicators import SimpleMovingAverage
+from StockSharp.Algo.Strategies import Strategy
+
+
+class artificial_intelligence_right_strategy(Strategy):
+    def __init__(self):
+        super(artificial_intelligence_right_strategy, self).__init__()
+        self._fast_period = self.Param("FastPeriod", 5) \
+            .SetDisplay("Fast SMA", "Fast SMA period", "Indicators")
+        self._slow_period = self.Param("SlowPeriod", 34) \
+            .SetDisplay("Slow SMA", "Slow SMA period", "Indicators")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+            .SetDisplay("Candle Type", "Candle timeframe", "General")
+        self._prev_diff = 0.0
+        self._has_prev = False
+
+    @property
+    def fast_period(self):
+        return self._fast_period.Value
+
+    @property
+    def slow_period(self):
+        return self._slow_period.Value
+
+    @property
+    def candle_type(self):
+        return self._candle_type.Value
+
+    def OnReseted(self):
+        super(artificial_intelligence_right_strategy, self).OnReseted()
+        self._prev_diff = 0.0
+        self._has_prev = False
+
+    def OnStarted2(self, time):
+        super(artificial_intelligence_right_strategy, self).OnStarted2(time)
+        self._has_prev = False
+        fast = SimpleMovingAverage()
+        fast.Length = self.fast_period
+        slow = SimpleMovingAverage()
+        slow.Length = self.slow_period
+        subscription = self.SubscribeCandles(self.candle_type)
+        subscription.Bind(fast, slow, self.process_candle).Start()
+
+    def process_candle(self, candle, fast, slow):
+        if candle.State != CandleStates.Finished:
+            return
+        fast_val = float(fast)
+        slow_val = float(slow)
+        diff = fast_val - slow_val
+        if not self._has_prev:
+            self._prev_diff = diff
+            self._has_prev = True
+            return
+        if self._prev_diff <= 0 and diff > 0 and self.Position <= 0:
+            if self.Position < 0:
+                self.BuyMarket()
+            self.BuyMarket()
+        elif self._prev_diff >= 0 and diff < 0 and self.Position >= 0:
+            if self.Position > 0:
+                self.SellMarket()
+            self.SellMarket()
+        self._prev_diff = diff
+
+    def CreateClone(self):
+        return artificial_intelligence_right_strategy()

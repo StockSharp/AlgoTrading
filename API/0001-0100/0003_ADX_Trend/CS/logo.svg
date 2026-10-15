@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">ADX Trend strategy logo for C#</title>
+  <desc id="description">A solid weather vane locks into a strong directional wind above a stable roofline.</desc>
+
+  <style>
+    :root { color-scheme: light dark; }
+
+    .language-mark { fill: #17323d; opacity: 0.07; }
+    .python-upper { fill: #2874a6; opacity: 0.07; }
+    .python-lower { fill: #aa8108; opacity: 0.07; }
+    .primary { fill: #16849a; }
+    .primary-light { fill: #69c4d2; }
+    .primary-shade { fill: #0d6074; }
+    .secondary { fill: #d4862f; }
+    .secondary-light { fill: #f1bb62; }
+    .secondary-shade { fill: #a85e1d; }
+    .accent { fill: #d84955; }
+    .neutral { fill: #27373d; }
+    .shadow { fill: #14242a; opacity: 0.22; }
+
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill: #edf6f3; opacity: 0.08; }
+      .python-upper { fill: #7ec5ed; opacity: 0.08; }
+      .python-lower { fill: #f1ca50; opacity: 0.08; }
+      .primary { fill: #48bfd1; }
+      .primary-light { fill: #8cdeE7; }
+      .primary-shade { fill: #218da0; }
+      .secondary { fill: #f1ac52; }
+      .secondary-light { fill: #ffd482; }
+      .secondary-shade { fill: #c87a2e; }
+      .accent { fill: #f36b73; }
+      .neutral { fill: #e4eeeb; }
+      .shadow { fill: #02090b; opacity: 0.34; }
+    }
+  </style>
+
+  <g class="language-mark" aria-hidden="true">
+    <path d="M327 108 A180 210 0 1 0 327 404 L278 348 A110 130 0 1 1 278 164 Z" />
+    <path d="M342 54 L397 54 L367 458 L312 458 Z M432 54 L487 54 L457 458 L402 458 Z M301 172 L499 172 L493 232 L295 232 Z M289 285 L487 285 L481 345 L283 345 Z" />
+  </g>
+
+  <g aria-hidden="true">
+    <path class="primary" d="M30 132 C121 100 188 108 247 140 C308 173 367 178 482 129 L470 181 C363 222 292 211 231 177 C177 147 119 144 39 174 Z" />
+    <path class="primary-light" d="M70 217 C154 190 213 198 268 226 C320 252 368 257 449 230 L438 270 C357 294 299 287 246 260 C194 234 144 228 78 248 Z" />
+    <path class="neutral" d="M244 194 L273 194 L286 438 L231 438 Z" />
+    <path class="secondary" d="M75 215 L244 177 L244 153 L432 201 L351 231 L273 207 L273 242 L244 242 L244 210 L128 250 Z" />
+    <path class="secondary-light" d="M92 215 L244 183 L244 199 L133 235 Z" />
+    <path class="secondary-shade" d="M351 178 L432 201 L361 246 L329 221 Z" />
+    <path class="accent" d="M259 165 A24 24 0 1 1 259 213 A24 24 0 1 1 259 165 Z" />
+    <path class="neutral" d="M145 442 L258 348 L372 442 L340 464 L258 397 L177 464 Z" />
+  </g>
+</svg>

@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Ichimoku Volume strategy logo for C#</title>
+  <desc id="description">Volume towers lift a price arrow through an Ichimoku cloud, confirming that the cloud break has real participation.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .language-mark { fill:#17323d; opacity:.07; } .python-upper { fill:#2874a6; opacity:.07; } .python-lower { fill:#aa8108; opacity:.07; }
+    .primary { fill:#347858; } .primary-light { fill:#7fbc99; } .primary-shade { fill:#23513d; } .secondary { fill:#c4872e; } .secondary-light { fill:#edbb69; } .secondary-shade { fill:#895b1e; }
+    .accent { fill:#7a65ad; } .positive { fill:#388960; } .positive-light { fill:#82c49f; } .negative { fill:#b94c46; } .negative-light { fill:#e78b7f; }
+    .violet { fill:#3f75a7; } .violet-light { fill:#8db7db; } .neutral { fill:#273a36; } .pale { fill:#cbd8cb; } .shadow { fill:#14262c; opacity:.22; }
+    .line-primary { fill:none; stroke:#347858; stroke-width:18; stroke-linecap:round; stroke-linejoin:round; } .line-secondary { fill:none; stroke:#c4872e; stroke-width:18; stroke-linecap:round; stroke-linejoin:round; }
+    .line-neutral { fill:none; stroke:#273a36; stroke-width:18; stroke-linecap:round; stroke-linejoin:round; } .line-accent { fill:none; stroke:#7a65ad; stroke-width:14; stroke-linecap:round; stroke-linejoin:round; }
+    .thin-primary { fill:none; stroke:#347858; stroke-width:10; stroke-linecap:round; stroke-linejoin:round; } .thin-secondary { fill:none; stroke:#c4872e; stroke-width:10; stroke-linecap:round; stroke-linejoin:round; } .thin-neutral { fill:none; stroke:#273a36; stroke-width:10; stroke-linecap:round; stroke-linejoin:round; }
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill:#edf6f3; opacity:.08; } .python-upper { fill:#7ec5ed; opacity:.08; } .python-lower { fill:#f1ca50; opacity:.08; }
+      .primary { fill:#66bf91; } .primary-light { fill:#aae0be; } .primary-shade { fill:#3d8e69; } .secondary { fill:#e6ad57; } .secondary-light { fill:#ffd08a; } .secondary-shade { fill:#a97735; }
+      .accent { fill:#ac9ae0; } .positive { fill:#67c391; } .positive-light { fill:#a7ddbb; } .negative { fill:#ee746c; } .negative-light { fill:#ffaea3; }
+      .violet { fill:#73ace0; } .violet-light { fill:#b5d5ee; } .neutral { fill:#edf3ef; } .pale { fill:#718378; } .shadow { fill:#02090b; opacity:.34; }
+      .line-primary { stroke:#66bf91; } .line-secondary { stroke:#e6ad57; } .line-neutral { stroke:#edf3ef; } .line-accent { stroke:#ac9ae0; }
+      .thin-primary { stroke:#66bf91; } .thin-secondary { stroke:#e6ad57; } .thin-neutral { stroke:#edf3ef; }
+    }
+  </style>
+  <g class="language-mark" aria-hidden="true"><path d="M327 108 A180 210 0 1 0 327 404 L278 348 A110 130 0 1 1 278 164 Z"/><path d="M342 54 L397 54 L367 458 L312 458 Z M432 54 L487 54 L457 458 L402 458 Z M301 172 L499 172 L493 232 L295 232 Z M289 285 L487 285 L481 345 L283 345 Z"/></g>
+  <g aria-hidden="true">
+    <path class="violet-light" d="M40 252 C52 207 94 188 132 206 C152 159 216 149 251 190 C282 156 345 164 363 211 C414 202 463 233 463 280 C463 325 428 347 385 347 H105 C65 347 35 319 35 282 C35 269 37 260 40 252 Z" />
+    <path class="pale" d="M82 279 C133 246 184 251 226 280 C269 310 322 310 382 274 L400 304 C329 347 257 347 207 313 C177 292 141 289 103 312 Z" />
+    <path class="secondary" d="M72 364 L116 364 L116 440 L72 440 Z M131 330 L175 330 L175 440 L131 440 Z M190 287 L234 287 L234 440 L190 440 Z M249 235 L293 235 L293 440 L249 440 Z" />
+    <path class="line-primary" d="M230 345 C286 306 326 249 369 181 C395 140 417 114 448 94" />
+    <path class="primary" d="M416 72 L483 80 L447 139 L443 107 Z" />
+  </g>
+</svg>
+

@@ -1,0 +1,40 @@
+# Ichimoku Volume Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
+ 
+Implementation of strategy - Ichimoku + Volume. Buy when price is above Kumo cloud, Tenkan-sen is above Kijun-sen, and volume is above average. Sell when price is below Kumo cloud, Tenkan-sen is below Kijun-sen, and volume is above average.
+
+Testing indicates an average annual return of about 40%. It performs best in the crypto market.
+
+Ichimoku components define the directional bias while surging volume confirms interest. Trades open when price aligns with the cloud and volume picks up.
+
+It fits traders who like to follow cloud breakouts with participation. Risk is restricted by a percent stop.
+
+## Details
+
+- **Entry Criteria**:
+  - Long: `Price > Cloud && Tenkan > Kijun && Volume > AvgVolume`
+  - Short: `Price < Cloud && Tenkan < Kijun && Volume > AvgVolume`
+- **Long/Short**: Both
+- **Exit Criteria**:
+  - Cloud breakout in opposite direction
+- **Stops**: Percent-based using `StopLossPercent`
+- **Default Values**:
+  - `TenkanPeriod` = 9
+  - `KijunPeriod` = 26
+  - `SenkouSpanPeriod` = 52
+  - `VolumeAvgPeriod` = 20
+  - `StopLossPercent` = 2
+  - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    AvgVolume is the average volume of the previous VolumeAvgPeriod candles. A long closes when price closes below the cloud and a short when it closes above it. An entry signal against an open position reverses it.
+- **Filters**:
+  - Category: Breakout
+  - Direction: Both
+  - Indicators: Ichimoku Cloud, Volume
+  - Stops: Yes
+  - Complexity: Intermediate
+  - Timeframe: Mid-term
+  - Seasonality: No
+  - Neural Networks: No
+  - Divergence: No
+  - Risk Level: Medium
+

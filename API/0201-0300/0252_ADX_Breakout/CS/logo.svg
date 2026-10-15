@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">ADX Breakout strategy logo for C#</title><desc id="description">A high ADX power gauge drives a steel ram through a brick wall.</desc>
+  <style>
+:root{color-scheme:light dark}.language-mark{fill:#17323d;opacity:.07}.python-upper{fill:#2874a6;opacity:.07}.python-lower{fill:#aa8108;opacity:.07}.primary{fill:#347858}.primary-light{fill:#7fbc99}.primary-shade{fill:#23513d}.secondary{fill:#c4872e}.secondary-light{fill:#edbb69}.secondary-shade{fill:#895b1e}.accent{fill:#7a65ad}.positive{fill:#388960}.positive-light{fill:#82c49f}.negative{fill:#b94c46}.negative-light{fill:#e78b7f}.violet{fill:#3f75a7}.violet-light{fill:#8db7db}.neutral{fill:#273a36}.pale{fill:#cbd8cb}.shadow{fill:#14262c;opacity:.22}.line-primary{fill:none;stroke:#347858;stroke-width:18;stroke-linecap:round;stroke-linejoin:round}.line-secondary{fill:none;stroke:#c4872e;stroke-width:18;stroke-linecap:round;stroke-linejoin:round}.line-neutral{fill:none;stroke:#273a36;stroke-width:18;stroke-linecap:round;stroke-linejoin:round}.line-accent{fill:none;stroke:#7a65ad;stroke-width:14;stroke-linecap:round;stroke-linejoin:round}.thin-primary{fill:none;stroke:#347858;stroke-width:10;stroke-linecap:round;stroke-linejoin:round}.thin-secondary{fill:none;stroke:#c4872e;stroke-width:10;stroke-linecap:round;stroke-linejoin:round}.thin-neutral{fill:none;stroke:#273a36;stroke-width:10;stroke-linecap:round;stroke-linejoin:round}@media(prefers-color-scheme:dark){.language-mark{fill:#edf6f3;opacity:.08}.python-upper{fill:#7ec5ed;opacity:.08}.python-lower{fill:#f1ca50;opacity:.08}.primary{fill:#66bf91}.primary-light{fill:#aae0be}.primary-shade{fill:#3d8e69}.secondary{fill:#e6ad57}.secondary-light{fill:#ffd08a}.secondary-shade{fill:#a97735}.accent{fill:#ac9ae0}.positive{fill:#67c391}.positive-light{fill:#a7ddbb}.negative{fill:#ee746c}.negative-light{fill:#ffaea3}.violet{fill:#73ace0}.violet-light{fill:#b5d5ee}.neutral{fill:#edf3ef}.pale{fill:#718378}.shadow{fill:#02090b;opacity:.34}.line-primary{stroke:#66bf91}.line-secondary{stroke:#e6ad57}.line-neutral{stroke:#edf3ef}.line-accent{stroke:#ac9ae0}.thin-primary{stroke:#66bf91}.thin-secondary{stroke:#e6ad57}.thin-neutral{stroke:#edf3ef}}
+  </style>
+  <g class="language-mark" aria-hidden="true">
+    <path d="M327 108 A180 210 0 1 0 327 404 L278 348 A110 130 0 1 1 278 164 Z" />
+    <path d="M342 54 L397 54 L367 458 L312 458 Z M432 54 L487 54 L457 458 L402 458 Z M301 172 L499 172 L493 232 L295 232 Z M289 285 L487 285 L481 345 L283 345 Z" />
+  </g>
+  <g aria-hidden="true"><path class="primary-shade" d="M333 68 L474 68 L474 112 L333 112 Z M353 120 L474 120 L474 164 L353 164 Z M333 172 L474 172 L474 216 L333 216 Z M353 224 L474 224 L474 268 L353 268 Z M333 276 L474 276 L474 320 L333 320 Z M353 328 L474 328 L474 372 L353 372 Z M333 380 L474 380 L474 424 L333 424 Z"/>
+    <path class="violet-light" d="M40 342 A145 145 0 0 1 330 342 L292 342 A107 107 0 0 0 78 342 Z" />
+    <path class="primary" d="M73 247 A145 145 0 0 1 139 205 L151 242 A107 107 0 0 0 101 273 Z" />
+    <path class="accent" d="M237 211 A145 145 0 0 1 308 276 L275 295 A107 107 0 0 0 225 249 Z" />
+    <circle class="secondary" cx="185" cy="342" r="27" />
+    <path class="line-accent" d="M185 342 L270 241" />
+    <path class="secondary" d="M250 316 L413 316 L413 366 L250 366 Z" />
+    <path class="accent" d="M376 287 L452 341 L376 395 L393 366 L393 316 Z" />
+  </g>
+</svg>

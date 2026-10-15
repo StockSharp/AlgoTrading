@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Statistical Arbitrage strategy logo for Python</title>
+  <desc id="description">Two separated price streams pass through a mechanical statistical gear and leave with their spread compressed.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .language-mark { fill:#17323d; opacity:.07; } .python-upper { fill:#2874a6; opacity:.07; } .python-lower { fill:#aa8108; opacity:.07; }
+    .primary { fill:#347858; } .primary-light { fill:#7fbc99; } .primary-shade { fill:#23513d; } .secondary { fill:#c4872e; } .secondary-light { fill:#edbb69; } .secondary-shade { fill:#895b1e; }
+    .accent { fill:#7a65ad; } .positive { fill:#388960; } .positive-light { fill:#82c49f; } .negative { fill:#b94c46; } .negative-light { fill:#e78b7f; } .violet { fill:#3f75a7; } .violet-light { fill:#8db7db; } .neutral { fill:#273a36; } .pale { fill:#cbd8cb; } .shadow { fill:#14262c; opacity:.22; }
+    .line-primary { fill:none; stroke:#347858; stroke-width:18; stroke-linecap:round; stroke-linejoin:round; } .line-secondary { fill:none; stroke:#c4872e; stroke-width:18; stroke-linecap:round; stroke-linejoin:round; } .line-neutral { fill:none; stroke:#273a36; stroke-width:18; stroke-linecap:round; stroke-linejoin:round; } .line-accent { fill:none; stroke:#7a65ad; stroke-width:14; stroke-linecap:round; stroke-linejoin:round; } .thin-primary { fill:none; stroke:#347858; stroke-width:10; stroke-linecap:round; stroke-linejoin:round; } .thin-secondary { fill:none; stroke:#c4872e; stroke-width:10; stroke-linecap:round; stroke-linejoin:round; } .thin-neutral { fill:none; stroke:#273a36; stroke-width:10; stroke-linecap:round; stroke-linejoin:round; }
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill:#edf6f3; opacity:.08; } .python-upper { fill:#7ec5ed; opacity:.08; } .python-lower { fill:#f1ca50; opacity:.08; }
+      .primary { fill:#66bf91; } .primary-light { fill:#aae0be; } .primary-shade { fill:#3d8e69; } .secondary { fill:#e6ad57; } .secondary-light { fill:#ffd08a; } .secondary-shade { fill:#a97735; } .accent { fill:#ac9ae0; } .positive { fill:#67c391; } .positive-light { fill:#a7ddbb; } .negative { fill:#ee746c; } .negative-light { fill:#ffaea3; } .violet { fill:#73ace0; } .violet-light { fill:#b5d5ee; } .neutral { fill:#edf3ef; } .pale { fill:#718378; } .shadow { fill:#02090b; opacity:.34; }
+      .line-primary { stroke:#66bf91; } .line-secondary { stroke:#e6ad57; } .line-neutral { stroke:#edf3ef; } .line-accent { stroke:#ac9ae0; } .thin-primary { stroke:#66bf91; } .thin-secondary { stroke:#e6ad57; } .thin-neutral { stroke:#edf3ef; }
+    }
+  </style>
+  <g aria-hidden="true">
+    <path class="python-upper" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" />
+    <path class="python-lower" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" transform="rotate(180 256 256)" />
+  </g>
+  <g aria-hidden="true">
+    <path class="line-secondary" d="M37 124 C105 124 139 153 196 190" />
+    <path class="line-primary" d="M37 388 C105 388 139 359 196 322" />
+    <path class="secondary" d="M33 96 L93 124 L33 152 Z" />
+    <path class="primary" d="M33 360 L93 388 L33 416 Z" />
+    <path class="violet" d="M238 124 L274 124 L274 164 L304 176 L333 148 L359 174 L331 203 L343 232 L383 232 L383 268 L343 268 L331 298 L359 326 L333 352 L304 324 L274 336 L274 376 L238 376 L238 336 L208 324 L180 352 L154 326 L182 298 L170 268 L130 268 L130 232 L170 232 L182 203 L154 174 L180 148 L208 176 L238 164 Z" />
+    <circle class="pale" cx="256" cy="250" r="72" />
+    <circle class="accent" cx="256" cy="250" r="34" />
+    <path class="line-secondary" d="M316 219 C363 231 402 240 471 242" />
+    <path class="line-primary" d="M316 281 C363 269 402 260 471 258" />
+    <path class="positive" d="M439 218 L488 250 L439 282 L451 258 L451 242 Z" />
+    <path class="primary-light" d="M390 225 L421 225 L421 275 L390 275 Z" />
+  </g>
+</svg>

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description"><title id="title">MA Mirror Strategy logo for C#</title><desc id="description">Close-price and open-price moving averages face each other in a mirror.</desc><style>:root{color-scheme:light dark;--p:hsl(286 61% 41%);--pl:hsl(286 67% 78%);--pd:hsl(286 61% 25%);--s:hsl(174 58% 44%);--sl:hsl(174 64% 79%);--sd:hsl(174 56% 27%);--a:hsl(22 67% 47%);--al:hsl(22 72% 80%);--ink:#21343a;--soft:#aabbb7;--panel:#f4f8f7;--pos:#238454;--neg:#c94b48}.language-mark{fill:#17323d;opacity:.13}.python-upper{fill:#2874a6;opacity:.13}.python-lower{fill:#aa8108;opacity:.13}@media(prefers-color-scheme:dark){:root{--p:hsl(286 68% 69%);--pl:hsl(286 72% 83%);--pd:hsl(286 57% 48%);--s:hsl(174 64% 70%);--sl:hsl(174 68% 84%);--sd:hsl(174 51% 48%);--a:hsl(22 72% 71%);--al:hsl(22 76% 85%);--ink:#eef5f3;--soft:#728580;--panel:#26373b;--pos:#66d89a;--neg:#ff8580}.language-mark{fill:#edf6f3;opacity:.16}.python-upper{fill:#7ec5ed;opacity:.16}.python-lower{fill:#f1ca50;opacity:.16}}</style><g class="language-mark" aria-hidden="true"><path d="M327 108 A180 210 0 1 0 327 404 L278 348 A110 130 0 1 1 278 164 Z"/><path d="M342 54 L397 54 L367 458 L312 458 Z M432 54 L487 54 L457 458 L402 458 Z M301 172 L499 172 L493 232 L295 232 Z M289 285 L487 285 L481 345 L283 345 Z"/></g><g class="art" data-scene="ma_mirror" aria-hidden="true" stroke-linecap="round" stroke-linejoin="round">
+<rect x="82" y="53" width="348" height="351" rx="72" fill="var(--panel)" stroke="var(--p)" stroke-width="15"/>
+<path d="M256 69 V390" stroke="var(--soft)" stroke-width="7"/>
+<path d="M117 304 C151 284 164 171 231 137" fill="none" stroke="var(--pos)" stroke-width="17"/>
+<path d="M395 304 C361 284 348 171 281 137" fill="none" stroke="var(--neg)" stroke-width="17"/>
+<path d="M118 253 C159 234 174 257 231 218" fill="none" stroke="var(--s)" stroke-width="10" stroke-dasharray="15 10"/>
+<path d="M394 253 C353 234 338 257 281 218" fill="none" stroke="var(--a)" stroke-width="10" stroke-dasharray="15 10"/>
+<polygon points="226,129 250,139 229,155" fill="var(--pos)"/><polygon points="286,129 262,139 283,155" fill="var(--neg)"/>
+<text x="166" y="351" fill="var(--pos)" font-family="Arial,sans-serif" font-size="20" font-weight="700" text-anchor="middle">CLOSE MA</text>
+<text x="346" y="351" fill="var(--neg)" font-family="Arial,sans-serif" font-size="20" font-weight="700" text-anchor="middle">OPEN MA</text>
+<path d="M220 405 L205 469 H307 L292 405" fill="var(--panel)" stroke="var(--p)" stroke-width="13"/>
+<path d="M181 469 H331" stroke="var(--ink)" stroke-width="15"/>
+</g></svg>

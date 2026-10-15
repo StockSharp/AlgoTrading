@@ -1,0 +1,487 @@
+using System;
+using System.Linq;
+using System.Collections.Generic;
+
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
+
+using StockSharp.Algo.Indicators;
+using StockSharp.Algo.Strategies;
+using StockSharp.BusinessEntities;
+using StockSharp.Messages;
+
+using StockSharp.Algo;
+
+namespace StockSharp.Samples.Strategies;
+
+/// <summary>
+/// Conversion of the Exp_IBS_RSI_CCI_v4 MetaTrader strategy to StockSharp.
+/// Combines internal bar strength, RSI, and CCI into a smoothed oscillator for contrarian entries.
+/// </summary>
+public class IbsRsiCciV4Strategy : Strategy
+{
+	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _ibsPeriod;
+	private readonly StrategyParam<MovingAverageKinds> _ibsAverageType;
+	private readonly StrategyParam<int> _rsiPeriod;
+	private readonly StrategyParam<int> _cciPeriod;
+	private readonly StrategyParam<int> _rangePeriod;
+	private readonly StrategyParam<int> _smoothPeriod;
+	private readonly StrategyParam<MovingAverageKinds> _rangeAverageType;
+	private readonly StrategyParam<decimal> _stepThreshold;
+	private readonly StrategyParam<int> _signalBar;
+	private readonly StrategyParam<bool> _enableLongOpen;
+	private readonly StrategyParam<bool> _enableShortOpen;
+	private readonly StrategyParam<bool> _enableLongClose;
+	private readonly StrategyParam<bool> _enableShortClose;
+	private readonly StrategyParam<decimal> _volume;
+	private readonly StrategyParam<decimal> _cciWeight;
+
+	private RelativeStrengthIndex _rsi = null!;
+	private CommodityChannelIndex _cci = null!;
+	private IIndicator _ibsAverage = null!;
+
+	private bool _hasSignal;
+	private decimal _lastSignal;
+	private readonly List<decimal> _signalHistory = [];
+	private readonly List<decimal> _baselineHistory = [];
+
+	private readonly StrategyParam<decimal> _ibsWeight;
+	private readonly StrategyParam<decimal> _rsiWeight;
+
+	/// <summary>
+	/// Initializes a new instance of the <see cref="IbsRsiCciV4Strategy"/> class.
+	/// </summary>
+	public IbsRsiCciV4Strategy()
+	{
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		.SetDisplay("Candle Type", "Timeframe used for calculations", "General")
+		;
+
+		_ibsPeriod = Param(nameof(IbsPeriod), 5)
+		.SetDisplay("IBS Period", "Smoothing period for the internal bar strength component", "Indicator")
+		;
+
+		_ibsAverageType = Param(nameof(IbsAverageType), MovingAverageKinds.Simple)
+		.SetDisplay("IBS MA Type", "Moving average type applied to the IBS series", "Indicator")
+		;
+
+		_rsiPeriod = Param(nameof(RsiPeriod), 14)
+		.SetDisplay("RSI Period", "Lookback period for the RSI filter", "Indicator")
+		;
+
+		_cciPeriod = Param(nameof(CciPeriod), 14)
+		.SetDisplay("CCI Period", "Lookback period for the CCI filter", "Indicator")
+		;
+
+		_rangePeriod = Param(nameof(RangePeriod), 25)
+		.SetDisplay("Range Period", "Window size for highest/lowest range calculation", "Indicator")
+		;
+
+		_smoothPeriod = Param(nameof(SmoothPeriod), 3)
+		.SetDisplay("Range Smooth", "Smoothing period for the range bands", "Indicator")
+		;
+
+		_rangeAverageType = Param(nameof(RangeAverageType), MovingAverageKinds.Simple)
+		.SetDisplay("Range MA Type", "Moving average type applied to the range envelopes", "Indicator")
+		;
+
+		_stepThreshold = Param(nameof(StepThreshold), 50m)
+		.SetDisplay("Step Threshold", "Maximum adjustment applied when the composite signal jumps", "Trading")
+		;
+		_cciWeight = Param(nameof(CciWeight), 1m)
+		.SetDisplay("CCI Weight", "Weight applied to the CCI component within the composite signal", "Indicator")
+		;
+
+		_ibsWeight = Param(nameof(IbsWeight), 700m)
+		.SetDisplay("IBS Weight", "Weight applied to IBS component", "Trading");
+
+		_rsiWeight = Param(nameof(RsiWeight), 9m)
+		.SetDisplay("RSI Weight", "Weight applied to RSI component", "Trading");
+
+		_signalBar = Param(nameof(SignalBar), 1)
+		.SetDisplay("Signal Bar", "Number of closed candles used for confirmation", "Trading")
+		;
+
+		_enableLongOpen = Param(nameof(EnableLongOpen), true)
+		.SetDisplay("Enable Long Entries", "Allow opening long positions", "Trading");
+
+		_enableShortOpen = Param(nameof(EnableShortOpen), true)
+		.SetDisplay("Enable Short Entries", "Allow opening short positions", "Trading");
+
+		_enableLongClose = Param(nameof(EnableLongClose), true)
+		.SetDisplay("Enable Long Exits", "Allow closing existing long positions", "Trading");
+
+		_enableShortClose = Param(nameof(EnableShortClose), true)
+		.SetDisplay("Enable Short Exits", "Allow closing existing short positions", "Trading");
+
+		_volume = Param(nameof(OrderVolume), 1m)
+		.SetDisplay("Order Volume", "Base volume used for market orders", "Trading")
+		;
+	}
+
+	/// <summary>
+	/// Candle type used to feed the strategy.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Period for smoothing the IBS component.
+	/// </summary>
+	public int IbsPeriod
+	{
+		get => _ibsPeriod.Value;
+		set => _ibsPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Moving average type applied to the IBS series.
+	/// </summary>
+	public MovingAverageKinds IbsAverageType
+	{
+		get => _ibsAverageType.Value;
+		set => _ibsAverageType.Value = value;
+	}
+
+	/// <summary>
+	/// RSI lookback period.
+	/// </summary>
+	public int RsiPeriod
+	{
+		get => _rsiPeriod.Value;
+		set => _rsiPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// CCI lookback period.
+	/// </summary>
+	public int CciPeriod
+	{
+		get => _cciPeriod.Value;
+		set => _cciPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Window used to search for highs and lows of the composite signal.
+	/// </summary>
+	public int RangePeriod
+	{
+		get => _rangePeriod.Value;
+		set => _rangePeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Smoothing period for the signal envelopes.
+	/// </summary>
+	public int SmoothPeriod
+	{
+		get => _smoothPeriod.Value;
+		set => _smoothPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Moving average type used for the envelope smoothing.
+	/// </summary>
+	public MovingAverageKinds RangeAverageType
+	{
+		get => _rangeAverageType.Value;
+		set => _rangeAverageType.Value = value;
+	}
+
+	/// <summary>
+	/// Maximum step applied when the composite signal changes sharply.
+	/// </summary>
+	public decimal StepThreshold
+	{
+		get => _stepThreshold.Value;
+		set => _stepThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Weight applied to the IBS component.
+	/// </summary>
+	public decimal IbsWeight
+	{
+		get => _ibsWeight.Value;
+		set => _ibsWeight.Value = value;
+	}
+
+	/// <summary>
+	/// Weight applied to the RSI component.
+	/// </summary>
+	public decimal RsiWeight
+	{
+		get => _rsiWeight.Value;
+		set => _rsiWeight.Value = value;
+  }
+  
+	/// <summary>
+	/// Weight applied to the CCI component within the composite oscillator.
+	/// </summary>
+	public decimal CciWeight
+	{
+		get => _cciWeight.Value;
+		set => _cciWeight.Value = value;
+	}
+
+	/// <summary>
+	/// Number of closed candles used for confirmation logic.
+	/// </summary>
+	public int SignalBar
+	{
+		get => _signalBar.Value;
+		set => _signalBar.Value = value;
+	}
+
+	/// <summary>
+	/// Enables long entries when <c>true</c>.
+	/// </summary>
+	public bool EnableLongOpen
+	{
+		get => _enableLongOpen.Value;
+		set => _enableLongOpen.Value = value;
+	}
+
+	/// <summary>
+	/// Enables short entries when <c>true</c>.
+	/// </summary>
+	public bool EnableShortOpen
+	{
+		get => _enableShortOpen.Value;
+		set => _enableShortOpen.Value = value;
+	}
+
+	/// <summary>
+	/// Enables long exits when <c>true</c>.
+	/// </summary>
+	public bool EnableLongClose
+	{
+		get => _enableLongClose.Value;
+		set => _enableLongClose.Value = value;
+	}
+
+	/// <summary>
+	/// Enables short exits when <c>true</c>.
+	/// </summary>
+	public bool EnableShortClose
+	{
+		get => _enableShortClose.Value;
+		set => _enableShortClose.Value = value;
+	}
+
+	/// <summary>
+	/// Volume used for new market orders.
+	/// </summary>
+	public decimal OrderVolume
+	{
+		get => _volume.Value;
+		set => _volume.Value = value;
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_hasSignal = false;
+		_lastSignal = 0m;
+		_signalHistory.Clear();
+		_baselineHistory.Clear();
+	}
+
+	/// <inheritdoc />
+	protected override void OnStarted2(DateTime time)
+	{
+		base.OnStarted2(time);
+
+		Volume = OrderVolume;
+
+		_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
+		_cci = new CommodityChannelIndex { Length = CciPeriod };
+		_ibsAverage = CreateMovingAverage(IbsAverageType, Math.Max(1, IbsPeriod));
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+		.Bind(_rsi, _cci, ProcessCandle)
+		.Start();
+
+		// removed StartProtection(null, null)
+
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+		}
+	}
+
+	private void ProcessCandle(ICandleMessage candle, decimal rsiValue, decimal cciValue)
+	{
+		if (candle.State != CandleStates.Finished)
+		return;
+
+		// removed IFOAAT
+
+		if (!_rsi.IsFormed || !_cci.IsFormed)
+		return;
+
+		var range = candle.HighPrice - candle.LowPrice;
+		if (range == 0m)
+		{
+			var step = Security?.PriceStep ?? 0.0001m;
+			if (step == 0m)
+			step = 0.0001m;
+			range = step;
+		}
+
+		var ibsRaw = (candle.ClosePrice - candle.LowPrice) / range;
+		var ibsValue = _ibsAverage.Process(new DecimalIndicatorValue(_ibsAverage, ibsRaw, candle.OpenTime) { IsFinal = true });
+		if (ibsValue is not DecimalIndicatorValue { IsFinal: true, Value: var ibsSmoothed })
+		return;
+
+		var compositeTarget = ((ibsSmoothed - 0.5m) * IbsWeight + cciValue * CciWeight + (rsiValue - 50m) * RsiWeight) / 3m;
+		var adjustedSignal = ApplyStepConstraint(compositeTarget);
+
+		_signalHistory.Add(adjustedSignal);
+		var maxSignalHistory = Math.Max(2, Math.Max(RangePeriod, SignalBar + 2) + Math.Max(1, SmoothPeriod));
+		if (_signalHistory.Count > maxSignalHistory)
+			_signalHistory.RemoveAt(0);
+
+		if (_signalHistory.Count < Math.Max(1, RangePeriod))
+			return;
+
+		var highest = decimal.MinValue;
+		var lowest = decimal.MaxValue;
+		var startIndex = Math.Max(0, _signalHistory.Count - RangePeriod);
+
+		for (var i = startIndex; i < _signalHistory.Count; i++)
+		{
+			var value = _signalHistory[i];
+			if (value > highest)
+				highest = value;
+			if (value < lowest)
+				lowest = value;
+		}
+
+		var baseline = (highest + lowest) / 2m;
+
+		UpdateHistory(baseline);
+
+		var historyLength = Math.Min(_signalHistory.Count, _baselineHistory.Count);
+		if (historyLength <= SignalBar)
+		return;
+
+		var previousIndex = historyLength - 1 - Math.Max(0, SignalBar);
+		var previousSignal = _signalHistory[previousIndex];
+		var previousBaseline = _baselineHistory[previousIndex];
+		var currentSignal = _signalHistory[historyLength - 1];
+		var currentBaseline = _baselineHistory[historyLength - 1];
+
+		var position = Position;
+
+		if (position > 0 && EnableLongClose && previousSignal < previousBaseline)
+		{
+			SellMarket();
+			position = 0m;
+		}
+		else if (position < 0 && EnableShortClose && previousSignal > previousBaseline)
+		{
+			BuyMarket();
+			position = 0m;
+		}
+
+		if (EnableLongOpen && position <= 0m && previousSignal > previousBaseline && currentSignal <= currentBaseline)
+		{
+			BuyMarket();
+		}
+		else if (EnableShortOpen && position >= 0m && previousSignal < previousBaseline && currentSignal >= currentBaseline)
+		{
+			SellMarket();
+		}
+	}
+
+	private decimal ApplyStepConstraint(decimal target)
+	{
+		if (!_hasSignal)
+		{
+			_lastSignal = target;
+			_hasSignal = true;
+			return _lastSignal;
+		}
+
+		var threshold = Math.Abs(StepThreshold);
+		if (threshold <= 0m)
+		{
+			_lastSignal = target;
+			return _lastSignal;
+		}
+
+		var diff = target - _lastSignal;
+		if (Math.Abs(diff) > threshold)
+		{
+			var direction = diff > 0m ? 1m : -1m;
+			_lastSignal = target - direction * threshold;
+		}
+		else
+		{
+			_lastSignal = target;
+		}
+
+		return _lastSignal;
+	}
+
+	private void UpdateHistory(decimal baseline)
+	{
+		var maxSize = Math.Max(2, Math.Max(RangePeriod, SignalBar + 2) + Math.Max(1, SmoothPeriod));
+		_baselineHistory.Add(baseline);
+		if (_baselineHistory.Count > maxSize)
+			_baselineHistory.RemoveAt(0);
+	}
+
+	private static IIndicator CreateMovingAverage(MovingAverageKinds kind, int length)
+	{
+		return kind switch
+		{
+			MovingAverageKinds.Exponential => new EMA { Length = length },
+			MovingAverageKinds.Smoothed => new SmoothedMovingAverage { Length = length },
+			MovingAverageKinds.LinearWeighted => new WeightedMovingAverage { Length = length },
+			_ => new SMA { Length = length },
+		};
+	}
+
+	/// <summary>
+	/// Supported moving average families.
+	/// </summary>
+	public enum MovingAverageKinds
+	{
+		/// <summary>
+		/// Simple moving average.
+		/// </summary>
+		Simple,
+
+		/// <summary>
+		/// Exponential moving average.
+		/// </summary>
+		Exponential,
+
+		/// <summary>
+		/// Smoothed moving average.
+		/// </summary>
+		Smoothed,
+
+		/// <summary>
+		/// Linear weighted moving average.
+		/// </summary>
+		LinearWeighted
+	}
+}

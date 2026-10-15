@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Hull Moving Average Trend strategy logo for C#</title>
+  <desc id="description">A streamlined sailing hull cuts through two waves without losing its heading.</desc>
+
+  <style>
+    :root { color-scheme: light dark; }
+
+    .language-mark { fill: #17323d; opacity: 0.07; }
+    .python-upper { fill: #2874a6; opacity: 0.07; }
+    .python-lower { fill: #aa8108; opacity: 0.07; }
+    .primary { fill: #168a9b; }
+    .primary-light { fill: #69c7d2; }
+    .primary-shade { fill: #0d6472; }
+    .secondary { fill: #365b76; }
+    .secondary-light { fill: #7f9fb1; }
+    .secondary-shade { fill: #243f54; }
+    .accent { fill: #df8a36; }
+    .neutral { fill: #27383f; }
+    .shadow { fill: #14262c; opacity: 0.22; }
+
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill: #edf6f3; opacity: 0.08; }
+      .python-upper { fill: #7ec5ed; opacity: 0.08; }
+      .python-lower { fill: #f1ca50; opacity: 0.08; }
+      .primary { fill: #45c4d2; }
+      .primary-light { fill: #8de0e6; }
+      .primary-shade { fill: #218d9b; }
+      .secondary { fill: #729dbb; }
+      .secondary-light { fill: #abc8d8; }
+      .secondary-shade { fill: #466f8d; }
+      .accent { fill: #f1b156; }
+      .neutral { fill: #e5efec; }
+      .shadow { fill: #02090b; opacity: 0.34; }
+    }
+  </style>
+
+  <g class="language-mark" aria-hidden="true">
+    <path d="M327 108 A180 210 0 1 0 327 404 L278 348 A110 130 0 1 1 278 164 Z" />
+    <path d="M342 54 L397 54 L367 458 L312 458 Z M432 54 L487 54 L457 458 L402 458 Z M301 172 L499 172 L493 232 L295 232 Z M289 285 L487 285 L481 345 L283 345 Z" />
+  </g>
+
+  <g aria-hidden="true">
+    <path class="primary-shade" d="M21 373 C102 327 172 320 244 349 C319 379 389 379 491 326 L491 382 C392 431 313 431 232 399 C167 373 106 382 21 425 Z" />
+    <path class="primary" d="M21 330 C102 285 172 278 244 307 C319 337 389 337 491 284 L491 337 C392 388 313 388 232 356 C167 330 106 339 21 382 Z" />
+    <path class="primary-light" d="M42 326 C110 299 169 301 232 327 C305 357 376 354 466 315 L444 339 C365 368 301 366 230 339 C169 315 113 312 54 335 Z" />
+    <path class="neutral" d="M245 117 L260 117 L268 283 L250 283 Z" />
+    <path class="accent" d="M253 130 L258 268 L381 258 L322 187 Z" />
+    <path class="secondary-light" d="M244 167 L246 271 L151 270 L205 214 Z" />
+    <path class="secondary" d="M124 278 L391 264 L339 346 L189 357 Z" />
+    <path class="secondary-shade" d="M154 322 L356 305 L339 346 L189 357 Z" />
+    <path class="primary-light" d="M191 371 C251 356 311 359 371 379 L348 397 C297 381 248 380 205 390 Z" />
+  </g>
+</svg>

@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Volatility Adjusted Moving Average strategy logo for Python</title>
+  <desc id="description">A shock absorber reshapes a smooth guide rail as terrain becomes rough.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .language-mark { fill: #17323d; opacity: 0.07; } .python-upper { fill: #2874a6; opacity: 0.07; } .python-lower { fill: #aa8108; opacity: 0.07; }
+    .primary { fill: #596f88; } .primary-light { fill: #9aafc1; } .primary-shade { fill: #394f66; }
+    .secondary { fill: #168a82; } .secondary-light { fill: #67cabe; } .secondary-shade { fill: #0d655f; }
+    .accent { fill: #dfa23a; } .neutral { fill: #29393f; } .shadow { fill: #14262c; opacity: 0.22; }
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill: #edf6f3; opacity: 0.08; } .python-upper { fill: #7ec5ed; opacity: 0.08; } .python-lower { fill: #f1ca50; opacity: 0.08; }
+      .primary { fill: #8eabc3; } .primary-light { fill: #c0d3e1; } .primary-shade { fill: #607f9d; }
+      .secondary { fill: #43c7ba; } .secondary-light { fill: #87e0d5; } .secondary-shade { fill: #20948a; }
+      .accent { fill: #f2c45d; } .neutral { fill: #e5efec; } .shadow { fill: #02090b; opacity: 0.34; }
+    }
+  </style>
+  <g aria-hidden="true">
+    <path class="python-upper" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" />
+    <path class="python-lower" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" transform="rotate(180 256 256)" />
+  </g>
+  <g aria-hidden="true">
+    <path class="secondary-shade" d="M23 405 L93 330 L156 386 L222 292 L292 371 L358 271 L489 405 L489 465 L23 465 Z" />
+    <path class="secondary" d="M23 405 L93 348 L156 405 L222 316 L292 393 L358 294 L489 405 L489 432 L23 432 Z" />
+    <path class="primary" d="M31 153 C137 111 235 115 323 151 C376 173 425 173 486 147 L486 196 C423 218 369 216 308 192 C228 161 139 158 31 201 Z" />
+    <path class="primary-light" d="M31 153 C137 111 235 115 323 151 L307 170 C227 140 139 138 31 177 Z" />
+    <path class="neutral" d="M218 126 L294 126 L294 221 L218 221 Z" />
+    <path class="secondary-light" d="M233 145 L279 145 L279 205 L233 205 Z" />
+    <path class="accent" d="M218 221 L294 221 L276 259 L236 259 Z" />
+    <path class="primary-shade" d="M230 259 L282 259 L282 352 L230 352 Z" />
+    <path class="secondary-light" d="M213 352 L299 352 L299 382 L213 382 Z" />
+  </g>
+</svg>

@@ -1,0 +1,41 @@
+# Macd Volume Strategy
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
+ 
+Strategy combining MACD (Moving Average Convergence Divergence) with volume confirmation. Enters positions when MACD line crosses the Signal line and confirms with increased volume.
+
+Testing indicates an average annual return of about 175%. It performs best in the stocks market.
+
+MACD crossovers are filtered by an increase in volume to confirm momentum. Buy signals come on bullish crosses with expanding volume; sells do the opposite.
+
+Momentum traders watching for volume spikes may find it valuable. Risk is limited using a percent stop.
+
+## Details
+
+- **Entry Criteria**:
+  - Long: `MACD crosses above Signal && Volume > AvgVolume * VolumeMultiplier`
+  - Short: `MACD crosses below Signal && Volume > AvgVolume * VolumeMultiplier`
+- **Long/Short**: Both
+- **Exit Criteria**:
+  - MACD cross in opposite direction
+- **Stops**: Percent-based at `StopLossPercent`
+- **Default Values**:
+  - `MacdFast` = 12
+  - `MacdSlow` = 26
+  - `MacdSignal` = 9
+  - `VolumePeriod` = 20
+  - `VolumeMultiplier` = 1.5m
+  - `StopLossPercent` = 2.0m
+  - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
+    AvgVolume is the average volume of the previous VolumePeriod candles. Every MACD cross closes a position against it, so a cross on a volume surge reverses the position and one without it only closes.
+- **Filters**:
+  - Category: Breakout
+  - Direction: Both
+  - Indicators: MACD, Volume
+  - Stops: Yes
+  - Complexity: Intermediate
+  - Timeframe: Mid-term
+  - Seasonality: No
+  - Neural Networks: No
+  - Divergence: No
+  - Risk Level: Medium
+

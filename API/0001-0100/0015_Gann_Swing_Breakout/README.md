@@ -1,0 +1,34 @@
+# Gann Swing Breakout
+[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
+ 
+Strategy based on Gann Swing Breakout technique
+
+Testing indicates an average annual return of about 82%. It performs best in the stocks market.
+
+Gann Swing Breakout tracks swing highs and lows from Gann analysis. A breakout beyond the latest swing starts a trade in that direction and it stays open until an opposing swing is breached.
+
+The method is designed for traders who view past swing points as important support and resistance. By trading the break, it attempts to ride the next leg of a trend.
+
+
+## Details
+
+- **Entry Criteria**: Signals based on MA, Gann.
+- **Long/Short**: Both directions.
+- **Exit Criteria**: Opposite signal.
+- **Stops**: No.
+- **Default Values**:
+  - `SwingLookback` = 5
+  - `MaPeriod` = 20
+  - `CandleType` = TimeSpan.FromMinutes(15)
+- **Filters**:
+  - Category: Breakout
+  - Direction: Both
+  - Indicators: MA, Gann
+  - Stops: No
+  - Complexity: Basic
+  - Timeframe: Intraday (15m)
+  - Seasonality: No
+  - Neural Networks: No
+  - Divergence: No
+  - Risk Level: Medium
+

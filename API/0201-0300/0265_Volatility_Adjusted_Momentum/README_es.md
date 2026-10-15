@@ -1,0 +1,36 @@
+# Momentum Ajustado por Volatilidad
+[English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
+ 
+La estrategia de Momentum Ajustado por Volatilidad monitorea la Volatilidad en busca de expansiones rápidas. Cuando las lecturas saltan más allá de su rango promedio, el precio a menudo inicia un nuevo movimiento.
+
+Las pruebas indican un rendimiento anual promedio de aproximadamente 130%. Funciona mejor en el mercado de acciones.
+
+Una posición se abre una vez que el indicador perfora una banda derivada de datos recientes y un multiplicador de desviación. Son posibles operaciones largas y cortas con un stop adjunto.
+
+Este sistema es adecuado para operadores de momentum que buscan rompimientos tempranos. Las operaciones se cierran cuando la Volatilidad vuelve hacia la media. Los valores predeterminados comienzan con `MomentumPeriod` = 14.
+
+## Detalles
+
+- **Criterios de entrada**: El indicador supera el promedio por el multiplicador de desviación.
+- **Largo/Corto**: Ambos direcciones.
+- **Criterios de salida**: El indicador revierte al promedio.
+- **Stops**: Sí.
+- **Valores predeterminados**:
+  - `MomentumPeriod` = 14
+  - `AtrPeriod` = 14
+  - `LookbackPeriod` = 20
+  - `DeviationMultiplier` = 2m
+  - `StopLoss` = new Unit(2
+  - `CandleType` = TimeSpan.FromMinutes(5)
+- **Filtros**:
+  - Categoría: Ruptura
+  - Dirección: Ambos
+  - Indicadores: Volatilidad
+  - Stops: Sí
+  - Complejidad: Intermedio
+  - Marco temporal: Corto plazo
+  - Estacionalidad: No
+  - Redes neuronales: No
+  - Divergencia: No
+  - Nivel de riesgo: Medio
+

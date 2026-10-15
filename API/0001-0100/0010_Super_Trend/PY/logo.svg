@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Super Trend strategy logo for Python</title>
+  <desc id="description">A continuous route climbs across successive ridges and resolves at a higher summit.</desc>
+
+  <style>
+    :root { color-scheme: light dark; }
+
+    .language-mark { fill: #17323d; opacity: 0.07; }
+    .python-upper { fill: #2874a6; opacity: 0.07; }
+    .python-lower { fill: #aa8108; opacity: 0.07; }
+    .primary { fill: #d69334; }
+    .primary-light { fill: #f0c269; }
+    .primary-shade { fill: #a96720; }
+    .secondary { fill: #58708c; }
+    .secondary-light { fill: #9aadc0; }
+    .secondary-shade { fill: #394d65; }
+    .accent { fill: #168b82; }
+    .neutral { fill: #29383f; }
+    .shadow { fill: #14262c; opacity: 0.22; }
+
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill: #edf6f3; opacity: 0.08; }
+      .python-upper { fill: #7ec5ed; opacity: 0.08; }
+      .python-lower { fill: #f1ca50; opacity: 0.08; }
+      .primary { fill: #f0b454; }
+      .primary-light { fill: #ffd47e; }
+      .primary-shade { fill: #c57d2e; }
+      .secondary { fill: #8ea9c4; }
+      .secondary-light { fill: #bfd0df; }
+      .secondary-shade { fill: #627f9c; }
+      .accent { fill: #40c6b8; }
+      .neutral { fill: #e5efec; }
+      .shadow { fill: #02090b; opacity: 0.34; }
+    }
+  </style>
+
+  <g aria-hidden="true">
+    <path class="python-upper" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" />
+    <path class="python-lower" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" transform="rotate(180 256 256)" />
+  </g>
+
+  <g aria-hidden="true">
+    <path class="secondary-light" d="M19 363 L130 203 L205 307 L291 164 L382 298 L449 207 L497 363 Z" />
+    <path class="secondary" d="M18 417 L133 275 L207 355 L295 226 L381 347 L456 282 L498 417 Z" />
+    <path class="secondary-shade" d="M17 462 L124 351 L205 417 L295 310 L382 411 L459 352 L499 462 Z" />
+    <path class="primary" d="M49 432 C112 406 153 371 190 331 C230 287 260 260 297 227 C340 188 374 143 422 94 L395 86 L484 56 L459 151 L438 119 C399 160 366 204 323 243 C285 278 255 305 218 347 C174 397 126 433 64 456 Z" />
+    <path class="primary-light" d="M72 430 C123 403 158 372 193 335 C234 291 264 264 301 231 C343 193 376 148 415 107 L434 101 C395 147 363 190 321 229 C282 265 252 291 214 334 C175 378 132 411 82 441 Z" />
+    <path class="accent" d="M421 75 L435 75 L437 141 L423 141 Z" />
+    <path class="accent" d="M435 77 L492 91 L435 116 Z" />
+  </g>
+</svg>

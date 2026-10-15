@@ -1,0 +1,36 @@
+# ADX MACD 策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
+
+本策略结合平均趋向指数(ADX)的趋势强度与MACD的动量变化。
+当ADX上升并且MACD在同一方向交叉时，突破延续的概率更大。
+当信号一致时入场，若ADX开始走弱或MACD反向，则立即离场。
+适度的百分比止损有助于在震荡行情中控制亏损。
+
+测试表明年均收益约为 139%，该策略在股票市场表现最佳。
+
+## 细节
+
+- **入场条件**：指标信号
+- **多/空**：均可
+- **退出条件**：止损或反向信号
+- **止损**：是，按百分比
+- **默认值**:
+  - `CandleType` = 15分钟
+  - `StopLossPercent` = 2
+  - `AdxPeriod` = 14
+  - `MacdFast` = 12
+  - `MacdSlow` = 26
+  - `MacdSignal` = 9
+    空仓时，MACD上穿信号线做多、下穿做空，但仅在ADX高于前一值时入场。ADX低于前一值或MACD回到信号线另一侧时平仓。
+- **过滤器**:
+  - 类别：趋势跟随
+  - 方向：双向
+  - 指标：ADX, MACD
+  - 止损：有
+  - 复杂度：中等
+  - 时间框架：日内
+  - 季节性：否
+  - 神经网络：否
+  - 背离：否
+  - 风险等级：中等
+

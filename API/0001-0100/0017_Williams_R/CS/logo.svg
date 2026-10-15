@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Williams Percent R strategy logo for C#</title>
+  <desc id="description">A bounded oscillator travels between a clear overbought ceiling and oversold floor on a calibrated vertical scale.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .language-mark { fill: #17323d; opacity: 0.07; }
+    .python-upper { fill: #2874a6; opacity: 0.07; }
+    .python-lower { fill: #aa8108; opacity: 0.07; }
+    .primary { fill: #88563a; } .primary-light { fill: #bd8962; } .primary-shade { fill: #603c29; }
+    .secondary { fill: #1a8a83; } .secondary-light { fill: #68cabe; } .secondary-shade { fill: #0f655f; }
+    .accent { fill: #dfa13b; } .neutral { fill: #29393f; } .shadow { fill: #14262c; opacity: 0.22; }
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill: #edf6f3; opacity: 0.08; }
+      .python-upper { fill: #7ec5ed; opacity: 0.08; }
+      .python-lower { fill: #f1ca50; opacity: 0.08; }
+      .primary { fill: #c18a65; } .primary-light { fill: #e3b28f; } .primary-shade { fill: #8e5d42; }
+      .secondary { fill: #48c7bb; } .secondary-light { fill: #88e1d6; } .secondary-shade { fill: #23948a; }
+      .accent { fill: #f1c45d; } .neutral { fill: #e5efec; } .shadow { fill: #02090b; opacity: 0.34; }
+    }
+  </style>
+  <g class="language-mark" aria-hidden="true">
+    <path d="M327 108 A180 210 0 1 0 327 404 L278 348 A110 130 0 1 1 278 164 Z" />
+    <path d="M342 54 L397 54 L367 458 L312 458 Z M432 54 L487 54 L457 458 L402 458 Z M301 172 L499 172 L493 232 L295 232 Z M289 285 L487 285 L481 345 L283 345 Z" />
+  </g>
+  <g aria-hidden="true">
+    <path class="secondary-shade" d="M78 54 L112 54 L112 458 L78 458 Z M400 54 L434 54 L434 458 L400 458 Z M78 54 L434 54 L434 88 L78 88 Z M78 424 L434 424 L434 458 L78 458 Z" />
+    <path class="primary" d="M112 96 L400 96 L400 154 L112 154 Z" />
+    <path class="primary-light" d="M136 112 L376 112 L376 132 L136 132 Z" />
+    <path class="secondary" d="M112 356 L400 356 L400 416 L112 416 Z" />
+    <path class="secondary-light" d="M136 382 L376 382 L376 402 L136 402 Z" />
+    <path class="neutral" d="M112 201 L150 201 L150 221 L112 221 Z M112 252 L166 252 L166 272 L112 272 Z M112 303 L150 303 L150 323 L112 323 Z M362 201 L400 201 L400 221 L362 221 Z M346 252 L400 252 L400 272 L346 272 Z M362 303 L400 303 L400 323 L362 323 Z" />
+    <path class="accent" d="M128 368 L191 297 L242 326 L314 174 L384 226 L384 263 L322 218 L253 365 L196 334 L128 410 Z" />
+  </g>
+</svg>

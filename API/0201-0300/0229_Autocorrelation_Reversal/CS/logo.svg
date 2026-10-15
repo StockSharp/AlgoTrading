@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Autocorrelation Reversal strategy logo for C#</title>
+  <desc id="description">Repeated same-direction impulses hit a spring wall and rebound as one clear reversal.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .language-mark { fill:#17323d; opacity:.07; } .python-upper { fill:#2874a6; opacity:.07; } .python-lower { fill:#aa8108; opacity:.07; }
+    .primary { fill:#078b84; } .primary-light { fill:#56c9b9; } .primary-shade { fill:#056963; } .secondary { fill:#cf4455; } .secondary-light { fill:#f07c72; } .secondary-shade { fill:#a92f42; }
+    .accent { fill:#e4a62d; } .positive { fill:#2f936c; } .positive-light { fill:#7bc6a5; } .negative { fill:#c84d4d; } .negative-light { fill:#ef8a80; } .violet { fill:#725bb3; } .violet-light { fill:#af9be0; } .neutral { fill:#233842; } .pale { fill:#c8d8d7; } .shadow { fill:#14262c; opacity:.22; }
+    .line-primary { fill:none;stroke:#078b84;stroke-width:18;stroke-linecap:round;stroke-linejoin:round}.line-secondary { fill:none;stroke:#cf4455;stroke-width:18;stroke-linecap:round;stroke-linejoin:round}.line-neutral { fill:none;stroke:#233842;stroke-width:18;stroke-linecap:round;stroke-linejoin:round}.line-accent { fill:none;stroke:#e4a62d;stroke-width:14;stroke-linecap:round;stroke-linejoin:round}.thin-primary { fill:none;stroke:#078b84;stroke-width:10;stroke-linecap:round;stroke-linejoin:round}.thin-secondary { fill:none;stroke:#cf4455;stroke-width:10;stroke-linecap:round;stroke-linejoin:round}.thin-neutral { fill:none;stroke:#233842;stroke-width:10;stroke-linecap:round;stroke-linejoin:round}
+    @media (prefers-color-scheme: dark) {
+      .language-mark { fill:#edf6f3;opacity:.08}.python-upper { fill:#7ec5ed;opacity:.08}.python-lower { fill:#f1ca50;opacity:.08}
+      .primary { fill:#35bdb2}.primary-light { fill:#79dfd0}.primary-shade { fill:#168e87}.secondary { fill:#f0646c}.secondary-light { fill:#ff9b88}.secondary-shade { fill:#c44352}.accent { fill:#f2c45d}.positive { fill:#69c79a}.positive-light { fill:#a8e0c2}.negative { fill:#f47768}.negative-light { fill:#ffb09e}.violet { fill:#a99adb}.violet-light { fill:#d0c5ed}.neutral { fill:#edf3f1}.pale { fill:#71848a}.shadow { fill:#02090b;opacity:.34}
+      .line-primary { stroke:#35bdb2}.line-secondary { stroke:#f0646c}.line-neutral { stroke:#edf3f1}.line-accent { stroke:#f2c45d}.thin-primary { stroke:#35bdb2}.thin-secondary { stroke:#f0646c}.thin-neutral { stroke:#edf3f1}
+    }
+  </style>
+  <g class="language-mark" aria-hidden="true">
+    <path d="M327 108 A180 210 0 1 0 327 404 L278 348 A110 130 0 1 1 278 164 Z" />
+    <path d="M342 54 L397 54 L367 458 L312 458 Z M432 54 L487 54 L457 458 L402 458 Z M301 172 L499 172 L493 232 L295 232 Z M289 285 L487 285 L481 345 L283 345 Z" />
+  </g>
+  <g aria-hidden="true">
+    <path class="primary" d="M50 115 L148 115 L148 151 L50 151 Z M75 200 L193 200 L193 236 L75 236 Z M103 285 L238 285 L238 321 L103 321 Z" />
+    <path class="accent" d="M129 91 L187 133 L129 175 Z M174 176 L232 218 L174 260 Z M219 261 L277 303 L219 345 Z" />
+    <path class="primary-shade" d="M366 70 L414 70 L414 442 L366 442 Z" />
+    <path class="line-secondary" d="M279 303 L309 267 L339 339 L369 245" />
+    <path class="secondary-light" d="M365 252 C314 349 253 414 145 402 L150 363 C238 372 288 322 331 237 Z" />
+    <path class="secondary" d="M117 341 L57 383 L123 425 L111 400 L112 365 Z" />
+  </g>
+</svg>

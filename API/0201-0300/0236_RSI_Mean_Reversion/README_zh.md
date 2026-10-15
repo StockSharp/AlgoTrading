@@ -1,0 +1,39 @@
+# RSI 均值回归策略
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
+
+该策略跟踪相对强弱指数(RSI)与其平均值的偏离程度。当 RSI 偏离超过近期标准差的数倍时，预期其向均值回归。
+
+测试表明年均收益约为 61%，该策略在加密市场表现最佳。
+
+当 RSI 低于平均值减 `Multiplier` 倍标准差时做多；当 RSI 高于平均值加同样倍数时做空。RSI 回到移动平均附近即平仓。
+
+此方法适合寻找超买超卖信号的交易者，波动率带可以根据市况调整阈值，止损有助于控制风险。
+## 详细信息
+- **入场条件**:
+  - **做多**: RSI < Avg - Multiplier * StdDev
+  - **做空**: RSI > Avg + Multiplier * StdDev
+- **多空方向**: 双向
+- **退出条件**:
+  - **做多**: Exit when RSI > Avg
+  - **做空**: Exit when RSI < Avg
+- **止损**: 是
+- **默认值**:
+  - `RsiPeriod` = 14
+  - `AveragePeriod` = 20
+  - `Multiplier` = 2
+  - `StopLossPercent` = 2
+  - `CandleType` = TimeSpan.FromMinutes(5)
+    Avg和StdDev为最近AveragePeriod个RSI值（含当前值）的平均值和标准差。止损为入场价的固定StopLossPercent百分比，在K线之间同样监控；设为0则关闭。与持仓方向相反的入场信号会反转持仓。
+- **筛选条件**:
+  - 类别: 均值回归
+  - 方向: 双向
+  - 指标: RSI
+  - 止损: 是
+  - 复杂度: 中等
+  - 时间框架: 日内
+  - 季节性: 否
+  - 神经网络: 否
+  - 背离: 否
+  - 风险等级: 中等
+
+

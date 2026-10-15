@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description"><title id="title">MACD Volume Cluster strategy logo for Python</title><desc id="description">MACD waves drive volume blocks along a conveyor into three visibly sorted crates.</desc>
+  <style>:root{color-scheme:light dark;--p:#b24f42;--pl:#e48b74;--ps:#7d342c;--s:#2a82a4;--sl:#7bbdd4;--a:#dca93e;--n:#2f383e;--pale:#d9c9bf}.language-mark{fill:#17323d;opacity:.07}.python-upper{fill:#2874a6;opacity:.07}.python-lower{fill:#aa8108;opacity:.07}@media(prefers-color-scheme:dark){:root{--p:#ed806d;--pl:#f7b09b;--ps:#a94f43;--s:#55b8d7;--sl:#9ed7e8;--a:#f2cb61;--n:#eff3f2;--pale:#8a786e}.language-mark{fill:#edf6f3;opacity:.08}.python-upper{fill:#7ec5ed;opacity:.08}.python-lower{fill:#f1ca50;opacity:.08}}</style>
+  <g aria-hidden="true"><path class="python-upper" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z"/><path class="python-lower" d="M139 53 C139 26 161 4 188 4 H293 C323 4 347 28 347 58 V157 C347 187 323 211 293 211 H212 C183 211 159 235 159 264 V287 H95 C65 287 41 263 41 233 V194 C41 164 65 140 95 140 H139 Z" transform="rotate(180 256 256)"/></g>
+  <g aria-hidden="true" stroke-linecap="round" stroke-linejoin="round">
+    <path fill="var(--n)" d="M35 291 H477 V337 H35 Z"/>
+    <circle fill="var(--pale)" cx="78" cy="314" r="30"/><circle fill="var(--pale)" cx="434" cy="314" r="30"/>
+    <path fill="var(--p)" d="M70 220 H112 V291 H70 Z M128 184 H170 V291 H128 Z M186 236 H228 V291 H186 Z"/>
+    <path fill="var(--s)" d="M249 205 H291 V291 H249 Z M307 156 H349 V291 H307 Z M365 226 H407 V291 H365 Z"/>
+    <path fill="var(--ps)" d="M40 62 H174 V205 H40 Z"/><path fill="var(--s)" d="M189 62 H323 V205 H189 Z"/><path fill="var(--a)" d="M338 62 H472 V205 H338 Z"/>
+    <path fill="var(--pl)" d="M62 124 H91 V185 H62 Z M101 96 H130 V185 H101 Z M140 143 H169 V185 H140 Z"/>
+    <path fill="var(--sl)" d="M211 112 H240 V185 H211 Z M250 82 H279 V185 H250 Z M289 139 H318 V185 H289 Z"/>
+    <path fill="var(--pale)" d="M360 144 H389 V185 H360 Z M399 100 H428 V185 H399 Z M438 125 H467 V185 H438 Z"/>
+    <path fill="none" stroke="var(--s)" stroke-width="18" d="M37 396 C105 346 158 357 215 407 C276 460 343 444 475 363"/>
+    <path fill="none" stroke="var(--p)" stroke-width="14" d="M37 431 C109 389 164 395 222 432 C286 472 359 445 475 397"/>
+    <path fill="var(--a)" d="M202 322 L256 365 L310 322 L310 354 L256 397 L202 354 Z"/>
+  </g>
+</svg>
