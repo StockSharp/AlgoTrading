@@ -2,3 +2,5 @@
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
 La estrategia compra cuando el precio cierra por debajo de la banda inferior de Bollinger Bands mientras permanece por encima de la extensión Fibonacci del 61.8% calculada desde el último máximo y mínimo de swing. La posición se cierra cuando el precio alcanza la banda superior o el máximo anterior del swing.
+
+**Regla verificable y valores predeterminados:** `BollingerPeriod=20`, `BollingerDeviation=2`, `FibLookback=50`, `FibonacciLevel=0.618`, `CandleType=1 minuto`. Bandas con cierres completados **incluida la vela de señal** y desviación estándar poblacional por multiplicador. El máximo y mínimo son los de las `FibLookback` velas **anteriores**, sin la actual. Precio Fib = `mínimo previo + FibonacciLevel × (máximo previo − mínimo previo)` (61,8% desde el mínimo: nivel de retroceso, no proyección externa). **Solo largo** estando plano cuando `Close < banda inferior && Close > Fib`. Cerrar todo el largo si `Close >= banda superior || Close >= máximo previo`. Sin cortos ni stops; no se usan velas futuras.
