@@ -294,4 +294,74 @@ public abstract partial class StrategyTests
             "The default one-minute BTC/TON replay must exercise real wick entries and timed exits.");
     }
 
+    [TestMethod]
+    [TestCategory("Shard02")]
+    public async Task Point1Part01_0666_DcaBuysFixedQuoteAmount()
+    {
+        var buys = 0;
+        var filledBuys = 0;
+        await Replay("0666_DCA", (strategy, _) =>
+        {
+            AreEqual(200m, Convert.ToDecimal(strategy.Parameters["CapitalToInvest"].Value));
+            AreEqual(72, Convert.ToInt32(strategy.Parameters["EveryXCandles"].Value));
+            AreEqual(false, Convert.ToBoolean(strategy.Parameters["UseDayOfWeek"].Value));
+            AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+
+            strategy.OrderRegistering += order =>
+            {
+                AreEqual(Sides.Buy, order.Side,
+                    "A periodic fixed-quote investment must not create EMA cross shorts.");
+                IsTrue(order.Volume > 0m && order.Volume <= 200m / Math.Max(order.Price, 1m) ||
+                    order.Price == 0m && order.Volume > 0m,
+                    "Quote-based volume must be positive; market orders can omit an explicit price.");
+                buys++;
+            };
+            strategy.Trades.TradeAdded += trade =>
+            {
+                if (trade.Order.Side == Sides.Buy)
+                    filledBuys++;
+            };
+        }, replayDuration: TimeSpan.FromDays(31));
+
+        IsTrue(buys >= 2 && filledBuys >= 2,
+            "The unchanged default must execute multiple scheduled buys on the packaged archive.");
+    }
+
+    [TestMethod]
+    [TestCategory("Shard02")]
+    public async Task Point1Part01_0666_WeekdayAndEndDateModes()
+    {
+        var buys = 0;
+        var closes = 0;
+        await Replay("0666_DCA", (strategy, _) =>
+        {
+            SetParam(strategy, "UseDayOfWeek", true);
+            SetParam(strategy, "DayOfWeek", DayOfWeek.Wednesday);
+            SetParam(strategy, "EndDate", new DateTime(2024, 3, 20));
+            SetParam(strategy, "CloseAllOnLastCandle", true);
+
+            strategy.OrderRegistering += order =>
+            {
+                if (order.Side == Sides.Buy)
+                {
+                    AreEqual(DayOfWeek.Wednesday, strategy.CurrentTime.DayOfWeek,
+                        "Weekday mode can purchase only on the configured day.");
+                    IsTrue(strategy.CurrentTime.Date < new DateTime(2024, 3, 20));
+                    buys++;
+                }
+                else
+                {
+                    AreEqual(Sides.Sell, order.Side);
+                    IsTrue(strategy.CurrentTime.Date >= new DateTime(2024, 3, 20));
+                    AreEqual(strategy.Position, order.Volume,
+                        "The end-date liquidation must close the entire accumulated position.");
+                    closes++;
+                }
+            };
+        }, replayDuration: TimeSpan.FromDays(31));
+
+        IsTrue(buys > 0 && closes > 0,
+            "Weekday purchases and date-triggered liquidation must both execute against BTC/TON.");
+    }
+
 }
