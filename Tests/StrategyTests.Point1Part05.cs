@@ -36,4 +36,27 @@ public abstract partial class StrategyTests
 		}, replayDuration: TimeSpan.FromDays(14));
 		IsTrue(sellClose > 0 && fills > 1, "Require actual opening and closing fills.");
 	}
+
+	[TestMethod]
+	[TestCategory("Point1Part05")]
+	public async Task Point1Part05_HeikenAshiNoWick_ActualContrarianFillAndPositionSize()
+	{
+		var registered = 0;
+		var fills = 0;
+		await Replay("1994_Heiken_Ashi_No_Wick", (strategy, _) =>
+		{
+			strategy.OrderRegistering += order =>
+			{
+				AreEqual(OrderTypes.Market, order.Type);
+				IsTrue(order.Volume > 0m);
+				if (strategy.Position != 0m && (strategy.Position > 0m) != (order.Side == Sides.Buy))
+					IsTrue(order.Volume >= Math.Abs(strategy.Position),
+						"An opposite no-wick candle must at least close the actual position.");
+				registered++;
+			};
+			strategy.Trades.TradeAdded += _ => fills++;
+		}, replayDuration: TimeSpan.FromDays(14));
+		IsTrue(registered > 0 && fills > 0, "Archive must show an actual no-wick contrarian fill.");
+	}
+
 }

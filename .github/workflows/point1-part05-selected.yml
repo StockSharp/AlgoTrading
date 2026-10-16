@@ -3,7 +3,7 @@ on:
   push:
     branches: [work/point1-part05-20261016]
     paths:
-      - 'API/1901-2000/1995_Color_ZeroLag_MA/**'
+      - 'API/**'
       - 'Tests/StrategyTests.Point1Part05.cs'
       - '.github/workflows/point1-part05-selected.yml'
   workflow_dispatch:
