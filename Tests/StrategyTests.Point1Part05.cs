@@ -1177,4 +1177,44 @@ public abstract partial class StrategyTests
 			"Weighted Momentum OSMA must execute both entry and closing orders.");
 	}
 
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public async Task Point1Part05_ColorJMomentum_JurikSmoothedMomentumAndNativePercentProtection()
+	{
+		var buys = 0;
+		var fills = 0;
+		var stopField = typeof(Strategy).GetField("_stopLoss", BindingFlags.Instance | BindingFlags.NonPublic);
+		IsNotNull(stopField);
+		await Replay("2007_ColorJMomentum", (strategy, _) =>
+		{
+			AreEqual(8, Convert.ToInt32(strategy.Parameters["MomentumLength"].Value));
+			AreEqual(8, Convert.ToInt32(strategy.Parameters["JmaLength"].Value));
+			AreEqual(TimeSpan.FromHours(8).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			foreach (var name in new[] { "EnableStopLoss", "StopLossPercent", "TakeProfitPercent", "EnableLong", "EnableShort" })
+				IsTrue(strategy.Parameters.ContainsKey(name));
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "MomentumLength", 3);
+			SetParam(strategy, "JmaLength", 3);
+			SetParam(strategy, "EnableShort", false);
+			SetParam(strategy, "EnableStopLoss", true);
+			SetParam(strategy, "StopLossPercent", 1m);
+			SetParam(strategy, "TakeProfitPercent", 2m);
+			strategy.OrderRegistering += order =>
+			{
+				IsTrue(order.Volume > 0m);
+				var unit = (Unit)stopField.GetValue(strategy);
+				IsNotNull(unit);
+				AreEqual(UnitTypes.Percent, unit.Type);
+				AreEqual(1m, unit.Value);
+				if (order.Side == Sides.Buy)
+					buys++;
+				else if (strategy.Position > 0m)
+					AreEqual(strategy.Position, order.Volume);
+			};
+			strategy.Trades.TradeAdded += _ => fills++;
+		}, replayDuration: TimeSpan.FromDays(14));
+		IsTrue(buys > 0 && fills > 0, "Smoothed momentum must fill real entries in the archive.");
+	}
+
 }

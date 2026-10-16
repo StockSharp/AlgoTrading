@@ -10,116 +10,105 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Strategy based on smoothed momentum direction changes.
-/// Opens long when momentum turns up, short when momentum turns down.
-/// </summary>
+/// <summary>Completed-candle momentum smoothed by a Jurik moving average.</summary>
 public class ColorJMomentumStrategy : Strategy
 {
-	private readonly StrategyParam<int> _momentumLength;
+	private readonly StrategyParam<int> _momentumLength, _jmaLength;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _stopLossPercent;
-	private readonly StrategyParam<decimal> _takeProfitPercent;
-	private readonly StrategyParam<bool> _enableLong;
-	private readonly StrategyParam<bool> _enableShort;
+	private readonly StrategyParam<decimal> _stopLossPercent, _takeProfitPercent;
+	private readonly StrategyParam<bool> _enableStopLoss, _enableLong, _enableShort;
 
-	private decimal _prevMom;
-	private decimal _prevPrevMom;
-	private int _count;
+	private JurikMovingAverage _jma;
+	private decimal? _previous, _beforePrevious;
+	private Order _pending;
 
 	public int MomentumLength { get => _momentumLength.Value; set => _momentumLength.Value = value; }
+	public int JmaLength { get => _jmaLength.Value; set => _jmaLength.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public decimal StopLossPercent { get => _stopLossPercent.Value; set => _stopLossPercent.Value = value; }
 	public decimal TakeProfitPercent { get => _takeProfitPercent.Value; set => _takeProfitPercent.Value = value; }
+	public bool EnableStopLoss { get => _enableStopLoss.Value; set => _enableStopLoss.Value = value; }
 	public bool EnableLong { get => _enableLong.Value; set => _enableLong.Value = value; }
 	public bool EnableShort { get => _enableShort.Value; set => _enableShort.Value = value; }
 
 	public ColorJMomentumStrategy()
 	{
-		_momentumLength = Param(nameof(MomentumLength), 8)
-			.SetGreaterThanZero()
-			.SetDisplay("Momentum Length", "Period for momentum", "Parameters");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
-			.SetDisplay("Candle Type", "Timeframe for candles", "Parameters");
-
-		_stopLossPercent = Param(nameof(StopLossPercent), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk management");
-
-		_takeProfitPercent = Param(nameof(TakeProfitPercent), 2m)
-			.SetGreaterThanZero()
-			.SetDisplay("Take Profit %", "Take profit percentage", "Risk management");
-
+		_momentumLength = Param(nameof(MomentumLength), 8).SetGreaterThanZero()
+			.SetDisplay("Momentum Length", "Momentum lookback", "Indicator");
+		_jmaLength = Param(nameof(JmaLength), 8).SetGreaterThanZero()
+			.SetDisplay("JMA Length", "Smoothing length", "Indicator");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
+			.SetDisplay("Candle Type", "Signal candle timeframe", "General");
+		_stopLossPercent = Param(nameof(StopLossPercent), 1m).SetNotNegative()
+			.SetDisplay("Stop Loss %", "Optional native percent risk distance", "Risk");
+		_takeProfitPercent = Param(nameof(TakeProfitPercent), 2m).SetNotNegative()
+			.SetDisplay("Take Profit %", "Native percent target distance", "Risk");
+		_enableStopLoss = Param(nameof(EnableStopLoss), true)
+			.SetDisplay("Enable Stop Loss", "Activate initial stop", "Risk");
 		_enableLong = Param(nameof(EnableLong), true)
-			.SetDisplay("Enable Long", "Allow long entries", "General");
-
+			.SetDisplay("Enable Long", "Allow long entries", "Trading");
 		_enableShort = Param(nameof(EnableShort), true)
-			.SetDisplay("Enable Short", "Allow short entries", "General");
+			.SetDisplay("Enable Short", "Allow short entries", "Trading");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevMom = 0;
-		_prevPrevMom = 0;
-		_count = 0;
+		_jma = null;
+		_previous = _beforePrevious = null;
+		_pending = null;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
+		_previous = _beforePrevious = null;
+		_pending = null;
 		var momentum = new Momentum { Length = MomentumLength };
-
-		SubscribeCandles(CandleType)
-			.Bind(momentum, ProcessCandle)
-			.Start();
-
+		_jma = new JurikMovingAverage { Length = JmaLength };
+		Indicators.Add(_jma);
+		SubscribeCandles(CandleType).Bind(momentum, ProcessCandle).Start();
 		StartProtection(
 			takeProfit: new Unit(TakeProfitPercent, UnitTypes.Percent),
-			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent)
-		);
+			stopLoss: new Unit(EnableStopLoss ? StopLossPercent : 0m, UnitTypes.Percent),
+			useMarketOrders: true);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal momValue)
+	private void ProcessCandle(ICandleMessage candle, decimal momentum)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		_count++;
-		if (_count < 3)
-		{
-			_prevPrevMom = _prevMom;
-			_prevMom = momValue;
+		var result = _jma.Process(momentum, candle.OpenTime, true);
+		if (!result.IsFormed)
 			return;
-		}
+		var value = result.ToDecimal();
+		var up = _beforePrevious is decimal before && _previous is decimal previous
+			&& previous < before && value > previous;
+		var down = _beforePrevious is decimal beforeDown && _previous is decimal previousDown
+			&& previousDown > beforeDown && value < previousDown;
+		_beforePrevious = _previous;
+		_previous = value;
 
-		var wasDecreasing = _prevMom < _prevPrevMom;
-		var nowIncreasing = momValue > _prevMom;
-		var wasIncreasing = _prevMom > _prevPrevMom;
-		var nowDecreasing = momValue < _prevMom;
-
-		// Momentum turns up - go long
-		if (wasDecreasing && nowIncreasing && EnableLong && Position <= 0)
+		if (!IsFormedAndOnlineAndAllowTrading()
+			|| (_pending is not null && _pending.State is not (OrderStates.Done or OrderStates.Failed)))
+			return;
+		if (up)
 		{
-			if (Position < 0) BuyMarket();
-			BuyMarket();
+			if (Position < 0m)
+				_pending = BuyMarket(-Position + (EnableLong ? Volume : 0m));
+			else if (Position == 0m && EnableLong)
+				_pending = BuyMarket(Volume);
 		}
-		// Momentum turns down - go short
-		else if (wasIncreasing && nowDecreasing && EnableShort && Position >= 0)
+		else if (down)
 		{
-			if (Position > 0) SellMarket();
-			SellMarket();
+			if (Position > 0m)
+				_pending = SellMarket(Position + (EnableShort ? Volume : 0m));
+			else if (Position == 0m && EnableShort)
+				_pending = SellMarket(Volume);
 		}
-
-		_prevPrevMom = _prevMom;
-		_prevMom = momValue;
 	}
 }
