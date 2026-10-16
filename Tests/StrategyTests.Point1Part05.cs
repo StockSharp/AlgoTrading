@@ -1259,4 +1259,42 @@ public abstract partial class StrategyTests
 			"Archive must contain actual oscillator signals and filled orders in both directions.");
 	}
 
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public async Task Point1Part05_ColorMaRsiTrigger_DocumentedSignTransitionWithActualFills()
+	{
+		var buys = 0;
+		var sells = 0;
+		var fills = 0;
+		await Replay("2010_ColorMaRsi_Trigger", (strategy, _) =>
+		{
+			foreach (var (name, value) in new (string name, int value)[]
+			{
+				("EmaFastLength", 5), ("EmaSlowLength", 10), ("RsiFastLength", 3), ("RsiSlowLength", 13)
+			})
+				AreEqual(value, Convert.ToInt32(strategy.Parameters[name].Value));
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "EmaFastLength", 3);
+			SetParam(strategy, "EmaSlowLength", 7);
+			SetParam(strategy, "RsiFastLength", 3);
+			SetParam(strategy, "RsiSlowLength", 7);
+			strategy.OrderRegistering += order =>
+			{
+				AreEqual(OrderTypes.Market, order.Type);
+				IsTrue(order.Volume > 0m);
+				if (order.Side == Sides.Buy) buys++;
+				else sells++;
+				if (strategy.Position != 0m)
+				{
+					AreEqual(Math.Abs(strategy.Position) + strategy.Volume, order.Volume,
+						"Opposite composite signal must flatten the actual position and enter exactly once.");
+				}
+			};
+			strategy.Trades.TradeAdded += _ => fills++;
+		}, replayDuration: TimeSpan.FromDays(14));
+		IsTrue(buys > 0 && sells > 0 && fills > 1,
+			"The archive must produce real buys and sells on documented sign transitions.");
+	}
+
 }
