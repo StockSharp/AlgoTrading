@@ -158,7 +158,7 @@ public abstract partial class StrategyTests
 	[TestCategory("Shard03")]
 	public async Task S1243_FullMonthRenkoBuildHasBoundedTickCostAndOrderedBricks()
 	{
-		async Task<(TimeSpan elapsed, int count, int upward, int downward)> Run(DataType priceSource)
+		async Task<(TimeSpan elapsed, int count, int upward, int downward)> Point1Part02Run(DataType priceSource)
 		{
 			var errors = new List<string>();
 			DateTimeOffset? previousBrickTime = null;
@@ -241,8 +241,8 @@ public abstract partial class StrategyTests
 
 		// Different underlying quotes/trades need not produce identical bricks; compare
 		// ordering, nonzero brick directions and bounded processing cost instead.
-		var level1 = await Run(DataType.Level1);
-		var ticks = await Run(DataType.Ticks);
+		var level1 = await Point1Part02Run(DataType.Level1);
+		var ticks = await Point1Part02Run(DataType.Ticks);
 		IsTrue(ticks.elapsed < TimeSpan.FromSeconds(120),
 			$"The full-month tick builder took {ticks.elapsed.TotalSeconds:F2}s.");
 		IsTrue(ticks.elapsed <= level1.elapsed * 8 + TimeSpan.FromSeconds(30),
