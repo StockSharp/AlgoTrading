@@ -4,12 +4,15 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 
 using Ecng.Common;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
+using StockSharp.Algo.Indicators;
+using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
@@ -541,5 +544,134 @@ public abstract partial class StrategyTests
 		IsTrue(expectedEntries > 0 && expectedExits > 0 && fills > 0 && nonSignals > 0,
 			"Existing history must exercise long entries, exits, filled orders and no-signal bars.");
 		TestContext.WriteLine($"0781 {Extension} secondary={secondary}: {expectedEntries} entries, {expectedExits} exits, {fills} fills, {nonSignals} ignored bars.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard04")]
+	[DataRow(false)]
+	[DataRow(true)]
+	public async Task S0772_IndependentVolumeMomentumAdxAndActualNativeProtection(bool secondary)
+	{
+		const int momentum = 3;
+		const int volumePeriod = 5;
+		const int smoothing = 2;
+		const decimal threshold = 15m;
+		const decimal adxThreshold = 15m;
+		var adx = new AverageDirectionalIndex { Length = 7 };
+		var bars = new List<(decimal close, decimal volume)>();
+		var raw = new Queue<decimal>();
+		decimal? previousVwmo = null;
+		var position = 0m;
+		Order pending = null;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var entries = 0;
+		var exits = 0;
+		var fills = 0;
+		var rejectedBars = 0;
+		var errors = new List<string>();
+		var stopField = typeof(Strategy).GetField("_stopLoss", BindingFlags.Instance | BindingFlags.NonPublic);
+
+		await Replay("0772_Exodus", (strategy, other) =>
+		{
+			foreach (var (name, expected) in new (string, object)[]
+			{
+				("VwmoMomentum", 10), ("VwmoVolume", 20), ("VwmoSmooth", 3),
+				("VwmoThreshold", 25m), ("AdxLength", 14), ("AdxThreshold", 25m),
+				("AtrLength", 14), ("AtrMultiplier", 2m), ("TpMultiplier", 3m)
+			})
+			{
+				IsTrue(strategy.Parameters.ContainsKey(name), $"Missing documented VWMO, ADX or ATR parameter {name}.");
+				AreEqual(expected, strategy.Parameters[name].Value);
+			}
+			AreEqual(TimeSpan.FromMinutes(1).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			if (secondary) strategy.Security = other;
+			SetParam(strategy, "VwmoMomentum", momentum);
+			SetParam(strategy, "VwmoVolume", volumePeriod);
+			SetParam(strategy, "VwmoSmooth", smoothing);
+			SetParam(strategy, "VwmoThreshold", threshold);
+			SetParam(strategy, "AdxLength", 7);
+			SetParam(strategy, "AdxThreshold", adxThreshold);
+			SetParam(strategy, "AtrLength", 7);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished || candle.SecurityId != strategy.Security.Id.ToSecurityId())
+					return;
+				if (expectedSide is not null)
+					errors.Add("An eligible VWMO/ADX entry or explicit zero-cross exit was not submitted.");
+				expectedSide = null;
+				var adxResult = (AverageDirectionalIndexValue)adx.Process(candle);
+				bars.Add((candle.ClosePrice, candle.TotalVolume));
+				if (bars.Count < momentum + volumePeriod || !adxResult.IsFormed || adxResult.MovingAverage is not decimal strength)
+					return;
+				var numerator = 0m;
+				var denominator = 0m;
+				for (var i = bars.Count - volumePeriod; i < bars.Count; i++)
+				{
+					var weightedDelta = (bars[i].close - bars[i - momentum].close) * bars[i].volume;
+					numerator += weightedDelta;
+					denominator += Math.Abs(weightedDelta);
+				}
+				raw.Enqueue(denominator > 0m ? 100m * numerator / denominator : 0m);
+				while (raw.Count > smoothing) raw.Dequeue();
+				if (raw.Count < smoothing)
+					return;
+				var vwmo = raw.Average();
+				var pendingActive = pending is not null && pending.State is not (OrderStates.Done or OrderStates.Failed);
+				if (!pendingActive)
+				{
+					var longSignal = vwmo > threshold && strength > adxThreshold;
+					var shortSignal = vwmo < -threshold && strength > adxThreshold;
+					var zeroExit = position > 0m && previousVwmo is decimal lastLong && lastLong > 0m && vwmo <= 0m
+						|| position < 0m && previousVwmo is decimal lastShort && lastShort < 0m && vwmo >= 0m;
+					if (longSignal && position <= 0m)
+					{
+						expectedSide = Sides.Buy;
+						expectedVolume = strategy.Volume + Math.Abs(position);
+					}
+					else if (shortSignal && position >= 0m)
+					{
+						expectedSide = Sides.Sell;
+						expectedVolume = strategy.Volume + Math.Abs(position);
+					}
+					else if (zeroExit)
+					{
+						expectedSide = position > 0m ? Sides.Sell : Sides.Buy;
+						expectedVolume = Math.Abs(position);
+					}
+					else rejectedBars++;
+				}
+				previousVwmo = vwmo;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				if (expectedSide is not null)
+				{
+					if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market)
+						errors.Add($"VWMO expected {expectedSide}/{expectedVolume}, got {order.Side}/{order.Volume}.");
+					if (position == 0m || order.Volume > Math.Abs(position))
+					{
+						var nativeStop = (Ecng.Common.Unit)stopField?.GetValue(strategy);
+						if (nativeStop is null || nativeStop.Value <= 0m || nativeStop.Type != UnitTypes.Absolute)
+							errors.Add("The entry must activate native ATR-based absolute protection.");
+						entries++;
+					}
+					else exits++;
+				}
+				else if (position == 0m || order.Side == (position > 0m ? Sides.Buy : Sides.Sell))
+					errors.Add("Unsignalled order is not a valid opposite-side native protection exit.");
+				expectedSide = null;
+				pending = order;
+			};
+			strategy.OwnTradeReceived += (_, trade) =>
+			{
+				fills++;
+				position += trade.Order.Side == Sides.Buy ? trade.Trade.Volume : -trade.Trade.Volume;
+			};
+		}, TimeSpan.FromDays(31), TimeSpan.FromHours(4));
+		IsTrue(errors.Count == 0, string.Join(Environment.NewLine, errors.Take(12)));
+		IsTrue(entries > 0 && fills > 0 && rejectedBars > 0,
+			"The month must exercise a VWMO/ADX entry, execution and non-signal bars.");
+		TestContext.WriteLine($"0772 {Extension} secondary={secondary}: {entries} entries, {exits} zero/opposite exits, {fills} fills, {rejectedBars} no-signal bars.");
 	}
 }
