@@ -72,6 +72,12 @@ dotnet test Tests/Tests.csproj --filter 'FullyQualifiedName~CSharpTests.Point1Pa
 dotnet test Tests/Tests.csproj --filter 'FullyQualifiedName~PythonTests.Point1Part01_0307_AdaptiveMacdDefaultAndNativeStop' -- RunConfiguration.TestSessionTimeout=900000
 ```
 
+## Additional semantic blockers: 0321, 0351, 0353
+
+- 0321 source performs no native protection. The only manual cloud/crossover exits are evaluated on finished candles, while localized READMEs imply ATR-based protective stops. Tests must independently distinguish these, not mislabel an opposite order as an ATR stop.
+- 0351 and 0353, in both languages, are OHLC-derived two-instrument synthetic Z-score examples rather than the published fundamental equity factors. No balance sheets, equity universe, accrual ratios, asset growth or annual factor ranking are available from the permitted BTC/TON replay. Restoring the published factor without importing non-permitted data cannot be certified; no fabricated fundamental fixtures were introduced.
+- 0103, 0121 and 0122 localized introductions have been aligned with actual proxy data and *monthly* calendars, removing conflicting unverified return claims.
+
 ## Per-key coverage
 
 | Key | Task kind | Status and specific outstanding reason |
@@ -81,12 +87,12 @@ dotnet test Tests/Tests.csproj --filter 'FullyQualifiedName~PythonTests.Point1Pa
 | `0121_Santa_Claus_Rally` | проверка замечаний | Код C#/Python исправлен: добавлен параметр `StopLossPercent=2%` и нативная защита; Выход теперь использует фактический остаток позиции. Семь README приведены к исполняемым формулам/defaults. Тест реальных intrabar-исполнений добавлен, но **не запускался**. Не подтверждены C#/Python red→green, объёмы фактических исполнений и выполнение контракта на BTC/TON. |
 | `0122_January_Effect` | проверка замечаний | Код C#/Python исправлен: добавлен параметр `StopLossPercent=2%` и нативная защита; Выход теперь использует фактический остаток позиции. Семь README приведены к исполняемым формулам/defaults. Тест реальных intrabar-исполнений добавлен, но **не запускался**. Не подтверждены C#/Python red→green, объёмы фактических исполнений и выполнение контракта на BTC/TON. |
 | `0299_Beta_Adjusted_Pairs_Trading` | проверка замечаний | Не проверено: требуется независимая проверка контракта и реальных исполнений C#/Python по назначенному замечанию. |
-| `0321_Ichimoku_Hurst_Exponent` | проверка замечаний | Не проверено: требуется независимая проверка контракта и реальных исполнений C#/Python по назначенному замечанию. |
+| `0321_Ichimoku_Hurst_Exponent` | проверка замечаний | Сверены C#/Python: пересечение Tenkan/Kijun при подтверждении цены относительно облака и Hurst R/S > 0.5; закрытие длинной/короткой позиции при пересечении в обратную сторону или уходе цены на противоположную сторону облака. В отличие от семи README, **ATR-стоп и отдельная защита отсутствуют**: это только ручной выход по сигналу на закрытии 15-минутной свечи. Требуются корректировка проверяемого контракта, независимый oracle и фактические исполнения; код не исправлен. |
 | `0341_Supertrend_Put_Call_Ratio` | проверка замечаний | Не проверено: требуется независимая проверка контракта и реальных исполнений C#/Python по назначенному замечанию. |
 | `0344_Hull_MA_Implied_Volatility_Breakout` | проверка замечаний | Не проверено: требуется независимая проверка контракта и реальных исполнений C#/Python по назначенному замечанию. |
-| `0351_Accrual_Anomaly` | проверка замечаний | Не проверено: требуется независимая проверка контракта и реальных исполнений C#/Python по назначенному замечанию. |
+| `0351_Accrual_Anomaly` | проверка замечаний | Выявлено существенное несовпадение: README требует Deciles=10, ежегодного майского ребалансирования по фундаментальным accrual, но C#/Python реализуют внутридневную 5-минутную пару BTC/TON на **синтетическом прокси** от OHLC с Z-score и 2.5% stop; параметр Deciles отсутствует. Для настоящей факторной стратегии нужен фундаментальный accrual-универсум, отсутствующий в разрешённом BTC/TON-архиве. Проверка и исправление не завершены. |
 | `0352_Asset_Class_Trend_Following` | проверка замечаний | Статически выявлено: обе реализации имеют SmaLength=36 и 4-часовые свечи, README требует SMA210 на дневных свечах и MinTradeUsd=50; MinTradeUsd отсутствует в коде, а реализованный двухинструментный относительный фильтр отличается от описанного ежемесячного равного распределения. Не исправлено: требуется выбор верного контракта и независимые C#/Python тесты входов, выходов и перебалансировки. |
-| `0353_Asset_Growth_Effect` | проверка замечаний | Не проверено: требуется независимая проверка контракта и реальных исполнений C#/Python по назначенному замечанию. |
+| `0353_Asset_Growth_Effect` | проверка замечаний | README требует Leverage=1, MinTradeUsd=50, Quantiles=10 и ежегодного ранжирования по росту балансовых активов. C#/Python фактически используют синтетическую сумму цен/оборотного прокси из OHLC BTC/TON, Z-score межинструментного спреда на 5-минутках и защиту 2.5%; названных трёх параметров и факторного рейтинга нет. Для настоящего ранжирования нужны балансовые данные/универсум, которых нет в разрешённом архиве. Не исправлено. |
 | `0354_Betting_Against_Beta_Stocks` | проверка замечаний | Не проверено: требуется независимая проверка контракта и реальных исполнений C#/Python по назначенному замечанию. |
 | `0355_Betting_Against_Beta` | проверка замечаний | Не проверено: требуется независимая проверка контракта и реальных исполнений C#/Python по назначенному замечанию. |
 | `0357_Book_To_Market_Value` | проверка замечаний | Не проверено: требуется независимая проверка контракта и реальных исполнений C#/Python по назначенному замечанию. |
