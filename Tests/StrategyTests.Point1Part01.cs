@@ -242,4 +242,56 @@ public abstract partial class StrategyTests
             expectedFrame: TimeSpan.FromMinutes(15));
     }
 
+    [TestMethod]
+    [TestCategory("Shard05")]
+    public async Task Point1Part01_0661_WickLengthOnlyLongAndExitAfterHold()
+    {
+        var entries = 0;
+        var exits = 0;
+        var finishedBars = 0;
+        var entryBar = -1;
+        var priceStep = 0m;
+        await Replay("0661_Daytrading_ES_Wick_Length", (strategy, _) =>
+        {
+            AreEqual(20, Convert.ToInt32(strategy.Parameters["MaLength"].Value));
+            AreEqual("VolumeWeighted", Convert.ToString(strategy.Parameters["MaType"].Value));
+            AreEqual(10m, Convert.ToDecimal(strategy.Parameters["MaOffset"].Value));
+            AreEqual(18, Convert.ToInt32(strategy.Parameters["HoldPeriods"].Value));
+            AreEqual(TimeSpan.FromMinutes(1).TimeFrame(), strategy.Parameters["CandleType"].Value);
+            priceStep = strategy.Security.PriceStep;
+
+            // An EMA death cross must never open a short in this long-only strategy.
+            strategy.CandleReceived += (_, candle) =>
+            {
+                if (candle.State == CandleStates.Finished &&
+                    candle.SecurityId == strategy.Security.Id.ToSecurityId())
+                    finishedBars++;
+            };
+            strategy.OrderRegistering += order =>
+            {
+                if (strategy.Position == 0)
+                {
+                    AreEqual(Sides.Buy, order.Side, "The wick setup has no short entry.");
+                    entries++;
+                    entryBar = finishedBars;
+                }
+                else if (strategy.Position > 0)
+                {
+                    AreEqual(Sides.Sell, order.Side, "A held long must only be closed by a sell.");
+                    AreEqual(strategy.Position, order.Volume,
+                        "The timed exit must flatten the actual remaining position.");
+                    IsTrue(entryBar >= 0 && finishedBars - entryBar >= 18,
+                        "A long must not be closed before 18 subsequent finished candles.");
+                    exits++;
+                }
+                else
+                    Fail("A short position violates the published long-only contract.");
+            };
+        }, replayDuration: TimeSpan.FromDays(31));
+
+        IsTrue(priceStep > 0m);
+        IsTrue(entries > 0 && exits > 0,
+            "The default one-minute BTC/TON replay must exercise real wick entries and timed exits.");
+    }
+
 }
