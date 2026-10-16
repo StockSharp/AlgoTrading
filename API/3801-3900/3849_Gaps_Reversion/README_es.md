@@ -51,3 +51,5 @@ Todos los parámetros están registrados como `StrategyParam<T>` y admiten la op
 
 - StockSharp API con acceso a los datos de velas para el instrumento seleccionado.
 - Las cotizaciones de nivel 1 son opcionales pero mejoran la detección de diferenciales.
+
+**Momento en la reproducción:** el hueco se comprueba en la primera actualización de cada vela (`Active` si está disponible). Si la fuente solo emite velas `Finished`, el hueco de apertura se detecta al cierre; esto no demuestra una ejecución al precio de apertura.
