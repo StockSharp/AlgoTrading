@@ -54,3 +54,5 @@
 - 元の取引環境（スキャルピングの日中の短い時間枠など）に一致するローソク足の間隔を選択します。
 - 絶対価格へのストップロス変換が正しく機能するように、ポートフォリオに有効な `PriceStep` があることを確認してください。
 - `MoneyManagementRisk` は慎重に調整してください。MQL のエキスパートから継承された `ceil(balance * risk / 10000)` の計算により、値が大きいほどポジションが大きくなります。
+
+**厳密なシグナル条件:** チャネル高値・安値はシグナル足を除く **直前**の確定済み `BreakoutWindow` 本で計算します。買いは `EMA(FastLength) > SMA(SlowLength)` かつ `currentLow <= previousWindowLow`、売りは逆のトレンドかつ `currentHigh >= previousWindowHigh` が必要です。ロングは `currentHigh > previousWindowHigh`、ショートは `currentLow < previousWindowLow` で決済します。両移動平均とチャネルのウォームアップ完了前は取引しません。`StopLossPoints > 0` の場合、`StartProtection` で保護ストップを有効化します。
