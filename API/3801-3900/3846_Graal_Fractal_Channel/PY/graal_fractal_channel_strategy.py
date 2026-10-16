@@ -64,6 +64,7 @@ class graal_fractal_channel_strategy(Strategy):
         self._lower_fractal = None
         self._pending_side = None
         self._pending_age = 0
+        self._finished_bars = 0
         self._entry_order = None
         self._counter_order = None
         self._closing = False
@@ -149,6 +150,7 @@ class graal_fractal_channel_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
+        self._finished_bars += 1
         if self._pending_side is not None:
             self._pending_age += 1
             if self._pending_age > self._signal_age_limit.Value:
@@ -184,7 +186,7 @@ class graal_fractal_channel_strategy(Strategy):
                 return
             self._closing = False
 
-        if self._use_williams_exit.Value:
+        if self._use_williams_exit.Value and self._finished_bars >= self.williams_period:
             wpr = float(wpr_value)
             threshold = float(self._williams_threshold.Value)
             if (self.Position > 0 and wpr > -threshold or
