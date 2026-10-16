@@ -54,3 +54,5 @@
 - 根据原策略的定位选择合适的短周期（剥头皮）K 线。
 - 确保标的证券的 `PriceStep` 已正确设置，以便止损距离能从点数准确换算为价格。
 - 调整 `MoneyManagementRisk` 时需谨慎，值越大意味着通过 `ceil(balance * risk / 10000)` 公式计算出的仓位越大。
+
+**精确定义：** 通道最高价与最低价取自信号K线之前的 `BreakoutWindow` 根*已完成* K线，不包含当前K线。买入要求 `EMA(FastLength) > SMA(SlowLength)` 且 `currentLow <= previousWindowLow`；卖出要求反向趋势且 `currentHigh >= previousWindowHigh`。持有多头时 `currentHigh > previousWindowHigh` 平仓，空头时 `currentLow < previousWindowLow` 平仓。所有指标与通道需完成预热。当 `StopLossPoints > 0` 时使用 `StartProtection` 设置保护。
