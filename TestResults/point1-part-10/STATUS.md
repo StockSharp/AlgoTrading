@@ -344,6 +344,10 @@ Use the filtered command for red/green observations and add parameter-profile-sp
 | `4222_Parabolic_SAR_First_Dot` | Incomplete | Both implementations, default parameters, all documented entry/exit/risk branches, and independent execution oracle not yet reviewed and replay-tested. |
 | `4224_Daily_Trend_Reversal` | Incomplete | Both implementations, default parameters, all documented entry/exit/risk branches, and independent execution oracle not yet reviewed and replay-tested. |
  
+## GitHub branch scope check
+
+A direct GitHub `main...feature/tz-point1-part10` comparison showed exactly 56 changed files: the two implementations and seven localized READMEs in each of six assigned strategy folders (54 files), plus `Tests/StrategyTests.Point1Part10.cs` and this ledger. No files from other repositories or strategy IDs were changed. The comparison is a path-isolation audit, not an executed build or behavior test.
+
 ## Merge / isolation notes
 
 No shared `Tests/StrategyInventory.cs`, `Tests.csproj`, helpers, other part-specific test files, CI, scripts, or sibling repositories were changed. The new part-specific test file is the only test source added. Only these six assigned strategy directories and this ledger should be in the part-10 diff.
