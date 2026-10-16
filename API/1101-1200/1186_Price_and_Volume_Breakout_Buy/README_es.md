@@ -28,3 +28,5 @@ La estrategia entra cuando precio y volumen rompen simultáneamente por encima d
   - Redes neuronales: No
   - Divergencia: No
   - Nivel de riesgo: Medio
+
+Los extremos de precio y volumen se calculan solo con velas anteriores cerradas (se excluye la vela de señal). `OrderDirection` admite `Long`, `Short` o `Both`; el valor predeterminado es `Long`. Un cierre en la SMA o de vuelta al lado de la posición reinicia el contador de cinco cierres consecutivos.
