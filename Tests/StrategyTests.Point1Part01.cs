@@ -88,12 +88,16 @@ public abstract partial class StrategyTests
             const string originalBaseCall = "super(keltner_seasonal_strategy, self).OnStarted2(time)";
             IsTrue(original.Contains(originalBaseCall, StringComparison.Ordinal), "The Python startup hook changed; inspect this probe.");
 
-            // Keep every candle, parameter and signal identical; vary only the DateTime
-            // passed to the strategy's base OnStarted2, as in the existing C# probe.
+            // Keep every historical candle, published parameter and signal
+            // identical. Change the actual DateTime received by the Python
+            // strategy's OnStarted2, not merely the base.OnStarted2 call:
+            // a future use of the argument in strategy code must be caught.
+            const string originalHook = "    def OnStarted2(self, time):";
+            IsTrue(original.Contains(originalHook, StringComparison.Ordinal), "The Python startup hook changed; inspect this probe.");
             var modified = original
                 .Replace("from System import TimeSpan, Math", "from System import TimeSpan, Math, DateTime", StringComparison.Ordinal)
-                .Replace(originalBaseCall,
-                    $"super(keltner_seasonal_strategy, self).OnStarted2(DateTime(time.Year, {month}, 1, time.Hour, time.Minute, time.Second, time.Kind))",
+                .Replace(originalHook,
+                    originalHook + $"\\n        time = DateTime(time.Year, {month}, 1, time.Hour, time.Minute, time.Second, time.Kind)",
                     StringComparison.Ordinal);
 
             var code = new CodeInfo
