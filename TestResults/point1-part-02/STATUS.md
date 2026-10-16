@@ -45,6 +45,7 @@ Only one test worker may execute at a time; each command has a shell timeout and
 ```bash
 timeout 900s dotnet test Tests/Tests.csproj -m:1 --filter 'FullyQualifiedName~S1186_' --blame-hang-timeout 00:01:00 -- RunConfiguration.MaxCpuCount=1
 timeout 900s dotnet test Tests/Tests.csproj -m:1 --filter 'FullyQualifiedName~S1243_' --blame-hang-timeout 00:01:00 -- RunConfiguration.MaxCpuCount=1
+timeout 900s dotnet test Tests/Tests.csproj -m:1 --filter 'FullyQualifiedName~S0779_' --blame-hang-timeout 00:01:00 -- RunConfiguration.MaxCpuCount=1
 ```
 
 **Execution results:** not run (missing SDK, sibling core, and packaged history in current environment). C# / Python and README structure/translation changes therefore await actual validation.
