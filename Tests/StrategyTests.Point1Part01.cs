@@ -364,4 +364,67 @@ public abstract partial class StrategyTests
             "Weekday purchases and date-triggered liquidation must both execute against BTC/TON.");
     }
 
+    [TestMethod]
+    [TestCategory("Shard01")]
+    public async Task Point1Part01_0665_BollingerDcaOnlyAccumulatesLongs()
+    {
+        var buys = 0;
+        var fills = 0;
+        await Replay("0665_DCA_Mean_Reversion_Bollinger_Band", (strategy, _) =>
+        {
+            AreEqual(200m, Convert.ToDecimal(strategy.Parameters["InvestmentAmount"].Value));
+            AreEqual(20, Convert.ToInt32(strategy.Parameters["BollingerPeriod"].Value));
+            AreEqual(2m, Convert.ToDecimal(strategy.Parameters["BollingerMultiplier"].Value));
+            AreEqual("Combined", Convert.ToString(strategy.Parameters["StrategyMode"].Value));
+            AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+
+            strategy.OrderRegistering += order =>
+            {
+                AreEqual(Sides.Buy, order.Side,
+                    "Neither monthly nor lower-band-cross DCA is permitted to short.");
+                IsTrue(order.Volume > 0m, "A fixed-quote buy must size a positive volume.");
+                buys++;
+            };
+            strategy.Trades.TradeAdded += trade =>
+            {
+                if (trade.Order.Side == Sides.Buy)
+                    fills++;
+            };
+        }, replayDuration: TimeSpan.FromDays(31));
+
+        IsTrue(buys > 0 && fills > 0, "The unchanged default must open real accumulated long positions.");
+    }
+
+    [TestMethod]
+    [TestCategory("Shard01")]
+    public async Task Point1Part01_0665_MonthlyModeClosesOnSpecifiedDate()
+    {
+        var buys = 0;
+        var sells = 0;
+        await Replay("0665_DCA_Mean_Reversion_Bollinger_Band", (strategy, _) =>
+        {
+            SetParam(strategy, "StrategyMode", "Monthly");
+            SetParam(strategy, "CloseDate", new DateTime(2024, 3, 20));
+            strategy.OrderRegistering += order =>
+            {
+                if (order.Side == Sides.Buy)
+                {
+                    IsTrue(strategy.CurrentTime.Date < new DateTime(2024, 3, 20));
+                    buys++;
+                }
+                else
+                {
+                    AreEqual(Sides.Sell, order.Side);
+                    AreEqual(strategy.Position, order.Volume,
+                        "The closing order must sell all accumulated assets.");
+                    IsTrue(strategy.CurrentTime.Date >= new DateTime(2024, 3, 20));
+                    sells++;
+                }
+            };
+        }, replayDuration: TimeSpan.FromDays(31));
+
+        IsTrue(buys >= 1 && sells >= 1,
+            "Monthly DCA must execute the monthly investment and date-based liquidation.");
+    }
+
 }
