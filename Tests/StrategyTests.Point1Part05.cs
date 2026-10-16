@@ -1134,4 +1134,47 @@ public abstract partial class StrategyTests
 		IsTrue(buys > 0 && closes > 0 && fills > 1, "Both entry and exit must actually fill.");
 	}
 
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public async Task Point1Part05_ColorZerolagMomentumOsma_WeightedMomentumAndFullActualExits()
+	{
+		var buys = 0;
+		var sells = 0;
+		var fills = 0;
+		await Replay("2004_Color_Zerolag_Momentum_OSMA", (strategy, _) =>
+		{
+			foreach (var flag in new[] { "BuyOpen", "SellOpen", "BuyClose", "SellClose" })
+				AreEqual(true, strategy.Parameters[flag].Value);
+			for (var i = 1; i <= 5; i++)
+			{
+				IsTrue(strategy.Parameters.ContainsKey("MomentumPeriod" + i));
+				IsTrue(strategy.Parameters.ContainsKey("Factor" + i));
+				SetParam(strategy, "MomentumPeriod" + i, i + 2);
+			}
+			SetParam(strategy, "Smoothing1", 3);
+			SetParam(strategy, "Smoothing2", 3);
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "SellOpen", false);
+			strategy.OrderRegistering += order =>
+			{
+				IsTrue(order.Volume > 0m);
+				if (order.Side == Sides.Sell)
+				{
+					IsTrue(strategy.Position > 0m, "SellOpen=false forbids new shorts.");
+					AreEqual(strategy.Position, order.Volume, "Close the exact filled long.");
+					sells++;
+				}
+				else
+				{
+					AreEqual(strategy.Volume, order.Volume);
+					buys++;
+				}
+			};
+			strategy.Trades.TradeAdded += _ => fills++;
+		}, replayDuration: TimeSpan.FromDays(14));
+		IsTrue(buys > 0 && sells > 0 && fills > 1,
+			"Weighted Momentum OSMA must execute both entry and closing orders.");
+	}
+
 }
