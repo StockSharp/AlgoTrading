@@ -22,6 +22,10 @@
 - It requires a complete-month replay; checks nondecreasing brick times, complete nonzero bricks, each direction, and an elapsed-time ceiling/relative Ticks-to-Level1 cost.
 - **Not yet proved:** tick mode timing, processing cost, actual completeness against the original tick stream, full-month performance, or tests passing in either language.
 
+## Confirmed defects from targeted static source review
+
+Both C# and Python were fetched and independently inspected for the following eight keys: `0772_Exodus`, `0773_Express_Generator`, `0774_External_Signals_Tester`, `0777_Faith_Indicator`, `0778_Falcon_Liquidity_Grab`, `0779_Fancy_Bollinger_Bands`, `0780_Fearzone_Panel`, `0781_Fibonacci_Bollinger_Bands`. Each currently contains identical generic EMA(120/450) crossing logic and only `FastEmaPeriod`, `SlowEmaPeriod`, `CandleType` parameters, not the algorithm in the README. These are **confirmed source-contract mismatches**, not behavioral test passes. Do not report them as fixed, and do not reuse the EMA template as the replacement. Each needs its own independent oracle, red/green trace, actual orders and executions and seven-language documentation check.
+
 ## Shared files touched (merge coordination)
 - `Tests/StrategyInventory.cs`: only add `1186_Price_and_Volume_Breakout_Buy` to Overrides. No other keys changed.
 - `Tests/Tests.csproj`: unchanged.
@@ -44,14 +48,14 @@ timeout 900s dotnet test Tests/Tests.csproj -m:1 --filter 'FullyQualifiedName~S1
 |---|---|---|
 | `1186_Price_and_Volume_Breakout_Buy` | Specified change | Source changed; C#/Python archive TDD and default checks NOT RUN |
 | `1243_Renko` | Specified change | Test proposed; full-month Tick/Level1 performance NOT RUN |
-| `0772_Exodus` | Investigate note | NOT REVIEWED — requires independent C#/Python archive verification |
-| `0773_Express_Generator` | Investigate note | NOT REVIEWED — requires independent C#/Python archive verification |
-| `0774_External_Signals_Tester` | Investigate note | NOT REVIEWED — requires independent C#/Python archive verification |
-| `0777_Faith_Indicator` | Investigate note | NOT REVIEWED — requires independent C#/Python archive verification |
-| `0778_Falcon_Liquidity_Grab` | Investigate note | NOT REVIEWED — requires independent C#/Python archive verification |
-| `0779_Fancy_Bollinger_Bands` | Investigate note | NOT REVIEWED — requires independent C#/Python archive verification |
-| `0780_Fearzone_Panel` | Investigate note | NOT REVIEWED — requires independent C#/Python archive verification |
-| `0781_Fibonacci_Bollinger_Bands` | Investigate note | NOT REVIEWED — requires independent C#/Python archive verification |
+| `0772_Exodus` | Investigate note | STATIC DEFECT CONFIRMED — both languages use generic EMA(120/450) crossover unrelated to README; original behavior, independent tests, fills and protection NOT IMPLEMENTED/NOT RUN |
+| `0773_Express_Generator` | Investigate note | STATIC DEFECT CONFIRMED — both languages use generic EMA(120/450) crossover unrelated to README; original behavior, independent tests, fills and protection NOT IMPLEMENTED/NOT RUN |
+| `0774_External_Signals_Tester` | Investigate note | STATIC DEFECT CONFIRMED — both languages use generic EMA(120/450) crossover unrelated to README; original behavior, independent tests, fills and protection NOT IMPLEMENTED/NOT RUN |
+| `0777_Faith_Indicator` | Investigate note | STATIC DEFECT CONFIRMED — both languages use generic EMA(120/450) crossover unrelated to README; original behavior, independent tests, fills and protection NOT IMPLEMENTED/NOT RUN |
+| `0778_Falcon_Liquidity_Grab` | Investigate note | STATIC DEFECT CONFIRMED — both languages use generic EMA(120/450) crossover unrelated to README; original behavior, independent tests, fills and protection NOT IMPLEMENTED/NOT RUN |
+| `0779_Fancy_Bollinger_Bands` | Investigate note | STATIC DEFECT CONFIRMED — both languages use generic EMA(120/450) crossover unrelated to README; original behavior, independent tests, fills and protection NOT IMPLEMENTED/NOT RUN |
+| `0780_Fearzone_Panel` | Investigate note | STATIC DEFECT CONFIRMED — both languages use generic EMA(120/450) crossover unrelated to README; original behavior, independent tests, fills and protection NOT IMPLEMENTED/NOT RUN |
+| `0781_Fibonacci_Bollinger_Bands` | Investigate note | STATIC DEFECT CONFIRMED — both languages use generic EMA(120/450) crossover unrelated to README; original behavior, independent tests, fills and protection NOT IMPLEMENTED/NOT RUN |
 | `0784_Fibonacci_Counter_Trend_Trading` | Investigate note | NOT REVIEWED — requires independent C#/Python archive verification |
 | `0785_Fibonacci_Levels_High_Low` | Investigate note | NOT REVIEWED — requires independent C#/Python archive verification |
 | `0786_Fibonacci_Retracement_Crypto` | Investigate note | NOT REVIEWED — requires independent C#/Python archive verification |
