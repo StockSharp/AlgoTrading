@@ -46,3 +46,5 @@ A estratégia de sessão E-Friday replica o clássico consultor especialista Met
 - Usa dados de fechamento de velas para tomada de decisão, considerando os preços originais pesquisados por tick.
 - As saídas de proteção são executadas por meio de ordens de mercado quando as velas indicam que os níveis de parada ou meta foram atingidos dentro do intervalo.
 - Os parâmetros de estratégia são expostos por meio do sistema `StrategyParam` de StockSharp, suportando otimização e vinculação de UI.
+
+**Detalhes de execução:** a entrada de sexta é avaliada no primeiro candle intradiário *concluído* cuja hora de abertura corresponde a `HourOpen`, não no primeiro tick. É necessário um candle diário de quinta já concluído. Só há uma tentativa de entrada por sexta, mesmo após uma saída de proteção. O encerramento por horário, stop, take profit e trailing usam as máximas e mínimas de candles intradiários concluídos e fecham por ordens a mercado. O trailing avança apenas após o passo definido e nunca é considerado executado retroativamente no mesmo candle.
