@@ -167,6 +167,13 @@ public abstract partial class StrategyTests
 			var up = 0;
 			var down = 0;
 			var count = 0;
+			var previousDirection = 0;
+			var netPosition = 0m;
+			Sides? expectedSide = null;
+			var expectedVolume = 0m;
+			var orders = 0;
+			var fills = 0;
+			var expectedReversals = 0;
 			var stopwatch = Stopwatch.StartNew();
 			await Replay("1243_Renko", (strategy, _) =>
 			{
@@ -192,6 +199,31 @@ public abstract partial class StrategyTests
 					else if (movement < 0m) down++;
 					else errors.Add("A finished Renko brick has zero direction.");
 					count++;
+					if (expectedSide is not null)
+						errors.Add("A previous Renko direction reversal did not register its order.");
+					expectedSide = null;
+					var direction = Math.Sign(movement);
+					if (previousDirection != 0 && direction != previousDirection
+						&& (direction > 0 ? netPosition <= 0m : netPosition >= 0m))
+					{
+						expectedSide = direction > 0 ? Sides.Buy : Sides.Sell;
+						expectedVolume = strategy.Volume + Math.Abs(netPosition);
+						expectedReversals++;
+					}
+					previousDirection = direction;
+				};
+				strategy.OrderRegistering += order =>
+				{
+					orders++;
+					if (order.Side != expectedSide || order.Volume != expectedVolume
+						|| order.Type != OrderTypes.Market || strategy.Position != netPosition)
+						errors.Add($"{strategy.CurrentTime:O}: Renko order {order.Side}/{order.Volume}; expected {expectedSide}/{expectedVolume} at position {netPosition}.");
+					expectedSide = null;
+				};
+				strategy.OwnTradeReceived += (_, trade) =>
+				{
+					fills++;
+					netPosition += trade.Order.Side == Sides.Buy ? trade.Trade.Volume : -trade.Trade.Volume;
 				};
 			}, TimeSpan.FromDays(31), TimeSpan.FromDays(31));
 			stopwatch.Stop();
@@ -199,9 +231,11 @@ public abstract partial class StrategyTests
 				&& lastReplayTime.Value - firstReplayTime.Value >= TimeSpan.FromDays(28),
 				$"{priceSource}: did not replay the entire packaged month.");
 			IsTrue(errors.Count == 0, string.Join(Environment.NewLine, errors.Take(12)));
+			AreEqual(expectedReversals, orders, "All and only completed Renko direction reversals may issue market orders.");
+			IsTrue(expectedSide is null && orders > 0 && fills > 0);
 			IsTrue(count > 0 && up > 0 && down > 0,
 				$"{priceSource}: archive must produce both directions and finished bricks.");
-			TestContext.WriteLine($"1243 {Extension}: {priceSource}: {count} finished bricks ({up} up/{down} down), {stopwatch.Elapsed.TotalSeconds:F2}s over the full archived month.");
+			TestContext.WriteLine($"1243 {Extension}: {priceSource}: {count} finished bricks ({up} up/{down} down), {orders} reversal orders/{fills} fills, {stopwatch.Elapsed.TotalSeconds:F2}s over the full archived month.");
 			return (stopwatch.Elapsed, count, up, down);
 		}
 
