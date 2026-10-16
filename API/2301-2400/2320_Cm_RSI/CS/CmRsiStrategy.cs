@@ -87,12 +87,13 @@ public class CmRsiStrategy : Strategy
 	{
 		base.OnStarted2(time);
 		ResetRsi();
-		if (Security.PriceStep <= 0m)
+		var step = Security.PriceStep ?? 0m;
+		if (step <= 0m)
 			throw new InvalidOperationException("Cm RSI requires a positive Security.PriceStep for point-based stops.");
 		SubscribeCandles(CandleType).Bind(ProcessCandle).Start();
 		StartProtection(
-			takeProfit: TakeProfit > 0 ? new Unit(TakeProfit * Security.PriceStep, UnitTypes.Absolute) : new Unit(),
-			stopLoss: StopLoss > 0 ? new Unit(StopLoss * Security.PriceStep, UnitTypes.Absolute) : new Unit());
+			takeProfit: TakeProfit > 0 ? new Unit(TakeProfit * step, UnitTypes.Absolute) : new Unit(),
+			stopLoss: StopLoss > 0 ? new Unit(StopLoss * step, UnitTypes.Absolute) : new Unit());
 	}
 
 	private static decimal ToRsi(decimal averageGain, decimal averageLoss)

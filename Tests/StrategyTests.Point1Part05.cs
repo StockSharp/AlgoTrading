@@ -326,8 +326,8 @@ public abstract partial class StrategyTests
 			SetParam(strategy, "Length", 5);
 			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
 			// Reachable explicit profile; do not claim this verifies default thresholds.
-			SetParam(strategy, "UpLevel", 0.5m);
-			SetParam(strategy, "DownLevel", -0.5m);
+			SetParam(strategy, "UpLevel", 0.1m);
+			SetParam(strategy, "DownLevel", -0.1m);
 			strategy.OrderRegistering += order =>
 			{
 				IsTrue(order.Volume > 0m);
