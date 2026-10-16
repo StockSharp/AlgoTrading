@@ -46,3 +46,5 @@ Die E-Friday Session-Strategie repliziert den klassischen MetaTrader-Expertenber
 - Verwendet Kerzenschlussdaten für die Entscheidungsfindung, während die ursprünglich abgefragten Preise pro Tick verwendet werden.
 - Schutzausstiege werden über Marktaufträge ausgeführt, wenn Kerzen anzeigen, dass Stop- oder Zielniveaus innerhalb des Intervalls berührt wurden.
 - Strategieparameter werden über das `StrategyParam`-System von StockSharp bereitgestellt und unterstützen die Optimierung und UI-Bindung.
+
+**Ausführungsdetails:** Der Freitagseinstieg wird bei der ersten *abgeschlossenen* Intraday-Kerze geprüft, deren Eröffnungsstunde `HourOpen` entspricht, nicht beim ersten Tick. Eine abgeschlossene Tageskerze vom Donnerstag ist erforderlich. Pro Freitag wird nur ein Einstiegsversuch unternommen, auch nach einem frühen Schutz-Ausstieg. Sitzungsschluss, Stop, Take-Profit und Trailing werden an den Extremwerten abgeschlossener Intraday-Kerzen geprüft und über Marktorders geschlossen. Der Trailing-Level wird nur nach dem konfigurierten Schritt nachgezogen; eine rückwirkende Ausführung innerhalb derselben Kerze wird nicht angenommen.
