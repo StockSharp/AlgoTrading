@@ -97,7 +97,7 @@ public abstract partial class StrategyTests
             var modified = original
                 .Replace("from System import TimeSpan, Math", "from System import TimeSpan, Math, DateTime", StringComparison.Ordinal)
                 .Replace(originalHook,
-                    originalHook + $"\\n        time = DateTime(time.Year, {month}, 1, time.Hour, time.Minute, time.Second, time.Kind)",
+                    originalHook + $"\n        time = DateTime(time.Year, {month}, 1, time.Hour, time.Minute, time.Second, time.Kind)",
                     StringComparison.Ordinal);
 
             var code = new CodeInfo
