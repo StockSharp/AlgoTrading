@@ -1,14 +1,14 @@
 # Point 1 / Part 09 — verification record (incomplete)
 
 **Scope:** exactly the 316 strategy keys in TZ-09.md. A key covers C# and Python.
-**Status:** NOT COMPLETED. No entry below is marked 'verified' without an independent behavioral replay.
+**Status:** NOT COMPLETED. All 316 required C#/Python/README file structures were verified (see structure-verification.md); no strategy is marked behaviorally verified without an independent replay.
 
 ## Environment and restrictions
 
 - GitHub-only source access in this session; the Windows checkout `D:\stocksharp\AlgoTrading` and its sibling `StockSharp (GitHub)` are not mounted.
 - No `dotnet` executable, MSBuild, MSTest worker or bundled BTC/TON archive available in the execution container; test execution, red/green demonstration, compile and real fills cannot be certified.
 - `AlgoTrading/AGENTS.md` is absent on the inspected default GitHub branch, and sibling `configs/instructions.md` was not retrievable through the available connection.
-- Existing tests, translated READMEs, default behavior and execution mechanics therefore require further verification. `requireTrades` was not changed; no test runs or history downloads were attempted.
+- The complete 316-key file structure is verified. Parameter names were inspected in all seven READMEs for 3410/3413/3433 and the M5 CandleType declaration for 3467. Full translations, default behavior and execution mechanics require verification. `requireTrades` was not changed; no test runs or history downloads were attempted.
 - Changes in this branch are limited to assigned C#/Python strategy implementations (3410, 3413, 3433, 3467), the prescribed partial test file and this report. No other repository was modified.
 
 ## Reproduction commands (NOT executed)
@@ -60,7 +60,7 @@ The commands above are illustrative Unix-shell timeout wrappers; use a correspon
 | `3460_Spread_Informer` | Unfinished: README, C#, Python, independent signal oracle and execution/protection replay have not been reviewed or run in this session. |
 | `3462_Spread_Data_Collector` | Unfinished: README, C#, Python, independent signal oracle and execution/protection replay have not been reviewed or run in this session. |
 | `3466_Ronz_Auto_SLTP` | Unfinished: README, C#, Python, independent signal oracle and execution/protection replay have not been reviewed or run in this session. |
-| `3467_The_Enchantress` | Unfinished: C# and Python CandleType defaults changed from M60 to documented M5; pattern classifications, virtual orders, real protective executions, and all seven translations remain unverified. |
+| `3467_The_Enchantress` | Unfinished: C# and Python CandleType defaults changed from M60 to documented M5; pattern classifications, virtual orders, real protective executions, while full translation semantics remain unverified. |
 | `3468_Trading_Panel` | Unfinished: README, C#, Python, independent signal oracle and execution/protection replay have not been reviewed or run in this session. |
 | `3469_TradingPanel_Batch` | Unfinished: README, C#, Python, independent signal oracle and execution/protection replay have not been reviewed or run in this session. |
 | `3470_MACross` | Unfinished: README, C#, Python, independent signal oracle and execution/protection replay have not been reviewed or run in this session. |
@@ -347,7 +347,7 @@ The commands above are illustrative Unix-shell timeout wrappers; use a correspon
 
 - `Tests/StrategyTests.Point1Part09.cs`: `S3410_IndependentFiveIndicatorEntriesAndFilledVolume`, `S3413_IndependentMedianLwmaEnvelopeBidEntriesAndActualFills` (two profiles), `S3433_IndependentMfiSmaPatternEntriesAndCrossingExits`; each inherited by CSharpTests and PythonTests.
 - Execution results: **unknown**; red/green TDD cannot be claimed because the SDK, packaged history and MSBuild worker are unavailable. A static code review is not a substitute for the test runs.
-- Protection fill checks, every translation, other assigned strategy contracts and all failures found after compiling remain outstanding.
+- Protection fill checks, semantic translations, other assigned strategy contracts and all failures found after compiling remain outstanding. Structural completeness of all 316 keys and the documented parameter-name surfaces of the four touched examples were checked separately.
 
 ## Next verification steps
 
