@@ -3,103 +3,200 @@ using System.Collections.Generic;
 
 using Ecng.Common;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
-/// Strategy based on a zero-lag TRIX OSMA oscillator.
-/// Uses TRIX direction changes for trend reversal signals.
-/// </summary>
+/// <summary>Five weighted TRIX components with slow trend and smoothed OSMA reversal line.</summary>
 public class ColorZerolagTrixOsmaStrategy : Strategy
 {
-	private readonly StrategyParam<int> _trixPeriod;
-	private readonly StrategyParam<int> _signalPeriod;
+	private sealed class TrixState
+	{
+		private readonly int _period;
+		private readonly decimal _alpha;
+		private decimal _first;
+		private decimal _second;
+		private decimal _third;
+		private decimal _previousThird;
+		private int _samples;
+
+		public TrixState(int period)
+		{
+			_period = period;
+			_alpha = 2m / (period + 1m);
+		}
+
+		// The replay harness clones and resets a strategy, then checks nested fields
+		// structurally. Internal TRIX state must compare by value, not reference.
+		public override bool Equals(object other)
+			=> other is TrixState value
+				&& _period == value._period
+				&& _alpha == value._alpha
+				&& _first == value._first
+				&& _second == value._second
+				&& _third == value._third
+				&& _previousThird == value._previousThird
+				&& _samples == value._samples;
+
+		public override int GetHashCode()
+			=> HashCode.Combine(_period, _alpha, _first, _second, _third, _previousThird, _samples);
+
+		public decimal? Add(decimal close)
+		{
+			if (_samples == 0)
+			{
+				_first = _second = _third = close;
+				_previousThird = _third;
+				_samples = 1;
+				return null;
+			}
+
+			_first += _alpha * (close - _first);
+			_second += _alpha * (_first - _second);
+			_third += _alpha * (_second - _third);
+			_samples++;
+			var value = _previousThird == 0m ? 0m
+				: 100m * (_third - _previousThird) / _previousThird;
+			_previousThird = _third;
+			// Each EMA stage needs history: do not trade during triple-EMA warmup.
+			return _samples >= 3 * _period + 1 ? value : null;
+		}
+	}
+
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _smoothing1, _smoothing2;
+	private readonly StrategyParam<decimal> _stopLoss, _takeProfit;
+	private readonly StrategyParam<int>[] _periods = new StrategyParam<int>[5];
+	private readonly StrategyParam<decimal>[] _factors = new StrategyParam<decimal>[5];
+	private readonly StrategyParam<bool> _buyOpen, _buyClose, _sellOpen, _sellClose;
 
-	private decimal _prevOsma;
-	private decimal _prevPrevOsma;
-	private int _count;
+	private TrixState[] _trix;
+	private decimal? _slow, _smoothedOsma, _previousOsma, _beforePreviousOsma;
+	private Order _pending;
 
-	public int TrixPeriod { get => _trixPeriod.Value; set => _trixPeriod.Value = value; }
-	public int SignalPeriod { get => _signalPeriod.Value; set => _signalPeriod.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public int Smoothing1 { get => _smoothing1.Value; set => _smoothing1.Value = value; }
+	public int Smoothing2 { get => _smoothing2.Value; set => _smoothing2.Value = value; }
+	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
+	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
+	public int Period1 { get => _periods[0].Value; set => _periods[0].Value = value; }
+	public int Period2 { get => _periods[1].Value; set => _periods[1].Value = value; }
+	public int Period3 { get => _periods[2].Value; set => _periods[2].Value = value; }
+	public int Period4 { get => _periods[3].Value; set => _periods[3].Value = value; }
+	public int Period5 { get => _periods[4].Value; set => _periods[4].Value = value; }
+	public decimal Factor1 { get => _factors[0].Value; set => _factors[0].Value = value; }
+	public decimal Factor2 { get => _factors[1].Value; set => _factors[1].Value = value; }
+	public decimal Factor3 { get => _factors[2].Value; set => _factors[2].Value = value; }
+	public decimal Factor4 { get => _factors[3].Value; set => _factors[3].Value = value; }
+	public decimal Factor5 { get => _factors[4].Value; set => _factors[4].Value = value; }
+	public bool BuyOpen { get => _buyOpen.Value; set => _buyOpen.Value = value; }
+	public bool BuyClose { get => _buyClose.Value; set => _buyClose.Value = value; }
+	public bool SellOpen { get => _sellOpen.Value; set => _sellOpen.Value = value; }
+	public bool SellClose { get => _sellClose.Value; set => _sellClose.Value = value; }
 
 	public ColorZerolagTrixOsmaStrategy()
 	{
-		_trixPeriod = Param(nameof(TrixPeriod), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("TRIX Period", "TRIX calculation period", "Indicator");
-
-		_signalPeriod = Param(nameof(SignalPeriod), 9)
-			.SetGreaterThanZero()
-			.SetDisplay("Signal Period", "Signal line EMA period", "Indicator");
-
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
+			.SetDisplay("Candle Type", "Signal candle timeframe", "General");
+		_smoothing1 = Param(nameof(Smoothing1), 9).SetGreaterThanZero()
+			.SetDisplay("Smoothing 1", "Slow-trend EMA period", "Indicator");
+		_smoothing2 = Param(nameof(Smoothing2), 5).SetGreaterThanZero()
+			.SetDisplay("Smoothing 2", "OSMA-line EMA period", "Indicator");
+		_stopLoss = Param(nameof(StopLoss), 0m).SetNotNegative()
+			.SetDisplay("Stop Loss", "Optional absolute stop distance", "Risk");
+		_takeProfit = Param(nameof(TakeProfit), 0m).SetNotNegative()
+			.SetDisplay("Take Profit", "Optional absolute take-profit distance", "Risk");
+		var periods = new[] { 5, 8, 13, 21, 34 };
+		for (var i = 0; i < 5; i++)
+		{
+			_periods[i] = Param("Period" + (i + 1), periods[i]).SetGreaterThanZero()
+				.SetDisplay("TRIX period " + (i + 1), "Triple EMA period", "Indicator");
+			_factors[i] = Param("Factor" + (i + 1), 1m)
+				.SetDisplay("TRIX factor " + (i + 1), "Component weight", "Indicator");
+		}
+		_buyOpen = Param(nameof(BuyOpen), true).SetDisplay("Buy Open", "Enable long entries", "Trading");
+		_buyClose = Param(nameof(BuyClose), true).SetDisplay("Buy Close", "Enable long exits", "Trading");
+		_sellOpen = Param(nameof(SellOpen), true).SetDisplay("Sell Open", "Enable short entries", "Trading");
+		_sellClose = Param(nameof(SellClose), true).SetDisplay("Sell Close", "Enable short exits", "Trading");
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> [(Security, CandleType)];
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() => [(Security, CandleType)];
 
-	/// <inheritdoc />
+	private void ResetHistory()
+	{
+		_trix = new TrixState[5];
+		for (var i = 0; i < 5; i++)
+			_trix[i] = new TrixState(_periods[i].Value);
+		_slow = _smoothedOsma = _previousOsma = _beforePreviousOsma = null;
+		_pending = null;
+	}
+
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevOsma = 0;
-		_prevPrevOsma = 0;
-		_count = 0;
+		ResetHistory();
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		var trix = new Trix { Length = TrixPeriod };
-		var signal = new ExponentialMovingAverage { Length = SignalPeriod };
-
-		SubscribeCandles(CandleType)
-			.Bind(trix, signal, ProcessCandle)
-			.Start();
+		ResetHistory();
+		StartProtection(takeProfit: new Unit(TakeProfit, UnitTypes.Absolute),
+			stopLoss: new Unit(StopLoss, UnitTypes.Absolute));
+		SubscribeCandles(CandleType).Bind(ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal trixValue, decimal signalValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		var osma = trixValue - signalValue;
-		_count++;
-
-		if (_count < 3)
+		var fast = 0m;
+		var formed = true;
+		for (var i = 0; i < _trix.Length; i++)
 		{
-			_prevPrevOsma = _prevOsma;
-			_prevOsma = osma;
+			var value = _trix[i].Add(candle.ClosePrice);
+			if (value is decimal trix)
+				fast += trix * _factors[i].Value;
+			else
+				formed = false;
+		}
+		if (!formed)
 			return;
-		}
 
-		// Buy when OSMA turns up
-		var turnUp = _prevOsma < _prevPrevOsma && osma > _prevOsma;
-		// Sell when OSMA turns down
-		var turnDown = _prevOsma > _prevPrevOsma && osma < _prevOsma;
+		var slow = _slow is decimal oldSlow
+			? oldSlow + 2m / (Smoothing1 + 1m) * (fast - oldSlow)
+			: fast;
+		var osma = fast - slow;
+		var currentOsma = _smoothedOsma is decimal oldOsma
+			? oldOsma + 2m / (Smoothing2 + 1m) * (osma - oldOsma)
+			: osma;
+		var buy = _beforePreviousOsma is decimal older && _previousOsma is decimal previous
+			&& previous < older && currentOsma > previous;
+		var sell = _beforePreviousOsma is decimal olderDown && _previousOsma is decimal previousDown
+			&& previousDown > olderDown && currentOsma < previousDown;
+		_beforePreviousOsma = _previousOsma;
+		_previousOsma = _smoothedOsma = currentOsma;
+		_slow = slow;
+		if (!IsFormedAndOnlineAndAllowTrading()
+			|| (_pending is not null && _pending.State is not (OrderStates.Done or OrderStates.Failed)))
+			return;
 
-		if (turnUp && Position <= 0)
+		if (buy)
 		{
-			if (Position < 0) BuyMarket();
-			BuyMarket();
+			if (Position < 0m && SellClose)
+				_pending = BuyMarket(-Position + (BuyOpen ? Volume : 0m));
+			else if (Position == 0m && BuyOpen)
+				_pending = BuyMarket(Volume);
 		}
-		else if (turnDown && Position >= 0)
+		else if (sell)
 		{
-			if (Position > 0) SellMarket();
-			SellMarket();
+			if (Position > 0m && BuyClose)
+				_pending = SellMarket(Position + (SellOpen ? Volume : 0m));
+			else if (Position == 0m && SellOpen)
+				_pending = SellMarket(Volume);
 		}
-
-		_prevPrevOsma = _prevOsma;
-		_prevOsma = osma;
 	}
 }

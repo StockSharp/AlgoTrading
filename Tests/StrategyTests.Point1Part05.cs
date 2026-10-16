@@ -913,4 +913,47 @@ public abstract partial class StrategyTests
 			"Both sides of the inverted fast/slow crossing must produce real executions.");
 	}
 
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public async Task Point1Part05_ColorZerolagTrixOsma_FiveComponentsAndActualOscillatorReversals()
+	{
+		var orders = 0;
+		var fills = 0;
+		var stopField = typeof(Strategy).GetField("_stopLoss", BindingFlags.Instance | BindingFlags.NonPublic);
+		IsNotNull(stopField);
+		await Replay("1999_Color_Zerolag_TriX_OSMA", (strategy, _) =>
+		{
+			foreach (var name in new[] { "Smoothing1", "Smoothing2", "StopLoss", "TakeProfit" })
+				IsTrue(strategy.Parameters.ContainsKey(name), $"Missing {name} in {Extension}.");
+			for (var i = 1; i <= 5; i++)
+			{
+				IsTrue(strategy.Parameters.ContainsKey("Factor" + i));
+				IsTrue(strategy.Parameters.ContainsKey("Period" + i));
+				SetParam(strategy, "Period" + i, i + 2);
+			}
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "Smoothing1", 3);
+			SetParam(strategy, "Smoothing2", 3);
+			SetParam(strategy, "StopLoss", 100m);
+			SetParam(strategy, "TakeProfit", 200m);
+			strategy.OrderRegistering += order =>
+			{
+				IsTrue(order.Volume > 0m);
+				if (strategy.Position == 0m)
+				{
+					var stop = (Unit)stopField.GetValue(strategy);
+					IsNotNull(stop);
+					AreEqual(UnitTypes.Absolute, stop.Type);
+					AreEqual(100m, stop.Value);
+				}
+				else if (order.Side == (strategy.Position > 0m ? Sides.Sell : Sides.Buy))
+					IsTrue(order.Volume <= Math.Abs(strategy.Position) + strategy.Volume);
+				orders++;
+			};
+			strategy.Trades.TradeAdded += _ => fills++;
+		}, replayDuration: TimeSpan.FromDays(14));
+		IsTrue(orders > 0 && fills > 0, "Archive must show actual OSMA reversal orders and fills.");
+	}
+
 }
