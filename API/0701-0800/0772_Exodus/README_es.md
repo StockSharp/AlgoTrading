@@ -20,3 +20,5 @@ Esta estrategia es una adaptación simplificada del script TradingView **EXODUS*
   - `AdxLength`, `AdxThreshold`
   - `Volume`
   - `CandleType`
+
+**Fórmula VWMO simplificada y valores iniciales:** `VwmoMomentum=10`, `VwmoVolume=20`, `VwmoSmooth=3`, `VwmoThreshold=25`, `AdxLength=14`, `AdxThreshold=25`, `AtrLength=14`, `AtrMultiplier=2`, `TpMultiplier=3`, `CandleType=1 minuto`. Para cada vela cerrada `i`, `d_i=Close_i−Close_(i−VwmoMomentum)`; VWMO bruto `=100 × Σ(d_i×Volume_i)/Σ(|d_i|×Volume_i)` en las últimas `VwmoVolume` velas (cero si denominador nulo), suavizado con SMA de `VwmoSmooth`. Es impulso **firmado ponderado por volumen** (−100..100), no cruce EMA. Largo si `VWMO > +VwmoThreshold && ADX > AdxThreshold`; corto si `VWMO < −VwmoThreshold && ADX > AdxThreshold`. Señal opuesta revierte toda la posición con una orden de mercado; sin señal opuesta, el cruce de VWMO por cero cierra la posición. Stop nativo `Wilder ATR(AtrLength) × AtrMultiplier`, objetivo `Stop × TpMultiplier`, sobre bid/ask Level1 incluso entre velas. Sin órdenes duplicadas activas ni datos futuros.
