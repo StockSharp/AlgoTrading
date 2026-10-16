@@ -353,4 +353,94 @@ public abstract partial class StrategyTests
 			"Packaged month must exercise both breakout directions, re-entry exits and quiet bars.");
 		TestContext.WriteLine($"0779 {Extension} TON={secondary}: {entriesLong} longs, {entriesShort} shorts, {exits} exits, {fills} fills, {ignored} no-signal candles.");
 	}
+
+	[TestMethod]
+	[TestCategory("Shard02")]
+	[DataRow(false)]
+	[DataRow(true)]
+	public async Task S0778_FalconUsesPriorSwingWicksSmaAndNativeTickProtection(bool secondary)
+	{
+		const int swing = 3;
+		const int trend = 5;
+		var highs = new Queue<decimal>();
+		var lows = new Queue<decimal>();
+		var closes = new Queue<decimal>();
+		var netPosition = 0m;
+		var entryOrders = 0;
+		var exitOrders = 0;
+		var fills = 0;
+		var allowedEntries = 0;
+		var disallowedBars = 0;
+		Sides? expectedSide = null;
+		Order pending = null;
+		var errors = new List<string>();
+		await Replay("0778_Falcon_Liquidity_Grab", (strategy, other) =>
+		{
+			AreEqual(20, strategy.Parameters["SwingPeriod"].Value);
+			AreEqual(50, strategy.Parameters["TrendLength"].Value);
+			AreEqual(50, strategy.Parameters["StopLossPoints"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["TakeProfitMultiplier"].Value));
+			AreEqual(true, strategy.Parameters["UseSession"].Value);
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			if (secondary) strategy.Security = other;
+			SetParam(strategy, "SwingPeriod", swing);
+			SetParam(strategy, "TrendLength", trend);
+			SetParam(strategy, "UseSession", false);
+			SetParam(strategy, "StopLossPoints", 10);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished || candle.SecurityId != strategy.Security.Id.ToSecurityId())
+					return;
+				if (expectedSide is not null)
+					errors.Add("Falcon missed its price-wick/SMA entry.");
+				expectedSide = null;
+				closes.Enqueue(candle.ClosePrice);
+				while (closes.Count > trend) closes.Dequeue();
+				var formed = closes.Count == trend && highs.Count == swing && lows.Count == swing;
+				var pendingActive = pending is not null && pending.State is not (OrderStates.Done or OrderStates.Failed);
+				if (formed && netPosition == 0m && !pendingActive)
+				{
+					var sma = closes.Average();
+					if (candle.LowPrice < lows.Min() && candle.ClosePrice > sma)
+						expectedSide = Sides.Buy;
+					else if (candle.HighPrice > highs.Max() && candle.ClosePrice < sma)
+						expectedSide = Sides.Sell;
+					if (expectedSide is null) disallowedBars++;
+					else allowedEntries++;
+				}
+				highs.Enqueue(candle.HighPrice);
+				lows.Enqueue(candle.LowPrice);
+				while (highs.Count > swing) highs.Dequeue();
+				while (lows.Count > swing) lows.Dequeue();
+			};
+			strategy.OrderRegistering += order =>
+			{
+				if (netPosition == 0m)
+				{
+					entryOrders++;
+					if (order.Side != expectedSide || order.Type != OrderTypes.Market || order.Volume != strategy.Volume)
+						errors.Add($"Falcon registered unsignaled entry {order.Side}/{order.Volume}; expected {expectedSide}/{strategy.Volume}.");
+				}
+				else
+				{
+					exitOrders++;
+					if (order.Side != (netPosition > 0m ? Sides.Sell : Sides.Buy)
+						|| order.Volume != Math.Abs(netPosition))
+						errors.Add("Falcon protection must close the entire current position.");
+				}
+				expectedSide = null;
+				pending = order;
+			};
+			strategy.OwnTradeReceived += (_, trade) =>
+			{
+				fills++;
+				netPosition += trade.Order.Side == Sides.Buy ? trade.Trade.Volume : -trade.Trade.Volume;
+			};
+		}, TimeSpan.FromDays(31), TimeSpan.FromHours(4));
+		IsTrue(errors.Count == 0, string.Join(Environment.NewLine, errors.Take(12)));
+		IsTrue(expectedSide is null);
+		AreEqual(allowedEntries, entryOrders, "There must be one entry for every eligible wick and none for ineligible bars.");
+		IsTrue(entryOrders > 0 && fills > 0 && disallowedBars > 0);
+		TestContext.WriteLine($"0778 {Extension}: other={secondary}: {entryOrders} entries, {exitOrders} native exits, {fills} fills and {disallowedBars} rejected bars.");
+	}
 }
