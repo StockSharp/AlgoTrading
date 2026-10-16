@@ -16,7 +16,7 @@ Este ejemplo **generaliza** el patrón navideño a **todos los meses**, no exclu
 - **Stops**: Sí, basado en porcentaje
 - **Valores predeterminados**:
   - `CandleType` = 5 minute
-  - `StopLossPercent` = 2%
+  - `StopLoss` = 2%
 - **Filtros**:
   - Categoría: Estacionalidad
   - Dirección: Ambos

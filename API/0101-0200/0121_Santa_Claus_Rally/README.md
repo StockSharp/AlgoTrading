@@ -16,7 +16,7 @@ This example **generalizes** the Santa Claus pattern to **every month**; it does
 - **Stops**: Yes, percent based
 - **Default Values**:
   - `CandleType` = 5 minute
-  - `StopLossPercent` = 2%
+  - `StopLoss` = 2%
 - **Filters**:
   - Category: Seasonality
   - Direction: Both

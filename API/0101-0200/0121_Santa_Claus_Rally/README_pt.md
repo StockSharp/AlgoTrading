@@ -16,7 +16,7 @@ Este exemplo **generaliza** o efeito de Natal para **todos os meses**, não apen
 - **Stops**: Sim, baseado em percentual
 - **Valores padrão**:
   - `CandleType` = 5 minute
-  - `StopLossPercent` = 2%
+  - `StopLoss` = 2%
 - **Filtros**:
   - Categoria: Sazonalidade
   - Direção: Ambos

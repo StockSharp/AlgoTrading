@@ -16,7 +16,7 @@ Dieses Beispiel **überträgt** den Santa-Claus-Effekt auf **jeden Monat**; es h
 - **Stops**: Ja, prozentbasiert
 - **Standardwerte**:
   - `CandleType` = 5 minute
-  - `StopLossPercent` = 2%
+  - `StopLoss` = 2%
 - **Filter**:
   - Kategorie: Saisonalität
   - Richtung: Beide
