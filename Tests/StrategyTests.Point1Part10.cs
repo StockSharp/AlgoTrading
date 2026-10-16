@@ -356,6 +356,78 @@ public abstract partial class StrategyTests
         IsTrue(entries > 0 && fills > 0, "Require executable trend-and-band sweeps with real fills.");
     }
 
+
+    [TestMethod]
+    [TestCategory("Shard04")]
+    public async Task S3852_FarhadCrabEntryNeedsNineBarTypicalEmaOrOpenSma()
+    {
+        const string key = "3852_Farhad_Crab";
+        var typical = new List<decimal>();
+        var opens = new Queue<decimal>();
+        decimal? ema = null;
+        var entrySignals = 0;
+        var entryFills = 0;
+        var invalid = new List<string>();
+        Sides? entrySide = null;
+        await Replay(key, (strategy, _) =>
+        {
+            foreach (var (name, defaultValue) in new (string name, decimal expected)[]
+            {
+                ("DailyMaPeriod", 55m), ("OrderVolume", 0.1m),
+                ("LongTakeProfitPips", 10m), ("ShortTakeProfitPips", 10m),
+                ("LongTrailingStopPips", 8m), ("ShortTrailingStopPips", 8m),
+            })
+            {
+                IsTrue(strategy.Parameters.TryGetValue(name, out var p), $"Missing {name}.");
+                AreEqual(defaultValue, Convert.ToDecimal(p.Value), name);
+            }
+            AreEqual(TimeSpan.FromMinutes(1).TimeFrame(), strategy.Parameters["CandleType"].Value);
+            // The packaged replay may not span 55 completed daily candles.
+            // Verify the published default above; test mechanics with a reachable period.
+            SetParam(strategy, "DailyMaPeriod", 5);
+            strategy.CandleReceived += (_, candle) =>
+            {
+                if (candle.State != CandleStates.Finished ||
+                    candle.CloseTime - candle.OpenTime > TimeSpan.FromHours(1))
+                    return;
+                entrySide = null;
+                var midpoint = (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m;
+                typical.Add(midpoint);
+                opens.Enqueue(candle.OpenPrice);
+                if (opens.Count > 9)
+                    opens.Dequeue();
+                if (typical.Count == 9)
+                    ema = typical.Average();
+                else if (typical.Count > 9)
+                    ema += (midpoint - ema.Value) * 2m / 10m;
+                if (opens.Count < 9 || ema is null || strategy.Position != 0m)
+                    return;
+                if (candle.LowPrice > ema.Value)
+                    entrySide = Sides.Buy;
+                else if (candle.HighPrice < opens.Average())
+                    entrySide = Sides.Sell;
+            };
+            strategy.OrderRegistering += order =>
+            {
+                if (order.Comment != "Farhad Crab entry")
+                    return;
+                entrySignals++;
+                if (entrySide is null || order.Side != entrySide ||
+                    order.Type != OrderTypes.Market)
+                    invalid.Add($"Unconfirmed Farhad entry: {order.Side} at {strategy.CurrentTime:O}.");
+                entrySide = null;
+            };
+            strategy.OwnTradeReceived += (_, trade) =>
+            {
+                if (trade.Order?.Comment == "Farhad Crab entry" && trade.Trade is not null)
+                    entryFills++;
+            };
+        }, TimeSpan.FromDays(31));
+        AreEqual(0, invalid.Count, string.Join(Environment.NewLine, invalid.Take(12)));
+        IsTrue(entrySignals > 0 && entryFills > 0,
+            "Farhad Crab must execute real orders on the reachable mechanics profile.");
+    }
+
     private const string Point1Part10GapKey = "3849_Gaps_Reversion";
 
     [TestMethod]
