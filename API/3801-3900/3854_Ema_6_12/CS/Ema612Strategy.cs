@@ -1,3 +1,5 @@
+namespace StockSharp.Samples.Strategies;
+
 using System;
 using System.Collections.Generic;
 
@@ -6,55 +8,91 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-namespace StockSharp.Samples.Strategies;
-
 /// <summary>
-/// EMA 6/12 crossover strategy.
-/// Buys when EMA(6) crosses above EMA(12).
-/// Sells when EMA(6) crosses below EMA(12).
+/// EMA(6)/EMA(12) crossover: enter while flat and close (never reverse on the
+/// same crossover) when the close-signals switch is enabled.
 /// </summary>
 public class Ema612Strategy : Strategy
 {
-	private readonly StrategyParam<int> _fastPeriod;
-	private readonly StrategyParam<int> _slowPeriod;
+	private readonly StrategyParam<int> _shortEmaLength;
+	private readonly StrategyParam<int> _longEmaLength;
+	private readonly StrategyParam<bool> _useCloseSignals;
+	private readonly StrategyParam<decimal> _orderVolume;
+	private readonly StrategyParam<decimal> _trailingStopSteps;
+	private readonly StrategyParam<decimal> _takeProfitSteps;
 	private readonly StrategyParam<DataType> _candleType;
+	private decimal? _previousFast;
+	private decimal? _previousSlow;
+	private Order _pendingOrder;
 
-	private decimal _prevFast;
-	private decimal _prevSlow;
-	private bool _hasPrev;
-
-	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
-	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
+	public int ShortEmaLength { get => _shortEmaLength.Value; set => _shortEmaLength.Value = value; }
+	public int LongEmaLength { get => _longEmaLength.Value; set => _longEmaLength.Value = value; }
+	public bool UseCloseSignals { get => _useCloseSignals.Value; set => _useCloseSignals.Value = value; }
+	public decimal OrderVolume { get => _orderVolume.Value; set => _orderVolume.Value = value; }
+	public decimal TrailingStopSteps { get => _trailingStopSteps.Value; set => _trailingStopSteps.Value = value; }
+	public decimal TakeProfitSteps { get => _takeProfitSteps.Value; set => _takeProfitSteps.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public Ema612Strategy()
 	{
-		_fastPeriod = Param(nameof(FastPeriod), 6)
-			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
-
-		_slowPeriod = Param(nameof(SlowPeriod), 12)
-			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
-			.SetDisplay("Candle Type", "Candle timeframe", "General");
+		_shortEmaLength = Param(nameof(ShortEmaLength), 6).SetGreaterThanZero()
+			.SetDisplay("Short EMA", "Period of the fast EMA", "Indicators");
+		_longEmaLength = Param(nameof(LongEmaLength), 12).SetGreaterThanZero()
+			.SetDisplay("Long EMA", "Period of the slow EMA", "Indicators");
+		_useCloseSignals = Param(nameof(UseCloseSignals), true)
+			.SetDisplay("Close Signals", "Close on an opposite cross instead of reversing", "Trading");
+		_orderVolume = Param(nameof(OrderVolume), 1m).SetGreaterThanZero()
+			.SetDisplay("Order Volume", "Entry size in lots", "Trading");
+		_trailingStopSteps = Param(nameof(TrailingStopSteps), 0m).SetNotNegative()
+			.SetDisplay("Trailing Stop Steps", "Zero disables trailing", "Protection");
+		_takeProfitSteps = Param(nameof(TakeProfitSteps), 0m).SetNotNegative()
+			.SetDisplay("Take Profit Steps", "Zero disables take profit", "Protection");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+			.SetDisplay("Candle Type", "Input candle timeframe", "General");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() => [(Security, CandleType)];
-	protected override void OnReseted() { base.OnReseted(); _prevFast = 0m; _prevSlow = 0m; _hasPrev = false; }
+
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_previousFast = null;
+		_previousSlow = null;
+		_pendingOrder = null;
+	}
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_previousFast = null;
+		_previousSlow = null;
+		_pendingOrder = null;
+		Volume = NormalizeVolume(OrderVolume);
+		var step = Security?.PriceStep ?? 0m;
+		if (step <= 0m)
+			throw new InvalidOperationException("EMA6/12 requires a valid positive PriceStep.");
 
-		_hasPrev = false;
+		if (TakeProfitSteps > 0m || TrailingStopSteps > 0m)
+			StartProtection(
+				takeProfit: TakeProfitSteps > 0m ? new Unit(TakeProfitSteps * step, UnitTypes.Absolute) : new Unit(),
+				stopLoss: TrailingStopSteps > 0m ? new Unit(TrailingStopSteps * step, UnitTypes.Absolute) : new Unit(),
+				isStopTrailing: TrailingStopSteps > 0m,
+				useMarketOrders: true, isLocalStop: true);
 
-		var fast = new ExponentialMovingAverage { Length = FastPeriod };
-		var slow = new ExponentialMovingAverage { Length = SlowPeriod };
+		var fast = new ExponentialMovingAverage { Length = ShortEmaLength };
+		var slow = new ExponentialMovingAverage { Length = LongEmaLength };
+		SubscribeCandles(CandleType).Bind(fast, slow, ProcessCandle).Start();
+	}
 
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(fast, slow, ProcessCandle)
-			.Start();
+	private decimal NormalizeVolume(decimal requested)
+	{
+		if (Security?.VolumeStep is decimal step && step > 0m)
+			requested = decimal.Floor(requested / step) * step;
+		if (Security?.MinVolume is decimal min && min > 0m)
+			requested = Math.Max(requested, min);
+		if (Security?.MaxVolume is decimal max && max > 0m)
+			requested = Math.Min(requested, max);
+		return requested;
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
@@ -62,28 +100,43 @@ public class Ema612Strategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!_hasPrev)
-		{
-			_prevFast = fast;
-			_prevSlow = slow;
-			_hasPrev = true;
+		var previousFast = _previousFast;
+		var previousSlow = _previousSlow;
+		_previousFast = fast;
+		_previousSlow = slow;
+		if (previousFast is null || previousSlow is null)
 			return;
-		}
 
-		if (_prevFast <= _prevSlow && fast > slow && Position <= 0)
-		{
-			if (Position < 0)
-				BuyMarket();
-			BuyMarket();
-		}
-		else if (_prevFast >= _prevSlow && fast < slow && Position >= 0)
-		{
-			if (Position > 0)
-				SellMarket();
-			SellMarket();
-		}
+		var up = previousFast.Value <= previousSlow.Value && fast > slow;
+		var down = previousFast.Value >= previousSlow.Value && fast < slow;
+		if (!up && !down || _pendingOrder is not null &&
+			_pendingOrder.State is not (OrderStates.Done or OrderStates.Failed))
+			return;
 
-		_prevFast = fast;
-		_prevSlow = slow;
+		var side = up ? Sides.Buy : Sides.Sell;
+		if (Position == 0m)
+		{
+			var volume = NormalizeVolume(OrderVolume);
+			if (volume > 0m)
+				Submit(side, volume);
+		}
+		else if (UseCloseSignals && (side == Sides.Buy && Position < 0m ||
+			side == Sides.Sell && Position > 0m))
+		{
+			Submit(side, Math.Abs(Position));
+		}
+	}
+
+	private void Submit(Sides side, decimal volume)
+	{
+		_pendingOrder = new Order
+		{
+			Security = Security,
+			Portfolio = Portfolio,
+			Type = OrderTypes.Market,
+			Side = side,
+			Volume = volume,
+		};
+		RegisterOrder(_pendingOrder);
 	}
 }
