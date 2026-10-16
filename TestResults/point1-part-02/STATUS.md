@@ -19,7 +19,7 @@
 
 ### 1243_Renko
 - **No production changes.** Added a proposed monthly `PriceSource=Ticks` vs `Level1` test in `StrategyTests.Point1Part02.cs`.
-- It requires a complete-month replay; checks nondecreasing brick times, complete nonzero bricks, each direction, and an elapsed-time ceiling/relative Ticks-to-Level1 cost.
+- It requires a complete-month replay; checks nondecreasing brick times, complete nonzero bricks, each direction, an independent oracle for reversal-order direction/volume and actual fills, and an elapsed-time ceiling/relative Ticks-to-Level1 cost.
 - **Not yet proved:** tick mode timing, processing cost, actual completeness against the original tick stream, full-month performance, or tests passing in either language.
 
 ## Confirmed defects from targeted static source review
