@@ -1097,4 +1097,41 @@ public abstract partial class StrategyTests
 		IsTrue(entries > 0 && exits > 0 && fills >= 2, "Require actual entry and exit fills.");
 	}
 
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public async Task Point1Part05_ColorZerolagX10Ma_IndependentEntryExitFlagsAndActualFills()
+	{
+		var buys = 0;
+		var closes = 0;
+		var fills = 0;
+		await Replay("2006_Color_Zerolag_X10_Ma", (strategy, _) =>
+		{
+			AreEqual(20, Convert.ToInt32(strategy.Parameters["Length"].Value));
+			AreEqual(TimeSpan.FromHours(4).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			foreach (var flag in new[] { "BuyPosOpen", "SellPosOpen", "BuyPosClose", "SellPosClose" })
+				AreEqual(true, strategy.Parameters[flag].Value);
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "Length", 5);
+			SetParam(strategy, "SellPosOpen", false);
+			strategy.OrderRegistering += order =>
+			{
+				AreEqual(OrderTypes.Market, order.Type);
+				IsTrue(order.Volume > 0m);
+				if (order.Side == Sides.Sell)
+				{
+					IsTrue(strategy.Position > 0m, "SellPosOpen=false forbids a new short position.");
+					AreEqual(strategy.Position, order.Volume, "Opposite signal must flatten the full long.");
+					closes++;
+				}
+				else
+				{
+					AreEqual(strategy.Volume, order.Volume, "A flat long entry uses the configured order volume.");
+					buys++;
+				}
+			};
+			strategy.Trades.TradeAdded += _ => fills++;
+		}, replayDuration: TimeSpan.FromDays(14));
+		IsTrue(buys > 0 && closes > 0 && fills > 1, "Both entry and exit must actually fill.");
+	}
+
 }
