@@ -14,7 +14,7 @@ class the_enchantress_strategy(Strategy):
     def __init__(self):
         super(the_enchantress_strategy, self).__init__()
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(60)))
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5)))
         self._ema_period = self.Param("EmaPeriod", 50)
         self._rsi_period = self.Param("RsiPeriod", 21)
 
