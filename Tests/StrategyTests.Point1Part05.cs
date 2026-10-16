@@ -1048,4 +1048,53 @@ public abstract partial class StrategyTests
 		IsTrue(registered > 0 && filled > 0, "Protection profile needs actual archive-backed orders and fills.");
 	}
 
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public async Task Point1Part05_WellMartin_AdxFilterAndNativeProtectionWithRealFills()
+	{
+		var entries = 0;
+		var exits = 0;
+		var fills = 0;
+		var stopField = typeof(Strategy).GetField("_stopLoss", BindingFlags.Instance | BindingFlags.NonPublic);
+		IsNotNull(stopField);
+		await Replay("2002_WellMartin", (strategy, _) =>
+		{
+			foreach (var name in new[] { "BollingerPeriod", "BollingerWidth", "AdxPeriod", "AdxLevel",
+				"StopLoss", "TakeProfit" })
+				IsTrue(strategy.Parameters.ContainsKey(name), $"{Extension} missing {name}.");
+			AreEqual(84, Convert.ToInt32(strategy.Parameters["BollingerPeriod"].Value));
+			AreEqual(1.8m, Convert.ToDecimal(strategy.Parameters["BollingerWidth"].Value));
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "BollingerPeriod", 5);
+			SetParam(strategy, "BollingerWidth", 0.5m);
+			SetParam(strategy, "AdxPeriod", 5);
+			SetParam(strategy, "AdxLevel", 100m);
+			SetParam(strategy, "StopLoss", 100m);
+			SetParam(strategy, "TakeProfit", 200m);
+			strategy.OrderRegistering += order =>
+			{
+				AreEqual(OrderTypes.Market, order.Type);
+				IsTrue(order.Volume > 0m);
+				if (strategy.Position == 0m)
+				{
+					AreEqual(strategy.Volume, order.Volume, "Flat entry must use fixed volume.");
+					var stop = (Unit)stopField.GetValue(strategy);
+					IsNotNull(stop);
+					AreEqual(UnitTypes.Absolute, stop.Type);
+					AreEqual(100m, stop.Value);
+					entries++;
+				}
+				else
+				{
+					AreEqual(Math.Abs(strategy.Position), order.Volume,
+						"Exit must use the actual filled position, not one nominal lot.");
+					AreEqual(strategy.Position > 0m ? Sides.Sell : Sides.Buy, order.Side);
+					exits++;
+				}
+			};
+			strategy.Trades.TradeAdded += _ => fills++;
+		}, replayDuration: TimeSpan.FromDays(14));
+		IsTrue(entries > 0 && exits > 0 && fills >= 2, "Require actual entry and exit fills.");
+	}
+
 }
