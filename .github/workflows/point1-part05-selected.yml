@@ -42,6 +42,6 @@ jobs:
       - name: Run ONLY selected Point1Part05 tests
         run: >
           dotnet test Tests/Tests.csproj --no-build -c Release
-          --filter "FullyQualifiedName~Point1Part05_ColorZeroLagMa|FullyQualifiedName~Point1Part05_HeikenAshiNoWick|FullyQualifiedName~Point1Part05_RandomTrader|FullyQualifiedName~Point1Part05_ColorJVariation"
+          --filter "FullyQualifiedName~Point1Part05_ExpMovingAverageFn|FullyQualifiedName~Point1Part05_ColorZerolagRvi|FullyQualifiedName~Point1Part05_ColorStochNr|FullyQualifiedName~Point1Part05_GoCandleBodyReversal"
           --blame-hang-timeout 10m
           -- RunConfiguration.MaxCpuCount=1
