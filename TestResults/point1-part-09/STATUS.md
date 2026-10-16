@@ -9,7 +9,7 @@
 - No `dotnet` executable, MSBuild, MSTest worker or bundled BTC/TON archive available in the execution container; test execution, red/green demonstration, compile and real fills cannot be certified.
 - `AlgoTrading/AGENTS.md` is absent on the inspected default GitHub branch, and sibling `configs/instructions.md` was not retrievable through the available connection.
 - Existing tests, translated READMEs, default behavior and execution mechanics therefore require further verification. `requireTrades` was not changed; no test runs or history downloads were attempted.
-- Files changed on this branch so far: two implementations of 3433 and two implementations of 3467, plus this status record. No other repository was modified.
+- Changes in this branch are limited to assigned C#/Python strategy implementations (3410, 3413, 3433, 3467), the prescribed partial test file and this report. No other repository was modified.
 
 ## Reproduction commands (NOT executed)
 
@@ -26,9 +26,9 @@ The commands above are illustrative Unix-shell timeout wrappers; use a correspon
 
 | Key | Result / reason |
 | --- | --- |
-| `3410_Five_Minute_Rsi_Cci` | Unfinished: reviewed C#/Python against the README; found missing SMMA/EMA/second CCI, spread filter, dynamic volume and protection. No source fix or independent replay test yet. |
+| `3410_Five_Minute_Rsi_Cci` | Unfinished: C# and Python were rewritten with the documented RSI, SMMA, EMA, two CCI, bid/ask spread gating, equity-based volume, native SL/TP and manual quote-driven trailing. An independent C#/Python-inherited reference replay test S3410 was added, but neither language has been compiled, exercised or green-verified. |
 | `3411_NNFXAutoTrade` | Unfinished: README, C#, Python, independent signal oracle and execution/protection replay have not been reviewed or run in this session. |
-| `3413_5Mins_Envelopes` | Unfinished: README, C#, Python, independent signal oracle and execution/protection replay have not been reviewed or run in this session. |
+| `3413_5Mins_Envelopes` | Unfinished: C# and Python implement M5 median-price LWMA envelopes, previous-bar extremes, live bid/spread entry gating, requested volume and local SL/TP plus quote-driven trailing. Cross-language independent S3413 archive replay test added; compile, actual fills and risk exits unverified. |
 | `3414_ABE_BE_CCI` | Unfinished: README, C#, Python, independent signal oracle and execution/protection replay have not been reviewed or run in this session. |
 | `3417_Engulfing_MFI_Confirmation` | Unfinished: README, C#, Python, independent signal oracle and execution/protection replay have not been reviewed or run in this session. |
 | `3419_Abe_Be_Rsi` | Unfinished: README, C#, Python, independent signal oracle and execution/protection replay have not been reviewed or run in this session. |
@@ -38,7 +38,7 @@ The commands above are illustrative Unix-shell timeout wrappers; use a correspon
 | `3428_Hammer_Hanging_Stochastic` | Unfinished: README, C#, Python, independent signal oracle and execution/protection replay have not been reviewed or run in this session. |
 | `3430_Hammer_Hanging_Man_CCI` | Unfinished: README, C#, Python, independent signal oracle and execution/protection replay have not been reviewed or run in this session. |
 | `3432_DreamBot` | Unfinished: README, C#, Python, independent signal oracle and execution/protection replay have not been reviewed or run in this session. |
-| `3433_AH_HM_MFI` | Unfinished: C#/Python adjusted from RSI to MFI, MFI length 47, thresholds 40/60 and 30-minute candles; pattern/MA/exit contract and fills remain untested and not fully implemented. |
+| `3433_AH_HM_MFI` | Unfinished: C# and Python now use MFI(47), SMA(5), documented hammer/hanging-man thresholds and crossing exits. Independent cross-language S3433 oracle test added. Without the .NET history replay, neither real fills nor default profitability are certified; README's unspecified emergency-stop behavior remains open. |
 | `3434_AH_HM_RSI` | Unfinished: README, C#, Python, independent signal oracle and execution/protection replay have not been reviewed or run in this session. |
 | `3435_MeetingLinesStochastic` | Unfinished: README, C#, Python, independent signal oracle and execution/protection replay have not been reviewed or run in this session. |
 | `3436_Master_Exit_Plan` | Unfinished: README, C#, Python, independent signal oracle and execution/protection replay have not been reviewed or run in this session. |
@@ -60,7 +60,7 @@ The commands above are illustrative Unix-shell timeout wrappers; use a correspon
 | `3460_Spread_Informer` | Unfinished: README, C#, Python, independent signal oracle and execution/protection replay have not been reviewed or run in this session. |
 | `3462_Spread_Data_Collector` | Unfinished: README, C#, Python, independent signal oracle and execution/protection replay have not been reviewed or run in this session. |
 | `3466_Ronz_Auto_SLTP` | Unfinished: README, C#, Python, independent signal oracle and execution/protection replay have not been reviewed or run in this session. |
-| `3467_The_Enchantress` | Unfinished: changed C#/Python CandleType defaults from M60 to documented M5; signal classification, virtual exits, live fills and protection remain untested. |
+| `3467_The_Enchantress` | Unfinished: C# and Python CandleType defaults changed from M60 to documented M5; pattern classifications, virtual orders, real protective executions, and all seven translations remain unverified. |
 | `3468_Trading_Panel` | Unfinished: README, C#, Python, independent signal oracle and execution/protection replay have not been reviewed or run in this session. |
 | `3469_TradingPanel_Batch` | Unfinished: README, C#, Python, independent signal oracle and execution/protection replay have not been reviewed or run in this session. |
 | `3470_MACross` | Unfinished: README, C#, Python, independent signal oracle and execution/protection replay have not been reviewed or run in this session. |
@@ -342,6 +342,12 @@ The commands above are illustrative Unix-shell timeout wrappers; use a correspon
 | `3837_Farhad_Hill_Version_2` | Unfinished: README, C#, Python, independent signal oracle and execution/protection replay have not been reviewed or run in this session. |
 | `3838_FitFul_13_Time_Gated` | Unfinished: README, C#, Python, independent signal oracle and execution/protection replay have not been reviewed or run in this session. |
 | `3839_Flat_Trend` | Unfinished: README, C#, Python, independent signal oracle and execution/protection replay have not been reviewed or run in this session. |
+
+## Tests written but not executed
+
+- `Tests/StrategyTests.Point1Part09.cs`: `S3410_IndependentFiveIndicatorEntriesAndFilledVolume`, `S3413_IndependentMedianLwmaEnvelopeBidEntriesAndActualFills` (two profiles), `S3433_IndependentMfiSmaPatternEntriesAndCrossingExits`; each inherited by CSharpTests and PythonTests.
+- Execution results: **unknown**; red/green TDD cannot be claimed because the SDK, packaged history and MSBuild worker are unavailable. A static code review is not a substitute for the test runs.
+- Protection fill checks, every translation, other assigned strategy contracts and all failures found after compiling remain outstanding.
 
 ## Next verification steps
 
