@@ -8,6 +8,7 @@ using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
+using StockSharp.MatchingEngine;
 using StockSharp.Messages;
 
 /// <summary>
