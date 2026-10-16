@@ -35,5 +35,5 @@ This strategy replicates the MetaTrader expert advisor that trades the crossover
 ## Notes
 
 - Signals are processed only on finished candles to avoid intrabar noise.
-- The previous EMA values are reset whenever the position returns to zero, ensuring clean detection for the next crossover.
+- Previous EMA values are preserved across position exits to detect only genuinely new crossings; a close signal never opens an opposite position on the same candle.
 - All code comments are written in English, and indentation uses tabs in accordance with project guidelines.
