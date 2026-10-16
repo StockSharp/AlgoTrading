@@ -27,14 +27,14 @@ public class AhHmMfiStrategy : Strategy
 
 	public AhHmMfiStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(60).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
-		_mfiPeriod = Param(nameof(MfiPeriod), 14)
+		_mfiPeriod = Param(nameof(MfiPeriod), 47)
 			.SetGreaterThanZero()
 			.SetDisplay("MFI Period", "MFI period", "Indicators");
-		_mfiLow = Param(nameof(MfiLow), 35m)
+		_mfiLow = Param(nameof(MfiLow), 40m)
 			.SetDisplay("MFI Low", "MFI oversold threshold for buy", "Signals");
-		_mfiHigh = Param(nameof(MfiHigh), 65m)
+		_mfiHigh = Param(nameof(MfiHigh), 60m)
 			.SetDisplay("MFI High", "MFI overbought threshold for sell", "Signals");
 		_signalCooldownCandles = Param(nameof(SignalCooldownCandles), 8)
 			.SetGreaterThanZero()
@@ -53,7 +53,7 @@ public class AhHmMfiStrategy : Strategy
 	{
 		base.OnStarted2(time);
 		_candlesSinceTrade = SignalCooldownCandles;
-		var rsi = new RelativeStrengthIndex { Length = MfiPeriod };
+		var rsi = new MoneyFlowIndex { Length = MfiPeriod };
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(rsi, ProcessCandle).Start();
 	}
