@@ -777,4 +777,52 @@ public abstract partial class StrategyTests
 			"Manager must close the manually seeded position with an actual filled protective order.");
 	}
 
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public async Task Point1Part05_LacustStopAndBe_FilledEntryAndExecutableQuoteExits()
+	{
+		var entries = 0;
+		var exits = 0;
+		var filled = 0;
+		await Replay("1993_Lacust_Stop_and_BE", (strategy, _) =>
+		{
+			AreEqual(400m, Convert.ToDecimal(strategy.Parameters["StopLoss"].Value));
+			AreEqual(2000m, Convert.ToDecimal(strategy.Parameters["TakeProfit"].Value));
+			AreEqual(300m, Convert.ToDecimal(strategy.Parameters["TrailingStart"].Value));
+			AreEqual(200m, Convert.ToDecimal(strategy.Parameters["TrailingStop"].Value));
+			AreEqual(250m, Convert.ToDecimal(strategy.Parameters["BreakevenGain"].Value));
+			AreEqual(100m, Convert.ToDecimal(strategy.Parameters["Breakeven"].Value));
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "StopLoss", 10m);
+			SetParam(strategy, "TakeProfit", 15m);
+			SetParam(strategy, "TrailingStart", 8m);
+			SetParam(strategy, "TrailingStop", 5m);
+			SetParam(strategy, "BreakevenGain", 6m);
+			SetParam(strategy, "Breakeven", 1m);
+			strategy.OrderRegistering += order =>
+			{
+				AreEqual(OrderTypes.Market, order.Type);
+				IsTrue(order.Volume > 0m);
+				if (strategy.Position == 0m)
+				{
+					AreEqual(strategy.Volume, order.Volume);
+					entries++;
+				}
+				else
+				{
+					AreEqual(Math.Abs(strategy.Position), order.Volume,
+						"Stop/take exit must close the actual filled position, not the default volume.");
+					AreEqual(strategy.Position > 0m ? Sides.Sell : Sides.Buy, order.Side);
+					IsTrue(order.Comment is "Lacust stop / breakeven / trailing" or "Lacust take profit",
+						"Protective exit must be triggered from a fresh executable quote.");
+					exits++;
+				}
+			};
+			strategy.Trades.TradeAdded += _ => filled++;
+		}, replayDuration: TimeSpan.FromDays(7));
+		IsTrue(entries > 0 && exits > 0 && filled >= 2,
+			"Packaged BTC/TON must contain actual opening and protective exit fills.");
+	}
+
 }

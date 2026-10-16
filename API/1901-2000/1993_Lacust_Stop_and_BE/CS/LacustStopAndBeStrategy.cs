@@ -10,8 +10,8 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Trade management strategy with break-even and trailing stop logic.
-/// Enters on candle direction, manages with SL/TP/trailing/breakeven.
+/// Enters on the last completed candle's direction; manages actual filled positions
+/// through best bid/ask quotes with initial SL/TP, breakeven and monotonic trailing.
 /// </summary>
 public class LacustStopAndBeStrategy : Strategy
 {
@@ -23,9 +23,12 @@ public class LacustStopAndBeStrategy : Strategy
 	private readonly StrategyParam<decimal> _breakevenGain;
 	private readonly StrategyParam<decimal> _breakeven;
 
-	private decimal _entryPrice;
-	private decimal _stopPrice;
-	private decimal _takePrice;
+	private decimal? _entryPrice;
+	private decimal? _stopPrice;
+	private decimal? _takePrice;
+	private decimal? _favorableExtreme;
+	private decimal _trackedVolume;
+	private Order _pendingOrder;
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
@@ -38,93 +41,167 @@ public class LacustStopAndBeStrategy : Strategy
 	public LacustStopAndBeStrategy()
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
-			.SetDisplay("Candle type", "Candle type", "General");
-		_stopLoss = Param(nameof(StopLoss), 400m)
-			.SetDisplay("Stop loss", "Stop loss distance", "Risk");
-		_takeProfit = Param(nameof(TakeProfit), 2000m)
-			.SetDisplay("Take profit", "Take profit distance", "Risk");
-		_trailingStart = Param(nameof(TrailingStart), 300m)
-			.SetDisplay("Trailing start", "Profit to activate trailing", "Risk");
-		_trailingStop = Param(nameof(TrailingStop), 200m)
-			.SetDisplay("Trailing stop", "Trailing stop distance", "Risk");
-		_breakevenGain = Param(nameof(BreakevenGain), 250m)
-			.SetDisplay("Breakeven gain", "Profit for breakeven move", "Risk");
-		_breakeven = Param(nameof(Breakeven), 100m)
-			.SetDisplay("Breakeven", "Profit locked at breakeven", "Risk");
+			.SetDisplay("Candle Type", "Signal candles", "General");
+		_stopLoss = Param(nameof(StopLoss), 400m).SetNotNegative()
+			.SetDisplay("Stop Loss", "Initial risk distance in price units", "Risk");
+		_takeProfit = Param(nameof(TakeProfit), 2000m).SetNotNegative()
+			.SetDisplay("Take Profit", "Target distance in price units", "Risk");
+		_trailingStart = Param(nameof(TrailingStart), 300m).SetNotNegative()
+			.SetDisplay("Trailing Start", "Profit at which trailing starts", "Risk");
+		_trailingStop = Param(nameof(TrailingStop), 200m).SetGreaterThanZero()
+			.SetDisplay("Trailing Stop", "Trailing distance from favorable quote", "Risk");
+		_breakevenGain = Param(nameof(BreakevenGain), 250m).SetNotNegative()
+			.SetDisplay("Breakeven Gain", "Profit at which breakeven activates", "Risk");
+		_breakeven = Param(nameof(Breakeven), 100m).SetNotNegative()
+			.SetDisplay("Breakeven", "Profit locked on breakeven", "Risk");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> [(Security, CandleType)];
+		=> [(Security, CandleType), (Security, DataType.Level1)];
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_entryPrice = 0;
-		_stopPrice = 0;
-		_takePrice = 0;
+		ClearPositionTracking();
+		_pendingOrder = null;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		SubscribeCandles(CandleType)
-			.Bind(ProcessCandle)
-			.Start();
+		ClearPositionTracking();
+		_pendingOrder = null;
+		SubscribeCandles(CandleType).Bind(ProcessCandle).Start();
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var subscription = new Subscription(DataType.Level1, Security);
+			subscription.MarketData.BuildField = field;
+			SubscribeLevel1(subscription).Bind(ProcessQuote).Start();
+		}
 	}
+
+	private void ClearPositionTracking()
+	{
+		_entryPrice = _stopPrice = _takePrice = _favorableExtreme = null;
+		_trackedVolume = 0m;
+	}
+
+	protected override void OnNewPosition(Position position)
+	{
+		base.OnNewPosition(position);
+		ObservePosition(position);
+	}
+
+	protected override void OnPositionChanged(Position position)
+	{
+		base.OnPositionChanged(position);
+		ObservePosition(position);
+	}
+
+	protected override void OnPositionReceived(Position position)
+	{
+		base.OnPositionReceived(position);
+		ObservePosition(position);
+	}
+
+	private void ObservePosition(Position position)
+	{
+		if (position.Security != Security || position.Portfolio != Portfolio)
+			return;
+
+		var volume = position.CurrentValue ?? 0m;
+		if (volume == 0m)
+		{
+			ClearPositionTracking();
+			return;
+		}
+
+		if (position.AveragePrice is not decimal average || average <= 0m)
+			return;
+
+		if (_entryPrice == average && _trackedVolume == volume)
+			return;
+
+		// Retain an already tightened stop after a partial same-side reduction.
+		if (_entryPrice == average && _trackedVolume * volume > 0m
+			&& Math.Abs(volume) < Math.Abs(_trackedVolume))
+		{
+			_trackedVolume = volume;
+			return;
+		}
+
+		_entryPrice = average;
+		_trackedVolume = volume;
+		_favorableExtreme = average;
+		_stopPrice = StopLoss > 0m
+			? volume > 0m ? average - StopLoss : average + StopLoss
+			: null;
+		_takePrice = TakeProfit > 0m
+			? volume > 0m ? average + TakeProfit : average - TakeProfit
+			: null;
+	}
+
+	private bool HasPendingOrder()
+		=> _pendingOrder is not null && _pendingOrder.State is not (OrderStates.Done or OrderStates.Failed);
 
 	private void ProcessCandle(ICandleMessage candle)
 	{
-		if (candle.State != CandleStates.Finished)
+		if (candle.State != CandleStates.Finished || Position != 0m
+			|| !IsFormedAndOnlineAndAllowTrading() || HasPendingOrder())
 			return;
 
-		if (Position == 0)
-		{
-			if (candle.ClosePrice > candle.OpenPrice)
-			{
-				BuyMarket();
-				_entryPrice = candle.ClosePrice;
-				_stopPrice = _entryPrice - StopLoss;
-				_takePrice = _entryPrice + TakeProfit;
-			}
-			else if (candle.ClosePrice < candle.OpenPrice)
-			{
-				SellMarket();
-				_entryPrice = candle.ClosePrice;
-				_stopPrice = _entryPrice + StopLoss;
-				_takePrice = _entryPrice - TakeProfit;
-			}
-			return;
-		}
-
-		if (Position > 0)
-		{
-			if (candle.ClosePrice - _entryPrice >= BreakevenGain && _stopPrice < _entryPrice + Breakeven)
-				_stopPrice = _entryPrice + Breakeven;
-
-			if (candle.ClosePrice - _entryPrice >= TrailingStart && _stopPrice < candle.ClosePrice - TrailingStop)
-				_stopPrice = candle.ClosePrice - TrailingStop;
-
-			if (candle.LowPrice <= _stopPrice || candle.HighPrice >= _takePrice)
-			{
-				SellMarket();
-			}
-		}
-		else if (Position < 0)
-		{
-			if (_entryPrice - candle.ClosePrice >= BreakevenGain && _stopPrice > _entryPrice - Breakeven)
-				_stopPrice = _entryPrice - Breakeven;
-
-			if (_entryPrice - candle.ClosePrice >= TrailingStart && _stopPrice > candle.ClosePrice + TrailingStop)
-				_stopPrice = candle.ClosePrice + TrailingStop;
-
-			if (candle.HighPrice >= _stopPrice || candle.LowPrice <= _takePrice)
-			{
-				BuyMarket();
-			}
-		}
+		if (candle.ClosePrice > candle.OpenPrice)
+			_pendingOrder = BuyMarket(Volume);
+		else if (candle.ClosePrice < candle.OpenPrice)
+			_pendingOrder = SellMarket(Volume);
 	}
+
+	private void ProcessQuote(Level1ChangeMessage quote)
+	{
+		if (Position == 0m || _entryPrice is not decimal entry
+			|| !IsFormedAndOnlineAndAllowTrading() || HasPendingOrder())
+			return;
+
+		var isLong = Position > 0m;
+		var field = isLong ? Level1Fields.BestBidPrice : Level1Fields.BestAskPrice;
+		if (!quote.Changes.TryGetValue(field, out var raw) || raw is not decimal price || price <= 0m)
+			return;
+
+		var best = _favorableExtreme ?? entry;
+		_favorableExtreme = best = isLong ? Math.Max(best, price) : Math.Min(best, price);
+		var gain = isLong ? best - entry : entry - best;
+
+		if (gain >= BreakevenGain)
+		{
+			var candidate = isLong ? entry + Breakeven : entry - Breakeven;
+			TightenStop(isLong, candidate);
+		}
+		if (gain >= TrailingStart)
+		{
+			var candidate = isLong ? best - TrailingStop : best + TrailingStop;
+			TightenStop(isLong, candidate);
+		}
+
+		var hitStop = _stopPrice is decimal stop && (isLong ? price <= stop : price >= stop);
+		var hitTake = _takePrice is decimal take && (isLong ? price >= take : price <= take);
+		if (!hitStop && !hitTake)
+			return;
+
+		var exit = new Order
+		{
+			Security = Security,
+			Portfolio = Portfolio,
+			Type = OrderTypes.Market,
+			Side = isLong ? Sides.Sell : Sides.Buy,
+			Volume = Math.Abs(Position),
+			Comment = hitStop ? "Lacust stop / breakeven / trailing" : "Lacust take profit",
+		};
+		_pendingOrder = exit;
+		RegisterOrder(exit);
+	}
+
+	private void TightenStop(bool isLong, decimal candidate)
+		=> _stopPrice = _stopPrice is decimal old
+			? isLong ? Math.Max(old, candidate) : Math.Min(old, candidate)
+			: candidate;
 }
