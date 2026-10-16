@@ -109,6 +109,107 @@ public abstract partial class StrategyTests
         IsTrue(entries > 0 && fills > 0, "Require fractal entry orders and real fills on the packaged history.");
     }
 
+
+    [TestMethod]
+    [TestCategory("Shard06")]
+    public async Task S3854_Ema612OnlyUsesCompletedCrossingsAndClosesWithoutReversing()
+    {
+        const string key = "3854_Ema_6_12";
+        var closes = new List<decimal>();
+        decimal? fast = null;
+        decimal? slow = null;
+        decimal? priorFast = null;
+        decimal? priorSlow = null;
+        var expected = (Sides?)null;
+        var expectedVolume = 0m;
+        var orders = 0;
+        var entries = 0;
+        var exits = 0;
+        var fills = 0;
+        var violations = new List<string>();
+        await Replay(key, (strategy, _) =>
+        {
+            foreach (var (name, value) in new (string, object)[]
+            {
+                ("ShortEmaLength", 6), ("LongEmaLength", 12),
+                ("OrderVolume", 1m), ("UseCloseSignals", true),
+                ("TrailingStopSteps", 0m), ("TakeProfitSteps", 0m),
+            })
+            {
+                IsTrue(strategy.Parameters.TryGetValue(name, out var parameter), $"Missing {name}.");
+                if (value is bool) AreEqual(value, parameter.Value, name);
+                else AreEqual(Convert.ToDecimal(value), Convert.ToDecimal(parameter.Value), name);
+            }
+            AreEqual(TimeSpan.FromHours(1).TimeFrame(), strategy.Parameters["CandleType"].Value);
+            strategy.CandleReceived += (_, candle) =>
+            {
+                if (candle.State != CandleStates.Finished)
+                    return;
+                expected = null;
+                closes.Add(candle.ClosePrice);
+                decimal? Ema(int period, decimal? previous)
+                    => closes.Count < period ? null
+                        : closes.Count == period ? closes.TakeLast(period).Average()
+                        : previous + (candle.ClosePrice - previous.Value) * 2m / (period + 1);
+                fast = Ema(6, fast);
+                slow = Ema(12, slow);
+                if (fast is not decimal f || slow is not decimal s ||
+                    priorFast is not decimal pf || priorSlow is not decimal ps)
+                {
+                    priorFast = fast;
+                    priorSlow = slow;
+                    return;
+                }
+                var bullish = pf <= ps && f > s;
+                var bearish = pf >= ps && f < s;
+                if (bullish && strategy.Position == 0m)
+                {
+                    expected = Sides.Buy;
+                    expectedVolume = 1m;
+                    entries++;
+                }
+                else if (bearish && strategy.Position == 0m)
+                {
+                    expected = Sides.Sell;
+                    expectedVolume = 1m;
+                    entries++;
+                }
+                else if (bullish && strategy.Position < 0m)
+                {
+                    expected = Sides.Buy;
+                    expectedVolume = Math.Abs(strategy.Position);
+                    exits++;
+                }
+                else if (bearish && strategy.Position > 0m)
+                {
+                    expected = Sides.Sell;
+                    expectedVolume = strategy.Position;
+                    exits++;
+                }
+                priorFast = f;
+                priorSlow = s;
+            };
+            strategy.OrderRegistering += order =>
+            {
+                // Default zero protection means each submission must come from a cross.
+                orders++;
+                if (expected != order.Side || expectedVolume != order.Volume ||
+                    order.Type != OrderTypes.Market)
+                    violations.Add($"Unexpected order on {strategy.CurrentTime:O}: {order.Side} {order.Volume}; expected {expected} {expectedVolume}.");
+                expected = null;
+            };
+            strategy.OwnTradeReceived += (_, trade) =>
+            {
+                if (trade.Trade is not null)
+                    fills++;
+            };
+        }, TimeSpan.FromDays(31));
+        AreEqual(0, violations.Count, string.Join(Environment.NewLine, violations.Take(12)));
+        IsTrue(entries > 0 && exits > 0 && fills > 0,
+            $"Exercise default long/short crossover entries, real fills and opposite-cross exits: {entries}/{exits}/{fills}.");
+        TestContext.WriteLine($"{key}: {orders} orders, {fills} fills, {entries} entry signals and {exits} closing signals.");
+    }
+
     private const string Point1Part10GapKey = "3849_Gaps_Reversion";
 
     [TestMethod]
