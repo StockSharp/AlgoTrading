@@ -49,6 +49,15 @@ Both C# and Python were fetched and independently inspected for the following ei
 - All seven localized README files now define default periods, price formula and lookback windows. The prior ambiguous term “61.8% extension” is explicitly disambiguated as a fraction **within** the preceding swing, not a projection beyond it.
 - **Not verified**: compilation, test-red-before-fix, test-green-after-fix, trade/order/fill sufficiency, exit coverage and translated text validation in CI.
 
+### 0772_Exodus
+
+- Both source files previously traded the generic EMA(120/450) crossover instead of documented VWMO and ADX.
+- Added independent VWMO weighted-return oracle and ADX threshold checks in `S0772_IndependentVolumeMomentumAdxAndActualNativeProtection`, before replacing either implementation.
+- New C# and Python use a signed normalized volume-weighted momentum oscillator with explicitly documented lag, volume lookback and SMA smoothing, native ADX, VWMO zero-cross exits and one-order reversals.
+- For actual protection the stop uses `Wilder ATR(AtrLength) × AtrMultiplier`; take-profit distance is `stop × TpMultiplier`, configured with `StartProtection`, with Level1 bid and ask subscriptions to cover between-bar fills. Mutating unit distances at subsequent reversals must be checked in the archive.
+- All seven localized READMEs now define VWMO, entry/exit and risk parameters identically.
+- **NOT RUN**: compile, test red before fix, green after fix, real entry/exit/stop fills, position remainder or translated README validators.
+
 ## Shared files touched (merge coordination)
 - `Tests/StrategyInventory.cs`: only add `1186_Price_and_Volume_Breakout_Buy` to Overrides. No other keys changed.
 - `Tests/Tests.csproj`: unchanged.
@@ -64,6 +73,7 @@ timeout 900s dotnet test Tests/Tests.csproj -m:1 --filter 'FullyQualifiedName~S1
 timeout 900s dotnet test Tests/Tests.csproj -m:1 --filter 'FullyQualifiedName~S0779_' --blame-hang-timeout 00:01:00 -- RunConfiguration.MaxCpuCount=1
 timeout 900s dotnet test Tests/Tests.csproj -m:1 --filter 'FullyQualifiedName~S0778_' --blame-hang-timeout 00:01:00 -- RunConfiguration.MaxCpuCount=1
 timeout 900s dotnet test Tests/Tests.csproj -m:1 --filter 'FullyQualifiedName~S0781_' --blame-hang-timeout 00:01:00 -- RunConfiguration.MaxCpuCount=1
+timeout 900s dotnet test Tests/Tests.csproj -m:1 --filter 'FullyQualifiedName~S0772_' --blame-hang-timeout 00:01:00 -- RunConfiguration.MaxCpuCount=1
 ```
 
 **Execution results:** not run (missing SDK, sibling core, and packaged history in current environment). C# / Python and README structure/translation changes therefore await actual validation.
@@ -74,7 +84,7 @@ timeout 900s dotnet test Tests/Tests.csproj -m:1 --filter 'FullyQualifiedName~S0
 |---|---|---|
 | `1186_Price_and_Volume_Breakout_Buy` | Specified change | Source changed; C#/Python archive TDD and default checks NOT RUN |
 | `1243_Renko` | Specified change | Test proposed; full-month Tick/Level1 performance NOT RUN |
-| `0772_Exodus` | Investigate note | STATIC DEFECT CONFIRMED — both languages use generic EMA(120/450) crossover unrelated to README; original behavior, independent tests, fills and protection NOT IMPLEMENTED/NOT RUN |
+| `0772_Exodus` | Investigate note | SOURCE FIX + ARCHIVE ORACLE PREPARED — normalized VWMO, ADX, Wilder ATR protection, C#/Python and seven README languages; no verified red/green archive run |
 | `0773_Express_Generator` | Investigate note | STATIC DEFECT CONFIRMED — both languages use generic EMA(120/450) crossover unrelated to README; original behavior, independent tests, fills and protection NOT IMPLEMENTED/NOT RUN |
 | `0774_External_Signals_Tester` | Investigate note | STATIC DEFECT CONFIRMED — both languages use generic EMA(120/450) crossover unrelated to README; original behavior, independent tests, fills and protection NOT IMPLEMENTED/NOT RUN |
 | `0777_Faith_Indicator` | Investigate note | STATIC DEFECT CONFIRMED — both languages use generic EMA(120/450) crossover unrelated to README; original behavior, independent tests, fills and protection NOT IMPLEMENTED/NOT RUN |
