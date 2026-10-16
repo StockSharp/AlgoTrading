@@ -2,6 +2,8 @@ namespace StockSharp.Tests;
 
 using System;
 using System.IO;
+using System.Collections.Generic;
+using System.Reflection;
 using System.Threading.Tasks;
 
 using Ecng.Common;
@@ -14,6 +16,7 @@ using StockSharp.Algo.Compilation;
 using StockSharp.Algo.Strategies;
 using StockSharp.Samples.Strategies;
 using StockSharp.Messages;
+using StockSharp.BusinessEntities;
 
 /// <summary>Behavioral checks reserved for Point 1 / Part 01. Both language runners inherit these tests.</summary>
 public abstract partial class StrategyTests
@@ -120,26 +123,93 @@ public abstract partial class StrategyTests
         var september = await ReplayWithStartedMonth(9);
         january.AssertSameAs(september);
     }
+    /// <summary>
+    /// Verify a named published percent stop has genuine intrabar protective
+    /// fills on the packaged archive. Does not rename the user's StopLoss
+    /// parameter or relax requireTrades.
+    /// </summary>
+    private async Task Point1Part01_CheckPublishedStopLoss(string key, TimeSpan frame)
+    {
+        var entries = 0;
+        var finishedBars = 0;
+        var firstEntryBar = -1;
+        var nativeStopFills = 0;
+        DateTime? lastEntryTime = null;
+        var candidateStopOrders = new HashSet<Order>();
+
+        var nativeStopField = typeof(Strategy).GetField("_stopLoss",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+        IsNotNull(nativeStopField, "StockSharp Strategy's native stop field must be available.");
+
+        await Replay(key, (strategy, _) =>
+        {
+            AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLoss"].Value));
+            AreEqual(frame.TimeFrame(), strategy.Parameters["CandleType"].Value);
+            SetParam(strategy, "StopLoss", 0.00001m);
+
+            strategy.CandleReceived += (_, candle) =>
+            {
+                if (candle.State == CandleStates.Finished &&
+                    candle.SecurityId == strategy.Security.Id.ToSecurityId())
+                    finishedBars++;
+            };
+
+            strategy.OrderRegistering += order =>
+            {
+                if (strategy.Position == 0m)
+                {
+                    entries++;
+                    firstEntryBar = finishedBars;
+                    lastEntryTime = strategy.CurrentTime;
+                    var protection = (Unit)nativeStopField.GetValue(strategy);
+                    IsNotNull(protection, "A real native protective rule is required, not a README-only parameter.");
+                    AreEqual(UnitTypes.Percent, protection.Type);
+                    AreEqual(0.00001m, protection.Value);
+                }
+                else if (lastEntryTime is not null &&
+                    finishedBars == firstEntryBar &&
+                    strategy.CurrentTime < lastEntryTime.Value.AddMinutes(4))
+                {
+                    candidateStopOrders.Add(order);
+                    AreEqual(Math.Abs(strategy.Position), order.Volume,
+                        "A protective close must use the actual residual position.");
+                    AreEqual(strategy.Position > 0m ? Sides.Sell : Sides.Buy,
+                        order.Side);
+                }
+            };
+
+            strategy.Trades.TradeAdded += trade =>
+            {
+                if (candidateStopOrders.Contains(trade.Order) && strategy.Position == 0m)
+                {
+                    AreEqual(firstEntryBar, finishedBars,
+                        "The protective close must fill before the next finished signal candle.");
+                    nativeStopFills++;
+                }
+            };
+        }, replayDuration: TimeSpan.FromDays(31));
+
+        IsTrue(entries > 0 && nativeStopFills > 0,
+            "A tight StopLoss setting must genuinely flatten filled positions between signal bars.");
+    }
+
     // Tests are required to fail against the pre-fix sources because all three
     // examples publish a real two-percent stop yet previously registered none.
     // Real entry and intrabar exit fills are checked by the shared helper.
     [TestMethod]
     [TestCategory("Shard07")]
     public Task Point1Part01_0103_DarkPoolPublishedStopExecutes()
-        => CheckPercentStopBetweenBars("0103_Dark_Pool_Prints",
-            duration: TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(1));
+        => Point1Part01_CheckPublishedStopLoss("0103_Dark_Pool_Prints", TimeSpan.FromMinutes(1));
 
     [TestMethod]
     [TestCategory("Shard01")]
     public Task Point1Part01_0121_SantaClausPublishedStopExecutes()
-        => CheckPercentStopBetweenBars("0121_Santa_Claus_Rally",
-            duration: TimeSpan.FromDays(31));
+        => Point1Part01_CheckPublishedStopLoss("0121_Santa_Claus_Rally", TimeSpan.FromMinutes(5));
 
     [TestMethod]
     [TestCategory("Shard02")]
     public Task Point1Part01_0122_JanuaryEffectPublishedStopExecutes()
-        => CheckPercentStopBetweenBars("0122_January_Effect",
-            duration: TimeSpan.FromDays(31));
+        => Point1Part01_CheckPublishedStopLoss("0122_January_Effect", TimeSpan.FromMinutes(5));
 
     [TestMethod]
     [TestCategory("Shard07")]
