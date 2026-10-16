@@ -725,4 +725,56 @@ public abstract partial class StrategyTests
 		IsTrue(sellClose > 0 && fills > 1,
 			"Archive verification needs a real long entry and fully matched close.");
 	}
+
+	[TestMethod]
+	[TestCategory("Point1Part05")]
+	public async Task Point1Part05_TrailingStopActivation_ManualEntryMustHaveActualProtectiveExit()
+	{
+		var seeded = false;
+		var entryOrders = 0;
+		var exitOrders = 0;
+		var exitFills = 0;
+		await Replay("1989_Trailing_Stop_Activation", (strategy, _) =>
+		{
+			AreEqual(500m, Convert.ToDecimal(strategy.Parameters["TrailingStop"].Value));
+			AreEqual(0m, Convert.ToDecimal(strategy.Parameters["StopLoss"].Value));
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "TrailingStop", 0.1m);
+			SetParam(strategy, "StopLoss", 1m);
+			strategy.OrderRegistering += order =>
+			{
+				AreEqual(OrderTypes.Market, order.Type);
+				IsTrue(order.Volume > 0m);
+				if (order.Side == Sides.Buy)
+				{
+					IsTrue(seeded, "Exit-only manager must not open any unseeded long position.");
+					entryOrders++;
+				}
+				else
+				{
+					IsTrue(strategy.Position > 0m, "Protective sell needs a filled long position.");
+					AreEqual(strategy.Position, order.Volume, "Protective exit must close all filled volume.");
+					exitOrders++;
+				}
+			};
+			strategy.Trades.TradeAdded += trade =>
+			{
+				if (trade.Order.Side == Sides.Sell)
+					exitFills++;
+			};
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (seeded || candle.State != CandleStates.Finished ||
+					!strategy.IsFormedAndOnlineAndAllowTrading())
+					return;
+				seeded = true;
+				strategy.BuyMarket(strategy.Volume);
+			};
+		}, replayDuration: TimeSpan.FromDays(14));
+
+		AreEqual(1, entryOrders, "Exactly one entry must be seeded by the test itself.");
+		IsTrue(exitOrders > 0 && exitFills > 0,
+			"Manager must close the manually seeded position with an actual filled protective order.");
+	}
+
 }
