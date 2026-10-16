@@ -5,7 +5,7 @@ Source: user-provided `TZ-01.md`. Exact strategy keys only; **315** keys, **630 
 ## Current results
 
 - **0333_Keltner_Seasonal_Filter** — partial: C#/Python source was inspected; the use of `candle.OpenTime.Month` was confirmed in both implementations. All seven localized READMEs now specify formulas, calendar gating, manual bar-close stop semantics, and entry/exit rules. Two test methods were authored in `Tests/StrategyTests.Point1Part01.cs`; **neither compiled nor executed here**. The Python two-start-month replay is unverified. The packaged BTC/TON fixture spans **March 1–31, 2024** (StockSharp.Configuration/Paths.cs), so it cannot observe a forbidden-season candle or a September short. An independent positive/forbidden breakout fixture and actual stop-fill proof are still outstanding. **Status: not complete.**
-- The remaining **309** exact keys (all except 0333, 0103, 0121, 0122, 0303 and 0305) lack authored regression tests in this branch. None of these six strategies is certified complete: no branch build or history replay was executed. 0302 and 0352 have additionally been inspected statically, revealing discrepancies but requiring an independent fix and executable proof.
+- The remaining **308** exact keys (all except 0333, 0103, 0121, 0122, 0303, 0305 and 0307) lack authored regression tests in this branch. None of these seven strategies is certified complete: no branch build or history replay was executed. 0302 and 0352 have additionally been inspected statically, revealing discrepancies but requiring an independent fix and executable proof.
 - No red → green result was obtained; no build, MSTest or Python replay results are available. No history was downloaded or modified. No other part of the master TZ was started.
 - Environment limitation: the linked GitHub source is accessible through the connector, but this sandbox has neither `dotnet` nor the StockSharp project/reference checkout and packaged BTC/TON history. Reproducing a full test run here is therefore not possible.
 - Workspace rules `AGENTS.md` and `configs/instructions.md` were not present in the published main checkout accessible through GitHub; verify them against `D:\stocksharp` before integrating these edits.
@@ -60,6 +60,17 @@ dotnet test Tests/Tests.csproj --filter 'FullyQualifiedName~PythonTests.Point1Pa
 ```
 
 The 0333 static C# signal test is authored in the shared base test class, so both CSharpTests and PythonTests run its compiled C# oracle, whereas the source replay methods exercise their respective implementation. None of the above commands has been executed here.
+
+## Adaptive MACD (0307) and Bollinger breakout (0306) findings
+
+- Both C#/Python 0307 sources have been reviewed statically; default MACD/Histogram parameters match. Method `Point1Part01_0307_AdaptiveMacdDefaultAndNativeStop` is authored for both languages in shard 03, checking unchanged defaults and actual intrabar tight-stop fills on the 31-day fixture; **not executed**.
+- Seven 0307 README translations now specify exact two-sided entry/exit conditions and native percent stop, rather than claiming ATR multiples.
+- Static review of 0306 confirms ATR x multiplier manual stop logic coexists with a native `UnitTypes.Percent` stop using the very same multiplier. It remains unresolved pending an ATR-frozen protective implementation and independent order/fill tests.
+
+```powershell
+dotnet test Tests/Tests.csproj --filter 'FullyQualifiedName~CSharpTests.Point1Part01_0307_AdaptiveMacdDefaultAndNativeStop' -- RunConfiguration.TestSessionTimeout=900000
+dotnet test Tests/Tests.csproj --filter 'FullyQualifiedName~PythonTests.Point1Part01_0307_AdaptiveMacdDefaultAndNativeStop' -- RunConfiguration.TestSessionTimeout=900000
+```
 
 ## Per-key coverage
 
@@ -257,8 +268,8 @@ The 0333 static C# signal test is authored in the shared base test class, so bot
 | `0302_Volatility_Cluster_Breakout` | проверка контракта | Статически выявлено в C#/Python: StopMultiplier используется как множитель ATR для ручного выхода на закрытии, но в StartProtection тот же параметр передаётся в UnitTypes.Percent; это не эквивалентные уровни защиты. Не исправлено: нужна тестируемая схема фиксации ATR при входе и действительной intrabar-защиты; проверки исполнений не было. |
 | `0303_Seasonality_Adjusted_Momentum` | проверка контракта | Оба исходника статически сверены: M=Momentum14, SMA14(M), сезонный коэффициент candle.OpenTime.Month, закрытия по смещению/отмене разрешённой сезонности, нативный стоп 2%. Все семь README уточнены; добавлен реальный replay-тест мартовского запрета новых шортов, но **C#/Python тесты не запускались**; отрицательные месяцы и стоп-филлы не подтверждены. |
 | `0305_RSI_Dynamic_Overbought_Oversold` | проверка контракта | Сверены C#/Python исходники: RSI14/SMA50 по RSI, ограниченные динамические границы, фильтр цены относительно SMA50, cooldown 48 и нативный процентный стоп 2%; семь README исправлены. Добавлен тест реальных входов и intrabar stop fills для обеих языковых версий, **не запускался**. Не подтверждён independent oracle фактических сигналов и позитивный C#/Python replay. |
-| `0306_Bollinger_Volatility_Breakout` | проверка контракта | Не проверено: требуется независимая проверка контракта и реальных исполнений C#/Python по назначенному замечанию. |
-| `0307_MACD_Adaptive_Histogram` | проверка контракта | Не проверено: требуется независимая проверка контракта и реальных исполнений C#/Python по назначенному замечанию. |
+| `0306_Bollinger_Volatility_Breakout` | проверка контракта | Статически обнаружено: StopLossMultiplier используется как множитель ATR для ручного выхода, но native StartProtection интерпретирует то же число как процент. Это две разные защиты; обе языковые реализации совпадают, но исходному заявлению об ATR-стопе противоречат. Не исправлено и не проверено фактическими исполнениями. |
+| `0307_MACD_Adaptive_Histogram` | проверка контракта | Сверены C#/Python: MACD12/26/9 histogram, SMA20 и StdDev20 от гистограммы, вход по ±2σ, выход по среднему, cooldown16, стоп 2% и 15-минутные свечи. Семь README исправлены, общий тест default и реального стоп-исполнения добавлен для обоих языков, но **не запускался**; отдельный независимый signal oracle ещё нужен. |
 | `0308_Ichimoku_Volume_Cluster` | проверка контракта | Не проверено: требуется независимая проверка контракта и реальных исполнений C#/Python по назначенному замечанию. |
 | `0309_Supertrend_Momentum_Filter` | проверка контракта | Не проверено: требуется независимая проверка контракта и реальных исполнений C#/Python по назначенному замечанию. |
 | `0310_Donchian_Volatility_Contraction` | проверка контракта | Не проверено: требуется независимая проверка контракта и реальных исполнений C#/Python по назначенному замечанию. |
