@@ -344,4 +344,134 @@ public abstract partial class StrategyTests
 		TestContext.WriteLine($"3413 ({Extension}), TON={useTon}: {readyQuotes} ready quotes, {rejectedQuotes} ineligible, {expectedCount} matching quote signals, {orderCount} orders, {fillCount} fills.");
 	}
 
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public async Task S3433_IndependentMfiSmaPatternEntriesAndCrossingExits()
+	{
+		const string key = "3433_AH_HM_MFI";
+		// Reachable profile to exercise mechanics; the documented defaults are checked separately below.
+		const int mfiPeriod = 5, maPeriod = 2;
+		var flow = new List<(decimal up, decimal down)>();
+		var closes = new List<decimal>();
+		ICandleMessage previousCandle = null;
+		decimal? previousMa = null, previousMfi = null;
+		decimal? previousTypical = null;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var errors = new List<string>();
+		var orders = 0;
+		var entries = 0;
+		var exits = 0;
+		var fills = 0;
+		var position = 0m;
+		var candidatePatterns = 0;
+
+		await Replay(key, (strategy, alternate) =>
+		{
+			strategy.Security = alternate;
+			AreEqual(TimeSpan.FromMinutes(30).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			foreach (var (name, expected) in new (string, decimal)[]
+			{
+				("MfiPeriod", 47m), ("MaPeriod", 5m), ("HammerEntryThreshold", 40m),
+				("HangingEntryThreshold", 60m), ("MfiUpperExitLevel", 70m), ("MfiLowerExitLevel", 30m),
+			})
+			{
+				IsTrue(strategy.Parameters.ContainsKey(name), $"{key} needs {name}.");
+				AreEqual(expected, Convert.ToDecimal(strategy.Parameters[name].Value));
+			}
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "MfiPeriod", mfiPeriod);
+			SetParam(strategy, "MaPeriod", maPeriod);
+			SetParam(strategy, "HammerEntryThreshold", 100m);
+			SetParam(strategy, "HangingEntryThreshold", 0m);
+
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished || candle.SecurityId != strategy.Security.Id.ToSecurityId())
+					return;
+				if (expectedSide is not null)
+					errors.Add("Previous reference candle predicted an order that was not sent.");
+				expectedSide = null;
+
+				var typical = (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m;
+				var money = typical * candle.TotalVolume;
+				flow.Add((previousTypical is null || typical > previousTypical ? money : 0m,
+					previousTypical is not null && typical < previousTypical ? money : 0m));
+				previousTypical = typical;
+				closes.Add(candle.ClosePrice);
+				var ma = closes.Count < maPeriod ? (decimal?)null : closes.Skip(closes.Count - maPeriod).Average();
+				decimal? mfi = null;
+				if (flow.Count >= mfiPeriod)
+				{
+					var window = flow.Skip(flow.Count - mfiPeriod).ToArray();
+					var pos = window.Sum(f => f.up);
+					var neg = window.Sum(f => f.down);
+					mfi = neg == 0m ? 100m : pos + neg == 0m ? null : 100m * pos / (pos + neg);
+				}
+				if (mfi is decimal current && previousMfi is decimal previous)
+				{
+					if (position > 0m && (previous <= 70m && current > 70m || previous >= 30m && current < 30m))
+					{
+						expectedSide = Sides.Sell;
+						expectedVolume = position;
+						exits++;
+					}
+					else if (position < 0m && (previous <= 30m && current > 30m || previous <= 70m && current > 70m))
+					{
+						expectedSide = Sides.Buy;
+						expectedVolume = -position;
+						exits++;
+					}
+				}
+				if (mfi is decimal value && previousCandle is not null && previousMa is decimal priorMa && position == 0m)
+				{
+					var body = Math.Abs(candle.ClosePrice - candle.OpenPrice);
+					var range = candle.HighPrice - candle.LowPrice;
+					var highBody = Math.Min(candle.OpenPrice, candle.ClosePrice);
+					var upperShadow = candle.HighPrice - Math.Max(candle.OpenPrice, candle.ClosePrice);
+					var lowerShadow = highBody - candle.LowPrice;
+					var pattern = range > 0m && body > 0m && highBody >= candle.HighPrice - range / 3m
+						&& lowerShadow >= body * 2.5m && upperShadow <= body * 0.5m;
+					if (pattern)
+					{
+						candidatePatterns++;
+						var midpoint = (previousCandle.OpenPrice + previousCandle.ClosePrice) / 2m;
+						if (candle.OpenPrice < previousCandle.ClosePrice && midpoint < priorMa && value <= 100m)
+							expectedSide = Sides.Buy;
+						else if (candle.OpenPrice > previousCandle.ClosePrice && midpoint > priorMa && value >= 0m)
+							expectedSide = Sides.Sell;
+						if (expectedSide is not null)
+						{
+							expectedVolume = strategy.Volume;
+							entries++;
+						}
+					}
+				}
+				previousCandle = candle;
+				previousMa = ma;
+				previousMfi = mfi;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				orders++;
+				if (order.Type != OrderTypes.Market || order.Side != expectedSide || order.Volume != expectedVolume)
+					errors.Add($"{strategy.CurrentTime:O} submitted {order.Side} x{order.Volume}; independent MFI/SMA/gap/pattern reference expected {expectedSide} x{expectedVolume}.");
+				expectedSide = null;
+			};
+			strategy.OwnTradeReceived += (_, trade) =>
+			{
+				fills++;
+				position += trade.Order.Side == Sides.Buy ? trade.Trade.Volume : -trade.Trade.Volume;
+				if (position != strategy.Position)
+					errors.Add("Net actual execution position differs from strategy.Position.");
+			};
+		}, TimeSpan.FromDays(31));
+
+		IsTrue(errors.Count == 0, string.Join(Environment.NewLine, errors.Take(12)));
+		AreEqual(entries + exits, orders);
+		IsTrue(candidatePatterns > 0 && entries > 0 && fills > 0,
+			"Real archive must exercise the published hammer/hanging-man geometry and one real filled order.");
+		TestContext.WriteLine($"3433 ({Extension}) reachable M5 profile: {candidatePatterns} candidate patterns, {entries} entries, {exits} MFI exits, {fills} fills.");
+	}
+
 }
