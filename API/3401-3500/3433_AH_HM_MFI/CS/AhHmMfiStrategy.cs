@@ -1,89 +1,141 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
+
 using Ecng.Common;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.Messages;
 
 /// <summary>
-/// Hammer/Hanging Man + MFI strategy.
-/// Buys on hammer with low MFI (oversold), sells on hanging man with high MFI (overbought).
+/// Hammer/hanging-man lower-shadow patterns confirmed by previous SMA trend and MFI.
 /// </summary>
 public class AhHmMfiStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _mfiPeriod;
-	private readonly StrategyParam<decimal> _mfiLow;
-	private readonly StrategyParam<decimal> _mfiHigh;
-	private readonly StrategyParam<int> _signalCooldownCandles;
-	private int _candlesSinceTrade;
+	private readonly StrategyParam<int> _maPeriod;
+	private readonly StrategyParam<decimal> _hammerEntryThreshold;
+	private readonly StrategyParam<decimal> _hangingEntryThreshold;
+	private readonly StrategyParam<decimal> _mfiUpperExitLevel;
+	private readonly StrategyParam<decimal> _mfiLowerExitLevel;
+
+	private MoneyFlowIndex _mfi;
+	private SimpleMovingAverage _ma;
+	private ICandleMessage _previousCandle;
+	private decimal? _previousMa;
+	private decimal? _previousMfi;
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public int MfiPeriod { get => _mfiPeriod.Value; set => _mfiPeriod.Value = value; }
-	public decimal MfiLow { get => _mfiLow.Value; set => _mfiLow.Value = value; }
-	public decimal MfiHigh { get => _mfiHigh.Value; set => _mfiHigh.Value = value; }
-	public int SignalCooldownCandles { get => _signalCooldownCandles.Value; set => _signalCooldownCandles.Value = value; }
+	public int MaPeriod { get => _maPeriod.Value; set => _maPeriod.Value = value; }
+	public decimal HammerEntryThreshold { get => _hammerEntryThreshold.Value; set => _hammerEntryThreshold.Value = value; }
+	public decimal HangingEntryThreshold { get => _hangingEntryThreshold.Value; set => _hangingEntryThreshold.Value = value; }
+	public decimal MfiUpperExitLevel { get => _mfiUpperExitLevel.Value; set => _mfiUpperExitLevel.Value = value; }
+	public decimal MfiLowerExitLevel { get => _mfiLowerExitLevel.Value; set => _mfiLowerExitLevel.Value = value; }
 
 	public AhHmMfiStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
-			.SetDisplay("Candle Type", "Candle timeframe", "General");
-		_mfiPeriod = Param(nameof(MfiPeriod), 47)
-			.SetGreaterThanZero()
-			.SetDisplay("MFI Period", "MFI period", "Indicators");
-		_mfiLow = Param(nameof(MfiLow), 40m)
-			.SetDisplay("MFI Low", "MFI oversold threshold for buy", "Signals");
-		_mfiHigh = Param(nameof(MfiHigh), 60m)
-			.SetDisplay("MFI High", "MFI overbought threshold for sell", "Signals");
-		_signalCooldownCandles = Param(nameof(SignalCooldownCandles), 8)
-			.SetGreaterThanZero()
-			.SetDisplay("Signal Cooldown", "Bars to wait between trades", "Trading");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame());
+		_mfiPeriod = Param(nameof(MfiPeriod), 47).SetGreaterThanZero();
+		_maPeriod = Param(nameof(MaPeriod), 5).SetGreaterThanZero();
+		_hammerEntryThreshold = Param(nameof(HammerEntryThreshold), 40m);
+		_hangingEntryThreshold = Param(nameof(HangingEntryThreshold), 60m);
+		_mfiUpperExitLevel = Param(nameof(MfiUpperExitLevel), 70m);
+		_mfiLowerExitLevel = Param(nameof(MfiLowerExitLevel), 30m);
 	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_candlesSinceTrade = SignalCooldownCandles;
+		ResetRuntime();
+	}
+
+	private void ResetRuntime()
+	{
+		_previousCandle = null;
+		_previousMa = null;
+		_previousMfi = null;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-		_candlesSinceTrade = SignalCooldownCandles;
-		var rsi = new MoneyFlowIndex { Length = MfiPeriod };
-		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(rsi, ProcessCandle).Start();
+		ResetRuntime();
+		_mfi = new MoneyFlowIndex { Length = MfiPeriod };
+		_ma = new SimpleMovingAverage { Length = MaPeriod };
+		SubscribeCandles(CandleType).Bind(ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal mfiValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
-		if (candle.State != CandleStates.Finished) return;
+		if (candle.State != CandleStates.Finished)
+			return;
 
-		if (_candlesSinceTrade < SignalCooldownCandles)
-			_candlesSinceTrade++;
+		var mfiValue = _mfi.Process(candle);
+		var maValue = _ma.Process(candle.ClosePrice, candle.OpenTime, true);
 
-		var body = Math.Abs(candle.ClosePrice - candle.OpenPrice);
-		var range = candle.HighPrice - candle.LowPrice;
-		if (range <= 0 || body <= 0) return;
-
-		var upperShadow = candle.HighPrice - Math.Max(candle.OpenPrice, candle.ClosePrice);
-		var lowerShadow = Math.Min(candle.OpenPrice, candle.ClosePrice) - candle.LowPrice;
-
-		var isHammer = lowerShadow > body * 2.5m && upperShadow < body * 0.5m;
-		var isHangingMan = upperShadow > body * 2.5m && lowerShadow < body * 0.5m;
-
-		if (isHammer && mfiValue < MfiLow && Position <= 0 && _candlesSinceTrade >= SignalCooldownCandles)
+		if (!mfiValue.IsFormed || !maValue.IsFormed)
 		{
-			BuyMarket();
-			_candlesSinceTrade = 0;
+			Remember(candle, maValue.IsFormed ? maValue.ToDecimal() : null,
+				mfiValue.IsFormed ? mfiValue.ToDecimal() : null);
+			return;
 		}
-		else if (isHangingMan && mfiValue > MfiHigh && Position >= 0 && _candlesSinceTrade >= SignalCooldownCandles)
+
+		var mfi = mfiValue.ToDecimal();
+		var ma = maValue.ToDecimal();
+		if (_previousMfi is decimal previousMfi)
 		{
-			SellMarket();
-			_candlesSinceTrade = 0;
+			if (Position > 0m &&
+				((previousMfi <= MfiUpperExitLevel && mfi > MfiUpperExitLevel) ||
+				 (previousMfi >= MfiLowerExitLevel && mfi < MfiLowerExitLevel)))
+			{
+				ClosePosition();
+				Remember(candle, ma, mfi);
+				return;
+			}
+
+			if (Position < 0m &&
+				((previousMfi <= MfiLowerExitLevel && mfi > MfiLowerExitLevel) ||
+				 (previousMfi <= MfiUpperExitLevel && mfi > MfiUpperExitLevel)))
+			{
+				ClosePosition();
+				Remember(candle, ma, mfi);
+				return;
+			}
 		}
+
+		if (Position == 0m && _previousCandle is { } previous && _previousMa is decimal previousMa)
+		{
+			var body = Math.Abs(candle.ClosePrice - candle.OpenPrice);
+			var range = candle.HighPrice - candle.LowPrice;
+			if (body > 0m && range > 0m)
+			{
+				var upperShadow = candle.HighPrice - Math.Max(candle.OpenPrice, candle.ClosePrice);
+				var lowerShadow = Math.Min(candle.OpenPrice, candle.ClosePrice) - candle.LowPrice;
+				var bodyInUpperThird = Math.Min(candle.OpenPrice, candle.ClosePrice) >= candle.HighPrice - range / 3m;
+				var lowerTailPattern = bodyInUpperThird && lowerShadow >= body * 2.5m && upperShadow <= body * 0.5m;
+				var previousMidpoint = (previous.OpenPrice + previous.ClosePrice) / 2m;
+
+				if (lowerTailPattern && candle.OpenPrice < previous.ClosePrice &&
+					previousMidpoint < previousMa && mfi <= HammerEntryThreshold)
+					BuyMarket();
+				else if (lowerTailPattern && candle.OpenPrice > previous.ClosePrice &&
+					previousMidpoint > previousMa && mfi >= HangingEntryThreshold)
+					SellMarket();
+			}
+		}
+
+		Remember(candle, ma, mfi);
+	}
+
+	private void Remember(ICandleMessage candle, decimal? ma, decimal? mfi)
+	{
+		_previousCandle = candle;
+		_previousMa = ma;
+		_previousMfi = mfi;
 	}
 }
