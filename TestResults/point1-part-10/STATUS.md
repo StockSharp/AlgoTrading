@@ -5,8 +5,8 @@ Source: uploaded TZ-10.md; **315 exact strategy keys** (229 issue checks, 86 con
 ## Environment and coverage
 
 - Target: `StockSharp/AlgoTrading`, isolated branch `feature/tz-point1-part10` created from `main`.
-- Modified implementations: `3846_Graal_Fractal_Channel`, `3849_Gaps_Reversion`, `3854_Ema_6_12`, `3855_E_Friday_Session` and `3858_Trend_Scalper` (each in both C# and Python).
-- Added `Tests/StrategyTests.Point1Part10.cs` with independent fractal, gap, EMA-cross, Friday-session and rolling-band entry oracles. Existing generated default tests remain enabled; no `requireTrades` bypass.
+- Modified implementations: `3846_Graal_Fractal_Channel`, `3849_Gaps_Reversion`, `3852_Farhad_Crab`, `3854_Ema_6_12`, `3855_E_Friday_Session` and `3858_Trend_Scalper` (each in both C# and Python).
+- Added `Tests/StrategyTests.Point1Part10.cs` with independent fractal, gap, Farhad-typical/open MA, EMA-cross, Friday-session and rolling-band entry oracles. Existing generated default tests remain enabled; no `requireTrades` bypass.
 - Updated all seven localized strategy README files for each changed strategy.
 - **No MSBuild, MSTest, Python runtime import, end-to-end replay, structural validation, or external oracle tests ran** in this environment: the GitHub integration can read/write repository files but cannot execute code with the required sibling StockSharp checkout or packaged BTC/TON archive.
 - **No strategy is certified complete.** The source modifications must not be reported as verified fixes until tests and real fills pass.
@@ -19,7 +19,7 @@ Use one MSBuild/MSTest worker at a time. From the AlgoTrading root, with sibling
 ```bash
 python Tools/validate_api_structure.py
 timeout 600s dotnet build Tests/Tests.csproj --configuration Release --maxcpucount:1
-timeout 600s dotnet test Tests/Tests.csproj --no-build --configuration Release --filter "FullyQualifiedName~S3846_|FullyQualifiedName~S3849_|FullyQualifiedName~S3854_|FullyQualifiedName~S3855_|FullyQualifiedName~S3858_" -- RunConfiguration.MaxCpuCount=1
+timeout 600s dotnet test Tests/Tests.csproj --no-build --configuration Release --filter "FullyQualifiedName~S3846_|FullyQualifiedName~S3849_|FullyQualifiedName~S3852_|FullyQualifiedName~S3854_|FullyQualifiedName~S3855_|FullyQualifiedName~S3858_" -- RunConfiguration.MaxCpuCount=1
 ```
 
 Use the filtered command for red/green observations and add parameter-profile-specific replay checks for both C# and Python. Do not label default behavior verified merely because a reduced warm-up profile trades.
@@ -34,7 +34,7 @@ Use the filtered command for red/green observations and add parameter-profile-sp
 | `3849_Gaps_Reversion` | Incomplete (C#/Python changes + test authored) | Requires red/green replay, archive gap opportunities, quote-spread oracle, order/fill verification, started-vs-finished candle timing and seven-language cross-check. |
 | `3850_Fractured_Fractals_MQL4` | Incomplete | Both implementations, default parameters, all documented entry/exit/risk branches, and independent execution oracle not yet reviewed and replay-tested. |
 | `3851_Firebird_MA_Envelope_Exhaustion` | Incomplete | Both implementations, default parameters, all documented entry/exit/risk branches, and independent execution oracle not yet reviewed and replay-tested. |
-| `3852_Farhad_Crab` | Incomplete | Both implementations, default parameters, all documented entry/exit/risk branches, and independent execution oracle not yet reviewed and replay-tested. |
+| `3852_Farhad_Crab` | Incomplete (C#/Python changes + mechanics test authored) | Needs red/green replay, default 55-day SMMA warmup verification separately, both direction entries, daily crossover exits and bidirectional trailing/TP fills. |
 | `3854_Ema_6_12` | Incomplete (C#/Python changes + test authored) | Needs red/green replay, actual fills, both directions, take-profit/trailing and off-default profiles. |
 | `3855_E_Friday_Session` | Incomplete (C#/Python changes + test authored) | Needs red/green replay, Thursday/day-boundary ordering, Friday fills, time/stop/trailing exits, and off-default profiles. |
 | `3856_Disaster` | Incomplete | Both implementations, default parameters, all documented entry/exit/risk branches, and independent execution oracle not yet reviewed and replay-tested. |
@@ -346,8 +346,8 @@ Use the filtered command for red/green observations and add parameter-profile-sp
  
 ## Merge / isolation notes
 
-No shared `Tests/StrategyInventory.cs`, `Tests.csproj`, helpers, other part-specific test files, CI, scripts, or sibling repositories were changed. The new part-specific test file is the only test source added. Only these five assigned strategy directories and this ledger should be in the part-10 diff.
+No shared `Tests/StrategyInventory.cs`, `Tests.csproj`, helpers, other part-specific test files, CI, scripts, or sibling repositories were changed. The new part-specific test file is the only test source added. Only these six assigned strategy directories and this ledger should be in the part-10 diff.
 
 ## Important limitations
 
-The tests have **not** been run even once, so their assertions, event ordering, and the proposed strategy implementations are still unverified. In particular, finished-only candle providers discover a gap only at the candle close and cannot establish entry-at-open execution. Do not mark the remaining 310 strategies as passed. No profitability claims are supported by these changes.
+The tests have **not** been run even once, so their assertions, event ordering, and the proposed strategy implementations are still unverified. In particular, finished-only candle providers discover a gap only at the candle close and cannot establish entry-at-open execution. Do not mark the remaining 309 strategies as passed. No profitability claims are supported by these changes.
