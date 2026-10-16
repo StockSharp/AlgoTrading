@@ -16,7 +16,7 @@ The implemented strategy is a **monthly** adaptation, not an exclusive December/
 - **Stops**: Yes, percent based
 - **Default Values**:
   - `CandleType` = 5 minute
-  - `StopLossPercent` = 2%
+  - `StopLoss` = 2%
 - **Filters**:
   - Category: Seasonality
   - Direction: Both

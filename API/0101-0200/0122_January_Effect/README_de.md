@@ -16,7 +16,7 @@ Implementiert ist eine **monatliche** Variante, nicht ausschließlich ein Dezemb
 - **Stops**: Ja, prozentbasiert
 - **Standardwerte**:
   - `CandleType` = 5 minute
-  - `StopLossPercent` = 2%
+  - `StopLoss` = 2%
 - **Filter**:
   - Kategorie: Saisonalität
   - Richtung: Beide

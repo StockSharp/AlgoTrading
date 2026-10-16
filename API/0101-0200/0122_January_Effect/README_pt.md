@@ -16,7 +16,7 @@ A implementação é uma adaptação **mensal**, não apenas uma operação em d
 - **Stops**: Sim, baseado em percentual
 - **Valores padrão**:
   - `CandleType` = 5 minute
-  - `StopLossPercent` = 2%
+  - `StopLoss` = 2%
 - **Filtros**:
   - Categoria: Sazonalidade
   - Direção: Ambos
