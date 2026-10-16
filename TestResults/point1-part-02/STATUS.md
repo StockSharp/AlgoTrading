@@ -33,6 +33,14 @@ Both C# and Python were fetched and independently inspected for the following ei
 - Updated **all seven** localized README files with explicit prior/current-band semantics, the exact reverse crossover, and defaults.
 - **Not yet proved:** failing pre-fix run, passing post-fix run, trade/order/fill coverage and compilation (SDK/archive unavailable in this environment). This is a source fix pending validation, **not completed**.
 
+### 0778_Falcon_Liquidity_Grab
+
+- Independent C#/Python shared archive test was added before the fix, but could not be executed red/green here.
+- Removed generic EMA crossover from C# and Python; entries require a wick beyond **previous** N bars with the close strictly on the correct side of an SMA, plus a configurable UTC session filter. Long/short only when flat.
+- Native `StartProtection` uses `StopLossPoints × Security.PriceStep` as an absolute stop distance, `TakeProfitMultiplier × stop` as the target, and Level1 bid/ask feeds for protection between completed candles.
+- Seven localized README files now define the same lookback, time basis, defaults and protection distances.
+- **Not verified:** actual code compilation, Python interop, full one-month archive entry/stop fills and correctness/absence of duplicate orders. These are blockers, not successes.
+
 ## Shared files touched (merge coordination)
 - `Tests/StrategyInventory.cs`: only add `1186_Price_and_Volume_Breakout_Buy` to Overrides. No other keys changed.
 - `Tests/Tests.csproj`: unchanged.
@@ -46,6 +54,7 @@ Only one test worker may execute at a time; each command has a shell timeout and
 timeout 900s dotnet test Tests/Tests.csproj -m:1 --filter 'FullyQualifiedName~S1186_' --blame-hang-timeout 00:01:00 -- RunConfiguration.MaxCpuCount=1
 timeout 900s dotnet test Tests/Tests.csproj -m:1 --filter 'FullyQualifiedName~S1243_' --blame-hang-timeout 00:01:00 -- RunConfiguration.MaxCpuCount=1
 timeout 900s dotnet test Tests/Tests.csproj -m:1 --filter 'FullyQualifiedName~S0779_' --blame-hang-timeout 00:01:00 -- RunConfiguration.MaxCpuCount=1
+timeout 900s dotnet test Tests/Tests.csproj -m:1 --filter 'FullyQualifiedName~S0778_' --blame-hang-timeout 00:01:00 -- RunConfiguration.MaxCpuCount=1
 ```
 
 **Execution results:** not run (missing SDK, sibling core, and packaged history in current environment). C# / Python and README structure/translation changes therefore await actual validation.
@@ -60,7 +69,7 @@ timeout 900s dotnet test Tests/Tests.csproj -m:1 --filter 'FullyQualifiedName~S0
 | `0773_Express_Generator` | Investigate note | STATIC DEFECT CONFIRMED — both languages use generic EMA(120/450) crossover unrelated to README; original behavior, independent tests, fills and protection NOT IMPLEMENTED/NOT RUN |
 | `0774_External_Signals_Tester` | Investigate note | STATIC DEFECT CONFIRMED — both languages use generic EMA(120/450) crossover unrelated to README; original behavior, independent tests, fills and protection NOT IMPLEMENTED/NOT RUN |
 | `0777_Faith_Indicator` | Investigate note | STATIC DEFECT CONFIRMED — both languages use generic EMA(120/450) crossover unrelated to README; original behavior, independent tests, fills and protection NOT IMPLEMENTED/NOT RUN |
-| `0778_Falcon_Liquidity_Grab` | Investigate note | STATIC DEFECT CONFIRMED — both languages use generic EMA(120/450) crossover unrelated to README; original behavior, independent tests, fills and protection NOT IMPLEMENTED/NOT RUN |
+| `0778_Falcon_Liquidity_Grab` | Investigate note | SOURCE FIX + ARCHIVE ORACLE WRITTEN — C#/Python wick/SMA/UTC/native quote protection and seven READMEs; no red/green runtime or actual stop fill verified |
 | `0779_Fancy_Bollinger_Bands` | Investigate note | SOURCE FIX + ORACLE WRITTEN — replaced EMA template with BB breakout/reentry, C#/Python, synced seven README; red/green archive executions NOT RUN |
 | `0780_Fearzone_Panel` | Investigate note | STATIC DEFECT CONFIRMED — both languages use generic EMA(120/450) crossover unrelated to README; original behavior, independent tests, fills and protection NOT IMPLEMENTED/NOT RUN |
 | `0781_Fibonacci_Bollinger_Bands` | Investigate note | STATIC DEFECT CONFIRMED — both languages use generic EMA(120/450) crossover unrelated to README; original behavior, independent tests, fills and protection NOT IMPLEMENTED/NOT RUN |
