@@ -1,14 +1,7 @@
 # Estratégia do Efeito de Janeiro
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
- 
-O Efeito de Janeiro observa que as ações de pequena capitalização frequentemente superam o desempenho no início do ano, possivelmente devido às vendas por perda fiscal em dezembro.
-Os traders tentam capturar essa tendência comprando no final de dezembro e vendendo após as primeiras semanas de janeiro.
 
-Os testes indicam um retorno anual médio de aproximadamente 103%. Funciona melhor no mercado de ações.
-
-A estratégia segue esse cronograma, entrando perto do fim do ano e saindo em meados de janeiro.
-
-Um stop-loss garante que as perdas permaneçam gerenciáveis se o efeito não aparecer.
+Este exemplo negocia **janelas recorrentes em todos os meses** com filtro de média móvel. **Não** se limita ao efeito clássico de ações de pequenas empresas no fim de dezembro/início de janeiro e não usa dados sobre tamanho de empresa ou vendas tributárias. O retorno anual de 103% anteriormente citado não foi comprovado no replay BTC/TON.
 
 ### Regras mensais executadas (C# e Python)
 

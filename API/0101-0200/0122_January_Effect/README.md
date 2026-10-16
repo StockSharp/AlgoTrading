@@ -1,14 +1,7 @@
 # January Effect Strategy
 [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
- 
-The January Effect observes that small-cap stocks often outperform early in the year, possibly due to tax-loss selling in December.
-Traders attempt to capture this tendency by buying in late December and selling after the first few weeks of January.
 
-Testing indicates an average annual return of about 103%. It performs best in the stocks market.
-
-The strategy follows that schedule, entering near year-end and exiting mid-January.
-
-A stop-loss ensures losses stay manageable if the effect fails to appear.
+This example trades **recurring windows within every calendar month** and uses a moving-average filter. It is **not** confined to the classical late-December/early-January small-cap January effect and does not use company-size or tax-loss data. The previously stated 103% annual return is not demonstrated by the BTC/TON fixture.
 
 ### Executed monthly calendar rules (C# and Python)
 
