@@ -16,7 +16,7 @@ O padrão usa candles de 1 minuto e SMA20. Após 20 amostras de volume, o volume
 - **Stops**: Sim, baseado em percentual
 - **Valores padrão**:
   - `CandleType` = 1 minute
-  - `StopLossPercent` = 2%
+  - `StopLoss` = 2%
 - **Filtros**:
   - Categoria: Volume
   - Direção: Ambos

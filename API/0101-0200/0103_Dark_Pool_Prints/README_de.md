@@ -16,7 +16,7 @@ Standard sind 1-Minuten-Kerzen und SMA20. Nach 20 Volumenwerten muss das aktuell
 - **Stops**: Ja, prozentbasiert
 - **Standardwerte**:
   - `CandleType` = 1 minute
-  - `StopLossPercent` = 2%
+  - `StopLoss` = 2%
 - **Filter**:
   - Kategorie: Volumen
   - Richtung: Beide

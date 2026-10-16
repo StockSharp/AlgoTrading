@@ -16,7 +16,7 @@
 - **止损**：是，按百分比
 - **默认值**:
   - `CandleType` = 1 minute
-  - `StopLossPercent` = 2%
+  - `StopLoss` = 2%
 - **过滤器**:
   - 类别：成交量
   - 方向：双向
