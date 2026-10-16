@@ -872,4 +872,45 @@ public abstract partial class StrategyTests
 			"Center-of-Gravity OSMA must generate actual orders and trade fills on the archive.");
 	}
 
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public async Task Point1Part05_ColorZerolagTrix_FiveWeightedComponentsAndInvertedCrossings()
+	{
+		var buys = 0;
+		var sells = 0;
+		var fills = 0;
+		await Replay("1997_ColorZerolagTrix", (strategy, _) =>
+		{
+			AreEqual(TimeSpan.FromHours(4).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			foreach (var flag in new[] { "BuyOpen", "BuyClose", "SellOpen", "SellClose" })
+				AreEqual(true, strategy.Parameters[flag].Value);
+			foreach (var index in new[] { 1, 2, 3, 4, 5 })
+			{
+				IsTrue(strategy.Parameters.ContainsKey("Period" + index));
+				IsTrue(strategy.Parameters.ContainsKey("Factor" + index));
+				SetParam(strategy, "Period" + index, index + 2);
+			}
+			SetParam(strategy, "Smoothing", 3);
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			// Closed shorts are allowed, but new shorts are forbidden in this profile.
+			SetParam(strategy, "SellOpen", false);
+			strategy.OrderRegistering += order =>
+			{
+				IsTrue(order.Volume > 0m);
+				if (order.Side == Sides.Buy)
+					buys++;
+				else
+				{
+					IsTrue(strategy.Position > 0m, "SellOpen=false must not create shorts.");
+					AreEqual(strategy.Position, order.Volume, "Long closes use the actual volume.");
+					sells++;
+				}
+			};
+			strategy.Trades.TradeAdded += _ => fills++;
+		}, replayDuration: TimeSpan.FromDays(14));
+		IsTrue(buys > 0 && sells > 0 && fills > 1,
+			"Both sides of the inverted fast/slow crossing must produce real executions.");
+	}
+
 }
