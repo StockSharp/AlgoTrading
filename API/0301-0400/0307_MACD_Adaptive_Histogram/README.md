@@ -5,9 +5,11 @@ The **MACD Adaptive Histogram** strategy is built around MACD with adaptive hist
 
 Testing indicates an average annual return of about 184%. It performs best in the crypto market.
 
-Signals trigger when Histogram confirms trend changes on intraday (15m) data. This makes the method suitable for active traders.
+### Actual MACD histogram contract (C# and Python)
 
-Stops rely on ATR multiples and factors like FastPeriod, SlowPeriod. Adjust these defaults to balance risk and reward.
+Signals use **finished 15-minute candles** and the MACD(12,26,9) histogram `H = MACD - Signal`. Over the last 20 values of H, compute its SMA `A` and standard deviation `D`. Only after the indicators are formed and `D > 0`: from flat **buy** when `H >= A + 2*D` and `H > 0`, **sell** when `H <= A - 2*D` and `H < 0`. When long, close at `H <= A`; when short, close at `H >= A`. A signal order starts a **16-finished-bar cooldown**. Filled positions also have an independent **native 2% stop-loss** (not ATR based). Neither these formulas nor the public source independently establish the annual-return estimate above.
+
+
 
 ## Details
 - **Entry Criteria**: see implementation for indicator conditions.

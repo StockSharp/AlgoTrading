@@ -5,9 +5,11 @@ Die **MACD Adaptive Histogram**-Strategie basiert auf dem MACD mit adaptivem His
 
 Tests zeigen eine durchschnittliche Jahresrendite von etwa 184%. Sie funktioniert am besten auf dem Kryptomarkt.
 
-Signale werden ausgelöst, wenn das Histogramm Trendänderungen bei Intraday-Daten (15m) bestätigt. Dies macht die Methode für aktive Trader geeignet.
+### Tatsächliche MACD-Histogramm-Regeln (C# und Python)
 
-Stops basieren auf ATR-Vielfachen und Faktoren wie FastPeriod, SlowPeriod. Passen Sie diese Standardwerte an, um Risiko und Ertrag auszubalancieren.
+Gehandelt wird auf **abgeschlossenen 15-Minuten-Kerzen** mit dem MACD(12,26,9)-Histogramm `H = MACD - Signal`. Aus den letzten 20 H-Werten werden SMA `A` und Standardabweichung `D` berechnet. Bei fertigen Indikatoren und `D > 0`: aus Flat **kaufen** bei `H >= A + 2*D` und `H > 0`, **verkaufen** bei `H <= A - 2*D` und `H < 0`. Long bei `H <= A` schließen, Short bei `H >= A` schließen. Nach einer Signalorder: **16 abgeschlossene Kerzen** Pause. Ein **nativer Stop-Loss von 2%** schützt ausgeführte Positionen zusätzlich, kein ATR-Stop. Die Renditeangabe oben ist nicht unabhängig verifiziert.
+
+
 
 ## Details
 - **Einstiegskriterien**: Implementierung für Indikatorbedingungen prüfen.
