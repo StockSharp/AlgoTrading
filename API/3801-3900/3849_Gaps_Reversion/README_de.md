@@ -51,3 +51,5 @@ Alle Parameter sind als `StrategyParam<T>` registriert und unterstützen die Opt
 
 - StockSharp API mit Zugriff auf Kerzendaten für das ausgewählte Instrument.
 - Kurse der Stufe 1 sind optional, verbessern jedoch die Spread-Erkennung.
+
+**Zeitpunkt beim Replay:** Die Kurslücke wird beim ersten Update der Kerze geprüft (`Active`, sofern verfügbar). Liefert die Datenquelle nur `Finished`-Kerzen, wird die Eröffnungslücke erst beim Kerzenschluss erkannt; dies bestätigt keine Ausführung zum Eröffnungskurs.
