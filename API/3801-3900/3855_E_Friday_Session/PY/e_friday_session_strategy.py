@@ -123,20 +123,20 @@ class e_friday_session_strategy(Strategy):
         take = float(self._take_profit_points.Value) * point
 
         if stop > 0 and (
-                candle.LowPrice <= entry - stop if long_pos
-                else candle.HighPrice >= entry + stop):
+                float(candle.LowPrice) <= entry - stop if long_pos
+                else float(candle.HighPrice) >= entry + stop):
             self._exit("EFriday stop loss")
             return True
         if take > 0 and (
-                candle.HighPrice >= entry + take if long_pos
-                else candle.LowPrice <= entry - take):
+                float(candle.HighPrice) >= entry + take if long_pos
+                else float(candle.LowPrice) <= entry - take):
             self._exit("EFriday take profit")
             return True
 
         old_stop = self._trailing_level
         if old_stop is not None and (
-                candle.LowPrice <= old_stop if long_pos
-                else candle.HighPrice >= old_stop):
+                float(candle.LowPrice) <= old_stop if long_pos
+                else float(candle.HighPrice) >= old_stop):
             self._exit("EFriday trailing stop")
             return True
 
@@ -167,6 +167,10 @@ class e_friday_session_strategy(Strategy):
         order.Side = side
         order.Volume = Decimal(volume)
         order.Comment = comment
+        if comment == "EFriday entry":
+            self._entry_order = order
+        else:
+            self._exit_order = order
         self.RegisterOrder(order)
         return order
 
