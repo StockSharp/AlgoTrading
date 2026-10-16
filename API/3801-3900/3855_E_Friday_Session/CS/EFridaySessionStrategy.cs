@@ -152,7 +152,7 @@ public class EFridaySessionStrategy : Strategy
 	{
 		if (_entryPrice is not decimal entry)
 			return false;
-		var point = Security.PriceStep;
+		var point = Security?.PriceStep ?? 0m;
 		var longPosition = Position > 0m;
 
 		var stop = StopLossPoints * point;
@@ -210,6 +210,10 @@ public class EFridaySessionStrategy : Strategy
 			Volume = volume,
 			Comment = comment,
 		};
+		if (comment == "EFriday entry")
+			_entryOrder = order;
+		else
+			_exitOrder = order;
 		RegisterOrder(order);
 		return order;
 	}
