@@ -127,12 +127,12 @@ public class PriceAndVolumeBreakoutBuyStrategy : Strategy
 					var shortSignal = candle.ClosePrice < priceBars.Min(x => x.low)
 						&& candle.TotalVolume > maximumVolume && candle.ClosePrice < average;
 
-					if (longSignal && OrderDirection is "Long" or "Both")
+					if (longSignal && (OrderDirection is "Long" or "Both"))
 					{
 						_entryRequested = true;
 						BuyMarket(Volume);
 					}
-					else if (shortSignal && OrderDirection is "Short" or "Both")
+					else if (shortSignal && (OrderDirection is "Short" or "Both"))
 					{
 						_entryRequested = true;
 						SellMarket(Volume);

@@ -114,9 +114,9 @@ public abstract partial class StrategyTests
 							var shortSignal = close < priorPrice.Min(x => x.low) && volume > priorVolume && close < sma;
 							if (longSignal) qualifiedLongs++;
 						if (shortSignal) qualifiedShorts++;
-						if (longSignal && direction is "Long" or "Both")
+						if (longSignal && (direction is "Long" or "Both"))
 							expectedSide = Sides.Buy;
-						else if (shortSignal && direction is "Short" or "Both")
+						else if (shortSignal && (direction is "Short" or "Both"))
 							expectedSide = Sides.Sell;
 						if (expectedSide is not null)
 						{
