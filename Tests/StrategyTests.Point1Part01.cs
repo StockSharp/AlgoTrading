@@ -427,4 +427,45 @@ public abstract partial class StrategyTests
             "Monthly DCA must execute the monthly investment and date-based liquidation.");
     }
 
+    [TestMethod]
+    [TestCategory("Shard04")]
+    public async Task Point1Part01_0660_EmaRsiCrossesHaveNativeStops()
+    {
+        var entries = 0;
+        var longEntries = 0;
+        var shortEntries = 0;
+        await Replay("0660_Day_Trading_Risk_Management", (strategy, _) =>
+        {
+            AreEqual(20, Convert.ToInt32(strategy.Parameters["FastEmaPeriod"].Value));
+            AreEqual(50, Convert.ToInt32(strategy.Parameters["SlowEmaPeriod"].Value));
+            AreEqual(14, Convert.ToInt32(strategy.Parameters["RsiLength"].Value));
+            AreEqual(70m, Convert.ToDecimal(strategy.Parameters["RsiOverbought"].Value));
+            AreEqual(30m, Convert.ToDecimal(strategy.Parameters["RsiOversold"].Value));
+            AreEqual(2m, Convert.ToDecimal(strategy.Parameters["TakeProfitPercent"].Value));
+            AreEqual(1m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+            AreEqual(TimeSpan.FromMinutes(1).TimeFrame(), strategy.Parameters["CandleType"].Value);
+
+            strategy.OrderRegistering += order =>
+            {
+                if (strategy.Position == 0m)
+                {
+                    entries++;
+                    if (order.Side == Sides.Buy)
+                        longEntries++;
+                    else if (order.Side == Sides.Sell)
+                        shortEntries++;
+                }
+            };
+        }, replayDuration: TimeSpan.FromDays(31));
+
+        IsTrue(entries > 0 && longEntries + shortEntries == entries,
+            "The original EMA/RSI profile must register real directional entry orders.");
+
+        // The published stop must be a real native intrabar percent stop,
+        // rather than a parameter shown in the README but never used.
+        await CheckPercentStopBetweenBars("0660_Day_Trading_Risk_Management",
+            duration: TimeSpan.FromDays(31), expectedFrame: TimeSpan.FromMinutes(1),
+            expectedStopPercent: 1m);
+    }
+
 }
