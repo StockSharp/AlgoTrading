@@ -28,6 +28,21 @@ public class ColorZerolagTrixStrategy : Strategy
 			_alpha = 2m / (period + 1m);
 		}
 
+		// The replay harness clones and resets a strategy, then checks nested fields
+		// structurally. Internal TRIX state must compare by value, not reference.
+		public override bool Equals(object other)
+			=> other is TrixState value
+				&& _period == value._period
+				&& _alpha == value._alpha
+				&& _first == value._first
+				&& _second == value._second
+				&& _third == value._third
+				&& _previousThird == value._previousThird
+				&& _samples == value._samples;
+
+		public override int GetHashCode()
+			=> HashCode.Combine(_period, _alpha, _first, _second, _third, _previousThird, _samples);
+
 		public decimal? Add(decimal close)
 		{
 			if (_samples == 0)
