@@ -2,6 +2,7 @@ namespace StockSharp.Tests;
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -151,5 +152,64 @@ public abstract partial class StrategyTests
 		IsTrue(fills > 0 && expectedEntries > 0 && rejects > 0,
 			$"{direction}/{secondary}: real archive must exercise entries, fills, and rejected signals.");
 		TestContext.WriteLine($"1186 {Extension} {direction}, secondary={secondary}: {qualifiedLongs} long / {qualifiedShorts} short qualifying bars, {expectedEntries} entries, {expectedExits} fifth-close exits, {interruptions} interrupted streaks, {orders} orders, {fills} fills.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard03")]
+	public async Task S1243_FullMonthRenkoBuildHasBoundedTickCostAndOrderedBricks()
+	{
+		async Task<(TimeSpan elapsed, int count, int upward, int downward)> Run(DataType priceSource)
+		{
+			var errors = new List<string>();
+			DateTimeOffset? previousBrickTime = null;
+			DateTime? firstReplayTime = null;
+			DateTime? lastReplayTime = null;
+			var up = 0;
+			var down = 0;
+			var count = 0;
+			var stopwatch = Stopwatch.StartNew();
+			await Replay("1243_Renko", (strategy, _) =>
+			{
+				SetParam(strategy, "BoxSize", 25m);
+				SetParam(strategy, "PriceSource", priceSource);
+				strategy.Volume = 1m;
+				strategy.Connector.CurrentTimeChanged += _ =>
+				{
+					firstReplayTime ??= strategy.Connector.CurrentTime;
+					lastReplayTime = strategy.Connector.CurrentTime;
+				};
+				strategy.CandleReceived += (_, candle) =>
+				{
+					if (candle.State != CandleStates.Finished)
+						return;
+					if (previousBrickTime is { } previous && candle.OpenTime < previous)
+						errors.Add("Renko bricks were delivered in noncausal time order.");
+					previousBrickTime = candle.OpenTime;
+					var movement = candle.ClosePrice - candle.OpenPrice;
+					if (movement > 0m) up++;
+					else if (movement < 0m) down++;
+					else errors.Add("A finished Renko brick has zero direction.");
+					count++;
+				};
+			}, TimeSpan.FromDays(31), TimeSpan.FromDays(31));
+			stopwatch.Stop();
+			IsTrue(firstReplayTime is not null && lastReplayTime is not null
+				&& lastReplayTime.Value - firstReplayTime.Value >= TimeSpan.FromDays(28),
+				$"{priceSource}: did not replay the entire packaged month.");
+			IsTrue(errors.Count == 0, string.Join(Environment.NewLine, errors.Take(12)));
+			IsTrue(count > 0 && up > 0 && down > 0,
+				$"{priceSource}: archive must produce both directions and finished bricks.");
+			TestContext.WriteLine($"1243 {Extension}: {priceSource}: {count} finished bricks ({up} up/{down} down), {stopwatch.Elapsed.TotalSeconds:F2}s over the full archived month.");
+			return (stopwatch.Elapsed, count, up, down);
+		}
+
+		// Different underlying quotes/trades need not produce identical bricks; compare
+		// ordering, nonzero brick directions and bounded processing cost instead.
+		var level1 = await Run(DataType.Level1);
+		var ticks = await Run(DataType.Ticks);
+		IsTrue(ticks.elapsed < TimeSpan.FromSeconds(120),
+			$"The full-month tick builder took {ticks.elapsed.TotalSeconds:F2}s.");
+		IsTrue(ticks.elapsed <= level1.elapsed * 8 + TimeSpan.FromSeconds(30),
+			$"Ticks ({ticks.elapsed.TotalSeconds:F2}s) costs disproportionately more than Level1 ({level1.elapsed.TotalSeconds:F2}s) for the same 25-price-unit bricks.");
 	}
 }
