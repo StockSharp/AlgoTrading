@@ -1217,4 +1217,46 @@ public abstract partial class StrategyTests
 		IsTrue(buys > 0 && fills > 0, "Smoothed momentum must fill real entries in the archive.");
 	}
 
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public async Task Point1Part05_ColorJLaguerre_JurikSmoothedRsiAndActualExits()
+	{
+		var buys = 0;
+		var sells = 0;
+		var fills = 0;
+		var stopField = typeof(Strategy).GetField("_stopLoss", BindingFlags.Instance | BindingFlags.NonPublic);
+		IsNotNull(stopField);
+		await Replay("2008_Color_JLaguerre", (strategy, _) =>
+		{
+			AreEqual(14, Convert.ToInt32(strategy.Parameters["RsiLength"].Value));
+			AreEqual(85m, Convert.ToDecimal(strategy.Parameters["HighLevel"].Value));
+			AreEqual(50m, Convert.ToDecimal(strategy.Parameters["MiddleLevel"].Value));
+			AreEqual(15m, Convert.ToDecimal(strategy.Parameters["LowLevel"].Value));
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value));
+			AreEqual(TimeSpan.FromHours(1).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			IsTrue(strategy.Parameters.ContainsKey("JmaLength"), "Jurik smoothing must be configurable.");
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "RsiLength", 4);
+			SetParam(strategy, "JmaLength", 4);
+			SetParam(strategy, "HighLevel", 65m);
+			SetParam(strategy, "LowLevel", 35m);
+			strategy.OrderRegistering += order =>
+			{
+				IsTrue(order.Volume > 0m);
+				var stop = (Unit)stopField.GetValue(strategy);
+				IsNotNull(stop);
+				AreEqual(UnitTypes.Percent, stop.Type);
+				AreEqual(2m, stop.Value);
+				if (order.Side == Sides.Buy) buys++;
+				else sells++;
+				if (strategy.Position != 0m && order.Side == (strategy.Position > 0m ? Sides.Sell : Sides.Buy))
+					IsTrue(order.Volume <= Math.Abs(strategy.Position) + strategy.Volume);
+			};
+			strategy.Trades.TradeAdded += _ => fills++;
+		}, replayDuration: TimeSpan.FromDays(14));
+		IsTrue(buys > 0 && sells > 0 && fills > 1,
+			"Archive must contain actual oscillator signals and filled orders in both directions.");
+	}
+
 }
