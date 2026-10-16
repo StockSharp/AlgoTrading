@@ -3,7 +3,6 @@ using System.Collections.Generic;
 
 using Ecng.Common;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -11,95 +10,144 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// DcaStrategy using EMA crossover for trend timing.
-/// Enters long on golden cross, short on death cross.
+/// Fixed quote-currency investment either at regular completed-candle
+/// intervals or once per configured weekday. Never shorts.
 /// </summary>
 public class DcaStrategy : Strategy
 {
-	private readonly StrategyParam<int> _fastEmaPeriod;
-	private readonly StrategyParam<int> _slowEmaPeriod;
-	private readonly StrategyParam<DataType> _candleType;
+    private readonly StrategyParam<DataType> _candleType;
+    private readonly StrategyParam<decimal> _capitalToInvest;
+    private readonly StrategyParam<DateTime> _startDate;
+    private readonly StrategyParam<DateTime> _endDate;
+    private readonly StrategyParam<bool> _closeAllOnLastCandle;
+    private readonly StrategyParam<bool> _useDayOfWeek;
+    private readonly StrategyParam<DayOfWeek> _dayOfWeek;
+    private readonly StrategyParam<int> _everyXCandles;
 
-	private decimal _prevFastEma;
-	private decimal _prevSlowEma;
+    private int _eligibleBars;
+    private DateTime? _lastWeekdayPurchase;
+    private bool _endReached;
 
-	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
-	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+    public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+    public decimal CapitalToInvest { get => _capitalToInvest.Value; set => _capitalToInvest.Value = value; }
+    public DateTime StartDate { get => _startDate.Value; set => _startDate.Value = value; }
+    public DateTime EndDate { get => _endDate.Value; set => _endDate.Value = value; }
+    public bool CloseAllOnLastCandle { get => _closeAllOnLastCandle.Value; set => _closeAllOnLastCandle.Value = value; }
+    public bool UseDayOfWeek { get => _useDayOfWeek.Value; set => _useDayOfWeek.Value = value; }
+    public DayOfWeek DayOfWeek { get => _dayOfWeek.Value; set => _dayOfWeek.Value = value; }
+    public int EveryXCandles { get => _everyXCandles.Value; set => _everyXCandles.Value = value; }
 
-	public DcaStrategy()
-	{
-		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
-			.SetGreaterThanZero()
-			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
+    public DcaStrategy()
+    {
+        _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+            .SetDisplay("Candle Type", "Completed-candle interval for scheduling", "General");
+        _capitalToInvest = Param(nameof(CapitalToInvest), 200m)
+            .SetGreaterThanZero()
+            .SetDisplay("Capital To Invest", "Fixed quote-currency amount for each purchase", "Trading");
+        _startDate = Param(nameof(StartDate), DateTime.MinValue)
+            .SetDisplay("Start Date", "Inclusive start of the buying range", "Calendar");
+        _endDate = Param(nameof(EndDate), DateTime.MaxValue)
+            .SetDisplay("End Date", "Exclusive end of the buying range", "Calendar");
+        _closeAllOnLastCandle = Param(nameof(CloseAllOnLastCandle), false)
+            .SetDisplay("Close All On Last Candle", "Liquidate accumulated holdings when EndDate is reached", "Calendar");
+        _useDayOfWeek = Param(nameof(UseDayOfWeek), false)
+            .SetDisplay("Use Day Of Week", "Purchase once per selected weekday instead of every N bars", "Calendar");
+        _dayOfWeek = Param(nameof(DayOfWeek), System.DayOfWeek.Wednesday)
+            .SetDisplay("Day Of Week", "Weekday for scheduled purchases", "Calendar");
+        _everyXCandles = Param(nameof(EveryXCandles), 72)
+            .SetGreaterThanZero()
+            .SetDisplay("Every X Candles", "Completed candles per periodic purchase", "Calendar");
+    }
 
-		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
-			.SetGreaterThanZero()
-			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
+    public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+    {
+        return [(Security, CandleType)];
+    }
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
-	}
+    protected override void OnReseted()
+    {
+        base.OnReseted();
+        _eligibleBars = 0;
+        _lastWeekdayPurchase = null;
+        _endReached = false;
+    }
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+    protected override void OnStarted2(DateTime time)
+    {
+        base.OnStarted2(time);
 
-	/// <inheritdoc />
-	protected override void OnReseted()
-	{
-		base.OnReseted();
-		_prevFastEma = 0m;
-		_prevSlowEma = 0m;
-	}
+        if (StartDate.Date > EndDate.Date)
+            throw new ArgumentException("StartDate must not be after EndDate.");
 
-	/// <inheritdoc />
-	protected override void OnStarted2(DateTime time)
-	{
-		base.OnStarted2(time);
+        _eligibleBars = 0;
+        _lastWeekdayPurchase = null;
+        _endReached = false;
 
-		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
-		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
+        var subscription = SubscribeCandles(CandleType);
+        subscription.Bind(ProcessCandle).Start();
 
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(fastEma, slowEma, ProcessCandle)
-			.Start();
+        var area = CreateChartArea();
+        if (area != null)
+        {
+            DrawCandles(area, subscription);
+            DrawOwnTrades(area);
+        }
+    }
 
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, fastEma);
-			DrawIndicator(area, slowEma);
-			DrawOwnTrades(area);
-		}
-	}
+    private void ProcessCandle(ICandleMessage candle)
+    {
+        if (candle.State != CandleStates.Finished)
+            return;
 
-	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
+        var date = candle.OpenTime.Date;
+        if (date < StartDate.Date)
+            return;
 
-		if (_prevFastEma == 0m || _prevSlowEma == 0m)
-		{
-			_prevFastEma = fastEmaValue;
-			_prevSlowEma = slowEmaValue;
-			return;
-		}
+        // Treat EndDate as the first day on which new investments cease;
+        // optionally exit once, using actual holdings rather than Volume.
+        if (date >= EndDate.Date)
+        {
+            if (!_endReached && CloseAllOnLastCandle &&
+                Position > 0m && IsFormedAndOnlineAndAllowTrading())
+            {
+                SellMarket(Position);
+                _endReached = true;
+            }
+            return;
+        }
 
-		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
-		{
-			BuyMarket();
-		}
-		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
-		{
-			SellMarket();
-		}
+        if (!IsFormedAndOnlineAndAllowTrading())
+            return;
 
-		_prevFastEma = fastEmaValue;
-		_prevSlowEma = slowEmaValue;
-	}
+        if (UseDayOfWeek)
+        {
+            if (candle.OpenTime.DayOfWeek != DayOfWeek ||
+                _lastWeekdayPurchase == date)
+                return;
+        }
+        else
+        {
+            _eligibleBars++;
+            if (_eligibleBars % EveryXCandles != 0)
+                return;
+        }
+
+        var price = candle.ClosePrice;
+        if (price <= 0m || Security is null)
+            return;
+
+        // The budget is expressed in quoted currency. Floor to the native
+        // volume step and never silently round up into over-investment.
+        var step = Security.VolumeStep > 0m ? Security.VolumeStep : 0.001m;
+        var maxVolume = Security.MaxVolume > 0m ? Security.MaxVolume : decimal.MaxValue;
+        var budgetVolume = Math.Min(CapitalToInvest / price, maxVolume);
+        var volume = Math.Floor(budgetVolume / step) * step;
+
+        if (volume <= 0m || (Security.MinVolume > 0m && volume < Security.MinVolume))
+            return;
+
+        BuyMarket(volume);
+        if (UseDayOfWeek)
+            _lastWeekdayPurchase = date;
+    }
 }
