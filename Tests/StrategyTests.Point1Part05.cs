@@ -825,4 +825,51 @@ public abstract partial class StrategyTests
 			"Packaged BTC/TON must contain actual opening and protective exit fills.");
 	}
 
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public async Task Point1Part05_CenterOfGravityOsma_MultistageOscillatorAndActualReversalFills()
+	{
+		var orders = 0;
+		var fills = 0;
+		var stopField = typeof(Strategy).GetField("_stopLoss", BindingFlags.Instance | BindingFlags.NonPublic);
+		var takeField = typeof(Strategy).GetField("_takeProfit", BindingFlags.Instance | BindingFlags.NonPublic);
+		IsNotNull(stopField);
+		IsNotNull(takeField);
+		await Replay("1998_Center_Of_Gravity_OSMA", (strategy, _) =>
+		{
+			foreach (var name in new[] { "Period", "SmoothPeriod1", "SmoothPeriod2",
+				"BuyPosOpen", "SellPosOpen", "BuyPosClose", "SellPosClose", "StopLoss", "TakeProfit" })
+				IsTrue(strategy.Parameters.ContainsKey(name), $"Missing {name} in {Extension}.");
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "Period", 4);
+			SetParam(strategy, "SmoothPeriod1", 3);
+			SetParam(strategy, "SmoothPeriod2", 3);
+			SetParam(strategy, "StopLoss", 100m);
+			SetParam(strategy, "TakeProfit", 200m);
+			strategy.OrderRegistering += order =>
+			{
+				IsTrue(order.Volume > 0m);
+				if (strategy.Position == 0m)
+				{
+					var stop = (Unit)stopField.GetValue(strategy);
+					var take = (Unit)takeField.GetValue(strategy);
+					IsNotNull(stop);
+					IsNotNull(take);
+					AreEqual(UnitTypes.Absolute, stop.Type);
+					AreEqual(UnitTypes.Absolute, take.Type);
+					AreEqual(100m, stop.Value);
+					AreEqual(200m, take.Value);
+				}
+				else if (order.Side == (strategy.Position > 0m ? Sides.Sell : Sides.Buy))
+					IsTrue(order.Volume <= strategy.Volume + Math.Abs(strategy.Position),
+						"Reverse or native stop must never exceed executed position plus one entry.");
+				orders++;
+			};
+			strategy.Trades.TradeAdded += _ => fills++;
+		}, replayDuration: TimeSpan.FromDays(7));
+		IsTrue(orders > 0 && fills > 0,
+			"Center-of-Gravity OSMA must generate actual orders and trade fills on the archive.");
+	}
+
 }
