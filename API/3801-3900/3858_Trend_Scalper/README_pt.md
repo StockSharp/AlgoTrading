@@ -54,3 +54,5 @@ O saldo é retirado de `Portfolio.CurrentValue` (voltando para `BeginValue`). Ca
 - Selecione um intervalo de velas que corresponda ao ambiente de negociação original (por exemplo, prazos intradiários curtos para scalping).
 - Certifique-se de que o portfólio tenha um `PriceStep` válido para que a conversão de stop loss em preço absoluto funcione corretamente.
 - Ajuste `MoneyManagementRisk` com cuidado: valores mais altos levam a posições maiores devido ao cálculo `ceil(balance * risk / 10000)` herdado do especialista MQL.
+
+**Janela exata de sinal:** o maior máximo e o menor mínimo vêm dos **anteriores** `BreakoutWindow` candles concluídos, excluindo o atual. Compra: `EMA(FastLength) > SMA(SlowLength)` e `currentLow <= previousWindowLow`; venda: tendência oposta e `currentHigh >= previousWindowHigh`. Fecha long em `currentHigh > previousWindowHigh` e short em `currentLow < previousWindowLow`. É necessário aquecimento completo de ambos indicadores e canal. Com `StopLossPoints > 0`, `StartProtection` configura proteção efetiva.
