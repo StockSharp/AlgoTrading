@@ -1,86 +1,121 @@
+namespace StockSharp.Samples.Strategies;
+
 using System;
 using System.Collections.Generic;
 
-using StockSharp.Algo.Indicators;
+using StockSharp.Algo;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-namespace StockSharp.Samples.Strategies;
-
 /// <summary>
-/// Gap Reversion strategy - detects gap openings and trades mean reversion.
-/// Buys when candle opens below previous low (gap down reversion).
-/// Sells when candle opens above previous high (gap up reversion).
-/// Uses EMA as trend filter for exits.
+/// Enters against gaps between a new candle's open and the previous completed range.
+/// No EMA condition or automatic protection is part of the original gap rules.
 /// </summary>
 public class GapReversionStrategy : Strategy
 {
-	private readonly StrategyParam<int> _emaPeriod;
-	private readonly StrategyParam<DataType> _candleType;
+    private readonly StrategyParam<decimal> _minGapSize;
+    private readonly StrategyParam<decimal> _gapVolume;
+    private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevHigh;
-	private decimal _prevLow;
-	private bool _hasPrev;
+    private decimal? _previousHigh;
+    private decimal? _previousLow;
+    private DateTimeOffset? _observedBar;
+    private decimal? _bid;
+    private decimal? _ask;
 
-	public int EmaPeriod { get => _emaPeriod.Value; set => _emaPeriod.Value = value; }
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+    public decimal MinGapSize { get => _minGapSize.Value; set => _minGapSize.Value = value; }
+    public decimal GapVolume { get => _gapVolume.Value; set => _gapVolume.Value = value; }
+    public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	public GapReversionStrategy()
-	{
-		_emaPeriod = Param(nameof(EmaPeriod), 20)
-			.SetDisplay("EMA Period", "EMA trend filter", "Indicators");
+    public GapReversionStrategy()
+    {
+        _minGapSize = Param(nameof(MinGapSize), 1m)
+            .SetGreaterThanZero()
+            .SetDisplay("Minimum Gap", "Minimum open gap in price steps", "Signals");
+        _gapVolume = Param(nameof(GapVolume), 0.1m)
+            .SetGreaterThanZero()
+            .SetDisplay("Gap Volume", "Volume of each market gap entry", "Trading");
+        _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+            .SetDisplay("Candle Type", "Candle timeframe", "General");
+    }
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Candle timeframe", "General");
-	}
+    public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+        => [(Security, CandleType)];
 
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() => [(Security, CandleType)];
-	protected override void OnReseted() { base.OnReseted(); _prevHigh = 0m; _prevLow = 0m; _hasPrev = false; }
+    protected override void OnReseted()
+    {
+        base.OnReseted();
+        ClearState();
+    }
 
-	protected override void OnStarted2(DateTime time)
-	{
-		base.OnStarted2(time);
+    private void ClearState()
+    {
+        _previousHigh = null;
+        _previousLow = null;
+        _observedBar = null;
+        _bid = null;
+        _ask = null;
+    }
 
-		_hasPrev = false;
+    protected override void OnStarted2(DateTime time)
+    {
+        base.OnStarted2(time);
+        ClearState();
+        Volume = GapVolume;
 
-		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
+        // Quote subscriptions are optional: one price step is used as spread
+        // if the replay or provider does not expose both best prices.
+        foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+        {
+            var quotes = new Subscription(DataType.Level1, Security);
+            quotes.MarketData.BuildField = field;
+            SubscribeLevel1(quotes).Bind(ProcessQuote).Start();
+        }
 
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(ema, ProcessCandle)
-			.Start();
+        var candles = SubscribeCandles(CandleType);
+        candles.Bind(ProcessCandle).Start();
+    }
 
-		StartProtection(
-			takeProfit: new Unit(2, UnitTypes.Percent),
-			stopLoss: new Unit(1, UnitTypes.Percent)
-		);
-	}
+    private void ProcessQuote(Level1ChangeMessage quote)
+    {
+        if (quote.TryGetDecimal(Level1Fields.BestBidPrice) is decimal bid)
+            _bid = bid;
+        if (quote.TryGetDecimal(Level1Fields.BestAskPrice) is decimal ask)
+            _ask = ask;
+    }
 
-	private void ProcessCandle(ICandleMessage candle, decimal ema)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
+    private void ProcessCandle(ICandleMessage candle)
+    {
+        if (candle.State is not (CandleStates.Active or CandleStates.Finished))
+            return;
 
-		if (!_hasPrev)
-		{
-			_prevHigh = candle.HighPrice;
-			_prevLow = candle.LowPrice;
-			_hasPrev = true;
-			return;
-		}
+        // Process a bar just once, at its first update (Active if available).
+        // Finished-only feeds can only evaluate the opening gap retrospectively.
+        if (_observedBar != candle.OpenTime)
+        {
+            _observedBar = candle.OpenTime;
+            if (_previousHigh is decimal high && _previousLow is decimal low)
+            {
+                var step = Security?.PriceStep ?? 0m;
+                if (step > 0m)
+                {
+                    var spread = _bid is decimal bid && _ask is decimal ask && ask > bid
+                        ? ask - bid
+                        : step;
+                    var buffer = MinGapSize * step + spread;
+                    if (candle.OpenPrice > high + buffer)
+                        SellMarket(GapVolume);
+                    else if (candle.OpenPrice < low - buffer)
+                        BuyMarket(GapVolume);
+                }
+            }
+        }
 
-		var open = candle.OpenPrice;
-		var close = candle.ClosePrice;
-
-		// Gap down reversion - open below previous low, expect bounce
-		if (open < _prevLow && close > ema && Position == 0)
-			BuyMarket();
-		// Gap up reversion - open above previous high, expect pullback
-		else if (open > _prevHigh && close < ema && Position == 0)
-			SellMarket();
-
-		_prevHigh = candle.HighPrice;
-		_prevLow = candle.LowPrice;
-	}
+        if (candle.State == CandleStates.Finished)
+        {
+            _previousHigh = candle.HighPrice;
+            _previousLow = candle.LowPrice;
+        }
+    }
 }
