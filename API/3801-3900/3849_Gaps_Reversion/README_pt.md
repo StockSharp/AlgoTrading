@@ -51,3 +51,5 @@ Todos os parâmetros são registrados como `StrategyParam<T>` e suportam otimiza
 
 - StockSharp API com acesso aos dados da vela para o instrumento selecionado.
 - As cotações de nível 1 são opcionais, mas melhoram a detecção de spread.
+
+**Momento no replay:** o gap é verificado na primeira atualização de cada candle (`Active`, quando disponível). Se a fonte fornecer apenas candles `Finished`, o gap de abertura só será identificado no fechamento; isso não comprova execução no preço de abertura.
