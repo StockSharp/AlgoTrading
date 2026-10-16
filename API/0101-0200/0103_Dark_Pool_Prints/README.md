@@ -1,14 +1,7 @@
 # Dark Pool Prints Strategy
 [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
- 
-Dark Pool Prints tracks large off-exchange transactions that often precede sharp moves once the activity is revealed.
-Unusual volume hitting the tape can signal institutional positioning that hasn't yet impacted the regular market.
 
-Testing indicates an average annual return of about 46%. It performs best in the stocks market.
-
-The strategy enters in the same direction as heavy dark pool buying or selling, expecting follow-through when the rest of the market reacts.
-
-A small percent stop keeps risk contained and positions close if the anticipated momentum fails to appear.
+This example approximates unusual institutional-sized activity from **candle volume**, not real dark-pool trade reports. It cannot distinguish exchange trades from off-exchange executions. The implementation trades a price/SMA/volume-spike proxy, not a feed of dark-pool prints. Historical return claims are not demonstrated by this source or its BTC/TON replay.
 
 ### Executed trading rules (C# and Python)
 
