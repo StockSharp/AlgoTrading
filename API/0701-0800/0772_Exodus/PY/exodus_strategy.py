@@ -6,7 +6,7 @@ clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 clr.AddReference("StockSharp.BusinessEntities")
 
-from System import Decimal, TimeSpan
+from System import Decimal, TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, OrderStates, Unit, UnitTypes, Level1Fields
 from StockSharp.Algo.Indicators import AverageDirectionalIndex
 from StockSharp.Algo.Strategies import Strategy
@@ -158,15 +158,15 @@ class exodus_strategy(Strategy):
                          and self._previous_vwmo < 0 and oscillator >= 0)
             if long_signal and position <= 0:
                 self._configure_protection(self._atr)
-                self.BuyMarket(self.Volume + abs(position))
+                self.BuyMarket(self.Volume + Math.Abs(position))
             elif short_signal and position >= 0:
                 self._configure_protection(self._atr)
-                self.SellMarket(self.Volume + abs(position))
+                self.SellMarket(self.Volume + Math.Abs(position))
             elif zero_exit and position != 0:
                 if position > 0:
                     self.SellMarket(position)
                 else:
-                    self.BuyMarket(abs(position))
+                    self.BuyMarket(Math.Abs(position))
         self._previous_vwmo = oscillator
 
     def CreateClone(self):
