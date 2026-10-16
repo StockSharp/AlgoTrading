@@ -233,4 +233,115 @@ public abstract partial class StrategyTests
 			"Independent causal RSI/SMMA/EMA/CCI reference must see real entry and fill events.");
 		TestContext.WriteLine($"3410 reachable profile ({Extension}): {reference.ReadyBars} fully formed bars, {expectedOrders} entries, {fillCount} fills, {reference.IgnoredBars} gated signals.");
 	}
+	[TestMethod]
+	[TestCategory("Shard05")]
+	[DataRow(false)]
+	[DataRow(true)]
+	public async Task S3413_IndependentMedianLwmaEnvelopeBidEntriesAndActualFills(bool useTon)
+	{
+		const string key = "3413_5Mins_Envelopes";
+		var medians = new List<decimal>();
+		decimal? previousLow = null, previousHigh = null, lowerBand = null, upperBand = null;
+		decimal? bid = null, ask = null;
+		var errors = new List<string>();
+		var expectedCount = 0;
+		var orderCount = 0;
+		var fillCount = 0;
+		var position = 0m;
+		var readyQuotes = 0;
+		var rejectedQuotes = 0;
+		Sides? expectedSide = null;
+		const int period = 3;
+		const decimal deviation = 0.05m;
+		const decimal distancePoints = 1m;
+		decimal point = 0m;
+
+		await Replay(key, (strategy, alternate) =>
+		{
+			if (useTon)
+				strategy.Security = alternate;
+			foreach (var (name, value) in new (string, decimal)[]
+			{
+				("TradeVolume", 1m), ("DistancePoints", 140m), ("EnvelopePeriod", 3m),
+				("EnvelopeDeviationPercent", 0.05m), ("StopLossPoints", 250m),
+				("TakeProfitPoints", 0m), ("TrailingStopPoints", 120m), ("MaxSpreadPoints", 25m),
+			})
+			{
+				IsTrue(strategy.Parameters.ContainsKey(name), $"{key} is missing {name}.");
+				AreEqual(value, Convert.ToDecimal(strategy.Parameters[name].Value));
+			}
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "DistancePoints", distancePoints);
+			SetParam(strategy, "StopLossPoints", 0m);
+			SetParam(strategy, "TrailingStopPoints", 0m);
+			SetParam(strategy, "MaxSpreadPoints", 1000000m);
+			point = strategy.Security.PriceStep;
+
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished || candle.SecurityId != strategy.Security.Id.ToSecurityId())
+					return;
+				medians.Add((candle.HighPrice + candle.LowPrice) / 2m);
+				if (medians.Count > period)
+					medians.RemoveAt(0);
+				if (medians.Count < period)
+					return;
+				// Standalone linear-weighted mean, oldest=1, newest=3.
+				var middle = medians.Select((price, i) => price * (i + 1)).Sum() / 6m;
+				previousLow = candle.LowPrice;
+				previousHigh = candle.HighPrice;
+				lowerBand = middle * (1m - deviation / 100m);
+				upperBand = middle * (1m + deviation / 100m);
+			};
+			strategy.Level1Received += (_, message) =>
+			{
+				if (message.TryGetDecimal(Level1Fields.BestBidPrice) is decimal currentBid && currentBid > 0m)
+					bid = currentBid;
+				if (message.TryGetDecimal(Level1Fields.BestAskPrice) is decimal currentAsk && currentAsk > 0m)
+					ask = currentAsk;
+
+				expectedSide = null;
+				if (previousLow is not decimal low || previousHigh is not decimal high ||
+					lowerBand is not decimal lower || upperBand is not decimal upper ||
+					bid is not decimal b || ask is not decimal a || a < b)
+					return;
+				readyQuotes++;
+				if (a - b >= 1000000m * point || position != 0m)
+				{
+					rejectedQuotes++;
+					return;
+				}
+				if (low < lower - distancePoints * point && b < lower - distancePoints * point)
+					expectedSide = Sides.Buy;
+				else if (high > upper + distancePoints * point && b > upper + distancePoints * point)
+					expectedSide = Sides.Sell;
+				if (expectedSide is not null)
+					expectedCount++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				orderCount++;
+				if (order.Side != expectedSide || order.Volume != 1m || order.Type != OrderTypes.Market)
+					errors.Add($"{strategy.CurrentTime:O}: order {order.Side} x{order.Volume} must match the preceding finished candle's median LWMA envelope AND live bid.");
+				if (position != 0m)
+					errors.Add("A second entry was submitted before the first position closed.");
+				expectedSide = null;
+			};
+			strategy.OwnTradeReceived += (_, trade) =>
+			{
+				fillCount++;
+				position += trade.Order.Side == Sides.Buy ? trade.Trade.Volume : -trade.Trade.Volume;
+				if (position != strategy.Position)
+					errors.Add($"Trade-by-trade position {position} does not equal strategy position {strategy.Position}.");
+			};
+		}, TimeSpan.FromDays(31));
+
+		IsTrue(errors.Count == 0, string.Join(Environment.NewLine, errors.Take(12)));
+		IsTrue(orderCount > 0 && fillCount > 0 && readyQuotes > 0,
+			"Both implementations need an actual archive-backed order/fill justified by the independent envelope reference.");
+		// A quote can trigger the same signal many times until the exchange confirms the entry.
+		IsTrue(expectedCount >= orderCount);
+		TestContext.WriteLine($"3413 ({Extension}), TON={useTon}: {readyQuotes} ready quotes, {rejectedQuotes} ineligible, {expectedCount} matching quote signals, {orderCount} orders, {fillCount} fills.");
+	}
+
 }
