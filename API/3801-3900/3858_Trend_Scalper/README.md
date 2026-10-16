@@ -48,9 +48,11 @@ The balance is taken from `Portfolio.CurrentValue` (falling back to `BeginValue`
 ## Implementation Notes
 - Indicator chaining relies on the high-level `SubscribeCandles().Bind(...)` workflow; no manual series buffering is required.
 - Comments in the code were added in English to match the repository guidelines.
-- No unit tests were modified; the focus of this conversion is the strategy and its accompanying documentation.
+- Behavioural contract tests for this strategy live in `Tests/StrategyTests.Point1Part10.cs`; they still require an executed BTC/TON replay.
 
 ## Usage Tips
 - Select a candle interval that matches the original trading environment (e.g., short intraday time frames for scalping).
 - Ensure the portfolio has a valid `PriceStep` so the stop-loss conversion to absolute price works correctly.
 - Adjust `MoneyManagementRisk` carefully: higher values lead to larger positions because of the `ceil(balance * risk / 10000)` calculation inherited from the MQL expert.
+
+**Exact signal window:** The highest high and lowest low are computed from the **previous** `BreakoutWindow` fully completed candles, excluding the signal candle. On a new close, a long requires `EMA(FastLength) > SMA(SlowLength)` and `currentLow <= previousWindowLow`; a short requires the reverse trend and `currentHigh >= previousWindowHigh`. Existing longs exit when `currentHigh > previousWindowHigh`, and shorts when `currentLow < previousWindowLow`. MA and channel warm-up are mandatory. An actual protective stop is also configured through `StartProtection` when `StopLossPoints > 0`. Default mode `0` uses `FixedVolume`; other modes use the documented rounded risk formula and instrument volume limits.
