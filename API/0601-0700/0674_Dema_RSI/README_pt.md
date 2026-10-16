@@ -13,3 +13,8 @@ Esta estratégia opera os cruzamentos entre o RSI de uma média móvel exponenci
 - Usar sessão
 - Início da sessão
 - Fim da sessão
+
+### Regras reais de RSI(DEMA)
+
+Padrões: `CandleType=1m`, `MaLength=20`, `RsiLength=14`, `RsiSmoothingLength=5`, `TakeProfitPoints=0`, `TrailStopPoints=0`, `UseSession=false`, `SessionStart=09:00`, `SessionEnd=17:00`. Em candle concluído: `EMA1=EMA(Close,20)`, `EMA2=EMA(EMA1,20)`, `DEMA=2×EMA1−EMA2`, `R=RSI(DEMA,14)`, `S=SMA(R,5)`. Compra quando antes `R <= S` e agora `R > S`; vende quando antes `R >= S` e agora `R < S`, podendo inverter posição com `Volume + abs(Position)`. Com `UseSession=true`, apenas entradas dentro de `[SessionStart,SessionEnd)`, inclusive sessões noturnas; proteções encerram independentemente do horário. `TakeProfitPoints` e `TrailStopPoints` são **ticks mínimos de preço**: valores positivos ativam TP e trailing nativos em distância absoluta, zero desativa. O README original não detalhava defaults numéricos, definidos nesta implementação. O cruzamento EMA120/450 anterior não satisfazia o contrato.
+
