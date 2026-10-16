@@ -468,4 +468,40 @@ public abstract partial class StrategyTests
             expectedStopPercent: 1m);
     }
 
+    [TestMethod]
+    [TestCategory("Shard03")]
+    public async Task Point1Part01_0675_ScalpingRequiresLongGapAndVolume()
+    {
+        var buys = 0;
+        var exits = 0;
+        await Replay("0675_Demo_GPT_Day_Trading_Scalping", (strategy, _) =>
+        {
+            AreEqual(20, Convert.ToInt32(strategy.Parameters["EmaLength"].Value));
+            AreEqual(20, Convert.ToInt32(strategy.Parameters["VolumeLookback"].Value));
+            AreEqual(TimeSpan.FromMinutes(1).TimeFrame(), strategy.Parameters["CandleType"].Value);
+
+            strategy.OrderRegistering += order =>
+            {
+                if (strategy.Position == 0m)
+                {
+                    AreEqual(Sides.Buy, order.Side,
+                        "The two-green candle setup must never open a short.");
+                    buys++;
+                }
+                else if (strategy.Position > 0m)
+                {
+                    AreEqual(Sides.Sell, order.Side);
+                    AreEqual(strategy.Position, order.Volume,
+                        "The two-red candle exit must flatten the actual residual long.");
+                    exits++;
+                }
+                else
+                    Fail("The strategy must not hold a short position.");
+            };
+        }, replayDuration: TimeSpan.FromDays(31));
+
+        IsTrue(buys > 0 && exits > 0,
+            "The default real archive must exercise two-green entries and two-red flatten fills.");
+    }
+
 }
