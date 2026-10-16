@@ -210,6 +210,74 @@ public abstract partial class StrategyTests
         TestContext.WriteLine($"{key}: {orders} orders, {fills} fills, {entries} entry signals and {exits} closing signals.");
     }
 
+
+    [TestMethod]
+    [TestCategory("Shard07")]
+    public async Task S3855_FridayRequiresPriorDailyDirectionAndOneEntryAtHourSeven()
+    {
+        const string key = "3855_E_Friday_Session";
+        var entries = 0;
+        var fills = 0;
+        var seenDates = new HashSet<DateTime>();
+        (DateTime date, decimal open, decimal close)? previousDaily = null;
+        var violations = new List<string>();
+
+        await Replay(key, (strategy, _) =>
+        {
+            foreach (var (name, value) in new (string, object)[]
+            {
+                ("HourOpen", 7), ("HourClose", 19), ("StopLossPoints", 75m),
+                ("TakeProfitPoints", 0m), ("TrailingStopPoints", 60m),
+                ("TrailingStepPoints", 5m), ("UseClosePositions", true),
+                ("UseTrailing", true), ("ProfitTrailing", true),
+            })
+            {
+                IsTrue(strategy.Parameters.TryGetValue(name, out var p), $"Missing {name}.");
+                if (value is bool)
+                    AreEqual(value, p.Value, name);
+                else
+                    AreEqual(Convert.ToDecimal(value), Convert.ToDecimal(p.Value), name);
+            }
+            AreEqual(TimeSpan.FromDays(1).TimeFrame(), strategy.Parameters["DailyCandleType"].Value);
+            AreEqual(TimeSpan.FromMinutes(1).TimeFrame(), strategy.Parameters["IntradayCandleType"].Value);
+
+            strategy.CandleReceived += (_, candle) =>
+            {
+                if (candle.State != CandleStates.Finished)
+                    return;
+                if (candle.CloseTime - candle.OpenTime >= TimeSpan.FromHours(23))
+                    previousDaily = (candle.OpenTime.Date, candle.OpenPrice, candle.ClosePrice);
+            };
+            strategy.OrderRegistering += order =>
+            {
+                if (order.Comment != "EFriday entry")
+                    return;
+                entries++;
+                var now = strategy.CurrentTime;
+                if (now.DayOfWeek != DayOfWeek.Friday || now.Hour != 7)
+                    violations.Add($"Entry outside Friday at 07:00 hour: {now:O}.");
+                if (!seenDates.Add(now.Date))
+                    violations.Add($"Duplicate entry on Friday {now:yyyy-MM-dd}.");
+                if (previousDaily is not { } day || day.date != now.Date.AddDays(-1))
+                    violations.Add($"Entry missing the previous completed Thursday daily candle on {now:yyyy-MM-dd}.");
+                else if (day.close == day.open ||
+                         order.Side != (day.close < day.open ? Sides.Buy : Sides.Sell))
+                    violations.Add($"Wrong contrarian side {order.Side} for Thursday {day.open}/{day.close}.");
+                if (order.Type != OrderTypes.Market)
+                    violations.Add("Friday entry must be market.");
+            };
+            strategy.OwnTradeReceived += (_, trade) =>
+            {
+                if (trade.Order?.Comment == "EFriday entry" && trade.Trade is not null)
+                    fills++;
+            };
+        }, TimeSpan.FromDays(31));
+
+        AreEqual(0, violations.Count, string.Join(Environment.NewLine, violations.Take(12)));
+        IsTrue(entries > 0 && fills > 0, "The archive must exercise Friday entries and actual fills.");
+        TestContext.WriteLine($"{key}: {entries} Friday entries, {fills} actual fills.");
+    }
+
     private const string Point1Part10GapKey = "3849_Gaps_Reversion";
 
     [TestMethod]
