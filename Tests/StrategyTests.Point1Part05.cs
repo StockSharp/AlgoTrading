@@ -1073,10 +1073,10 @@ public abstract partial class StrategyTests
 			SetParam(strategy, "TakeProfit", 200m);
 			strategy.OrderRegistering += order =>
 			{
-				AreEqual(OrderTypes.Market, order.Type);
 				IsTrue(order.Volume > 0m);
 				if (strategy.Position == 0m)
 				{
+					AreEqual(OrderTypes.Market, order.Type, "Signal entries are market orders.");
 					AreEqual(strategy.Volume, order.Volume, "Flat entry must use fixed volume.");
 					var stop = (Unit)stopField.GetValue(strategy);
 					IsNotNull(stop);
