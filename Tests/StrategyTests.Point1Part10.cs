@@ -278,6 +278,84 @@ public abstract partial class StrategyTests
         TestContext.WriteLine($"{key}: {entries} Friday entries, {fills} actual fills.");
     }
 
+
+    [TestMethod]
+    [TestCategory("Shard02")]
+    public async Task S3858_TrendScalperNeedsPriorBandSweepAndMovingAverageAgreement()
+    {
+        const string key = "3858_Trend_Scalper";
+        var candles = new Queue<(decimal close, decimal high, decimal low)>();
+        decimal? ema = null;
+        Sides? signal = null;
+        var entries = 0;
+        var fills = 0;
+        var violations = new List<string>();
+        await Replay(key, (strategy, _) =>
+        {
+            foreach (var (name, value) in new (string, decimal)[]
+            {
+                ("FastLength", 6m), ("SlowLength", 12m),
+                ("BreakoutWindow", 6m), ("FixedVolume", 0.1m),
+                ("MoneyManagementMode", 0m), ("MoneyManagementRisk", 40m),
+                ("StopLossPoints", 50m),
+            })
+            {
+                IsTrue(strategy.Parameters.TryGetValue(name, out var p), $"Missing {name}.");
+                AreEqual(value, Convert.ToDecimal(p.Value), name);
+            }
+            AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+            strategy.CandleReceived += (_, candle) =>
+            {
+                if (candle.State != CandleStates.Finished)
+                    return;
+                signal = null;
+                var prior = candles.ToArray();
+                candles.Enqueue((candle.ClosePrice, candle.HighPrice, candle.LowPrice));
+                if (candles.Count > 12)
+                    candles.Dequeue();
+                if (candles.Count < 6)
+                    return;
+                var newest = candles.ToArray();
+                if (newest.Length == 6)
+                    ema = newest.Average(x => x.close);
+                else
+                    ema += (candle.ClosePrice - ema.Value) * 2m / 7m;
+                if (prior.Length < 12)
+                    return;
+                var slow = prior.TakeLast(11).Sum(x => x.close) / 12m + candle.ClosePrice / 12m;
+                var band = prior.TakeLast(6).ToArray();
+                if (strategy.Position == 0m && ema > slow && candle.LowPrice <= band.Min(x => x.low))
+                    signal = Sides.Buy;
+                else if (strategy.Position == 0m && ema < slow && candle.HighPrice >= band.Max(x => x.high))
+                    signal = Sides.Sell;
+            };
+            strategy.OrderRegistering += order =>
+            {
+                if (order.Comment != "Trend scalper entry")
+                    return;
+                entries++;
+                if (order.Side != signal || order.Type != OrderTypes.Market)
+                    violations.Add($"Entry without preceding breakout and trend filter at {strategy.CurrentTime:O}.");
+                var volume = 0.1m;
+                if (strategy.Security.VolumeStep is decimal step && step > 0m)
+                    volume = decimal.Floor(volume / step) * step;
+                if (strategy.Security.MinVolume is decimal min && min > 0m)
+                    volume = Math.Max(volume, min);
+                if (order.Volume != volume)
+                    violations.Add($"Wrong fixed-volume market entry: {order.Volume}; expected {volume}.");
+                signal = null;
+            };
+            strategy.OwnTradeReceived += (_, trade) =>
+            {
+                if (trade.Trade is not null && trade.Order?.Comment == "Trend scalper entry")
+                    fills++;
+            };
+        }, TimeSpan.FromDays(31));
+
+        AreEqual(0, violations.Count, string.Join(Environment.NewLine, violations.Take(12)));
+        IsTrue(entries > 0 && fills > 0, "Require executable trend-and-band sweeps with real fills.");
+    }
+
     private const string Point1Part10GapKey = "3849_Gaps_Reversion";
 
     [TestMethod]
