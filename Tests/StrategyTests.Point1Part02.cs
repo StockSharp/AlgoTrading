@@ -214,4 +214,109 @@ public abstract partial class StrategyTests
 		IsTrue(ticks.elapsed <= level1.elapsed * 8 + TimeSpan.FromSeconds(30),
 			$"Ticks ({ticks.elapsed.TotalSeconds:F2}s) costs disproportionately more than Level1 ({level1.elapsed.TotalSeconds:F2}s) for the same 25-price-unit bricks.");
 	}
+
+	[TestMethod]
+	[TestCategory("Shard03")]
+	[DataRow(false)]
+	[DataRow(true)]
+	public async Task S0779_BollingerBreakoutsAndBandReentryExitsMatchIndependentBands(bool secondary)
+	{
+		const int length = 10;
+		const decimal deviation = 1.5m;
+		var window = new Queue<decimal>();
+		decimal? previousClose = null;
+		decimal? previousUpper = null;
+		decimal? previousLower = null;
+		var position = 0m;
+		Order pending = null;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var actualOrders = 0;
+		var fills = 0;
+		var entriesLong = 0;
+		var entriesShort = 0;
+		var exits = 0;
+		var ignored = 0;
+		var failures = new List<string>();
+
+		await Replay("0779_Fancy_Bollinger_Bands", (strategy, other) =>
+		{
+			AreEqual(20, strategy.Parameters["BollingerPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["DeviationMultiplier"].Value));
+			AreEqual(TimeSpan.FromMinutes(1).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			if (secondary) strategy.Security = other;
+			SetParam(strategy, "BollingerPeriod", length);
+			SetParam(strategy, "DeviationMultiplier", deviation);
+			strategy.Volume = 1m;
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished || candle.SecurityId != strategy.Security.Id.ToSecurityId())
+					return;
+				if (expectedSide is not null)
+					failures.Add("Eligible Bollinger entry or band reentry exit not submitted.");
+				expectedSide = null;
+				window.Enqueue(candle.ClosePrice);
+				if (window.Count > length)
+					window.Dequeue();
+				if (window.Count < length)
+					return;
+				var mean = window.Average();
+				var sigma = (decimal)Math.Sqrt((double)(window.Sum(price => (price - mean) * (price - mean)) / length));
+				var upper = mean + deviation * sigma;
+				var lower = mean - deviation * sigma;
+				var hasPreviousBands = previousUpper is not null && previousLower is not null && previousClose is not null;
+				if (hasPreviousBands && (pending is null || pending.State is OrderStates.Done or OrderStates.Failed))
+				{
+					if (position > 0m && previousClose >= previousUpper && candle.ClosePrice <= upper)
+					{
+						expectedSide = Sides.Sell;
+						expectedVolume = position;
+						exits++;
+					}
+					else if (position < 0m && previousClose <= previousLower && candle.ClosePrice >= lower)
+					{
+						expectedSide = Sides.Buy;
+						expectedVolume = -position;
+						exits++;
+					}
+					else if (position == 0m && previousClose <= previousUpper && candle.ClosePrice > upper)
+					{
+						expectedSide = Sides.Buy;
+						expectedVolume = strategy.Volume;
+						entriesLong++;
+					}
+					else if (position == 0m && previousClose >= previousLower && candle.ClosePrice < lower)
+					{
+						expectedSide = Sides.Sell;
+						expectedVolume = strategy.Volume;
+						entriesShort++;
+					}
+					else ignored++;
+				}
+				previousUpper = upper;
+				previousLower = lower;
+				previousClose = candle.ClosePrice;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				actualOrders++;
+				if (order.Side != expectedSide || order.Volume != expectedVolume
+					|| order.Type != OrderTypes.Market || position != strategy.Position)
+					failures.Add($"{strategy.CurrentTime:O}: unexpected {order.Side}/{order.Volume}; expected {expectedSide}/{expectedVolume}.");
+				expectedSide = null;
+				pending = order;
+			};
+			strategy.OwnTradeReceived += (_, trade) =>
+			{
+				fills++;
+				position += trade.Order.Side == Sides.Buy ? trade.Trade.Volume : -trade.Trade.Volume;
+			};
+		}, TimeSpan.FromDays(31), TimeSpan.FromDays(1));
+
+		IsTrue(failures.Count == 0, string.Join(Environment.NewLine, failures.Take(12)));
+		AreEqual(entriesLong + entriesShort + exits, actualOrders, "Orders must exactly match independent bands and crossover edges.");
+		IsTrue(fills > 0 && entriesLong > 0 && entriesShort > 0 && exits > 0 && ignored > 0,
+			"Packaged month must exercise both breakout directions, re-entry exits and quiet bars.");
+		TestContext.WriteLine($"0779 {Extension} TON={secondary}: {entriesLong} longs, {entriesShort} shorts, {exits} exits, {fills} fills, {ignored} no-signal candles.");
+	}
 }
