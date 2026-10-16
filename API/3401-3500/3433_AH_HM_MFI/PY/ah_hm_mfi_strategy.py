@@ -7,17 +7,17 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import RelativeStrengthIndex
+from StockSharp.Algo.Indicators import MoneyFlowIndex
 from StockSharp.Algo.Strategies import Strategy
 
 class ah_hm_mfi_strategy(Strategy):
     def __init__(self):
         super(ah_hm_mfi_strategy, self).__init__()
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(60)))
-        self._mfi_period = self.Param("MfiPeriod", 14)
-        self._mfi_low = self.Param("MfiLow", 35.0)
-        self._mfi_high = self.Param("MfiHigh", 65.0)
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30)))
+        self._mfi_period = self.Param("MfiPeriod", 47)
+        self._mfi_low = self.Param("MfiLow", 40.0)
+        self._mfi_high = self.Param("MfiHigh", 60.0)
         self._signal_cooldown_candles = self.Param("SignalCooldownCandles", 8)
 
         self._candles_since_trade = 8
@@ -70,11 +70,11 @@ class ah_hm_mfi_strategy(Strategy):
         super(ah_hm_mfi_strategy, self).OnStarted2(time)
         self._candles_since_trade = self.SignalCooldownCandles
 
-        rsi = RelativeStrengthIndex()
-        rsi.Length = self.MfiPeriod
+        mfi = MoneyFlowIndex()
+        mfi.Length = self.MfiPeriod
 
         subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(rsi, self._process_candle).Start()
+        subscription.Bind(mfi, self._process_candle).Start()
 
     def _process_candle(self, candle, mfi_value):
         if candle.State != CandleStates.Finished:
