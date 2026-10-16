@@ -54,3 +54,5 @@ El saldo se toma de `Portfolio.CurrentValue` (regresando a `BeginValue`). Si el 
 - Seleccione un intervalo de vela que coincida con el entorno comercial original (por ejemplo, marcos de tiempo intradiarios cortos para el especulación).
 - Asegúrese de que la cartera tenga un `PriceStep` válido para que la conversión de stop-loss a precio absoluto funcione correctamente.
 - Ajuste `MoneyManagementRisk` con cuidado: los valores más altos conducen a posiciones más grandes debido al cálculo `ceil(balance * risk / 10000)` heredado del experto MQL.
+
+**Ventana exacta:** los máximos y mínimos proceden de las `BreakoutWindow` velas *anteriores* terminadas, excluida la vela actual. Compra: `EMA(FastLength) > SMA(SlowLength)` y `currentLow <= previousWindowLow`; venta: tendencia contraria y `currentHigh >= previousWindowHigh`. El largo se cierra con `currentHigh > previousWindowHigh` y el corto con `currentLow < previousWindowLow`. Se exige calentamiento completo. Si `StopLossPoints > 0`, `StartProtection` habilita un stop real.
