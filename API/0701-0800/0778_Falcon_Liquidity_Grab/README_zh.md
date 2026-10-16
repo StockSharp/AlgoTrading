@@ -13,3 +13,5 @@
 - **指标**：SMA、Highest、Lowest
 - **时间框架**：15 分钟（默认）
 - **止损**：`StopLossPoints` tick，`TakeProfitMultiplier`× 止损距离
+
+**精确规则与默认值：**`SwingPeriod=20`、`TrendLength=50`、`StopLossPoints=50`、`TakeProfitMultiplier=2`、`UseSession=true`、`SessionStart=07:00`、`SessionEnd=21:00`（UTC）、`CandleType=15分钟`。信号K线完成后，将其高低点与**此前**N根已完成K线的极值比较，不包括当前信号K线。Low严格低于此前最低价且Close高于SMA时做多；High严格高于此前最高价且Close低于SMA时做空。SMA包括当前信号K线。只有空仓时且在UTC时间窗口内开仓（包含起点、不包含终点，支持跨午夜）。基于Level1买卖报价的原生市价保护可在K线之间触发：止损距离=`StopLossPoints × Security.PriceStep`，止盈距离=`TakeProfitMultiplier × 止损距离`。不会因相反收盘信号直接平仓。

@@ -13,3 +13,5 @@
 - **インジケーター**: SMA、Highest、Lowest
 - **時間軸**: 15分（デフォルト）
 - **ストップ**: `StopLossPoints` ティック、`TakeProfitMultiplier`× ストップ距離
+
+**厳密な条件と初期値:** `SwingPeriod=20`、`TrendLength=50`、`StopLossPoints=50`、`TakeProfitMultiplier=2`、`UseSession=true`、`SessionStart=07:00`、`SessionEnd=21:00` (UTC)、`CandleType=15分`。確定したシグナル足の高安を、その足を除く**過去**N本の高安と比較します。Lowが過去最安値より低くCloseがSMAより高ければロング、Highが過去最高値より高くCloseがSMAより低ければショート。SMAにはシグナル足を含めます。新規エントリーはノーポジションでUTC時間窓内のみ（開始を含み終了を含まない、日跨ぎ対応）。Level1のbid/askによるネイティブ成行保護は足の間でも動き、ストップ幅は`StopLossPoints × Security.PriceStep`、利確幅は`TakeProfitMultiplier × ストップ幅`。反対シグナルでの終値決済はありません。
