@@ -5,7 +5,7 @@ Source: user-provided `TZ-01.md`. Exact strategy keys only; **315** keys, **630 
 ## Current results
 
 - **0333_Keltner_Seasonal_Filter** — partial: C#/Python source was inspected; the use of `candle.OpenTime.Month` was confirmed in both implementations. All seven localized READMEs now specify formulas, calendar gating, manual bar-close stop semantics, and entry/exit rules. Two test methods were authored in `Tests/StrategyTests.Point1Part01.cs`; **neither compiled nor executed here**. The Python two-start-month replay is unverified. The packaged BTC/TON fixture spans **March 1–31, 2024** (StockSharp.Configuration/Paths.cs), so it cannot observe a forbidden-season candle or a September short. An independent positive/forbidden breakout fixture and actual stop-fill proof are still outstanding. **Status: not complete.**
-- The remaining **308** exact keys (all except 0333, 0103, 0121, 0122, 0303, 0305 and 0307) lack authored regression tests in this branch. None of these seven strategies is certified complete: no branch build or history replay was executed. 0302 and 0352 have additionally been inspected statically, revealing discrepancies but requiring an independent fix and executable proof.
+- The remaining **305** exact keys (all except 0333, 0103, 0121, 0122, 0303, 0305, 0307, 0661, 0665 and 0666) lack authored regression tests in this branch. None of these ten strategies is certified complete: no branch build or history replay was executed. 0302 and 0352 have additionally been inspected statically, revealing discrepancies but requiring an independent fix and executable proof.
 - No red → green result was obtained; no build, MSTest or Python replay results are available. No history was downloaded or modified. No other part of the master TZ was started.
 - Environment limitation: the linked GitHub source is accessible through the connector, but this sandbox has neither `dotnet` nor the StockSharp project/reference checkout and packaged BTC/TON history. Reproducing a full test run here is therefore not possible.
 - Workspace rules `AGENTS.md` and `configs/instructions.md` were not present in the published main checkout accessible through GitHub; verify them against `D:\stocksharp` before integrating these edits.
@@ -77,6 +77,24 @@ dotnet test Tests/Tests.csproj --filter 'FullyQualifiedName~PythonTests.Point1Pa
 - 0321 source performs no native protection. The only manual cloud/crossover exits are evaluated on finished candles, while localized READMEs imply ATR-based protective stops. Tests must independently distinguish these, not mislabel an opposite order as an ATR stop.
 - 0351 and 0353, in both languages, are OHLC-derived two-instrument synthetic Z-score examples rather than the published fundamental equity factors. No balance sheets, equity universe, accrual ratios, asset growth or annual factor ranking are available from the permitted BTC/TON replay. Restoring the published factor without importing non-permitted data cannot be certified; no fabricated fundamental fixtures were introduced.
 - 0103, 0121 and 0122 localized introductions have been aligned with actual proxy data and *monthly* calendars, removing conflicting unverified return claims.
+
+
+## New substantive algorithm replacements (0661, 0665, 0666)
+
+All three assigned examples had the identical generic 120/450 EMA-cross trading implementation in both languages even though their seven README translations describe unrelated strategies. Source-level expectation was red. Regression tests were committed before production fixes, but **no actual red or green MSTest execution** was possible in this environment.
+
+- **0661:** `Point1Part01_0661_WickLengthOnlyLongAndExitAfterHold` exercises default real minute-candle long-only entries and 18-bar position exits, asserting exit volume. Remaining: independent VWMA/offset oracle, compilations, actual fills.
+- **0665:** `Point1Part01_0665_BollingerDcaOnlyAccumulatesLongs` and `Point1Part01_0665_MonthlyModeClosesOnSpecifiedDate` cover Bollinger/combined defaults and alternative monthly/end-date profiles.
+- **0666:** `Point1Part01_0666_DcaBuysFixedQuoteAmount` and `Point1Part01_0666_WeekdayAndEndDateModes` exercise quote-valued scheduled buys, weekday gating and end-date liquidation.
+
+These tests inherit in both `CSharpTests` and `PythonTests`. Serial filtered commands:
+
+```powershell
+dotnet test Tests/Tests.csproj --filter 'FullyQualifiedName~CSharpTests.Point1Part01_0661|FullyQualifiedName~CSharpTests.Point1Part01_0665|FullyQualifiedName~CSharpTests.Point1Part01_0666' -- RunConfiguration.TestSessionTimeout=900000
+dotnet test Tests/Tests.csproj --filter 'FullyQualifiedName~PythonTests.Point1Part01_0661|FullyQualifiedName~PythonTests.Point1Part01_0665|FullyQualifiedName~PythonTests.Point1Part01_0666' -- RunConfiguration.TestSessionTimeout=900000
+```
+
+Default BTC/TON historical data and `requireTrades` behavior are not altered. No neighboring repository, CI file or shared test inventory is changed. **Every modified strategy remains marked incomplete** until actual independent order/fill verification.
 
 ## Per-key coverage
 
@@ -185,12 +203,12 @@ dotnet test Tests/Tests.csproj --filter 'FullyQualifiedName~PythonTests.Point1Pa
 | `0657_Daily_Play_Ace_Spectrum` | проверка замечаний | Не проверено: требуется независимая проверка контракта и реальных исполнений C#/Python по назначенному замечанию. |
 | `0659_DataChart` | проверка замечаний | Не проверено: требуется независимая проверка контракта и реальных исполнений C#/Python по назначенному замечанию. |
 | `0660_Day_Trading_Risk_Management` | проверка замечаний | Не проверено: требуется независимая проверка контракта и реальных исполнений C#/Python по назначенному замечанию. |
-| `0661_Daytrading_ES_Wick_Length` | проверка замечаний | Не проверено: требуется независимая проверка контракта и реальных исполнений C#/Python по назначенному замечанию. |
+| `0661_Daytrading_ES_Wick_Length` | проверка замечаний | В обеих версиях вместо шаблонного EMA-кроссовера реализованы сумма теней свечи, VWMA20 предыдущих свечей с весами TotalVolume, проверяемый порог +10 минимальных ценовых шагов, только лонг и закрытие фактического остатка через 18 закрытых свечей. Параметры и формулы отражены в 7 README, добавлен тест обеих версий с фактическими ордерами; **компиляция/тесты не запускались**. Ожидаются независимая проверка значений VWMA и реальные входы/выходы. |
 | `0662_DCA_Simulation_for_CryptoCommunity` | проверка замечаний | Не проверено: требуется независимая проверка контракта и реальных исполнений C#/Python по назначенному замечанию. |
 | `0663_DCA_2` | проверка замечаний | Не проверено: требуется независимая проверка контракта и реальных исполнений C#/Python по назначенному замечанию. |
 | `0664_DCA_with_Hedging` | проверка замечаний | Не проверено: требуется независимая проверка контракта и реальных исполнений C#/Python по назначенному замечанию. |
-| `0665_DCA_Mean_Reversion_Bollinger_Band` | проверка замечаний | Не проверено: требуется независимая проверка контракта и реальных исполнений C#/Python по назначенному замечанию. |
-| `0666_DCA` | проверка замечаний | Не проверено: требуется независимая проверка контракта и реальных исполнений C#/Python по назначенному замечанию. |
+| `0665_DCA_Mean_Reversion_Bollinger_Band` | проверка замечаний | В C#/Python заменён чужой EMA-кроссовер: 20/2 Bollinger, покупка при пересечении Close ниже нижней полосы, раз в месяц либо оба режима; 200 единиц котируемой валюты, округление вниз до VolumeStep; закрытие всей позиции в CloseDate. 7 README обновлены, тесты default и monthly/end-date добавлены; **компиляция/исполнения на BTC/TON не проверены**. |
+| `0666_DCA` | проверка замечаний | В C#/Python заменён EMA-кроссовер на DCA: 200 котируемых единиц, 5m, каждый 72-й завершённый бар либо раз в неделю по выбранному дню, учёт VolumeStep и диапазона дат; опциональная полная ликвидация EndDate. 7 README обновлены; тесты interval и Wednesday/EndDate добавлены, **не запускались**. |
 | `0668_DebugConsole` | проверка замечаний | Не проверено: требуется независимая проверка контракта и реальных исполнений C#/Python по назначенному замечанию. |
 | `0674_Dema_RSI` | проверка замечаний | Не проверено: требуется независимая проверка контракта и реальных исполнений C#/Python по назначенному замечанию. |
 | `0675_Demo_GPT_Day_Trading_Scalping` | проверка замечаний | Не проверено: требуется независимая проверка контракта и реальных исполнений C#/Python по назначенному замечанию. |
