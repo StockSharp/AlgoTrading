@@ -186,6 +186,8 @@ public abstract partial class StrategyTests
 						errors.Add("Renko bricks were delivered in noncausal time order.");
 					previousBrickTime = candle.OpenTime;
 					var movement = candle.ClosePrice - candle.OpenPrice;
+					if (Math.Abs(Math.Abs(movement) - 25m) > (strategy.Security.PriceStep ?? 0m))
+						errors.Add($"Incomplete or oversized Renko brick: open={candle.OpenPrice}, close={candle.ClosePrice}, box=25.");
 					if (movement > 0m) up++;
 					else if (movement < 0m) down++;
 					else errors.Add("A finished Renko brick has zero direction.");
