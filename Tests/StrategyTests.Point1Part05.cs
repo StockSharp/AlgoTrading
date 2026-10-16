@@ -987,15 +987,18 @@ public abstract partial class StrategyTests
 				IsTrue(order.Volume > 0m);
 				if (order.Side == Sides.Buy)
 				{
-					AreEqual(strategy.Volume, order.Volume);
+					var expectedBuy = strategy.Position < 0m
+						? -strategy.Position + strategy.Volume : strategy.Volume;
+					AreEqual(expectedBuy, order.Volume,
+						$"Buy order sizing: position={strategy.Position}, side={order.Side}, allowSell={strategy.Parameters["AllowSell"].Value}.");
 					entries++;
 				}
 				else
 				{
 					IsTrue(strategy.Position > 0m,
-						"AllowSell=false prohibits opening a short.");
+						$"AllowSell=false prohibits opening shorts: position={strategy.Position}, volume={order.Volume}, flags={strategy.Parameters["AllowSell"].Value}.");
 					AreEqual(strategy.Position, order.Volume,
-						"Exit size must equal the actual long position.");
+						$"Sell closing volume should match actual position {strategy.Position}; submitted {order.Volume}; flags={strategy.Parameters["AllowSell"].Value}.");
 					exits++;
 				}
 			};
