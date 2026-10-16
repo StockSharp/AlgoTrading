@@ -41,6 +41,14 @@ Both C# and Python were fetched and independently inspected for the following ei
 - Seven localized README files now define the same lookback, time basis, defaults and protection distances.
 - **Not verified:** actual code compilation, Python interop, full one-month archive entry/stop fills and correctness/absence of duplicate orders. These are blockers, not successes.
 
+### 0781_Fibonacci_Bollinger_Bands
+
+- The old C# and Python classes were unrelated generic EMA(120/450) templates.
+- Added an independent rolling-Bollinger / **previous-swing-extrema** archive oracle in `S0781_IndependentFibBandEntryAndPriorSwingHighExit` before changing the implementations.
+- Replaced both languages with a **long-only** entry (close below lower Bollinger band and above Fibonacci price) and a full exit at the upper Bollinger band or previous swing high, with an order-state guard and reset.
+- All seven localized README files now define default periods, price formula and lookback windows. The prior ambiguous term “61.8% extension” is explicitly disambiguated as a fraction **within** the preceding swing, not a projection beyond it.
+- **Not verified**: compilation, test-red-before-fix, test-green-after-fix, trade/order/fill sufficiency, exit coverage and translated text validation in CI.
+
 ## Shared files touched (merge coordination)
 - `Tests/StrategyInventory.cs`: only add `1186_Price_and_Volume_Breakout_Buy` to Overrides. No other keys changed.
 - `Tests/Tests.csproj`: unchanged.
@@ -55,6 +63,7 @@ timeout 900s dotnet test Tests/Tests.csproj -m:1 --filter 'FullyQualifiedName~S1
 timeout 900s dotnet test Tests/Tests.csproj -m:1 --filter 'FullyQualifiedName~S1243_' --blame-hang-timeout 00:01:00 -- RunConfiguration.MaxCpuCount=1
 timeout 900s dotnet test Tests/Tests.csproj -m:1 --filter 'FullyQualifiedName~S0779_' --blame-hang-timeout 00:01:00 -- RunConfiguration.MaxCpuCount=1
 timeout 900s dotnet test Tests/Tests.csproj -m:1 --filter 'FullyQualifiedName~S0778_' --blame-hang-timeout 00:01:00 -- RunConfiguration.MaxCpuCount=1
+timeout 900s dotnet test Tests/Tests.csproj -m:1 --filter 'FullyQualifiedName~S0781_' --blame-hang-timeout 00:01:00 -- RunConfiguration.MaxCpuCount=1
 ```
 
 **Execution results:** not run (missing SDK, sibling core, and packaged history in current environment). C# / Python and README structure/translation changes therefore await actual validation.
@@ -72,7 +81,7 @@ timeout 900s dotnet test Tests/Tests.csproj -m:1 --filter 'FullyQualifiedName~S0
 | `0778_Falcon_Liquidity_Grab` | Investigate note | SOURCE FIX + ARCHIVE ORACLE WRITTEN — C#/Python wick/SMA/UTC/native quote protection and seven READMEs; no red/green runtime or actual stop fill verified |
 | `0779_Fancy_Bollinger_Bands` | Investigate note | SOURCE FIX + ORACLE WRITTEN — replaced EMA template with BB breakout/reentry, C#/Python, synced seven README; red/green archive executions NOT RUN |
 | `0780_Fearzone_Panel` | Investigate note | STATIC DEFECT CONFIRMED — both languages use generic EMA(120/450) crossover unrelated to README; original behavior, independent tests, fills and protection NOT IMPLEMENTED/NOT RUN |
-| `0781_Fibonacci_Bollinger_Bands` | Investigate note | STATIC DEFECT CONFIRMED — both languages use generic EMA(120/450) crossover unrelated to README; original behavior, independent tests, fills and protection NOT IMPLEMENTED/NOT RUN |
+| `0781_Fibonacci_Bollinger_Bands` | Investigate note | SOURCE FIX + INDEPENDENT ORACLE PREPARED — C#/Python long-only bands/Fib/swing exits, seven READMEs; archive red/green and actual executions NOT RUN |
 | `0784_Fibonacci_Counter_Trend_Trading` | Investigate note | NOT REVIEWED — requires independent C#/Python archive verification |
 | `0785_Fibonacci_Levels_High_Low` | Investigate note | NOT REVIEWED — requires independent C#/Python archive verification |
 | `0786_Fibonacci_Retracement_Crypto` | Investigate note | NOT REVIEWED — requires independent C#/Python archive verification |
