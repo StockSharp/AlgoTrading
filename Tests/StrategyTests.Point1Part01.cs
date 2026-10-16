@@ -504,4 +504,57 @@ public abstract partial class StrategyTests
             "The default real archive must exercise two-green entries and two-red flatten fills.");
     }
 
+    [TestMethod]
+    [TestCategory("Shard02")]
+    public async Task Point1Part01_0674_DemaRsiTradesActualSmoothedCrossings()
+    {
+        var buys = 0;
+        var sells = 0;
+        await Replay("0674_Dema_RSI", (strategy, _) =>
+        {
+            AreEqual(20, Convert.ToInt32(strategy.Parameters["MaLength"].Value));
+            AreEqual(14, Convert.ToInt32(strategy.Parameters["RsiLength"].Value));
+            AreEqual(5, Convert.ToInt32(strategy.Parameters["RsiSmoothingLength"].Value));
+            AreEqual(false, Convert.ToBoolean(strategy.Parameters["UseSession"].Value));
+            AreEqual(TimeSpan.FromMinutes(1).TimeFrame(), strategy.Parameters["CandleType"].Value);
+
+            strategy.OrderRegistering += order =>
+            {
+                if (order.Side == Sides.Buy)
+                    buys++;
+                if (order.Side == Sides.Sell)
+                    sells++;
+            };
+        }, replayDuration: TimeSpan.FromDays(31));
+        IsTrue(buys > 0 && sells > 0,
+            "RSI(DEMA) crossing its own smoothing must execute both buy and sell orders.");
+    }
+
+    [TestMethod]
+    [TestCategory("Shard02")]
+    public async Task Point1Part01_0674_SessionOnlyGatesNewEntries()
+    {
+        var entries = 0;
+        await Replay("0674_Dema_RSI", (strategy, _) =>
+        {
+            SetParam(strategy, "UseSession", true);
+            SetParam(strategy, "SessionStart", TimeSpan.FromHours(12));
+            SetParam(strategy, "SessionEnd", TimeSpan.FromHours(14));
+            SetParam(strategy, "TakeProfitPoints", 100m);
+            SetParam(strategy, "TrailStopPoints", 100m);
+
+            strategy.OrderRegistering += order =>
+            {
+                if (strategy.Position != 0m)
+                    return; // Native protection can flatten outside the entry session.
+                var tod = strategy.CurrentTime.TimeOfDay;
+                IsTrue(tod >= TimeSpan.FromHours(12) && tod < TimeSpan.FromHours(14),
+                    "A new DEMA-RSI position cannot be opened outside the declared session.");
+                entries++;
+            };
+        }, replayDuration: TimeSpan.FromDays(31));
+
+        IsTrue(entries > 0, "A restrictive but reachable session must still produce actual trades.");
+    }
+
 }
