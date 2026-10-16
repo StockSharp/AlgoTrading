@@ -582,7 +582,10 @@ public abstract partial class StrategyTests
 			})
 			{
 				IsTrue(strategy.Parameters.ContainsKey(name), $"Missing documented VWMO, ADX or ATR parameter {name}.");
-				AreEqual(expected, strategy.Parameters[name].Value);
+				if (expected is decimal decimalExpected)
+					AreEqual(decimalExpected, Convert.ToDecimal(strategy.Parameters[name].Value));
+				else
+					AreEqual(expected, strategy.Parameters[name].Value);
 			}
 			AreEqual(TimeSpan.FromMinutes(1).TimeFrame(), strategy.Parameters["CandleType"].Value);
 			if (secondary) strategy.Security = other;
