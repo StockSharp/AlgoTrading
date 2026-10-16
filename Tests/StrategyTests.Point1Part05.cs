@@ -36,7 +36,8 @@ public abstract partial class StrategyTests
 
 			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
 			SetParam(strategy, "RviLength", 5);
-			SetParam(strategy, "SignalLength", 3);
+			// StockSharp RVI signal uses four fixed taps; Length < 4 reads outside its buffer.
+			SetParam(strategy, "SignalLength", 4);
 			SetParam(strategy, "SellOpen", false);
 
 			strategy.OrderRegistering += order =>
