@@ -35,5 +35,5 @@ Esta estratégia replica o consultor especialista MetaTrader que negocia o cruza
 ## Notas
 
 - Os sinais são processados apenas em velas acabadas para evitar ruído intrabarra.
-- Os valores EMA anteriores são redefinidos sempre que a posição retorna a zero, garantindo uma detecção limpa para o próximo cruzamento.
+- Os valores anteriores das EMAs são mantidos após o fechamento para identificar somente novos cruzamentos; um cruzamento de saída não abre posição oposta no mesmo candle.
 - Todos os comentários do código são escritos em inglês e o recuo usa tabulações de acordo com as diretrizes do projeto.
