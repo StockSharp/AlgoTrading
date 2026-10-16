@@ -979,8 +979,8 @@ public abstract partial class StrategyTests
 			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
 			SetParam(strategy, "Smoothing1", 3);
 			SetParam(strategy, "Smoothing2", 3);
-			SetParam(strategy, "StopLoss", 100m);
-			SetParam(strategy, "TakeProfit", 200m);
+			SetParam(strategy, "StopLoss", 0m);
+			SetParam(strategy, "TakeProfit", 0m);
 			SetParam(strategy, "AllowSell", false);
 			strategy.OrderRegistering += order =>
 			{
@@ -1006,6 +1006,46 @@ public abstract partial class StrategyTests
 		}, replayDuration: TimeSpan.FromDays(14));
 		IsTrue(entries > 0 && exits > 0 && fills >= 2,
 			"Both actual entries and exits must fill for 5-component RSI OSMA.");
+	}
+
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public async Task Point1Part05_ColorZerolagRsiOsma_NativeProtectionSeparatelyTracksRealOrders()
+	{
+		var registered = 0;
+		var filled = 0;
+		var stopField = typeof(Strategy).GetField("_stopLoss", BindingFlags.Instance | BindingFlags.NonPublic);
+		var takeField = typeof(Strategy).GetField("_takeProfit", BindingFlags.Instance | BindingFlags.NonPublic);
+		IsNotNull(stopField);
+		IsNotNull(takeField);
+		await Replay("2001_Color_Zerolag_RSI_OSMA", (strategy, _) =>
+		{
+			for (var i = 1; i <= 5; i++)
+				SetParam(strategy, "RsiPeriod" + i, i + 2);
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "Smoothing1", 3);
+			SetParam(strategy, "Smoothing2", 3);
+			SetParam(strategy, "StopLoss", 100m);
+			SetParam(strategy, "TakeProfit", 200m);
+			strategy.OrderRegistering += order =>
+			{
+				IsTrue(order.Volume > 0m);
+				var stop = (Unit)stopField.GetValue(strategy);
+				var take = (Unit)takeField.GetValue(strategy);
+				IsNotNull(stop);
+				IsNotNull(take);
+				AreEqual(UnitTypes.Absolute, stop.Type);
+				AreEqual(UnitTypes.Absolute, take.Type);
+				AreEqual(100m, stop.Value);
+				AreEqual(200m, take.Value);
+				registered++;
+				// Native ActiveProtection may submit a pure close of |Position|.
+				// That order must not be mislabeled as a strategy entry/reversal.
+			};
+			strategy.Trades.TradeAdded += _ => filled++;
+		}, replayDuration: TimeSpan.FromDays(14));
+		IsTrue(registered > 0 && filled > 0, "Protection profile needs actual archive-backed orders and fills.");
 	}
 
 }
