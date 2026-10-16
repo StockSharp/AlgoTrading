@@ -22,7 +22,7 @@ class santa_claus_rally_strategy(Strategy):
         self._ma_period = self.Param("MaPeriod", 20).SetDisplay("MA Period", "Moving average period for trend confirmation", "Strategy")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles for strategy", "Strategy")
         self._cooldown_bars = self.Param("CooldownBars", 50).SetDisplay("Cooldown Bars", "Bars between trades", "General")
-        self._stop_loss_percent = self.Param("StopLossPercent", 2.0).SetGreaterThanZero().SetDisplay("Stop Loss %", "Percentage stop applied to actual filled positions", "Risk")
+        self._stop_loss = self.Param("StopLoss", 2.0).SetGreaterThanZero().SetDisplay("Stop Loss %", "Percentage stop applied to actual filled positions", "Risk")
 
         self._cooldown = 0
         self._prev_day_of_month = 0
@@ -54,7 +54,7 @@ class santa_claus_rally_strategy(Strategy):
             self.DrawIndicator(area, sma)
             self.DrawOwnTrades(area)
 
-        self.StartProtection(Unit(0.0, UnitTypes.Absolute), Unit(float(self._stop_loss_percent.Value), UnitTypes.Percent), False)
+        self.StartProtection(Unit(0.0, UnitTypes.Absolute), Unit(float(self._stop_loss.Value), UnitTypes.Percent), False)
 
     def _process_candle(self, candle, ma_val):
         if candle.State != CandleStates.Finished:

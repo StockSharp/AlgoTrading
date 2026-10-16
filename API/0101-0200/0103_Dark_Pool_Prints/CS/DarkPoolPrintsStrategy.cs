@@ -23,7 +23,7 @@ public class DarkPoolPrintsStrategy : Strategy
 	private readonly StrategyParam<decimal> _volumeMultiplier;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _cooldownBars;
-	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<decimal> _stopLoss;
 
 	private readonly List<decimal> _volumeHistory = new();
 	private int _cooldown;
@@ -75,10 +75,10 @@ public class DarkPoolPrintsStrategy : Strategy
 
 
 	/// <summary>Percentage loss limit, executed by native protection on live price updates.</summary>
-	public decimal StopLossPercent
+	public decimal StopLoss
 	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
+		get => _stopLoss.Value;
+		set => _stopLoss.Value = value;
 	}
 
 	/// <summary>
@@ -105,7 +105,7 @@ public class DarkPoolPrintsStrategy : Strategy
 			.SetRange(1, 1000)
 			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
 
-		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+		_stopLoss = Param(nameof(StopLoss), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Percentage stop applied to actual filled positions", "Risk");
 	}
@@ -147,7 +147,7 @@ public class DarkPoolPrintsStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection(new Unit(0m, UnitTypes.Absolute), new Unit(StopLossPercent, UnitTypes.Percent), false);
+		StartProtection(new Unit(0m, UnitTypes.Absolute), new Unit(StopLoss, UnitTypes.Percent), false);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal smaValue)

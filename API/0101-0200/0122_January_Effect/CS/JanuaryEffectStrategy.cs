@@ -20,7 +20,7 @@ public class JanuaryEffectStrategy : Strategy
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _cooldownBars;
-	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<decimal> _stopLoss;
 
 	private SimpleMovingAverage _ma;
 
@@ -56,10 +56,10 @@ public class JanuaryEffectStrategy : Strategy
 
 
 	/// <summary>Percentage loss limit, executed by native protection on live price updates.</summary>
-	public decimal StopLossPercent
+	public decimal StopLoss
 	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
+		get => _stopLoss.Value;
+		set => _stopLoss.Value = value;
 	}
 
 	/// <summary>
@@ -78,7 +78,7 @@ public class JanuaryEffectStrategy : Strategy
 			.SetDisplay("Cooldown Bars", "Bars between trades", "General")
 			.SetRange(5, 500);
 
-		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+		_stopLoss = Param(nameof(StopLoss), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss %", "Percentage stop applied to actual filled positions", "Risk");
 	}
@@ -118,7 +118,7 @@ public class JanuaryEffectStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection(new Unit(0m, UnitTypes.Absolute), new Unit(StopLossPercent, UnitTypes.Percent), false);
+		StartProtection(new Unit(0m, UnitTypes.Absolute), new Unit(StopLoss, UnitTypes.Percent), false);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal maValue)
