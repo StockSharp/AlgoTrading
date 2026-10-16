@@ -147,7 +147,7 @@ public class DarkPoolPrintsStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection(new Unit(0m, UnitTypes.Absolute), new Unit(StopLossPercent, UnitTypes.Percent));
+		StartProtection(new Unit(0m, UnitTypes.Absolute), new Unit(StopLossPercent, UnitTypes.Percent), false);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal smaValue)

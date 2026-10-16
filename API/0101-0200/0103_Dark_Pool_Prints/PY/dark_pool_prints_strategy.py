@@ -57,7 +57,7 @@ class dark_pool_prints_strategy(Strategy):
             self.DrawIndicator(area, sma)
             self.DrawOwnTrades(area)
 
-        self.StartProtection(Unit(0.0, UnitTypes.Absolute), Unit(float(self._stop_loss_percent.Value), UnitTypes.Percent))
+        self.StartProtection(Unit(0.0, UnitTypes.Absolute), Unit(float(self._stop_loss_percent.Value), UnitTypes.Percent), False)
 
     def _process_candle(self, candle, sma_val):
         if candle.State != CandleStates.Finished:
