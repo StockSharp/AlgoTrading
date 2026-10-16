@@ -1,14 +1,7 @@
 # Santa Claus Rally Strategie
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
- 
-Die Santa Claus Rally beschreibt die Tendenz von Aktien, in der letzten Dezemberwoche bis zu den ersten zwei Handelstagen im Januar zu steigen.
-Urlaubsoptimismus und Jahresend-Positionierungen können diesen kurzen Stärke-Schub antreiben.
 
-Tests zeigen eine durchschnittliche jährliche Rendite von etwa 100%. Es funktioniert am besten auf dem Forex-Markt.
-
-Die Strategie kauft zu Beginn des Zeitraums und schließt nach dem zweiten Handelstag des neuen Jahres, um den saisonalen Aufschwung zu erfassen.
-
-Stops werden klein gehalten, um große Verluste zu vermeiden, falls der Markt im Zeitfenster nicht steigt.
+Diese Implementierung handelt **Kalendertage jedes Monats**, nicht ausschließlich die traditionelle Phase Ende Dezember/Anfang Januar. Die bisherige Angabe einer jährlichen Rendite von 100% ist durch den BTC/TON-Replay nicht belegt.
 
 ### Tatsächliche Monatsregeln (C# und Python)
 
