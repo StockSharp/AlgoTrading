@@ -218,7 +218,7 @@ public abstract partial class StrategyTests
     }
 
     [TestMethod]
-    [TestCategory("Shard07")]
+    [TestCategory("Shard03")]
     public async Task Point1Part01_0307_AdaptiveMacdDefaultAndNativeStop()
     {
         await Replay("0307_MACD_Adaptive_Histogram", (strategy, _) =>
