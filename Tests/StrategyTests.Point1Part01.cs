@@ -217,4 +217,25 @@ public abstract partial class StrategyTests
             duration: TimeSpan.FromDays(31));
     }
 
+    [TestMethod]
+    [TestCategory("Shard07")]
+    public async Task Point1Part01_0307_AdaptiveMacdDefaultAndNativeStop()
+    {
+        await Replay("0307_MACD_Adaptive_Histogram", (strategy, _) =>
+        {
+            AreEqual(12, Convert.ToInt32(strategy.Parameters["FastPeriod"].Value));
+            AreEqual(26, Convert.ToInt32(strategy.Parameters["SlowPeriod"].Value));
+            AreEqual(9, Convert.ToInt32(strategy.Parameters["SignalPeriod"].Value));
+            AreEqual(20, Convert.ToInt32(strategy.Parameters["HistogramAvgPeriod"].Value));
+            AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StdDevMultiplier"].Value));
+            AreEqual(16, Convert.ToInt32(strategy.Parameters["CooldownBars"].Value));
+            AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+        }, replayDuration: TimeSpan.FromDays(31));
+
+        // The stop has to close a real execution between *15-minute* signal bars.
+        await CheckPercentStopBetweenBars("0307_MACD_Adaptive_Histogram",
+            duration: TimeSpan.FromDays(31),
+            expectedFrame: TimeSpan.FromMinutes(15));
+    }
+
 }
