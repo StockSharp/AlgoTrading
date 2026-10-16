@@ -42,6 +42,7 @@ public class GraalFractalChannelStrategy : Strategy
     private decimal? _lowerFractal;
     private Sides? _pendingSide;
     private int _pendingAge;
+    private int _finishedBars;
     private Order _entryOrder;
     private Order _counterOrder;
     private bool _closing;
@@ -99,6 +100,7 @@ public class GraalFractalChannelStrategy : Strategy
         _lowerFractal = null;
         _pendingSide = null;
         _pendingAge = 0;
+        _finishedBars = 0;
         _entryOrder = null;
         _counterOrder = null;
         _closing = false;
@@ -113,6 +115,7 @@ public class GraalFractalChannelStrategy : Strategy
         _lowerFractal = null;
         _pendingSide = null;
         _pendingAge = 0;
+        _finishedBars = 0;
         _entryOrder = null;
         _counterOrder = null;
         _closing = false;
@@ -162,6 +165,7 @@ public class GraalFractalChannelStrategy : Strategy
         if (candle.State != CandleStates.Finished)
             return;
 
+        _finishedBars++;
         if (_pendingSide.HasValue && ++_pendingAge > SignalAgeLimit)
             _pendingSide = null;
 
@@ -199,8 +203,9 @@ public class GraalFractalChannelStrategy : Strategy
             _closing = false;
         }
 
-        if (UseWilliamsExit && Position > 0m && williams > -WilliamsThreshold ||
-            UseWilliamsExit && Position < 0m && williams < -100m + WilliamsThreshold)
+        if (UseWilliamsExit && _finishedBars >= WilliamsPeriod &&
+            (Position > 0m && williams > -WilliamsThreshold ||
+             Position < 0m && williams < -100m + WilliamsThreshold))
         {
             CancelCounter();
             _pendingSide = null;
