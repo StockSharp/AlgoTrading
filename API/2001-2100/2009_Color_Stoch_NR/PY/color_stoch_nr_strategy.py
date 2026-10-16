@@ -10,14 +10,21 @@ from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import StochasticOscillator
 from StockSharp.Algo.Strategies import Strategy
 
+
 class color_stoch_nr_strategy(Strategy):
-    """
-    Strategy based on the stochastic oscillator with OscDisposition mode.
-    Buys when %K crosses above %D, sells when %K crosses below %D.
-    """
+    """Stochastic oscillator with five entry modes and percentage protection."""
+
+    # Numeric modes match ColorStochNrStrategy.AlgModes enum ordering in C#.
+    BREAKDOWN = 0
+    OSC_TWIST = 1
+    SIGNAL_TWIST = 2
+    OSC_DISPOSITION = 3
+    SIGNAL_BREAKDOWN = 4
 
     def __init__(self):
         super(color_stoch_nr_strategy, self).__init__()
+        self._mode = self.Param("Mode", self.OSC_DISPOSITION) \
+            .SetDisplay("Algorithm Mode", "0=Breakdown, 1=OscTwist, 2=SignalTwist, 3=OscDisposition, 4=SignalBreakdown", "Parameters")
         self._k_period = self.Param("KPeriod", 5) \
             .SetDisplay("K Period", "Length for %K line", "Stochastic")
         self._d_period = self.Param("DPeriod", 3) \
@@ -29,30 +36,40 @@ class color_stoch_nr_strategy(Strategy):
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
-        self._prev_k = 0.0
-        self._prev_d = 0.0
-        self._prev_k_delta = 0.0
-        self._prev_d_delta = 0.0
+        self._prev_k = None
+        self._prev_d = None
+        self._prev_k_delta = None
+        self._prev_d_delta = None
 
     @property
-    def candle_type(self):
+    def Mode(self):
+        return self._mode.Value
+
+    @Mode.setter
+    def Mode(self, value):
+        self._mode.Value = value
+
+    @property
+    def CandleType(self):
         return self._candle_type.Value
+
+    @CandleType.setter
+    def CandleType(self, value):
+        self._candle_type.Value = value
 
     def OnReseted(self):
         super(color_stoch_nr_strategy, self).OnReseted()
-        self._prev_k = 0.0
-        self._prev_d = 0.0
-        self._prev_k_delta = 0.0
-        self._prev_d_delta = 0.0
+        self._prev_k = None
+        self._prev_d = None
+        self._prev_k_delta = None
+        self._prev_d_delta = None
 
     def OnStarted2(self, time):
         super(color_stoch_nr_strategy, self).OnStarted2(time)
-
         stochastic = StochasticOscillator()
         stochastic.K.Length = self._k_period.Value
         stochastic.D.Length = self._d_period.Value
-
-        subscription = self.SubscribeCandles(self.candle_type)
+        subscription = self.SubscribeCandles(self.CandleType)
         subscription.BindEx(stochastic, self.on_process).Start()
 
         self.StartProtection(
@@ -69,36 +86,50 @@ class color_stoch_nr_strategy(Strategy):
     def on_process(self, candle, stoch_value):
         if candle.State != CandleStates.Finished:
             return
-
-        k_val = stoch_value.K
-        d_val = stoch_value.D
-
-        if k_val is None or d_val is None:
+        if stoch_value.K is None or stoch_value.D is None:
             return
 
-        k = float(k_val)
-        d = float(d_val)
+        k = float(stoch_value.K)
+        d = float(stoch_value.D)
+        if self._prev_k is None or self._prev_d is None:
+            self._prev_k = k
+            self._prev_d = d
+            return
 
         delta_k = k - self._prev_k
         delta_d = d - self._prev_d
+        mode = int(self.Mode)
+        buy = sell = False
 
-        buy = False
-        sell = False
+        if mode == self.BREAKDOWN:
+            buy = self._prev_k <= 50 < k
+            sell = self._prev_k >= 50 > k
+        elif mode == self.OSC_TWIST:
+            if self._prev_k_delta is not None:
+                buy = self._prev_k_delta <= 0 < delta_k
+                sell = self._prev_k_delta >= 0 > delta_k
+        elif mode == self.SIGNAL_TWIST:
+            if self._prev_d_delta is not None:
+                buy = self._prev_d_delta <= 0 < delta_d
+                sell = self._prev_d_delta >= 0 > delta_d
+        elif mode == self.OSC_DISPOSITION:
+            buy = self._prev_k <= self._prev_d and k > d
+            sell = self._prev_k >= self._prev_d and k < d
+        elif mode == self.SIGNAL_BREAKDOWN:
+            buy = self._prev_d <= 50 < d
+            sell = self._prev_d >= 50 > d
+        else:
+            raise ValueError("Unsupported stochastic signal mode: %s" % mode)
 
-        # OscDisposition mode
-        if self._prev_k <= self._prev_d and k > d:
-            buy = True
-        elif self._prev_k >= self._prev_d and k < d:
-            sell = True
-
-        if buy and self.Position <= 0:
-            if self.Position < 0:
-                self.BuyMarket()
-            self.BuyMarket()
-        elif sell and self.Position >= 0:
-            if self.Position > 0:
-                self.SellMarket()
-            self.SellMarket()
+        position = self.Position
+        if buy and position <= 0:
+            if position < 0:
+                self.BuyMarket(-position)
+            self.BuyMarket(self.Volume)
+        elif sell and position >= 0:
+            if position > 0:
+                self.SellMarket(position)
+            self.SellMarket(self.Volume)
 
         self._prev_k_delta = delta_k
         self._prev_d_delta = delta_d

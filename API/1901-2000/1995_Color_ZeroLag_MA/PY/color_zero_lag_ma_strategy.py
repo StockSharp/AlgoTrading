@@ -1,4 +1,5 @@
 import clr
+
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
@@ -9,7 +10,10 @@ from StockSharp.Messages import DataType, CandleStates, OrderStates
 from StockSharp.Algo.Indicators import ZeroLagExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 
+
 class color_zero_lag_ma_strategy(Strategy):
+    """ZLEMA slope reversals with independent entry and exit permissions."""
+
     def __init__(self):
         super(color_zero_lag_ma_strategy, self).__init__()
         self._length = self.Param("Length", 12).SetDisplay("Length", "ZLEMA length", "Indicator")
@@ -47,6 +51,7 @@ class color_zero_lag_ma_strategy(Strategy):
     def on_process(self, candle, value):
         if candle.State != CandleStates.Finished:
             return
+
         current = float(value)
         up = self._before_previous is not None and self._previous < self._before_previous and current > self._previous
         down = self._before_previous is not None and self._previous > self._before_previous and current < self._previous

@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,8 +11,9 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Bykov Trend strategy based on Williams %R indicator.
-/// Generates buy or sell signals when trend changes occur.
+/// Bykov Trend: armed, two-threshold Williams %R trend transitions.
+/// The upper crossing is valid only after the lower extreme has been observed;
+/// the lower crossing is valid only after the upper extreme has been observed.
 /// </summary>
 public class BykovTrendStrategy : Strategy
 {
@@ -23,83 +21,54 @@ public class BykovTrendStrategy : Strategy
 	private readonly StrategyParam<int> _ssp;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private bool _previousUptrend;
+	private decimal? _previousWpr;
+	private bool _longArmed;
+	private bool _shortArmed;
+	private Order _pendingOrder;
 
-	/// <summary>
-	/// Risk parameter from original indicator (K = 33 - Risk).
-	/// </summary>
-	public int Risk
-	{
-		get => _risk.Value;
-		set => _risk.Value = value;
-	}
+	public int Risk { get => _risk.Value; set => _risk.Value = value; }
+	/// <summary>Williams %R look-back, matching the published SSP parameter.</summary>
+	public int SSP { get => _ssp.Value; set => _ssp.Value = value; }
+	/// <summary>Backward-compatible property alias for earlier local examples.</summary>
+	public int Ssp { get => SSP; set => SSP = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Williams %R period.
-	/// </summary>
-	public int Ssp
-	{
-		get => _ssp.Value;
-		set => _ssp.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type used for calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="BykovTrendStrategy" />.
-	/// </summary>
 	public BykovTrendStrategy()
 	{
-		_risk = Param(nameof(Risk), 3)
-			.SetGreaterThanZero()
-			.SetDisplay("Risk", "Risk parameter from original indicator", "Indicator")
-			
-			.SetOptimize(1, 10, 1);
-
-		_ssp = Param(nameof(Ssp), 9)
-			.SetGreaterThanZero()
-			.SetDisplay("SSP", "Williams %R period", "Indicator")
-			
-			.SetOptimize(5, 20, 1);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
-			.SetDisplay("Candle Type", "Timeframe for indicator", "General");
+		_risk = Param(nameof(Risk), 3).SetGreaterThanZero()
+			.SetDisplay("Risk", "K=33-Risk threshold parameter", "Indicator");
+		_ssp = Param(nameof(SSP), 9).SetGreaterThanZero()
+			.SetDisplay("SSP", "Williams %R look-back", "Indicator");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 
-	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() => [(Security, CandleType)];
+
+	private void ResetSignals()
+	{
+		_previousWpr = null;
+		_longArmed = _shortArmed = false;
+		_pendingOrder = null;
+	}
+
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_previousUptrend = false;
+		ResetSignals();
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
-
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		var wpr = new WilliamsR { Length = Ssp };
+		if (Risk < 1 || Risk >= 33)
+			throw new InvalidOperationException("Bykov Trend Risk must lie from 1 to 32 to preserve two distinct thresholds.");
+		ResetSignals();
+		var wpr = new WilliamsR { Length = SSP };
 		var subscription = SubscribeCandles(CandleType);
-
-		subscription
-			.Bind(wpr, ProcessCandle)
-			.Start();
-
+		subscription.Bind(wpr, ProcessCandle).Start();
 		var area = CreateChartArea();
-		if (area != null)
+		if (area is not null)
 		{
 			DrawCandles(area, subscription);
 			DrawIndicator(area, wpr);
@@ -107,38 +76,36 @@ public class BykovTrendStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal wprValue)
+	private void ProcessCandle(ICandleMessage candle, decimal wpr)
 	{
-		// Process only finished candles
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		// Ensure that strategy is ready to trade
-		if (!IsFormedAndOnlineAndAllowTrading())
+		var k = 33m - Risk;
+		var lower = -100m + k;
+		var upper = -k;
+		if (wpr <= lower)
+			_longArmed = true;
+		if (wpr >= upper)
+			_shortArmed = true;
+
+		var longSignal = _previousWpr is decimal prevLong && _longArmed
+			&& prevLong <= upper && wpr > upper;
+		var shortSignal = _previousWpr is decimal prevShort && _shortArmed
+			&& prevShort >= lower && wpr < lower;
+		_previousWpr = wpr;
+		if (longSignal)
+			_longArmed = false;
+		if (shortSignal)
+			_shortArmed = false;
+
+		if (!IsFormedAndOnlineAndAllowTrading() ||
+			(_pendingOrder is not null && _pendingOrder.State is not (OrderStates.Done or OrderStates.Failed)))
 			return;
 
-		var k = 33 - Risk;
-		var uptrend = _previousUptrend;
-
-		if (wprValue < -100 + k)
-			uptrend = false;
-		else if (wprValue > -k)
-			uptrend = true;
-
-		var buySignal = !_previousUptrend && uptrend;
-		var sellSignal = _previousUptrend && !uptrend;
-
-		_previousUptrend = uptrend;
-
-		if (buySignal)
-		{
-			// Close short positions and enter long
-			BuyMarket();
-		}
-		else if (sellSignal)
-		{
-			// Close long positions and enter short
-			SellMarket();
-		}
+		if (longSignal && Position <= 0m)
+			_pendingOrder = BuyMarket(Volume + Math.Abs(Position));
+		else if (shortSignal && Position >= 0m)
+			_pendingOrder = SellMarket(Volume + Math.Abs(Position));
 	}
 }

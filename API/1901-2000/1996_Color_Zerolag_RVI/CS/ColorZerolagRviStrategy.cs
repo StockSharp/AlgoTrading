@@ -11,14 +11,17 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on crossing of RVI and its signal line.
-/// Buys on RVI crossing above signal, sells on crossing below.
+/// Trades the documented inverse RVI/signal-line cross, with separate entry/exit permissions.
 /// </summary>
 public class ColorZerolagRviStrategy : Strategy
 {
 	private readonly StrategyParam<int> _rviLength;
 	private readonly StrategyParam<int> _signalLength;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<bool> _buyOpen;
+	private readonly StrategyParam<bool> _buyClose;
+	private readonly StrategyParam<bool> _sellOpen;
+	private readonly StrategyParam<bool> _sellClose;
 
 	private decimal? _prevRvi;
 	private decimal? _prevSignal;
@@ -26,6 +29,10 @@ public class ColorZerolagRviStrategy : Strategy
 	public int RviLength { get => _rviLength.Value; set => _rviLength.Value = value; }
 	public int SignalLength { get => _signalLength.Value; set => _signalLength.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public bool BuyOpen { get => _buyOpen.Value; set => _buyOpen.Value = value; }
+	public bool BuyClose { get => _buyClose.Value; set => _buyClose.Value = value; }
+	public bool SellOpen { get => _sellOpen.Value; set => _sellOpen.Value = value; }
+	public bool SellClose { get => _sellClose.Value; set => _sellClose.Value = value; }
 
 	public ColorZerolagRviStrategy()
 	{
@@ -39,6 +46,15 @@ public class ColorZerolagRviStrategy : Strategy
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
+
+		_buyOpen = Param(nameof(BuyOpen), true)
+			.SetDisplay("Buy Open", "Allow long entries", "Trading");
+		_buyClose = Param(nameof(BuyClose), true)
+			.SetDisplay("Buy Close", "Close longs on a sell signal", "Trading");
+		_sellOpen = Param(nameof(SellOpen), true)
+			.SetDisplay("Sell Open", "Allow short entries", "Trading");
+		_sellClose = Param(nameof(SellClose), true)
+			.SetDisplay("Sell Close", "Close shorts on a buy signal", "Trading");
 	}
 
 	/// <inheritdoc />
@@ -86,15 +102,24 @@ public class ColorZerolagRviStrategy : Strategy
 		var crossUp = _prevRvi < _prevSignal && rvi > signal;
 		var crossDown = _prevRvi > _prevSignal && rvi < signal;
 
-		if (crossUp && Position <= 0)
+		// Downward RVI crossover is the documented buy signal; upward is sell.
+		// A disabled opposite-position close also suppresses opening the reverse
+		// side, preventing an accidental netting trade.
+		if (crossDown)
 		{
-			if (Position < 0) BuyMarket();
-			BuyMarket();
+			var position = Position;
+			if (position < 0 && SellClose)
+				BuyMarket(-position);
+			if (BuyOpen && (position == 0 || (position < 0 && SellClose)))
+				BuyMarket(Volume);
 		}
-		else if (crossDown && Position >= 0)
+		else if (crossUp)
 		{
-			if (Position > 0) SellMarket();
-			SellMarket();
+			var position = Position;
+			if (position > 0 && BuyClose)
+				SellMarket(position);
+			if (SellOpen && (position == 0 || (position > 0 && BuyClose)))
+				SellMarket(Volume);
 		}
 
 		_prevRvi = rvi;

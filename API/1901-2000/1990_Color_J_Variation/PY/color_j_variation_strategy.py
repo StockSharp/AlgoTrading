@@ -6,7 +6,7 @@ clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import JurikMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 
@@ -24,6 +24,10 @@ class color_j_variation_strategy(Strategy):
             .SetDisplay("JMA Phase", "Phase for JMA", "Indicator")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
             .SetDisplay("Candle Type", "Timeframe for analysis", "General")
+        self._stop_loss = self.Param("StopLoss", 1000.0) \
+            .SetDisplay("Stop Loss", "Absolute stop distance from entry", "Risk")
+        self._take_profit = self.Param("TakeProfit", 2000.0) \
+            .SetDisplay("Take Profit", "Absolute take-profit distance from entry", "Risk")
 
         self._prev_jma = 0.0
         self._prev_prev_jma = 0.0
@@ -32,6 +36,22 @@ class color_j_variation_strategy(Strategy):
     @property
     def candle_type(self):
         return self._candle_type.Value
+
+    @property
+    def StopLoss(self):
+        return self._stop_loss.Value
+
+    @StopLoss.setter
+    def StopLoss(self, value):
+        self._stop_loss.Value = value
+
+    @property
+    def TakeProfit(self):
+        return self._take_profit.Value
+
+    @TakeProfit.setter
+    def TakeProfit(self, value):
+        self._take_profit.Value = value
 
     def OnReseted(self):
         super(color_j_variation_strategy, self).OnReseted()
@@ -48,6 +68,10 @@ class color_j_variation_strategy(Strategy):
 
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.Bind(jma, self.on_process).Start()
+        self.StartProtection(
+            takeProfit=Unit(self.TakeProfit, UnitTypes.Absolute),
+            stopLoss=Unit(self.StopLoss, UnitTypes.Absolute)
+        )
 
     def on_process(self, candle, jma_val):
         if candle.State != CandleStates.Finished:
@@ -64,12 +88,12 @@ class color_j_variation_strategy(Strategy):
 
         if turn_up and self.Position <= 0:
             if self.Position < 0:
-                self.BuyMarket()
-            self.BuyMarket()
+                self.BuyMarket(-self.Position)
+            self.BuyMarket(self.Volume)
         elif turn_down and self.Position >= 0:
             if self.Position > 0:
-                self.SellMarket()
-            self.SellMarket()
+                self.SellMarket(self.Position)
+            self.SellMarket(self.Volume)
 
         self._prev_prev_jma = self._prev_jma
         self._prev_jma = jma_val

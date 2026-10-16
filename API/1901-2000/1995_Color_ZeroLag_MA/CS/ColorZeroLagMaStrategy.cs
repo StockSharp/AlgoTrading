@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+
 using Ecng.Common;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -8,7 +10,9 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>ZLEMA reversals with independent entry and exit permissions.</summary>
+/// <summary>
+/// Trades ZLEMA slope reversals with independent long/short entry/exit switches.
+/// </summary>
 public class ColorZeroLagMaStrategy : Strategy
 {
 	private readonly StrategyParam<int> _length;
@@ -31,7 +35,8 @@ public class ColorZeroLagMaStrategy : Strategy
 
 	public ColorZeroLagMaStrategy()
 	{
-		_length = Param(nameof(Length), 12).SetGreaterThanZero().SetDisplay("Length", "ZLEMA length", "Indicator");
+		_length = Param(nameof(Length), 12).SetGreaterThanZero()
+			.SetDisplay("Length", "ZLEMA length", "Indicator");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
 		_openBuy = Param(nameof(OpenBuy), true).SetDisplay("Open Buy", "Allow long entries", "Trading");
@@ -40,7 +45,8 @@ public class ColorZeroLagMaStrategy : Strategy
 		_closeSell = Param(nameof(CloseSell), true).SetDisplay("Close Sell", "Allow short exits", "Trading");
 	}
 
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() => [(Security, CandleType)];
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
 
 	protected override void OnReseted()
 	{
@@ -62,15 +68,18 @@ public class ColorZeroLagMaStrategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
 		var turnUp = _beforePrevious is decimal older && _previous is decimal previous
 			&& previous < older && current > previous;
 		var turnDown = _beforePrevious is decimal olderDown && _previous is decimal previousDown
 			&& previousDown > olderDown && current < previousDown;
 		_beforePrevious = _previous;
 		_previous = current;
-		if (!IsFormedAndOnlineAndAllowTrading() ||
-			(_pendingOrder is not null && _pendingOrder.State is not (OrderStates.Done or OrderStates.Failed)))
+
+		if (!IsFormedAndOnlineAndAllowTrading()
+			|| (_pendingOrder is not null && _pendingOrder.State is not (OrderStates.Done or OrderStates.Failed)))
 			return;
+
 		if (turnUp)
 		{
 			if (Position < 0m && CloseSell)

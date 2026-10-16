@@ -12,20 +12,19 @@ from StockSharp.Algo.Strategies import Strategy
 
 
 class vinin_i_trend_lrma_strategy(Strategy):
+    """LRMA percent-deviation breakdown or LRMA-slope twist, with no stop."""
+
+    BREAKDOWN = 0
+    TWIST = 1
 
     def __init__(self):
         super(vinin_i_trend_lrma_strategy, self).__init__()
-
-        self._period = self.Param("Period", 13) \
-            .SetDisplay("LRMA period", "Linear regression period", "General")
-        self._up_level = self.Param("UpLevel", 0.1) \
-            .SetDisplay("Upper level", "Upper trigger level (percent)", "General")
-        self._dn_level = self.Param("DnLevel", -0.1) \
-            .SetDisplay("Lower level", "Lower trigger level (percent)", "General")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
-            .SetDisplay("Candle Type", "Candle Type", "General")
-
-        self._prev_osc = None
+        self._period = self.Param("Period", 13).SetDisplay("LRMA Period", "Linear regression lookback", "Indicators")
+        self._up_level = self.Param("UpLevel", 10.0).SetDisplay("Upper Level", "Percent deviation trigger", "Signals")
+        self._dn_level = self.Param("DnLevel", -10.0).SetDisplay("Lower Level", "Percent deviation trigger", "Signals")
+        self._mode = self.Param("Mode", self.BREAKDOWN).SetDisplay("Signal Mode", "0=Breakdown, 1=Twist", "Signals")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))).SetDisplay("Candle Type", "Type of candles", "General")
+        self._reset_signals()
 
     @property
     def Period(self):
@@ -52,6 +51,14 @@ class vinin_i_trend_lrma_strategy(Strategy):
         self._dn_level.Value = value
 
     @property
+    def Mode(self):
+        return self._mode.Value
+
+    @Mode.setter
+    def Mode(self, value):
+        self._mode.Value = value
+
+    @property
     def CandleType(self):
         return self._candle_type.Value
 
@@ -59,46 +66,59 @@ class vinin_i_trend_lrma_strategy(Strategy):
     def CandleType(self, value):
         self._candle_type.Value = value
 
+    def _reset_signals(self):
+        self._previous_oscillator = None
+        self._previous_lrma = None
+        self._previous_slope = None
+
+    def OnReseted(self):
+        super(vinin_i_trend_lrma_strategy, self).OnReseted()
+        self._reset_signals()
+
     def OnStarted2(self, time):
         super(vinin_i_trend_lrma_strategy, self).OnStarted2(time)
-
-        self._prev_osc = None
-
+        self._reset_signals()
         lrma = LinearReg()
         lrma.Length = self.Period
-
-        self.SubscribeCandles(self.CandleType) \
-            .Bind(lrma, self.ProcessCandle) \
-            .Start()
+        self.SubscribeCandles(self.CandleType).Bind(lrma, self.ProcessCandle).Start()
 
     def ProcessCandle(self, candle, lrma_value):
         if candle.State != CandleStates.Finished:
             return
-
         lrma = float(lrma_value)
         if lrma == 0:
             return
 
-        osc = (float(candle.ClosePrice) - lrma) / lrma * 100.0
+        oscillator = (float(candle.ClosePrice) - lrma) / lrma * 100.0
+        slope = lrma - self._previous_lrma if self._previous_lrma is not None else None
+        buy = sell = False
+        mode = int(self.Mode)
+        if mode == self.BREAKDOWN:
+            if self._previous_oscillator is not None:
+                buy = self._previous_oscillator <= float(self.UpLevel) < oscillator
+                sell = self._previous_oscillator >= float(self.DnLevel) > oscillator
+        elif mode == self.TWIST:
+            if self._previous_slope is not None and slope is not None:
+                buy = self._previous_slope < 0 < slope
+                sell = self._previous_slope > 0 > slope
+        else:
+            raise ValueError("Unsupported LRMA signal mode: %s" % mode)
 
-        if self._prev_osc is not None:
-            up = float(self.UpLevel)
-            dn = float(self.DnLevel)
+        self._previous_oscillator = oscillator
+        self._previous_lrma = lrma
+        self._previous_slope = slope
 
-            if osc > up and self._prev_osc <= up and self.Position <= 0:
-                if self.Position < 0:
-                    self.BuyMarket()
-                self.BuyMarket()
-            elif osc < dn and self._prev_osc >= dn and self.Position >= 0:
-                if self.Position > 0:
-                    self.SellMarket()
-                self.SellMarket()
-
-        self._prev_osc = osc
-
-    def OnReseted(self):
-        super(vinin_i_trend_lrma_strategy, self).OnReseted()
-        self._prev_osc = None
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+        position = self.Position
+        if buy and position <= 0:
+            if position < 0:
+                self.BuyMarket(-position)
+            self.BuyMarket(self.Volume)
+        elif sell and position >= 0:
+            if position > 0:
+                self.SellMarket(position)
+            self.SellMarket(self.Volume)
 
     def CreateClone(self):
         return vinin_i_trend_lrma_strategy()

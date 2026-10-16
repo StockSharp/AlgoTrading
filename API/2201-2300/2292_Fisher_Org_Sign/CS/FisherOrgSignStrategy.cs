@@ -11,9 +11,8 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Fisher transform strategy with level-based signals.
-/// Opens long positions when Fisher rises above a negative threshold
-/// and opens short positions when Fisher falls below a positive threshold.
+/// Long on Fisher crossing upward over DownLevel, short on crossing downward under UpLevel.
+/// Each reversal first closes the actual position volume, then opens the configured Volume.
 /// </summary>
 public class FisherOrgSignStrategy : Strategy
 {
@@ -21,114 +20,67 @@ public class FisherOrgSignStrategy : Strategy
 	private readonly StrategyParam<decimal> _upLevel;
 	private readonly StrategyParam<decimal> _downLevel;
 	private readonly StrategyParam<DataType> _candleType;
+	private decimal? _previousFisher;
 
-	private EhlersFisherTransform _fisher;
-	private decimal? _prevFisher;
-
-	public int Length
-	{
-		get => _length.Value;
-		set => _length.Value = value;
-	}
-
-	public decimal UpLevel
-	{
-		get => _upLevel.Value;
-		set => _upLevel.Value = value;
-	}
-
-	public decimal DownLevel
-	{
-		get => _downLevel.Value;
-		set => _downLevel.Value = value;
-	}
-
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	public int Length { get => _length.Value; set => _length.Value = value; }
+	public decimal UpLevel { get => _upLevel.Value; set => _upLevel.Value = value; }
+	public decimal DownLevel { get => _downLevel.Value; set => _downLevel.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public FisherOrgSignStrategy()
 	{
-		_length = Param(nameof(Length), 7)
-			.SetGreaterThanZero()
+		_length = Param(nameof(Length), 7).SetGreaterThanZero()
 			.SetDisplay("Fisher Length", "Period for Fisher Transform", "General")
 			.SetOptimize(5, 20, 1);
-
-		_upLevel = Param(nameof(UpLevel), 0.1m)
+		_upLevel = Param(nameof(UpLevel), 1.5m)
 			.SetDisplay("Upper Level", "Sell signal level", "General");
-
-		_downLevel = Param(nameof(DownLevel), -0.1m)
+		_downLevel = Param(nameof(DownLevel), -1.5m)
 			.SetDisplay("Lower Level", "Buy signal level", "General");
-
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
+			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevFisher = null;
+		_previousFisher = null;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_prevFisher = null;
-
-		_fisher = new EhlersFisherTransform
-		{
-			Length = Length
-		};
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription.BindEx(_fisher, ProcessCandle).Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, _fisher);
-			DrawOwnTrades(area);
-		}
+		_previousFisher = null;
+		var fisher = new EhlersFisherTransform { Length = Length };
+		SubscribeCandles(CandleType).BindEx(fisher, ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue fisherVal)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue fisherValue)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (fisherValue is not IEhlersFisherTransformValue typed || typed.MainLine is not decimal current)
 			return;
 
-		if (fisherVal is not IEhlersFisherTransformValue typed || typed.MainLine is not decimal fisherValue)
+		var previous = _previousFisher;
+		_previousFisher = current;
+		if (previous is null || !IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (_prevFisher is null)
+		var position = Position;
+		if (previous <= DownLevel && current > DownLevel && position <= 0m)
 		{
-			_prevFisher = fisherValue;
-			return;
+			if (position < 0m)
+				BuyMarket(-position);
+			BuyMarket(Volume);
 		}
-
-		var longCondition = _prevFisher <= DownLevel && fisherValue > DownLevel;
-		var shortCondition = _prevFisher >= UpLevel && fisherValue < UpLevel;
-
-		if (longCondition && Position <= 0)
-			BuyMarket();
-
-		if (shortCondition && Position >= 0)
-			SellMarket();
-
-		_prevFisher = fisherValue;
+		else if (previous >= UpLevel && current < UpLevel && position >= 0m)
+		{
+			if (position > 0m)
+				SellMarket(position);
+			SellMarket(Volume);
+		}
 	}
 }

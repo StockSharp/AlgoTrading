@@ -15,10 +15,10 @@ class random_trader_strategy(Strategy):
     def __init__(self):
         super(random_trader_strategy, self).__init__()
 
-        self._take_profit_pct = self.Param("TakeProfitPct", 2.0) \
-            .SetDisplay("Take Profit %", "Target profit percentage", "Risk")
-        self._stop_loss_pct = self.Param("StopLossPct", 1.0) \
-            .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk")
+        self._take_profit = self.Param("TakeProfit", 10.0) \
+            .SetDisplay("Take Profit", "Target profit distance in absolute price units", "Risk")
+        self._stop_loss = self.Param("StopLoss", 10.0) \
+            .SetDisplay("Stop Loss", "Stop loss distance in absolute price units", "Risk")
         self._cooldown = self.Param("Cooldown", 25) \
             .SetDisplay("Cooldown", "Candles between trades", "General")
         self._signal_seed = self.Param("SignalSeed", 42) \
@@ -30,20 +30,20 @@ class random_trader_strategy(Strategy):
         self._signal_state = 42
 
     @property
-    def TakeProfitPct(self):
-        return self._take_profit_pct.Value
+    def TakeProfit(self):
+        return self._take_profit.Value
 
-    @TakeProfitPct.setter
-    def TakeProfitPct(self, value):
-        self._take_profit_pct.Value = value
+    @TakeProfit.setter
+    def TakeProfit(self, value):
+        self._take_profit.Value = value
 
     @property
-    def StopLossPct(self):
-        return self._stop_loss_pct.Value
+    def StopLoss(self):
+        return self._stop_loss.Value
 
-    @StopLossPct.setter
-    def StopLossPct(self, value):
-        self._stop_loss_pct.Value = value
+    @StopLoss.setter
+    def StopLoss(self, value):
+        self._stop_loss.Value = value
 
     @property
     def Cooldown(self):
@@ -80,8 +80,8 @@ class random_trader_strategy(Strategy):
             .Start()
 
         self.StartProtection(
-            takeProfit=Unit(self.TakeProfitPct, UnitTypes.Percent),
-            stopLoss=Unit(self.StopLossPct, UnitTypes.Percent)
+            takeProfit=Unit(self.TakeProfit, UnitTypes.Absolute),
+            stopLoss=Unit(self.StopLoss, UnitTypes.Absolute)
         )
 
     def ProcessCandle(self, candle):

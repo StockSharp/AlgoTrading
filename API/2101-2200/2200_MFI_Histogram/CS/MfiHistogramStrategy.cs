@@ -1,9 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -11,12 +10,9 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-
-
 /// <summary>
-/// Money Flow Index histogram strategy.
-/// Buys when MFI crosses above the high level.
-/// Sells when MFI crosses below the low level.
+/// MFI level-crossing reversal with stop loss/take profit distances in instrument price steps.
+/// A crossover signal is acted on only after a completed, formed indicator bar.
 /// </summary>
 public class MfiHistogramStrategy : Strategy
 {
@@ -27,150 +23,96 @@ public class MfiHistogramStrategy : Strategy
 	private readonly StrategyParam<Unit> _takeProfit;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevMfi;
+	private decimal? _prevMfi;
+	private Order _pendingEntry;
 
-	/// <summary>
-	/// Period for Money Flow Index.
-	/// </summary>
-	public int MfiPeriod
-	{
-		get => _mfiPeriod.Value;
-		set => _mfiPeriod.Value = value;
-	}
+	public int MfiPeriod { get => _mfiPeriod.Value; set => _mfiPeriod.Value = value; }
+	public decimal HighLevel { get => _highLevel.Value; set => _highLevel.Value = value; }
+	public decimal LowLevel { get => _lowLevel.Value; set => _lowLevel.Value = value; }
+	/// <summary>Number of price steps to the protective stop.</summary>
+	public Unit StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
+	/// <summary>Number of price steps to the profit target.</summary>
+	public Unit TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Overbought level.
-	/// </summary>
-	public decimal HighLevel
-	{
-		get => _highLevel.Value;
-		set => _highLevel.Value = value;
-	}
-
-	/// <summary>
-	/// Oversold level.
-	/// </summary>
-	public decimal LowLevel
-	{
-		get => _lowLevel.Value;
-		set => _lowLevel.Value = value;
-	}
-
-	/// <summary>
-	/// Stop-loss value in ticks.
-	/// </summary>
-	public Unit StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Take-profit value in ticks.
-	/// </summary>
-	public Unit TakeProfit
-	{
-		get => _takeProfit.Value;
-		set => _takeProfit.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initialize <see cref="MfiHistogramStrategy"/>.
-	/// </summary>
 	public MfiHistogramStrategy()
 	{
-		_mfiPeriod = Param(nameof(MfiPeriod), 14)
-		.SetGreaterThanZero()
-		.SetDisplay("MFI Period", "Period for Money Flow Index", "MFI");
-
+		_mfiPeriod = Param(nameof(MfiPeriod), 14).SetGreaterThanZero()
+			.SetDisplay("MFI Period", "Period for Money Flow Index", "MFI");
 		_highLevel = Param(nameof(HighLevel), 60m)
-		.SetDisplay("High Level", "Overbought threshold", "MFI");
-
+			.SetDisplay("High Level", "Upper MFI crossing threshold", "MFI");
 		_lowLevel = Param(nameof(LowLevel), 40m)
-		.SetDisplay("Low Level", "Oversold threshold", "MFI");
-
-		_stopLoss = Param(nameof(StopLoss), new Unit(1000, UnitTypes.Absolute))
-		.SetDisplay("Stop Loss", "Stop-loss in ticks", "Risk");
-
-		_takeProfit = Param(nameof(TakeProfit), new Unit(2000, UnitTypes.Absolute))
-		.SetDisplay("Take Profit", "Take-profit in ticks", "Risk");
-
+			.SetDisplay("Low Level", "Lower MFI crossing threshold", "MFI");
+		// Preserve the existing public Unit parameter API; its numeric value denotes PRICE STEPS.
+		_stopLoss = Param(nameof(StopLoss), new Unit(1000m, UnitTypes.Absolute))
+			.SetDisplay("Stop Loss", "Distance measured in instrument price steps", "Risk");
+		_takeProfit = Param(nameof(TakeProfit), new Unit(2000m, UnitTypes.Absolute))
+			.SetDisplay("Take Profit", "Distance measured in instrument price steps", "Risk");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
-		.SetDisplay("Candle Type", "Timeframe of candles", "General");
+			.SetDisplay("Candle Type", "Timeframe of candles", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-	return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
-	base.OnReseted();
-
-	_prevMfi = 0;
+		base.OnReseted();
+		_prevMfi = null;
+		_pendingEntry = null;
 	}
 
-	/// <inheritdoc />
+	private Unit ConvertTicksToPrice(Unit ticks, decimal step, string name)
+	{
+		if (ticks is null || ticks.Type != UnitTypes.Absolute || ticks.Value <= 0)
+			throw new InvalidOperationException($"{name} must be a positive number of price steps (absolute numeric unit).");
+		return new Unit(ticks.Value * step, UnitTypes.Absolute);
+	}
+
 	protected override void OnStarted2(DateTime time)
 	{
-	base.OnStarted2(time);
+		base.OnStarted2(time);
+		_prevMfi = null;
+		_pendingEntry = null;
+		var step = Security?.PriceStep;
+		if (step is null || step <= 0m)
+			throw new InvalidOperationException("MFI Histogram requires a positive Security.PriceStep for tick-based protection.");
 
-	var mfi = new MoneyFlowIndex
-	{
-		Length = MfiPeriod
-	};
+		StartProtection(
+			takeProfit: ConvertTicksToPrice(TakeProfit, step.Value, nameof(TakeProfit)),
+			stopLoss: ConvertTicksToPrice(StopLoss, step.Value, nameof(StopLoss)),
+			useMarketOrders: true, isLocalStop: true);
 
-	var subscription = SubscribeCandles(CandleType);
-	subscription.Bind(mfi, ProcessCandle).Start();
+		var mfi = new MoneyFlowIndex { Length = MfiPeriod };
+		var subscription = SubscribeCandles(CandleType);
+		subscription.Bind(mfi, ProcessCandle).Start();
 
-	var area = CreateChartArea();
-	if (area != null)
-	{
-		DrawCandles(area, subscription);
-		DrawOwnTrades(area);
-
-		var area2 = CreateChartArea();
-		if (area2 != null)
-			DrawIndicator(area2, mfi);
-	}
+		var area = CreateChartArea();
+		if (area is not null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
+			var indicatorArea = CreateChartArea();
+			if (indicatorArea is not null)
+				DrawIndicator(indicatorArea, mfi);
+		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal mfiValue)
 	{
-	if (candle.State != CandleStates.Finished)
-	return;
+		if (candle.State != CandleStates.Finished)
+			return;
 
-	if (!IsFormedAndOnlineAndAllowTrading())
-	{
+		if (_prevMfi is decimal previous && IsFormedAndOnlineAndAllowTrading()
+			&& (_pendingEntry is null || _pendingEntry.State is OrderStates.Done or OrderStates.Failed))
+		{
+			if (previous <= HighLevel && mfiValue > HighLevel && Position <= 0m)
+				_pendingEntry = BuyMarket(Volume + Math.Abs(Position));
+			else if (previous >= LowLevel && mfiValue < LowLevel && Position >= 0m)
+				_pendingEntry = SellMarket(Volume + Math.Abs(Position));
+		}
+
+		// Always advance the baseline, even while trading is disabled or an order is pending.
 		_prevMfi = mfiValue;
-		return;
-	}
-
-	// MFI crosses above high level
-	if (mfiValue > HighLevel && _prevMfi <= HighLevel)
-	{
-	if (Position <= 0)
-	BuyMarket();
-	}
-	// MFI crosses below low level
-	else if (mfiValue < LowLevel && _prevMfi >= LowLevel)
-	{
-	if (Position >= 0)
-	SellMarket();
-	}
-
-	_prevMfi = mfiValue;
 	}
 }

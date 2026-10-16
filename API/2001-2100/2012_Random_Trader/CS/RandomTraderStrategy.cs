@@ -11,12 +11,12 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Randomly buys or sells on each candle when no position is open.
-/// Applies fixed take profit and stop loss via StartProtection.
+/// Applies fixed take-profit and stop-loss distances in absolute price units.
 /// </summary>
 public class RandomTraderStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _takeProfitPct;
-	private readonly StrategyParam<decimal> _stopLossPct;
+	private readonly StrategyParam<decimal> _takeProfit;
+	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<int> _cooldown;
 	private readonly StrategyParam<DataType> _candleType;
 
@@ -24,19 +24,19 @@ public class RandomTraderStrategy : Strategy
 	private int _candleCount;
 	private int _signalState;
 
-	public decimal TakeProfitPct { get => _takeProfitPct.Value; set => _takeProfitPct.Value = value; }
-	public decimal StopLossPct { get => _stopLossPct.Value; set => _stopLossPct.Value = value; }
+	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
+	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
 	public int Cooldown { get => _cooldown.Value; set => _cooldown.Value = value; }
 	public int SignalSeed { get => _signalSeed.Value; set => _signalSeed.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public RandomTraderStrategy()
 	{
-		_takeProfitPct = Param(nameof(TakeProfitPct), 2m)
-			.SetDisplay("Take Profit %", "Target profit percentage", "Risk");
+		_takeProfit = Param(nameof(TakeProfit), 10m)
+			.SetDisplay("Take Profit", "Target profit distance in absolute price units", "Risk");
 
-		_stopLossPct = Param(nameof(StopLossPct), 1m)
-			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
+		_stopLoss = Param(nameof(StopLoss), 10m)
+			.SetDisplay("Stop Loss", "Stop loss distance in absolute price units", "Risk");
 
 		_cooldown = Param(nameof(Cooldown), 25)
 			.SetGreaterThanZero()
@@ -78,8 +78,8 @@ public class RandomTraderStrategy : Strategy
 			.Start();
 
 		StartProtection(
-			takeProfit: new Unit(TakeProfitPct, UnitTypes.Percent),
-			stopLoss: new Unit(StopLossPct, UnitTypes.Percent)
+			takeProfit: new Unit(TakeProfit, UnitTypes.Absolute),
+			stopLoss: new Unit(StopLoss, UnitTypes.Absolute)
 		);
 
 		var area = CreateChartArea();

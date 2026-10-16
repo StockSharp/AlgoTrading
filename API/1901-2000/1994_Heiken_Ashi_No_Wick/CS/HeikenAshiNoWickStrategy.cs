@@ -1,13 +1,18 @@
 using System;
 using System.Collections.Generic;
+
 using Ecng.Common;
+
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>Contrarian Heiken Ashi no-wick pattern on completed candles.</summary>
+/// <summary>
+/// Contrarian Heiken Ashi pattern: enter against a stronger candle with no
+/// lower/upper wick, exit on the opposite no-wick candle.
+/// </summary>
 public class HeikenAshiNoWickStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
@@ -24,7 +29,8 @@ public class HeikenAshiNoWickStrategy : Strategy
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() => [(Security, CandleType)];
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> [(Security, CandleType)];
 
 	protected override void OnReseted()
 	{
@@ -45,6 +51,7 @@ public class HeikenAshiNoWickStrategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
+
 		var open = candle.OpenPrice;
 		var high = candle.HighPrice;
 		var low = candle.LowPrice;
@@ -57,12 +64,15 @@ public class HeikenAshiNoWickStrategy : Strategy
 		var larger = _previousBody is decimal previousBody && body > previousBody;
 		var bullishNoLower = haClose > haOpen && low >= haOpen;
 		var bearishNoUpper = haClose < haOpen && high <= haOpen;
+
 		_previousHaOpen = haOpen;
 		_previousHaClose = haClose;
 		_previousBody = body;
+
 		if (!IsFormedAndOnlineAndAllowTrading()
 			|| (_pendingOrder is not null && _pendingOrder.State is not (OrderStates.Done or OrderStates.Failed)))
 			return;
+
 		if (bullishNoLower)
 		{
 			if (Position > 0m)
