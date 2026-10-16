@@ -956,4 +956,53 @@ public abstract partial class StrategyTests
 		IsTrue(orders > 0 && fills > 0, "Archive must show actual OSMA reversal orders and fills.");
 	}
 
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public async Task Point1Part05_ColorZerolagRsiOsma_FiveFormedRsiAndLiveReversals()
+	{
+		var entries = 0;
+		var exits = 0;
+		var fills = 0;
+		await Replay("2001_Color_Zerolag_RSI_OSMA", (strategy, _) =>
+		{
+			var published = new[] { 8, 21, 34, 55, 89 };
+			for (var i = 1; i <= 5; i++)
+			{
+				AreEqual(published[i - 1], Convert.ToInt32(strategy.Parameters["RsiPeriod" + i].Value));
+				IsTrue(strategy.Parameters.ContainsKey("Factor" + i));
+				SetParam(strategy, "RsiPeriod" + i, i + 2);
+			}
+			AreEqual(TimeSpan.FromHours(4).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			foreach (var flag in new[] { "AllowBuy", "AllowSell", "CloseLong", "CloseShort" })
+				AreEqual(true, strategy.Parameters[flag].Value);
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "Smoothing1", 3);
+			SetParam(strategy, "Smoothing2", 3);
+			SetParam(strategy, "StopLoss", 100m);
+			SetParam(strategy, "TakeProfit", 200m);
+			SetParam(strategy, "AllowSell", false);
+			strategy.OrderRegistering += order =>
+			{
+				IsTrue(order.Volume > 0m);
+				if (order.Side == Sides.Buy)
+				{
+					AreEqual(strategy.Volume, order.Volume);
+					entries++;
+				}
+				else
+				{
+					IsTrue(strategy.Position > 0m,
+						"AllowSell=false prohibits opening a short.");
+					AreEqual(strategy.Position, order.Volume,
+						"Exit size must equal the actual long position.");
+					exits++;
+				}
+			};
+			strategy.Trades.TradeAdded += _ => fills++;
+		}, replayDuration: TimeSpan.FromDays(14));
+		IsTrue(entries > 0 && exits > 0 && fills >= 2,
+			"Both actual entries and exits must fill for 5-component RSI OSMA.");
+	}
+
 }
