@@ -11,6 +11,104 @@ using StockSharp.Messages;
 
 public abstract partial class StrategyTests
 {
+
+    private const string Point1Part10GraalKey = "3846_Graal_Fractal_Channel";
+
+    [TestMethod]
+    [TestCategory("Shard06")]
+    public async Task S3846_GraalEntriesRequireConfirmedFiveBarFractals()
+    {
+        var bars = new Queue<(decimal high, decimal low)>();
+        var completed = 0;
+        var entries = 0;
+        var fills = 0;
+        var invalid = new List<string>();
+        Sides? latestFractal = null;
+        var signalBar = -100;
+        var ordersThisBar = 0;
+
+        await Replay(Point1Part10GraalKey, (strategy, _) =>
+        {
+            var expected = new (string name, object value)[]
+            {
+                ("OrderVolume", 0.1m), ("StopLossPips", 500m),
+                ("TakeProfitPips", 500m), ("OffsetPips", 5m),
+                ("ChannelPeriod", 14), ("UseFractalChannel", false),
+                ("DepthPercent", 25m), ("UseHighLowChannel", false),
+                ("OrientationPercent", 20m), ("AllowFlatTrading", true),
+                ("FlatThresholdPips", 20m), ("UseWilliamsExit", false),
+                ("WilliamsPeriod", 14), ("WilliamsThreshold", 30m),
+                ("UseCounterOrders", false), ("SinglePosition", false),
+                ("SignalAgeLimit", 3),
+            };
+            foreach (var (name, value) in expected)
+            {
+                IsTrue(strategy.Parameters.TryGetValue(name, out var param), $"Missing {name}.");
+                if (value is bool)
+                    AreEqual(value, param.Value, name);
+                else
+                    AreEqual(Convert.ToDecimal(value), Convert.ToDecimal(param.Value), name);
+            }
+            AreEqual(TimeSpan.FromHours(1).TimeFrame(), strategy.Parameters["CandleType"].Value);
+
+            strategy.CandleReceived += (_, candle) =>
+            {
+                if (candle.State != CandleStates.Finished)
+                    return;
+                completed++;
+                ordersThisBar = 0;
+                bars.Enqueue((candle.HighPrice, candle.LowPrice));
+                if (bars.Count > 5)
+                    bars.Dequeue();
+                if (bars.Count != 5)
+                    return;
+                var window = bars.ToArray();
+                var high = window.Where((_, i) => i != 2).All(b => window[2].high > b.high);
+                var low = window.Where((_, i) => i != 2).All(b => window[2].low < b.low);
+                if (high != low)
+                {
+                    latestFractal = high ? Sides.Sell : Sides.Buy;
+                    signalBar = completed;
+                }
+                else if (high)
+                {
+                    latestFractal = null;
+                }
+            };
+            strategy.OrderRegistering += order =>
+            {
+                if (order.Comment != "Graal fractal entry")
+                    return; // Native protection is checked by the existing replay harness.
+                entries++;
+                ordersThisBar++;
+                if (order.Type != OrderTypes.Market || completed < 14 ||
+                    latestFractal is null || order.Side != latestFractal ||
+                    completed - signalBar > 3)
+                    invalid.Add($"Unconfirmed Graal entry at completed bar {completed}: {order.Side} {order.Volume}.");
+                if (ordersThisBar != 1)
+                    invalid.Add($"Multiple entries at bar {completed}.");
+                var baseVolume = 0.1m;
+                if (strategy.Security.VolumeStep is decimal step && step > 0m)
+                    baseVolume = decimal.Floor(baseVolume / step) * step;
+                if (strategy.Security.MinVolume is decimal min && min > 0m)
+                    baseVolume = Math.Max(baseVolume, min);
+                var expectedVolume = baseVolume + (order.Side == Sides.Buy && strategy.Position < 0m ||
+                    order.Side == Sides.Sell && strategy.Position > 0m ? Math.Abs(strategy.Position) : 0m);
+                if (order.Volume != expectedVolume)
+                    invalid.Add($"Wrong net order volume: {order.Volume}; expected {expectedVolume}.");
+                latestFractal = null; // Consume the signal after one submitted entry.
+            };
+            strategy.OwnTradeReceived += (_, trade) =>
+            {
+                if (trade.Trade is not null && trade.Order?.Comment == "Graal fractal entry")
+                    fills++;
+            };
+        }, TimeSpan.FromDays(31));
+
+        AreEqual(0, invalid.Count, string.Join(Environment.NewLine, invalid.Take(12)));
+        IsTrue(entries > 0 && fills > 0, "Require fractal entry orders and real fills on the packaged history.");
+    }
+
     private const string Point1Part10GapKey = "3849_Gaps_Reversion";
 
     [TestMethod]
