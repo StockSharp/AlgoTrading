@@ -443,4 +443,103 @@ public abstract partial class StrategyTests
 		IsTrue(entryOrders > 0 && fills > 0 && disallowedBars > 0);
 		TestContext.WriteLine($"0778 {Extension}: other={secondary}: {entryOrders} entries, {exitOrders} native exits, {fills} fills and {disallowedBars} rejected bars.");
 	}
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	[DataRow(false)]
+	[DataRow(true)]
+	public async Task S0781_IndependentFibBandEntryAndPriorSwingHighExit(bool secondary)
+	{
+		const int bandLength = 8;
+		const int swingWindow = 12;
+		const decimal bandFactor = 1.0m;
+		const decimal fibFactor = 0.382m;
+		var closes = new Queue<decimal>();
+		var highs = new Queue<decimal>();
+		var lows = new Queue<decimal>();
+		var position = 0m;
+		Order pending = null;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var expectedEntries = 0;
+		var expectedExits = 0;
+		var nonSignals = 0;
+		var orders = 0;
+		var fills = 0;
+		var errors = new List<string>();
+		await Replay("0781_Fibonacci_Bollinger_Bands", (strategy, other) =>
+		{
+			AreEqual(20, strategy.Parameters["BollingerPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["BollingerDeviation"].Value));
+			AreEqual(50, strategy.Parameters["FibLookback"].Value);
+			AreEqual(0.618m, Convert.ToDecimal(strategy.Parameters["FibonacciLevel"].Value));
+			AreEqual(TimeSpan.FromMinutes(1).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			if (secondary) strategy.Security = other;
+			SetParam(strategy, "BollingerPeriod", bandLength);
+			SetParam(strategy, "BollingerDeviation", bandFactor);
+			SetParam(strategy, "FibLookback", swingWindow);
+			SetParam(strategy, "FibonacciLevel", fibFactor);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished || candle.SecurityId != strategy.Security.Id.ToSecurityId())
+					return;
+				if (expectedSide is not null)
+					errors.Add("A previous Fibonacci/Bollinger signal was not submitted.");
+				expectedSide = null;
+				closes.Enqueue(candle.ClosePrice);
+				while (closes.Count > bandLength) closes.Dequeue();
+				var complete = closes.Count == bandLength && highs.Count == swingWindow && lows.Count == swingWindow;
+				var pendingActive = pending is not null && pending.State is not (OrderStates.Done or OrderStates.Failed);
+				if (complete && !pendingActive)
+				{
+					var mean = closes.Average();
+					var variance = closes.Sum(price => (price - mean) * (price - mean)) / bandLength;
+					var sd = (decimal)Math.Sqrt((double)variance);
+					var upper = mean + sd * bandFactor;
+					var lower = mean - sd * bandFactor;
+					var swingHigh = highs.Max();
+					var swingLow = lows.Min();
+					var fib = swingLow + fibFactor * (swingHigh - swingLow);
+					if (position > 0m && (candle.ClosePrice >= upper || candle.ClosePrice >= swingHigh))
+					{
+						expectedSide = Sides.Sell;
+						expectedVolume = position;
+						expectedExits++;
+					}
+					else if (position == 0m && candle.ClosePrice < lower && candle.ClosePrice > fib)
+					{
+						expectedSide = Sides.Buy;
+						expectedVolume = strategy.Volume;
+						expectedEntries++;
+					}
+					else nonSignals++;
+				}
+				highs.Enqueue(candle.HighPrice);
+				lows.Enqueue(candle.LowPrice);
+				while (highs.Count > swingWindow) highs.Dequeue();
+				while (lows.Count > swingWindow) lows.Dequeue();
+			};
+			strategy.OrderRegistering += order =>
+			{
+				orders++;
+				if (expectedSide != order.Side || expectedVolume != order.Volume ||
+					order.Type != OrderTypes.Market || position != strategy.Position)
+					errors.Add($"Unexpected Fib/Bollinger order {order.Side}/{order.Volume}; expected {expectedSide}/{expectedVolume}.");
+				expectedSide = null;
+				pending = order;
+			};
+			strategy.OwnTradeReceived += (_, trade) =>
+			{
+				fills++;
+				position += trade.Order.Side == Sides.Buy ? trade.Trade.Volume : -trade.Trade.Volume;
+				if (position < 0m)
+					errors.Add("Fib/Bollinger is long-only and may not open a short position.");
+			};
+		}, TimeSpan.FromDays(31), TimeSpan.FromDays(1));
+		IsTrue(errors.Count == 0, string.Join(Environment.NewLine, errors.Take(12)));
+		AreEqual(expectedEntries + expectedExits, orders);
+		IsTrue(expectedEntries > 0 && expectedExits > 0 && fills > 0 && nonSignals > 0,
+			"Existing history must exercise long entries, exits, filled orders and no-signal bars.");
+		TestContext.WriteLine($"0781 {Extension} secondary={secondary}: {expectedEntries} entries, {expectedExits} exits, {fills} fills, {nonSignals} ignored bars.");
+	}
 }
