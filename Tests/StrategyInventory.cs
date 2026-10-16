@@ -67,6 +67,8 @@ static class StrategyInventory
 		"1153_Pairs",
 		// The unchanged 5% candle-gain/15000-volume defaults are reachable on packaged TON, not BTC.
 		"1181_Premarket_Gap_MomoTrader",
+		// The 200-day SMA cannot form from the one-month archive at the published daily default; custom archive test verifies trading mechanics.
+		"1186_Price_and_Volume_Breakout_Buy",
 		"1507_Ultimate_Template",
 		"1908_Random_Trailing_Stop",
 		"2000_HFT_Spreader_for_FORTS",
