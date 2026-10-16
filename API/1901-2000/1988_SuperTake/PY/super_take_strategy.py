@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Strategies")
 clr.AddReference("StockSharp.BusinessEntities")
 
-from System import TimeSpan, Convert
+from System import TimeSpan, Convert, Decimal
 from StockSharp.Messages import DataType, CandleStates, OrderStates, Level1Fields, Sides
 from StockSharp.BusinessEntities import Subscription
 from StockSharp.Algo.Strategies import Strategy
@@ -105,8 +105,13 @@ class super_take_strategy(Strategy):
 
         self._entry_long = self._last_closed_was_buy is not True
         base = Convert.ToDecimal(self.TakeProfit)
-        self._current_take_profit = (self._last_take_profit_distance * Convert.ToDecimal(self.MartinFactor)
-                                     if self._last_trade_was_loss else base)
+        factor = Convert.ToDecimal(self.MartinFactor)
+        if self._last_trade_was_loss:
+            limit = Decimal.MaxValue / factor if factor > 1 else Decimal.MaxValue
+            self._current_take_profit = (Decimal.MaxValue if self._last_take_profit_distance > limit
+                                         else self._last_take_profit_distance * factor)
+        else:
+            self._current_take_profit = base
         self._entry_volume = Convert.ToDecimal(0)
         self._entry_value = Convert.ToDecimal(0)
         self._realized_pnl = Convert.ToDecimal(0)
@@ -122,8 +127,8 @@ class super_take_strategy(Strategy):
         super(super_take_strategy, self).OnOwnTradeReceived(trade)
         if trade.Order is None or trade.Trade is None:
             return
-        volume = trade.Trade.Volume
-        price = trade.Trade.Price
+        volume = Convert.ToDecimal(trade.Trade.TradeVolume)
+        price = Convert.ToDecimal(trade.Trade.TradePrice)
         if trade.Order == self._entry_order:
             self._entry_volume += volume
             self._entry_value += volume * price

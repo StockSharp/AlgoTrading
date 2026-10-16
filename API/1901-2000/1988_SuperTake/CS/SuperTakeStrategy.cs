@@ -108,7 +108,18 @@ public class SuperTakeStrategy : Strategy
 			return;
 
 		_entryLong = _lastClosedWasBuy is not true;
-		_currentTakeProfit = _lastTradeWasLoss ? _lastTakeProfitDistance * MartinFactor : TakeProfit;
+		// Decimal arithmetic is finite; clamp an unreachable martingale target
+		// rather than crashing after repeated realized losses.
+		if (_lastTradeWasLoss)
+		{
+			var factor = MartinFactor;
+			_currentTakeProfit = factor > 1m &&
+				_lastTakeProfitDistance > decimal.MaxValue / factor
+					? decimal.MaxValue
+					: _lastTakeProfitDistance * factor;
+		}
+		else
+			_currentTakeProfit = TakeProfit;
 		_entryVolume = _entryValue = _realizedPnl = 0m;
 		_exitOrder = null;
 
