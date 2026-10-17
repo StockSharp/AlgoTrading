@@ -26,6 +26,7 @@ public class InstantaneousTrendFilterStrategy : Strategy
 	private decimal _itrendPrev2;
 	private decimal _triggerPrev;
 	private int _bars;
+	private Order _pending;
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public decimal Alpha { get => _alpha.Value; set => _alpha.Value = value; }
@@ -49,6 +50,7 @@ public class InstantaneousTrendFilterStrategy : Strategy
 	{
 		base.OnReseted();
 		_bars = default;
+		_pending = null;
 		_prevClose = default;
 		_prevPrevClose = default;
 		_itrendPrev1 = default;
@@ -67,6 +69,7 @@ public class InstantaneousTrendFilterStrategy : Strategy
 		base.OnStarted2(time);
 
 		_bars = 0;
+		_pending = null;
 		var a2 = Alpha * Alpha;
 		_k0 = Alpha - a2 / 4m;
 		_k1 = 0.5m * a2;
@@ -98,15 +101,10 @@ public class InstantaneousTrendFilterStrategy : Strategy
 		var crossDown = _triggerPrev > _itrendPrev1 && trigger < itrend;
 		var crossUp = _triggerPrev < _itrendPrev1 && trigger > itrend;
 
-		if (crossDown && Position <= 0)
+		if (_bars >= 4 && IsFormedAndOnlineAndAllowTrading() && (_pending is null || _pending.State is OrderStates.Done or OrderStates.Failed))
 		{
-			if (Position < 0) BuyMarket();
-			BuyMarket();
-		}
-		else if (crossUp && Position >= 0)
-		{
-			if (Position > 0) SellMarket();
-			SellMarket();
+			if (crossDown && Position <= 0m) _pending = BuyMarket(Volume - Math.Min(0m, Position));
+			else if (crossUp && Position >= 0m) _pending = SellMarket(Volume + Math.Max(0m, Position));
 		}
 
 		_itrendPrev2 = _itrendPrev1;

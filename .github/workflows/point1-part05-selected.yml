@@ -42,6 +42,6 @@ jobs:
       - name: Run ONLY selected Point1Part05 tests
         run: >
           dotnet test Tests/Tests.csproj --no-build -c Release
-          --filter "FullyQualifiedName~Point1Part05_Batch11_"
+          --filter "FullyQualifiedName~Point1Part05_Batch12_"
           --blame-hang-timeout 10m
           -- RunConfiguration.MaxCpuCount=1

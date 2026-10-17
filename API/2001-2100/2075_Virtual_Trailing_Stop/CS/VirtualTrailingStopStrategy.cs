@@ -3,7 +3,6 @@ using System.Collections.Generic;
 
 using Ecng.Common;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -11,93 +10,144 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Virtual trailing stop strategy.
-/// Uses EMA crossover for entries with trailing stop protection.
+/// Virtual risk manager. Never opens a position. Tracks externally executed
+/// position average price and closes it if a finished candle reaches the
+/// fixed stop, target, or a monotonically tightening virtual trailing stop.
+/// All configured distances are security price steps.
 /// </summary>
 public class VirtualTrailingStopStrategy : Strategy
 {
-	private readonly StrategyParam<int> _fastPeriod;
-	private readonly StrategyParam<int> _slowPeriod;
-	private readonly StrategyParam<decimal> _trailingPct;
+	private readonly StrategyParam<decimal> _stopLoss, _takeProfit, _trailingStop, _trailingStart, _trailingStep;
 	private readonly StrategyParam<DataType> _candleType;
+	private decimal? _entryPrice, _bestPrice, _virtualStop;
+	private decimal _trackedPosition;
+	private Order _pending;
 
-	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
-	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
-	public decimal TrailingPct { get => _trailingPct.Value; set => _trailingPct.Value = value; }
+	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
+	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
+	public decimal TrailingStop { get => _trailingStop.Value; set => _trailingStop.Value = value; }
+	public decimal TrailingStart { get => _trailingStart.Value; set => _trailingStart.Value = value; }
+	public decimal TrailingStep { get => _trailingStep.Value; set => _trailingStep.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public VirtualTrailingStopStrategy()
 	{
-		_fastPeriod = Param(nameof(FastPeriod), 10)
-			.SetGreaterThanZero()
-			.SetDisplay("Fast EMA", "Fast EMA period", "Indicator");
-
-		_slowPeriod = Param(nameof(SlowPeriod), 30)
-			.SetGreaterThanZero()
-			.SetDisplay("Slow EMA", "Slow EMA period", "Indicator");
-
-		_trailingPct = Param(nameof(TrailingPct), 2m)
-			.SetDisplay("Trailing %", "Trailing stop distance percentage", "Risk");
-
+		_stopLoss = Param(nameof(StopLoss), 0m).SetNotNegative()
+			.SetDisplay("Stop Loss", "Fixed distance from filled entry in price steps", "Risk");
+		_takeProfit = Param(nameof(TakeProfit), 0m).SetNotNegative()
+			.SetDisplay("Take Profit", "Fixed target distance in price steps", "Risk");
+		_trailingStop = Param(nameof(TrailingStop), 30m).SetNotNegative()
+			.SetDisplay("Trailing Stop", "Trailing distance in price steps", "Risk");
+		_trailingStart = Param(nameof(TrailingStart), 10m).SetNotNegative()
+			.SetDisplay("Trailing Start", "Required favorable movement in price steps", "Risk");
+		_trailingStep = Param(nameof(TrailingStep), 1m).SetGreaterThanZero()
+			.SetDisplay("Trailing Step", "Minimum improvement before tightening", "Risk");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
-			.SetDisplay("Candle Type", "Candle timeframe", "General");
+			.SetDisplay("Candle Type", "Processed finished candles", "General");
 	}
 
-	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() => [(Security, CandleType)];
+
+	private void ResetTracking()
 	{
-		return [(Security, CandleType)];
+		_entryPrice = _bestPrice = _virtualStop = null;
+		_trackedPosition = 0m;
+		_pending = null;
 	}
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		ResetTracking();
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		StartProtection(
-			takeProfit: null,
-			stopLoss: new Unit(TrailingPct, UnitTypes.Percent),
-			isStopTrailing: true,
-			useMarketOrders: true);
-
-		var fast = new ExponentialMovingAverage { Length = FastPeriod };
-		var slow = new ExponentialMovingAverage { Length = SlowPeriod };
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(fast, slow, ProcessCandle)
-			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, fast);
-			DrawIndicator(area, slow);
-			DrawOwnTrades(area);
-		}
+		ResetTracking();
+		SubscribeCandles(CandleType).Bind(ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fastVal, decimal slowVal)
+	protected override void OnNewPosition(Position position)
 	{
-		if (candle.State != CandleStates.Finished)
+		base.OnNewPosition(position);
+		ObservePosition(position);
+	}
+
+	protected override void OnPositionChanged(Position position)
+	{
+		base.OnPositionChanged(position);
+		ObservePosition(position);
+	}
+
+	protected override void OnPositionReceived(Position position)
+	{
+		base.OnPositionReceived(position);
+		ObservePosition(position);
+	}
+
+	private void ObservePosition(Position position)
+	{
+		if (position.Security != Security || position.Portfolio != Portfolio)
 			return;
 
-		if (fastVal > slowVal && Position <= 0)
+		var volume = position.CurrentValue ?? 0m;
+		if (volume == 0m)
 		{
-			if (Position < 0) BuyMarket();
-			BuyMarket();
+			_entryPrice = _bestPrice = _virtualStop = null;
+			_trackedPosition = 0m;
+			return;
 		}
-		else if (fastVal < slowVal && Position >= 0)
+		if (position.AveragePrice is not decimal price || price <= 0m)
+			return;
+		if (_entryPrice == price && _trackedPosition * volume > 0m)
 		{
-			if (Position > 0) SellMarket();
-			SellMarket();
+			_trackedPosition = volume;
+			return;
 		}
+		_entryPrice = _bestPrice = price;
+		_trackedPosition = volume;
+		_virtualStop = null;
+	}
+
+	private void Tighten(bool isLong, decimal candidate)
+		=> _virtualStop = _virtualStop is decimal old
+			? isLong ? Math.Max(old, candidate) : Math.Min(old, candidate)
+			: candidate;
+
+	private void ProcessCandle(ICandleMessage candle)
+	{
+		if (candle.State != CandleStates.Finished || Position == 0m || _entryPrice is not decimal entry ||
+			!IsFormedAndOnlineAndAllowTrading() ||
+			(_pending is not null && _pending.State is not (OrderStates.Done or OrderStates.Failed)))
+			return;
+
+		var isLong = Position > 0m;
+		var price = candle.ClosePrice;
+		var step = Security.PriceStep is decimal positive && positive > 0m ? positive : 1m;
+		var best = _bestPrice ?? entry;
+		best = isLong ? Math.Max(best, price) : Math.Min(best, price);
+		_bestPrice = best;
+
+		if (TrailingStop > 0m)
+		{
+			var profit = isLong ? best - entry : entry - best;
+			if (profit >= TrailingStart * step)
+			{
+				var candidate = isLong ? best - TrailingStop * step : best + TrailingStop * step;
+				if (_virtualStop is not decimal existing || 
+					(isLong ? candidate >= existing + TrailingStep * step
+						: candidate <= existing - TrailingStep * step))
+					Tighten(isLong, candidate);
+			}
+		}
+
+		var fixedStop = StopLoss > 0m && (isLong ? price <= entry - StopLoss * step
+			: price >= entry + StopLoss * step);
+		var target = TakeProfit > 0m && (isLong ? price >= entry + TakeProfit * step
+			: price <= entry - TakeProfit * step);
+		var trailing = _virtualStop is decimal stop && (isLong ? price <= stop : price >= stop);
+		if (fixedStop || target || trailing)
+			_pending = isLong ? SellMarket(Math.Abs(Position)) : BuyMarket(Math.Abs(Position));
 	}
 }

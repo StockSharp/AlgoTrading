@@ -2021,4 +2021,339 @@ public abstract partial class StrategyTests
 		AreEqual(1, buyOrders, "One-shot trailing example must submit exactly one long entry.");
 	}
 
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public async Task Point1Part05_Batch12_ITrend_ArchiveReplaysBothLanguages()
+	{
+		var orders = 0;
+		var fills = 0;
+		await Replay("2061_I_Trend", (strategy, _) =>
+		{
+			AreEqual(13m, Convert.ToDecimal(strategy.Parameters["MaPeriod"].Value), "2061_I_Trend: MaPeriod default.");
+			AreEqual(20m, Convert.ToDecimal(strategy.Parameters["BbPeriod"].Value), "2061_I_Trend: BbPeriod default.");
+			AreEqual(0m, Convert.ToDecimal(strategy.Parameters["PriceType"].Value), "2061_I_Trend: PriceType default.");
+			AreEqual(0m, Convert.ToDecimal(strategy.Parameters["BbMode"].Value), "2061_I_Trend: BbMode default.");
+
+
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "MaPeriod", 4m);
+			SetParam(strategy, "BbPeriod", 6m);
+			SetParam(strategy, "BbDeviation", 1m);
+			SetParam(strategy, "PriceType", 0m);
+			SetParam(strategy, "BbMode", 0m);
+			strategy.OrderRegistering += order =>
+			{
+				IsTrue(order.Volume > 0m, "2061_I_Trend: order volume must be positive.");
+				orders++;
+			};
+			strategy.Trades.TradeAdded += _ => fills++;
+		}, replayDuration: TimeSpan.FromDays(14));
+		IsTrue(orders > 0 && fills > 0,
+			"2061_I_Trend: real BTC/TON replay must contain actual orders and fills.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public async Task Point1Part05_Batch12_AnchoredMomentum_ArchiveReplaysBothLanguages()
+	{
+		var orders = 0;
+		var fills = 0;
+		await Replay("2062_Anchored_Momentum_Breakout", (strategy, _) =>
+		{
+			AreEqual(34m, Convert.ToDecimal(strategy.Parameters["SmaPeriod"].Value), "2062_Anchored_Momentum_Breakout: SmaPeriod default.");
+			AreEqual(20m, Convert.ToDecimal(strategy.Parameters["EmaPeriod"].Value), "2062_Anchored_Momentum_Breakout: EmaPeriod default.");
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLossPercent"].Value), "2062_Anchored_Momentum_Breakout: StopLossPercent default.");
+			AreEqual(4m, Convert.ToDecimal(strategy.Parameters["TakeProfitPercent"].Value), "2062_Anchored_Momentum_Breakout: TakeProfitPercent default.");
+
+
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "SmaPeriod", 7m);
+			SetParam(strategy, "EmaPeriod", 3m);
+			SetParam(strategy, "StopLossPercent", 10m);
+			SetParam(strategy, "TakeProfitPercent", 10m);
+			strategy.OrderRegistering += order =>
+			{
+				IsTrue(order.Volume > 0m, "2062_Anchored_Momentum_Breakout: order volume must be positive.");
+				orders++;
+			};
+			strategy.Trades.TradeAdded += _ => fills++;
+		}, replayDuration: TimeSpan.FromDays(14));
+		IsTrue(orders > 0 && fills > 0,
+			"2062_Anchored_Momentum_Breakout: real BTC/TON replay must contain actual orders and fills.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public async Task Point1Part05_Batch12_IchimokuOscillator_ArchiveReplaysBothLanguages()
+	{
+		var orders = 0;
+		var fills = 0;
+		await Replay("2063_Ichimoku_Oscillator", (strategy, _) =>
+		{
+			AreEqual(9m, Convert.ToDecimal(strategy.Parameters["TenkanPeriod"].Value), "2063_Ichimoku_Oscillator: TenkanPeriod default.");
+			AreEqual(26m, Convert.ToDecimal(strategy.Parameters["KijunPeriod"].Value), "2063_Ichimoku_Oscillator: KijunPeriod default.");
+			AreEqual(52m, Convert.ToDecimal(strategy.Parameters["SenkouSpanBPeriod"].Value), "2063_Ichimoku_Oscillator: SenkouSpanBPeriod default.");
+			AreEqual(7m, Convert.ToDecimal(strategy.Parameters["SmoothingPeriod"].Value), "2063_Ichimoku_Oscillator: SmoothingPeriod default.");
+			AreEqual(true, strategy.Parameters["EnableStopLoss"].Value, "2063_Ichimoku_Oscillator: EnableStopLoss enabled.");
+
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "TenkanPeriod", 4m);
+			SetParam(strategy, "KijunPeriod", 6m);
+			SetParam(strategy, "SenkouSpanBPeriod", 9m);
+			SetParam(strategy, "SmoothingPeriod", 3m);
+			SetParam(strategy, "StopLossPercent", 10m);
+			SetParam(strategy, "TakeProfitPercent", 10m);
+			strategy.OrderRegistering += order =>
+			{
+				IsTrue(order.Volume > 0m, "2063_Ichimoku_Oscillator: order volume must be positive.");
+				orders++;
+			};
+			strategy.Trades.TradeAdded += _ => fills++;
+		}, replayDuration: TimeSpan.FromDays(14));
+		IsTrue(orders > 0 && fills > 0,
+			"2063_Ichimoku_Oscillator: real BTC/TON replay must contain actual orders and fills.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public async Task Point1Part05_Batch12_HullTrendOsma_ArchiveReplaysBothLanguages()
+	{
+		var orders = 0;
+		var fills = 0;
+		await Replay("2064_Hull_Trend_OSMA", (strategy, _) =>
+		{
+			AreEqual(20m, Convert.ToDecimal(strategy.Parameters["HullPeriod"].Value), "2064_Hull_Trend_OSMA: HullPeriod default.");
+			AreEqual(5m, Convert.ToDecimal(strategy.Parameters["SignalPeriod"].Value), "2064_Hull_Trend_OSMA: SignalPeriod default.");
+			AreEqual(3m, Convert.ToDecimal(strategy.Parameters["TakeProfit"].Value), "2064_Hull_Trend_OSMA: TakeProfit default.");
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLoss"].Value), "2064_Hull_Trend_OSMA: StopLoss default.");
+
+			AreEqual(TimeSpan.FromHours(8).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "HullPeriod", 7m);
+			SetParam(strategy, "SignalPeriod", 3m);
+			SetParam(strategy, "TakeProfit", 200m);
+			SetParam(strategy, "StopLoss", 100m);
+			strategy.OrderRegistering += order =>
+			{
+				IsTrue(order.Volume > 0m, "2064_Hull_Trend_OSMA: order volume must be positive.");
+				orders++;
+			};
+			strategy.Trades.TradeAdded += _ => fills++;
+		}, replayDuration: TimeSpan.FromDays(14));
+		IsTrue(orders > 0 && fills > 0,
+			"2064_Hull_Trend_OSMA: real BTC/TON replay must contain actual orders and fills.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public async Task Point1Part05_Batch12_ZerolagHLR_ArchiveReplaysBothLanguages()
+	{
+		var orders = 0;
+		var fills = 0;
+		await Replay("2065_Color_Zerolag_HLR", (strategy, _) =>
+		{
+			AreEqual(15m, Convert.ToDecimal(strategy.Parameters["Smoothing"].Value), "2065_Color_Zerolag_HLR: Smoothing default.");
+			AreEqual(8m, Convert.ToDecimal(strategy.Parameters["HlrPeriod1"].Value), "2065_Color_Zerolag_HLR: HlrPeriod1 default.");
+			AreEqual(21m, Convert.ToDecimal(strategy.Parameters["HlrPeriod2"].Value), "2065_Color_Zerolag_HLR: HlrPeriod2 default.");
+			AreEqual(34m, Convert.ToDecimal(strategy.Parameters["HlrPeriod3"].Value), "2065_Color_Zerolag_HLR: HlrPeriod3 default.");
+			AreEqual(55m, Convert.ToDecimal(strategy.Parameters["HlrPeriod4"].Value), "2065_Color_Zerolag_HLR: HlrPeriod4 default.");
+			AreEqual(89m, Convert.ToDecimal(strategy.Parameters["HlrPeriod5"].Value), "2065_Color_Zerolag_HLR: HlrPeriod5 default.");
+			AreEqual(true, strategy.Parameters["BuyPosOpen"].Value, "2065_Color_Zerolag_HLR: BuyPosOpen enabled.");
+			AreEqual(true, strategy.Parameters["SellPosOpen"].Value, "2065_Color_Zerolag_HLR: SellPosOpen enabled.");
+			AreEqual(true, strategy.Parameters["BuyPosClose"].Value, "2065_Color_Zerolag_HLR: BuyPosClose enabled.");
+			AreEqual(true, strategy.Parameters["SellPosClose"].Value, "2065_Color_Zerolag_HLR: SellPosClose enabled.");
+
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "Smoothing", 3m);
+			SetParam(strategy, "HlrPeriod1", 3m);
+			SetParam(strategy, "HlrPeriod2", 4m);
+			SetParam(strategy, "HlrPeriod3", 5m);
+			SetParam(strategy, "HlrPeriod4", 6m);
+			SetParam(strategy, "HlrPeriod5", 7m);
+			strategy.OrderRegistering += order =>
+			{
+				IsTrue(order.Volume > 0m, "2065_Color_Zerolag_HLR: order volume must be positive.");
+				orders++;
+			};
+			strategy.Trades.TradeAdded += _ => fills++;
+		}, replayDuration: TimeSpan.FromDays(14));
+		IsTrue(orders > 0 && fills > 0,
+			"2065_Color_Zerolag_HLR: real BTC/TON replay must contain actual orders and fills.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public async Task Point1Part05_Batch12_AmmaTrend_ArchiveReplaysBothLanguages()
+	{
+		var orders = 0;
+		var fills = 0;
+		await Replay("2066_AMMA_Trend", (strategy, _) =>
+		{
+			AreEqual(25m, Convert.ToDecimal(strategy.Parameters["MaPeriod"].Value), "2066_AMMA_Trend: MaPeriod default.");
+			AreEqual(true, strategy.Parameters["AllowLongEntry"].Value, "2066_AMMA_Trend: AllowLongEntry enabled.");
+			AreEqual(true, strategy.Parameters["AllowShortEntry"].Value, "2066_AMMA_Trend: AllowShortEntry enabled.");
+			AreEqual(true, strategy.Parameters["AllowLongExit"].Value, "2066_AMMA_Trend: AllowLongExit enabled.");
+			AreEqual(true, strategy.Parameters["AllowShortExit"].Value, "2066_AMMA_Trend: AllowShortExit enabled.");
+
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "MaPeriod", 5m);
+			strategy.OrderRegistering += order =>
+			{
+				IsTrue(order.Volume > 0m, "2066_AMMA_Trend: order volume must be positive.");
+				orders++;
+			};
+			strategy.Trades.TradeAdded += _ => fills++;
+		}, replayDuration: TimeSpan.FromDays(14));
+		IsTrue(orders > 0 && fills > 0,
+			"2066_AMMA_Trend: real BTC/TON replay must contain actual orders and fills.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public async Task Point1Part05_Batch12_DailyBreakpoint_ArchiveReplaysBothLanguages()
+	{
+		var orders = 0;
+		var fills = 0;
+		await Replay("2071_Daily_Breakpoint", (strategy, _) =>
+		{
+			AreEqual(30m, Convert.ToDecimal(strategy.Parameters["BreakPoint"].Value), "2071_Daily_Breakpoint: BreakPoint default.");
+			AreEqual(5m, Convert.ToDecimal(strategy.Parameters["LastBarMin"].Value), "2071_Daily_Breakpoint: LastBarMin default.");
+			AreEqual(100m, Convert.ToDecimal(strategy.Parameters["LastBarMax"].Value), "2071_Daily_Breakpoint: LastBarMax default.");
+			AreEqual(100m, Convert.ToDecimal(strategy.Parameters["StopLoss"].Value), "2071_Daily_Breakpoint: StopLoss default.");
+			AreEqual(200m, Convert.ToDecimal(strategy.Parameters["TakeProfit"].Value), "2071_Daily_Breakpoint: TakeProfit default.");
+			AreEqual(0m, Convert.ToDecimal(strategy.Parameters["TrailingStart"].Value), "2071_Daily_Breakpoint: TrailingStart default.");
+			AreEqual(0m, Convert.ToDecimal(strategy.Parameters["TrailingStop"].Value), "2071_Daily_Breakpoint: TrailingStop default.");
+			AreEqual(1m, Convert.ToDecimal(strategy.Parameters["TrailingStep"].Value), "2071_Daily_Breakpoint: TrailingStep default.");
+
+
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "BreakPoint", 1m);
+			SetParam(strategy, "LastBarMin", 0m);
+			SetParam(strategy, "LastBarMax", 1000000m);
+			SetParam(strategy, "StopLoss", 100m);
+			SetParam(strategy, "TakeProfit", 200m);
+			SetParam(strategy, "TrailingStop", 0m);
+			strategy.OrderRegistering += order =>
+			{
+				IsTrue(order.Volume > 0m, "2071_Daily_Breakpoint: order volume must be positive.");
+				orders++;
+			};
+			strategy.Trades.TradeAdded += _ => fills++;
+		}, replayDuration: TimeSpan.FromDays(14));
+		IsTrue(orders > 0 && fills > 0,
+			"2071_Daily_Breakpoint: real BTC/TON replay must contain actual orders and fills.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public async Task Point1Part05_Batch12_InstantaneousTrendFilter_ArchiveReplaysBothLanguages()
+	{
+		var orders = 0;
+		var fills = 0;
+		await Replay("2072_InstantaneousTrendFilter", (strategy, _) =>
+		{
+			AreEqual(0.07m, Convert.ToDecimal(strategy.Parameters["Alpha"].Value), "2072_InstantaneousTrendFilter: Alpha default.");
+
+
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "Alpha", 0.3m);
+			strategy.OrderRegistering += order =>
+			{
+				IsTrue(order.Volume > 0m, "2072_InstantaneousTrendFilter: order volume must be positive.");
+				orders++;
+			};
+			strategy.Trades.TradeAdded += _ => fills++;
+		}, replayDuration: TimeSpan.FromDays(14));
+		IsTrue(orders > 0 && fills > 0,
+			"2072_InstantaneousTrendFilter: real BTC/TON replay must contain actual orders and fills.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public async Task Point1Part05_Batch12_ColorZerolagJjrsx_ArchiveReplaysBothLanguages()
+	{
+		var orders = 0;
+		var fills = 0;
+		await Replay("2076_ColorZerolagJJRSX", (strategy, _) =>
+		{
+			AreEqual(8m, Convert.ToDecimal(strategy.Parameters["FastPeriod"].Value), "2076_ColorZerolagJJRSX: FastPeriod default.");
+			AreEqual(21m, Convert.ToDecimal(strategy.Parameters["SlowPeriod"].Value), "2076_ColorZerolagJJRSX: SlowPeriod default.");
+			AreEqual(2m, Convert.ToDecimal(strategy.Parameters["StopLoss"].Value), "2076_ColorZerolagJJRSX: StopLoss default.");
+			AreEqual(3m, Convert.ToDecimal(strategy.Parameters["TakeProfit"].Value), "2076_ColorZerolagJJRSX: TakeProfit default.");
+			AreEqual(true, strategy.Parameters["BuyOpen"].Value, "2076_ColorZerolagJJRSX: BuyOpen enabled.");
+			AreEqual(true, strategy.Parameters["SellOpen"].Value, "2076_ColorZerolagJJRSX: SellOpen enabled.");
+			AreEqual(true, strategy.Parameters["BuyClose"].Value, "2076_ColorZerolagJJRSX: BuyClose enabled.");
+			AreEqual(true, strategy.Parameters["SellClose"].Value, "2076_ColorZerolagJJRSX: SellClose enabled.");
+
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "FastPeriod", 3m);
+			SetParam(strategy, "SlowPeriod", 8m);
+			SetParam(strategy, "StopLoss", 100m);
+			SetParam(strategy, "TakeProfit", 200m);
+			strategy.OrderRegistering += order =>
+			{
+				IsTrue(order.Volume > 0m, "2076_ColorZerolagJJRSX: order volume must be positive.");
+				orders++;
+			};
+			strategy.Trades.TradeAdded += _ => fills++;
+		}, replayDuration: TimeSpan.FromDays(14));
+		IsTrue(orders > 0 && fills > 0,
+			"2076_ColorZerolagJJRSX: real BTC/TON replay must contain actual orders and fills.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public async Task Point1Part05_Batch12_VirtualTrailingStop_OnlyClosesExternallySeededPosition()
+	{
+		var seeded = false;
+		var entries = 0;
+		var exits = 0;
+		var exitFills = 0;
+		await Replay("2075_Virtual_Trailing_Stop", (strategy, _) =>
+		{
+			foreach (var name in new[] { "StopLoss", "TakeProfit", "TrailingStop",
+				"TrailingStart", "TrailingStep", "CandleType" })
+				IsTrue(strategy.Parameters.ContainsKey(name), "Missing virtual trailing parameter: " + name);
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "StopLoss", 1m);
+			SetParam(strategy, "TakeProfit", 1m);
+			SetParam(strategy, "TrailingStop", 1m);
+			SetParam(strategy, "TrailingStart", 0m);
+			SetParam(strategy, "TrailingStep", 1m);
+			strategy.OrderRegistering += order =>
+			{
+				IsTrue(order.Volume > 0m);
+				if (order.Side == Sides.Buy)
+				{
+					IsTrue(seeded, "Virtual manager must never create an unseeded entry.");
+					entries++;
+				}
+				else
+				{
+					IsTrue(strategy.Position > 0m, "Virtual stop needs an externally filled long.");
+					AreEqual(strategy.Position, order.Volume,
+						"Virtual stop must close exactly the actual filled position.");
+					exits++;
+				}
+			};
+			strategy.Trades.TradeAdded += trade =>
+			{
+				if (trade.Order.Side == Sides.Sell)
+					exitFills++;
+			};
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (seeded || candle.State != CandleStates.Finished ||
+					!strategy.IsFormedAndOnlineAndAllowTrading())
+					return;
+				seeded = true;
+				strategy.BuyMarket(strategy.Volume);
+			};
+		}, replayDuration: TimeSpan.FromDays(14));
+		AreEqual(1, entries, "Only the test itself may seed the entry.");
+		IsTrue(exits > 0 && exitFills > 0,
+			"Virtual manager must register and fill an actual protective sell after the seeded long.");
+	}
+
 }

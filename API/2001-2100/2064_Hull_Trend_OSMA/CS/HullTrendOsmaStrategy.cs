@@ -18,17 +18,18 @@ public class HullTrendOsmaStrategy : Strategy
 {
 	private readonly StrategyParam<int> _hullPeriod;
 	private readonly StrategyParam<int> _signalPeriod;
-	private readonly StrategyParam<decimal> _takeProfitPct;
-	private readonly StrategyParam<decimal> _stopLossPct;
+	private readonly StrategyParam<decimal> _takeProfit;
+	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal? _prev1;
 	private decimal? _prev2;
+	private Order _pending;
 
 	public int HullPeriod { get => _hullPeriod.Value; set => _hullPeriod.Value = value; }
 	public int SignalPeriod { get => _signalPeriod.Value; set => _signalPeriod.Value = value; }
-	public decimal TakeProfitPct { get => _takeProfitPct.Value; set => _takeProfitPct.Value = value; }
-	public decimal StopLossPct { get => _stopLossPct.Value; set => _stopLossPct.Value = value; }
+	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
+	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public HullTrendOsmaStrategy()
@@ -39,13 +40,13 @@ public class HullTrendOsmaStrategy : Strategy
 		_signalPeriod = Param(nameof(SignalPeriod), 5)
 			.SetDisplay("Signal Period", "Period for signal SMA", "Indicators");
 
-		_takeProfitPct = Param(nameof(TakeProfitPct), 3m)
+		_takeProfit = Param(nameof(TakeProfit), 3m)
 			.SetDisplay("Take Profit %", "Take profit percentage", "Risk");
 
-		_stopLossPct = Param(nameof(StopLossPct), 2m)
+		_stopLoss = Param(nameof(StopLoss), 2m)
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
@@ -61,30 +62,29 @@ public class HullTrendOsmaStrategy : Strategy
 		base.OnReseted();
 		_prev1 = null;
 		_prev2 = null;
+		_pending = null;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_pending = null;
 
 		var hma = new HullMovingAverage { Length = HullPeriod };
-		var signal = new ExponentialMovingAverage { Length = SignalPeriod };
+		var signal = new SimpleMovingAverage { Length = SignalPeriod };
 
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(hma, signal, (candle, hmaValue, signalValue) =>
-			{
-				if (!hma.IsFormed || !signal.IsFormed)
-					return;
-
-				ProcessCandle(candle, hmaValue, signalValue);
-			})
-			.Start();
+		subscription.Bind(hma, (candle, hmaValue) =>
+		{
+			if (candle.State != CandleStates.Finished || !hma.IsFormed) return;
+			var sig = signal.Process(hmaValue, candle.OpenTime, true);
+			if (sig.IsFormed && !sig.IsEmpty) ProcessCandle(candle, hmaValue, sig.ToDecimal());
+		}).Start();
 
 		StartProtection(
-			takeProfit: new Unit(TakeProfitPct, UnitTypes.Percent),
-			stopLoss: new Unit(StopLossPct, UnitTypes.Percent),
+			takeProfit: new Unit(TakeProfit, UnitTypes.Absolute),
+			stopLoss: new Unit(StopLoss, UnitTypes.Absolute),
 			useMarketOrders: true);
 
 		var area = CreateChartArea();
@@ -117,15 +117,10 @@ public class HullTrendOsmaStrategy : Strategy
 		var isRising = prev > prevPrev && osma >= prev;
 		var isFalling = prev < prevPrev && osma <= prev;
 
-		if (isRising && Position <= 0)
+		if (IsFormedAndOnlineAndAllowTrading() && (_pending is null || _pending.State is OrderStates.Done or OrderStates.Failed))
 		{
-			if (Position < 0) BuyMarket();
-			BuyMarket();
-		}
-		else if (isFalling && Position >= 0)
-		{
-			if (Position > 0) SellMarket();
-			SellMarket();
+			if (isRising && Position <= 0m) _pending = BuyMarket(Volume - Math.Min(0m, Position));
+			else if (isFalling && Position >= 0m) _pending = SellMarket(Volume + Math.Max(0m, Position));
 		}
 
 		_prev2 = _prev1;

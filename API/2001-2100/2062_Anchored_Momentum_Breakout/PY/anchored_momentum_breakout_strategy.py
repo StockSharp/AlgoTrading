@@ -6,8 +6,8 @@ clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import ExponentialMovingAverage
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, OrderStates
+from StockSharp.Algo.Indicators import ExponentialMovingAverage, SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -30,6 +30,7 @@ class anchored_momentum_breakout_strategy(Strategy):
         self._prev = 0.0
         self._prev_prev = 0.0
         self._initialized = False
+        self._pending = None
 
     @property
     def SmaPeriod(self):
@@ -76,7 +77,7 @@ class anchored_momentum_breakout_strategy(Strategy):
 
         self._initialized = False
 
-        sma = ExponentialMovingAverage()
+        sma = SimpleMovingAverage()
         sma.Length = self.SmaPeriod
         ema = ExponentialMovingAverage()
         ema.Length = self.EmaPeriod
@@ -108,14 +109,11 @@ class anchored_momentum_breakout_strategy(Strategy):
             self._initialized = True
             return
 
-        if self._prev < self._prev_prev and mom >= self._prev and self.Position <= 0:
-            if self.Position < 0:
-                self.BuyMarket()
-            self.BuyMarket()
-        elif self._prev > self._prev_prev and mom <= self._prev and self.Position >= 0:
-            if self.Position > 0:
-                self.SellMarket()
-            self.SellMarket()
+        if self.IsFormedAndOnlineAndAllowTrading() and (self._pending is None or self._pending.State in (OrderStates.Done, OrderStates.Failed)):
+            if self._prev < self._prev_prev and mom > self._prev and self.Position <= 0:
+                self._pending = self.BuyMarket(self.Volume - min(0, self.Position))
+            elif self._prev > self._prev_prev and mom < self._prev and self.Position >= 0:
+                self._pending = self.SellMarket(self.Volume + max(0, self.Position))
 
         self._prev_prev = self._prev
         self._prev = mom
