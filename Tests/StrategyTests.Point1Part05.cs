@@ -1297,4 +1297,58 @@ public abstract partial class StrategyTests
 			"The archive must produce real buys and sells on documented sign transitions.");
 	}
 
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public async Task Point1Part05_EscortTrend_MacdConfirmationAndNativeAbsoluteRiskWithFills()
+	{
+		var orders = 0;
+		var fills = 0;
+		var stopField = typeof(Strategy).GetField("_stopLoss", BindingFlags.Instance | BindingFlags.NonPublic);
+		var takeField = typeof(Strategy).GetField("_takeProfit", BindingFlags.Instance | BindingFlags.NonPublic);
+		IsNotNull(stopField);
+		IsNotNull(takeField);
+		await Replay("2011_Escort_Trend", (strategy, _) =>
+		{
+			foreach (var (name, value) in new (string, int)[]
+			{
+				("FastWmaPeriod", 8), ("SlowWmaPeriod", 18), ("CciPeriod", 14),
+				("MacdFastEma", 8), ("MacdSlowEma", 18)
+			})
+				AreEqual(value, Convert.ToInt32(strategy.Parameters[name].Value));
+			AreEqual(100m, Convert.ToDecimal(strategy.Parameters["CciThreshold"].Value));
+			AreEqual(200m, Convert.ToDecimal(strategy.Parameters["TakeProfit"].Value));
+			AreEqual(55m, Convert.ToDecimal(strategy.Parameters["StopLoss"].Value));
+			AreEqual(35m, Convert.ToDecimal(strategy.Parameters["TrailingStop"].Value));
+			AreEqual(3m, Convert.ToDecimal(strategy.Parameters["TrailingStep"].Value));
+			SetParam(strategy, "FastWmaPeriod", 3);
+			SetParam(strategy, "SlowWmaPeriod", 7);
+			SetParam(strategy, "CciPeriod", 5);
+			SetParam(strategy, "CciThreshold", 10m);
+			SetParam(strategy, "MacdFastEma", 3);
+			SetParam(strategy, "MacdSlowEma", 8);
+			SetParam(strategy, "MacdSignalPeriod", 3);
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "StopLoss", 100m);
+			SetParam(strategy, "TakeProfit", 200m);
+			SetParam(strategy, "TrailingStop", 0m);
+			strategy.OrderRegistering += order =>
+			{
+				IsTrue(order.Volume > 0m);
+				var stop = (Unit)stopField.GetValue(strategy);
+				var take = (Unit)takeField.GetValue(strategy);
+				IsNotNull(stop);
+				IsNotNull(take);
+				AreEqual(UnitTypes.Absolute, stop.Type);
+				AreEqual(UnitTypes.Absolute, take.Type);
+				AreEqual(100m, stop.Value);
+				AreEqual(200m, take.Value);
+				orders++;
+			};
+			strategy.Trades.TradeAdded += _ => fills++;
+		}, replayDuration: TimeSpan.FromDays(14));
+		IsTrue(orders > 0 && fills > 0,
+			"MACD/WMA/CCI confluence must place and fill actual orders.");
+	}
+
 }
