@@ -6,8 +6,8 @@ clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import AverageTrueRange, ExponentialMovingAverage
+from StockSharp.Messages import DataType, CandleStates, OrderStates
+from StockSharp.Algo.Indicators import AverageTrueRange, SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -16,6 +16,9 @@ class kl_price_reversal_strategy(Strategy):
     def __init__(self):
         super(kl_price_reversal_strategy, self).__init__()
 
+        self._enable_buy = self.Param("EnableBuy", True)
+        self._enable_sell = self.Param("EnableSell", True)
+        self._pending = None
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
             .SetDisplay("Candle Type", "Time frame for calculations", "General")
         self._price_ma_length = self.Param("PriceMaLength", 100) \
@@ -29,6 +32,7 @@ class kl_price_reversal_strategy(Strategy):
 
         self._prev_color = 2.0
         self._is_first = True
+        self._pending = None
 
     @property
     def CandleType(self):
@@ -76,7 +80,7 @@ class kl_price_reversal_strategy(Strategy):
         self._is_first = True
         self._prev_color = 2.0
 
-        price_ma = ExponentialMovingAverage()
+        price_ma = SimpleMovingAverage()
         price_ma.Length = self.PriceMaLength
         atr = AverageTrueRange()
         atr.Length = self.AtrLength
@@ -115,15 +119,15 @@ class kl_price_reversal_strategy(Strategy):
         elif jres < 0:
             color = 1.0
 
-        if not self._is_first:
-            if self._prev_color == 4.0 and color < 4.0 and self.Position <= 0:
-                if self.Position < 0:
-                    self.BuyMarket()
-                self.BuyMarket()
-            elif self._prev_color == 0.0 and color > 0.0 and self.Position >= 0:
-                if self.Position > 0:
-                    self.SellMarket()
-                self.SellMarket()
+        if not self._is_first and self.IsFormedAndOnlineAndAllowTrading() and (self._pending is None or self._pending.State in (OrderStates.Done, OrderStates.Failed)):
+            if self.Position > 0 and color <= 2:
+                self._pending = self.SellMarket(self.Position)
+            elif self.Position < 0 and color >= 2:
+                self._pending = self.BuyMarket(-self.Position)
+            elif self._prev_color == 4 and color < 4 and self.Position == 0 and self._enable_buy.Value:
+                self._pending = self.BuyMarket(self.Volume)
+            elif self._prev_color == 0 and color > 0 and self.Position == 0 and self._enable_sell.Value:
+                self._pending = self.SellMarket(self.Volume)
 
         self._prev_color = color
         self._is_first = False

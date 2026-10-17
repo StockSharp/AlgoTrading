@@ -1672,4 +1672,353 @@ public abstract partial class StrategyTests
 			"2043_Fine_Tuning_MA: require real order registration and an actual filled trade on BTC/TON archive.");
 	}
 
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public async Task Point1Part05_Batch11_CorrectedAverageBreakout_ReplaysCsharpAndPython()
+	{
+		var orders = 0;
+		var buyOrders = 0;
+		var fills = 0;
+		await Replay("2044_CorrectedAverage_Breakout", (strategy, _) =>
+		{
+			AreEqual(12m, Convert.ToDecimal(strategy.Parameters["Length"].Value), "2044_CorrectedAverage_Breakout: default Length must match README.");
+			AreEqual(300m, Convert.ToDecimal(strategy.Parameters["LevelPoints"].Value), "2044_CorrectedAverage_Breakout: default LevelPoints must match README.");
+
+			AreEqual(true, strategy.Parameters["EnableLong"].Value, "EnableLong must be enabled by default.");
+			AreEqual(true, strategy.Parameters["EnableShort"].Value, "EnableShort must be enabled by default.");
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "Length", 5m);
+			SetParam(strategy, "LevelPoints", 2m);
+			SetParam(strategy, "StopLossPoints", 100m);
+			SetParam(strategy, "TakeProfitPoints", 200m);
+			strategy.OrderRegistering += order =>
+			{
+				IsTrue(order.Volume > 0m, "2044_CorrectedAverage_Breakout: every registered order needs positive volume.");
+				if (order.Side == Sides.Buy)
+					buyOrders++;
+				if (strategy.Position != 0m && order.Side == (strategy.Position > 0m ? Sides.Sell : Sides.Buy))
+					IsTrue(order.Volume <= Math.Abs(strategy.Position) + strategy.Volume,
+						"2044_CorrectedAverage_Breakout: exit/reverse order must not exceed filled position plus entry.");
+				orders++;
+			};
+			strategy.Trades.TradeAdded += _ => fills++;
+		}, replayDuration: TimeSpan.FromDays(14));
+		IsTrue(orders > 0 && fills > 0,
+			"2044_CorrectedAverage_Breakout: require real archive-backed order registration and trade fill.");
+
+	}
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public async Task Point1Part05_Batch11_ForceDiverSign_ReplaysCsharpAndPython()
+	{
+		var orders = 0;
+		var buyOrders = 0;
+		var fills = 0;
+		await Replay("2045_Force_DiverSign", (strategy, _) =>
+		{
+			AreEqual(3m, Convert.ToDecimal(strategy.Parameters["Period1"].Value), "2045_Force_DiverSign: default Period1 must match README.");
+			AreEqual(7m, Convert.ToDecimal(strategy.Parameters["Period2"].Value), "2045_Force_DiverSign: default Period2 must match README.");
+
+
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "Period1", 2m);
+			SetParam(strategy, "Period2", 4m);
+			strategy.OrderRegistering += order =>
+			{
+				IsTrue(order.Volume > 0m, "2045_Force_DiverSign: every registered order needs positive volume.");
+				if (order.Side == Sides.Buy)
+					buyOrders++;
+				if (strategy.Position != 0m && order.Side == (strategy.Position > 0m ? Sides.Sell : Sides.Buy))
+					IsTrue(order.Volume <= Math.Abs(strategy.Position) + strategy.Volume,
+						"2045_Force_DiverSign: exit/reverse order must not exceed filled position plus entry.");
+				orders++;
+			};
+			strategy.Trades.TradeAdded += _ => fills++;
+		}, replayDuration: TimeSpan.FromDays(14));
+		IsTrue(orders > 0 && fills > 0,
+			"2045_Force_DiverSign: require real archive-backed order registration and trade fill.");
+
+	}
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public async Task Point1Part05_Batch11_ForecastOscillator_ReplaysCsharpAndPython()
+	{
+		var orders = 0;
+		var buyOrders = 0;
+		var fills = 0;
+		await Replay("2046_Forecast_Oscillator", (strategy, _) =>
+		{
+			AreEqual(15m, Convert.ToDecimal(strategy.Parameters["Length"].Value), "2046_Forecast_Oscillator: default Length must match README.");
+			AreEqual(3m, Convert.ToDecimal(strategy.Parameters["T3Period"].Value), "2046_Forecast_Oscillator: default T3Period must match README.");
+
+			AreEqual(true, strategy.Parameters["BuyOpen"].Value, "BuyOpen must be enabled by default.");
+			AreEqual(true, strategy.Parameters["SellOpen"].Value, "SellOpen must be enabled by default.");
+			AreEqual(true, strategy.Parameters["BuyClose"].Value, "BuyClose must be enabled by default.");
+			AreEqual(true, strategy.Parameters["SellClose"].Value, "SellClose must be enabled by default.");
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "Length", 6m);
+			SetParam(strategy, "T3Period", 3m);
+			strategy.OrderRegistering += order =>
+			{
+				IsTrue(order.Volume > 0m, "2046_Forecast_Oscillator: every registered order needs positive volume.");
+				if (order.Side == Sides.Buy)
+					buyOrders++;
+				if (strategy.Position != 0m && order.Side == (strategy.Position > 0m ? Sides.Sell : Sides.Buy))
+					IsTrue(order.Volume <= Math.Abs(strategy.Position) + strategy.Volume,
+						"2046_Forecast_Oscillator: exit/reverse order must not exceed filled position plus entry.");
+				orders++;
+			};
+			strategy.Trades.TradeAdded += _ => fills++;
+		}, replayDuration: TimeSpan.FromDays(14));
+		IsTrue(orders > 0 && fills > 0,
+			"2046_Forecast_Oscillator: require real archive-backed order registration and trade fill.");
+
+	}
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public async Task Point1Part05_Batch11_VininITrend_ReplaysCsharpAndPython()
+	{
+		var orders = 0;
+		var buyOrders = 0;
+		var fills = 0;
+		await Replay("2049_VininI_Trend", (strategy, _) =>
+		{
+			AreEqual(20m, Convert.ToDecimal(strategy.Parameters["Period"].Value), "2049_VininI_Trend: default Period must match README.");
+			AreEqual(0m, Convert.ToDecimal(strategy.Parameters["Mode"].Value), "2049_VininI_Trend: default Mode must match README.");
+
+
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "Period", 5m);
+			SetParam(strategy, "Mode", 1m);
+			strategy.OrderRegistering += order =>
+			{
+				IsTrue(order.Volume > 0m, "2049_VininI_Trend: every registered order needs positive volume.");
+				if (order.Side == Sides.Buy)
+					buyOrders++;
+				if (strategy.Position != 0m && order.Side == (strategy.Position > 0m ? Sides.Sell : Sides.Buy))
+					IsTrue(order.Volume <= Math.Abs(strategy.Position) + strategy.Volume,
+						"2049_VininI_Trend: exit/reverse order must not exceed filled position plus entry.");
+				orders++;
+			};
+			strategy.Trades.TradeAdded += _ => fills++;
+		}, replayDuration: TimeSpan.FromDays(14));
+		IsTrue(orders > 0 && fills > 0,
+			"2049_VininI_Trend: require real archive-backed order registration and trade fill.");
+
+	}
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public async Task Point1Part05_Batch11_ColorHmaReversal_ReplaysCsharpAndPython()
+	{
+		var orders = 0;
+		var buyOrders = 0;
+		var fills = 0;
+		await Replay("2054_Color_HMA_Reversal", (strategy, _) =>
+		{
+			AreEqual(13m, Convert.ToDecimal(strategy.Parameters["HmaPeriod"].Value), "2054_Color_HMA_Reversal: default HmaPeriod must match README.");
+
+			AreEqual(true, strategy.Parameters["BuyOpen"].Value, "BuyOpen must be enabled by default.");
+			AreEqual(true, strategy.Parameters["SellOpen"].Value, "SellOpen must be enabled by default.");
+			AreEqual(true, strategy.Parameters["BuyClose"].Value, "BuyClose must be enabled by default.");
+			AreEqual(true, strategy.Parameters["SellClose"].Value, "SellClose must be enabled by default.");
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "HmaPeriod", 6m);
+			strategy.OrderRegistering += order =>
+			{
+				IsTrue(order.Volume > 0m, "2054_Color_HMA_Reversal: every registered order needs positive volume.");
+				if (order.Side == Sides.Buy)
+					buyOrders++;
+				if (strategy.Position != 0m && order.Side == (strategy.Position > 0m ? Sides.Sell : Sides.Buy))
+					IsTrue(order.Volume <= Math.Abs(strategy.Position) + strategy.Volume,
+						"2054_Color_HMA_Reversal: exit/reverse order must not exceed filled position plus entry.");
+				orders++;
+			};
+			strategy.Trades.TradeAdded += _ => fills++;
+		}, replayDuration: TimeSpan.FromDays(14));
+		IsTrue(orders > 0 && fills > 0,
+			"2054_Color_HMA_Reversal: require real archive-backed order registration and trade fill.");
+
+	}
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public async Task Point1Part05_Batch11_Hvr_ReplaysCsharpAndPython()
+	{
+		var orders = 0;
+		var buyOrders = 0;
+		var fills = 0;
+		await Replay("2055_HVR", (strategy, _) =>
+		{
+			AreEqual(6m, Convert.ToDecimal(strategy.Parameters["ShortPeriod"].Value), "2055_HVR: default ShortPeriod must match README.");
+			AreEqual(100m, Convert.ToDecimal(strategy.Parameters["LongPeriod"].Value), "2055_HVR: default LongPeriod must match README.");
+			AreEqual(1m, Convert.ToDecimal(strategy.Parameters["RatioThreshold"].Value));
+
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "ShortPeriod", 4m);
+			SetParam(strategy, "LongPeriod", 10m);
+			strategy.OrderRegistering += order =>
+			{
+				IsTrue(order.Volume > 0m, "2055_HVR: every registered order needs positive volume.");
+				if (order.Side == Sides.Buy)
+					buyOrders++;
+				if (strategy.Position != 0m && order.Side == (strategy.Position > 0m ? Sides.Sell : Sides.Buy))
+					IsTrue(order.Volume <= Math.Abs(strategy.Position) + strategy.Volume,
+						"2055_HVR: exit/reverse order must not exceed filled position plus entry.");
+				orders++;
+			};
+			strategy.Trades.TradeAdded += _ => fills++;
+		}, replayDuration: TimeSpan.FromDays(14));
+		IsTrue(orders > 0 && fills > 0,
+			"2055_HVR: require real archive-backed order registration and trade fill.");
+
+	}
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public async Task Point1Part05_Batch11_DecEMA_ReplaysCsharpAndPython()
+	{
+		var orders = 0;
+		var buyOrders = 0;
+		var fills = 0;
+		await Replay("2056_DecEMA", (strategy, _) =>
+		{
+			AreEqual(3m, Convert.ToDecimal(strategy.Parameters["EmaPeriod"].Value), "2056_DecEMA: default EmaPeriod must match README.");
+			AreEqual(15m, Convert.ToDecimal(strategy.Parameters["Length"].Value), "2056_DecEMA: default Length must match README.");
+
+			AreEqual(true, strategy.Parameters["BuyPosOpen"].Value, "BuyPosOpen must be enabled by default.");
+			AreEqual(true, strategy.Parameters["SellPosOpen"].Value, "SellPosOpen must be enabled by default.");
+			AreEqual(true, strategy.Parameters["BuyPosClose"].Value, "BuyPosClose must be enabled by default.");
+			AreEqual(true, strategy.Parameters["SellPosClose"].Value, "SellPosClose must be enabled by default.");
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "EmaPeriod", 2m);
+			SetParam(strategy, "Length", 3m);
+			strategy.OrderRegistering += order =>
+			{
+				IsTrue(order.Volume > 0m, "2056_DecEMA: every registered order needs positive volume.");
+				if (order.Side == Sides.Buy)
+					buyOrders++;
+				if (strategy.Position != 0m && order.Side == (strategy.Position > 0m ? Sides.Sell : Sides.Buy))
+					IsTrue(order.Volume <= Math.Abs(strategy.Position) + strategy.Volume,
+						"2056_DecEMA: exit/reverse order must not exceed filled position plus entry.");
+				orders++;
+			};
+			strategy.Trades.TradeAdded += _ => fills++;
+		}, replayDuration: TimeSpan.FromDays(14));
+		IsTrue(orders > 0 && fills > 0,
+			"2056_DecEMA: require real archive-backed order registration and trade fill.");
+
+	}
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public async Task Point1Part05_Batch11_BandsPrice_ReplaysCsharpAndPython()
+	{
+		var orders = 0;
+		var buyOrders = 0;
+		var fills = 0;
+		await Replay("2057_BandsPrice", (strategy, _) =>
+		{
+			AreEqual(100m, Convert.ToDecimal(strategy.Parameters["BandsPeriod"].Value), "2057_BandsPrice: default BandsPeriod must match README.");
+			AreEqual(5m, Convert.ToDecimal(strategy.Parameters["Smooth"].Value), "2057_BandsPrice: default Smooth must match README.");
+			AreEqual(25m, Convert.ToDecimal(strategy.Parameters["UpLevel"].Value), "2057_BandsPrice: default UpLevel must match README.");
+			AreEqual(-25m, Convert.ToDecimal(strategy.Parameters["DnLevel"].Value), "2057_BandsPrice: default DnLevel must match README.");
+
+			AreEqual(true, strategy.Parameters["BuyOpen"].Value, "BuyOpen must be enabled by default.");
+			AreEqual(true, strategy.Parameters["SellOpen"].Value, "SellOpen must be enabled by default.");
+			AreEqual(true, strategy.Parameters["BuyClose"].Value, "BuyClose must be enabled by default.");
+			AreEqual(true, strategy.Parameters["SellClose"].Value, "SellClose must be enabled by default.");
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "BandsPeriod", 8m);
+			SetParam(strategy, "Smooth", 3m);
+			SetParam(strategy, "UpLevel", 5m);
+			SetParam(strategy, "DnLevel", -5m);
+			strategy.OrderRegistering += order =>
+			{
+				IsTrue(order.Volume > 0m, "2057_BandsPrice: every registered order needs positive volume.");
+				if (order.Side == Sides.Buy)
+					buyOrders++;
+				if (strategy.Position != 0m && order.Side == (strategy.Position > 0m ? Sides.Sell : Sides.Buy))
+					IsTrue(order.Volume <= Math.Abs(strategy.Position) + strategy.Volume,
+						"2057_BandsPrice: exit/reverse order must not exceed filled position plus entry.");
+				orders++;
+			};
+			strategy.Trades.TradeAdded += _ => fills++;
+		}, replayDuration: TimeSpan.FromDays(14));
+		IsTrue(orders > 0 && fills > 0,
+			"2057_BandsPrice: require real archive-backed order registration and trade fill.");
+
+	}
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public async Task Point1Part05_Batch11_KlPriceReversal_ReplaysCsharpAndPython()
+	{
+		var orders = 0;
+		var buyOrders = 0;
+		var fills = 0;
+		await Replay("2058_KlPrice_Reversal", (strategy, _) =>
+		{
+			AreEqual(100m, Convert.ToDecimal(strategy.Parameters["PriceMaLength"].Value), "2058_KlPrice_Reversal: default PriceMaLength must match README.");
+			AreEqual(20m, Convert.ToDecimal(strategy.Parameters["AtrLength"].Value), "2058_KlPrice_Reversal: default AtrLength must match README.");
+
+			AreEqual(true, strategy.Parameters["EnableBuy"].Value, "EnableBuy must be enabled by default.");
+			AreEqual(true, strategy.Parameters["EnableSell"].Value, "EnableSell must be enabled by default.");
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "PriceMaLength", 6m);
+			SetParam(strategy, "AtrLength", 4m);
+			SetParam(strategy, "UpLevel", 5m);
+			SetParam(strategy, "DownLevel", -5m);
+			strategy.OrderRegistering += order =>
+			{
+				IsTrue(order.Volume > 0m, "2058_KlPrice_Reversal: every registered order needs positive volume.");
+				if (order.Side == Sides.Buy)
+					buyOrders++;
+				if (strategy.Position != 0m && order.Side == (strategy.Position > 0m ? Sides.Sell : Sides.Buy))
+					IsTrue(order.Volume <= Math.Abs(strategy.Position) + strategy.Volume,
+						"2058_KlPrice_Reversal: exit/reverse order must not exceed filled position plus entry.");
+				orders++;
+			};
+			strategy.Trades.TradeAdded += _ => fills++;
+		}, replayDuration: TimeSpan.FromDays(14));
+		IsTrue(orders > 0 && fills > 0,
+			"2058_KlPrice_Reversal: require real archive-backed order registration and trade fill.");
+
+	}
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public async Task Point1Part05_Batch11_SimpleTrailingStop_ReplaysCsharpAndPython()
+	{
+		var orders = 0;
+		var buyOrders = 0;
+		var fills = 0;
+		await Replay("2059_Simple_Trailing_Stop", (strategy, _) =>
+		{
+			AreEqual(100m, Convert.ToDecimal(strategy.Parameters["TrailPoints"].Value), "2059_Simple_Trailing_Stop: default TrailPoints must match README.");
+
+
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "TrailPoints", 1m);
+			strategy.OrderRegistering += order =>
+			{
+				IsTrue(order.Volume > 0m, "2059_Simple_Trailing_Stop: every registered order needs positive volume.");
+				if (order.Side == Sides.Buy)
+					buyOrders++;
+				if (strategy.Position != 0m && order.Side == (strategy.Position > 0m ? Sides.Sell : Sides.Buy))
+					IsTrue(order.Volume <= Math.Abs(strategy.Position) + strategy.Volume,
+						"2059_Simple_Trailing_Stop: exit/reverse order must not exceed filled position plus entry.");
+				orders++;
+			};
+			strategy.Trades.TradeAdded += _ => fills++;
+		}, replayDuration: TimeSpan.FromDays(14));
+		IsTrue(orders > 0 && fills > 0,
+			"2059_Simple_Trailing_Stop: require real archive-backed order registration and trade fill.");
+		AreEqual(1, buyOrders, "One-shot trailing example must submit exactly one long entry.");
+	}
+
 }

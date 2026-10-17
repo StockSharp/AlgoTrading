@@ -6,7 +6,7 @@ clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Messages import DataType, CandleStates, OrderStates
 from StockSharp.Algo.Indicators import LinearRegression
 from StockSharp.Algo.Strategies import Strategy
 from indicator_extensions import *
@@ -25,6 +25,11 @@ class forecast_oscillator_strategy(Strategy):
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
 
+        self._buy_open = self.Param("BuyOpen", True)
+        self._sell_open = self.Param("SellOpen", True)
+        self._buy_close = self.Param("BuyClose", True)
+        self._sell_close = self.Param("SellClose", True)
+        self._pending = None
         self._lin_reg = None
         self._b2 = 0.0
         self._b3 = 0.0
@@ -80,6 +85,7 @@ class forecast_oscillator_strategy(Strategy):
 
     def OnStarted2(self, time):
         super(forecast_oscillator_strategy, self).OnStarted2(time)
+        self._pending = None
 
         self._lin_reg = LinearRegression()
         self._lin_reg.Length = self.Length
@@ -136,20 +142,21 @@ class forecast_oscillator_strategy(Strategy):
         self._e6 = self._w1 * self._e5 + self._w2 * self._e6
         t3 = self._c1 * self._e6 + self._c2 * self._e5 + self._c3 * self._e4 + self._c4 * self._e3
 
-        if self._forecast_prev1 is not None and self._forecast_prev2 is not None and \
-           self._sig_prev1 is not None and self._sig_prev2 is not None and self._sig_prev3 is not None:
-
-            buy_signal = self._forecast_prev1 > self._sig_prev2 and self._forecast_prev2 <= self._sig_prev3 and self._sig_prev1 < 0
-            sell_signal = self._forecast_prev1 < self._sig_prev2 and self._forecast_prev2 >= self._sig_prev3 and self._sig_prev1 > 0
-
-            if buy_signal and self.Position <= 0:
-                if self.Position < 0:
-                    self.BuyMarket()
-                self.BuyMarket()
-            elif sell_signal and self.Position >= 0:
-                if self.Position > 0:
-                    self.SellMarket()
-                self.SellMarket()
+        buy = (self._forecast_prev1 is not None and self._sig_prev1 is not None and
+               self._forecast_prev1 <= self._sig_prev1 and forecast > t3 and t3 < 0)
+        sell = (self._forecast_prev1 is not None and self._sig_prev1 is not None and
+                self._forecast_prev1 >= self._sig_prev1 and forecast < t3 and t3 > 0)
+        if self.IsFormedAndOnlineAndAllowTrading() and (self._pending is None or self._pending.State in (OrderStates.Done, OrderStates.Failed)):
+            if buy:
+                if self.Position < 0 and self._sell_close.Value:
+                    self._pending = self.BuyMarket(-self.Position + (self.Volume if self._buy_open.Value else 0))
+                elif self.Position == 0 and self._buy_open.Value:
+                    self._pending = self.BuyMarket(self.Volume)
+            elif sell:
+                if self.Position > 0 and self._buy_close.Value:
+                    self._pending = self.SellMarket(self.Position + (self.Volume if self._sell_open.Value else 0))
+                elif self.Position == 0 and self._sell_open.Value:
+                    self._pending = self.SellMarket(self.Volume)
 
         self._forecast_prev2 = self._forecast_prev1
         self._forecast_prev1 = forecast

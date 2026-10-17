@@ -6,7 +6,7 @@ clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, OrderStates
 from StockSharp.Algo.Indicators import ExponentialMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
 
@@ -29,6 +29,9 @@ class corrected_average_breakout_strategy(Strategy):
         self._take_profit_points = self.Param("TakeProfitPoints", 2000) \
             .SetDisplay("Take Profit Points", "Take profit in price steps", "Risk")
 
+        self._enable_long = self.Param("EnableLong", True)
+        self._enable_short = self.Param("EnableShort", True)
+        self._pending = None
         self._prev_corrected = 0.0
         self._prev_prev_corrected = 0.0
         self._prev_close = 0.0
@@ -42,6 +45,7 @@ class corrected_average_breakout_strategy(Strategy):
 
     def OnReseted(self):
         super(corrected_average_breakout_strategy, self).OnReseted()
+        self._pending = None
         self._prev_corrected = 0.0
         self._prev_prev_corrected = 0.0
         self._prev_close = 0.0
@@ -51,6 +55,7 @@ class corrected_average_breakout_strategy(Strategy):
 
     def OnStarted2(self, time):
         super(corrected_average_breakout_strategy, self).OnStarted2(time)
+        self._pending = None
 
         step = 1.0
         if self.Security is not None and self.Security.PriceStep is not None:
@@ -92,19 +97,15 @@ class corrected_average_breakout_strategy(Strategy):
                 k = 1.0 - (v1 / v2)
             corrected = self._prev_corrected + k * (ma_val - self._prev_corrected)
 
-        buy_signal = (self._prev_prev_close > self._prev_prev_corrected + self._level and
-                      self._prev_close <= self._prev_corrected + self._level)
-        sell_signal = (self._prev_prev_close < self._prev_prev_corrected - self._level and
-                       self._prev_close >= self._prev_corrected - self._level)
-
-        if buy_signal and self.Position <= 0:
-            if self.Position < 0:
-                self.BuyMarket()
-            self.BuyMarket()
-        elif sell_signal and self.Position >= 0:
-            if self.Position > 0:
-                self.SellMarket()
-            self.SellMarket()
+        buy_level = self._prev_corrected + self._level
+        sell_level = self._prev_corrected - self._level
+        buy_signal = self._prev_close > buy_level and float(candle.LowPrice) <= buy_level and float(candle.ClosePrice) >= buy_level
+        sell_signal = self._prev_close < sell_level and float(candle.HighPrice) >= sell_level and float(candle.ClosePrice) <= sell_level
+        if self.IsFormedAndOnlineAndAllowTrading() and (self._pending is None or self._pending.State in (OrderStates.Done, OrderStates.Failed)):
+            if buy_signal and self.Position <= 0 and (self.Position < 0 or self._enable_long.Value):
+                self._pending = self.BuyMarket(abs(min(self.Position, 0)) + (self.Volume if self._enable_long.Value else 0))
+            elif sell_signal and self.Position >= 0 and (self.Position > 0 or self._enable_short.Value):
+                self._pending = self.SellMarket(max(0, self.Position) + (self.Volume if self._enable_short.Value else 0))
 
         self._prev_prev_corrected = self._prev_corrected
         self._prev_prev_close = self._prev_close

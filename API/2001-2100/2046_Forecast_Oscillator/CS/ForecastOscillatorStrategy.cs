@@ -22,6 +22,8 @@ public class ForecastOscillatorStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	private LinearRegression _linReg;
+	private readonly StrategyParam<bool> _buyOpen, _sellOpen, _buyClose, _sellClose;
+	private Order _pending;
 
 	private decimal _b2, _b3, _c1, _c2, _c3, _c4, _w1, _w2;
 	private decimal _e1, _e2, _e3, _e4, _e5, _e6;
@@ -33,8 +35,16 @@ public class ForecastOscillatorStrategy : Strategy
 	public decimal BFactor { get => _bFactor.Value; set => _bFactor.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
+	public bool BuyOpen { get => _buyOpen.Value; set => _buyOpen.Value = value; }
+	public bool SellOpen { get => _sellOpen.Value; set => _sellOpen.Value = value; }
+	public bool BuyClose { get => _buyClose.Value; set => _buyClose.Value = value; }
+	public bool SellClose { get => _sellClose.Value; set => _sellClose.Value = value; }
 	public ForecastOscillatorStrategy()
 	{
+		_buyOpen = Param(nameof(BuyOpen), true);
+		_sellOpen = Param(nameof(SellOpen), true);
+		_buyClose = Param(nameof(BuyClose), true);
+		_sellClose = Param(nameof(SellClose), true);
 		_length = Param(nameof(Length), 15)
 			.SetGreaterThanZero()
 			.SetDisplay("Length", "Regression length", "Indicators");
@@ -65,12 +75,14 @@ public class ForecastOscillatorStrategy : Strategy
 		_e1 = default; _e2 = default; _e3 = default; _e4 = default; _e5 = default; _e6 = default;
 		_forecastPrev1 = default; _forecastPrev2 = default;
 		_sigPrev1 = default; _sigPrev2 = default; _sigPrev3 = default;
+		_pending = null;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_pending = null;
 
 		var linReg = new LinearRegression { Length = Length };
 		_linReg = linReg;
@@ -125,21 +137,23 @@ public class ForecastOscillatorStrategy : Strategy
 		_e6 = _w1 * _e5 + _w2 * _e6;
 		var t3 = _c1 * _e6 + _c2 * _e5 + _c3 * _e4 + _c4 * _e3;
 
-		// Cross detection: forecast crosses signal line
-		if (_forecastPrev1 != null && _forecastPrev2 != null && _sigPrev1 != null && _sigPrev2 != null && _sigPrev3 != null)
+		// Independent reference: current finished oscillator crosses the current T3,
+		// having been on the other side at the previous finished candle.
+		var buySignal = _forecastPrev1 is decimal prevFc && _sigPrev1 is decimal prevT3
+			&& prevFc <= prevT3 && forecast > t3 && t3 < 0m;
+		var sellSignal = _forecastPrev1 is decimal prevFc2 && _sigPrev1 is decimal prevT32
+			&& prevFc2 >= prevT32 && forecast < t3 && t3 > 0m;
+		if (IsFormedAndOnlineAndAllowTrading() && (_pending is null || _pending.State is OrderStates.Done or OrderStates.Failed))
 		{
-			var buySignal = _forecastPrev1 > _sigPrev2 && _forecastPrev2 <= _sigPrev3 && _sigPrev1 < 0;
-			var sellSignal = _forecastPrev1 < _sigPrev2 && _forecastPrev2 >= _sigPrev3 && _sigPrev1 > 0;
-
-			if (buySignal && Position <= 0)
+			if (buySignal)
 			{
-				if (Position < 0) BuyMarket();
-				BuyMarket();
+				if (Position < 0m && SellClose) _pending = BuyMarket(-Position + (BuyOpen ? Volume : 0m));
+				else if (Position == 0m && BuyOpen) _pending = BuyMarket(Volume);
 			}
-			else if (sellSignal && Position >= 0)
+			else if (sellSignal)
 			{
-				if (Position > 0) SellMarket();
-				SellMarket();
+				if (Position > 0m && BuyClose) _pending = SellMarket(Position + (SellOpen ? Volume : 0m));
+				else if (Position == 0m && SellOpen) _pending = SellMarket(Volume);
 			}
 		}
 

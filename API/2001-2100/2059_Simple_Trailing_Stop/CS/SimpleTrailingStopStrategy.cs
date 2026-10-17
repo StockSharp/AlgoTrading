@@ -3,7 +3,6 @@ using System.Collections.Generic;
 
 using Ecng.Common;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -11,93 +10,61 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Simple trailing stop strategy.
-/// Uses EMA crossover for entries with a trailing stop for protection.
+/// Demonstrates exactly one market long entry after the first finished candle,
+/// followed by the engine's fill-price-based native trailing stop.
 /// </summary>
 public class SimpleTrailingStopStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _trailPercent;
-	private readonly StrategyParam<int> _fastLength;
-	private readonly StrategyParam<int> _slowLength;
+	private readonly StrategyParam<decimal> _trailPoints;
 	private readonly StrategyParam<DataType> _candleType;
+	private bool _submittedEntry;
+	private Order _entryOrder;
 
-	public decimal TrailPercent { get => _trailPercent.Value; set => _trailPercent.Value = value; }
-	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
-	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
+	public decimal TrailPoints { get => _trailPoints.Value; set => _trailPoints.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public SimpleTrailingStopStrategy()
 	{
-		_trailPercent = Param(nameof(TrailPercent), 2m)
-			.SetDisplay("Trail %", "Trailing stop distance as percentage", "Protection");
-
-		_fastLength = Param(nameof(FastLength), 10)
-			.SetGreaterThanZero()
-			.SetDisplay("Fast EMA", "Fast EMA period", "Indicator");
-
-		_slowLength = Param(nameof(SlowLength), 30)
-			.SetGreaterThanZero()
-			.SetDisplay("Slow EMA", "Slow EMA period", "Indicator");
-
+		_trailPoints = Param(nameof(TrailPoints), 100m).SetGreaterThanZero()
+			.SetDisplay("Trail Points", "Trailing distance in security price steps", "Protection");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		_submittedEntry = false;
+		_entryOrder = null;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_submittedEntry = false;
+		_entryOrder = null;
 
 		StartProtection(
 			takeProfit: null,
-			stopLoss: new Unit(TrailPercent, UnitTypes.Percent),
+			stopLoss: new Unit(TrailPoints * (Security.PriceStep ?? 1m), UnitTypes.Absolute),
 			isStopTrailing: true,
 			useMarketOrders: true);
 
-		var fast = new ExponentialMovingAverage { Length = FastLength };
-		var slow = new ExponentialMovingAverage { Length = SlowLength };
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(fast, slow, ProcessCandle)
-			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, fast);
-			DrawIndicator(area, slow);
-			DrawOwnTrades(area);
-		}
+		SubscribeCandles(CandleType).Bind(ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fastVal, decimal slowVal)
+	private void ProcessCandle(ICandleMessage candle)
 	{
-		if (candle.State != CandleStates.Finished)
+		if (candle.State != CandleStates.Finished || _submittedEntry ||
+			!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if (fastVal > slowVal && Position <= 0)
-		{
-			if (Position < 0) BuyMarket();
-			BuyMarket();
-		}
-		else if (fastVal < slowVal && Position >= 0)
-		{
-			if (Position > 0) SellMarket();
-			SellMarket();
-		}
+		// Mark before sending: avoid duplicate opens on synchronous fills or callbacks.
+		_submittedEntry = true;
+		_entryOrder = BuyMarket(Volume);
+		// Do not reopen after a protective stop fills: this is a one-shot example.
 	}
 }
