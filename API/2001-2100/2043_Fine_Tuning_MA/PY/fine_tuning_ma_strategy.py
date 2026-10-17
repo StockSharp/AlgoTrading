@@ -6,8 +6,8 @@ clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import ExponentialMovingAverage
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, OrderStates
+from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -28,6 +28,7 @@ class fine_tuning_ma_strategy(Strategy):
         self._prev1 = 0.0
         self._prev2 = 0.0
         self._candle_count = 0
+        self._pending = None
 
     @property
     def MaLength(self):
@@ -64,7 +65,7 @@ class fine_tuning_ma_strategy(Strategy):
     def OnStarted2(self, time):
         super(fine_tuning_ma_strategy, self).OnStarted2(time)
 
-        ma = ExponentialMovingAverage()
+        ma = SimpleMovingAverage()
         ma.Length = self.MaLength
 
         self.SubscribeCandles(self.CandleType) \
@@ -73,7 +74,7 @@ class fine_tuning_ma_strategy(Strategy):
 
         self.StartProtection(
             stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent),
-            takeProfit=Unit(self.TakeProfitPercent, UnitTypes.Percent)
+            takeProfit=Unit(self.TakeProfitPercent, UnitTypes.Percent), useMarketOrders=True
         )
 
     def ProcessCandle(self, candle, ma_value):
@@ -94,14 +95,10 @@ class fine_tuning_ma_strategy(Strategy):
         was_rising = self._prev1 > self._prev2
         was_falling = self._prev1 < self._prev2
 
-        if was_rising and val > self._prev1 and self.Position <= 0:
-            if self.Position < 0:
-                self.BuyMarket()
-            self.BuyMarket()
-        elif was_falling and val < self._prev1 and self.Position >= 0:
-            if self.Position > 0:
-                self.SellMarket()
-            self.SellMarket()
+        if was_falling and val > self._prev1 and self.Position <= 0 and (self._pending is None or self._pending.State in (OrderStates.Done, OrderStates.Failed)):
+            self._pending = self.BuyMarket(self.Volume + abs(min(self.Position, 0)))
+        elif was_rising and val < self._prev1 and self.Position >= 0 and (self._pending is None or self._pending.State in (OrderStates.Done, OrderStates.Failed)):
+            self._pending = self.SellMarket(self.Volume + max(self.Position, 0))
 
         self._prev2 = self._prev1
         self._prev1 = val

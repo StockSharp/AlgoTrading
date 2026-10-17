@@ -29,6 +29,9 @@ public class CronexCciStrategy : Strategy
 
 	private decimal? _prevFast;
 	private decimal? _prevSlow;
+	private EMA _fastMa;
+	private EMA _slowMa;
+	private Order _pendingOrder;
 
 	/// <summary>
 	/// CCI period.
@@ -151,6 +154,8 @@ public class CronexCciStrategy : Strategy
 
 		_prevFast = null;
 		_prevSlow = null;
+		_fastMa = _slowMa = null;
+		_pendingOrder = null;
 	}
 
 	/// <inheritdoc />
@@ -158,62 +163,49 @@ public class CronexCciStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
-		// Initialize indicators
+		_prevFast = _prevSlow = null;
+		_pendingOrder = null;
 		var cci = new CommodityChannelIndex { Length = CciPeriod };
-		var fastMa = new EMA { Length = FastPeriod };
-		var slowMa = new EMA { Length = SlowPeriod };
-
-		// Subscribe to candles and bind indicators
+		_fastMa = new EMA { Length = FastPeriod };
+		_slowMa = new EMA { Length = SlowPeriod };
+		Indicators.Add(_fastMa);
+		Indicators.Add(_slowMa);
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(cci, fastMa, slowMa, ProcessCandle)
-			.Start();
+		subscription.Bind(cci, ProcessCandle).Start();
 
 		// Setup chart visualization
 		var area = CreateChartArea();
 		if (area != null)
 		{
 			DrawCandles(area, subscription);
-			DrawIndicator(area, fastMa);
-			DrawIndicator(area, slowMa);
+			DrawIndicator(area, _fastMa);
+			DrawIndicator(area, _slowMa);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal cciValue, decimal fastValue, decimal slowValue)
+private void ProcessCandle(ICandleMessage candle, decimal cciValue)
 	{
-		// Skip unfinished candles
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		// Check if strategy is ready to trade
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var prevFast = _prevFast;
-		var prevSlow = _prevSlow;
-
-		if (prevFast.HasValue && prevSlow.HasValue)
+		if (candle.State != CandleStates.Finished) return;
+		var fastResult = _fastMa.Process(cciValue, candle.OpenTime, true);
+		var slowResult = _slowMa.Process(cciValue, candle.OpenTime, true);
+		if (!fastResult.IsFormed || !slowResult.IsFormed) return;
+		var fast = fastResult.ToDecimal();
+		var slow = slowResult.ToDecimal();
+		var buy = _prevFast is decimal oldFast && _prevSlow is decimal oldSlow && oldFast >= oldSlow && fast < slow;
+		var sell = _prevFast is decimal oldFast2 && _prevSlow is decimal oldSlow2 && oldFast2 <= oldSlow2 && fast > slow;
+		_prevFast = fast;
+		_prevSlow = slow;
+		if (!IsFormedAndOnlineAndAllowTrading() || (_pendingOrder is not null && _pendingOrder.State is not (OrderStates.Done or OrderStates.Failed))) return;
+		if (buy)
 		{
-			if (prevFast > prevSlow)
-			{
-				if (EnableShortExit && Position < 0)
-					BuyMarket();
-
-				if (EnableLongEntry && fastValue <= slowValue && Position <= 0)
-					BuyMarket();
-			}
-			else if (prevFast < prevSlow)
-			{
-				if (EnableLongExit && Position > 0)
-					SellMarket();
-
-				if (EnableShortEntry && fastValue >= slowValue && Position >= 0)
-					SellMarket();
-			}
+			if (Position < 0m && EnableShortExit) _pendingOrder = BuyMarket(-Position + (EnableLongEntry ? Volume : 0m));
+			else if (Position == 0m && EnableLongEntry) _pendingOrder = BuyMarket(Volume);
 		}
-
-		_prevFast = fastValue;
-		_prevSlow = slowValue;
+		else if (sell)
+		{
+			if (Position > 0m && EnableLongExit) _pendingOrder = SellMarket(Position + (EnableShortEntry ? Volume : 0m));
+			else if (Position == 0m && EnableShortEntry) _pendingOrder = SellMarket(Volume);
+		}
 	}
 }

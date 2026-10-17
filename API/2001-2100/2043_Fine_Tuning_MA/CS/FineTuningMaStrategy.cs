@@ -20,6 +20,7 @@ public class FineTuningMaStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
 
+	private Order _pending;
 	private decimal _prev1;
 	private decimal _prev2;
 	private int _candleCount;
@@ -58,21 +59,23 @@ public class FineTuningMaStrategy : Strategy
 		_prev1 = default;
 		_prev2 = default;
 		_candleCount = default;
+		_pending = null;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_pending = null;
 
-		var ma = new ExponentialMovingAverage { Length = MaLength };
+		var ma = new SimpleMovingAverage { Length = MaLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ma, ProcessCandle).Start();
 
 		StartProtection(
-			new Unit(StopLossPercent, UnitTypes.Percent),
-			new Unit(TakeProfitPercent, UnitTypes.Percent));
+			takeProfit: new Unit(TakeProfitPercent, UnitTypes.Percent),
+			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal ma)
@@ -94,17 +97,13 @@ public class FineTuningMaStrategy : Strategy
 		var wasRising = _prev1 > _prev2;
 		var wasFalling = _prev1 < _prev2;
 
-		if (wasRising && ma > _prev1 && Position <= 0)
+		if (wasFalling && ma > _prev1 && Position <= 0 && (_pending is null || _pending.State is OrderStates.Done or OrderStates.Failed))
 		{
-			if (Position < 0)
-				BuyMarket();
-			BuyMarket();
+			_pending = BuyMarket(Volume + Math.Abs(Math.Min(0m, Position)));
 		}
-		else if (wasFalling && ma < _prev1 && Position >= 0)
+		else if (wasRising && ma < _prev1 && Position >= 0 && (_pending is null || _pending.State is OrderStates.Done or OrderStates.Failed))
 		{
-			if (Position > 0)
-				SellMarket();
-			SellMarket();
+			_pending = SellMarket(Volume + Math.Max(0m, Position));
 		}
 
 		_prev2 = _prev1;

@@ -6,7 +6,7 @@ clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Messages import DataType, CandleStates, OrderStates
 from StockSharp.Algo.Indicators import RateOfChange, SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 from indicator_extensions import *
@@ -26,7 +26,7 @@ class coppock_histogram_strategy(Strategy):
             .SetDisplay("Smoothing", "Moving average length", "Parameters")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(8))) \
             .SetDisplay("Candle Type", "Type of candles", "Parameters")
-        self._signal_cooldown_bars = self.Param("SignalCooldownBars", 2) \
+        self._signal_cooldown_bars = self.Param("SignalCooldownBars", 0) \
             .SetDisplay("Signal Cooldown", "Closed candles to wait before the next trade", "Parameters")
 
         self._sma = None
@@ -40,12 +40,14 @@ class coppock_histogram_strategy(Strategy):
 
     def OnReseted(self):
         super(coppock_histogram_strategy, self).OnReseted()
+        self._pending_order = None
         self._prev = None
         self._prev2 = None
         self._cooldown_remaining = 0
 
     def OnStarted2(self, time):
         super(coppock_histogram_strategy, self).OnStarted2(time)
+        self._pending_order = None
 
         self._sma = SimpleMovingAverage()
         self._sma.Length = self._smooth_period.Value
@@ -64,6 +66,9 @@ class coppock_histogram_strategy(Strategy):
             self.DrawIndicator(area, self._sma)
             self.DrawOwnTrades(area)
 
+    def _has_pending(self):
+        return self._pending_order is not None and self._pending_order.State not in (OrderStates.Done, OrderStates.Failed)
+
     def on_process(self, candle, roc1_val, roc2_val):
         if candle.State != CandleStates.Finished:
             return
@@ -78,11 +83,11 @@ class coppock_histogram_strategy(Strategy):
         coppock = float(smooth_val)
 
         if self._prev is not None and self._prev2 is not None:
-            if self._cooldown_remaining == 0 and self._prev < self._prev2 and coppock > self._prev and self.Position <= 0:
-                self.BuyMarket()
+            if self.IsFormedAndOnlineAndAllowTrading() and self._cooldown_remaining == 0 and not self._has_pending() and self._prev < self._prev2 and coppock > self._prev and self.Position <= 0:
+                self._pending_order = self.BuyMarket(self.Volume + abs(self.Position))
                 self._cooldown_remaining = self._signal_cooldown_bars.Value
-            elif self._cooldown_remaining == 0 and self._prev > self._prev2 and coppock < self._prev and self.Position >= 0:
-                self.SellMarket()
+            elif self.IsFormedAndOnlineAndAllowTrading() and self._cooldown_remaining == 0 and not self._has_pending() and self._prev > self._prev2 and coppock < self._prev and self.Position >= 0:
+                self._pending_order = self.SellMarket(self.Volume + abs(self.Position))
                 self._cooldown_remaining = self._signal_cooldown_bars.Value
 
         self._prev2 = self._prev

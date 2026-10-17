@@ -28,6 +28,7 @@ public class DigVariationStrategy : Strategy
 	private decimal _prevPrev;
 	private bool _initialized;
 	private int _cooldown;
+	private Order _pending;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="DigVariationStrategy"/> class.
@@ -42,7 +43,7 @@ public class DigVariationStrategy : Strategy
 		_stopLoss = this.Param("StopLoss", 1000m).SetDisplay("Stop Loss", "Stop Loss", "General");
 		_takeProfit = this.Param("TakeProfit", 2000m).SetDisplay("Take Profit", "Take Profit", "General");
 		_candleType2 = this.Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type", "Candle", "General");
-		_cooldownPeriod = this.Param(nameof(CooldownPeriod), 200).SetDisplay("Cooldown", "Cooldown between trades in candles", "General");
+		_cooldownPeriod = this.Param(nameof(CooldownPeriod), 0).SetDisplay("Cooldown", "Cooldown between trades in candles", "General");
 	}
 
 	/// <summary>
@@ -129,16 +130,18 @@ public class DigVariationStrategy : Strategy
 		_prevPrev = default;
 		_initialized = default;
 		_cooldown = default;
+		_pending = null;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_pending = null;
 
-		StartProtection(new Unit(StopLoss, UnitTypes.Absolute), new Unit(TakeProfit, UnitTypes.Absolute));
+		StartProtection(takeProfit: new Unit(TakeProfit, UnitTypes.Absolute), stopLoss: new Unit(StopLoss, UnitTypes.Absolute));
 
-		var ema = new ExponentialMovingAverage { Length = Period };
+		var ema = new SimpleMovingAverage { Length = Period };
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ema, ProcessCandle).Start();
 	}
@@ -148,7 +151,7 @@ public class DigVariationStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!IsFormedAndOnlineAndAllowTrading() || (_pending is not null && _pending.State is not (OrderStates.Done or OrderStates.Failed)))
 			return;
 
 		if (!_initialized)
@@ -170,32 +173,15 @@ public class DigVariationStrategy : Strategy
 		var wasRising = _prev > _prevPrev;
 		var wasFalling = _prev < _prevPrev;
 
-		if (wasRising)
+		if (wasRising && smaValue > _prev)
 		{
-			if (SellClose && Position < 0)
-			{
-				BuyMarket();
-				_cooldown = CooldownPeriod;
-			}
-			else if (BuyOpen && Position <= 0 && smaValue > _prev)
-			{
-				BuyMarket();
-				_cooldown = CooldownPeriod;
-			}
+			if (Position < 0m && SellClose) _pending = BuyMarket(-Position + (BuyOpen ? Volume : 0m));
+			else if (Position == 0m && BuyOpen) _pending = BuyMarket(Volume);
 		}
-
-		if (wasFalling)
+		else if (wasFalling && smaValue < _prev)
 		{
-			if (BuyClose && Position > 0)
-			{
-				SellMarket();
-				_cooldown = CooldownPeriod;
-			}
-			else if (SellOpen && Position >= 0 && smaValue < _prev)
-			{
-				SellMarket();
-				_cooldown = CooldownPeriod;
-			}
+			if (Position > 0m && BuyClose) _pending = SellMarket(Position + (SellOpen ? Volume : 0m));
+			else if (Position == 0m && SellOpen) _pending = SellMarket(Volume);
 		}
 
 		_prevPrev = _prev;

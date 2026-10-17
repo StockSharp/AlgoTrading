@@ -6,7 +6,7 @@ clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Messages import DataType, CandleStates, OrderStates
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 from indicator_extensions import *
@@ -20,9 +20,9 @@ class color_xxdpo_strategy(Strategy):
             .SetDisplay("First MA Length", "Length for the first smoothing stage.", "Indicators")
         self._second_length = self.Param("SecondLength", 5) \
             .SetDisplay("Second MA Length", "Length for the second smoothing stage.", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(6))) \
             .SetDisplay("Candle Type", "Candle type for strategy calculation.", "General")
-        self._signal_cooldown_bars = self.Param("SignalCooldownBars", 3) \
+        self._signal_cooldown_bars = self.Param("SignalCooldownBars", 0) \
             .SetDisplay("Signal Cooldown Bars", "Closed candles to wait before a new direction change.", "General")
 
         self._ma1 = None
@@ -66,6 +66,7 @@ class color_xxdpo_strategy(Strategy):
 
     def OnStarted2(self, time):
         super(color_xxdpo_strategy, self).OnStarted2(time)
+        self._pending_order = None
 
         self._ma1 = SimpleMovingAverage()
         self._ma1.Length = self.FirstLength
@@ -77,6 +78,9 @@ class color_xxdpo_strategy(Strategy):
         self.SubscribeCandles(self.CandleType) \
             .Bind(self.ProcessCandle) \
             .Start()
+
+    def _has_pending(self):
+        return self._pending_order is not None and self._pending_order.State not in (OrderStates.Done, OrderStates.Failed)
 
     def ProcessCandle(self, candle):
         if candle.State != CandleStates.Finished:
@@ -107,16 +111,16 @@ class color_xxdpo_strategy(Strategy):
             self._is_initialized = True
             return
 
-        turned_up = self._prev2 >= self._prev1 and xxdpo > self._prev1
-        turned_down = self._prev2 <= self._prev1 and xxdpo < self._prev1
+        turned_up = self._prev2 > self._prev1 and xxdpo > self._prev1
+        turned_down = self._prev2 < self._prev1 and xxdpo < self._prev1
 
-        if self._cooldown_remaining == 0 and turned_up and self.Position <= 0:
+        if self.IsFormedAndOnlineAndAllowTrading() and self._cooldown_remaining == 0 and not self._has_pending() and turned_up and self.Position <= 0:
             volume = self.Volume + (-self.Position if self.Position < 0 else 0)
-            self.BuyMarket(volume)
+            self._pending_order = self.BuyMarket(volume)
             self._cooldown_remaining = self.SignalCooldownBars
-        elif self._cooldown_remaining == 0 and turned_down and self.Position >= 0:
+        elif self.IsFormedAndOnlineAndAllowTrading() and self._cooldown_remaining == 0 and not self._has_pending() and turned_down and self.Position >= 0:
             volume = self.Volume + (self.Position if self.Position > 0 else 0)
-            self.SellMarket(volume)
+            self._pending_order = self.SellMarket(volume)
             self._cooldown_remaining = self.SignalCooldownBars
 
         self._prev2 = self._prev1
@@ -124,6 +128,7 @@ class color_xxdpo_strategy(Strategy):
 
     def OnReseted(self):
         super(color_xxdpo_strategy, self).OnReseted()
+        self._pending_order = None
         self._ma1 = None
         self._ma2 = None
         self._prev1 = 0.0

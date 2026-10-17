@@ -6,9 +6,10 @@ clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Messages import DataType, CandleStates, OrderStates
 from StockSharp.Algo.Indicators import CommodityChannelIndex, ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import process_float
 
 
 class cronex_cci_strategy(Strategy):
@@ -102,49 +103,48 @@ class cronex_cci_strategy(Strategy):
 
     def OnStarted2(self, time):
         super(cronex_cci_strategy, self).OnStarted2(time)
+        self._prev_fast = self._prev_slow = None
+        self._pending_order = None
+        self._cci = CommodityChannelIndex()
+        self._cci.Length = self.CciPeriod
+        self._fast_ma = ExponentialMovingAverage()
+        self._fast_ma.Length = self.FastPeriod
+        self._slow_ma = ExponentialMovingAverage()
+        self._slow_ma.Length = self.SlowPeriod
+        self.Indicators.Add(self._fast_ma)
+        self.Indicators.Add(self._slow_ma)
+        self.SubscribeCandles(self.CandleType).Bind(self._cci, self.ProcessCandle).Start()
 
-        cci = CommodityChannelIndex()
-        cci.Length = self.CciPeriod
-        fast_ma = ExponentialMovingAverage()
-        fast_ma.Length = self.FastPeriod
-        slow_ma = ExponentialMovingAverage()
-        slow_ma.Length = self.SlowPeriod
-
-        self.SubscribeCandles(self.CandleType) \
-            .Bind(cci, fast_ma, slow_ma, self.ProcessCandle) \
-            .Start()
-
-    def ProcessCandle(self, candle, cci_value, fast_value, slow_value):
+    def ProcessCandle(self, candle, cci_value):
         if candle.State != CandleStates.Finished:
             return
-
-        fast_val = float(fast_value)
-        slow_val = float(slow_value)
-
-        prev_fast = self._prev_fast
-        prev_slow = self._prev_slow
-
-        if prev_fast is not None and prev_slow is not None:
-            if prev_fast > prev_slow:
-                if self.EnableShortExit and self.Position < 0:
-                    self.BuyMarket()
-
-                if self.EnableLongEntry and fast_val <= slow_val and self.Position <= 0:
-                    self.BuyMarket()
-            elif prev_fast < prev_slow:
-                if self.EnableLongExit and self.Position > 0:
-                    self.SellMarket()
-
-                if self.EnableShortEntry and fast_val >= slow_val and self.Position >= 0:
-                    self.SellMarket()
-
-        self._prev_fast = fast_val
-        self._prev_slow = slow_val
+        fast_result = process_float(self._fast_ma, cci_value, candle.OpenTime, True)
+        slow_result = process_float(self._slow_ma, cci_value, candle.OpenTime, True)
+        if not fast_result.IsFormed or not slow_result.IsFormed:
+            return
+        fast, slow = float(fast_result), float(slow_result)
+        buy = self._prev_fast is not None and self._prev_fast >= self._prev_slow and fast < slow
+        sell = self._prev_fast is not None and self._prev_fast <= self._prev_slow and fast > slow
+        self._prev_fast, self._prev_slow = fast, slow
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+        if self._pending_order is not None and self._pending_order.State not in (OrderStates.Done, OrderStates.Failed):
+            return
+        if buy:
+            if self.Position < 0 and self.EnableShortExit:
+                self._pending_order = self.BuyMarket(-self.Position + (self.Volume if self.EnableLongEntry else 0))
+            elif self.Position == 0 and self.EnableLongEntry:
+                self._pending_order = self.BuyMarket(self.Volume)
+        elif sell:
+            if self.Position > 0 and self.EnableLongExit:
+                self._pending_order = self.SellMarket(self.Position + (self.Volume if self.EnableShortEntry else 0))
+            elif self.Position == 0 and self.EnableShortEntry:
+                self._pending_order = self.SellMarket(self.Volume)
 
     def OnReseted(self):
         super(cronex_cci_strategy, self).OnReseted()
-        self._prev_fast = None
-        self._prev_slow = None
+        self._prev_fast = self._prev_slow = None
+        self._fast_ma = self._slow_ma = self._cci = self._pending_order = None
 
     def CreateClone(self):
         return cronex_cci_strategy()

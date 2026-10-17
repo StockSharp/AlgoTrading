@@ -1351,4 +1351,325 @@ public abstract partial class StrategyTests
 			"MACD/WMA/CCI confluence must place and fill actual orders.");
 	}
 
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public async Task Point1Part05_Batch10_MomentumAma_ExecutesActualFills()
+	{
+		var orders = 0;
+		var fills = 0;
+		await Replay("2017_ColorMomentum_Ama", (strategy, _) =>
+		{
+			AreEqual(8, Convert.ToInt32(strategy.Parameters["MomentumPeriod"].Value), "2017_ColorMomentum_Ama: MomentumPeriod default.");
+			AreEqual(9, Convert.ToInt32(strategy.Parameters["AmaPeriod"].Value), "2017_ColorMomentum_Ama: AmaPeriod default.");
+			AreEqual(0, Convert.ToInt32(strategy.Parameters["SignalCooldownBars"].Value), "2017_ColorMomentum_Ama: SignalCooldownBars default.");
+
+			AreEqual(TimeSpan.FromHours(1).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "MomentumPeriod", 5);
+			SetParam(strategy, "AmaPeriod", 5);
+			SetParam(strategy, "FastPeriod", 2);
+			SetParam(strategy, "SlowPeriod", 20);
+			SetParam(strategy, "SignalBar", 1);
+			SetParam(strategy, "SignalCooldownBars", 0);
+			strategy.OrderRegistering += order =>
+			{
+				IsTrue(order.Volume > 0m, "2017_ColorMomentum_Ama: market order requires a positive volume.");
+				if (strategy.Position != 0m && order.Side == (strategy.Position > 0m ? Sides.Sell : Sides.Buy))
+					IsTrue(order.Volume <= Math.Abs(strategy.Position) + strategy.Volume,
+						"2017_ColorMomentum_Ama: closing volume must not exceed current position plus one entry.");
+				orders++;
+			};
+			strategy.Trades.TradeAdded += _ => fills++;
+		}, replayDuration: TimeSpan.FromDays(14));
+		IsTrue(orders > 0 && fills > 0,
+			"2017_ColorMomentum_Ama: require real order registration and an actual filled trade on BTC/TON archive.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public async Task Point1Part05_Batch10_Xxdpo_ExecutesActualFills()
+	{
+		var orders = 0;
+		var fills = 0;
+		await Replay("2022_Color_XXDPO", (strategy, _) =>
+		{
+			AreEqual(21, Convert.ToInt32(strategy.Parameters["FirstLength"].Value), "2022_Color_XXDPO: FirstLength default.");
+			AreEqual(5, Convert.ToInt32(strategy.Parameters["SecondLength"].Value), "2022_Color_XXDPO: SecondLength default.");
+			AreEqual(0, Convert.ToInt32(strategy.Parameters["SignalCooldownBars"].Value), "2022_Color_XXDPO: SignalCooldownBars default.");
+
+			AreEqual(TimeSpan.FromHours(6).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "FirstLength", 8);
+			SetParam(strategy, "SecondLength", 3);
+			SetParam(strategy, "SignalCooldownBars", 0);
+			strategy.OrderRegistering += order =>
+			{
+				IsTrue(order.Volume > 0m, "2022_Color_XXDPO: market order requires a positive volume.");
+				if (strategy.Position != 0m && order.Side == (strategy.Position > 0m ? Sides.Sell : Sides.Buy))
+					IsTrue(order.Volume <= Math.Abs(strategy.Position) + strategy.Volume,
+						"2022_Color_XXDPO: closing volume must not exceed current position plus one entry.");
+				orders++;
+			};
+			strategy.Trades.TradeAdded += _ => fills++;
+		}, replayDuration: TimeSpan.FromDays(14));
+		IsTrue(orders > 0 && fills > 0,
+			"2022_Color_XXDPO: require real order registration and an actual filled trade on BTC/TON archive.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public async Task Point1Part05_Batch10_XdinMA_ExecutesActualFills()
+	{
+		var orders = 0;
+		var fills = 0;
+		await Replay("2023_ColorXdinMA", (strategy, _) =>
+		{
+			AreEqual(10, Convert.ToInt32(strategy.Parameters["MainLength"].Value), "2023_ColorXdinMA: MainLength default.");
+			AreEqual(20, Convert.ToInt32(strategy.Parameters["PlusLength"].Value), "2023_ColorXdinMA: PlusLength default.");
+			AreEqual(0, Convert.ToInt32(strategy.Parameters["SignalCooldownBars"].Value), "2023_ColorXdinMA: SignalCooldownBars default.");
+
+			AreEqual(TimeSpan.FromHours(6).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "MainLength", 5);
+			SetParam(strategy, "PlusLength", 10);
+			SetParam(strategy, "SignalCooldownBars", 0);
+			strategy.OrderRegistering += order =>
+			{
+				IsTrue(order.Volume > 0m, "2023_ColorXdinMA: market order requires a positive volume.");
+				if (strategy.Position != 0m && order.Side == (strategy.Position > 0m ? Sides.Sell : Sides.Buy))
+					IsTrue(order.Volume <= Math.Abs(strategy.Position) + strategy.Volume,
+						"2023_ColorXdinMA: closing volume must not exceed current position plus one entry.");
+				orders++;
+			};
+			strategy.Trades.TradeAdded += _ => fills++;
+		}, replayDuration: TimeSpan.FromDays(14));
+		IsTrue(orders > 0 && fills > 0,
+			"2023_ColorXdinMA: require real order registration and an actual filled trade on BTC/TON archive.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public async Task Point1Part05_Batch10_CoppockHistogram_ExecutesActualFills()
+	{
+		var orders = 0;
+		var fills = 0;
+		await Replay("2025_Coppock_Histogram", (strategy, _) =>
+		{
+			AreEqual(14, Convert.ToInt32(strategy.Parameters["Roc1Period"].Value), "2025_Coppock_Histogram: Roc1Period default.");
+			AreEqual(11, Convert.ToInt32(strategy.Parameters["Roc2Period"].Value), "2025_Coppock_Histogram: Roc2Period default.");
+			AreEqual(0, Convert.ToInt32(strategy.Parameters["SignalCooldownBars"].Value), "2025_Coppock_Histogram: SignalCooldownBars default.");
+
+			AreEqual(TimeSpan.FromHours(8).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "Roc1Period", 7);
+			SetParam(strategy, "Roc2Period", 5);
+			SetParam(strategy, "SmoothPeriod", 3);
+			SetParam(strategy, "SignalCooldownBars", 0);
+			strategy.OrderRegistering += order =>
+			{
+				IsTrue(order.Volume > 0m, "2025_Coppock_Histogram: market order requires a positive volume.");
+				if (strategy.Position != 0m && order.Side == (strategy.Position > 0m ? Sides.Sell : Sides.Buy))
+					IsTrue(order.Volume <= Math.Abs(strategy.Position) + strategy.Volume,
+						"2025_Coppock_Histogram: closing volume must not exceed current position plus one entry.");
+				orders++;
+			};
+			strategy.Trades.TradeAdded += _ => fills++;
+		}, replayDuration: TimeSpan.FromDays(14));
+		IsTrue(orders > 0 && fills > 0,
+			"2025_Coppock_Histogram: require real order registration and an actual filled trade on BTC/TON archive.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public async Task Point1Part05_Batch10_CronexCci_ExecutesActualFills()
+	{
+		var orders = 0;
+		var fills = 0;
+		await Replay("2026_Cronex_CCI", (strategy, _) =>
+		{
+			AreEqual(25, Convert.ToInt32(strategy.Parameters["CciPeriod"].Value), "2026_Cronex_CCI: CciPeriod default.");
+			AreEqual(14, Convert.ToInt32(strategy.Parameters["FastPeriod"].Value), "2026_Cronex_CCI: FastPeriod default.");
+			AreEqual(25, Convert.ToInt32(strategy.Parameters["SlowPeriod"].Value), "2026_Cronex_CCI: SlowPeriod default.");
+			AreEqual(true, strategy.Parameters["EnableLongEntry"].Value, "2026_Cronex_CCI: EnableLongEntry must be enabled by default.");
+			AreEqual(true, strategy.Parameters["EnableShortEntry"].Value, "2026_Cronex_CCI: EnableShortEntry must be enabled by default.");
+			AreEqual(true, strategy.Parameters["EnableLongExit"].Value, "2026_Cronex_CCI: EnableLongExit must be enabled by default.");
+			AreEqual(true, strategy.Parameters["EnableShortExit"].Value, "2026_Cronex_CCI: EnableShortExit must be enabled by default.");
+			AreEqual(TimeSpan.FromHours(4).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "CciPeriod", 6);
+			SetParam(strategy, "FastPeriod", 3);
+			SetParam(strategy, "SlowPeriod", 8);
+			strategy.OrderRegistering += order =>
+			{
+				IsTrue(order.Volume > 0m, "2026_Cronex_CCI: market order requires a positive volume.");
+				if (strategy.Position != 0m && order.Side == (strategy.Position > 0m ? Sides.Sell : Sides.Buy))
+					IsTrue(order.Volume <= Math.Abs(strategy.Position) + strategy.Volume,
+						"2026_Cronex_CCI: closing volume must not exceed current position plus one entry.");
+				orders++;
+			};
+			strategy.Trades.TradeAdded += _ => fills++;
+		}, replayDuration: TimeSpan.FromDays(14));
+		IsTrue(orders > 0 && fills > 0,
+			"2026_Cronex_CCI: require real order registration and an actual filled trade on BTC/TON archive.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public async Task Point1Part05_Batch10_DigVariation_ExecutesActualFills()
+	{
+		var orders = 0;
+		var fills = 0;
+		await Replay("2031_DigVariation", (strategy, _) =>
+		{
+			AreEqual(20, Convert.ToInt32(strategy.Parameters["Period"].Value), "2031_DigVariation: Period default.");
+			AreEqual(0, Convert.ToInt32(strategy.Parameters["CooldownPeriod"].Value), "2031_DigVariation: CooldownPeriod default.");
+			AreEqual(true, strategy.Parameters["BuyOpen"].Value, "2031_DigVariation: BuyOpen must be enabled by default.");
+			AreEqual(true, strategy.Parameters["SellOpen"].Value, "2031_DigVariation: SellOpen must be enabled by default.");
+			AreEqual(true, strategy.Parameters["BuyClose"].Value, "2031_DigVariation: BuyClose must be enabled by default.");
+			AreEqual(true, strategy.Parameters["SellClose"].Value, "2031_DigVariation: SellClose must be enabled by default.");
+
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "Period", 5);
+			SetParam(strategy, "CooldownPeriod", 0);
+			SetParam(strategy, "StopLoss", 100m);
+			SetParam(strategy, "TakeProfit", 200m);
+			strategy.OrderRegistering += order =>
+			{
+				IsTrue(order.Volume > 0m, "2031_DigVariation: market order requires a positive volume.");
+				if (strategy.Position != 0m && order.Side == (strategy.Position > 0m ? Sides.Sell : Sides.Buy))
+					IsTrue(order.Volume <= Math.Abs(strategy.Position) + strategy.Volume,
+						"2031_DigVariation: closing volume must not exceed current position plus one entry.");
+				orders++;
+			};
+			strategy.Trades.TradeAdded += _ => fills++;
+		}, replayDuration: TimeSpan.FromDays(14));
+		IsTrue(orders > 0 && fills > 0,
+			"2031_DigVariation: require real order registration and an actual filled trade on BTC/TON archive.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public async Task Point1Part05_Batch10_EmaCrossoverSignal_ExecutesActualFills()
+	{
+		var orders = 0;
+		var fills = 0;
+		await Replay("2033_Ema_Crossover_Signal", (strategy, _) =>
+		{
+			AreEqual(5, Convert.ToInt32(strategy.Parameters["FastPeriod"].Value), "2033_Ema_Crossover_Signal: FastPeriod default.");
+			AreEqual(13, Convert.ToInt32(strategy.Parameters["SlowPeriod"].Value), "2033_Ema_Crossover_Signal: SlowPeriod default.");
+			AreEqual(true, strategy.Parameters["AllowBuyOpen"].Value, "2033_Ema_Crossover_Signal: AllowBuyOpen must be enabled by default.");
+			AreEqual(true, strategy.Parameters["AllowSellOpen"].Value, "2033_Ema_Crossover_Signal: AllowSellOpen must be enabled by default.");
+			AreEqual(true, strategy.Parameters["AllowBuyClose"].Value, "2033_Ema_Crossover_Signal: AllowBuyClose must be enabled by default.");
+			AreEqual(true, strategy.Parameters["AllowSellClose"].Value, "2033_Ema_Crossover_Signal: AllowSellClose must be enabled by default.");
+			AreEqual(TimeSpan.FromHours(4).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "FastPeriod", 3);
+			SetParam(strategy, "SlowPeriod", 8);
+			SetParam(strategy, "StopLossTicks", 1000m);
+			SetParam(strategy, "TakeProfitTicks", 2000m);
+			strategy.OrderRegistering += order =>
+			{
+				IsTrue(order.Volume > 0m, "2033_Ema_Crossover_Signal: market order requires a positive volume.");
+				if (strategy.Position != 0m && order.Side == (strategy.Position > 0m ? Sides.Sell : Sides.Buy))
+					IsTrue(order.Volume <= Math.Abs(strategy.Position) + strategy.Volume,
+						"2033_Ema_Crossover_Signal: closing volume must not exceed current position plus one entry.");
+				orders++;
+			};
+			strategy.Trades.TradeAdded += _ => fills++;
+		}, replayDuration: TimeSpan.FromDays(14));
+		IsTrue(orders > 0 && fills > 0,
+			"2033_Ema_Crossover_Signal: require real order registration and an actual filled trade on BTC/TON archive.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public async Task Point1Part05_Batch10_MovingUpMA_ExecutesActualFills()
+	{
+		var orders = 0;
+		var fills = 0;
+		await Replay("2038_MovingUp_MA", (strategy, _) =>
+		{
+			AreEqual(13, Convert.ToInt32(strategy.Parameters["FastLength"].Value), "2038_MovingUp_MA: FastLength default.");
+			AreEqual(21, Convert.ToInt32(strategy.Parameters["SlowLength"].Value), "2038_MovingUp_MA: SlowLength default.");
+			AreEqual(true, strategy.Parameters["UseStopLoss"].Value, "2038_MovingUp_MA: UseStopLoss must be enabled by default.");
+			AreEqual(true, strategy.Parameters["UseTakeProfit"].Value, "2038_MovingUp_MA: UseTakeProfit must be enabled by default.");
+			AreEqual(TimeSpan.FromHours(1).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "FastLength", 3);
+			SetParam(strategy, "SlowLength", 8);
+			SetParam(strategy, "StopLoss", 100m);
+			SetParam(strategy, "TakeProfit", 200m);
+			strategy.OrderRegistering += order =>
+			{
+				IsTrue(order.Volume > 0m, "2038_MovingUp_MA: market order requires a positive volume.");
+				if (strategy.Position != 0m && order.Side == (strategy.Position > 0m ? Sides.Sell : Sides.Buy))
+					IsTrue(order.Volume <= Math.Abs(strategy.Position) + strategy.Volume,
+						"2038_MovingUp_MA: closing volume must not exceed current position plus one entry.");
+				orders++;
+			};
+			strategy.Trades.TradeAdded += _ => fills++;
+		}, replayDuration: TimeSpan.FromDays(14));
+		IsTrue(orders > 0 && fills > 0,
+			"2038_MovingUp_MA: require real order registration and an actual filled trade on BTC/TON archive.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public async Task Point1Part05_Batch10_Fast2Crossover_ExecutesActualFills()
+	{
+		var orders = 0;
+		var fills = 0;
+		await Replay("2039_Fast2_Crossover", (strategy, _) =>
+		{
+			AreEqual(3, Convert.ToInt32(strategy.Parameters["FastLength"].Value), "2039_Fast2_Crossover: FastLength default.");
+			AreEqual(9, Convert.ToInt32(strategy.Parameters["SlowLength"].Value), "2039_Fast2_Crossover: SlowLength default.");
+
+			AreEqual(TimeSpan.FromHours(8).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "FastLength", 3);
+			SetParam(strategy, "SlowLength", 6);
+			strategy.OrderRegistering += order =>
+			{
+				IsTrue(order.Volume > 0m, "2039_Fast2_Crossover: market order requires a positive volume.");
+				if (strategy.Position != 0m && order.Side == (strategy.Position > 0m ? Sides.Sell : Sides.Buy))
+					IsTrue(order.Volume <= Math.Abs(strategy.Position) + strategy.Volume,
+						"2039_Fast2_Crossover: closing volume must not exceed current position plus one entry.");
+				orders++;
+			};
+			strategy.Trades.TradeAdded += _ => fills++;
+		}, replayDuration: TimeSpan.FromDays(14));
+		IsTrue(orders > 0 && fills > 0,
+			"2039_Fast2_Crossover: require real order registration and an actual filled trade on BTC/TON archive.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard05")]
+	public async Task Point1Part05_Batch10_FineTuningMA_ExecutesActualFills()
+	{
+		var orders = 0;
+		var fills = 0;
+		await Replay("2043_Fine_Tuning_MA", (strategy, _) =>
+		{
+			AreEqual(10, Convert.ToInt32(strategy.Parameters["MaLength"].Value), "2043_Fine_Tuning_MA: MaLength default.");
+
+			AreEqual(TimeSpan.FromHours(4).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(strategy, "MaLength", 5);
+			SetParam(strategy, "StopLossPercent", 10m);
+			SetParam(strategy, "TakeProfitPercent", 10m);
+			strategy.OrderRegistering += order =>
+			{
+				IsTrue(order.Volume > 0m, "2043_Fine_Tuning_MA: market order requires a positive volume.");
+				if (strategy.Position != 0m && order.Side == (strategy.Position > 0m ? Sides.Sell : Sides.Buy))
+					IsTrue(order.Volume <= Math.Abs(strategy.Position) + strategy.Volume,
+						"2043_Fine_Tuning_MA: closing volume must not exceed current position plus one entry.");
+				orders++;
+			};
+			strategy.Trades.TradeAdded += _ => fills++;
+		}, replayDuration: TimeSpan.FromDays(14));
+		IsTrue(orders > 0 && fills > 0,
+			"2043_Fine_Tuning_MA: require real order registration and an actual filled trade on BTC/TON archive.");
+	}
+
 }

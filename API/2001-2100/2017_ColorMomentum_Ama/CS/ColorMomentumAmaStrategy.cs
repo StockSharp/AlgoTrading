@@ -21,6 +21,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ColorMomentumAmaStrategy : Strategy
 {
+	private Order _pendingOrder;
 	private readonly StrategyParam<int> _momentumPeriod;
 	private readonly StrategyParam<int> _amaPeriod;
 	private readonly StrategyParam<int> _fastPeriod;
@@ -128,8 +129,8 @@ public class ColorMomentumAmaStrategy : Strategy
 		.SetDisplay("Signal bar", "Bar index used for signals", "Strategy")
 		;
 
-		_signalCooldownBars = Param(nameof(SignalCooldownBars), 6)
-		.SetGreaterThanZero()
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 0)
+		.SetNotNegative()
 		.SetDisplay("Signal cooldown", "Bars to wait between reversals", "Strategy");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -146,6 +147,7 @@ public class ColorMomentumAmaStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		_pendingOrder = null;
 
 		_buffer = new decimal?[SignalBar + 3];
 		_cooldownRemaining = 0;
@@ -155,6 +157,7 @@ public class ColorMomentumAmaStrategy : Strategy
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_pendingOrder = null;
 
 		_momentum = new Momentum { Length = MomentumPeriod };
 		_ama = new KaufmanAdaptiveMovingAverage
@@ -180,6 +183,8 @@ public class ColorMomentumAmaStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 	}
+
+	private bool HasPending() => _pendingOrder is not null && _pendingOrder.State is not (OrderStates.Done or OrderStates.Failed);
 
 	private void ProcessCandle(ICandleMessage candle, decimal momentumValue)
 	{
@@ -209,14 +214,14 @@ public class ColorMomentumAmaStrategy : Strategy
 		var rising = v2 < v1 && v1 < v0;
 		var falling = v2 > v1 && v1 > v0;
 
-		if (_cooldownRemaining == 0 && rising && Position <= 0)
+		if (IsFormedAndOnlineAndAllowTrading() && _cooldownRemaining == 0 && rising && Position <= 0 && !HasPending())
 		{
-			BuyMarket(Volume + Math.Abs(Position));
+			_pendingOrder = BuyMarket(Volume + Math.Abs(Position));
 			_cooldownRemaining = SignalCooldownBars;
 		}
-		else if (_cooldownRemaining == 0 && falling && Position >= 0)
+		else if (IsFormedAndOnlineAndAllowTrading() && _cooldownRemaining == 0 && falling && Position >= 0 && !HasPending())
 		{
-			SellMarket(Volume + Math.Abs(Position));
+			_pendingOrder = SellMarket(Volume + Math.Abs(Position));
 			_cooldownRemaining = SignalCooldownBars;
 		}
 	}

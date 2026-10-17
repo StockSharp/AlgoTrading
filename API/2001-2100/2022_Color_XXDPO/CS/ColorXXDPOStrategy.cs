@@ -18,6 +18,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ColorXXDPOStrategy : Strategy
 {
+	private Order _pendingOrder;
 	private readonly StrategyParam<int> _firstLength;
 	private readonly StrategyParam<int> _secondLength;
 	private readonly StrategyParam<DataType> _candleType;
@@ -40,10 +41,10 @@ public class ColorXXDPOStrategy : Strategy
 		_secondLength = Param(nameof(SecondLength), 5)
 			.SetDisplay("Second MA Length", "Length for the second smoothing stage.", "Indicators");
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(6).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type for strategy calculation.", "General");
 
-		_signalCooldownBars = Param(nameof(SignalCooldownBars), 3)
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 0)
 			.SetNotNegative()
 			.SetDisplay("Signal Cooldown Bars", "Closed candles to wait before a new direction change.", "General");
 
@@ -83,6 +84,7 @@ public class ColorXXDPOStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		_pendingOrder = null;
 
 		_ma1.Reset();
 		_ma2.Reset();
@@ -98,6 +100,7 @@ public class ColorXXDPOStrategy : Strategy
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_pendingOrder = null;
 
 		_ma1.Length = FirstLength;
 		_ma2.Length = SecondLength;
@@ -114,6 +117,8 @@ public class ColorXXDPOStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 	}
+
+	private bool HasPending() => _pendingOrder is not null && _pendingOrder.State is not (OrderStates.Done or OrderStates.Failed);
 
 	private void ProcessCandle(ICandleMessage candle)
 	{
@@ -145,17 +150,17 @@ public class ColorXXDPOStrategy : Strategy
 				return;
 			}
 
-			var turnedUp = _prev2 >= _prev1 && xxdpo > _prev1;
-			var turnedDown = _prev2 <= _prev1 && xxdpo < _prev1;
+			var turnedUp = _prev2 > _prev1 && xxdpo > _prev1;
+			var turnedDown = _prev2 < _prev1 && xxdpo < _prev1;
 
-			if (_cooldownRemaining == 0 && turnedUp && Position <= 0)
+			if (IsFormedAndOnlineAndAllowTrading() && !HasPending() && _cooldownRemaining == 0 && turnedUp && Position <= 0)
 			{
-				BuyMarket(Volume + (Position < 0 ? -Position : 0m));
+				_pendingOrder = BuyMarket(Volume + (Position < 0 ? -Position : 0m));
 				_cooldownRemaining = SignalCooldownBars;
 			}
-			else if (_cooldownRemaining == 0 && turnedDown && Position >= 0)
+			else if (IsFormedAndOnlineAndAllowTrading() && !HasPending() && _cooldownRemaining == 0 && turnedDown && Position >= 0)
 			{
-				SellMarket(Volume + (Position > 0 ? Position : 0m));
+				_pendingOrder = SellMarket(Volume + (Position > 0 ? Position : 0m));
 				_cooldownRemaining = SignalCooldownBars;
 			}
 
