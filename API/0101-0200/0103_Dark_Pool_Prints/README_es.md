@@ -1,33 +1,12 @@
 # Estrategia de Impresiones de Dark Pool
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
- 
-Las Impresiones de Dark Pool rastrean grandes transacciones fuera de bolsa que a menudo preceden a movimientos bruscos una vez que la actividad se revela.
-Un volumen inusual en la cinta puede señalar posicionamiento institucional que aún no ha impactado el mercado regular.
 
-Las pruebas indican un rendimiento anual promedio de aproximadamente 46%. Funciona mejor en el mercado de acciones.
+Opera informes de grandes transacciones extrabursátiles según el lado agresor comunicado, con la SMA20 del instrumento negociado como filtro de tendencia.
 
-La estrategia entra en la misma dirección que las grandes compras o ventas del dark pool, esperando continuidad cuando el resto del mercado reaccione.
+`Security` identifica el instrumento negociado y `DarkPoolSecurity` un flujo independiente de informes del mismo subyacente. Sus identificadores deben ser distintos. El flujo debe aportar operaciones extrabursátiles reales (`IsSystem = false`), precio, volumen, fecha y `OriginSide`. La ausencia del flujo o un identificador idéntico impiden el inicio. Las operaciones bursátiles, informes sin lado, valores inválidos, duplicados e informes fuera de orden no generan entradas.
 
-Un pequeño stop porcentual mantiene el riesgo controlado y las posiciones se cierran si el impulso anticipado no llega a materializarse.
+El volumen debe superar estrictamente `1.5 × media de los 20 informes anteriores`; el informe actual queda excluido. Compra ante una compra comunicada por encima de SMA20 y vende ante una venta por debajo. El color y volumen de las velas no sustituyen los datos del informe. Una entrada contraria revierte toda la posición ejecutada con `Volume + abs(Position)`.
 
-## Detalles
+La SMA usa velas completas de 15 minutos. Cierra largos por debajo de SMA20 y cortos por encima, con independencia del volumen de informes y de la pausa entre entradas. `CooldownBars = 0` por defecto; un valor positivo retrasa las siguientes entradas ese número de velas completas. Una orden pendiente bloquea señales superpuestas.
 
-- **Criterios de entrada**: señal de indicador
-- **Largo/Corto**: Ambos
-- **Criterios de salida**: stop-loss o señal opuesta
-- **Stops**: Sí, basados en porcentaje
-- **Valores predeterminados**:
-  - `CandleType` = 15 minute
-  - `StopLoss` = 2%
-- **Filtros**:
-  - Categoría: Volumen
-  - Dirección: Ambos
-  - Indicadores: Volume
-  - Stops: Sí
-  - Complejidad: Intermedio
-  - Marco temporal: Intradía
-  - Estacionalidad: No
-  - Redes neuronales: No
-  - Divergencia: No
-  - Nivel de riesgo: Medio
-
+`StopLoss = 2` configura protección nativa local del 2% desde el precio real de ejecución. Sigue bid/ask del instrumento y envía una salida a mercado; necesita cotizaciones entre velas. No hay objetivo de beneficios.

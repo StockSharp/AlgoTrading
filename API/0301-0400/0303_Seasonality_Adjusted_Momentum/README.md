@@ -1,33 +1,10 @@
 # Seasonality Adjusted Momentum
 [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
- 
-The **Seasonality Adjusted Momentum** strategy is built around momentum indicator adjusted with seasonality strength.
 
-Testing indicates an average annual return of about 172%. It performs best in the forex market.
+Combines momentum with historical monthly returns. On finished 5-minute candles, calculate `M = Momentum(14)` and `A = SMA(14)` of M. From flat, buy when `S >= SeasonalityThreshold` and `M > A`; sell when `S <= -SeasonalityThreshold` and `M < A`. Default `SeasonalityThreshold = 0.5` is in percentage points.
 
-Signals trigger when Seasonality confirms momentum shifts on daily data. This makes the method suitable for active traders.
+Close a long if its seasonal condition is no longer satisfied or `M < A`; close a short if its seasonal condition fails or `M > A`. Every signal order starts a `CooldownBars = 120` pause in finished candles for subsequent signal decisions. Filled positions have separate local native `StopLossPercent = 2` protection from the actual execution price, monitored on bid/ask and executed at market; it does not wait for signal cooldown.
 
-Stops rely on ATR multiples and factors like MomentumPeriod, SeasonalityThreshold. Adjust these defaults to balance risk and reward.
+Requires `SeasonalityHistoryFile`: a UTF-8 CSV of monthly open/close prices with header `SecurityId,Month,Open,Close`. `Month` is `yyyy-MM`, numbers use a decimal point, prices must be positive, and each month must be unique for the execution instrument. Rows for other security IDs are ignored; missing input, malformed rows or no matching observations prevent startup.
 
-## Details
-- **Entry Criteria**: see implementation for indicator conditions.
-- **Long/Short**: Both directions.
-- **Exit Criteria**: opposite signal or stop logic.
-- **Stops**: Yes, using indicator-based calculations.
-- **Default Values**:
-  - `MomentumPeriod = 14`
-  - `SeasonalityThreshold = 0.5m`
-  - `StopLossPercent = 2.0m`
-  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
-- **Filters**:
-  - Category: Trend following
-  - Direction: Both
-  - Indicators: Seasonality, Adjusted
-  - Stops: Yes
-  - Complexity: Intermediate
-  - Timeframe: Daily
-  - Seasonality: Yes
-  - Neural Networks: No
-  - Divergence: No
-  - Risk Level: Medium
-
+At each signal candle, `S` is the mean of `100 × (Close / Open − 1)` for the same calendar month in prior years, within `SeasonalityLookbackYears = 10`. At least `MinimumSeasonalSamples = 2` observations are required. The current month and future months are excluded even if present in the file. Without sufficient history, no new position is opened. Supply actual monthly prices for the instrument; no fixed monthly score table is supplied.

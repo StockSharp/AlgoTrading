@@ -25,6 +25,7 @@ public class AnchoredMomentumBreakoutStrategy : Strategy
 	private decimal _prev;
 	private decimal _prevPrev;
 	private bool _initialized;
+	private Order _pending;
 
 	public int SmaPeriod { get => _smaPeriod.Value; set => _smaPeriod.Value = value; }
 	public int EmaPeriod { get => _emaPeriod.Value; set => _emaPeriod.Value = value; }
@@ -54,13 +55,16 @@ public class AnchoredMomentumBreakoutStrategy : Strategy
 		_prev = 0;
 		_prevPrev = 0;
 		_initialized = false;
+		_pending = null;
 	}
 
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
 
-		var sma = new ExponentialMovingAverage { Length = SmaPeriod };
+		_initialized = false;
+		_pending = null;
+		var sma = new SimpleMovingAverage { Length = SmaPeriod };
 		var ema = new ExponentialMovingAverage { Length = EmaPeriod };
 		var sub = SubscribeCandles(CandleType);
 		sub.Bind(sma, ema, ProcessCandle).Start();
@@ -98,15 +102,10 @@ public class AnchoredMomentumBreakoutStrategy : Strategy
 			return;
 		}
 
-		if (_prev < _prevPrev && mom >= _prev && Position <= 0)
+		if (IsFormedAndOnlineAndAllowTrading() && (_pending is null || _pending.State is OrderStates.Done or OrderStates.Failed))
 		{
-			if (Position < 0) BuyMarket();
-			BuyMarket();
-		}
-		else if (_prev > _prevPrev && mom <= _prev && Position >= 0)
-		{
-			if (Position > 0) SellMarket();
-			SellMarket();
+			if (_prev < _prevPrev && mom > _prev && Position <= 0m) _pending = BuyMarket(Volume - Math.Min(0m, Position));
+			else if (_prev > _prevPrev && mom < _prev && Position >= 0m) _pending = SellMarket(Volume + Math.Max(0m, Position));
 		}
 
 		_prevPrev = _prev;

@@ -1,34 +1,24 @@
-# Bollinger Volatility Breakout 策略
+# Bollinger Volatility Breakout
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-**Bollinger Volatility Breakout** 策略基于相关指标构建。
+策略使用已完成的5分钟K线，等待指标形成并允许交易。所有滚动统计都包含信号K线。`C`为收盘价，`M = SMA(C, 20)`，`D = 总体标准差(C, 20)`，`U = M + 2 × D`，`L = M − 2 × D`，`A = ATR(14)`，采用Wilder平滑真实波幅。
 
-测试表明年均收益约为 181%，该策略在加密市场表现最佳。
+高波动条件为 `A >= SMA(A, 14) + 2 × 总体标准差(A, 14)`。价格水平对应布林带的上轨、中轨和下轨。
 
-当指标在指定周期的数据上确认条件时触发信号，适合积极交易者。
+空仓时，高波动条件成立且 `C >= U` 则买入，成立且 `C <= L` 则卖出。开仓数量为 `Volume`。只有冷却期结束且没有待成交订单时才能再次开仓。 开仓要求 `A > 0`。
 
-止损依赖ATR倍数及其他参数，可根据需要调整默认值以平衡风险和收益。
+`k = StopLossMultiplier`. 开仓时固定信号K线的收盘价及ATR：多头止损为 `C_entry − k × A_entry`，空头止损为 `C_entry + k × A_entry`。每根K线完成后，如果收盘价达到固定止损，多头满足 `C <= M`，空头满足 `C >= M`，或高波动条件失效，则用市价单平掉全部实际持仓。
 
-## 详细信息
-- **入场条件**: see implementation for indicator conditions.
-- **多空**: Both directions.
-- **出场条件**: opposite signal or stop logic.
-- **止损**: Yes, using indicator-based calculations.
-- **默认值**:
-  - `BollingerPeriod = 20`
-  - `BollingerDeviation = 2.0m`
-  - `AtrPeriod = 14`
-  - `AtrDeviationMultiplier = 2.0m`
-  - `StopLossMultiplier = 2.0m`
-  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
-- **过滤器**:
-  - 分类: Trend following
-  - 方向: Both
-  - 指标: Bollinger
-  - 止损: Yes
-  - 复杂度: Intermediate
-  - 时间框架: Intraday (5m)
-  - 季节性: No
-  - 神经网络: No
-  - 背离: No
-  - 风险级别: Medium
+每次下单后的接下来84根完整K线禁止新开仓；冷却期间仍检查全部退出条件。止损在K线收盘时检查，市价单按可成交价格执行。持仓期间止损距离保持固定。不设置止盈或移动止损。
+
+## 默认参数
+
+```text
+BollingerPeriod = 20
+BollingerDeviation = 2
+AtrPeriod = 14
+AtrDeviationMultiplier = 2
+StopLossMultiplier = 2
+CooldownBars = 84
+CandleType = TimeSpan.FromMinutes(5).TimeFrame()
+```

@@ -1,32 +1,10 @@
 # Estratégia de Momentum Ajustado por Sazonalidade
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
-A estratégia **Seasonality Adjusted Momentum** é construída em torno do indicador de momentum ajustado pela força da sazonalidade.
+Combina momentum com retornos mensais históricos. Nas velas concluídas de 5 minutos, calcula `M = Momentum(14)` e `A = SMA(14)` de M. Sem posição, compra se `S >= SeasonalityThreshold` e `M > A`; vende se `S <= -SeasonalityThreshold` e `M < A`. O padrão `SeasonalityThreshold = 0.5` é medido em pontos percentuais.
 
-Os testes indicam um retorno anual médio de aproximadamente 172%. Funciona melhor no mercado de câmbio.
+Fecha compras se a condição sazonal deixar de valer ou `M < A`, e vendas se a condição falhar ou `M > A`. Cada ordem de sinal inicia uma pausa de `CooldownBars = 120` velas concluídas para novas decisões. As posições executadas têm proteção nativa local separada `StopLossPercent = 2` desde o preço real, monitorada por bid/ask e executada a mercado, sem esperar a pausa.
 
-Os sinais são disparados quando a Sazonalidade confirma mudanças de momentum em dados diários. Isso torna o método adequado para traders ativos.
+Exige `SeasonalityHistoryFile`: CSV UTF-8 com abertura e fechamento mensais e cabeçalho `SecurityId,Month,Open,Close`. `Month` usa `yyyy-MM`, números usam ponto decimal, preços devem ser positivos e cada mês deve ser único para o instrumento. Outros identificadores são ignorados. Dados ausentes, linhas inválidas ou falta de observações correspondentes impedem iniciar.
 
-Os stops se baseiam em múltiplos de ATR e fatores como MomentumPeriod, SeasonalityThreshold. Ajuste esses valores padrão para equilibrar risco e recompensa.
-
-## Detalhes
-- **Critérios de entrada**: ver implementação para as condições do indicador.
-- **Comprado/Vendido**: Ambos.
-- **Critérios de saída**: sinal oposto ou lógica de stop.
-- **Stops**: Sim, usando cálculos baseados em indicadores.
-- **Valores padrão**:
-  - `MomentumPeriod = 14`
-  - `SeasonalityThreshold = 0.5m`
-  - `StopLossPercent = 2.0m`
-  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
-- **Filtros**:
-  - Categoria: Seguidor de tendência
-  - Direção: Ambos
-  - Indicadores: Seasonality, Adjusted
-  - Stops: Sim
-  - Complexidade: Intermediário
-  - Período: Diário
-  - Sazonalidade: Sim
-  - Redes neurais: Não
-  - Divergência: Não
-  - Nível de risco: Médio
+Em cada vela de sinal, `S` é a média de `100 × (Close / Open − 1)` para o mesmo mês em anos anteriores, dentro de `SeasonalityLookbackYears = 10`. São necessárias `MinimumSeasonalSamples = 2` observações. O mês atual e os futuros são excluídos mesmo quando constam do arquivo. Sem histórico suficiente não há novas posições. Forneça preços mensais reais do instrumento; não há tabela fixa de pontuações.

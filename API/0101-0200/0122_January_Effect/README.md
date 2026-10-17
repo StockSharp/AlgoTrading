@@ -1,33 +1,8 @@
 # January Effect Strategy
 [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
- 
-The January Effect observes that small-cap stocks often outperform early in the year, possibly due to tax-loss selling in December.
-Traders attempt to capture this tendency by buying in late December and selling after the first few weeks of January.
 
-Testing indicates an average annual return of about 103%. It performs best in the stocks market.
+Trades the January Effect across the year boundary. Enter on the first available finished candle on the first trading day on or after December 26. Close at the end of the first trading session on or after January 15, or on the first subsequent eligible candle if that closing candle is unavailable. There are no recurring monthly entry windows or short entries.
 
-The strategy follows that schedule, entering near year-end and exiting mid-January.
+Uses finished 15-minute candles and the instrument's explicit `Security.Board` trading calendar, including holidays, special sessions and the board time zone. A missing calendar prevents startup. Only long positions are opened, with at most one entry attempt per annual season; a stop does not allow another entry that season. Pending orders block overlapping decisions.
 
-A stop-loss ensures losses stay manageable if the effect fails to appear.
-
-## Details
-
-- **Entry Criteria**: calendar effect triggers
-- **Long/Short**: Both
-- **Exit Criteria**: stop-loss or opposite signal
-- **Stops**: Yes, percent based
-- **Default Values**:
-  - `CandleType` = 15 minute
-  - `StopLoss` = 2%
-- **Filters**:
-  - Category: Seasonality
-  - Direction: Both
-  - Indicators: Seasonality
-  - Stops: Yes
-  - Complexity: Intermediate
-  - Timeframe: Intraday
-  - Seasonality: Yes
-  - Neural networks: No
-  - Divergence: No
-  - Risk level: Medium
-
+`StopLoss = 2` configures local native protection at 2% from the actual filled entry price. Bid/ask updates of the execution instrument can trigger a market exit between candles. No take-profit is configured.

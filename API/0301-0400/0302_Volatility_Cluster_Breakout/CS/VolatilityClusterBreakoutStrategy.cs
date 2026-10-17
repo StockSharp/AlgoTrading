@@ -1,3 +1,5 @@
+namespace StockSharp.Samples.Strategies;
+
 using System;
 using System.Collections.Generic;
 
@@ -8,8 +10,6 @@ using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-
-namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Breakout strategy that trades only when ATR expands into a high-volatility cluster.
@@ -27,8 +27,8 @@ public class VolatilityClusterBreakoutStrategy : Strategy
 	private StandardDeviation _stdDev;
 	private AverageTrueRange _atr;
 	private SimpleMovingAverage _atrAvg;
-	private decimal _entryPrice;
-	private decimal _entryAtr;
+	private decimal _stopPrice;
+	private Order _pendingOrder;
 	private int _cooldown;
 
 	/// <summary>
@@ -130,8 +130,8 @@ public class VolatilityClusterBreakoutStrategy : Strategy
 		_stdDev = null;
 		_atr = null;
 		_atrAvg = null;
-		_entryPrice = 0m;
-		_entryAtr = 0m;
+		_stopPrice = 0m;
+		_pendingOrder = null;
 		_cooldown = 0;
 	}
 
@@ -164,9 +164,9 @@ public class VolatilityClusterBreakoutStrategy : Strategy
 			DrawIndicator(area, _atr);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection(new Unit(0, UnitTypes.Absolute), new Unit(StopMultiplier, UnitTypes.Percent), false);
 	}
+
+	private bool IsOrderPending => _pendingOrder is not null && _pendingOrder.State is not (OrderStates.Done or OrderStates.Failed);
 
 	private void ProcessCandle(ICandleMessage candle, decimal smaValue, decimal stdDevValue, decimal atrValue)
 	{
@@ -178,14 +178,12 @@ public class VolatilityClusterBreakoutStrategy : Strategy
 		if (!_sma.IsFormed || !_stdDev.IsFormed || !_atr.IsFormed || !_atrAvg.IsFormed)
 			return;
 
-		if (ProcessState != ProcessStates.Started)
-			return;
-
-		if (_cooldown > 0)
-		{
+		var isCoolingDown = _cooldown > 0;
+		if (isCoolingDown)
 			_cooldown--;
+
+		if (!IsFormedAndOnlineAndAllowTrading() || IsOrderPending)
 			return;
-		}
 
 		var upperLevel = smaValue + StdDevMultiplier * stdDevValue;
 		var lowerLevel = smaValue - StdDevMultiplier * stdDevValue;
@@ -194,42 +192,38 @@ public class VolatilityClusterBreakoutStrategy : Strategy
 
 		if (Position == 0)
 		{
-			if (!isHighVolatility)
+			if (isCoolingDown || !isHighVolatility || atrValue <= 0m)
 				return;
 
 			if (price >= upperLevel)
 			{
-				_entryPrice = price;
-				_entryAtr = atrValue;
-				BuyMarket();
+				_stopPrice = price - atrValue * StopMultiplier;
+				_pendingOrder = BuyMarket();
 				_cooldown = CooldownBars;
 			}
 			else if (price <= lowerLevel)
 			{
-				_entryPrice = price;
-				_entryAtr = atrValue;
-				SellMarket();
+				_stopPrice = price + atrValue * StopMultiplier;
+				_pendingOrder = SellMarket();
 				_cooldown = CooldownBars;
 			}
 
 			return;
 		}
 
-		var stopDistance = _entryAtr * StopMultiplier;
-
 		if (Position > 0)
 		{
-			if (price <= smaValue || !isHighVolatility || price <= _entryPrice - stopDistance)
+			if (price <= smaValue || !isHighVolatility || price <= _stopPrice)
 			{
-				SellMarket(Math.Abs(Position));
+				_pendingOrder = SellMarket(Math.Abs(Position));
 				_cooldown = CooldownBars;
 			}
 		}
 		else if (Position < 0)
 		{
-			if (price >= smaValue || !isHighVolatility || price >= _entryPrice + stopDistance)
+			if (price >= smaValue || !isHighVolatility || price >= _stopPrice)
 			{
-				BuyMarket(Math.Abs(Position));
+				_pendingOrder = BuyMarket(Math.Abs(Position));
 				_cooldown = CooldownBars;
 			}
 		}

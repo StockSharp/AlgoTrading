@@ -1,6 +1,7 @@
 import clr
 
 clr.AddReference("StockSharp.Messages")
+clr.AddReference("StockSharp.BusinessEntities")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
@@ -8,6 +9,8 @@ clr.AddReference("StockSharp.Algo.Strategies")
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import RelativeStrengthIndex, SimpleMovingAverage, StandardDeviation
+from StockSharp.BusinessEntities import Subscription
+from StockSharp.Messages import Level1Fields
 from StockSharp.Algo.Strategies import Strategy
 from indicator_extensions import *
 
@@ -81,7 +84,11 @@ class rsi_dynamic_overbought_oversold_strategy(Strategy):
             self.DrawIndicator(area, self._price_sma)
             self.DrawOwnTrades(area)
 
-        self.StartProtection(Unit(0, UnitTypes.Absolute), Unit(self._stop_loss_percent.Value, UnitTypes.Percent), False)
+        self.StartProtection(Unit(0, UnitTypes.Absolute), Unit(self._stop_loss_percent.Value, UnitTypes.Percent), useMarketOrders=True, isLocalStop=True)
+        for field in (Level1Fields.BestBidPrice, Level1Fields.BestAskPrice):
+            quotes = Subscription(DataType.Level1, self.Security)
+            quotes.MarketData.BuildField = field
+            self.SubscribeLevel1(quotes).Start()
 
     def _process_candle(self, candle, rsi_value, price_sma_value):
         if candle.State != CandleStates.Finished:

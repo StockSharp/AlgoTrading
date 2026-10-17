@@ -35,5 +35,5 @@ Diese Strategie repliziert den MetaTrader-Expertenberater, der den Übergang zwi
 ## Notizen
 
 - Signale werden nur bei fertigen Kerzen verarbeitet, um Intrabar-Rauschen zu vermeiden.
-- Die vorherigen EMA-Werte werden jedes Mal zurückgesetzt, wenn die Position auf Null zurückkehrt, um eine saubere Erkennung für den nächsten Crossover sicherzustellen.
+- Die vorherigen EMA-Werte bleiben nach dem Schließen erhalten, damit nur neue Kreuzungen berücksichtigt werden; ein schließendes Signal öffnet keine Gegenposition in derselben Kerze.
 - Alle Codekommentare sind auf Englisch verfasst und beim Einrücken werden Tabulatoren gemäß den Projektrichtlinien verwendet.

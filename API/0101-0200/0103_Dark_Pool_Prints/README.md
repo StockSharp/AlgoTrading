@@ -1,33 +1,12 @@
 # Dark Pool Prints Strategy
 [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
- 
-Dark Pool Prints tracks large off-exchange transactions that often precede sharp moves once the activity is revealed.
-Unusual volume hitting the tape can signal institutional positioning that hasn't yet impacted the regular market.
 
-Testing indicates an average annual return of about 46%. It performs best in the stocks market.
+Trades large off-exchange reports in the direction of their reported aggressor side, with the execution instrument's SMA20 as a trend filter.
 
-The strategy enters in the same direction as heavy dark pool buying or selling, expecting follow-through when the rest of the market reacts.
+Set `Security` to the execution instrument and `DarkPoolSecurity` to a separate report stream for the same underlying instrument. The latter must have a different security ID and provide genuine off-exchange ticks (`IsSystem = false`), price, volume, timestamp, and `OriginSide`. Missing or identical sources are rejected at startup. Exchange prints, unknown-side reports, invalid prices/volumes, duplicates and out-of-order reports cannot trigger entries.
 
-A small percent stop keeps risk contained and positions close if the anticipated momentum fails to appear.
+A report qualifies when its volume is strictly greater than `1.5 × mean(previous 20 report volumes)`. The current report is excluded from the baseline. Buy on a reported buy above SMA20; sell on a reported sell below SMA20. Candle colour and candle volume do not determine the reported side or activity. An opposite entry reverses the whole filled position with an order of `Volume + abs(Position)`.
 
-## Details
+SMA uses finished 15-minute candles. Close a long below SMA20 and a short above SMA20, independently of report volume and entry cooldown. `CooldownBars = 0` by default; a positive value delays subsequent entries by that many finished candles. Pending orders block overlapping signals.
 
-- **Entry Criteria**: indicator signal
-- **Long/Short**: Both
-- **Exit Criteria**: stop-loss or opposite signal
-- **Stops**: Yes, percent based
-- **Default Values**:
-  - `CandleType` = 15 minute
-  - `StopLoss` = 2%
-- **Filters**:
-  - Category: Volume
-  - Direction: Both
-  - Indicators: Volume
-  - Stops: Yes
-  - Complexity: Intermediate
-  - Timeframe: Intraday
-  - Seasonality: No
-  - Neural networks: No
-  - Divergence: No
-  - Risk level: Medium
-
+`StopLoss = 2` means local native protection at 2% from the actual filled entry price. Protection monitors the execution instrument's bid/ask updates and submits a market exit; a quote feed is required for protection between candles. No take-profit is configured.

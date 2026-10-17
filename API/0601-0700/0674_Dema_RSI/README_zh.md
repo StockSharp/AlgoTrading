@@ -13,3 +13,9 @@
 - 使用交易时段
 - 会话开始时间
 - 会话结束时间
+
+### 实际 RSI(DEMA) 条件
+
+默认：`CandleType=1m`、`MaLength=20`、`RsiLength=14`、`RsiSmoothingLength=5`、`TakeProfitPoints=0`、`TrailStopPoints=0`、`UseSession=false`、`SessionStart=09:00`、`SessionEnd=17:00`。对已完成K线计算 `EMA1=EMA(Close,20)`、`EMA2=EMA(EMA1,20)`、`DEMA=2×EMA1−EMA2`、`R=RSI(DEMA,14)`、`S=SMA(R,5)`。若**上一根** `R <= S` 且**当前** `R > S`，从空仓或空头转为做多；反向交叉 `上一根 R >= S` 且 `当前 R < S` 则做空，反转数量 `Volume + abs(Position)`。启用 `UseSession=true` 时入场限于 `[SessionStart,SessionEnd)`，可跨午夜，保护平仓不受限制。`TakeProfitPoints` 和 `TrailStopPoints` 单位为**证券最小价格刻度**；非零时使用原生绝对距离止盈与追踪止损，零表示关闭。
+
+交易时段按当前 UTC 决策时间判断；即使信号 K 线在时段内开盘，也不能在时段结束后入场。预热时的空 RSI 值不输入平滑均线。

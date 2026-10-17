@@ -1,4 +1,6 @@
 using System;
+using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 
@@ -25,10 +27,24 @@ public class KeltnerSeasonalStrategy : Strategy
 	private readonly StrategyParam<decimal> _seasonalThreshold;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly Dictionary<int, decimal> _monthlyReturns = [];
+	private readonly StrategyParam<string> _seasonalityHistoryFile;
+	private readonly StrategyParam<int> _minimumSeasonalSamples;
+	private readonly StrategyParam<int> _seasonalityLookbackYears;
+	private readonly List<(DateTime month, decimal value)> _seasonalHistory = new();
+	private DateTime? _seasonalMonth;
+	private decimal? _seasonalValue;
 	private decimal _currentSeasonalStrength;
+	private bool _isSeasonalReady;
 	private decimal _stopPrice;
 
+	/// <summary>CSV monthly opening/closing prices: SecurityId,Month,Open,Close.</summary>
+	public string SeasonalityHistoryFile { get => _seasonalityHistoryFile.Value; set => _seasonalityHistoryFile.Value = value; }
+
+	/// <summary>Required completed observations of the same calendar month.</summary>
+	public int MinimumSeasonalSamples { get => _minimumSeasonalSamples.Value; set => _minimumSeasonalSamples.Value = value; }
+
+	/// <summary>Maximum number of prior years used for each seasonal estimate.</summary>
+	public int SeasonalityLookbackYears { get => _seasonalityLookbackYears.Value; set => _seasonalityLookbackYears.Value = value; }
 	/// <summary>
 	/// Strategy parameter: EMA period for Keltner Channel.
 	/// </summary>
@@ -79,6 +95,12 @@ public class KeltnerSeasonalStrategy : Strategy
 	/// </summary>
 	public KeltnerSeasonalStrategy()
 	{
+		_seasonalityHistoryFile = Param<string>(nameof(SeasonalityHistoryFile)).SetRequired()
+			.SetDisplay("Seasonality History File", "CSV monthly prices for the execution instrument", "Seasonality");
+		_minimumSeasonalSamples = Param(nameof(MinimumSeasonalSamples), 2).SetGreaterThanZero()
+			.SetDisplay("Minimum Seasonal Samples", "Completed observations required for the same month", "Seasonality");
+		_seasonalityLookbackYears = Param(nameof(SeasonalityLookbackYears), 10).SetRange(1, 100)
+			.SetDisplay("Seasonality Lookback Years", "Historical years used by the seasonal estimate", "Seasonality");
 		_emaPeriod = Param(nameof(EmaPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Period", "Period for EMA in Keltner Channel", "Indicator Settings");
@@ -97,9 +119,6 @@ public class KeltnerSeasonalStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-		// Initialize seasonal returns (this would typically be loaded from historical data)
-		// These are example values - in a real implementation, these would be calculated from historical data
-		InitializeSeasonalData();
 	}
 
 	/// <inheritdoc />
@@ -112,6 +131,10 @@ public class KeltnerSeasonalStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		_seasonalHistory.Clear();
+		_seasonalMonth = null;
+		_seasonalValue = null;
+		_isSeasonalReady = false;
 
 		_currentSeasonalStrength = 0;
 		_stopPrice = 0;
@@ -120,6 +143,7 @@ public class KeltnerSeasonalStrategy : Strategy
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
+		LoadSeasonalityHistory();
 		base.OnStarted2(time);
 
 		// Create indicators for Keltner Channel
@@ -151,6 +175,25 @@ public class KeltnerSeasonalStrategy : Strategy
 		}
 	}
 
+	/// <summary>
+	/// Evaluates seasonal Keltner entries: 1 for buy, -1 for sell and 0 for no entry.
+	/// </summary>
+	public static int GetEntrySignal(
+		decimal seasonalStrength,
+		decimal close,
+		decimal ema,
+		decimal atr,
+		decimal multiplier,
+		decimal threshold,
+		decimal position)
+	{
+		if (seasonalStrength > threshold && close > ema + atr * multiplier && position <= 0m)
+			return 1;
+		if (seasonalStrength < -threshold && close < ema - atr * multiplier && position >= 0m)
+			return -1;
+		return 0;
+	}
+
 	private void ProcessKeltner(ICandleMessage candle, decimal emaValue, decimal atrValue)
 	{
 		// Skip unfinished candles
@@ -179,30 +222,24 @@ public class KeltnerSeasonalStrategy : Strategy
 			return;
 		}
 
-		// Check for breakout signals with seasonal filter
-		if (_currentSeasonalStrength > SeasonalThreshold)
+
+		var signal = _isSeasonalReady ? GetEntrySignal(
+			_currentSeasonalStrength, candle.ClosePrice, emaValue, atrValue,
+			AtrMultiplier, SeasonalThreshold, Position) : 0;
+
+		if (signal > 0)
 		{
-			// Strong positive seasonal bias
-			if (candle.ClosePrice > upperBand && Position <= 0)
-			{
-				// Breakout above upper band - Buy signal
-				LogInfo($"Buy signal: Breakout above Keltner upper band ({upperBand}) with positive seasonal bias ({_currentSeasonalStrength})");
-				BuyMarket(Volume + Math.Abs(Position));
-				_stopPrice = candle.ClosePrice - atrValue * AtrMultiplier;
-				return;
-			}
+			LogInfo($"Buy signal: breakout above Keltner upper band ({upperBand}) with seasonal bias ({_currentSeasonalStrength})");
+			BuyMarket(Volume + Math.Abs(Position));
+			_stopPrice = candle.ClosePrice - atrValue * AtrMultiplier;
+			return;
 		}
-		else if (_currentSeasonalStrength < -SeasonalThreshold)
+		if (signal < 0)
 		{
-			// Strong negative seasonal bias
-			if (candle.ClosePrice < lowerBand && Position >= 0)
-			{
-				// Breakout below lower band - Sell signal
-				LogInfo($"Sell signal: Breakout below Keltner lower band ({lowerBand}) with negative seasonal bias ({_currentSeasonalStrength})");
-				SellMarket(Volume + Math.Abs(Position));
-				_stopPrice = candle.ClosePrice + atrValue * AtrMultiplier;
-				return;
-			}
+			LogInfo($"Sell signal: breakout below Keltner lower band ({lowerBand}) with seasonal bias ({_currentSeasonalStrength})");
+			SellMarket(Volume + Math.Abs(Position));
+			_stopPrice = candle.ClosePrice + atrValue * AtrMultiplier;
+			return;
 		}
 
 		// Exit rules based on middle line reversion
@@ -215,36 +252,58 @@ public class KeltnerSeasonalStrategy : Strategy
 		}
 	}
 
-	private void InitializeSeasonalData()
+	private void LoadSeasonalityHistory()
 	{
-		// Example seasonal bias by month (positive values favor longs, negative values favor shorts)
-		// This would typically be calculated from historical data
-		_monthlyReturns[1] = 0.8m;   // January - Strong bullish
-		_monthlyReturns[2] = 0.3m;   // February - Mildly bullish
-		_monthlyReturns[3] = 0.6m;   // March - Moderately bullish
-		_monthlyReturns[4] = 0.7m;   // April - Moderately bullish
-		_monthlyReturns[5] = 0.2m;   // May - Mildly bullish
-		_monthlyReturns[6] = -0.3m;  // June - Mildly bearish
-		_monthlyReturns[7] = -0.1m;  // July - Neutral to mildly bearish
-		_monthlyReturns[8] = -0.4m;  // August - Moderately bearish
-		_monthlyReturns[9] = -0.8m;  // September - Strong bearish
-		_monthlyReturns[10] = 0.1m;  // October - Neutral to mildly bullish
-		_monthlyReturns[11] = 0.9m;  // November - Strong bullish
-		_monthlyReturns[12] = 0.7m;  // December - Moderately bullish
+		if (string.IsNullOrWhiteSpace(SeasonalityHistoryFile))
+			throw new InvalidOperationException("SeasonalityHistoryFile is required.");
+		_seasonalHistory.Clear();
+		_seasonalMonth = null;
+		_seasonalValue = null;
+		var lines = File.ReadLines(SeasonalityHistoryFile).GetEnumerator();
+		using (lines)
+		{
+			if (!lines.MoveNext() || lines.Current.Trim() != "SecurityId,Month,Open,Close")
+				throw new InvalidOperationException("Seasonality history must begin with SecurityId,Month,Open,Close.");
+			var months = new HashSet<DateTime>();
+			while (lines.MoveNext())
+			{
+				if (string.IsNullOrWhiteSpace(lines.Current))
+					continue;
+				var columns = lines.Current.Split(',');
+				if (columns.Length != 4)
+					throw new InvalidOperationException("Every seasonal observation must contain four CSV fields.");
+				if (!string.Equals(columns[0].Trim(), Security.Id, StringComparison.OrdinalIgnoreCase))
+					continue;
+				var month = DateTime.ParseExact(columns[1].Trim(), "yyyy-MM", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
+				var open = decimal.Parse(columns[2], CultureInfo.InvariantCulture);
+				var close = decimal.Parse(columns[3], CultureInfo.InvariantCulture);
+				if (open <= 0m || close <= 0m || !months.Add(month))
+					throw new InvalidOperationException("Seasonality prices must be positive and months must be unique.");
+				_seasonalHistory.Add((month, 100m * (close / open - 1m)));
+			}
+		}
+		if (_seasonalHistory.Count == 0)
+			throw new InvalidOperationException("Seasonality history contains no observations for the execution instrument.");
 	}
 
-	private void UpdateSeasonalStrength(DateTimeOffset time)
+	private decimal? GetSeasonalStrength(DateTime time)
 	{
-		var month = time.Month;
-		if (_monthlyReturns.TryGetValue(month, out decimal seasonalStrength))
+		var month = new DateTime(time.Year, time.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+		if (_seasonalMonth != month)
 		{
-			_currentSeasonalStrength = seasonalStrength;
-			LogInfo($"Updated seasonal strength for month {month}: {_currentSeasonalStrength}");
+			var earliest = month.AddYears(-SeasonalityLookbackYears);
+			var history = _seasonalHistory.Where(h => h.month.Month == month.Month
+				&& h.month < month && h.month >= earliest).Select(h => h.value).ToArray();
+			_seasonalValue = history.Length >= MinimumSeasonalSamples ? history.Average() : null;
+			_seasonalMonth = month;
 		}
-		else
-		{
-			_currentSeasonalStrength = 0;
-			LogInfo($"No seasonal data found for month {month}, setting neutral bias");
-		}
+		return _seasonalValue;
+	}
+
+	private void UpdateSeasonalStrength(DateTime time)
+	{
+		var value = GetSeasonalStrength(time);
+		_isSeasonalReady = value.HasValue;
+		_currentSeasonalStrength = value ?? 0m;
 	}
 }

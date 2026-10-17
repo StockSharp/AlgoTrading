@@ -7,7 +7,7 @@ clr.AddReference("StockSharp.Algo.Strategies")
 clr.AddReference("StockSharp.BusinessEntities")
 
 from System import TimeSpan, Math, Decimal
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from StockSharp.Messages import DataType, CandleStates, OrderStates
 from StockSharp.Algo.Indicators import BollingerBands, AverageTrueRange, SimpleMovingAverage, StandardDeviation, CandleIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
 from indicator_extensions import *
@@ -46,8 +46,8 @@ class bollinger_volatility_breakout_strategy(Strategy):
         self._atr = None
         self._atr_sma = None
         self._atr_std_dev = None
-        self._entry_price = 0.0
-        self._entry_atr = 0.0
+        self._stop_price = 0.0
+        self._pending_order = None
         self._cooldown = 0
 
     @property
@@ -60,8 +60,8 @@ class bollinger_volatility_breakout_strategy(Strategy):
         self._atr = None
         self._atr_sma = None
         self._atr_std_dev = None
-        self._entry_price = 0.0
-        self._entry_atr = 0.0
+        self._stop_price = 0.0
+        self._pending_order = None
         self._cooldown = 0
 
     def OnStarted2(self, time):
@@ -91,7 +91,9 @@ class bollinger_volatility_breakout_strategy(Strategy):
             self.DrawIndicator(area, self._atr)
             self.DrawOwnTrades(area)
 
-        self.StartProtection(Unit(0, UnitTypes.Absolute), Unit(self._stop_loss_multiplier.Value, UnitTypes.Percent), False)
+    @property
+    def _is_order_pending(self):
+        return self._pending_order is not None and self._pending_order.State not in (OrderStates.Done, OrderStates.Failed)
 
     def _process_candle(self, candle, bollinger_value):
         if candle.State != CandleStates.Finished:
@@ -118,11 +120,11 @@ class bollinger_volatility_breakout_strategy(Strategy):
         if not self._bollinger_bands.IsFormed or not self._atr.IsFormed or not self._atr_sma.IsFormed or not self._atr_std_dev.IsFormed:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
-        if self._cooldown > 0:
+        is_cooling_down = self._cooldown > 0
+        if is_cooling_down:
             self._cooldown -= 1
+
+        if not self.IsFormedAndOnlineAndAllowTrading() or self._is_order_pending:
             return
 
         adm = float(self._atr_deviation_multiplier.Value)
@@ -133,30 +135,26 @@ class bollinger_volatility_breakout_strategy(Strategy):
         slm = float(self._stop_loss_multiplier.Value)
 
         if self.Position == 0:
-            if not is_high_volatility:
+            if is_cooling_down or not is_high_volatility or atr_value <= 0:
                 return
 
             if price >= upper_band:
-                self._entry_price = price
-                self._entry_atr = atr_value
-                self.BuyMarket()
+                self._stop_price = price - atr_value * slm
+                self._pending_order = self.BuyMarket()
                 self._cooldown = cd
             elif price <= lower_band:
-                self._entry_price = price
-                self._entry_atr = atr_value
-                self.SellMarket()
+                self._stop_price = price + atr_value * slm
+                self._pending_order = self.SellMarket()
                 self._cooldown = cd
             return
 
-        stop_distance = self._entry_atr * slm
-
         if self.Position > 0:
-            if price <= middle_band or not is_high_volatility or price <= self._entry_price - stop_distance:
-                self.SellMarket(Math.Abs(self.Position))
+            if price <= middle_band or not is_high_volatility or price <= self._stop_price:
+                self._pending_order = self.SellMarket(Math.Abs(self.Position))
                 self._cooldown = cd
         elif self.Position < 0:
-            if price >= middle_band or not is_high_volatility or price >= self._entry_price + stop_distance:
-                self.BuyMarket(Math.Abs(self.Position))
+            if price >= middle_band or not is_high_volatility or price >= self._stop_price:
+                self._pending_order = self.BuyMarket(Math.Abs(self.Position))
                 self._cooldown = cd
 
     def CreateClone(self):

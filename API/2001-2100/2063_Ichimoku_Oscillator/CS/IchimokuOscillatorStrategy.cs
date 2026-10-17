@@ -24,7 +24,9 @@ public class IchimokuOscillatorStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<decimal> _takeProfitPercent;
 
-	private ExponentialMovingAverage _ema;
+	private JurikMovingAverage _jma;
+	private readonly StrategyParam<bool> _enableStopLoss;
+	private Order _pending;
 	private decimal? _prevValue;
 	private decimal? _prevPrevValue;
 
@@ -36,8 +38,10 @@ public class IchimokuOscillatorStrategy : Strategy
 	public decimal StopLossPercent { get => _stopLossPercent.Value; set => _stopLossPercent.Value = value; }
 	public decimal TakeProfitPercent { get => _takeProfitPercent.Value; set => _takeProfitPercent.Value = value; }
 
+	public bool EnableStopLoss { get => _enableStopLoss.Value; set => _enableStopLoss.Value = value; }
 	public IchimokuOscillatorStrategy()
 	{
+		_enableStopLoss = Param(nameof(EnableStopLoss), true);
 		_tenkanPeriod = Param(nameof(TenkanPeriod), 9)
 			.SetGreaterThanZero()
 			.SetDisplay("Tenkan Period", "Period for Tenkan-sen line", "Ichimoku");
@@ -74,7 +78,8 @@ public class IchimokuOscillatorStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_ema = default;
+		_jma = default;
+		_pending = null;
 		_prevValue = null;
 		_prevPrevValue = null;
 	}
@@ -83,15 +88,16 @@ public class IchimokuOscillatorStrategy : Strategy
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_pending = null;
 
 		var ichimoku = new Ichimoku();
 		ichimoku.Tenkan.Length = TenkanPeriod;
 		ichimoku.Kijun.Length = KijunPeriod;
 		ichimoku.SenkouB.Length = SenkouSpanBPeriod;
 
-		_ema = new ExponentialMovingAverage { Length = SmoothingPeriod };
+		_jma = new JurikMovingAverage { Length = SmoothingPeriod };
 
-		Indicators.Add(_ema);
+		Indicators.Add(_jma);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -100,7 +106,7 @@ public class IchimokuOscillatorStrategy : Strategy
 
 		StartProtection(
 			takeProfit: new Unit(TakeProfitPercent, UnitTypes.Percent),
-			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent),
+			stopLoss: new Unit(EnableStopLoss ? StopLossPercent : 0m, UnitTypes.Percent),
 			useMarketOrders: true);
 
 		var area = CreateChartArea();
@@ -128,7 +134,7 @@ public class IchimokuOscillatorStrategy : Strategy
 			return;
 
 		var osc = (chikou - spanB) - (tenkan - kijun);
-		var emaVal = _ema.Process(osc, candle.OpenTime, true);
+		var emaVal = _jma.Process(osc, candle.OpenTime, true);
 		if (!emaVal.IsFormed)
 			return;
 
@@ -139,15 +145,10 @@ public class IchimokuOscillatorStrategy : Strategy
 			var rising = prev > prevPrev;
 			var falling = prev < prevPrev;
 
-			if (rising && current >= prev && Position <= 0)
+			if (IsFormedAndOnlineAndAllowTrading() && (_pending is null || _pending.State is OrderStates.Done or OrderStates.Failed))
 			{
-				if (Position < 0) BuyMarket();
-				BuyMarket();
-			}
-			else if (falling && current <= prev && Position >= 0)
-			{
-				if (Position > 0) SellMarket();
-				SellMarket();
+				if (falling && current > prev && Position <= 0m) _pending = BuyMarket(Volume - Math.Min(0m, Position));
+				else if (rising && current < prev && Position >= 0m) _pending = SellMarket(Volume + Math.Max(0m, Position));
 			}
 		}
 

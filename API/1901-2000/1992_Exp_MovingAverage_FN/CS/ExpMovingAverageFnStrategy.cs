@@ -11,13 +11,14 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// EMA slope reversal strategy.
-/// Enters long when EMA turns up, short when EMA turns down.
+/// EMA slope reversal with absolute stop loss and take profit protection.
 /// </summary>
 public class ExpMovingAverageFnStrategy : Strategy
 {
 	private readonly StrategyParam<int> _length;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<decimal> _stopLoss;
+	private readonly StrategyParam<decimal> _takeProfit;
 
 	private decimal _prevEma;
 	private decimal _prevPrevEma;
@@ -25,6 +26,8 @@ public class ExpMovingAverageFnStrategy : Strategy
 
 	public int Length { get => _length.Value; set => _length.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
+	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
 
 	public ExpMovingAverageFnStrategy()
 	{
@@ -34,6 +37,12 @@ public class ExpMovingAverageFnStrategy : Strategy
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Candle timeframe", "General");
+
+		_stopLoss = Param(nameof(StopLoss), 1000m)
+			.SetDisplay("Stop Loss", "Absolute price distance from entry", "Risk");
+
+		_takeProfit = Param(nameof(TakeProfit), 2000m)
+			.SetDisplay("Take Profit", "Absolute price distance from entry", "Risk");
 	}
 
 	/// <inheritdoc />
@@ -59,6 +68,10 @@ public class ExpMovingAverageFnStrategy : Strategy
 		SubscribeCandles(CandleType)
 			.Bind(ema, ProcessCandle)
 			.Start();
+
+		StartProtection(
+			takeProfit: new Unit(TakeProfit, UnitTypes.Absolute),
+			stopLoss: new Unit(StopLoss, UnitTypes.Absolute));
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal emaValue)
@@ -75,20 +88,20 @@ public class ExpMovingAverageFnStrategy : Strategy
 			return;
 		}
 
-		// Buy when EMA turns up
 		var turnUp = _prevEma < _prevPrevEma && emaValue > _prevEma;
-		// Sell when EMA turns down
 		var turnDown = _prevEma > _prevPrevEma && emaValue < _prevEma;
 
 		if (turnUp && Position <= 0)
 		{
-			if (Position < 0) BuyMarket();
-			BuyMarket();
+			if (Position < 0)
+				BuyMarket(-Position);
+			BuyMarket(Volume);
 		}
 		else if (turnDown && Position >= 0)
 		{
-			if (Position > 0) SellMarket();
-			SellMarket();
+			if (Position > 0)
+				SellMarket(Position);
+			SellMarket(Volume);
 		}
 
 		_prevPrevEma = _prevEma;

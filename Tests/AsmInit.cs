@@ -98,40 +98,52 @@ public static class AsmInit
 	public static async Task RunStrategy<T>(T strategy, CancellationToken cancellationToken, Action<T, Security> extra = null, TimeSpan? postTradeHorizon = null, TimeSpan? replayDuration = null, bool requireTrades = true)
 		where T : Strategy
 	{
+		var data = await CreateArchiveMarketData(cancellationToken);
+		await RunScenario(strategy, cancellationToken, data, extra, postTradeHorizon, replayDuration, requireTrades, _replayTimeout);
+	}
+
+	internal static async Task<ReplayMarketData> CreateArchiveMarketData(CancellationToken cancellationToken)
+	{
+		var storage = new StorageRegistry { DefaultDrive = new LocalMarketDataDrive(Paths.FileSystem, Paths.HistoryDataPath) };
+		var primary = new Security
+		{
+			Id = Paths.HistoryDefaultSecurity,
+			PriceStep = await ReadArchivePriceStep(storage, Paths.HistoryDefaultSecurity, cancellationToken),
+			VolumeStep = 0.001m,
+			MinVolume = 0.001m,
+			MaxVolume = 1000m,
+		};
+		var secondary = new Security
+		{
+			Id = Paths.HistoryDefaultSecurity2,
+			PriceStep = await ReadArchivePriceStep(storage, Paths.HistoryDefaultSecurity2, cancellationToken),
+			VolumeStep = 0.1m,
+			MinVolume = 0.1m,
+			MaxVolume = 1000000m,
+		};
+		return new ReplayMarketData(storage, _cache, primary, secondary,
+			Paths.HistoryBeginDate, Paths.HistoryEndDate.Date.AddDays(1).AddTicks(-1));
+	}
+
+	internal static async Task RunScenario<T>(T strategy, CancellationToken cancellationToken, ReplayMarketData data,
+		Action<T, Security> extra, TimeSpan? postTradeHorizon, TimeSpan? replayDuration, bool requireTrades, TimeSpan replayTimeout)
+		where T : Strategy
+	{
+		if (replayTimeout <= TimeSpan.Zero)
+			throw new ArgumentOutOfRangeException(nameof(replayTimeout));
 		if (postTradeHorizon is { } requestedPostTradeHorizon && requestedPostTradeHorizon <= TimeSpan.Zero)
 			throw new ArgumentOutOfRangeException(nameof(postTradeHorizon), postTradeHorizon, "Post-trade horizon must be positive.");
 		if (replayDuration is { } requestedReplayDuration && requestedReplayDuration <= TimeSpan.Zero)
 			throw new ArgumentOutOfRangeException(nameof(replayDuration), replayDuration, "Replay duration must be positive.");
 
-		var storageRegistry = new StorageRegistry { DefaultDrive = new LocalMarketDataDrive(Paths.FileSystem, Paths.HistoryDataPath) };
-
-		var startTime = Paths.HistoryBeginDate;
-		// StopDate is inclusive. Paths.HistoryEndDate points to midnight, so use the
-		// end of that date to replay all messages from the last packaged day.
-		var availableStopTime = Paths.HistoryEndDate.Date.AddDays(1).AddTicks(-1);
+		var storageRegistry = data.Storage;
+		var startTime = data.From;
+		var availableStopTime = data.To;
 		var requestedStopTime = replayDuration is { } duration ? startTime.Add(duration) : availableStopTime;
 		var stopTime = requestedStopTime < availableStopTime ? requestedStopTime : availableStopTime;
 
-		// A real instrument states how small an order may be and how large, and strategies are written
-		// against that: one that doubles its size after a loss asks the instrument where to stop. Left
-		// unfilled, the question has no answer, the size doubles for a month, and the run dies somewhere
-		// far away -- in the drawdown statistic, on a position of 7.5e22.
-		var security1 = new Security
-		{
-			Id = Paths.HistoryDefaultSecurity,
-			PriceStep = await ReadArchivePriceStep(storageRegistry, Paths.HistoryDefaultSecurity, cancellationToken),
-			VolumeStep = 0.001m,
-			MinVolume = 0.001m,
-			MaxVolume = 1000m,
-		};
-		var security2 = new Security
-		{
-			Id = Paths.HistoryDefaultSecurity2,
-			PriceStep = await ReadArchivePriceStep(storageRegistry, Paths.HistoryDefaultSecurity2, cancellationToken),
-			VolumeStep = 0.1m,
-			MinVolume = 0.1m,
-			MaxVolume = 1000000m,
-		};
+		var security1 = data.Primary;
+		var security2 = data.Secondary;
 		var portfolio = Portfolio.CreateSimulator();
 		portfolio.CurrentValue = 1000000m;
 
@@ -148,7 +160,7 @@ public static class AsmInit
 			{
 				StartDate = startTime,
 				StopDate = stopTime,
-				StorageCache = _cache,
+				StorageCache = data.Cache,
 			}
 		};
 
@@ -605,11 +617,11 @@ public static class AsmInit
 				await connector.ConnectAsync(setupSource.Token);
 
 			using var replayTimeoutSource = new CancellationTokenSource();
-			var replayTimeout = Task.Delay(_replayTimeout, replayTimeoutSource.Token);
+			var replayTimeoutTask = Task.Delay(replayTimeout, replayTimeoutSource.Token);
 			var execTask = strategy.ExecAsync(_ => connector.StartAsync(cancellationToken), cancellationToken).AsTask();
-			var completedTask = await Task.WhenAny(execTask, shutdownRequested.Task, replayTimeout);
+			var completedTask = await Task.WhenAny(execTask, shutdownRequested.Task, replayTimeoutTask);
 
-			if (completedTask == replayTimeout)
+			if (completedTask == replayTimeoutTask)
 			{
 				replayTimedOut = true;
 				shutdownReason = "replay timeout";
@@ -740,7 +752,7 @@ public static class AsmInit
 			throw result.execError;
 
 		if (replayTimedOut)
-			Assert.Fail($"Historical replay exceeded the {_replayTimeout} budget. {getDiagnostics()}");
+			Assert.Fail($"Historical replay exceeded the {replayTimeout} budget. {getDiagnostics()}");
 
 		if (finalCleanupFailureCount > 0)
 			Assert.Fail($"Harness cleanup failed {finalCleanupFailureCount} time(s): {string.Join("; ", observedCleanupFailures)} {getDiagnostics()}");

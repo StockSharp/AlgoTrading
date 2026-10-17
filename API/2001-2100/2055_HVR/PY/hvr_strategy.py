@@ -7,7 +7,7 @@ clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Messages import DataType, CandleStates, OrderStates
 from StockSharp.Algo.Indicators import StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
 from indicator_extensions import *
@@ -29,6 +29,7 @@ class hvr_strategy(Strategy):
         self._short_sd = None
         self._long_sd = None
         self._prev_close = None
+        self._pending = None
 
     @property
     def ShortPeriod(self):
@@ -105,14 +106,12 @@ class hvr_strategy(Strategy):
         ratio = short_val / long_val
         threshold = float(self.RatioThreshold)
 
+        if not self.IsFormedAndOnlineAndAllowTrading() or (self._pending is not None and self._pending.State not in (OrderStates.Done, OrderStates.Failed)):
+            return
         if ratio > threshold and self.Position <= 0:
-            if self.Position < 0:
-                self.BuyMarket()
-            self.BuyMarket()
+            self._pending = self.BuyMarket(self.Volume - min(0, self.Position))
         elif ratio < threshold and self.Position >= 0:
-            if self.Position > 0:
-                self.SellMarket()
-            self.SellMarket()
+            self._pending = self.SellMarket(self.Volume + max(0, self.Position))
 
     def OnReseted(self):
         super(hvr_strategy, self).OnReseted()

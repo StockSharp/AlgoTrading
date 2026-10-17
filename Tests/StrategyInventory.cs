@@ -35,6 +35,10 @@ static class StrategyInventory
 	public static readonly IReadOnlyCollection<string> Overrides = new HashSet<string>(StringComparer.Ordinal)
 	{
 		"0001_MA_CrossOver",
+		"0103_Dark_Pool_Prints",
+		"0121_Santa_Claus_Rally",
+		"0122_January_Effect",
+		"0303_Seasonality_Adjusted_Momentum",
 		// The unchanged 5% ROC10 threshold is reachable on packaged TON, not packaged BTC.
 		"0020_Momentum_Percentage",
 		// Published 5% SMA20 deviation is reachable on packaged TON, not packaged BTC.
@@ -67,6 +71,8 @@ static class StrategyInventory
 		"1153_Pairs",
 		// The unchanged 5% candle-gain/15000-volume defaults are reachable on packaged TON, not BTC.
 		"1181_Premarket_Gap_MomoTrader",
+		// The 200-day SMA cannot form from the one-month archive at the published daily default; custom archive test verifies trading mechanics.
+		"1186_Price_and_Volume_Breakout_Buy",
 		"1507_Ultimate_Template",
 		"1908_Random_Trailing_Stop",
 		"2000_HFT_Spreader_for_FORTS",

@@ -421,6 +421,7 @@ partial class PythonTests
 		// Compact periods make the signal reachable in the bundled history window.
 		=> RunStrategy("0301-0400/0333_Keltner_Seasonal_Filter/PY/keltner_seasonal_strategy.py", CancellationToken, (s, _) =>
 		{
+			SetParam(s, "SeasonalityHistoryFile", SeasonalityFixture(s.Security.Id, 1, false));
 			SetParam(s, "EmaPeriod", 2);
 			SetParam(s, "AtrPeriod", 2);
 			SetParam(s, "AtrMultiplier", 0.01);

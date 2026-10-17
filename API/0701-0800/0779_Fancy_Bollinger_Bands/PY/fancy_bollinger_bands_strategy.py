@@ -1,79 +1,103 @@
 import clr
+import math
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
-clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan
+from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+
 
 class fancy_bollinger_bands_strategy(Strategy):
     """
-    EMA crossover strategy.
-    Uses fast and slow EMA to generate entry/exit signals.
+    Buy an upper Bollinger-band close crossover and sell a lower-band crossover.
+    Exit when the close crosses back inside the broken band.
     """
 
     def __init__(self):
         super(fancy_bollinger_bands_strategy, self).__init__()
-        self._fast_ema_period = self.Param("FastEmaPeriod", 120) \
-            .SetDisplay("Fast EMA", "Fast EMA period", "Indicators")
-        self._slow_ema_period = self.Param("SlowEmaPeriod", 450) \
-            .SetDisplay("Slow EMA", "Slow EMA period", "Indicators")
+        self._bollinger_period = self.Param("BollingerPeriod", 20) \
+            .SetGreaterThanZero() \
+            .SetDisplay("Bollinger Period", "Number of completed closes in each band calculation.", "Bollinger")
+        self._deviation_multiplier = self.Param("DeviationMultiplier", 2.0) \
+            .SetGreaterThanZero() \
+            .SetDisplay("Deviation Multiplier", "Standard deviation multiplier for both bands.", "Bollinger")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1))) \
-            .SetDisplay("Candle Type", "Candle type for strategy", "General")
+            .SetDisplay("Candle Type", "Candle timeframe.", "General")
+        self._closes = []
+        self._previous_close = None
+        self._previous_upper = None
+        self._previous_lower = None
+        self._entry_requested = False
+        self._exit_requested = False
 
-        self._prev_fast_ema = 0.0
-        self._prev_slow_ema = 0.0
-
-    @property
-    def candle_type(self):
-        return self._candle_type.Value
-
+    def GetWorkingSecurities(self):
+        return [(self.Security, self._candle_type.Value)]
 
     def OnReseted(self):
         super(fancy_bollinger_bands_strategy, self).OnReseted()
-        self._prev_fast_ema = 0.0
-        self._prev_slow_ema = 0.0
+        self._closes = []
+        self._previous_close = None
+        self._previous_upper = None
+        self._previous_lower = None
+        self._entry_requested = False
+        self._exit_requested = False
+
     def OnStarted2(self, time):
         super(fancy_bollinger_bands_strategy, self).OnStarted2(time)
-
-        fast_ema = ExponentialMovingAverage()
-        fast_ema.Length = self._fast_ema_period.Value
-        slow_ema = ExponentialMovingAverage()
-        slow_ema.Length = self._slow_ema_period.Value
-
-        subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(fast_ema, slow_ema, self.on_process).Start()
+        subscription = self.SubscribeCandles(self._candle_type.Value)
+        subscription.Bind(self.on_candle).Start()
 
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, fast_ema)
-            self.DrawIndicator(area, slow_ema)
             self.DrawOwnTrades(area)
 
-    def on_process(self, candle, fast_val, slow_val):
+    def on_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
 
-        fast_v = float(fast_val)
-        slow_v = float(slow_val)
-
-        if self._prev_fast_ema == 0.0 or self._prev_slow_ema == 0.0:
-            self._prev_fast_ema = fast_v
-            self._prev_slow_ema = slow_v
+        period = int(self._bollinger_period.Value)
+        close = float(candle.ClosePrice)
+        self._closes.append(close)
+        if len(self._closes) > period:
+            self._closes.pop(0)
+        if len(self._closes) < period:
             return
 
-        if self._prev_fast_ema <= self._prev_slow_ema and fast_v > slow_v and self.Position <= 0:
-            self.BuyMarket()
-        elif self._prev_fast_ema >= self._prev_slow_ema and fast_v < slow_v and self.Position >= 0:
-            self.SellMarket()
+        mean = sum(self._closes) / period
+        variance = sum((price - mean) ** 2 for price in self._closes) / period
+        offset = math.sqrt(variance) * float(self._deviation_multiplier.Value)
+        upper = mean + offset
+        lower = mean - offset
 
-        self._prev_fast_ema = fast_v
-        self._prev_slow_ema = slow_v
+        if self._previous_upper is not None and self._previous_lower is not None:
+            previous = self._previous_close
+            position = self.Position
+            if position != 0:
+                self._entry_requested = False
+                if not self._exit_requested:
+                    if position > 0 and previous >= self._previous_upper and close <= upper:
+                        self._exit_requested = True
+                        self.SellMarket(position)
+                    elif position < 0 and previous <= self._previous_lower and close >= lower:
+                        self._exit_requested = True
+                        self.BuyMarket(Math.Abs(position))
+            else:
+                self._exit_requested = False
+                if not self._entry_requested:
+                    if previous <= self._previous_upper and close > upper:
+                        self._entry_requested = True
+                        self.BuyMarket(self.Volume)
+                    elif previous >= self._previous_lower and close < lower:
+                        self._entry_requested = True
+                        self.SellMarket(self.Volume)
+
+        self._previous_close = close
+        self._previous_upper = upper
+        self._previous_lower = lower
 
     def CreateClone(self):
         return fancy_bollinger_bands_strategy()

@@ -6,8 +6,8 @@ clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import ExponentialMovingAverage
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, OrderStates
+from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -27,6 +27,11 @@ class moving_up_strategy(Strategy):
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
             .SetDisplay("Candle", "Candle type", "General")
 
+        self._use_tp = self.Param("UseTakeProfit", True)
+        self._use_sl = self.Param("UseStopLoss", True)
+        self._use_ts = self.Param("UseTrailingStop", False)
+        self._trailing_stop = self.Param("TrailingStop", 200.0)
+        self._pending = None
         self._is_initialized = False
         self._was_fast_below_slow = False
 
@@ -72,10 +77,11 @@ class moving_up_strategy(Strategy):
 
     def OnStarted2(self, time):
         super(moving_up_strategy, self).OnStarted2(time)
+        self._pending = None
 
-        fast_ma = ExponentialMovingAverage()
+        fast_ma = SimpleMovingAverage()
         fast_ma.Length = self.FastLength
-        slow_ma = ExponentialMovingAverage()
+        slow_ma = SimpleMovingAverage()
         slow_ma.Length = self.SlowLength
 
         self.SubscribeCandles(self.CandleType) \
@@ -83,8 +89,8 @@ class moving_up_strategy(Strategy):
             .Start()
 
         self.StartProtection(
-            stopLoss=Unit(self.StopLoss, UnitTypes.Absolute),
-            takeProfit=Unit(self.TakeProfit, UnitTypes.Absolute)
+            stopLoss=Unit(self.StopLoss if self._use_sl.Value else 0, UnitTypes.Absolute),
+            takeProfit=Unit(self.TakeProfit if self._use_tp.Value else 0, UnitTypes.Absolute), useMarketOrders=True
         )
 
     def ProcessCandle(self, candle, fast_value, slow_value):
@@ -101,17 +107,12 @@ class moving_up_strategy(Strategy):
 
         is_fast_below_slow = fast < slow
 
-        if self._was_fast_below_slow != is_fast_below_slow:
+        if self._was_fast_below_slow != is_fast_below_slow and self.IsFormedAndOnlineAndAllowTrading() and (self._pending is None or self._pending.State in (OrderStates.Done, OrderStates.Failed)):
             if not is_fast_below_slow and self.Position <= 0:
-                if self.Position < 0:
-                    self.BuyMarket()
-                self.BuyMarket()
+                self._pending = self.BuyMarket(self.Volume + abs(min(self.Position, 0)))
             elif is_fast_below_slow and self.Position >= 0:
-                if self.Position > 0:
-                    self.SellMarket()
-                self.SellMarket()
-
-            self._was_fast_below_slow = is_fast_below_slow
+                self._pending = self.SellMarket(self.Volume + max(self.Position, 0))
+        self._was_fast_below_slow = is_fast_below_slow
 
     def OnReseted(self):
         super(moving_up_strategy, self).OnReseted()

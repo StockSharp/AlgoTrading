@@ -28,3 +28,5 @@ A estratégia entra quando preço e volume simultaneamente rompem acima de suas 
   - Redes neurais: Não
   - Divergência: Não
   - Nível de risco: Médio
+
+Os extremos de preço e volume consideram apenas candles anteriores concluídos (o candle do sinal é excluído). `OrderDirection` aceita `Long`, `Short` ou `Both`; o padrão é `Long`. Um fechamento na SMA ou de volta ao lado da posição reinicia a contagem de cinco fechamentos consecutivos.

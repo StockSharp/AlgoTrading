@@ -1,5 +1,8 @@
 using System;
+using System.Globalization;
+using System.IO;
 using System.Collections.Generic;
+using System.Linq;
 
 using Ecng.Common;
 
@@ -22,11 +25,24 @@ public class SeasonalityAdjustedMomentumStrategy : Strategy
 	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private readonly Dictionary<int, decimal> _seasonalStrengthByMonth = [];
+	private readonly StrategyParam<string> _seasonalityHistoryFile;
+	private readonly StrategyParam<int> _minimumSeasonalSamples;
+	private readonly StrategyParam<int> _seasonalityLookbackYears;
+	private readonly List<(DateTime month, decimal value)> _seasonalHistory = new();
+	private DateTime? _seasonalMonth;
+	private decimal? _seasonalValue;
 	private Momentum _momentum;
 	private SimpleMovingAverage _momentumAverage;
 	private int _cooldown;
 
+	/// <summary>CSV monthly opening/closing prices: SecurityId,Month,Open,Close.</summary>
+	public string SeasonalityHistoryFile { get => _seasonalityHistoryFile.Value; set => _seasonalityHistoryFile.Value = value; }
+
+	/// <summary>Required completed observations of the same calendar month.</summary>
+	public int MinimumSeasonalSamples { get => _minimumSeasonalSamples.Value; set => _minimumSeasonalSamples.Value = value; }
+
+	/// <summary>Maximum number of prior years used for each seasonal estimate.</summary>
+	public int SeasonalityLookbackYears { get => _seasonalityLookbackYears.Value; set => _seasonalityLookbackYears.Value = value; }
 	/// <summary>
 	/// Period for the momentum indicator.
 	/// </summary>
@@ -77,6 +93,12 @@ public class SeasonalityAdjustedMomentumStrategy : Strategy
 	/// </summary>
 	public SeasonalityAdjustedMomentumStrategy()
 	{
+		_seasonalityHistoryFile = Param<string>(nameof(SeasonalityHistoryFile)).SetRequired()
+			.SetDisplay("Seasonality History File", "CSV monthly prices for the execution instrument", "Seasonality");
+		_minimumSeasonalSamples = Param(nameof(MinimumSeasonalSamples), 2).SetGreaterThanZero()
+			.SetDisplay("Minimum Seasonal Samples", "Completed observations required for the same month", "Seasonality");
+		_seasonalityLookbackYears = Param(nameof(SeasonalityLookbackYears), 10).SetRange(1, 100)
+			.SetDisplay("Seasonality Lookback Years", "Historical years used by the seasonal estimate", "Seasonality");
 		_momentumPeriod = Param(nameof(MomentumPeriod), 14)
 			.SetRange(3, 100)
 			.SetDisplay("Momentum Period", "Period for the momentum indicator", "Indicators");
@@ -96,7 +118,6 @@ public class SeasonalityAdjustedMomentumStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for the strategy", "General");
 
-		InitializeSeasonalityData();
 	}
 
 	/// <inheritdoc />
@@ -110,17 +131,19 @@ public class SeasonalityAdjustedMomentumStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		_seasonalHistory.Clear();
+		_seasonalMonth = null;
+		_seasonalValue = null;
 
 		_momentum = null;
 		_momentumAverage = null;
 		_cooldown = 0;
-		_seasonalStrengthByMonth.Clear();
-		InitializeSeasonalityData();
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
+		LoadSeasonalityHistory();
 		base.OnStarted2(time);
 
 		if (Security == null)
@@ -146,7 +169,13 @@ public class SeasonalityAdjustedMomentumStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection(new Unit(0, UnitTypes.Absolute), new Unit(StopLossPercent, UnitTypes.Percent), false);
+		StartProtection(new Unit(0, UnitTypes.Absolute), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Start();
+		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal momentumValue)
@@ -168,7 +197,7 @@ public class SeasonalityAdjustedMomentumStrategy : Strategy
 			return;
 		}
 
-		var seasonalStrength = GetSeasonalStrength(candle.OpenTime.Month);
+		var seasonalStrength = GetSeasonalStrength(candle.OpenTime);
 		var allowLong = seasonalStrength >= SeasonalityThreshold;
 		var allowShort = seasonalStrength <= -SeasonalityThreshold;
 		var bullishMomentum = momentumValue > momentumAvgValue;
@@ -208,22 +237,52 @@ public class SeasonalityAdjustedMomentumStrategy : Strategy
 		}
 	}
 
-	private decimal GetSeasonalStrength(int month)
-		=> _seasonalStrengthByMonth.TryGetValue(month, out var strength) ? strength : 0m;
-
-	private void InitializeSeasonalityData()
+	private void LoadSeasonalityHistory()
 	{
-		_seasonalStrengthByMonth[1] = 0.8m;
-		_seasonalStrengthByMonth[2] = 0.2m;
-		_seasonalStrengthByMonth[3] = 0.5m;
-		_seasonalStrengthByMonth[4] = 0.7m;
-		_seasonalStrengthByMonth[5] = 0.3m;
-		_seasonalStrengthByMonth[6] = -0.2m;
-		_seasonalStrengthByMonth[7] = -0.3m;
-		_seasonalStrengthByMonth[8] = -0.4m;
-		_seasonalStrengthByMonth[9] = -0.7m;
-		_seasonalStrengthByMonth[10] = 0.4m;
-		_seasonalStrengthByMonth[11] = 0.6m;
-		_seasonalStrengthByMonth[12] = 0.9m;
+		if (string.IsNullOrWhiteSpace(SeasonalityHistoryFile))
+			throw new InvalidOperationException("SeasonalityHistoryFile is required.");
+		_seasonalHistory.Clear();
+		_seasonalMonth = null;
+		_seasonalValue = null;
+		var lines = File.ReadLines(SeasonalityHistoryFile).GetEnumerator();
+		using (lines)
+		{
+			if (!lines.MoveNext() || lines.Current.Trim() != "SecurityId,Month,Open,Close")
+				throw new InvalidOperationException("Seasonality history must begin with SecurityId,Month,Open,Close.");
+			var months = new HashSet<DateTime>();
+			while (lines.MoveNext())
+			{
+				if (string.IsNullOrWhiteSpace(lines.Current))
+					continue;
+				var columns = lines.Current.Split(',');
+				if (columns.Length != 4)
+					throw new InvalidOperationException("Every seasonal observation must contain four CSV fields.");
+				if (!string.Equals(columns[0].Trim(), Security.Id, StringComparison.OrdinalIgnoreCase))
+					continue;
+				var month = DateTime.ParseExact(columns[1].Trim(), "yyyy-MM", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
+				var open = decimal.Parse(columns[2], CultureInfo.InvariantCulture);
+				var close = decimal.Parse(columns[3], CultureInfo.InvariantCulture);
+				if (open <= 0m || close <= 0m || !months.Add(month))
+					throw new InvalidOperationException("Seasonality prices must be positive and months must be unique.");
+				_seasonalHistory.Add((month, 100m * (close / open - 1m)));
+			}
+		}
+		if (_seasonalHistory.Count == 0)
+			throw new InvalidOperationException("Seasonality history contains no observations for the execution instrument.");
 	}
+
+	private decimal? GetSeasonalStrength(DateTime time)
+	{
+		var month = new DateTime(time.Year, time.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+		if (_seasonalMonth != month)
+		{
+			var earliest = month.AddYears(-SeasonalityLookbackYears);
+			var history = _seasonalHistory.Where(h => h.month.Month == month.Month
+				&& h.month < month && h.month >= earliest).Select(h => h.value).ToArray();
+			_seasonalValue = history.Length >= MinimumSeasonalSamples ? history.Average() : null;
+			_seasonalMonth = month;
+		}
+		return _seasonalValue;
+	}
+
 }

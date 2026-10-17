@@ -1,36 +1,10 @@
 # MACD Adaptive Histogram
 [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
- 
-The **MACD Adaptive Histogram** strategy is built around MACD with adaptive histogram threshold.
 
-Testing indicates an average annual return of about 184%. It performs best in the crypto market.
+Trades statistically large MACD histogram values. Use finished 15-minute candles and `H = MACD(12,26) − Signal(9)`. Compute `A = SMA(20)` and `D = StandardDeviation(20)` of H. Wait for all indicators to form and `D > 0`.
 
-Signals trigger when Histogram confirms trend changes on intraday (15m) data. This makes the method suitable for active traders.
+From flat, buy if `H >= A + 2 × D && H > 0`; sell if `H <= A − 2 × D && H < 0`. Close the entire long when `H <= A`, or the entire short when `H >= A`. Every signal order starts a pause of `CooldownBars = 16` finished candles for further signal decisions.
 
-Stops rely on ATR multiples and factors like FastPeriod, SlowPeriod. Adjust these defaults to balance risk and reward.
+Filled positions have local native percentage protection: `StopLossPercent = 2` from the actual entry execution price. It monitors the instrument's bid/ask updates and submits a market exit independently of the signal cooldown; a quote feed is required between candles. No take-profit is configured.
 
-## Details
-- **Entry Criteria**: see implementation for indicator conditions.
-- **Long/Short**: Both directions.
-- **Exit Criteria**: opposite signal or stop logic.
-- **Stops**: Yes, using indicator-based calculations.
-- **Default Values**:
-  - `FastPeriod = 12`
-  - `SlowPeriod = 26`
-  - `SignalPeriod = 9`
-  - `HistogramAvgPeriod = 20`
-  - `StdDevMultiplier = 2.0m`
-  - `StopLossPercent = 2.0m`
-  - `CandleType = TimeSpan.FromMinutes(15).TimeFrame()`
-- **Filters**:
-  - Category: Trend following
-  - Direction: Both
-  - Indicators: Histogram
-  - Stops: Yes
-  - Complexity: Intermediate
-  - Timeframe: Intraday (15m)
-  - Seasonality: No
-  - Neural Networks: No
-  - Divergence: No
-  - Risk Level: Medium
-
+`FastPeriod = 12; SlowPeriod = 26; SignalPeriod = 9; HistogramAvgPeriod = 20; StdDevMultiplier = 2; StopLossPercent = 2; CooldownBars = 16`.

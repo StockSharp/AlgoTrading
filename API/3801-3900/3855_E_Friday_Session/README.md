@@ -46,3 +46,5 @@ The E-Friday Session strategy replicates the classic MetaTrader expert advisor t
 - Uses candle close data for decision making, whereas the original polled prices per tick.
 - Protective exits are executed via market orders when candles indicate that stop or target levels were touched within the interval.
 - Strategy parameters are exposed through StockSharp's `StrategyParam` system, supporting optimization and UI binding.
+
+**Execution detail:** The Friday gate is evaluated on the first *finished* intraday candle whose opening hour equals `HourOpen`, not at the exact opening tick. A previously *finished Thursday daily candle* must be present. Exactly one entry attempt is permitted per Friday, irrespective of an early protective exit. The current session exit and the per-direction stop, take-profit, and trailing levels are evaluated using completed intraday candle extremes; they close via market orders. Trailing levels move only after the configured step and never use a newly recorded high/low to claim a hit earlier within the same candle. Open/close order timing cannot be inferred from finished candles alone.

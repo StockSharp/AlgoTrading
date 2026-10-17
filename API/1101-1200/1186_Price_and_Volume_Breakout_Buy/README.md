@@ -28,3 +28,5 @@ The strategy enters when price and volume simultaneously break above their respe
   - Neural networks: No
   - Divergence: No
   - Risk Level: Medium
+
+The price and volume extrema use only preceding completed candles (the signal candle is excluded). `OrderDirection` accepts `Long`, `Short`, or `Both`; the default is `Long`. A close on the SMA, or back on the position's side of it, resets the five-close exit count.

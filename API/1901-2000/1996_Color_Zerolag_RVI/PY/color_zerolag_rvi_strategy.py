@@ -23,6 +23,11 @@ class color_zerolag_rvi_strategy(Strategy):
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
             .SetDisplay("Candle Type", "Type of candles", "General")
 
+        self._buy_open = self.Param("BuyOpen", True).SetDisplay("Buy Open", "Allow long entries", "Trading")
+        self._buy_close = self.Param("BuyClose", True).SetDisplay("Buy Close", "Close longs on a sell signal", "Trading")
+        self._sell_open = self.Param("SellOpen", True).SetDisplay("Sell Open", "Allow short entries", "Trading")
+        self._sell_close = self.Param("SellClose", True).SetDisplay("Sell Close", "Close shorts on a buy signal", "Trading")
+
         self._prev_rvi = None
         self._prev_signal = None
 
@@ -49,6 +54,38 @@ class color_zerolag_rvi_strategy(Strategy):
     @CandleType.setter
     def CandleType(self, value):
         self._candle_type.Value = value
+
+    @property
+    def BuyOpen(self):
+        return self._buy_open.Value
+
+    @BuyOpen.setter
+    def BuyOpen(self, value):
+        self._buy_open.Value = value
+
+    @property
+    def BuyClose(self):
+        return self._buy_close.Value
+
+    @BuyClose.setter
+    def BuyClose(self, value):
+        self._buy_close.Value = value
+
+    @property
+    def SellOpen(self):
+        return self._sell_open.Value
+
+    @SellOpen.setter
+    def SellOpen(self, value):
+        self._sell_open.Value = value
+
+    @property
+    def SellClose(self):
+        return self._sell_close.Value
+
+    @SellClose.setter
+    def SellClose(self, value):
+        self._sell_close.Value = value
 
     def OnStarted2(self, time):
         super(color_zerolag_rvi_strategy, self).OnStarted2(time)
@@ -81,14 +118,21 @@ class color_zerolag_rvi_strategy(Strategy):
         cross_up = self._prev_rvi < self._prev_signal and rvi_val > signal_val
         cross_down = self._prev_rvi > self._prev_signal and rvi_val < signal_val
 
-        if cross_up and self.Position <= 0:
-            if self.Position < 0:
-                self.BuyMarket()
-            self.BuyMarket()
-        elif cross_down and self.Position >= 0:
-            if self.Position > 0:
-                self.SellMarket()
-            self.SellMarket()
+        # Downward RVI crossover is the documented *buy* signal.
+        # Closure and entry are independently configurable; do not net against
+        # an opposite position when its close permission is disabled.
+        if cross_down:
+            current_position = self.Position
+            if current_position < 0 and self.SellClose:
+                self.BuyMarket(-current_position)
+            if self.BuyOpen and (current_position == 0 or (current_position < 0 and self.SellClose)):
+                self.BuyMarket(self.Volume)
+        elif cross_up:
+            current_position = self.Position
+            if current_position > 0 and self.BuyClose:
+                self.SellMarket(current_position)
+            if self.SellOpen and (current_position == 0 or (current_position > 0 and self.BuyClose)):
+                self.SellMarket(self.Volume)
 
         self._prev_rvi = rvi_val
         self._prev_signal = signal_val

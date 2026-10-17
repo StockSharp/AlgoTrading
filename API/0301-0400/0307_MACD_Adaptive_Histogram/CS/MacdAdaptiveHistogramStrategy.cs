@@ -193,7 +193,13 @@ public class MacdAdaptiveHistogramStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		StartProtection(new Unit(0, UnitTypes.Absolute), new Unit(StopLossPercent, UnitTypes.Percent), false);
+		StartProtection(new Unit(0, UnitTypes.Absolute), new Unit(StopLossPercent, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Start();
+		}
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue)

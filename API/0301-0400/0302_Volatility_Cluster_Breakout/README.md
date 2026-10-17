@@ -1,34 +1,23 @@
 # Volatility Cluster Breakout
 [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
- 
-The **Volatility Cluster Breakout** strategy is built around breakouts during high volatility clusters.
 
-Testing indicates an average annual return of about 169%. It performs best in the crypto market.
+Uses finished 5-minute candles and waits for formed indicators and permission to trade. All moving statistics include the signal candle. `C` is its close, `M = SMA(C, 20)`, `D = population standard deviation(C, 20)`, `U = M + 2 × D`, `L = M − 2 × D`, and `A = ATR(14)` using Wilder smoothing of true range.
 
-Signals trigger when its indicators confirms breakout opportunities on intraday (5m) data. This makes the method suitable for active traders.
+The high-volatility condition is `A >= 1.15 × SMA(A, 28)`.
 
-Stops rely on ATR multiples and factors like PriceAvgPeriod, AtrPeriod. Adjust these defaults to balance risk and reward.
+From a flat position, buy when high volatility is confirmed and `C >= U`; sell when it is confirmed and `C <= L`. The entry volume is `Volume`. A new entry is allowed only after the entry cooldown expires and while no order is pending. Entry requires `A > 0`.
 
-## Details
-- **Entry Criteria**: see implementation for indicator conditions.
-- **Long/Short**: Both directions.
-- **Exit Criteria**: opposite signal or stop logic.
-- **Stops**: Yes, using indicator-based calculations.
-- **Default Values**:
-  - `PriceAvgPeriod = 20`
-  - `AtrPeriod = 14`
-  - `StdDevMultiplier = 2.0m`
-  - `StopMultiplier = 2.0m`
-  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
-- **Filters**:
-  - Category: Trend following
-  - Direction: Both
-  - Indicators: multiple indicators
-  - Stops: Yes
-  - Complexity: Intermediate
-  - Timeframe: Intraday (5m)
-  - Seasonality: No
-  - Neural Networks: No
-  - Divergence: No
-  - Risk Level: Medium
+`k = StopMultiplier`. Freeze the signal close and ATR at entry: the long stop is `C_entry − k × A_entry`, the short stop is `C_entry + k × A_entry`. On each finished candle, close the entire actual position with a market order if the close reaches the stored stop, a long has `C <= M`, a short has `C >= M`, or high volatility is no longer confirmed.
 
+The cooldown blocks new entries for the next 60 finished candles after an order; exits remain active throughout. Stop checks occur at candle close, and market fills use the available execution price. The stop distance stays fixed while the position is held. There is no take profit or trailing stop.
+
+## Default parameters
+
+```text
+PriceAvgPeriod = 20
+StdDevMultiplier = 2
+AtrPeriod = 14
+StopMultiplier = 2
+CooldownBars = 60
+CandleType = TimeSpan.FromMinutes(5).TimeFrame()
+```

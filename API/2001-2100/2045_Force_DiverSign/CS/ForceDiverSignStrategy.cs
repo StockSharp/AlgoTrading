@@ -27,6 +27,7 @@ public class ForceDiverSignStrategy : Strategy
 	private readonly decimal[] _f2 = new decimal[5];
 	private decimal _prevClose;
 	private int _count;
+	private Order _pending;
 
 	public int Period1 { get => _period1.Value; set => _period1.Value = value; }
 	public int Period2 { get => _period2.Value; set => _period2.Value = value; }
@@ -58,6 +59,7 @@ public class ForceDiverSignStrategy : Strategy
 		base.OnReseted();
 		_prevClose = default;
 		_count = default;
+		_pending = null;
 		Array.Clear(_opens);
 		Array.Clear(_closes);
 		Array.Clear(_f1);
@@ -68,6 +70,7 @@ public class ForceDiverSignStrategy : Strategy
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_pending = null;
 
 		var ma1 = new ExponentialMovingAverage { Length = Period1 };
 		var ma2 = new ExponentialMovingAverage { Length = Period2 };
@@ -115,7 +118,7 @@ public class ForceDiverSignStrategy : Strategy
 				return;
 			}
 
-			if (!IsFormedAndOnlineAndAllowTrading())
+			if (!IsFormedAndOnlineAndAllowTrading() || (_pending is not null && _pending.State is not (OrderStates.Done or OrderStates.Failed)))
 				return;
 
 			var sellSignal = _opens[3] < _closes[3] && _opens[2] > _closes[2] && _opens[1] < _closes[1]
@@ -130,15 +133,11 @@ public class ForceDiverSignStrategy : Strategy
 
 			if (buySignal && Position <= 0)
 			{
-				if (Position < 0)
-					BuyMarket();
-				BuyMarket();
+				_pending = BuyMarket(Volume - Math.Min(0m, Position));
 			}
 			else if (sellSignal && Position >= 0)
 			{
-				if (Position > 0)
-					SellMarket();
-				SellMarket();
+				_pending = SellMarket(Volume + Math.Max(0m, Position));
 			}
 		}).Start();
 	}

@@ -11,21 +11,20 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on color-coded Laguerre oscillator approximated by RSI.
+/// RSI oscillator smoothed through Jurik MA. Middle-level reversals and
+/// extreme-level exits are based on formed indicators and completed candles.
 /// </summary>
 public class ColorJLaguerreStrategy : Strategy
 {
-	private readonly StrategyParam<int> _rsiLength;
-	private readonly StrategyParam<decimal> _highLevel;
-	private readonly StrategyParam<decimal> _middleLevel;
-	private readonly StrategyParam<decimal> _lowLevel;
-	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<int> _rsiLength, _jmaLength;
+	private readonly StrategyParam<decimal> _highLevel, _middleLevel, _lowLevel, _stopLossPercent;
 	private readonly StrategyParam<DataType> _candleType;
-
-	private decimal _prevRsi;
-	private bool _hasPrev;
+	private JurikMovingAverage _jma;
+	private decimal? _previous;
+	private Order _pending;
 
 	public int RsiLength { get => _rsiLength.Value; set => _rsiLength.Value = value; }
+	public int JmaLength { get => _jmaLength.Value; set => _jmaLength.Value = value; }
 	public decimal HighLevel { get => _highLevel.Value; set => _highLevel.Value = value; }
 	public decimal MiddleLevel { get => _middleLevel.Value; set => _middleLevel.Value = value; }
 	public decimal LowLevel { get => _lowLevel.Value; set => _lowLevel.Value = value; }
@@ -34,96 +33,93 @@ public class ColorJLaguerreStrategy : Strategy
 
 	public ColorJLaguerreStrategy()
 	{
-		_rsiLength = Param(nameof(RsiLength), 14)
-			.SetDisplay("RSI Length", "Period for RSI", "Indicators");
-
+		_rsiLength = Param(nameof(RsiLength), 14).SetGreaterThanZero()
+			.SetDisplay("RSI Length", "RSI lookback period", "Indicator");
+		_jmaLength = Param(nameof(JmaLength), 14).SetGreaterThanZero()
+			.SetDisplay("JMA Length", "Jurik smoothing of RSI", "Indicator");
 		_highLevel = Param(nameof(HighLevel), 85m)
-			.SetDisplay("High Level", "Upper threshold", "Levels");
-
+			.SetDisplay("High Level", "Close long at this threshold", "Levels");
 		_middleLevel = Param(nameof(MiddleLevel), 50m)
-			.SetDisplay("Middle Level", "Central threshold", "Levels");
-
+			.SetDisplay("Middle Level", "Entry crossover threshold", "Levels");
 		_lowLevel = Param(nameof(LowLevel), 15m)
-			.SetDisplay("Low Level", "Lower threshold", "Levels");
-
-		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management");
-
+			.SetDisplay("Low Level", "Close short at this threshold", "Levels");
+		_stopLossPercent = Param(nameof(StopLossPercent), 2m).SetNotNegative()
+			.SetDisplay("Stop Loss %", "Native percent stop distance", "Risk");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevRsi = 0;
-		_hasPrev = false;
+		_jma = null;
+		_previous = null;
+		_pending = null;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_previous = null;
+		_pending = null;
 
 		var rsi = new RelativeStrengthIndex { Length = RsiLength };
-
+		_jma = new JurikMovingAverage { Length = JmaLength };
+		Indicators.Add(_jma);
 		SubscribeCandles(CandleType)
 			.Bind(rsi, (candle, value) =>
 			{
-				if (!rsi.IsFormed)
-					return;
-
-				ProcessCandle(candle, value);
-			})
-			.Start();
+				if (candle.State == CandleStates.Finished && rsi.IsFormed)
+					ProcessCandle(candle, value);
+			}).Start();
 
 		StartProtection(
-			takeProfit: new Unit(4, UnitTypes.Percent),
-			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent)
-		);
+			takeProfit: new Unit(0m, UnitTypes.Percent),
+			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent),
+			useMarketOrders: true);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
 	{
-		if (candle.State != CandleStates.Finished)
+		var result = _jma.Process(rsiValue, candle.OpenTime, true);
+		if (!result.IsFormed)
+			return;
+		var value = result.ToDecimal();
+		var crossUp = _previous is decimal prior && prior <= MiddleLevel && value > MiddleLevel;
+		var crossDown = _previous is decimal before && before >= MiddleLevel && value < MiddleLevel;
+		_previous = value;
+
+		if (!IsFormedAndOnlineAndAllowTrading()
+			|| (_pending is not null && _pending.State is not (OrderStates.Done or OrderStates.Failed)))
 			return;
 
-		if (!_hasPrev)
+		if (Position > 0m && value >= HighLevel)
 		{
-			_prevRsi = rsiValue;
-			_hasPrev = true;
+			_pending = SellMarket(Position);
+			return;
+		}
+		if (Position < 0m && value <= LowLevel)
+		{
+			_pending = BuyMarket(-Position);
 			return;
 		}
 
-		// Open long when RSI crosses above middle level
-		if (_prevRsi <= MiddleLevel && rsiValue > MiddleLevel && Position <= 0)
+		if (crossUp)
 		{
-			if (Position < 0) BuyMarket();
-			BuyMarket();
+			if (Position < 0m)
+				_pending = BuyMarket(-Position + Volume);
+			else if (Position == 0m)
+				_pending = BuyMarket(Volume);
 		}
-		// Open short when RSI crosses below middle level
-		else if (_prevRsi >= MiddleLevel && rsiValue < MiddleLevel && Position >= 0)
+		else if (crossDown)
 		{
-			if (Position > 0) SellMarket();
-			SellMarket();
+			if (Position > 0m)
+				_pending = SellMarket(Position + Volume);
+			else if (Position == 0m)
+				_pending = SellMarket(Volume);
 		}
-
-		// Exit long at high level
-		if (Position > 0 && rsiValue >= HighLevel)
-		{
-			SellMarket();
-		}
-		// Exit short at low level
-		else if (Position < 0 && rsiValue <= LowLevel)
-		{
-			BuyMarket();
-		}
-
-		_prevRsi = rsiValue;
 	}
 }

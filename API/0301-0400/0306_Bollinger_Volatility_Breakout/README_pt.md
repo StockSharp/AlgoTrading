@@ -1,34 +1,24 @@
-# Estratégia de Rompimento de Volatilidade com Bollinger
+# Bollinger Volatility Breakout
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
-A estratégia **Bollinger Volatility Breakout** é construída em torno do rompimento das Bandas de Bollinger com confirmação de volatilidade.
+Usa velas de 5 minutos concluídas e aguarda indicadores formados e permissão para negociar. Todas as estatísticas móveis incluem a vela de sinal. `C` é seu fechamento, `M = SMA(C, 20)`, `D = desvio padrão populacional(C, 20)`, `U = M + 2 × D`, `L = M − 2 × D` e `A = ATR(14)` com suavização de Wilder do intervalo verdadeiro.
 
-Os testes indicam um retorno anual médio de aproximadamente 181%. Funciona melhor no mercado de criptomoedas.
+A condição de alta volatilidade é `A >= SMA(A, 14) + 2 × desvio padrão populacional(A, 14)`. Os níveis de preço são as bandas superior, central e inferior de Bollinger.
 
-Os sinais são disparados quando Bollinger confirma oportunidades de rompimento em dados intradiários (5m). Isso torna o método adequado para traders ativos.
+Sem posição, compra quando há alta volatilidade e `C >= U`; vende quando ela é confirmada e `C <= L`. O volume de entrada é `Volume`. Uma nova entrada exige o fim da pausa e nenhuma ordem pendente. A entrada exige `A > 0`.
 
-Os stops se baseiam em múltiplos de ATR e fatores como BollingerPeriod, BollingerDeviation. Ajuste esses valores padrão para equilibrar risco e recompensa.
+`k = StopLossMultiplier`. Fixa o fechamento e o ATR da vela de entrada: stop de compra `C_entry − k × A_entry`, stop de venda `C_entry + k × A_entry`. Em cada vela concluída, encerra toda a posição real com uma ordem a mercado se o fechamento atingir o stop fixo, uma posição comprada tiver `C <= M`, uma vendida tiver `C >= M` ou a alta volatilidade deixar de ser confirmada.
 
-## Detalhes
-- **Critérios de entrada**: ver implementação para as condições do indicador.
-- **Comprado/Vendido**: Ambos.
-- **Critérios de saída**: sinal oposto ou lógica de stop.
-- **Stops**: Sim, usando cálculos baseados em indicadores.
-- **Valores padrão**:
-  - `BollingerPeriod = 20`
-  - `BollingerDeviation = 2.0m`
-  - `AtrPeriod = 14`
-  - `AtrDeviationMultiplier = 2.0m`
-  - `StopLossMultiplier = 2.0m`
-  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
-- **Filtros**:
-  - Categoria: Seguidor de tendência
-  - Direção: Ambos
-  - Indicadores: Bollinger
-  - Stops: Sim
-  - Complexidade: Intermediário
-  - Período: Intradiário (5m)
-  - Sazonalidade: Não
-  - Redes neurais: Não
-  - Divergência: Não
-  - Nível de risco: Médio
+A pausa bloqueia novas entradas nas próximas 84 velas concluídas após uma ordem; as saídas continuam ativas. O stop é verificado no fechamento da vela e a ordem a mercado usa o preço disponível. A distância do stop permanece fixa durante a posição. Não há realização de lucro automática nem stop móvel.
+
+## Parâmetros padrão
+
+```text
+BollingerPeriod = 20
+BollingerDeviation = 2
+AtrPeriod = 14
+AtrDeviationMultiplier = 2
+StopLossMultiplier = 2
+CooldownBars = 84
+CandleType = TimeSpan.FromMinutes(5).TimeFrame()
+```

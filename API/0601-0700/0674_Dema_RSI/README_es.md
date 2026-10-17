@@ -13,3 +13,9 @@ Esta estrategia opera los cruces entre el RSI de una media móvil exponencial do
 - Usar sesión
 - Inicio de sesión
 - Fin de sesión
+
+### Condiciones reales RSI(DEMA)
+
+Predeterminados: `CandleType=1m`, `MaLength=20`, `RsiLength=14`, `RsiSmoothingLength=5`, `TakeProfitPoints=0`, `TrailStopPoints=0`, `UseSession=false`, `SessionStart=09:00`, `SessionEnd=17:00`. En vela terminada: `EMA1=EMA(Close,20)`, `EMA2=EMA(EMA1,20)`, `DEMA=2×EMA1−EMA2`, `R=RSI(DEMA,14)`, `S=SMA(R,5)`. Comprar si antes `R <= S` y ahora `R > S`; vender si antes `R >= S` y ahora `R < S`, desde plano o invirtiendo la posición opuesta con `Volume + abs(Position)`. `UseSession=true` limita nuevas entradas a `[SessionStart,SessionEnd)`, incluso cruzando medianoche; las salidas por protección son independientes. Los puntos de `TakeProfitPoints` y `TrailStopPoints` son **ticks mínimos del instrumento**: valores no nulos usan protección nativa a distancia absoluta, cero desactiva cada componente.
+
+El filtro de sesión usa la hora UTC actual de la decisión: una vela abierta dentro de la sesión no permite entrar después del cierre. Los valores RSI vacíos durante el calentamiento no alimentan la media de suavizado.

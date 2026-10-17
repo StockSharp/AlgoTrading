@@ -1,35 +1,10 @@
 # MACDアダプティブヒストグラム戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
-**MACD Adaptive Histogram**戦略は、適応型ヒストグラム閾値を持つMACDを中心に構築されています。
+統計的に大きな MACD ヒストグラム値を売買します。確定15分足で `H = MACD(12,26) − Signal(9)` を用い、H の `A = SMA(20)` と `D = StandardDeviation(20)` を計算します。全指標の形成と `D > 0` を待ちます。
 
-テストでは平均年間リターンが約184%であることが示されています。暗号通貨市場で最もよいパフォーマンスを発揮します。
+建玉なしで `H >= A + 2 × D && H > 0` なら買い、`H <= A − 2 × D && H < 0` なら売りです。`H <= A` で全ロング、`H >= A` で全ショートを決済します。各シグナル注文後、`CooldownBars = 16` 本の確定足の間、次のシグナル判断を待ちます。
 
-HistogramがイントラデイI(15m)データでトレンド変化を確認したときにシグナルが発動します。これにより、この手法はアクティブトレーダーに適しています。
+約定済み建玉には実際の入場約定価格から `StopLossPercent = 2` のローカル標準パーセント保護が働きます。銘柄の bid/ask を監視し、シグナル待機期間と独立して成行決済します。足の間の保護には気配配信が必要です。利確は設定しません。
 
-ストップはATRの倍数とFastPeriod、SlowPeriodなどの要素に基づいています。デフォルト値を調整してリスクとリワードのバランスを取ってください。
-
-## 詳細
-- **エントリー条件**: インジケーター条件の実装を参照。
-- **ロング/ショート**: 両方。
-- **エグジット条件**: 反対シグナルまたはストップロジック。
-- **ストップ**: はい、インジケーターに基づく計算を使用。
-- **デフォルト値**:
-  - `FastPeriod = 12`
-  - `SlowPeriod = 26`
-  - `SignalPeriod = 9`
-  - `HistogramAvgPeriod = 20`
-  - `StdDevMultiplier = 2.0m`
-  - `StopLossPercent = 2.0m`
-  - `CandleType = TimeSpan.FromMinutes(15).TimeFrame()`
-- **フィルター**:
-  - カテゴリ: トレンドフォロー
-  - 方向: 両方
-  - インジケーター: Histogram
-  - ストップ: はい
-  - 複雑さ: 中級
-  - 時間軸: イントラデイ (15m)
-  - 季節性: いいえ
-  - ニューラルネットワーク: いいえ
-  - ダイバージェンス: いいえ
-  - リスクレベル: 中
+`FastPeriod = 12; SlowPeriod = 26; SignalPeriod = 9; HistogramAvgPeriod = 20; StdDevMultiplier = 2; StopLossPercent = 2; CooldownBars = 16`.

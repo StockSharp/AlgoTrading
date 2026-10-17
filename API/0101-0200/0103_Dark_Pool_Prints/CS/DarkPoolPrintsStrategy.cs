@@ -1,5 +1,8 @@
+namespace StockSharp.Samples.Strategies;
+
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using Ecng.Common;
 
@@ -8,188 +11,153 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-namespace StockSharp.Samples.Strategies;
-
-/// <summary>
-/// Dark Pool Prints strategy.
-/// Detects unusually high volume candles and trades in the direction of the candle
-/// when confirmed by SMA trend direction.
-/// Uses cooldown to control trade frequency.
-/// </summary>
+/// <summary>Trades large, direction-classified off-exchange prints from an explicitly selected source.</summary>
 public class DarkPoolPrintsStrategy : Strategy
 {
+	private readonly StrategyParam<Security> _darkPoolSecurity;
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _volumeLookback;
 	private readonly StrategyParam<decimal> _volumeMultiplier;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _cooldownBars;
-
-	private readonly List<decimal> _volumeHistory = new();
+	private readonly StrategyParam<decimal> _stopLoss;
+	private readonly Queue<decimal> _reportVolumes = new();
+	private readonly HashSet<(long? id, string text)> _reportIds = new();
+	private DateTime _reportTime;
+	private decimal? _average;
 	private int _cooldown;
+	private Order _pendingOrder;
 
-	/// <summary>
-	/// MA period.
-	/// </summary>
-	public int MaPeriod
-	{
-		get => _maPeriod.Value;
-		set => _maPeriod.Value = value;
-	}
+	/// <summary>Dedicated off-exchange report instrument; it must differ from the execution instrument.</summary>
+	public Security DarkPoolSecurity { get => _darkPoolSecurity.Value; set => _darkPoolSecurity.Value = value; }
+	/// <summary>Trend and exit SMA length.</summary>
+	public int MaPeriod { get => _maPeriod.Value; set => _maPeriod.Value = value; }
+	/// <summary>Number of preceding reported trades in the volume baseline.</summary>
+	public int VolumeLookback { get => _volumeLookback.Value; set => _volumeLookback.Value = value; }
+	/// <summary>Required multiple of the preceding report volumes.</summary>
+	public decimal VolumeMultiplier { get => _volumeMultiplier.Value; set => _volumeMultiplier.Value = value; }
+	/// <summary>Execution instrument's candle interval.</summary>
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	/// <summary>Finished candles between entries; zero allows each qualifying report.</summary>
+	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
+	/// <summary>Native percentage loss limit.</summary>
+	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
 
-	/// <summary>
-	/// Volume lookback.
-	/// </summary>
-	public int VolumeLookback
-	{
-		get => _volumeLookback.Value;
-		set => _volumeLookback.Value = value;
-	}
-
-	/// <summary>
-	/// Volume multiplier threshold.
-	/// </summary>
-	public decimal VolumeMultiplier
-	{
-		get => _volumeMultiplier.Value;
-		set => _volumeMultiplier.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Cooldown bars.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
-	/// Constructor.
-	/// </summary>
+	/// <summary>Initializes the dark-pool strategy.</summary>
 	public DarkPoolPrintsStrategy()
 	{
-		_maPeriod = Param(nameof(MaPeriod), 20)
-			.SetRange(5, 50)
-			.SetDisplay("MA Period", "Period for trend SMA", "Indicators");
-
-		_volumeLookback = Param(nameof(VolumeLookback), 20)
-			.SetRange(5, 50)
-			.SetDisplay("Volume Lookback", "Bars for volume average", "Volume");
-
-		_volumeMultiplier = Param(nameof(VolumeMultiplier), 1.5m)
-			.SetRange(1.2m, 5m)
-			.SetDisplay("Volume Multiplier", "Threshold multiplier for high volume", "Volume");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_cooldownBars = Param(nameof(CooldownBars), 500)
-			.SetRange(1, 1000)
-			.SetDisplay("Cooldown Bars", "Bars to wait between trades", "General");
+		_darkPoolSecurity = Param<Security>(nameof(DarkPoolSecurity)).SetRequired()
+			.SetDisplay("Dark Pool Security", "Dedicated source of off-exchange trade reports", "Data");
+		_maPeriod = Param(nameof(MaPeriod), 20).SetGreaterThanZero()
+			.SetDisplay("MA Period", "Execution instrument SMA period", "Indicators");
+		_volumeLookback = Param(nameof(VolumeLookback), 20).SetGreaterThanZero()
+			.SetDisplay("Volume Lookback", "Preceding off-exchange reports for the volume baseline", "Volume");
+		_volumeMultiplier = Param(nameof(VolumeMultiplier), 1.5m).SetGreaterThanZero()
+			.SetDisplay("Volume Multiplier", "Required report-volume multiple", "Volume");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+			.SetDisplay("Candle Type", "Execution instrument candle interval", "Data");
+		_cooldownBars = Param(nameof(CooldownBars), 0).SetNotNegative()
+			.SetDisplay("Cooldown Bars", "Finished candles between qualifying reports", "Trading");
+		_stopLoss = Param(nameof(StopLoss), 2m).SetGreaterThanZero()
+			.SetDisplay("Stop Loss %", "Percentage loss limit from the actual entry fill", "Risk");
+		OrderRegistering += order => _pendingOrder = order;
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType), (Security, DataType.Level1), (DarkPoolSecurity, DataType.Ticks)];
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_volumeHistory.Clear();
-		_cooldown = default;
+		ClearRuntime();
+	}
+
+	private void ClearRuntime()
+	{
+		_reportVolumes.Clear();
+		_reportIds.Clear();
+		_reportTime = default;
+		_average = null;
+		_cooldown = 0;
+		_pendingOrder = null;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
+		if (DarkPoolSecurity is null || Security is null
+			|| string.Equals(DarkPoolSecurity.Id, Security.Id, StringComparison.OrdinalIgnoreCase))
+			throw new InvalidOperationException("DarkPoolSecurity must explicitly identify a separate off-exchange report source.");
 		base.OnStarted2(time);
-
-		_volumeHistory.Clear();
-		_cooldown = 0;
-
-		var sma = new SimpleMovingAverage { Length = MaPeriod };
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(sma, ProcessCandle)
-			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
+		ClearRuntime();
+		StartProtection(new Unit(), new Unit(StopLoss, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
 		{
-			DrawCandles(area, subscription);
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Start();
+		}
+		var sma = new SimpleMovingAverage { Length = MaPeriod };
+		var candles = SubscribeCandles(CandleType);
+		candles.Bind(sma, ProcessCandle).Start();
+		SubscribeTicks(DarkPoolSecurity).Bind(ProcessReport).Start();
+		var area = CreateChartArea();
+		if (area is not null)
+		{
+			DrawCandles(area, candles);
 			DrawIndicator(area, sma);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal smaValue)
+	private bool IsOrderPending => _pendingOrder is not null && _pendingOrder.State is not (OrderStates.Done or OrderStates.Failed);
+
+	private void ProcessCandle(ICandleMessage candle, decimal average)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		// Track volume history
-		_volumeHistory.Add(candle.TotalVolume);
-		if (_volumeHistory.Count > VolumeLookback)
-			_volumeHistory.RemoveAt(0);
-
-		if (_volumeHistory.Count < VolumeLookback)
-			return;
-
+		_average = average;
 		if (_cooldown > 0)
-		{
 			_cooldown--;
+		if (!IsFormedAndOnlineAndAllowTrading() || IsOrderPending)
 			return;
+		if (Position > 0m && candle.ClosePrice < average)
+			SellMarket(Position);
+		else if (Position < 0m && candle.ClosePrice > average)
+			BuyMarket(-Position);
+	}
+
+	private void ProcessReport(ITickTradeMessage report)
+	{
+		if (report.IsSystem != false || report.Price <= 0m || report.Volume <= 0m
+			|| report.ServerTime < _reportTime || report.Id is null && string.IsNullOrEmpty(report.StringId))
+			return;
+		if (report.ServerTime > _reportTime)
+		{
+			_reportTime = report.ServerTime;
+			_reportIds.Clear();
 		}
-
-		// Calculate average volume
-		decimal avgVolume = 0;
-		for (int i = 0; i < _volumeHistory.Count - 1; i++)
-			avgVolume += _volumeHistory[i];
-		avgVolume /= (_volumeHistory.Count - 1);
-
-		var isHighVolume = candle.TotalVolume > avgVolume * VolumeMultiplier;
-		if (!isHighVolume)
+		if (!_reportIds.Add((report.Id, report.StringId)))
 			return;
 
-		var isBullish = candle.ClosePrice > candle.OpenPrice;
-		var isBearish = candle.ClosePrice < candle.OpenPrice;
-		var isAboveSma = candle.ClosePrice > smaValue;
-		var isBelowSma = candle.ClosePrice < smaValue;
-
-		if (Position == 0 && isBullish && isAboveSma)
+		var baseline = _reportVolumes.Count == VolumeLookback ? _reportVolumes.Average() : (decimal?)null;
+		_reportVolumes.Enqueue(report.Volume);
+		while (_reportVolumes.Count > VolumeLookback)
+			_reportVolumes.Dequeue();
+		if (baseline is null || report.Volume <= baseline.Value * VolumeMultiplier
+			|| _average is not decimal average || _cooldown > 0 || IsOrderPending
+			|| !IsFormedAndOnlineAndAllowTrading())
+			return;
+		if (report.OriginSide == Sides.Buy && report.Price > average && Position <= 0m)
 		{
-			BuyMarket();
+			BuyMarket(Volume + Math.Abs(Position));
 			_cooldown = CooldownBars;
 		}
-		else if (Position == 0 && isBearish && isBelowSma)
+		else if (report.OriginSide == Sides.Sell && report.Price < average && Position >= 0m)
 		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position > 0 && isBelowSma)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		else if (Position < 0 && isAboveSma)
-		{
-			BuyMarket();
+			SellMarket(Volume + Math.Abs(Position));
 			_cooldown = CooldownBars;
 		}
 	}

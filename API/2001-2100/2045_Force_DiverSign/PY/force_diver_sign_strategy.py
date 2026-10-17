@@ -6,7 +6,7 @@ clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Messages import DataType, CandleStates, OrderStates
 from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 from indicator_extensions import *
@@ -32,6 +32,7 @@ class force_diver_sign_strategy(Strategy):
         self._f2 = [0.0] * 5
         self._prev_close = 0.0
         self._count = 0
+        self._pending = None
 
     @property
     def candle_type(self):
@@ -48,6 +49,7 @@ class force_diver_sign_strategy(Strategy):
 
     def OnStarted2(self, time):
         super(force_diver_sign_strategy, self).OnStarted2(time)
+        self._pending = None
 
         self._ma1 = ExponentialMovingAverage()
         self._ma1.Length = self._period1.Value
@@ -120,14 +122,12 @@ class force_diver_sign_strategy(Strategy):
                       ((self._f1[3] > self._f1[1] and self._f2[3] < self._f2[1]) or
                        (self._f1[3] < self._f1[1] and self._f2[3] > self._f2[1])))
 
+        if not self.IsFormedAndOnlineAndAllowTrading() or (self._pending is not None and self._pending.State not in (OrderStates.Done, OrderStates.Failed)):
+            return
         if buy_signal and self.Position <= 0:
-            if self.Position < 0:
-                self.BuyMarket()
-            self.BuyMarket()
+            self._pending = self.BuyMarket(self.Volume - min(0, self.Position))
         elif sell_signal and self.Position >= 0:
-            if self.Position > 0:
-                self.SellMarket()
-            self.SellMarket()
+            self._pending = self.SellMarket(self.Volume + max(0, self.Position))
 
     def CreateClone(self):
         return force_diver_sign_strategy()

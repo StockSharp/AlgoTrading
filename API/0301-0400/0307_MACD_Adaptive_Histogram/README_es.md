@@ -1,35 +1,10 @@
 # Estrategia de Histograma Adaptativo MACD
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-La estrategia **MACD Adaptive Histogram** está construida alrededor del MACD con umbral de histograma adaptativo.
+Opera valores estadísticamente grandes del histograma MACD. Usa velas completas de 15 minutos y `H = MACD(12,26) − Signal(9)`. Calcula `A = SMA(20)` y `D = StandardDeviation(20)` de H. Espera todos los indicadores formados y `D > 0`.
 
-Las pruebas indican un retorno anual promedio de aproximadamente el 184%. Funciona mejor en el mercado cripto.
+Sin posición, compra con `H >= A + 2 × D && H > 0`; vende con `H <= A − 2 × D && H < 0`. Cierra todo el largo con `H <= A` y todo el corto con `H >= A`. Cada orden de señal impone una pausa de `CooldownBars = 16` velas completas para nuevas decisiones.
 
-Las señales se disparan cuando el Histograma confirma cambios de tendencia en datos intradía (15m). Esto hace que el método sea adecuado para traders activos.
+Las posiciones ejecutadas tienen protección nativa local porcentual `StopLossPercent = 2` desde el precio real de entrada. Sigue bid/ask y envía una salida a mercado independiente de la pausa de señales; requiere cotizaciones entre velas. Sin objetivo de beneficios.
 
-Los stops se basan en múltiplos de ATR y factores como FastPeriod, SlowPeriod. Ajuste estos valores predeterminados para equilibrar el riesgo y la recompensa.
-
-## Detalles
-- **Criterios de entrada**: ver implementación para las condiciones del indicador.
-- **Largo/Corto**: Ambos.
-- **Criterios de salida**: señal opuesta o lógica de stop.
-- **Stops**: Sí, usando cálculos basados en indicadores.
-- **Valores predeterminados**:
-  - `FastPeriod = 12`
-  - `SlowPeriod = 26`
-  - `SignalPeriod = 9`
-  - `HistogramAvgPeriod = 20`
-  - `StdDevMultiplier = 2.0m`
-  - `StopLossPercent = 2.0m`
-  - `CandleType = TimeSpan.FromMinutes(15).TimeFrame()`
-- **Filtros**:
-  - Categoría: Seguimiento de tendencia
-  - Dirección: Ambos
-  - Indicadores: Histogram
-  - Stops: Sí
-  - Complejidad: Intermedio
-  - Marco temporal: Intradía (15m)
-  - Estacionalidad: No
-  - Redes neuronales: No
-  - Divergencia: No
-  - Nivel de riesgo: Medio
+`FastPeriod = 12; SlowPeriod = 26; SignalPeriod = 9; HistogramAvgPeriod = 20; StdDevMultiplier = 2; StopLossPercent = 2; CooldownBars = 16`.

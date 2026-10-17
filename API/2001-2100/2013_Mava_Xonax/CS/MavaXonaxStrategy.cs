@@ -1,10 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -14,7 +11,8 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on EMA cross of open and close prices with stop and take levels.
+/// MAVA Xonax: crossing of the OPEN-price EMA above/below the CLOSE-price EMA
+/// on the two most recently completed candles. High/low EMA values set initial risk.
 /// </summary>
 public class MavaXonaxStrategy : Strategy
 {
@@ -22,94 +20,49 @@ public class MavaXonaxStrategy : Strategy
 	private readonly StrategyParam<int> _signalCooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private EMA _emaClose;
-	private EMA _emaOpen;
-	private EMA _emaHigh;
-	private EMA _emaLow;
-
-	private decimal _prevOpen1;
-	private decimal _prevOpen2;
-	private decimal _prevClose1;
-	private decimal _prevClose2;
-	private decimal _prevHigh;
-	private decimal _prevLow;
-	private decimal _longStop;
-	private decimal _longTake;
-	private decimal _shortStop;
-	private decimal _shortTake;
-	private int _history;
+	private EMA _emaOpen, _emaClose, _emaHigh, _emaLow;
+	private decimal _previousOpen, _previousClose;
+	private bool _havePrevious;
+	private decimal _longStop, _longTake, _shortStop, _shortTake;
 	private int _cooldownRemaining;
 
-	/// <summary>
-	/// EMA period for all calculations.
-	/// </summary>
-	public int EmaPeriod
-	{
-		get => _emaPeriod.Value;
-		set => _emaPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Type of candles to process.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	public int SignalCooldownBars
-	{
-		get => _signalCooldownBars.Value;
-		set => _signalCooldownBars.Value = value;
-	}
+	public int EmaPeriod { get => _emaPeriod.Value; set => _emaPeriod.Value = value; }
+	public int SignalCooldownBars { get => _signalCooldownBars.Value; set => _signalCooldownBars.Value = value; }
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public MavaXonaxStrategy()
 	{
-		_emaPeriod = Param(nameof(EmaPeriod), 6)
-			.SetGreaterThanZero()
+		_emaPeriod = Param(nameof(EmaPeriod), 6).SetGreaterThanZero()
 			.SetDisplay("EMA Period", "EMA period", "General");
-
-		_signalCooldownBars = Param(nameof(SignalCooldownBars), 1)
-			.SetGreaterThanZero()
-			.SetDisplay("Signal Cooldown", "Bars to wait after an entry or exit", "General");
-
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 1).SetGreaterThanZero()
+			.SetDisplay("Signal Cooldown", "Bars to wait after entry or exit", "General");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(240).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles", "General");
+			.SetDisplay("Candle Type", "Candle timeframe", "General");
 	}
 
-	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		=> [(Security, CandleType)];
 
-	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_prevOpen1 = _prevOpen2 = 0m;
-		_prevClose1 = _prevClose2 = 0m;
-		_prevHigh = _prevLow = 0m;
-		_longStop = _longTake = 0m;
-		_shortStop = _shortTake = 0m;
-		_history = 0;
+		_emaOpen = _emaClose = _emaHigh = _emaLow = null;
+		_havePrevious = false;
+		_previousOpen = _previousClose = 0m;
+		_longStop = _longTake = _shortStop = _shortTake = 0m;
 		_cooldownRemaining = 0;
-		_emaClose = _emaOpen = _emaHigh = _emaLow = null;
 	}
 
-	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_emaClose = new EMA { Length = EmaPeriod };
 		_emaOpen = new EMA { Length = EmaPeriod };
+		_emaClose = new EMA { Length = EmaPeriod };
 		_emaHigh = new EMA { Length = EmaPeriod };
 		_emaLow = new EMA { Length = EmaPeriod };
+		_havePrevious = false;
 		_cooldownRemaining = 0;
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription.Bind(_emaClose, ProcessCandle).Start();
+		SubscribeCandles(CandleType).Bind(_emaClose, ProcessCandle).Start();
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal closeEma)
@@ -117,89 +70,69 @@ public class MavaXonaxStrategy : Strategy
 		if (candle.State != CandleStates.Finished)
 			return;
 
-		if (_cooldownRemaining > 0)
+		var coolingDown = _cooldownRemaining > 0;
+		if (coolingDown)
 			_cooldownRemaining--;
 
-		var openValue = _emaOpen!.Process(candle.OpenPrice, candle.ServerTime, true);
-		var highValue = _emaHigh!.Process(candle.HighPrice, candle.ServerTime, true);
-		var lowValue = _emaLow!.Process(candle.LowPrice, candle.ServerTime, true);
-
-		if (!openValue.IsFinal || !highValue.IsFinal || !lowValue.IsFinal)
+		var open = _emaOpen.Process(candle.OpenPrice, candle.ServerTime, true);
+		var high = _emaHigh.Process(candle.HighPrice, candle.ServerTime, true);
+		var low = _emaLow.Process(candle.LowPrice, candle.ServerTime, true);
+		if (!open.IsFinal || !high.IsFinal || !low.IsFinal)
 			return;
 
-		var openEma = openValue.ToDecimal();
-		var highEma = highValue.ToDecimal();
-		var lowEma = lowValue.ToDecimal();
+		var openEma = open.ToDecimal();
+		var highEma = high.ToDecimal();
+		var lowEma = low.ToDecimal();
+		var formed = _emaOpen.IsFormed && _emaClose.IsFormed && _emaHigh.IsFormed && _emaLow.IsFormed;
+		var closed = false;
 
-		// Check for stop loss or take profit hits.
-		if (Position > 0)
+		// Preliminary candle-close protection: true intrabar execution still needs native replay.
+		if (Position > 0m && (candle.ClosePrice <= _longStop || candle.ClosePrice >= _longTake))
 		{
-			if (candle.ClosePrice <= _longStop || candle.ClosePrice >= _longTake)
-			{
-				SellMarket();
-				_cooldownRemaining = SignalCooldownBars;
-			}
+			SellMarket(Position); // Exit the entire actual position, never just the default order size.
+			_cooldownRemaining = SignalCooldownBars;
+			closed = true;
 		}
-		else if (Position < 0)
+		else if (Position < 0m && (candle.ClosePrice >= _shortStop || candle.ClosePrice <= _shortTake))
 		{
-			if (candle.ClosePrice >= _shortStop || candle.ClosePrice <= _shortTake)
-			{
-				BuyMarket();
-				_cooldownRemaining = SignalCooldownBars;
-			}
+			BuyMarket(-Position);
+			_cooldownRemaining = SignalCooldownBars;
+			closed = true;
 		}
 
-		if (_history >= 2 && _cooldownRemaining == 0 && IsFormedAndOnlineAndAllowTrading())
+		if (formed && _havePrevious && !closed && !coolingDown && _cooldownRemaining == 0 && Position == 0m && IsFormedAndOnlineAndAllowTrading())
 		{
-			var step = Security.PriceStep ?? 1m;
-			var buySignal = _prevOpen2 > _prevClose2 && _prevOpen1 < _prevClose1;
-			var sellSignal = _prevOpen2 < _prevClose2 && _prevOpen1 > _prevClose1;
+			var crossUp = _previousOpen <= _previousClose && openEma > closeEma;
+			var crossDown = _previousOpen >= _previousClose && openEma < closeEma;
+			var step = Security.PriceStep is > 0m ? Security.PriceStep.Value : 1m;
 
-			if (buySignal && Position == 0)
+			if (crossUp || crossDown)
 			{
-				var takePr = _prevHigh - _prevLow;
-				if (takePr < 600m * step)
-					takePr = 600m * step;
+				var takeDistance = Math.Max(highEma - lowEma, 600m * step);
+				var stopDistance = crossUp
+					? Math.Clamp(2m * (openEma - lowEma), step, 400m * step)
+					: Math.Clamp(2m * (highEma - closeEma), step, 400m * step);
 
-				var stopL = 2m * (_prevOpen1 - _prevLow);
-				if (stopL > 400m * step)
-					stopL = 400m * step;
-
-				var entry = candle.ClosePrice;
-				_longStop = entry - stopL;
-				_longTake = entry + takePr;
-
-				BuyMarket();
-				_cooldownRemaining = SignalCooldownBars;
-			}
-			else if (sellSignal && Position == 0)
-			{
-				var takePr = _prevHigh - _prevLow;
-				if (takePr < 600m * step)
-					takePr = 600m * step;
-
-				var stopL = 2m * (_prevHigh - _prevClose1);
-				if (stopL > 400m * step)
-					stopL = 400m * step;
-
-				var entry = candle.ClosePrice;
-				_shortStop = entry + stopL;
-				_shortTake = entry - takePr;
-
-				SellMarket();
+				// Candle-close anchor is provisional; actual fill-price anchoring remains unverified.
+				if (crossUp)
+				{
+					_longStop = candle.ClosePrice - stopDistance;
+					_longTake = candle.ClosePrice + takeDistance;
+					BuyMarket();
+				}
+				else
+				{
+					_shortStop = candle.ClosePrice + stopDistance;
+					_shortTake = candle.ClosePrice - takeDistance;
+					SellMarket();
+				}
 				_cooldownRemaining = SignalCooldownBars;
 			}
 		}
 
-		// Shift stored EMA values.
-		_prevOpen2 = _prevOpen1;
-		_prevOpen1 = openEma;
-		_prevClose2 = _prevClose1;
-		_prevClose1 = closeEma;
-		_prevHigh = highEma;
-		_prevLow = lowEma;
-
-		if (_history < 2)
-			_history++;
+		// Only completed-bar EMA values become the reference for the next crossing.
+		_previousOpen = openEma;
+		_previousClose = closeEma;
+		_havePrevious = formed;
 	}
 }

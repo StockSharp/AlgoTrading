@@ -23,13 +23,23 @@ public class DecEmaStrategy : Strategy
 	private decimal _prev;
 	private decimal _prevPrev;
 	private int _count;
+	private readonly StrategyParam<bool> _buyOpen, _sellOpen, _buyClose, _sellClose;
+	private Order _pending;
 
 	public int EmaPeriod { get => _emaPeriod.Value; set => _emaPeriod.Value = value; }
 	public int Length { get => _length.Value; set => _length.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
+	public bool BuyPosOpen { get => _buyOpen.Value; set => _buyOpen.Value = value; }
+	public bool SellPosOpen { get => _sellOpen.Value; set => _sellOpen.Value = value; }
+	public bool BuyPosClose { get => _buyClose.Value; set => _buyClose.Value = value; }
+	public bool SellPosClose { get => _sellClose.Value; set => _sellClose.Value = value; }
 	public DecEmaStrategy()
 	{
+		_buyOpen = Param(nameof(BuyPosOpen), true);
+		_sellOpen = Param(nameof(SellPosOpen), true);
+		_buyClose = Param(nameof(BuyPosClose), true);
+		_sellClose = Param(nameof(SellPosClose), true);
 		_emaPeriod = Param(nameof(EmaPeriod), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Base EMA Period", "Length for initial EMA", "Parameters");
@@ -55,6 +65,7 @@ public class DecEmaStrategy : Strategy
 		_prev = default;
 		_prevPrev = default;
 		_count = default;
+		_pending = null;
 	}
 
 	/// <inheritdoc />
@@ -63,6 +74,7 @@ public class DecEmaStrategy : Strategy
 		base.OnStarted2(time);
 
 		_count = 0;
+		_pending = null;
 
 		var decema = new DecemaIndicator
 		{
@@ -98,18 +110,20 @@ public class DecEmaStrategy : Strategy
 			return;
 		}
 
-		// Slope reversal detection
-		if (_prev < _prevPrev && decema > _prev && Position <= 0)
+		var buy = _prev < _prevPrev && decema > _prev;
+		var sell = _prev > _prevPrev && decema < _prev;
+		if (IsFormedAndOnlineAndAllowTrading() && (_pending is null || _pending.State is OrderStates.Done or OrderStates.Failed))
 		{
-			// Was falling, now turning up -> buy
-			if (Position < 0) BuyMarket();
-			BuyMarket();
-		}
-		else if (_prev > _prevPrev && decema < _prev && Position >= 0)
-		{
-			// Was rising, now turning down -> sell
-			if (Position > 0) SellMarket();
-			SellMarket();
+			if (buy)
+			{
+				if (Position < 0m && SellPosClose) _pending = BuyMarket(-Position + (BuyPosOpen ? Volume : 0m));
+				else if (Position == 0m && BuyPosOpen) _pending = BuyMarket(Volume);
+			}
+			else if (sell)
+			{
+				if (Position > 0m && BuyPosClose) _pending = SellMarket(Position + (SellPosOpen ? Volume : 0m));
+				else if (Position == 0m && SellPosOpen) _pending = SellMarket(Volume);
+			}
 		}
 
 		_prevPrev = _prev;

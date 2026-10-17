@@ -6,8 +6,8 @@ clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import BollingerBands, ExponentialMovingAverage
+from StockSharp.Messages import DataType, CandleStates, OrderStates
+from StockSharp.Algo.Indicators import BollingerBands, SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 from indicator_extensions import *
 
@@ -16,6 +16,11 @@ class bands_price_strategy(Strategy):
     def __init__(self):
         super(bands_price_strategy, self).__init__()
 
+        self._buy_open = self.Param("BuyOpen", True)
+        self._sell_open = self.Param("SellOpen", True)
+        self._buy_close = self.Param("BuyClose", True)
+        self._sell_close = self.Param("SellClose", True)
+        self._pending = None
         self._bands_period = self.Param("BandsPeriod", 100) \
             .SetDisplay("Bands Period", "Bollinger Bands period", "Indicator")
         self._bands_deviation = self.Param("BandsDeviation", 2.0) \
@@ -86,7 +91,8 @@ class bands_price_strategy(Strategy):
 
         self._prev_color = -1
         self._prev_prev_color = -1
-        self._smoother = ExponentialMovingAverage()
+        self._pending = None
+        self._smoother = SimpleMovingAverage()
         self._smoother.Length = self.Smooth
 
         bands = BollingerBands()
@@ -140,15 +146,23 @@ class bands_price_strategy(Strategy):
         else:
             color = 2
 
-        if self._prev_prev_color != -1 and self._prev_color != -1:
-            if self._prev_prev_color == 4 and self._prev_color < 4 and self.Position <= 0:
-                if self.Position < 0:
-                    self.BuyMarket()
-                self.BuyMarket()
-            elif self._prev_prev_color == 0 and self._prev_color > 0 and self.Position >= 0:
-                if self.Position > 0:
-                    self.SellMarket()
-                self.SellMarket()
+        if self._prev_color != -1 and self.IsFormedAndOnlineAndAllowTrading() and (self._pending is None or self._pending.State in (OrderStates.Done, OrderStates.Failed)):
+            long_entry = self._prev_color == 4 and color != 4
+            short_entry = self._prev_color == 0 and color > 0
+            if self.Position > 0 and self._buy_close.Value and color <= 2:
+                self._pending = self.SellMarket(self.Position)
+            elif self.Position < 0 and self._sell_close.Value and color >= 2:
+                self._pending = self.BuyMarket(-self.Position)
+            elif long_entry and self.Position <= 0:
+                if self.Position < 0 and self._sell_close.Value:
+                    self._pending = self.BuyMarket(-self.Position + (self.Volume if self._buy_open.Value else 0))
+                elif self.Position == 0 and self._buy_open.Value:
+                    self._pending = self.BuyMarket(self.Volume)
+            elif short_entry and self.Position >= 0:
+                if self.Position > 0 and self._buy_close.Value:
+                    self._pending = self.SellMarket(self.Position + (self.Volume if self._sell_open.Value else 0))
+                elif self.Position == 0 and self._sell_open.Value:
+                    self._pending = self.SellMarket(self.Volume)
 
         self._prev_prev_color = self._prev_color
         self._prev_color = color

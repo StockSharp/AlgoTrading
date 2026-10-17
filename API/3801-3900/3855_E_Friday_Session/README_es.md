@@ -46,3 +46,5 @@ La estrategia E-Friday Session replica el clásico asesor experto MetaTrader que
 - Utiliza datos de cierre de velas para la toma de decisiones, mientras que los precios por tick originales sondeados.
 - Las salidas protectoras se ejecutan mediante órdenes de mercado cuando las velas indican que se alcanzaron los niveles objetivo o de parada dentro del intervalo.
 - Los parámetros de la estrategia se exponen a través del sistema `StrategyParam` de StockSharp, lo que admite la optimización y el enlace de la interfaz de usuario.
+
+**Detalles de ejecución:** la entrada se evalúa en la primera vela intradía *terminada* cuya hora de apertura sea `HourOpen`, no en el primer tick de la hora. Se necesita una vela diaria del jueves cerrada. Solo se permite un intento de entrada por viernes, incluso si se produce una salida protectora. La salida horaria, el stop, el take profit y el trailing se evalúan con los extremos de velas intradía cerradas y se ejecutan mediante órdenes de mercado; el trailing se ajusta solo tras el paso configurado y nunca se considera ejecutado retroactivamente dentro de la misma vela.

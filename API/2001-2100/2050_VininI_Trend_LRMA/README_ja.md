@@ -1,30 +1,10 @@
 # VininI Trend LRMA戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
-VininI Trend LRMA戦略は線形回帰移動平均（LRMA）を使用して市場の方向性を追跡します。この戦略は2つのエントリーモードをサポートします。
-- **Breakdown**: LRMAが固定された上位または下位レベルをクロスしたときに取引します。
-- **Twist**: LRMAが方向を反転したときに取引します。
+確定終値の移動線形回帰の終点 `L` を追跡します。既定値は `CandleType = 4時間`、`Period = 13`、`UpLevel = 10`、`DnLevel = -10`、`Mode = Breakdown`。指標形成と売買許可を待ちます。
 
-## 詳細
+**Breakdown** の閾値は相対オシレーター `O = 100 × (Close − L) / L` の百分率です。`previousO <= UpLevel && O > UpLevel` で買い、`previousO >= DnLevel && O < DnLevel` で売ります。LRMA の絶対価格水準ではありません。
 
-- **エントリー条件**: LRMAがレベルをクロス（Breakdown）または方向転換（Twist）
-- **ロング/ショート**: 両方
-- **エグジット条件**: 反対シグナル
-- **ストップ**: なし
-- **デフォルト値**:
-  - `CandleType` = TimeFrameCandle 4h
-  - `Period` = 13
-  - `UpLevel` = 10
-  - `DnLevel` = -10
-  - `Mode` = Breakdown
-- **フィルター**:
-  - カテゴリ: トレンド
-  - 方向: 両方
-  - インジケーター: LinearRegression
-  - ストップ: なし
-  - 複雑さ: 基本
-  - 時間軸: 任意
-  - 季節性: いいえ
-  - ニューラルネットワーク: いいえ
-  - ダイバージェンス: いいえ
-  - リスクレベル: 中
+**Twist** は回帰終点の傾きが負方向から正方向になれば買い、逆なら売ります。横ばい区間は直前のゼロでない方向を保持します。
+
+買いは `Position <= 0`、売りは `Position >= 0` で許可します。反対の約定済み建玉を成行で閉じてから、新方向に `Volume` を建てます。同方向シグナルで積み増しません。損切りや利確はありません。

@@ -1,34 +1,10 @@
 # RSI Dynamic Overbought Oversold
 [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
- 
-The **RSI Dynamic Overbought Oversold** strategy is built around RSI with dynamic overbought/oversold levels.
 
-Testing indicates an average annual return of about 178%. It performs best in the stocks market.
+Trades RSI extremes against adaptive overbought/oversold bands, with a price trend filter. Use finished 5-minute candles. Compute `R = RSI(14)`, `P = SMA(50)` of close, and `A = SMA(50)` and `D = StandardDeviation(50)` of R. Adaptive bounds: `upper = min(A + 2 × D, 85)`, `lower = max(A − 2 × D, 15)`. All indicators must be formed.
 
-Signals trigger when Overbought confirms trend changes on intraday (5m) data. This makes the method suitable for active traders.
+From flat, buy if `R <= lower && Close >= P × 0.995`; sell if `R >= upper && Close <= P × 1.005`. Close the entire long if `R >= A || Close < P × 0.995`; close the entire short if `R <= A || Close > P × 1.005`. A signal order starts a pause of `CooldownBars = 48` finished candles for further signal decisions.
 
-Stops rely on ATR multiples and factors like RsiPeriod, MovingAvgPeriod. Adjust these defaults to balance risk and reward.
+Filled positions have local native percentage protection: `StopLossPercent = 2` from the actual entry execution price. It monitors the instrument's bid/ask updates and submits a market exit independently of the signal cooldown; a quote feed is required between candles. No take-profit is configured.
 
-## Details
-- **Entry Criteria**: see implementation for indicator conditions.
-- **Long/Short**: Both directions.
-- **Exit Criteria**: opposite signal or stop logic.
-- **Stops**: Yes, using indicator-based calculations.
-- **Default Values**:
-  - `RsiPeriod = 14`
-  - `MovingAvgPeriod = 50`
-  - `StdDevMultiplier = 2.0m`
-  - `StopLossPercent = 2.0m`
-  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
-- **Filters**:
-  - Category: Trend following
-  - Direction: Both
-  - Indicators: Overbought, Oversold
-  - Stops: Yes
-  - Complexity: Intermediate
-  - Timeframe: Intraday (5m)
-  - Seasonality: No
-  - Neural Networks: No
-  - Divergence: No
-  - Risk Level: Medium
-
+`RsiPeriod = 14; MovingAvgPeriod = 50; StdDevMultiplier = 2; StopLossPercent = 2; CooldownBars = 48`.

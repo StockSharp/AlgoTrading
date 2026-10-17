@@ -18,6 +18,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class CoppockHistogramStrategy : Strategy
 {
+	private Order _pendingOrder;
 	private readonly StrategyParam<int> _roc1Period;
 	private readonly StrategyParam<int> _roc2Period;
 	private readonly StrategyParam<int> _smoothPeriod;
@@ -100,7 +101,7 @@ public class CoppockHistogramStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "Parameters");
 
-		_signalCooldownBars = Param(nameof(SignalCooldownBars), 2)
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 0)
 			.SetNotNegative()
 			.SetDisplay("Signal Cooldown", "Closed candles to wait before the next trade", "Parameters");
 	}
@@ -115,6 +116,7 @@ public class CoppockHistogramStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		_pendingOrder = null;
 
 		_sma?.Reset();
 		_prev = null;
@@ -126,6 +128,7 @@ public class CoppockHistogramStrategy : Strategy
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_pendingOrder = null;
 
 		_sma = new SMA { Length = SmoothPeriod };
 
@@ -146,6 +149,8 @@ public class CoppockHistogramStrategy : Strategy
 		StartProtection(null, null);
 	}
 
+	private bool HasPending() => _pendingOrder is not null && _pendingOrder.State is not (OrderStates.Done or OrderStates.Failed);
+
 	private void ProcessCandle(ICandleMessage candle, decimal roc1Value, decimal roc2Value)
 	{
 		if (candle.State != CandleStates.Finished)
@@ -164,14 +169,14 @@ public class CoppockHistogramStrategy : Strategy
 
 			if (_prev is decimal prev && _prev2 is decimal prev2)
 			{
-				if (_cooldownRemaining == 0 && prev < prev2 && coppock > prev && Position <= 0)
+				if (!HasPending() && IsFormedAndOnlineAndAllowTrading() && _cooldownRemaining == 0 && prev < prev2 && coppock > prev && Position <= 0)
 				{
-					BuyMarket(Volume + Math.Abs(Position));
+					_pendingOrder = BuyMarket(Volume + Math.Abs(Position));
 					_cooldownRemaining = SignalCooldownBars;
 				}
-				else if (_cooldownRemaining == 0 && prev > prev2 && coppock < prev && Position >= 0)
+				else if (!HasPending() && IsFormedAndOnlineAndAllowTrading() && _cooldownRemaining == 0 && prev > prev2 && coppock < prev && Position >= 0)
 				{
-					SellMarket(Volume + Math.Abs(Position));
+					_pendingOrder = SellMarket(Volume + Math.Abs(Position));
 					_cooldownRemaining = SignalCooldownBars;
 				}
 			}

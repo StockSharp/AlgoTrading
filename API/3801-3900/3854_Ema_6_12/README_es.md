@@ -35,5 +35,5 @@ Esta estrategia replica el asesor experto MetaTrader que intercambia el cruce en
 ## Notas
 
 - Las señales se procesan únicamente en velas terminadas para evitar el ruido dentro de la barra.
-- Los valores EMA anteriores se restablecen cada vez que la posición vuelve a cero, lo que garantiza una detección limpia para el siguiente cruce.
+- Los valores EMA anteriores se conservan después del cierre para detectar solo cruces nuevos; un cruce que cierra la posición nunca la revierte en la misma vela.
 - Todos los comentarios del código están escritos en inglés y la sangría utiliza tabulaciones de acuerdo con las pautas del proyecto.

@@ -19,9 +19,12 @@ public class ColorZerolagHlrStrategy : Strategy
 	private readonly StrategyParam<int> _hlrPeriod1;
 	private readonly StrategyParam<int> _hlrPeriod2;
 	private readonly StrategyParam<int> _hlrPeriod3;
+	private readonly StrategyParam<int> _hlrPeriod4, _hlrPeriod5;
 	private readonly StrategyParam<decimal> _factor1;
 	private readonly StrategyParam<decimal> _factor2;
 	private readonly StrategyParam<decimal> _factor3;
+	private readonly StrategyParam<decimal> _factor4, _factor5;
+	private readonly StrategyParam<bool> _buyOpen, _sellOpen, _buyClose, _sellClose;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private Highest _high1;
@@ -30,6 +33,9 @@ public class ColorZerolagHlrStrategy : Strategy
 	private Lowest _low2;
 	private Highest _high3;
 	private Lowest _low3;
+	private Highest _high4, _high5;
+	private Lowest _low4, _low5;
+	private Order _pending;
 
 	private decimal _smoothConst;
 	private decimal _prevFast;
@@ -40,9 +46,17 @@ public class ColorZerolagHlrStrategy : Strategy
 	public int HlrPeriod1 { get => _hlrPeriod1.Value; set => _hlrPeriod1.Value = value; }
 	public int HlrPeriod2 { get => _hlrPeriod2.Value; set => _hlrPeriod2.Value = value; }
 	public int HlrPeriod3 { get => _hlrPeriod3.Value; set => _hlrPeriod3.Value = value; }
+	public int HlrPeriod4 { get => _hlrPeriod4.Value; set => _hlrPeriod4.Value = value; }
+	public int HlrPeriod5 { get => _hlrPeriod5.Value; set => _hlrPeriod5.Value = value; }
 	public decimal Factor1 { get => _factor1.Value; set => _factor1.Value = value; }
 	public decimal Factor2 { get => _factor2.Value; set => _factor2.Value = value; }
 	public decimal Factor3 { get => _factor3.Value; set => _factor3.Value = value; }
+	public decimal Factor4 { get => _factor4.Value; set => _factor4.Value = value; }
+	public decimal Factor5 { get => _factor5.Value; set => _factor5.Value = value; }
+	public bool BuyPosOpen { get => _buyOpen.Value; set => _buyOpen.Value = value; }
+	public bool SellPosOpen { get => _sellOpen.Value; set => _sellOpen.Value = value; }
+	public bool BuyPosClose { get => _buyClose.Value; set => _buyClose.Value = value; }
+	public bool SellPosClose { get => _sellClose.Value; set => _sellClose.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public ColorZerolagHlrStrategy()
@@ -69,6 +83,14 @@ public class ColorZerolagHlrStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("HLR Period 3", "Lookback for HLR 3", "Indicator");
 
+		_factor4 = Param(nameof(Factor4), 0.1m);
+		_factor5 = Param(nameof(Factor5), 0.1m);
+		_hlrPeriod4 = Param(nameof(HlrPeriod4), 55).SetGreaterThanZero();
+		_hlrPeriod5 = Param(nameof(HlrPeriod5), 89).SetGreaterThanZero();
+		_buyOpen = Param(nameof(BuyPosOpen), true);
+		_sellOpen = Param(nameof(SellPosOpen), true);
+		_buyClose = Param(nameof(BuyPosClose), true);
+		_sellClose = Param(nameof(SellPosClose), true);
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for calculations", "General");
 	}
@@ -93,6 +115,9 @@ public class ColorZerolagHlrStrategy : Strategy
 		_low2 = default;
 		_high3 = default;
 		_low3 = default;
+		_high4 = _high5 = default;
+		_low4 = _low5 = default;
+		_pending = null;
 	}
 
 	/// <inheritdoc />
@@ -102,6 +127,7 @@ public class ColorZerolagHlrStrategy : Strategy
 
 		_smoothConst = (Smoothing - 1m) / Smoothing;
 		_isFirst = true;
+		_pending = null;
 
 		_high1 = new Highest { Length = HlrPeriod1 };
 		_low1 = new Lowest { Length = HlrPeriod1 };
@@ -109,6 +135,10 @@ public class ColorZerolagHlrStrategy : Strategy
 		_low2 = new Lowest { Length = HlrPeriod2 };
 		_high3 = new Highest { Length = HlrPeriod3 };
 		_low3 = new Lowest { Length = HlrPeriod3 };
+		_high4 = new Highest { Length = HlrPeriod4 };
+		_low4 = new Lowest { Length = HlrPeriod4 };
+		_high5 = new Highest { Length = HlrPeriod5 };
+		_low5 = new Lowest { Length = HlrPeriod5 };
 
 		Indicators.Add(_high1);
 		Indicators.Add(_low1);
@@ -116,6 +146,10 @@ public class ColorZerolagHlrStrategy : Strategy
 		Indicators.Add(_low2);
 		Indicators.Add(_high3);
 		Indicators.Add(_low3);
+		Indicators.Add(_high4);
+		Indicators.Add(_low4);
+		Indicators.Add(_high5);
+		Indicators.Add(_low5);
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
@@ -132,8 +166,12 @@ public class ColorZerolagHlrStrategy : Strategy
 		var l2 = _low2.Process(candle);
 		var h3 = _high3.Process(candle);
 		var l3 = _low3.Process(candle);
+		var h4 = _high4.Process(candle);
+		var l4 = _low4.Process(candle);
+		var h5 = _high5.Process(candle);
+		var l5 = _low5.Process(candle);
 
-		if (!h1.IsFormed || !l1.IsFormed || !h2.IsFormed || !l2.IsFormed || !h3.IsFormed || !l3.IsFormed)
+		if (!h1.IsFormed || !l1.IsFormed || !h2.IsFormed || !l2.IsFormed || !h3.IsFormed || !l3.IsFormed || !h4.IsFormed || !l4.IsFormed || !h5.IsFormed || !l5.IsFormed)
 			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
@@ -145,14 +183,20 @@ public class ColorZerolagHlrStrategy : Strategy
 		var low2 = l2.ToDecimal();
 		var high3 = h3.ToDecimal();
 		var low3 = l3.ToDecimal();
+		var high4 = h4.ToDecimal();
+		var low4 = l4.ToDecimal();
+		var high5 = h5.ToDecimal();
+		var low5 = l5.ToDecimal();
 
 		var mid = (candle.HighPrice + candle.LowPrice) / 2m;
 
 		var hlr1 = high1 - low1 == 0 ? 0m : 100m * (mid - low1) / (high1 - low1);
 		var hlr2 = high2 - low2 == 0 ? 0m : 100m * (mid - low2) / (high2 - low2);
 		var hlr3 = high3 - low3 == 0 ? 0m : 100m * (mid - low3) / (high3 - low3);
+		var hlr4 = high4 == low4 ? 0m : 100m * (mid - low4) / (high4 - low4);
+		var hlr5 = high5 == low5 ? 0m : 100m * (mid - low5) / (high5 - low5);
 
-		var fast = Factor1 * hlr1 + Factor2 * hlr2 + Factor3 * hlr3;
+		var fast = Factor1 * hlr1 + Factor2 * hlr2 + Factor3 * hlr3 + Factor4 * hlr4 + Factor5 * hlr5;
 		var slow = fast / Smoothing + _prevSlow * _smoothConst;
 
 		if (_isFirst)
@@ -164,15 +208,18 @@ public class ColorZerolagHlrStrategy : Strategy
 		}
 
 		// Cross signals
-		if (_prevFast > _prevSlow && fast < slow && Position <= 0)
+		if (_pending is null || _pending.State is OrderStates.Done or OrderStates.Failed)
 		{
-			if (Position < 0) BuyMarket();
-			BuyMarket();
-		}
-		else if (_prevFast < _prevSlow && fast > slow && Position >= 0)
-		{
-			if (Position > 0) SellMarket();
-			SellMarket();
+			if (_prevFast > _prevSlow && fast < slow)
+			{
+				if (Position < 0m && SellPosClose) _pending = BuyMarket(-Position + (BuyPosOpen ? Volume : 0m));
+				else if (Position == 0m && BuyPosOpen) _pending = BuyMarket(Volume);
+			}
+			else if (_prevFast < _prevSlow && fast > slow)
+			{
+				if (Position > 0m && BuyPosClose) _pending = SellMarket(Position + (SellPosOpen ? Volume : 0m));
+				else if (Position == 0m && SellPosOpen) _pending = SellMarket(Volume);
+			}
 		}
 
 		_prevFast = fast;

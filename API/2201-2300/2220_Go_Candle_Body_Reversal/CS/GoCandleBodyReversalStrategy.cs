@@ -1,12 +1,8 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -14,55 +10,51 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Strategy based on smoothed candle body direction.
-/// Smooths (close-open) with SMA, trades on sign changes.
+/// Counter-trend reversal on the sign of the simple moving average of candle bodies.
+/// A positive-to-negative sign change buys; a negative-to-positive change sells.
 /// </summary>
 public class GoCandleBodyReversalStrategy : Strategy
 {
 	private readonly StrategyParam<int> _period;
 	private readonly StrategyParam<DataType> _candleType;
-
-	private ExponentialMovingAverage _bodySma;
-	private int _prevSign;
+	private readonly Queue<decimal> _bodies = new();
+	private decimal _bodySum;
+	private int _prevNonzeroSign;
 
 	public int Period { get => _period.Value; set => _period.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public GoCandleBodyReversalStrategy()
 	{
-		_period = Param(nameof(Period), 30)
+		_period = Param(nameof(Period), 174)
 			.SetGreaterThanZero()
 			.SetDisplay("Period", "SMA period for candle body", "Parameters");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "Parameters");
 	}
 
+	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		=> [(Security, CandleType)];
 
+	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_bodySma = null;
-		_prevSign = 0;
+		_bodies.Clear();
+		_bodySum = 0m;
+		_prevNonzeroSign = 0;
 	}
 
+	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
-
-		_bodySma = new ExponentialMovingAverage { Length = Period };
-		Indicators.Add(_bodySma);
-
-		// Use a warmup EMA bound to close price
-		var warmup = new ExponentialMovingAverage { Length = Period };
-
+		_bodies.Clear();
+		_bodySum = 0m;
+		_prevNonzeroSign = 0;
 		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(warmup, ProcessCandle)
-			.Start();
-
+		subscription.Bind(ProcessCandle).Start();
 		var area = CreateChartArea();
 		if (area != null)
 		{
@@ -71,39 +63,40 @@ public class GoCandleBodyReversalStrategy : Strategy
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal _warmupVal)
+	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
 		var body = candle.ClosePrice - candle.OpenPrice;
-		var maResult = _bodySma.Process(new DecimalIndicatorValue(_bodySma, body, candle.OpenTime) { IsFinal = true });
-
-		if (!maResult.IsFormed)
+		_bodies.Enqueue(body);
+		_bodySum += body;
+		if (_bodies.Count > Period)
+			_bodySum -= _bodies.Dequeue();
+		if (_bodies.Count < Period)
 			return;
 
-		var value = maResult.GetValue<decimal>();
-		var sign = value > 0 ? 1 : value < 0 ? -1 : 0;
+		var sign = Math.Sign(_bodySum); // Dividing by positive Period does not change the SMA sign.
+		if (sign == 0)
+			return; // Retain the last nonzero sign across exact-zero SMA readings.
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		var previous = _prevNonzeroSign;
+		_prevNonzeroSign = sign;
+		if (previous == 0 || previous == sign || !IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		var position = Position;
+		if (previous > 0 && sign < 0 && position <= 0m)
 		{
-			_prevSign = sign;
-			return;
+			if (position < 0m)
+				BuyMarket(-position);
+			BuyMarket(Volume);
 		}
-
-		if (_prevSign == 0)
+		else if (previous < 0 && sign > 0 && position >= 0m)
 		{
-			_prevSign = sign;
-			return;
+			if (position > 0m)
+				SellMarket(position);
+			SellMarket(Volume);
 		}
-
-		// Body direction turns negative (bearish reversal) -> sell
-		if (sign < 0 && _prevSign > 0 && Position >= 0)
-			SellMarket();
-		// Body direction turns positive (bullish reversal) -> buy
-		else if (sign > 0 && _prevSign < 0 && Position <= 0)
-			BuyMarket();
-
-		_prevSign = sign;
 	}
 }

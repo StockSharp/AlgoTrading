@@ -7,7 +7,7 @@ clr.AddReference("StockSharp.Algo.Strategies")
 
 import math
 from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Messages import DataType, CandleStates, OrderStates
 from StockSharp.Algo.Indicators import WeightedMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 from indicator_extensions import *
@@ -30,6 +30,7 @@ class fast2_crossover_strategy(Strategy):
         self._prev_fast = 0.0
         self._prev_slow = 0.0
         self._has_prev_average = False
+        self._pending = None
         self._prev_diff1 = 0.0
         self._prev_diff2 = 0.0
         self._has_prev_diff1 = False
@@ -91,11 +92,11 @@ class fast2_crossover_strategy(Strategy):
         f = float(fast_result)
         s = float(slow_result)
 
-        if self._has_prev_average:
+        if self._has_prev_average and self.IsFormedAndOnlineAndAllowTrading() and (self._pending is None or self._pending.State in (OrderStates.Done, OrderStates.Failed)):
             if self._prev_fast > self._prev_slow and f < s and self.Position <= 0:
-                self.BuyMarket()
+                self._pending = self.BuyMarket(self.Volume + abs(min(self.Position, 0)))
             if self._prev_fast < self._prev_slow and f > s and self.Position >= 0:
-                self.SellMarket()
+                self._pending = self.SellMarket(self.Volume + max(self.Position, 0))
 
         self._prev_fast = f
         self._prev_slow = s

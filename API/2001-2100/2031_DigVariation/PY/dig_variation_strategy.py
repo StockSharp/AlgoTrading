@@ -6,8 +6,8 @@ clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import ExponentialMovingAverage
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, OrderStates
+from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -32,7 +32,7 @@ class dig_variation_strategy(Strategy):
             .SetDisplay("Take Profit", "Take Profit", "General")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Candle", "General")
-        self._cooldown_period = self.Param("CooldownPeriod", 200) \
+        self._cooldown_period = self.Param("CooldownPeriod", 0) \
             .SetDisplay("Cooldown", "Cooldown between trades in candles", "General")
 
         self._prev = 0.0
@@ -114,13 +114,14 @@ class dig_variation_strategy(Strategy):
 
     def OnStarted2(self, time):
         super(dig_variation_strategy, self).OnStarted2(time)
+        self._pending = None
 
         self.StartProtection(
             stopLoss=Unit(self.StopLoss, UnitTypes.Absolute),
             takeProfit=Unit(self.TakeProfit, UnitTypes.Absolute)
         )
 
-        ema = ExponentialMovingAverage()
+        ema = SimpleMovingAverage()
         ema.Length = self.Period
 
         self.SubscribeCandles(self.CandleType) \
@@ -131,7 +132,7 @@ class dig_variation_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
+        if not self.IsFormedAndOnlineAndAllowTrading() or (self._pending is not None and self._pending.State not in (OrderStates.Done, OrderStates.Failed)):
             return
 
         val = float(ema_value)
@@ -151,27 +152,23 @@ class dig_variation_strategy(Strategy):
         was_rising = self._prev > self._prev_prev
         was_falling = self._prev < self._prev_prev
 
-        if was_rising:
-            if self.SellClose and self.Position < 0:
-                self.BuyMarket()
-                self._cooldown = self.CooldownPeriod
-            elif self.BuyOpen and self.Position <= 0 and val > self._prev:
-                self.BuyMarket()
-                self._cooldown = self.CooldownPeriod
-
-        if was_falling:
-            if self.BuyClose and self.Position > 0:
-                self.SellMarket()
-                self._cooldown = self.CooldownPeriod
-            elif self.SellOpen and self.Position >= 0 and val < self._prev:
-                self.SellMarket()
-                self._cooldown = self.CooldownPeriod
+        if was_rising and val > self._prev:
+            if self.Position < 0 and self.SellClose:
+                self._pending = self.BuyMarket(-self.Position + (self.Volume if self.BuyOpen else 0))
+            elif self.Position == 0 and self.BuyOpen:
+                self._pending = self.BuyMarket(self.Volume)
+        elif was_falling and val < self._prev:
+            if self.Position > 0 and self.BuyClose:
+                self._pending = self.SellMarket(self.Position + (self.Volume if self.SellOpen else 0))
+            elif self.Position == 0 and self.SellOpen:
+                self._pending = self.SellMarket(self.Volume)
 
         self._prev_prev = self._prev
         self._prev = val
 
     def OnReseted(self):
         super(dig_variation_strategy, self).OnReseted()
+        self._pending = None
         self._prev = 0.0
         self._prev_prev = 0.0
         self._initialized = False

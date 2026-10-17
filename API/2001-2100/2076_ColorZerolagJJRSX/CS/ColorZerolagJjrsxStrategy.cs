@@ -17,21 +17,31 @@ public class ColorZerolagJjrsxStrategy : Strategy
 {
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _slowPeriod;
-	private readonly StrategyParam<decimal> _stopLossPct;
-	private readonly StrategyParam<decimal> _takeProfitPct;
+	private readonly StrategyParam<decimal> _stopLoss;
+	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal? _prevFast;
 	private decimal? _prevSlow;
+	private readonly StrategyParam<bool> _buyOpen, _sellOpen, _buyClose, _sellClose;
+	private Order _pending;
 
 	public int FastPeriod { get => _fastPeriod.Value; set => _fastPeriod.Value = value; }
 	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
-	public decimal StopLossPct { get => _stopLossPct.Value; set => _stopLossPct.Value = value; }
-	public decimal TakeProfitPct { get => _takeProfitPct.Value; set => _takeProfitPct.Value = value; }
+	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
+	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
+	public bool BuyOpen { get => _buyOpen.Value; set => _buyOpen.Value = value; }
+	public bool SellOpen { get => _sellOpen.Value; set => _sellOpen.Value = value; }
+	public bool BuyClose { get => _buyClose.Value; set => _buyClose.Value = value; }
+	public bool SellClose { get => _sellClose.Value; set => _sellClose.Value = value; }
 	public ColorZerolagJjrsxStrategy()
 	{
+		_buyOpen = Param(nameof(BuyOpen), true);
+		_sellOpen = Param(nameof(SellOpen), true);
+		_buyClose = Param(nameof(BuyClose), true);
+		_sellClose = Param(nameof(SellClose), true);
 		_fastPeriod = Param(nameof(FastPeriod), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast Period", "Fast RSI period", "Indicator");
@@ -40,10 +50,10 @@ public class ColorZerolagJjrsxStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Period", "Slow RSI period", "Indicator");
 
-		_stopLossPct = Param(nameof(StopLossPct), 2m)
+		_stopLoss = Param(nameof(StopLoss), 2m)
 			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
 
-		_takeProfitPct = Param(nameof(TakeProfitPct), 3m)
+		_takeProfit = Param(nameof(TakeProfit), 3m)
 			.SetDisplay("Take Profit %", "Take profit percentage", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -62,19 +72,21 @@ public class ColorZerolagJjrsxStrategy : Strategy
 		base.OnReseted();
 		_prevFast = null;
 		_prevSlow = null;
+		_pending = null;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_pending = null;
 
 		var fastRsi = new RelativeStrengthIndex { Length = FastPeriod };
 		var slowRsi = new RelativeStrengthIndex { Length = SlowPeriod };
 
 		StartProtection(
-			takeProfit: new Unit(TakeProfitPct, UnitTypes.Percent),
-			stopLoss: new Unit(StopLossPct, UnitTypes.Percent),
+			takeProfit: new Unit(TakeProfit, UnitTypes.Absolute),
+			stopLoss: new Unit(StopLoss, UnitTypes.Absolute),
 			useMarketOrders: true);
 
 		var subscription = SubscribeCandles(CandleType);
@@ -107,15 +119,18 @@ public class ColorZerolagJjrsxStrategy : Strategy
 		var crossDown = _prevFast > _prevSlow && fast < slow;
 		var crossUp = _prevFast < _prevSlow && fast > slow;
 
-		if (crossDown && Position <= 0)
+		if (IsFormedAndOnlineAndAllowTrading() && (_pending is null || _pending.State is OrderStates.Done or OrderStates.Failed))
 		{
-			if (Position < 0) BuyMarket();
-			BuyMarket();
-		}
-		else if (crossUp && Position >= 0)
-		{
-			if (Position > 0) SellMarket();
-			SellMarket();
+			if (crossDown)
+			{
+				if (Position < 0m && SellClose) _pending = BuyMarket(-Position + (BuyOpen ? Volume : 0m));
+				else if (Position == 0m && BuyOpen) _pending = BuyMarket(Volume);
+			}
+			else if (crossUp)
+			{
+				if (Position > 0m && BuyClose) _pending = SellMarket(Position + (SellOpen ? Volume : 0m));
+				else if (Position == 0m && SellOpen) _pending = SellMarket(Volume);
+			}
 		}
 
 		_prevFast = fast;

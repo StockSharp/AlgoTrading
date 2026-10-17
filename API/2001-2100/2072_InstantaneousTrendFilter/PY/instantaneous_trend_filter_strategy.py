@@ -6,7 +6,7 @@ clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Messages import DataType, CandleStates, OrderStates
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -28,6 +28,7 @@ class instantaneous_trend_filter_strategy(Strategy):
         self._itrend_prev2 = 0.0
         self._trigger_prev = 0.0
         self._bars = 0
+        self._pending = None
 
     @property
     def candle_type(self):
@@ -84,14 +85,11 @@ class instantaneous_trend_filter_strategy(Strategy):
         cross_down = self._trigger_prev > self._itrend_prev1 and trigger < itrend
         cross_up = self._trigger_prev < self._itrend_prev1 and trigger > itrend
 
-        if cross_down and self.Position <= 0:
-            if self.Position < 0:
-                self.BuyMarket()
-            self.BuyMarket()
-        elif cross_up and self.Position >= 0:
-            if self.Position > 0:
-                self.SellMarket()
-            self.SellMarket()
+        if self._bars >= 4 and self.IsFormedAndOnlineAndAllowTrading() and (self._pending is None or self._pending.State in (OrderStates.Done, OrderStates.Failed)):
+            if cross_down and self.Position <= 0:
+                self._pending = self.BuyMarket(self.Volume - min(0, self.Position))
+            elif cross_up and self.Position >= 0:
+                self._pending = self.SellMarket(self.Volume + max(0, self.Position))
 
         self._itrend_prev2 = self._itrend_prev1
         self._itrend_prev1 = itrend

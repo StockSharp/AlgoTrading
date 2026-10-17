@@ -6,7 +6,7 @@ clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import Math, TimeSpan
-from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Messages import DataType, CandleStates, OrderStates
 from StockSharp.Algo.Indicators import Momentum, KaufmanAdaptiveMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 from indicator_extensions import *
@@ -26,7 +26,7 @@ class color_momentum_ama_strategy(Strategy):
             .SetDisplay("Slow period", "Slow period of AMA", "Indicator")
         self._signal_bar = self.Param("SignalBar", 2) \
             .SetDisplay("Signal bar", "Bar index used for signals", "Strategy")
-        self._signal_cooldown_bars = self.Param("SignalCooldownBars", 6) \
+        self._signal_cooldown_bars = self.Param("SignalCooldownBars", 0) \
             .SetDisplay("Signal cooldown", "Bars to wait between reversals", "Strategy")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
             .SetDisplay("Candle type", "Type of candles", "General")
@@ -35,6 +35,7 @@ class color_momentum_ama_strategy(Strategy):
         self._ama = None
         self._buffer = None
         self._cooldown_remaining = 0
+        self._pending_order = None
 
     @property
     def MomentumPeriod(self):
@@ -94,6 +95,7 @@ class color_momentum_ama_strategy(Strategy):
 
     def OnStarted2(self, time):
         super(color_momentum_ama_strategy, self).OnStarted2(time)
+        self._pending_order = None
 
         self._momentum = Momentum()
         self._momentum.Length = self.MomentumPeriod
@@ -107,6 +109,9 @@ class color_momentum_ama_strategy(Strategy):
         self.SubscribeCandles(self.CandleType) \
             .Bind(self._momentum, self.ProcessCandle) \
             .Start()
+
+    def _has_pending(self):
+        return self._pending_order is not None and self._pending_order.State not in (OrderStates.Done, OrderStates.Failed)
 
     def ProcessCandle(self, candle, momentum_value):
         if candle.State != CandleStates.Finished:
@@ -136,17 +141,18 @@ class color_momentum_ama_strategy(Strategy):
         rising = v2 < v1 and v1 < v0
         falling = v2 > v1 and v1 > v0
 
-        if self._cooldown_remaining == 0 and rising and self.Position <= 0:
+        if self.IsFormedAndOnlineAndAllowTrading() and self._cooldown_remaining == 0 and not self._has_pending() and rising and self.Position <= 0:
             volume = self.Volume + abs(self.Position)
-            self.BuyMarket(volume)
+            self._pending_order = self.BuyMarket(volume)
             self._cooldown_remaining = self.SignalCooldownBars
-        elif self._cooldown_remaining == 0 and falling and self.Position >= 0:
+        elif self.IsFormedAndOnlineAndAllowTrading() and self._cooldown_remaining == 0 and not self._has_pending() and falling and self.Position >= 0:
             volume = self.Volume + abs(self.Position)
-            self.SellMarket(volume)
+            self._pending_order = self.SellMarket(volume)
             self._cooldown_remaining = self.SignalCooldownBars
 
     def OnReseted(self):
         super(color_momentum_ama_strategy, self).OnReseted()
+        self._pending_order = None
         self._buffer = [None] * (self.SignalBar + 3)
         self._cooldown_remaining = 0
 

@@ -1,32 +1,10 @@
 # Saisonalitätsbereinigter-Momentum-Strategie
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-Die **Seasonality Adjusted Momentum**-Strategie basiert auf einem Momentum-Indikator, der um die Saisonalitätsstärke bereinigt wird.
+Verbindet Momentum mit historischen Monatsrenditen. Auf abgeschlossenen 5-Minuten-Kerzen werden `M = Momentum(14)` und `A = SMA(14)` von M berechnet. Ohne Position: Kauf bei `S >= SeasonalityThreshold` und `M > A`, Verkauf bei `S <= -SeasonalityThreshold` und `M < A`. Standard `SeasonalityThreshold = 0.5`, in Prozentpunkten.
 
-Tests zeigen eine durchschnittliche Jahresrendite von etwa 172%. Sie funktioniert am besten am Devisenmarkt.
+Long schließen, wenn die saisonale Bedingung entfällt oder `M < A`; Short schließen, wenn dessen Bedingung entfällt oder `M > A`. Jeder Signalauftrag startet `CooldownBars = 120` abgeschlossene Kerzen Pause für weitere Signalentscheidungen. Ausgeführte Positionen erhalten getrennten lokalen nativen Schutz `StopLossPercent = 2` ab dem tatsächlichen Ausführungskurs, mit Bid/Ask-Überwachung und Marktausstieg unabhängig vom Cooldown.
 
-Signale werden ausgelöst, wenn die Saisonalität Momentum-Verschiebungen bei Tagesdaten bestätigt. Dies macht die Methode für aktive Trader geeignet.
+Erfordert `SeasonalityHistoryFile`: eine UTF-8-CSV mit monatlichen Eröffnungs- und Schlusskursen und Kopfzeile `SecurityId,Month,Open,Close`. `Month` hat das Format `yyyy-MM`, Zahlen verwenden den Dezimalpunkt, Kurse müssen positiv und Monate je Handelsinstrument eindeutig sein. Andere Wertpapier-IDs werden ignoriert. Fehlende Daten, fehlerhafte Zeilen oder keine passenden Beobachtungen verhindern den Start.
 
-Stops basieren auf ATR-Vielfachen und Faktoren wie MomentumPeriod, SeasonalityThreshold. Passen Sie diese Standardwerte an, um Risiko und Ertrag auszubalancieren.
-
-## Details
-- **Einstiegskriterien**: Implementierung für Indikatorbedingungen prüfen.
-- **Long/Short**: Beide.
-- **Ausstiegskriterien**: Gegensignal oder Stop-Logik.
-- **Stops**: Ja, mit indikatorbasierten Berechnungen.
-- **Standardwerte**:
-  - `MomentumPeriod = 14`
-  - `SeasonalityThreshold = 0.5m`
-  - `StopLossPercent = 2.0m`
-  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
-- **Filter**:
-  - Kategorie: Trendfolge
-  - Richtung: Beide
-  - Indikatoren: Seasonality, Adjusted
-  - Stops: Ja
-  - Komplexität: Mittel
-  - Zeitrahmen: Täglich
-  - Saisonalität: Ja
-  - Neuronale Netze: Nein
-  - Divergenz: Nein
-  - Risikolevel: Mittel
+Auf jeder Signalkerze ist `S` der Mittelwert von `100 × (Close / Open − 1)` für denselben Kalendermonat früherer Jahre innerhalb von `SeasonalityLookbackYears = 10`. Erforderlich sind mindestens `MinimumSeasonalSamples = 2` Beobachtungen. Aktuelle und zukünftige Monate werden auch dann ausgeschlossen, wenn sie in der Datei stehen. Ohne ausreichende Historie keine neuen Positionen. Tatsächliche Monatskurse des Instruments sind bereitzustellen; es gibt keine feste Monatstabelle.

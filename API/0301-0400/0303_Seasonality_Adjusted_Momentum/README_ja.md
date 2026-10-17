@@ -1,32 +1,10 @@
 # 季節性調整モメンタム戦略
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
-**Seasonality Adjusted Momentum**戦略は、季節性の強度で調整されたモメンタムインジケーターを中心に構築されています。
+モメンタムと過去の月次リターンを組み合わせます。確定5分足で `M = Momentum(14)` と M の `A = SMA(14)` を計算します。建玉なしで `S >= SeasonalityThreshold` かつ `M > A` なら買い、`S <= -SeasonalityThreshold` かつ `M < A` なら売りです。既定の `SeasonalityThreshold = 0.5` の単位はパーセントポイントです。
 
-テストでは平均年間リターンが約172%であることが示されています。外国為替市場で最もよいパフォーマンスを発揮します。
+ロングは季節条件を満たさなくなるか `M < A`、ショートは条件不成立か `M > A` で決済します。各シグナル注文後、`CooldownBars = 120` 本の確定足の間、次のシグナル判断を待ちます。約定済み建玉には実際の約定価格から `StopLossPercent = 2` のローカル標準保護が別途働き、bid/ask 監視で成行決済します。保護は待機期間に依存しません。
 
-季節性が日足データでモメンタムの変化を確認したときにシグナルが発動します。これにより、この手法はアクティブトレーダーに適しています。
+`SeasonalityHistoryFile` が必須です。月次始値・終値を含む UTF-8 CSV で、ヘッダーは `SecurityId,Month,Open,Close`、`Month` は `yyyy-MM`、小数点はピリオドです。価格は正、同一銘柄の月は重複不可です。他の証券 ID は無視します。未指定、不正な行、対象銘柄のデータがない場合は起動できません。
 
-ストップはATRの倍数とMomentumPeriod、SeasonalityThresholdなどの要素に基づいています。デフォルト値を調整してリスクとリワードのバランスを取ってください。
-
-## 詳細
-- **エントリー条件**: インジケーター条件の実装を参照。
-- **ロング/ショート**: 両方。
-- **エグジット条件**: 反対シグナルまたはストップロジック。
-- **ストップ**: はい、インジケーターに基づく計算を使用。
-- **デフォルト値**:
-  - `MomentumPeriod = 14`
-  - `SeasonalityThreshold = 0.5m`
-  - `StopLossPercent = 2.0m`
-  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
-- **フィルター**:
-  - カテゴリ: トレンドフォロー
-  - 方向: 両方
-  - インジケーター: Seasonality, Adjusted
-  - ストップ: はい
-  - 複雑さ: 中級
-  - 時間軸: 日足
-  - 季節性: はい
-  - ニューラルネットワーク: いいえ
-  - ダイバージェンス: いいえ
-  - リスクレベル: 中
+各シグナル足の `S` は、過去 `SeasonalityLookbackYears = 10` 年の同じ暦月における `100 × (Close / Open − 1)` の平均です。`MinimumSeasonalSamples = 2` 件以上が必要です。ファイルにあっても当月や将来月は使いません。履歴不足時は新規建玉を作りません。実際の銘柄の月次価格を入力し、固定の月別スコア表は使用しません。

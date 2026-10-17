@@ -21,6 +21,9 @@ public class MovingUpStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<DataType> _candleType;
 
+	private readonly StrategyParam<bool> _useTp, _useSl, _useTs;
+	private readonly StrategyParam<decimal> _trailingStop;
+	private Order _pending;
 	private bool _isInitialized;
 	private bool _wasFastBelowSlow;
 
@@ -30,6 +33,10 @@ public class MovingUpStrategy : Strategy
 	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
+	public bool UseTakeProfit { get => _useTp.Value; set => _useTp.Value = value; }
+	public bool UseStopLoss { get => _useSl.Value; set => _useSl.Value = value; }
+	public bool UseTrailingStop { get => _useTs.Value; set => _useTs.Value = value; }
+	public decimal TrailingStop { get => _trailingStop.Value; set => _trailingStop.Value = value; }
 	public MovingUpStrategy()
 	{
 		_fastLength = Param(nameof(FastLength), 13)
@@ -48,6 +55,10 @@ public class MovingUpStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("TP", "Take profit distance", "Risk");
 
+		_useTp = Param(nameof(UseTakeProfit), true);
+		_useSl = Param(nameof(UseStopLoss), true);
+		_useTs = Param(nameof(UseTrailingStop), false);
+		_trailingStop = Param(nameof(TrailingStop), 200m).SetNotNegative();
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle", "Candle type", "General");
 	}
@@ -64,15 +75,17 @@ public class MovingUpStrategy : Strategy
 		base.OnReseted();
 		_isInitialized = default;
 		_wasFastBelowSlow = default;
+		_pending = null;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_pending = null;
 
-		var fastMa = new ExponentialMovingAverage { Length = FastLength };
-		var slowMa = new ExponentialMovingAverage { Length = SlowLength };
+		var fastMa = new SimpleMovingAverage { Length = FastLength };
+		var slowMa = new SimpleMovingAverage { Length = SlowLength };
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
@@ -80,8 +93,8 @@ public class MovingUpStrategy : Strategy
 			.Start();
 
 		StartProtection(
-			new Unit(StopLoss, UnitTypes.Absolute),
-			new Unit(TakeProfit, UnitTypes.Absolute));
+			takeProfit: new Unit(UseTakeProfit ? TakeProfit : 0m, UnitTypes.Absolute),
+			stopLoss: new Unit(UseStopLoss ? StopLoss : 0m, UnitTypes.Absolute), useMarketOrders: true);
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow)
@@ -101,19 +114,15 @@ public class MovingUpStrategy : Strategy
 
 		var isFastBelowSlow = fast < slow;
 
-		if (_wasFastBelowSlow != isFastBelowSlow)
+		if (_wasFastBelowSlow != isFastBelowSlow && (_pending is null || _pending.State is OrderStates.Done or OrderStates.Failed))
 		{
 			if (!isFastBelowSlow && Position <= 0)
 			{
-				if (Position < 0)
-					BuyMarket();
-				BuyMarket();
+				_pending = BuyMarket(Volume + Math.Abs(Math.Min(0m, Position)));
 			}
 			else if (isFastBelowSlow && Position >= 0)
 			{
-				if (Position > 0)
-					SellMarket();
-				SellMarket();
+				_pending = SellMarket(Volume + Math.Max(0m, Position));
 			}
 
 			_wasFastBelowSlow = isFastBelowSlow;

@@ -1,162 +1,125 @@
+namespace StockSharp.Samples.Strategies;
+
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using Ecng.Common;
+using Ecng.ComponentModel;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-namespace StockSharp.Samples.Strategies;
-
-/// <summary>
-/// Implementation of January Effect trading strategy.
-/// Generalizes the seasonal effect: buys at the start of each month if above MA,
-/// exits mid-month. Goes short mid-month if below MA, covers at end of month.
-/// </summary>
+/// <summary>Long-only January effect: enter on or after December 26 and exit on or after January 15.</summary>
 public class JanuaryEffectStrategy : Strategy
 {
-	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<decimal> _stopLoss;
+	private int _entryYear = -1;
+	private Order _pendingOrder;
 
-	private SimpleMovingAverage _ma;
+	/// <summary>Signal candle interval.</summary>
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	private int _cooldown;
-	private int _prevDayOfMonth;
+	/// <summary>Loss limit as a percentage of the actual entry price.</summary>
+	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
 
-	/// <summary>
-	/// Moving average period.
-	/// </summary>
-	public int MaPeriod
-	{
-		get => _maPeriod.Value;
-		set => _maPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Candle type for strategy.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Cooldown bars between trades.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="JanuaryEffectStrategy"/>.
-	/// </summary>
+	/// <summary>Initializes the seasonal strategy.</summary>
 	public JanuaryEffectStrategy()
 	{
-		_maPeriod = Param(nameof(MaPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("MA Period", "Moving average period for trend confirmation", "Strategy");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles for strategy", "Strategy");
-
-		_cooldownBars = Param(nameof(CooldownBars), 50)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "General")
-			.SetRange(5, 500);
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+			.SetDisplay("Candle Type", "Finished candles used for calendar decisions", "Data");
+		_stopLoss = Param(nameof(StopLoss), 2m).SetGreaterThanZero()
+			.SetDisplay("Stop Loss %", "Percentage loss limit from the executed entry", "Risk");
+		OrderRegistering += order => _pendingOrder = order;
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType), (Security, DataType.Level1)];
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_ma = default;
-		_cooldown = 0;
-		_prevDayOfMonth = 0;
+		_entryYear = -1;
+		_pendingOrder = null;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
+		if (Security?.Board is null)
+			throw new InvalidOperationException("The instrument's trading board and calendar are required.");
 		base.OnStarted2(time);
-
-		_ma = new SimpleMovingAverage { Length = MaPeriod };
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(_ma, ProcessCandle)
-			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
+		_entryYear = -1;
+		_pendingOrder = null;
+		StartProtection(new Unit(), new Unit(StopLoss, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
 		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, _ma);
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Start();
+		}
+		var candles = SubscribeCandles(CandleType);
+		candles.Bind(ProcessCandle).Start();
+		var area = CreateChartArea();
+		if (area is not null)
+		{
+			DrawCandles(area, candles);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal maValue)
+	private (DateTime entry, DateTime exit) GetSeason(int year)
 	{
-		if (candle.State != CandleStates.Finished)
+		var calendar = Security.Board.WorkingTime;
+		var entry = new DateTime(year, 12, 26);
+		while (!calendar.IsWorkingDate(entry))
+			entry = entry.AddDays(1);
+		var exit = new DateTime(year + 1, 1, 15);
+		while (!calendar.IsWorkingDate(exit))
+			exit = exit.AddDays(1);
+		return (entry, exit);
+	}
+
+	private TimeSpan SessionEnd(DateTime date)
+	{
+		var calendar = Security.Board.WorkingTime;
+		if (!calendar.IsEnabled)
+			return TimeSpan.FromDays(1);
+		var period = calendar.GetPeriod(date);
+		IEnumerable<Range<TimeSpan>> sessions = period?.Times;
+		if (calendar.SpecialDays.TryGetValue(date, out var special))
+			sessions = special;
+		else if (period is not null && period.SpecialDays.TryGetValue(date.DayOfWeek, out var weekday))
+			sessions = weekday;
+		return sessions is not null && sessions.Any() ? sessions.Max(r => r.Max) : TimeSpan.FromDays(1);
+	}
+
+	private void ProcessCandle(ICandleMessage candle)
+	{
+		if (candle.State != CandleStates.Finished || !IsFormedAndOnlineAndAllowTrading()
+			|| _pendingOrder is not null && _pendingOrder.State is not (OrderStates.Done or OrderStates.Failed))
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
+		var local = TimeZoneInfo.ConvertTimeFromUtc(candle.OpenTime, Security.Board.TimeZone);
+		var date = local.Date;
+		var year = local.Month == 12 ? local.Year : local.Year - 1;
+		var (entry, exit) = GetSeason(year);
 
-		var close = candle.ClosePrice;
-		var dayOfMonth = candle.OpenTime.Day;
-		var isNewDay = dayOfMonth != _prevDayOfMonth;
-
-		if (_cooldown > 0)
+		if (Position > 0m)
 		{
-			_cooldown--;
-			_prevDayOfMonth = dayOfMonth;
-			return;
+			var barEnd = TimeZoneInfo.ConvertTimeFromUtc(candle.OpenTime + (TimeSpan)CandleType.Arg, Security.Board.TimeZone);
+			if (date > exit || date == exit && barEnd >= exit + SessionEnd(exit))
+				SellMarket(Position);
 		}
-
-		// Start of month: day 1-5 buy zone
-		var isStartOfMonth = dayOfMonth >= 1 && dayOfMonth <= 5;
-		// Mid-month exit zone: day 14-17
-		var isMidMonth = dayOfMonth >= 14 && dayOfMonth <= 17;
-		// End-of-month short exit zone: day 26+
-		var isEndOfMonth = dayOfMonth >= 26;
-
-		// Buy at start of month if above MA
-		if (isStartOfMonth && isNewDay && Position == 0 && close > maValue)
+		else if (Position == 0m && local.Month == 12 && date >= entry && _entryYear != year
+			&& Security.Board.WorkingTime.IsWorkingDate(date))
 		{
-			BuyMarket();
-			_cooldown = CooldownBars;
+			_entryYear = year;
+			BuyMarket(Volume);
 		}
-		// Exit long mid-month
-		else if (isMidMonth && isNewDay && Position > 0)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		// Short mid-month if below MA
-		else if (isMidMonth && isNewDay && Position == 0 && close < maValue)
-		{
-			SellMarket();
-			_cooldown = CooldownBars;
-		}
-		// Cover short at end of month
-		else if (isEndOfMonth && isNewDay && Position < 0)
-		{
-			BuyMarket();
-			_cooldown = CooldownBars;
-		}
-
-		_prevDayOfMonth = dayOfMonth;
 	}
 }

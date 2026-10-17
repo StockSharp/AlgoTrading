@@ -1,13 +1,18 @@
 import clr
 
 clr.AddReference("StockSharp.Messages")
+clr.AddReference("StockSharp.BusinessEntities")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
+from System import DateTime, InvalidOperationException
+from System.Globalization import CultureInfo
 from System import TimeSpan, Math, Decimal
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import Momentum, SimpleMovingAverage
+from StockSharp.BusinessEntities import Subscription
+from StockSharp.Messages import Level1Fields
 from StockSharp.Algo.Strategies import Strategy
 from indicator_extensions import *
 
@@ -19,6 +24,12 @@ class seasonality_adjusted_momentum_strategy(Strategy):
 
     def __init__(self):
         super(seasonality_adjusted_momentum_strategy, self).__init__()
+        self._seasonality_history_file = self.Param[str]("SeasonalityHistoryFile", None).SetRequired()
+        self._minimum_seasonal_samples = self.Param("MinimumSeasonalSamples", 2).SetGreaterThanZero()
+        self._seasonality_lookback_years = self.Param("SeasonalityLookbackYears", 10).SetRange(1, 100)
+        self._seasonal_history = []
+        self._seasonal_month = None
+        self._seasonal_value = None
 
         self._momentum_period = self.Param("MomentumPeriod", 14) \
             .SetDisplay("Momentum Period", "Period for the momentum indicator", "Indicators")
@@ -35,40 +46,28 @@ class seasonality_adjusted_momentum_strategy(Strategy):
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles for the strategy", "General")
 
-        self._seasonal_strength_by_month = {}
+        self._seasonal_history = []
         self._momentum = None
         self._momentum_average = None
         self._cooldown = 0
 
-        self._initialize_seasonality_data()
 
     @property
     def candle_type(self):
         return self._candle_type.Value
 
-    def _initialize_seasonality_data(self):
-        self._seasonal_strength_by_month[1] = 0.8
-        self._seasonal_strength_by_month[2] = 0.2
-        self._seasonal_strength_by_month[3] = 0.5
-        self._seasonal_strength_by_month[4] = 0.7
-        self._seasonal_strength_by_month[5] = 0.3
-        self._seasonal_strength_by_month[6] = -0.2
-        self._seasonal_strength_by_month[7] = -0.3
-        self._seasonal_strength_by_month[8] = -0.4
-        self._seasonal_strength_by_month[9] = -0.7
-        self._seasonal_strength_by_month[10] = 0.4
-        self._seasonal_strength_by_month[11] = 0.6
-        self._seasonal_strength_by_month[12] = 0.9
-
     def OnReseted(self):
         super(seasonality_adjusted_momentum_strategy, self).OnReseted()
+        self._seasonal_history = []
+        self._seasonal_month = None
+        self._seasonal_value = None
         self._momentum = None
         self._momentum_average = None
         self._cooldown = 0
-        self._seasonal_strength_by_month.clear()
-        self._initialize_seasonality_data()
+        self._seasonal_history.clear()
 
     def OnStarted2(self, time):
+        self._load_seasonality_history()
         super(seasonality_adjusted_momentum_strategy, self).OnStarted2(time)
 
         mp = int(self._momentum_period.Value)
@@ -88,7 +87,11 @@ class seasonality_adjusted_momentum_strategy(Strategy):
             self.DrawIndicator(area, self._momentum_average)
             self.DrawOwnTrades(area)
 
-        self.StartProtection(Unit(0, UnitTypes.Absolute), Unit(self._stop_loss_percent.Value, UnitTypes.Percent), False)
+        self.StartProtection(Unit(0, UnitTypes.Absolute), Unit(self._stop_loss_percent.Value, UnitTypes.Percent), useMarketOrders=True, isLocalStop=True)
+        for field in (Level1Fields.BestBidPrice, Level1Fields.BestAskPrice):
+            quotes = Subscription(DataType.Level1, self.Security)
+            quotes.MarketData.BuildField = field
+            self.SubscribeLevel1(quotes).Start()
 
     def _process_candle(self, candle, momentum_value):
         if candle.State != CandleStates.Finished:
@@ -108,10 +111,10 @@ class seasonality_adjusted_momentum_strategy(Strategy):
             self._cooldown -= 1
             return
 
-        seasonal_strength = self._seasonal_strength_by_month.get(candle.OpenTime.Month, 0.0)
+        seasonal_strength = self._get_seasonal_strength(candle.OpenTime)
         st = float(self._seasonality_threshold.Value)
-        allow_long = seasonal_strength >= st
-        allow_short = seasonal_strength <= -st
+        allow_long = seasonal_strength is not None and seasonal_strength >= st
+        allow_short = seasonal_strength is not None and seasonal_strength <= -st
         bullish_momentum = mv > momentum_avg_val
         bearish_momentum = mv < momentum_avg_val
         cd = int(self._cooldown_bars.Value)
@@ -135,5 +138,51 @@ class seasonality_adjusted_momentum_strategy(Strategy):
             self.SellMarket()
             self._cooldown = cd
 
+    def _load_seasonality_history(self):
+        if self.Security is None:
+            raise InvalidOperationException("Security is required for seasonal history")
+        path = self._seasonality_history_file.Value
+        if not path or not str(path).strip():
+            raise InvalidOperationException("SeasonalityHistoryFile is required")
+        self._seasonal_history = []
+        self._seasonal_month = None
+        self._seasonal_value = None
+        months = set()
+        with open(str(path), "r", encoding="utf-8-sig") as stream:
+            if stream.readline().strip() != "SecurityId,Month,Open,Close":
+                raise InvalidOperationException("Seasonality history must begin with SecurityId,Month,Open,Close")
+            for line in stream:
+                if not line.strip():
+                    continue
+                fields = line.strip().split(",")
+                if len(fields) != 4:
+                    raise InvalidOperationException("Every seasonal observation must contain four CSV fields")
+                if fields[0].strip().lower() != self.Security.Id.lower():
+                    continue
+                month = DateTime.ParseExact(fields[1].strip(), "yyyy-MM", CultureInfo.InvariantCulture)
+                opening = Decimal.Parse(fields[2], CultureInfo.InvariantCulture)
+                closing = Decimal.Parse(fields[3], CultureInfo.InvariantCulture)
+                if opening <= 0 or closing <= 0 or month in months:
+                    raise InvalidOperationException("Seasonality prices must be positive and months must be unique")
+                months.add(month)
+                self._seasonal_history.append((month, Decimal.Multiply(Decimal(100), Decimal.Subtract(Decimal.Divide(closing, opening), Decimal.One))))
+        if not self._seasonal_history:
+            raise InvalidOperationException("Seasonality history contains no observations for the execution instrument")
+
+    def _get_seasonal_strength(self, time):
+        month = DateTime(time.Year, time.Month, 1)
+        if self._seasonal_month != month:
+            earliest = month.AddYears(-int(self._seasonality_lookback_years.Value))
+            values = [value for observed, value in self._seasonal_history
+                      if observed.Month == month.Month and earliest <= observed < month]
+            minimum = int(self._minimum_seasonal_samples.Value)
+            self._seasonal_value = None
+            if len(values) >= minimum:
+                total = Decimal.Zero
+                for value in values:
+                    total = Decimal.Add(total, value)
+                self._seasonal_value = float(Decimal.Divide(total, Decimal(len(values))))
+            self._seasonal_month = month
+        return self._seasonal_value
     def CreateClone(self):
         return seasonality_adjusted_momentum_strategy()

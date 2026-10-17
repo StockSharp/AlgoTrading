@@ -24,7 +24,9 @@ public class BandsPriceStrategy : Strategy
 	private readonly StrategyParam<int> _dnLevel;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ExponentialMovingAverage _smoother;
+	private SimpleMovingAverage _smoother;
+	private readonly StrategyParam<bool> _buyOpen, _sellOpen, _buyClose, _sellClose;
+	private Order _pending;
 	private int _prevColor;
 	private int _prevPrevColor;
 
@@ -35,8 +37,16 @@ public class BandsPriceStrategy : Strategy
 	public int DnLevel { get => _dnLevel.Value; set => _dnLevel.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
+	public bool BuyOpen { get => _buyOpen.Value; set => _buyOpen.Value = value; }
+	public bool SellOpen { get => _sellOpen.Value; set => _sellOpen.Value = value; }
+	public bool BuyClose { get => _buyClose.Value; set => _buyClose.Value = value; }
+	public bool SellClose { get => _sellClose.Value; set => _sellClose.Value = value; }
 	public BandsPriceStrategy()
 	{
+		_buyOpen = Param(nameof(BuyOpen), true);
+		_sellOpen = Param(nameof(SellOpen), true);
+		_buyClose = Param(nameof(BuyClose), true);
+		_sellClose = Param(nameof(SellClose), true);
 		_bandsPeriod = Param(nameof(BandsPeriod), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("Bands Period", "Bollinger Bands period", "Indicator");
@@ -69,6 +79,7 @@ public class BandsPriceStrategy : Strategy
 	{
 		base.OnReseted();
 		_smoother = default;
+		_pending = null;
 		_prevColor = -1;
 		_prevPrevColor = -1;
 	}
@@ -80,7 +91,8 @@ public class BandsPriceStrategy : Strategy
 
 		_prevColor = -1;
 		_prevPrevColor = -1;
-		_smoother = new ExponentialMovingAverage { Length = Smooth };
+		_pending = null;
+		_smoother = new SimpleMovingAverage { Length = Smooth };
 
 		Indicators.Add(_smoother);
 
@@ -133,19 +145,24 @@ public class BandsPriceStrategy : Strategy
 		else
 			color = 2; // neutral
 
-		if (_prevPrevColor != -1 && _prevColor != -1)
+		// Use previous FINISHED color and current FINISHED color; no 1-bar lag.
+		if (_prevColor != -1 && IsFormedAndOnlineAndAllowTrading() && (_pending is null || _pending.State is OrderStates.Done or OrderStates.Failed))
 		{
-			// Buy: was overbought (4), now leaving -> mean reversion buy
-			if (_prevPrevColor == 4 && _prevColor < 4 && Position <= 0)
+			var longEntry = _prevColor == 4 && color != 4;
+			var shortEntry = _prevColor == 0 && color > 0;
+			if (Position > 0m && BuyClose && color <= 2)
+				_pending = SellMarket(Position);
+			else if (Position < 0m && SellClose && color >= 2)
+				_pending = BuyMarket(-Position);
+			else if (longEntry && Position <= 0m)
 			{
-				if (Position < 0) BuyMarket();
-				BuyMarket();
+				if (Position < 0m && SellClose) _pending = BuyMarket(-Position + (BuyOpen ? Volume : 0m));
+				else if (Position == 0m && BuyOpen) _pending = BuyMarket(Volume);
 			}
-			// Sell: was oversold (0), now leaving -> mean reversion sell
-			else if (_prevPrevColor == 0 && _prevColor > 0 && Position >= 0)
+			else if (shortEntry && Position >= 0m)
 			{
-				if (Position > 0) SellMarket();
-				SellMarket();
+				if (Position > 0m && BuyClose) _pending = SellMarket(Position + (SellOpen ? Volume : 0m));
+				else if (Position == 0m && SellOpen) _pending = SellMarket(Volume);
 			}
 		}
 

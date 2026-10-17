@@ -22,12 +22,22 @@ public class ColorHmaReversalStrategy : Strategy
 	private decimal _prevValue1;
 	private decimal _prevValue2;
 	private int _count;
+	private readonly StrategyParam<bool> _buyOpen, _sellOpen, _buyClose, _sellClose;
+	private Order _pending;
 
 	public int HmaPeriod { get => _hmaPeriod.Value; set => _hmaPeriod.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
+	public bool BuyOpen { get => _buyOpen.Value; set => _buyOpen.Value = value; }
+	public bool SellOpen { get => _sellOpen.Value; set => _sellOpen.Value = value; }
+	public bool BuyClose { get => _buyClose.Value; set => _buyClose.Value = value; }
+	public bool SellClose { get => _sellClose.Value; set => _sellClose.Value = value; }
 	public ColorHmaReversalStrategy()
 	{
+		_buyOpen = Param(nameof(BuyOpen), true);
+		_sellOpen = Param(nameof(SellOpen), true);
+		_buyClose = Param(nameof(BuyClose), true);
+		_sellClose = Param(nameof(SellClose), true);
 		_hmaPeriod = Param(nameof(HmaPeriod), 13)
 			.SetGreaterThanZero()
 			.SetDisplay("HMA Period", "Hull Moving Average period", "Indicators");
@@ -49,6 +59,7 @@ public class ColorHmaReversalStrategy : Strategy
 		_prevValue1 = default;
 		_prevValue2 = default;
 		_count = default;
+		_pending = null;
 	}
 
 	/// <inheritdoc />
@@ -57,6 +68,7 @@ public class ColorHmaReversalStrategy : Strategy
 		base.OnStarted2(time);
 
 		_count = 0;
+		_pending = null;
 
 		var hma = new HullMovingAverage { Length = HmaPeriod };
 
@@ -93,17 +105,18 @@ public class ColorHmaReversalStrategy : Strategy
 		var nowRising = hmaValue > _prevValue1;
 		var nowFalling = hmaValue < _prevValue1;
 
-		// HMA slope reversal from falling to rising -> buy
-		if (wasFalling && nowRising && Position <= 0)
+		if (IsFormedAndOnlineAndAllowTrading() && (_pending is null || _pending.State is OrderStates.Done or OrderStates.Failed))
 		{
-			if (Position < 0) BuyMarket();
-			BuyMarket();
-		}
-		// HMA slope reversal from rising to falling -> sell
-		else if (wasRising && nowFalling && Position >= 0)
-		{
-			if (Position > 0) SellMarket();
-			SellMarket();
+			if (wasFalling && nowRising)
+			{
+				if (Position < 0m && SellClose) _pending = BuyMarket(-Position + (BuyOpen ? Volume : 0m));
+				else if (Position == 0m && BuyOpen) _pending = BuyMarket(Volume);
+			}
+			else if (wasRising && nowFalling)
+			{
+				if (Position > 0m && BuyClose) _pending = SellMarket(Position + (SellOpen ? Volume : 0m));
+				else if (Position == 0m && SellOpen) _pending = SellMarket(Volume);
+			}
 		}
 
 		_prevValue2 = _prevValue1;

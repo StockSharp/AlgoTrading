@@ -22,7 +22,9 @@ public class ColorMaRsiTriggerStrategy : Strategy
 	private readonly StrategyParam<int> _rsiSlowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private decimal _prevSignal;
+	private decimal? _prevSignal;
+	private int _count;
+	private Order _pending;
 
 	public int EmaFastLength { get => _emaFastLength.Value; set => _emaFastLength.Value = value; }
 	public int EmaSlowLength { get => _emaSlowLength.Value; set => _emaSlowLength.Value = value; }
@@ -60,13 +62,19 @@ public class ColorMaRsiTriggerStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevSignal = 0;
+		_prevSignal = null;
+		_count = 0;
+		_pending = null;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+
+		_prevSignal = null;
+		_count = 0;
+		_pending = null;
 
 		var emaFast = new ExponentialMovingAverage { Length = EmaFastLength };
 		var emaSlow = new ExponentialMovingAverage { Length = EmaSlowLength };
@@ -97,18 +105,36 @@ public class ColorMaRsiTriggerStrategy : Strategy
 		// Clamp signal to [-1, 1]
 		signal = Math.Clamp(signal, -1, 1);
 
-		// Detect signal change for entry/exit
-		if (_prevSignal <= 0 && signal > 0 && Position <= 0)
-		{
-			if (Position < 0) BuyMarket();
-			BuyMarket();
-		}
-		else if (_prevSignal >= 0 && signal < 0 && Position >= 0)
-		{
-			if (Position > 0) SellMarket();
-			SellMarket();
-		}
+		// Both RSI and EMA paths must have enough finished bars before the
+		// previous composite sign is meaningful.
+		_count++;
+		if (_count < Math.Max(Math.Max(EmaFastLength, EmaSlowLength),
+			Math.Max(RsiFastLength, RsiSlowLength)) + 2)
+			return;
 
+		// The documented MQL5 trigger is intentionally counter-directional:
+		// positive -> zero/negative opens LONG; negative -> zero/positive opens SHORT.
+		var buy = _prevSignal is decimal oldPositive && oldPositive > 0m && signal <= 0m;
+		var sell = _prevSignal is decimal oldNegative && oldNegative < 0m && signal >= 0m;
 		_prevSignal = signal;
+
+		if (!IsFormedAndOnlineAndAllowTrading()
+			|| (_pending is not null && _pending.State is not (OrderStates.Done or OrderStates.Failed)))
+			return;
+
+		if (buy)
+		{
+			if (Position < 0m)
+				_pending = BuyMarket(-Position + Volume);
+			else if (Position == 0m)
+				_pending = BuyMarket(Volume);
+		}
+		else if (sell)
+		{
+			if (Position > 0m)
+				_pending = SellMarket(Position + Volume);
+			else if (Position == 0m)
+				_pending = SellMarket(Volume);
+		}
 	}
 }

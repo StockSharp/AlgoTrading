@@ -6,8 +6,8 @@ clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, Ichimoku
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, OrderStates
+from StockSharp.Algo.Indicators import JurikMovingAverage, Ichimoku
 from StockSharp.Algo.Strategies import Strategy
 from indicator_extensions import *
 
@@ -16,6 +16,8 @@ class ichimoku_oscillator_strategy(Strategy):
     def __init__(self):
         super(ichimoku_oscillator_strategy, self).__init__()
 
+        self._enable_stop_loss = self.Param("EnableStopLoss", True)
+        self._pending = None
         self._tenkan_period = self.Param("TenkanPeriod", 9) \
             .SetDisplay("Tenkan Period", "Period for Tenkan-sen line", "Ichimoku")
         self._kijun_period = self.Param("KijunPeriod", 26) \
@@ -93,13 +95,14 @@ class ichimoku_oscillator_strategy(Strategy):
 
     def OnStarted2(self, time):
         super(ichimoku_oscillator_strategy, self).OnStarted2(time)
+        self._pending = None
 
         ichimoku = Ichimoku()
         ichimoku.Tenkan.Length = self.TenkanPeriod
         ichimoku.Kijun.Length = self.KijunPeriod
         ichimoku.SenkouB.Length = self.SenkouSpanBPeriod
 
-        self._ema = ExponentialMovingAverage()
+        self._ema = JurikMovingAverage()
         self._ema.Length = self.SmoothingPeriod
 
         self.Indicators.Add(self._ema)
@@ -113,7 +116,7 @@ class ichimoku_oscillator_strategy(Strategy):
 
         self.StartProtection(
             takeProfit=Unit(float(self.TakeProfitPercent), UnitTypes.Percent),
-            stopLoss=Unit(float(self.StopLossPercent), UnitTypes.Percent),
+            stopLoss=Unit(float(self.StopLossPercent) if self._enable_stop_loss.Value else 0.0, UnitTypes.Percent),
             useMarketOrders=True
         )
 
@@ -148,20 +151,18 @@ class ichimoku_oscillator_strategy(Strategy):
             rising = prev > prev_prev
             falling = prev < prev_prev
 
-            if rising and current >= prev and self.Position <= 0:
-                if self.Position < 0:
-                    self.BuyMarket()
-                self.BuyMarket()
-            elif falling and current <= prev and self.Position >= 0:
-                if self.Position > 0:
-                    self.SellMarket()
-                self.SellMarket()
+            if self.IsFormedAndOnlineAndAllowTrading() and (self._pending is None or self._pending.State in (OrderStates.Done, OrderStates.Failed)):
+                if falling and current > prev and self.Position <= 0:
+                    self._pending = self.BuyMarket(self.Volume - min(0, self.Position))
+                elif rising and current < prev and self.Position >= 0:
+                    self._pending = self.SellMarket(self.Volume + max(0, self.Position))
 
         self._prev_prev_value = self._prev_value
         self._prev_value = current
 
     def OnReseted(self):
         super(ichimoku_oscillator_strategy, self).OnReseted()
+        self._pending = None
         self._ema = None
         self._prev_value = None
         self._prev_prev_value = None

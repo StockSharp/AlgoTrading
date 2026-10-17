@@ -13,3 +13,5 @@ Esta estratégia opera capturas de liquidez durante as principais sessões de me
 - **Indicadores**: SMA, Highest, Lowest
 - **Período**: 15 minutos (padrão)
 - **Stops**: `StopLossPoints` ticks, `TakeProfitMultiplier`× distância do stop
+
+**Regra exata e padrões:** `SwingPeriod=20`, `TrendLength=50`, `StopLossPoints=50`, `TakeProfitMultiplier=2`, `UseSession=true`, `SessionStart=07:00`, `SessionEnd=21:00` UTC, `CandleType=15 minutos`. A mínima/máxima do candle concluído é comparada com os extremos dos N candles **anteriores**, excluindo o atual. Compra se Low for estritamente menor que a mínima anterior e Close maior que SMA; vende se High exceder a máxima anterior e Close ficar abaixo de SMA. A SMA inclui o candle de sinal. Só entra sem posição na janela UTC (início incluso, fim exclusivo, inclusive janelas noturnas). Proteção nativa com ordens a mercado acompanha bid/ask Level1 entre candles: stop `StopLossPoints × Security.PriceStep`, alvo `TakeProfitMultiplier × distância do stop`. Não existe saída no fechamento por sinal oposto.

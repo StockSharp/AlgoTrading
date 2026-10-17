@@ -68,7 +68,7 @@ public partial class CSharpTests : StrategyTests
 	/// The default references name assemblies without a path, and the ones this repository needs
 	/// sit next to the test binaries rather than in the runtime directory.
 	/// </summary>
-	private static void ResolveLocalReferences(CodeInfo code)
+	internal static void ResolveLocalReferences(CodeInfo code)
 	{
 		// Runtime-compiled examples can use emulator stop conditions, settings conversion and the platform configuration.
 		string[] additional = ["StockSharp.MatchingEngine.dll", "StockSharp.Configuration.dll", "System.Collections.Concurrent.dll", "System.Runtime.InteropServices.dll"];

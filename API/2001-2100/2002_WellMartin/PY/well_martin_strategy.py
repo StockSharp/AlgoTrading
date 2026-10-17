@@ -4,30 +4,34 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
+clr.AddReference("StockSharp.BusinessEntities")
 
 from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import BollingerBands
+from StockSharp.Messages import DataType, CandleStates, OrderStates, Sides, Unit, UnitTypes
+from StockSharp.Algo.Indicators import AverageDirectionalIndex
 from StockSharp.Algo.Strategies import Strategy
 
 
 class well_martin_strategy(Strategy):
+    """Bollinger mean reversion, low ADX filter, actual-fill direction and native protection."""
 
     def __init__(self):
         super(well_martin_strategy, self).__init__()
-
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
-            .SetDisplay("Candle Type", "Type of candles", "General")
-        self._bollinger_period = self.Param("BollingerPeriod", 84) \
-            .SetDisplay("Bollinger Period", "Bollinger Bands period", "Indicators")
-        self._bollinger_width = self.Param("BollingerWidth", 1.8) \
-            .SetDisplay("Bollinger Width", "Bollinger Bands width", "Indicators")
-        self._take_profit = self.Param("TakeProfit", 1200.0) \
-            .SetDisplay("Take Profit", "Take profit in price units", "Risk")
-        self._stop_loss = self.Param("StopLoss", 1400.0) \
-            .SetDisplay("Stop Loss", "Stop loss in price units", "Risk")
-
-        self._entry_price = 0.0
+            .SetDisplay("Candle Type", "Signal timeframe", "General")
+        self._bollinger_period = self.Param("BollingerPeriod", 84).SetGreaterThanZero() \
+            .SetDisplay("Bollinger Period", "Mean and deviation period", "Indicator")
+        self._bollinger_width = self.Param("BollingerWidth", 1.8).SetGreaterThanZero() \
+            .SetDisplay("Bollinger Width", "Deviation multiplier", "Indicator")
+        self._adx_period = self.Param("AdxPeriod", 14).SetGreaterThanZero() \
+            .SetDisplay("ADX Period", "Trend strength smoothing", "Indicator")
+        self._adx_level = self.Param("AdxLevel", 25.0).SetNotNegative() \
+            .SetDisplay("ADX Level", "Maximum trend strength", "Indicator")
+        self._take_profit = self.Param("TakeProfit", 1200.0).SetNotNegative() \
+            .SetDisplay("Take Profit", "Price-unit target", "Risk")
+        self._stop_loss = self.Param("StopLoss", 1400.0).SetNotNegative() \
+            .SetDisplay("Stop Loss", "Price-unit risk", "Risk")
+        self._reset_history()
 
     @property
     def CandleType(self):
@@ -37,88 +41,71 @@ class well_martin_strategy(Strategy):
     def CandleType(self, value):
         self._candle_type.Value = value
 
-    @property
-    def BollingerPeriod(self):
-        return self._bollinger_period.Value
-
-    @BollingerPeriod.setter
-    def BollingerPeriod(self, value):
-        self._bollinger_period.Value = value
-
-    @property
-    def BollingerWidth(self):
-        return self._bollinger_width.Value
-
-    @BollingerWidth.setter
-    def BollingerWidth(self, value):
-        self._bollinger_width.Value = value
-
-    @property
-    def TakeProfit(self):
-        return self._take_profit.Value
-
-    @TakeProfit.setter
-    def TakeProfit(self, value):
-        self._take_profit.Value = value
-
-    @property
-    def StopLoss(self):
-        return self._stop_loss.Value
-
-    @StopLoss.setter
-    def StopLoss(self, value):
-        self._stop_loss.Value = value
-
-    def OnStarted2(self, time):
-        super(well_martin_strategy, self).OnStarted2(time)
-
-        bb = BollingerBands()
-        bb.Length = self.BollingerPeriod
-        bb.Width = self.BollingerWidth
-
-        self.SubscribeCandles(self.CandleType) \
-            .BindEx(bb, self.ProcessCandle) \
-            .Start()
-
-    def ProcessCandle(self, candle, bb_value):
-        if candle.State != CandleStates.Finished:
-            return
-
-        upper_raw = bb_value.UpBand
-        lower_raw = bb_value.LowBand
-        if upper_raw is None or lower_raw is None:
-            return
-
-        upper = float(upper_raw)
-        lower = float(lower_raw)
-        close = float(candle.ClosePrice)
-        tp = float(self.TakeProfit)
-        sl = float(self.StopLoss)
-
-        if self.Position > 0:
-            profit = close - self._entry_price
-            if close >= upper or (tp > 0 and profit >= tp) or (sl > 0 and -profit >= sl):
-                self.SellMarket()
-                return
-        elif self.Position < 0:
-            profit = self._entry_price - close
-            if close <= lower or (tp > 0 and profit >= tp) or (sl > 0 and -profit >= sl):
-                self.BuyMarket()
-                return
-
-        if self.Position != 0:
-            return
-
-        if close < lower:
-            self.BuyMarket()
-            self._entry_price = close
-        elif close > upper:
-            self.SellMarket()
-            self._entry_price = close
+    def _reset_history(self):
+        self._closes = []
+        self._pending = None
+        self._entry_order = None
+        self._last_executed_entry_side = None
 
     def OnReseted(self):
         super(well_martin_strategy, self).OnReseted()
-        self._entry_price = 0.0
+        self._reset_history()
+
+    def OnStarted2(self, time):
+        super(well_martin_strategy, self).OnStarted2(time)
+        self._reset_history()
+        self.StartProtection(
+            takeProfit=Unit(self._take_profit.Value, UnitTypes.Absolute),
+            stopLoss=Unit(self._stop_loss.Value, UnitTypes.Absolute))
+        adx = AverageDirectionalIndex()
+        adx.Length = int(self._adx_period.Value)
+        self.SubscribeCandles(self.CandleType).BindEx(adx, self.ProcessCandle).Start()
+
+    def OnOwnTradeReceived(self, trade):
+        super(well_martin_strategy, self).OnOwnTradeReceived(trade)
+        if trade.Order is not None and trade.Order == self._entry_order:
+            self._last_executed_entry_side = trade.Order.Side
+
+    def ProcessCandle(self, candle, adx_value):
+        if candle.State != CandleStates.Finished:
+            return
+        length = int(self._bollinger_period.Value)
+        self._closes.append(float(candle.ClosePrice))
+        if len(self._closes) > length:
+            self._closes.pop(0)
+        if len(self._closes) < length or not adx_value.IsFormed:
+            return
+        strength_raw = adx_value.MovingAverage
+        if strength_raw is None:
+            return
+        strength = float(strength_raw)
+        mean = sum(self._closes) / length
+        variance = sum((price - mean) ** 2 for price in self._closes) / length
+        deviation = variance ** 0.5
+        lower = mean - float(self._bollinger_width.Value) * deviation
+        upper = mean + float(self._bollinger_width.Value) * deviation
+
+        if not self.IsFormedAndOnlineAndAllowTrading():
+            return
+        if self._pending is not None and self._pending.State not in (OrderStates.Done, OrderStates.Failed):
+            return
+
+        price = float(candle.ClosePrice)
+        if self.Position > 0:
+            if price >= upper:
+                self._pending = self.SellMarket(abs(self.Position))
+            return
+        if self.Position < 0:
+            if price <= lower:
+                self._pending = self.BuyMarket(abs(self.Position))
+            return
+        if strength >= float(self._adx_level.Value):
+            return
+
+        if price < lower and self._last_executed_entry_side in (None, Sides.Buy):
+            self._entry_order = self._pending = self.BuyMarket(self.Volume)
+        elif price > upper and self._last_executed_entry_side in (None, Sides.Sell):
+            self._entry_order = self._pending = self.SellMarket(self.Volume)
 
     def CreateClone(self):
         return well_martin_strategy()

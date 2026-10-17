@@ -1,33 +1,12 @@
 # Dark Pool Prints Strategie
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
- 
-Dark Pool Prints verfolgt große außerbörsliche Transaktionen, die oft starken Bewegungen vorausgehen, sobald die Aktivität bekannt wird.
-Ungewöhnliches Volumen auf dem Tape kann institutionelle Positionierungen signalisieren, die den regulären Markt noch nicht beeinflusst haben.
 
-Tests zeigen eine durchschnittliche jährliche Rendite von etwa 46%. Die Strategie funktioniert am besten am Aktienmarkt.
+Handelt große außerbörsliche Transaktionsmeldungen in Richtung der gemeldeten Aggressorseite; SMA20 des gehandelten Instruments filtert den Trend.
 
-Die Strategie tritt in dieselbe Richtung ein wie starke Dark Pool-Käufe oder -Verkäufe und erwartet eine Fortsetzung, wenn der Rest des Marktes reagiert.
+`Security` bezeichnet das Handelsinstrument, `DarkPoolSecurity` einen getrennten Meldungsstrom für denselben Basiswert. Die Wertpapier-IDs müssen verschieden sein. Der Strom muss echte außerbörsliche Ticks (`IsSystem = false`), Preis, Volumen, Zeit und `OriginSide` liefern. Fehlende oder identische Quellen verhindern den Start. Börsliche Trades, Meldungen ohne Seite, ungültige Werte, Duplikate und verspätete Meldungen lösen keine Einstiege aus.
 
-Ein kleiner prozentualer Stop hält das Risiko begrenzt, und Positionen werden geschlossen, wenn der erwartete Impuls ausbleibt.
+Das Volumen muss strikt größer sein als `1.5 × Mittelwert der vorherigen 20 Meldungsvolumen`; die aktuelle Meldung bleibt unberücksichtigt. Gemeldeter Kauf oberhalb SMA20 führt zum Kauf, gemeldeter Verkauf unterhalb SMA20 zum Verkauf. Kerzenfarbe und Kerzenvolumen ersetzen diese Informationen nicht. Ein Gegensignal dreht die vollständig ausgeführte Position mit `Volume + abs(Position)`.
 
-## Details
+Die SMA verwendet abgeschlossene 15-Minuten-Kerzen. Long wird unter SMA20 geschlossen, Short darüber, unabhängig vom Meldungsvolumen und Einstiegscooldown. Standard ist `CooldownBars = 0`; positive Werte verzögern weitere Einstiege um abgeschlossene Kerzen. Offene Aufträge blockieren überlappende Signale.
 
-- **Einstiegskriterien**: Indikatorsignal
-- **Long/Short**: Beide
-- **Ausstiegskriterien**: Stop-Loss oder entgegengesetztes Signal
-- **Stops**: Ja, prozentbasiert
-- **Standardwerte**:
-  - `CandleType` = 15 minute
-  - `StopLoss` = 2%
-- **Filter**:
-  - Kategorie: Volumen
-  - Richtung: Beide
-  - Indikatoren: Volume
-  - Stops: Ja
-  - Komplexität: Mittel
-  - Zeitrahmen: Intraday
-  - Saisonalität: Nein
-  - Neuronale Netze: Nein
-  - Divergenz: Nein
-  - Risikolevel: Mittel
-
+`StopLoss = 2` setzt lokalen nativen Schutz von 2% ab dem tatsächlichen Einstiegskurs. Der Schutz verfolgt Bid/Ask und sendet einen Marktausstieg; zwischen Kerzen ist ein Kursstrom erforderlich. Kein Take-Profit.

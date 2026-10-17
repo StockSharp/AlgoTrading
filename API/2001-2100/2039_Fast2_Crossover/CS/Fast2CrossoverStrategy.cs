@@ -20,6 +20,7 @@ public class Fast2CrossoverStrategy : Strategy
 	private readonly StrategyParam<int> _fastLength;
 	private readonly StrategyParam<int> _slowLength;
 
+	private Order _pending;
 	private decimal _prevFast;
 	private decimal _prevSlow;
 	private bool _hasPrevAverage;
@@ -61,12 +62,14 @@ public class Fast2CrossoverStrategy : Strategy
 		_prevDiff2 = default;
 		_hasPrevDiff1 = default;
 		_hasPrevDiff2 = default;
+		_pending = null;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_pending = null;
 
 		var fast = new WeightedMovingAverage { Length = FastLength };
 		var slow = new WeightedMovingAverage { Length = SlowLength };
@@ -97,7 +100,7 @@ public class Fast2CrossoverStrategy : Strategy
 			if (fastValue.IsEmpty || slowValue.IsEmpty || !fast.IsFormed || !slow.IsFormed)
 				return;
 
-			if (!IsFormedAndOnlineAndAllowTrading())
+			if (!IsFormedAndOnlineAndAllowTrading() || (_pending is not null && _pending.State is not (OrderStates.Done or OrderStates.Failed)))
 				return;
 
 			var f = fastValue.ToDecimal();
@@ -106,10 +109,10 @@ public class Fast2CrossoverStrategy : Strategy
 			if (_hasPrevAverage)
 			{
 				if (_prevFast > _prevSlow && f < s && Position <= 0)
-					BuyMarket();
+					_pending = BuyMarket(Volume + Math.Abs(Math.Min(0m, Position)));
 
 				if (_prevFast < _prevSlow && f > s && Position >= 0)
-					SellMarket();
+					_pending = SellMarket(Volume + Math.Max(0m, Position));
 			}
 
 			_prevFast = f;

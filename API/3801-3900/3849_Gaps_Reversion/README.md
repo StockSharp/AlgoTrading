@@ -36,7 +36,7 @@ All parameters are registered as `StrategyParam<T>` and support optimisation ins
 
 ## Implementation Notes
 
-- Uses `SubscribeCandles` with `Bind` to process finished candles only.
+- Uses `SubscribeCandles` with `Bind` to process the first observable candle update and to store the final high/low of completed candles.
 - Remembers the previous candle's range to avoid recalculating data series.
 - Blocks duplicate orders on the same candle by tracking the open time of the bar that triggered the trade.
 - Chart output draws the subscribed candles and the strategy trades for quick visual inspection.
@@ -51,3 +51,5 @@ All parameters are registered as `StrategyParam<T>` and support optimisation ins
 
 - StockSharp API with access to candle data for the selected instrument.
 - Level1 quotes are optional but improve spread detection.
+
+**Replay timing:** The gap check runs on the first observed update of each candle (the `Active` update, when supplied). When the data source only emits `Finished` candles, the opening gap is detected at the candle close; this does not verify an entry at the candle-open price.

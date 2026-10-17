@@ -19,6 +19,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ColorXdinMAStrategy : Strategy
 {
+	private Order _pendingOrder;
 	private readonly StrategyParam<int> _mainLength;
 	private readonly StrategyParam<int> _plusLength;
 	private readonly StrategyParam<DataType> _candleType;
@@ -85,10 +86,10 @@ public class ColorXdinMAStrategy : Strategy
 			
 			.SetOptimize(10, 40, 1);
 
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(6).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
-		_signalCooldownBars = Param(nameof(SignalCooldownBars), 3)
+		_signalCooldownBars = Param(nameof(SignalCooldownBars), 0)
 			.SetNotNegative()
 			.SetDisplay("Signal Cooldown Bars", "Closed candles to wait before a new reversal", "General");
 	}
@@ -103,6 +104,7 @@ public class ColorXdinMAStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		_pendingOrder = null;
 
 		_mainMa = null!;
 		_plusMa = null!;
@@ -116,6 +118,7 @@ public class ColorXdinMAStrategy : Strategy
 	protected override void OnStarted2(DateTime time)
 	{
 		base.OnStarted2(time);
+		_pendingOrder = null;
 		_cooldownRemaining = 0;
 
 		_mainMa = new SMA { Length = MainLength };
@@ -135,6 +138,8 @@ public class ColorXdinMAStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 	}
+
+	private bool HasPending() => _pendingOrder is not null && _pendingOrder.State is not (OrderStates.Done or OrderStates.Failed);
 
 	private void ProcessCandle(ICandleMessage candle, decimal main, decimal plus)
 	{
@@ -159,14 +164,14 @@ public class ColorXdinMAStrategy : Strategy
 			return;
 		}
 
-		if (_cooldownRemaining == 0 && _prev < _prevPrev && xdin > _prev && Position <= 0)
+		if (_cooldownRemaining == 0 && !HasPending() && _prev < _prevPrev && xdin > _prev && Position <= 0)
 		{
-			BuyMarket(Volume + (Position < 0 ? -Position : 0m));
+			_pendingOrder = BuyMarket(Volume + (Position < 0 ? -Position : 0m));
 			_cooldownRemaining = SignalCooldownBars;
 		}
-		else if (_cooldownRemaining == 0 && _prev > _prevPrev && xdin < _prev && Position >= 0)
+		else if (_cooldownRemaining == 0 && !HasPending() && _prev > _prevPrev && xdin < _prev && Position >= 0)
 		{
-			SellMarket(Volume + (Position > 0 ? Position : 0m));
+			_pendingOrder = SellMarket(Volume + (Position > 0 ? Position : 0m));
 			_cooldownRemaining = SignalCooldownBars;
 		}
 

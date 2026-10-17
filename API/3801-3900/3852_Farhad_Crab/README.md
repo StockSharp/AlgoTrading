@@ -49,7 +49,9 @@ All parameters are exposed through `StrategyParam<T>` and marked as optimisable 
 
 ## Usage Tips
 
-- The original EA was tailored for highly volatile GBP and EUR pairs on the M1 timeframe. Similar results can be expected when applying the same timeframe and instruments, but the parameters are exposed to accommodate different volatility profiles.
+- The original EA was tailored for highly volatile GBP and EUR pairs on the M1 timeframe. Results may differ significantly even when the timeframe and instruments are the same; parameters are provided to explore different volatility profiles.
 - Because the system keeps only one position at a time, it is suitable for straightforward backtesting and live execution without complex position pyramiding.
 - Trailing stops become more effective on instruments with smooth trends. On ranging markets consider reducing the trailing distance or relying solely on take-profit exits.
 - The daily SMMA exit serves as the primary risk control. For swing-oriented setups you can increase `DailyMaPeriod` to make the long-term filter less reactive.
+
+**Testable indicator and exit rules:** For each finished M1 candle the typical price is `(high+low+close)/3`. The 9-period EMA of typical prices is seeded with their first nine-value SMA and thereafter updated by `EMA=(8*EMA+2*typical)/10`. The separate 9-period SMA uses candle **opens**. With no position or pending order, buy if `low > EMA`, otherwise sell if `high < SMA(Open)`. The daily SMMA(55) is seeded from 55 completed daily closes and updated as `(54*SMMA+close)/55`; its crossing of the daily close closes the adverse position. Take-profit and trailing-stop exits use finished M1 candle extremes and the **actual entry fill price**, not the signal close. Trailing levels become active only after the position moves by the configured trailing distance and are checked against subsequent bars, without inferring the unknown intrabar path. A reduced `DailyMaPeriod` is a separate mechanics test, not evidence that the 55-day default was covered. Backtests do not demonstrate future returns.

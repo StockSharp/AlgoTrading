@@ -1,33 +1,10 @@
 # Estratégia RSI com Sobrecompra/Sobrevenda Dinâmica
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
-A estratégia **RSI Dynamic Overbought Oversold** é construída em torno do RSI com níveis dinâmicos de sobrecompra/sobrevenda.
+Negocia extremos do RSI com limites adaptativos e filtro de tendência do preço, usando velas concluídas de 5 minutos. Calcula `R = RSI(14)`, `P = SMA(50)` do fechamento e `A = SMA(50)`, `D = StandardDeviation(50)` de R. Limites: `upper = min(A + 2 × D, 85)`, `lower = max(A − 2 × D, 15)`. Todos os indicadores devem estar formados.
 
-Os testes indicam um retorno anual médio de aproximadamente 178%. Funciona melhor no mercado de ações.
+Sem posição, compra com `R <= lower && Close >= P × 0.995` e vende com `R >= upper && Close <= P × 1.005`. Fecha toda a compra com `R >= A || Close < P × 0.995`, e toda a venda com `R <= A || Close > P × 1.005`. Cada ordem de sinal inicia pausa de `CooldownBars = 48` velas concluídas para novas decisões.
 
-Os sinais são disparados quando a Sobrecompra confirma mudanças de tendência em dados intradiários (5m). Isso torna o método adequado para traders ativos.
+Posições executadas têm proteção nativa local percentual `StopLossPercent = 2` desde o preço real da entrada. Monitora bid/ask e envia saída a mercado independentemente da pausa dos sinais; exige cotações entre velas. Sem take-profit.
 
-Os stops se baseiam em múltiplos de ATR e fatores como RsiPeriod, MovingAvgPeriod. Ajuste esses valores padrão para equilibrar risco e recompensa.
-
-## Detalhes
-- **Critérios de entrada**: ver implementação para as condições do indicador.
-- **Comprado/Vendido**: Ambos.
-- **Critérios de saída**: sinal oposto ou lógica de stop.
-- **Stops**: Sim, usando cálculos baseados em indicadores.
-- **Valores padrão**:
-  - `RsiPeriod = 14`
-  - `MovingAvgPeriod = 50`
-  - `StdDevMultiplier = 2.0m`
-  - `StopLossPercent = 2.0m`
-  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
-- **Filtros**:
-  - Categoria: Seguidor de tendência
-  - Direção: Ambos
-  - Indicadores: Overbought, Oversold
-  - Stops: Sim
-  - Complexidade: Intermediário
-  - Período: Intradiário (5m)
-  - Sazonalidade: Não
-  - Redes neurais: Não
-  - Divergência: Não
-  - Nível de risco: Médio
+`RsiPeriod = 14; MovingAvgPeriod = 50; StdDevMultiplier = 2; StopLossPercent = 2; CooldownBars = 48`.

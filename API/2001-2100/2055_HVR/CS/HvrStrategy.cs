@@ -25,6 +25,7 @@ public class HvrStrategy : Strategy
 	private StandardDeviation _shortSd;
 	private StandardDeviation _longSd;
 	private decimal? _prevClose;
+	private Order _pending;
 
 	public int ShortPeriod { get => _shortPeriod.Value; set => _shortPeriod.Value = value; }
 	public int LongPeriod { get => _longPeriod.Value; set => _longPeriod.Value = value; }
@@ -61,6 +62,7 @@ public class HvrStrategy : Strategy
 		_shortSd = default;
 		_longSd = default;
 		_prevClose = default;
+		_pending = null;
 	}
 
 	/// <inheritdoc />
@@ -69,6 +71,7 @@ public class HvrStrategy : Strategy
 		base.OnStarted2(time);
 
 		_prevClose = null;
+		_pending = null;
 		_shortSd = new StandardDeviation { Length = ShortPeriod };
 		_longSd = new StandardDeviation { Length = LongPeriod };
 
@@ -101,7 +104,7 @@ public class HvrStrategy : Strategy
 		if (!shortResult.IsFormed || !longResult.IsFormed)
 			return;
 
-		if (!IsFormedAndOnlineAndAllowTrading())
+		if (!IsFormedAndOnlineAndAllowTrading() || (_pending is not null && _pending.State is not (OrderStates.Done or OrderStates.Failed)))
 			return;
 
 		var shortVal = shortResult.ToDecimal();
@@ -114,13 +117,11 @@ public class HvrStrategy : Strategy
 
 		if (ratio > RatioThreshold && Position <= 0)
 		{
-			if (Position < 0) BuyMarket();
-			BuyMarket();
+			_pending = BuyMarket(Volume - Math.Min(0m, Position));
 		}
 		else if (ratio < RatioThreshold && Position >= 0)
 		{
-			if (Position > 0) SellMarket();
-			SellMarket();
+			_pending = SellMarket(Volume + Math.Max(0m, Position));
 		}
 	}
 }

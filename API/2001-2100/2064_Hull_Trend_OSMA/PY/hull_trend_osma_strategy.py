@@ -6,8 +6,9 @@ clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import HullMovingAverage, ExponentialMovingAverage
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, OrderStates
+from StockSharp.Algo.Indicators import HullMovingAverage, SimpleMovingAverage
+from indicator_extensions import process_float
 from StockSharp.Algo.Strategies import Strategy
 
 
@@ -20,15 +21,16 @@ class hull_trend_osma_strategy(Strategy):
             .SetDisplay("Hull Period", "Period for Hull Moving Average", "Indicators")
         self._signal_period = self.Param("SignalPeriod", 5) \
             .SetDisplay("Signal Period", "Period for signal SMA", "Indicators")
-        self._take_profit_pct = self.Param("TakeProfitPct", 3.0) \
+        self._take_profit = self.Param("TakeProfit", 3.0) \
             .SetDisplay("Take Profit %", "Take profit percentage", "Risk")
-        self._stop_loss_pct = self.Param("StopLossPct", 2.0) \
+        self._stop_loss = self.Param("StopLoss", 2.0) \
             .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(8))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._prev1 = None
         self._prev2 = None
+        self._pending = None
         self._hma = None
         self._signal = None
 
@@ -49,20 +51,20 @@ class hull_trend_osma_strategy(Strategy):
         self._signal_period.Value = value
 
     @property
-    def TakeProfitPct(self):
-        return self._take_profit_pct.Value
+    def TakeProfit(self):
+        return self._take_profit.Value
 
-    @TakeProfitPct.setter
-    def TakeProfitPct(self, value):
-        self._take_profit_pct.Value = value
+    @TakeProfit.setter
+    def TakeProfit(self, value):
+        self._take_profit.Value = value
 
     @property
-    def StopLossPct(self):
-        return self._stop_loss_pct.Value
+    def StopLoss(self):
+        return self._stop_loss.Value
 
-    @StopLossPct.setter
-    def StopLossPct(self, value):
-        self._stop_loss_pct.Value = value
+    @StopLoss.setter
+    def StopLoss(self, value):
+        self._stop_loss.Value = value
 
     @property
     def CandleType(self):
@@ -80,29 +82,30 @@ class hull_trend_osma_strategy(Strategy):
 
         self._hma = HullMovingAverage()
         self._hma.Length = self.HullPeriod
-        self._signal = ExponentialMovingAverage()
+        self._signal = SimpleMovingAverage()
         self._signal.Length = self.SignalPeriod
 
         self.SubscribeCandles(self.CandleType) \
-            .Bind(self._hma, self._signal, self.ProcessCandle) \
+            .Bind(self._hma, self.ProcessCandle) \
             .Start()
 
         self.StartProtection(
-            takeProfit=Unit(float(self.TakeProfitPct), UnitTypes.Percent),
-            stopLoss=Unit(float(self.StopLossPct), UnitTypes.Percent),
+            takeProfit=Unit(float(self.TakeProfit), UnitTypes.Absolute),
+            stopLoss=Unit(float(self.StopLoss), UnitTypes.Absolute),
             useMarketOrders=True
         )
 
-    def ProcessCandle(self, candle, hma_val, signal_val):
+    def ProcessCandle(self, candle, hma_val):
         if candle.State != CandleStates.Finished:
             return
 
-        if not self._hma.IsFormed or not self._signal.IsFormed:
+        if not self._hma.IsFormed:
             return
 
-        hma_f = float(hma_val)
-        signal_f = float(signal_val)
-        osma = hma_f - signal_f
+        smooth = process_float(self._signal, hma_val, candle.OpenTime, True)
+        if not smooth.IsFormed:
+            return
+        osma = float(hma_val) - float(smooth)
 
         if self._prev1 is None or self._prev2 is None:
             self._prev2 = self._prev1
@@ -115,14 +118,11 @@ class hull_trend_osma_strategy(Strategy):
         is_rising = prev > prev_prev and osma >= prev
         is_falling = prev < prev_prev and osma <= prev
 
-        if is_rising and self.Position <= 0:
-            if self.Position < 0:
-                self.BuyMarket()
-            self.BuyMarket()
-        elif is_falling and self.Position >= 0:
-            if self.Position > 0:
-                self.SellMarket()
-            self.SellMarket()
+        if self.IsFormedAndOnlineAndAllowTrading() and (self._pending is None or self._pending.State in (OrderStates.Done, OrderStates.Failed)):
+            if is_rising and self.Position <= 0:
+                self._pending = self.BuyMarket(self.Volume - min(0, self.Position))
+            elif is_falling and self.Position >= 0:
+                self._pending = self.SellMarket(self.Volume + max(0, self.Position))
 
         self._prev2 = self._prev1
         self._prev1 = osma

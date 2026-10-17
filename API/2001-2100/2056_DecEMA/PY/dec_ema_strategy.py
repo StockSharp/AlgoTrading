@@ -6,7 +6,7 @@ clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
 from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Messages import DataType, CandleStates, OrderStates
 from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 from indicator_extensions import *
@@ -16,6 +16,11 @@ class dec_ema_strategy(Strategy):
     def __init__(self):
         super(dec_ema_strategy, self).__init__()
 
+        self._buy_open = self.Param("BuyPosOpen", True)
+        self._sell_open = self.Param("SellPosOpen", True)
+        self._buy_close = self.Param("BuyPosClose", True)
+        self._sell_close = self.Param("SellPosClose", True)
+        self._pending = None
         self._ema_period = self.Param("EmaPeriod", 3) \
             .SetDisplay("Base EMA Period", "Length for initial EMA", "Parameters")
         self._length = self.Param("Length", 15) \
@@ -26,6 +31,7 @@ class dec_ema_strategy(Strategy):
         self._prev = 0.0
         self._prev_prev = 0.0
         self._count = 0
+        self._pending = None
         self._base_ema = None
         self._ema1 = 0.0
         self._ema2 = 0.0
@@ -119,14 +125,19 @@ class dec_ema_strategy(Strategy):
             self._prev = decema
             return
 
-        if self._prev < self._prev_prev and decema > self._prev and self.Position <= 0:
-            if self.Position < 0:
-                self.BuyMarket()
-            self.BuyMarket()
-        elif self._prev > self._prev_prev and decema < self._prev and self.Position >= 0:
-            if self.Position > 0:
-                self.SellMarket()
-            self.SellMarket()
+        buy = self._prev < self._prev_prev and decema > self._prev
+        sell = self._prev > self._prev_prev and decema < self._prev
+        if self.IsFormedAndOnlineAndAllowTrading() and (self._pending is None or self._pending.State in (OrderStates.Done, OrderStates.Failed)):
+            if buy:
+                if self.Position < 0 and self._sell_close.Value:
+                    self._pending = self.BuyMarket(-self.Position + (self.Volume if self._buy_open.Value else 0))
+                elif self.Position == 0 and self._buy_open.Value:
+                    self._pending = self.BuyMarket(self.Volume)
+            elif sell:
+                if self.Position > 0 and self._buy_close.Value:
+                    self._pending = self.SellMarket(self.Position + (self.Volume if self._sell_open.Value else 0))
+                elif self.Position == 0 and self._sell_open.Value:
+                    self._pending = self.SellMarket(self.Volume)
 
         self._prev_prev = self._prev
         self._prev = decema

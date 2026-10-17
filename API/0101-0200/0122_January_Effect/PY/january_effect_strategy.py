@@ -1,95 +1,110 @@
 import clr
 
+clr.AddReference("Ecng.ComponentModel")
 clr.AddReference("StockSharp.Messages")
+clr.AddReference("StockSharp.BusinessEntities")
 clr.AddReference("StockSharp.Algo")
-clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import SimpleMovingAverage
+from System import DateTime, TimeSpan, TimeZoneInfo
+from Ecng.ComponentModel import WorkingTimeExtensions
+from StockSharp.Messages import DataType, CandleStates, OrderStates, Unit, UnitTypes, Level1Fields
+from StockSharp.BusinessEntities import Subscription
 from StockSharp.Algo.Strategies import Strategy
 
+
 class january_effect_strategy(Strategy):
-    """
-    January Effect trading strategy.
-    Buys at the start of each month if above MA, exits mid-month.
-    Goes short mid-month if below MA, covers at end of month.
-    """
+    """Long-only January effect: enter on or after December 26 and exit on or after January 15."""
 
     def __init__(self):
         super(january_effect_strategy, self).__init__()
-        self._ma_period = self.Param("MaPeriod", 20).SetDisplay("MA Period", "Moving average period for trend confirmation", "Strategy")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle Type", "Type of candles for strategy", "Strategy")
-        self._cooldown_bars = self.Param("CooldownBars", 50).SetDisplay("Cooldown Bars", "Bars between trades", "General")
-
-        self._cooldown = 0
-        self._prev_day_of_month = 0
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))).SetDisplay(
+            "Candle Type", "Finished candles used for calendar decisions", "Data")
+        self._stop_loss = self.Param("StopLoss", 2.0).SetGreaterThanZero().SetDisplay(
+            "Stop Loss %", "Percentage loss limit from the executed entry", "Risk")
+        self._entry_year = -1
+        self._pending_order = None
+        self.OrderRegistering += self._on_order
 
     @property
     def candle_type(self):
         return self._candle_type.Value
 
+    def GetWorkingSecurities(self):
+        return [(self.Security, self.candle_type), (self.Security, DataType.Level1)]
+
+    def _on_order(self, order):
+        self._pending_order = order
+
     def OnReseted(self):
         super(january_effect_strategy, self).OnReseted()
-        self._cooldown = 0
-        self._prev_day_of_month = 0
+        self._entry_year = -1
+        self._pending_order = None
 
     def OnStarted2(self, time):
+        if self.Security is None or self.Security.Board is None:
+            raise ValueError("The instrument's trading board and calendar are required")
         super(january_effect_strategy, self).OnStarted2(time)
-
-        self._cooldown = 0
-        self._prev_day_of_month = 0
-
-        sma = SimpleMovingAverage()
-        sma.Length = self._ma_period.Value
-
+        self._entry_year = -1
+        self._pending_order = None
+        self.StartProtection(Unit(), Unit(float(self._stop_loss.Value), UnitTypes.Percent),
+                             useMarketOrders=True, isLocalStop=True)
+        for field in (Level1Fields.BestBidPrice, Level1Fields.BestAskPrice):
+            quotes = Subscription(DataType.Level1, self.Security)
+            quotes.MarketData.BuildField = field
+            self.SubscribeLevel1(quotes).Start()
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(sma, self._process_candle).Start()
-
+        subscription.Bind(self._process_candle).Start()
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, sma)
             self.DrawOwnTrades(area)
 
-    def _process_candle(self, candle, ma_val):
-        if candle.State != CandleStates.Finished:
+    def _season(self, year):
+        calendar = self.Security.Board.WorkingTime
+        entry = DateTime(year, 12, 26)
+        while not WorkingTimeExtensions.IsWorkingDate(calendar, entry, True):
+            entry = entry.AddDays(1)
+        exit_date = DateTime(year + 1, 1, 15)
+        while not WorkingTimeExtensions.IsWorkingDate(calendar, exit_date, True):
+            exit_date = exit_date.AddDays(1)
+        return entry, exit_date
+
+    def _session_end(self, date):
+        calendar = self.Security.Board.WorkingTime
+        if not calendar.IsEnabled:
+            return TimeSpan.FromDays(1)
+        period = WorkingTimeExtensions.GetPeriod(calendar, date)
+        sessions = list(period.Times) if period is not None else []
+        if calendar.SpecialDays.ContainsKey(date):
+            sessions = list(calendar.SpecialDays[date])
+        elif period is not None and period.SpecialDays.ContainsKey(date.DayOfWeek):
+            sessions = list(period.SpecialDays[date.DayOfWeek])
+        if not sessions:
+            return TimeSpan.FromDays(1)
+        end = sessions[0].Max
+        for session in sessions[1:]:
+            if session.Max > end:
+                end = session.Max
+        return end
+
+    def _process_candle(self, candle):
+        if candle.State != CandleStates.Finished or not self.IsFormedAndOnlineAndAllowTrading():
             return
-
-        close = float(candle.ClosePrice)
-        ma = float(ma_val)
-        day_of_month = candle.OpenTime.Day
-        cd = self._cooldown_bars.Value
-        is_new_day = day_of_month != self._prev_day_of_month
-
-        if self._cooldown > 0:
-            self._cooldown -= 1
-            self._prev_day_of_month = day_of_month
+        if self._pending_order is not None and self._pending_order.State not in (OrderStates.Done, OrderStates.Failed):
             return
-
-        is_start_of_month = day_of_month >= 1 and day_of_month <= 5
-        is_mid_month = day_of_month >= 14 and day_of_month <= 17
-        is_end_of_month = day_of_month >= 26
-
-        # Buy at start of month if above MA
-        if is_start_of_month and is_new_day and self.Position == 0 and close > ma:
-            self.BuyMarket()
-            self._cooldown = cd
-        # Exit long mid-month
-        elif is_mid_month and is_new_day and self.Position > 0:
-            self.SellMarket()
-            self._cooldown = cd
-        # Short mid-month if below MA
-        elif is_mid_month and is_new_day and self.Position == 0 and close < ma:
-            self.SellMarket()
-            self._cooldown = cd
-        # Cover short at end of month
-        elif is_end_of_month and is_new_day and self.Position < 0:
-            self.BuyMarket()
-            self._cooldown = cd
-
-        self._prev_day_of_month = day_of_month
+        local = TimeZoneInfo.ConvertTimeFromUtc(candle.OpenTime, self.Security.Board.TimeZone)
+        date = local.Date
+        year = local.Year if local.Month == 12 else local.Year - 1
+        entry, exit_date = self._season(year)
+        if self.Position > 0:
+            bar_end = TimeZoneInfo.ConvertTimeFromUtc(candle.OpenTime.Add(self.candle_type.Arg), self.Security.Board.TimeZone)
+            if date > exit_date or (date == exit_date and bar_end >= exit_date.Add(self._session_end(exit_date))):
+                self.SellMarket(self.Position)
+        elif self.Position == 0 and local.Month == 12 and date >= entry and self._entry_year != year:
+            if WorkingTimeExtensions.IsWorkingDate(self.Security.Board.WorkingTime, date, True):
+                self._entry_year = year
+                self.BuyMarket(self.Volume)
 
     def CreateClone(self):
         return january_effect_strategy()

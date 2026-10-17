@@ -12,70 +12,79 @@ from StockSharp.Algo.Strategies import Strategy
 
 
 class fisher_org_sign_strategy(Strategy):
+    """Fisher level crossings with documented defaults and exact-volume reversal."""
+
     def __init__(self):
         super(fisher_org_sign_strategy, self).__init__()
-        self._length = self.Param("Length", 7) \
-            .SetDisplay("Fisher Length", "Period for Fisher Transform", "General")
-        self._up_level = self.Param("UpLevel", 0.1) \
-            .SetDisplay("Upper Level", "Sell signal level", "General")
-        self._down_level = self.Param("DownLevel", -0.1) \
-            .SetDisplay("Lower Level", "Buy signal level", "General")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
-            .SetDisplay("Candle Type", "Type of candles to use", "General")
-        self._prev_fisher = None
+        self._length = self.Param("Length", 7).SetDisplay("Fisher Length", "Period for Fisher Transform", "General")
+        self._up_level = self.Param("UpLevel", 1.5).SetDisplay("Upper Level", "Sell signal level", "General")
+        self._down_level = self.Param("DownLevel", -1.5).SetDisplay("Lower Level", "Buy signal level", "General")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))).SetDisplay("Candle Type", "Type of candles", "General")
+        self._previous_fisher = None
 
     @property
-    def length(self):
+    def Length(self):
         return self._length.Value
 
+    @Length.setter
+    def Length(self, value):
+        self._length.Value = value
+
     @property
-    def up_level(self):
+    def UpLevel(self):
         return self._up_level.Value
 
-    @property
-    def down_level(self):
-        return self._down_level.Value
+    @UpLevel.setter
+    def UpLevel(self, value):
+        self._up_level.Value = value
 
     @property
-    def candle_type(self):
+    def DownLevel(self):
+        return self._down_level.Value
+
+    @DownLevel.setter
+    def DownLevel(self, value):
+        self._down_level.Value = value
+
+    @property
+    def CandleType(self):
         return self._candle_type.Value
+
+    @CandleType.setter
+    def CandleType(self, value):
+        self._candle_type.Value = value
 
     def OnReseted(self):
         super(fisher_org_sign_strategy, self).OnReseted()
-        self._prev_fisher = None
+        self._previous_fisher = None
 
     def OnStarted2(self, time):
         super(fisher_org_sign_strategy, self).OnStarted2(time)
-        self._prev_fisher = None
+        self._previous_fisher = None
         fisher = EhlersFisherTransform()
-        fisher.Length = self.length
-        subscription = self.SubscribeCandles(self.candle_type)
-        subscription.BindEx(fisher, self.process_candle).Start()
-        area = self.CreateChartArea()
-        if area is not None:
-            self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, fisher)
-            self.DrawOwnTrades(area)
+        fisher.Length = self.Length
+        self.SubscribeCandles(self.CandleType).BindEx(fisher, self.process_candle).Start()
 
-    def process_candle(self, candle, fisher_val):
+    def process_candle(self, candle, fisher_value):
         if candle.State != CandleStates.Finished:
             return
-        main_line = fisher_val.MainLine
-        if main_line is None:
+        current = fisher_value.MainLine
+        if current is None:
             return
-        fisher_value = float(main_line)
-        if self._prev_fisher is None:
-            self._prev_fisher = fisher_value
+        current = float(current)
+        previous = self._previous_fisher
+        self._previous_fisher = current
+        if previous is None or not self.IsFormedAndOnlineAndAllowTrading():
             return
-        down_level = float(self.down_level)
-        up_level = float(self.up_level)
-        long_condition = self._prev_fisher <= down_level and fisher_value > down_level
-        short_condition = self._prev_fisher >= up_level and fisher_value < up_level
-        if long_condition and self.Position <= 0:
-            self.BuyMarket()
-        if short_condition and self.Position >= 0:
-            self.SellMarket()
-        self._prev_fisher = fisher_value
+        position = self.Position
+        if previous <= float(self.DownLevel) < current and position <= 0:
+            if position < 0:
+                self.BuyMarket(-position)
+            self.BuyMarket(self.Volume)
+        elif previous >= float(self.UpLevel) > current and position >= 0:
+            if position > 0:
+                self.SellMarket(position)
+            self.SellMarket(self.Volume)
 
     def CreateClone(self):
         return fisher_org_sign_strategy()

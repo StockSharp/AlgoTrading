@@ -344,6 +344,7 @@ partial class CSharpTests
 
 			await RunStrategy<KeltnerSeasonalStartedMonthProbe>(CancellationToken, (strategy, _) =>
 			{
+				SetParam(strategy, "SeasonalityHistoryFile", SeasonalityFixture(strategy.Security.Id, 1, false));
 				recorder.Attach(strategy);
 			});
 

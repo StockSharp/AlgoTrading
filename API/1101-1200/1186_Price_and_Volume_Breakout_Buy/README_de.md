@@ -28,3 +28,5 @@ Die Strategie steigt ein, wenn Preis und Volumen gleichzeitig über ihre jeweili
   - Neuronale Netze: Nein
   - Divergenz: Nein
   - Risikolevel: Mittel
+
+Preis- und Volumenextrema werden nur aus vorherigen abgeschlossenen Kerzen berechnet (ohne die Signalkerze). `OrderDirection` akzeptiert `Long`, `Short` oder `Both`, standardmäßig `Long`. Ein Schlusskurs auf dem SMA oder zurück auf die Positionsseite setzt den Zähler für fünf aufeinanderfolgende Schlusskurse zurück.

@@ -1,30 +1,10 @@
 # VininI Trend LRMA 策略
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-VininI Trend LRMA 策略使用线性回归移动平均线（LRMA）来追踪市场方向。策略支持两种入场模式：
-- **Breakdown**：当 LRMA 突破预设的上/下水平时交易。
-- **Twist**：当 LRMA 改变方向时交易。
+跟踪已完成 K 线收盘价滚动线性回归的端点 `L`。默认 `CandleType = 4小时`、`Period = 13`、`UpLevel = 10`、`DnLevel = -10`、`Mode = Breakdown`。等待指标形成并允许交易。
 
-## 细节
+**Breakdown** 的阈值用于相对振荡值 `O = 100 × (Close − L) / L`，单位为百分比。`previousO <= UpLevel && O > UpLevel` 时买入；`previousO >= DnLevel && O < DnLevel` 时卖出。阈值不是 LRMA 的绝对价格水平。
 
-- **入场条件**：LRMA 突破水平（Breakdown）或方向反转（Twist）
-- **多头/空头**：同时支持
-- **出场条件**：反向信号
-- **止损**：无
-- **默认值**：
-  - `CandleType` = TimeFrameCandle 4h
-  - `Period` = 13
-  - `UpLevel` = 10
-  - `DnLevel` = -10
-  - `Mode` = Breakdown
-- **筛选器**：
-  - 类别: Trend
-  - 方向: Both
-  - 指标: LinearRegression
-  - 止损: None
-  - 复杂度: Basic
-  - 时间框架: Any
-  - 季节性: No
-  - 神经网络: No
-  - 背离: No
-  - 风险等级: Medium
+**Twist** 在回归端点斜率由负转正时买入，由正转负时卖出。平坦段保留此前的非零方向。
+
+买入要求 `Position <= 0`，卖出要求 `Position >= 0`。先用市价单平掉相反的已成交持仓，再以 `Volume` 开新方向。同向信号不加仓。无止损或止盈。

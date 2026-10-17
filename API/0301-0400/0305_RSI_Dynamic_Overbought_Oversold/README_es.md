@@ -1,33 +1,10 @@
 # Estrategia RSI con Sobrecompra/Sobreventa Dinámica
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-La estrategia **RSI Dynamic Overbought Oversold** está construida alrededor del RSI con niveles dinámicos de sobrecompra/sobreventa.
+Opera extremos RSI con límites adaptativos y filtro de tendencia del precio, usando velas completas de 5 minutos. Calcula `R = RSI(14)`, `P = SMA(50)` del cierre y `A = SMA(50)`, `D = StandardDeviation(50)` de R. Límites: `upper = min(A + 2 × D, 85)`, `lower = max(A − 2 × D, 15)`. Todos los indicadores deben estar formados.
 
-Las pruebas indican un retorno anual promedio de aproximadamente el 178%. Funciona mejor en el mercado de acciones.
+Sin posición, compra con `R <= lower && Close >= P × 0.995` y vende con `R >= upper && Close <= P × 1.005`. Cierra todo el largo con `R >= A || Close < P × 0.995`, y todo el corto con `R <= A || Close > P × 1.005`. Cada orden de señal inicia una pausa de `CooldownBars = 48` velas completas para nuevas decisiones.
 
-Las señales se disparan cuando la Sobrecompra confirma cambios de tendencia en datos intradía (5m). Esto hace que el método sea adecuado para traders activos.
+Las posiciones ejecutadas tienen protección nativa local porcentual `StopLossPercent = 2` desde el precio real de entrada. Sigue bid/ask y envía una salida a mercado independiente de la pausa de señales; requiere cotizaciones entre velas. Sin objetivo de beneficios.
 
-Los stops se basan en múltiplos de ATR y factores como RsiPeriod, MovingAvgPeriod. Ajuste estos valores predeterminados para equilibrar el riesgo y la recompensa.
-
-## Detalles
-- **Criterios de entrada**: ver implementación para las condiciones del indicador.
-- **Largo/Corto**: Ambos.
-- **Criterios de salida**: señal opuesta o lógica de stop.
-- **Stops**: Sí, usando cálculos basados en indicadores.
-- **Valores predeterminados**:
-  - `RsiPeriod = 14`
-  - `MovingAvgPeriod = 50`
-  - `StdDevMultiplier = 2.0m`
-  - `StopLossPercent = 2.0m`
-  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
-- **Filtros**:
-  - Categoría: Seguimiento de tendencia
-  - Dirección: Ambos
-  - Indicadores: Overbought, Oversold
-  - Stops: Sí
-  - Complejidad: Intermedio
-  - Marco temporal: Intradía (5m)
-  - Estacionalidad: No
-  - Redes neuronales: No
-  - Divergencia: No
-  - Nivel de riesgo: Medio
+`RsiPeriod = 14; MovingAvgPeriod = 50; StdDevMultiplier = 2; StopLossPercent = 2; CooldownBars = 48`.

@@ -25,6 +25,8 @@ public class KlPriceReversalStrategy : Strategy
 
 	private decimal _prevColor;
 	private bool _isFirst;
+	private readonly StrategyParam<bool> _enableBuy, _enableSell;
+	private Order _pending;
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public int PriceMaLength { get => _priceMaLength.Value; set => _priceMaLength.Value = value; }
@@ -32,8 +34,12 @@ public class KlPriceReversalStrategy : Strategy
 	public decimal UpLevel { get => _upLevel.Value; set => _upLevel.Value = value; }
 	public decimal DownLevel { get => _downLevel.Value; set => _downLevel.Value = value; }
 
+	public bool EnableBuy { get => _enableBuy.Value; set => _enableBuy.Value = value; }
+	public bool EnableSell { get => _enableSell.Value; set => _enableSell.Value = value; }
 	public KlPriceReversalStrategy()
 	{
+		_enableBuy = Param(nameof(EnableBuy), true);
+		_enableSell = Param(nameof(EnableSell), true);
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for calculations", "General");
 
@@ -64,6 +70,7 @@ public class KlPriceReversalStrategy : Strategy
 		base.OnReseted();
 		_prevColor = 2m;
 		_isFirst = true;
+		_pending = null;
 	}
 
 	/// <inheritdoc />
@@ -74,7 +81,7 @@ public class KlPriceReversalStrategy : Strategy
 		_isFirst = true;
 		_prevColor = 2m;
 
-		var priceMa = new ExponentialMovingAverage { Length = PriceMaLength };
+		var priceMa = new SimpleMovingAverage { Length = PriceMaLength };
 		var atr = new AverageTrueRange { Length = AtrLength };
 
 		var subscription = SubscribeCandles(CandleType);
@@ -113,20 +120,12 @@ public class KlPriceReversalStrategy : Strategy
 		else if (jres < 0m)
 			color = 1m;
 
-		if (!_isFirst)
+		if (!_isFirst && (_pending is null || _pending.State is OrderStates.Done or OrderStates.Failed))
 		{
-			// Buy: leaving overbought (was 4, now < 4)
-			if (_prevColor == 4m && color < 4m && Position <= 0)
-			{
-				if (Position < 0) BuyMarket();
-				BuyMarket();
-			}
-			// Sell: leaving oversold (was 0, now > 0)
-			else if (_prevColor == 0m && color > 0m && Position >= 0)
-			{
-				if (Position > 0) SellMarket();
-				SellMarket();
-			}
+			if (Position > 0m && color <= 2m) _pending = SellMarket(Position);
+			else if (Position < 0m && color >= 2m) _pending = BuyMarket(-Position);
+			else if (_prevColor == 4m && color < 4m && Position == 0m && EnableBuy) _pending = BuyMarket(Volume);
+			else if (_prevColor == 0m && color > 0m && Position == 0m && EnableSell) _pending = SellMarket(Volume);
 		}
 
 		_prevColor = color;

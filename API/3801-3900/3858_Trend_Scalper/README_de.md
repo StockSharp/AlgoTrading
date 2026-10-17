@@ -54,3 +54,5 @@ Der Saldo wird von `Portfolio.CurrentValue` übernommen (und fällt zurück auf 
 - Wählen Sie ein Kerzenintervall, das der ursprünglichen Handelsumgebung entspricht (z. B. kurze Intraday-Zeitrahmen für Scalping).
 - Stellen Sie sicher, dass das Portfolio über einen gültigen `PriceStep` verfügt, damit die Stop-Loss-Umrechnung in den absoluten Preis korrekt funktioniert.
 - Passen Sie `MoneyManagementRisk` sorgfältig an: Höhere Werte führen aufgrund der vom MQL-Experten übernommenen `ceil(balance * risk / 10000)`-Berechnung zu größeren Positionen.
+
+**Genaues Signalzeitfenster:** Hoch und Tief werden aus den **vorherigen** `BreakoutWindow` abgeschlossenen Kerzen berechnet, ohne die aktuelle Kerze. Long verlangt `EMA(FastLength) > SMA(SlowLength)` und `currentLow <= previousWindowLow`; Short verlangt die Gegenrichtung und `currentHigh >= previousWindowHigh`. Ein Long endet bei `currentHigh > previousWindowHigh`, ein Short bei `currentLow < previousWindowLow`. Ohne vollständig berechnete Indikatoren und Kanal erfolgen keine Trades. Bei `StopLossPoints > 0` wird ein echter Stop durch `StartProtection` aktiviert.

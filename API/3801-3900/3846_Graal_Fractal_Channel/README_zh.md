@@ -55,3 +55,5 @@
 * 采用高阶的 `SubscribeCandles().Bind(...)` 订阅方式，无需像 MQL 那样手写指标循环。
 * 保护性止损/止盈由 `StartProtection` 统一管理，避免手动维护订单。
 * 下单前会根据交易所限制对数量进行归一化，更符合 StockSharp 的通用实践。
+
+**可独立测试的规则：** 五根K线分形要求中间K线严格高于或低于两侧各两根K线的相应极值。若同时满足高低分形，则不发出方向信号。收盘价通道需积累 `ChannelPeriod` 根已完成K线。分形通道允许的收盘价区间为 `[low+(high-low)*DepthPercent/100, high-(high-low)*DepthPercent/100]`；方向过滤要求买入位于通道顶部 `OrientationPercent`%，卖出位于底部同样比例。信号在超过 `SignalAgeLimit` 根新完成K线后失效。反向开仓使用单笔净市价订单，数量为原持仓绝对值加标准化的 `OrderVolume`。只有真实入场成交且已知反向分形价位后才建立反向止损挂单。

@@ -19,6 +19,9 @@ public class EmaCrossoverSignalStrategy : Strategy
 	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
+	private readonly StrategyParam<bool> _allowBuyOpen, _allowSellOpen, _allowBuyClose, _allowSellClose;
+	private readonly StrategyParam<decimal> _stopLossTicks, _takeProfitTicks;
+	private Order _pending;
 	private bool _isInitialized;
 	private bool _wasFastAboveSlow;
 
@@ -26,6 +29,12 @@ public class EmaCrossoverSignalStrategy : Strategy
 	public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
+	public bool AllowBuyOpen { get => _allowBuyOpen.Value; set => _allowBuyOpen.Value = value; }
+	public bool AllowSellOpen { get => _allowSellOpen.Value; set => _allowSellOpen.Value = value; }
+	public bool AllowBuyClose { get => _allowBuyClose.Value; set => _allowBuyClose.Value = value; }
+	public bool AllowSellClose { get => _allowSellClose.Value; set => _allowSellClose.Value = value; }
+	public decimal StopLossTicks { get => _stopLossTicks.Value; set => _stopLossTicks.Value = value; }
+	public decimal TakeProfitTicks { get => _takeProfitTicks.Value; set => _takeProfitTicks.Value = value; }
 	public EmaCrossoverSignalStrategy()
 	{
 		_fastPeriod = Param(nameof(FastPeriod), 5)
@@ -36,6 +45,12 @@ public class EmaCrossoverSignalStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Period", "Length of the slow EMA", "EMA");
 
+		_allowBuyOpen = Param(nameof(AllowBuyOpen), true);
+		_allowSellOpen = Param(nameof(AllowSellOpen), true);
+		_allowBuyClose = Param(nameof(AllowBuyClose), true);
+		_allowSellClose = Param(nameof(AllowSellClose), true);
+		_stopLossTicks = Param(nameof(StopLossTicks), 1000m).SetNotNegative();
+		_takeProfitTicks = Param(nameof(TakeProfitTicks), 2000m).SetNotNegative();
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for calculations", "General");
 	}
@@ -52,6 +67,7 @@ public class EmaCrossoverSignalStrategy : Strategy
 		base.OnReseted();
 		_isInitialized = default;
 		_wasFastAboveSlow = default;
+		_pending = null;
 	}
 
 	/// <inheritdoc />
@@ -59,6 +75,9 @@ public class EmaCrossoverSignalStrategy : Strategy
 	{
 		base.OnStarted2(time);
 
+		_pending = null;
+		var step = Security?.PriceStep ?? 1m;
+		StartProtection(takeProfit: new Unit(TakeProfitTicks * step, UnitTypes.Absolute), stopLoss: new Unit(StopLossTicks * step, UnitTypes.Absolute), useMarketOrders: true);
 		var fastEma = new ExponentialMovingAverage { Length = FastPeriod };
 		var slowEma = new ExponentialMovingAverage { Length = SlowPeriod };
 
@@ -82,26 +101,18 @@ public class EmaCrossoverSignalStrategy : Strategy
 
 		var isFastAboveSlow = fastValue > slowValue;
 
-		if (_wasFastAboveSlow != isFastAboveSlow)
+		var crossing = _wasFastAboveSlow != isFastAboveSlow;
+		_wasFastAboveSlow = isFastAboveSlow;
+		if (!crossing || !IsFormedAndOnlineAndAllowTrading() || (_pending is not null && _pending.State is not (OrderStates.Done or OrderStates.Failed))) return;
+		if (isFastAboveSlow)
 		{
-			if (isFastAboveSlow)
-			{
-				// Upward crossover - buy signal
-				if (Position < 0)
-					BuyMarket();
-				if (Position <= 0)
-					BuyMarket();
-			}
-			else
-			{
-				// Downward crossover - sell signal
-				if (Position > 0)
-					SellMarket();
-				if (Position >= 0)
-					SellMarket();
-			}
-
-			_wasFastAboveSlow = isFastAboveSlow;
+			if (Position < 0m && AllowSellClose) _pending = BuyMarket(-Position + (AllowBuyOpen ? Volume : 0m));
+			else if (Position == 0m && AllowBuyOpen) _pending = BuyMarket(Volume);
+		}
+		else
+		{
+			if (Position > 0m && AllowBuyClose) _pending = SellMarket(Position + (AllowSellOpen ? Volume : 0m));
+			else if (Position == 0m && AllowSellOpen) _pending = SellMarket(Volume);
 		}
 	}
 }
