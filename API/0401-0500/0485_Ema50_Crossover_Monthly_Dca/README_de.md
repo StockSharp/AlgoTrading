@@ -1,28 +1,20 @@
-# EMA50 Crossover Monatliche DCA-Strategie
-[English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
+# Ema50 Crossover Monthly Dca
 
-EMA50 Crossover Monatliche DCA kauft, wenn der Preis über dem 50-Perioden-EMA schließt, und akkumuliert jeden Monat zusätzliche Positionen. Nicht investierte DCA-Beträge werden als Bargeld gespeichert und eingesetzt, sobald der Trend wieder aufgenommen wird.
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Português](README_pt.md) | [中文](README_zh.md) | [日本語](README_ja.md)
 
-Die Strategie verkauft, wenn der Preis unter den EMA fällt und die Position schließt.
+## Handelsregeln
 
-## Details
+Abgeschlossene Wochenkerzen und einen gebildeten EmaLength-EMA der Schlusskurse verwenden; Startwert ist das Mittel des ersten vollständigen Fensters. Zulässig sind Schlusszeiten ab StartDate. Im ersten beobachteten zulässigen Kalendermonat einmal DcaAmount gutschreiben, danach für verstrichene Monate, auch während der EMA-Vorwärmung. Keine jahrzehntelangen Beiträge vor der ersten beobachteten Kerze erfinden. Über EMA angesammeltes Geld in gerundete native Mengen investieren, darunter den gesamten tatsächlichen Long verkaufen; bei Gleichheit halten. Der Geldbestand folgt Bruttoausführungen und Verkaufserlösen, als Strategiezuordnung, nicht Kontoeinzahlung oder Finanzierungsmodell. Offene Orders abwarten, Mengengrenzen einhalten, Restgeld behalten. Keine Shorts, RSI-Filter, Wartebalken oder Schutzstops.
 
-- **Einstiegskriterien**: Schlusskurs > EMA(50)
-- **Long/Short**: Nur Long
-- **Ausstiegskriterien**: Preis kreuzt unter EMA(50)
-- **Stops**: Nein
-- **Standardwerte**:
-  - `CandleType` = 1 Woche
-  - `DcaAmount` = 100000
-  - `StartDate` = 1980-01-01
-- **Filter**:
-  - Kategorie: Trendfolge
-  - Richtung: Long
-  - Indikatoren: EMA
-  - Stops: Nein
-  - Komplexität: Anfänger
-  - Zeitrahmen: Langfristig
-  - Saisonalität: Nein
-  - Neuronale Netze: Nein
-  - Divergenz: Nein
-  - Risikolevel: Mittel
+## Parameter
+
+| Parameter | Standard |
+|---|---|
+| `CandleType` | TimeSpan.FromMinutes(10080).TimeFrame() |
+| `EmaLength` | 50 |
+| `DcaAmount` | 100000 |
+| `StartDate` | 1980-01-01 |
+
+## Prüfung
+
+Beide Sprachen werden mit gebündelten BTC/TON-Daten, unabhängigen Formeln, Orderseiten/-mengen, Ausführungen, Positionen und Ausstiegen geprüft. Datierte Preis-/Faktor- und Kalenderfixtures prüfen Mechanik; verschobene OHLC/Volumina sind keine mehrjährige Marktgeschichte. Zwei Ranggruppen, TopN=1 und SMA=2 sind ausdrücklich kleine Testprofile. Lange Originalfenster und Standardwerte werden separat geprüft. Keine Renditezusage.

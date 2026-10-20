@@ -1,32 +1,27 @@
-# Strategie Bbsr Extreme
+# BBSR Extreme
+
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-Die **Bbsr Extreme**-Strategie kombiniert Bollinger-Bands-Ausbrüche mit einem Trendfilter auf Basis eines gleitenden Durchschnitts.
-Eine Long-Position entsteht, wenn der Kurs von der unteren Band abprallt und der Durchschnitt steigt.
-Eine Short-Position wird bei einem Rückzug von der oberen Band eröffnet, wenn der Durchschnitt fällt.
-Der Ausstieg basiert auf ATR-basiertem Stop-Loss und Take-Profit.
+Bandeintritt mit EMA-Steigungsfilter und ATR-Schutz. `C,L,U,E` sind Rohschlusskurs, unteres Band, oberes Band und EMA; `p` bezeichnet die vorherige gebildete Kerze.
 
-## Details
-- **Einstiegskriterien**: Kurs kreuzt die Bänder mit Trendbestätigung.
-- **Long/Short**: Beide Richtungen.
-- **Ausstiegskriterien**: ATR-Stop oder Take-Profit.
-- **Stops**: Ja, ATR-basiert.
-- **Standardwerte**:
-  - `BollingerPeriod = 20`
-  - `BollingerMultiplier = 2`
-  - `MaLength = 7`
-  - `AtrLength = 14`
-  - `AtrStopMultiplier = 2`
-  - `AtrProfitMultiplier = 3`
-  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
-- **Filter**:
-  - Kategorie: Trendfolge
-  - Richtung: Beide
-  - Indikatoren: Bollinger Bands, EMA, ATR
-  - Stops: Ja
-  - Komplexität: Grundlegend
-  - Zeitrahmen: Intraday (5m)
-  - Saisonalität: Nein
-  - Neuronale Netze: Nein
-  - Divergenz: Nein
-  - Risikolevel: Mittel
+## Handelsregeln
+
+Long: `C[p] < L[p] && C > L && E > E[p]`. Short: `C[p] > U[p] && C < U && E < E[p]`. Gleichheit genügt nicht. Einstieg nur ohne Position mit `Volume`, ohne Aufstockung, Umkehr oder feste Kerzenpause.
+
+Vor dem Einstieg wird `A=ATR` der Signalkerze eingefroren. Nativer lokaler Schutz verwendet den tatsächlichen Ausführungspreis: Long Stop/Ziel `fill-2A` / `fill+3A`, Short `fill+2A` / `fill-3A`. Multiplikatoren sind Parameter; spätere ATR-Werte verschieben die Ebenen nicht. Bid/Ask-Abonnements ermöglichen Marktabschlüsse des tatsächlich ausgeführten Volumens zwischen Signalkerzen.
+
+Einstiege verwenden nur abgeschlossene Kerzen und vollständig gebildete Indikatoren. Offene Positionen werden bis zum Ausstieg verwaltet; ausstehende Marktorders verhindern doppelte Aufträge.
+
+Bollinger verwendet die Populationsstandardabweichung des gleitenden Schlusskursfensters einschließlich der aktuellen abgeschlossenen Kerze.
+
+## Parameter
+
+| Parameter | Default |
+|---|---|
+| `BollingerPeriod` | `20` |
+| `BollingerMultiplier` | `2` |
+| `MaLength` | `7 (EMA)` |
+| `AtrLength` | `14 (Wilder)` |
+| `AtrStopMultiplier` | `2` |
+| `AtrProfitMultiplier` | `3` |
+| `CandleType` | `5m` |

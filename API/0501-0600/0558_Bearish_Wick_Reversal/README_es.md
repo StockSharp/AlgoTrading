@@ -1,27 +1,22 @@
-# Estrategia de Reversión por Mecha Bajista
+# Bearish Wick Reversal
+
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-La estrategia compra cuando una vela bajista forma una larga mecha inferior que supera un umbral porcentual definido por el usuario. Un filtro EMA opcional requiere que el cierre esté por encima de una media móvil para confirmar la dirección de la tendencia. Las posiciones se cierran cuando el precio cierra por encima del máximo de la vela anterior.
+## Reglas de negociación
 
-## Detalles
+Reversión de mecha inferior, solo larga, sobre velas terminadas de un minuto. Estando sin posición, comprar `Volume` si `Close < Open` y `100 * (Low - Close) / Close <= Threshold`. El valor predeterminado `-1` exige una mecha inferior de al menos el uno por ciento del cierre.
 
-- **Criterios de entrada:** vela bajista con mecha inferior <= umbral y dentro de la ventana de operación; opcionalmente precio por encima de EMA.
-- **Largo/Corto:** Solo largos.
-- **Criterios de salida:** precio de cierre > máximo anterior.
-- **Stops:** Ninguno.
-- **Valores predeterminados:**
-  - Umbral = -1 (%)
-  - Filtro EMA desactivado, período EMA = 200
-  - Hora de inicio = 2014-01-01, Hora de fin = 2099-01-01
-  - Marco temporal de velas = 1 minuto
-- **Filtros:**
-  - Categoría: Reversión
-  - Dirección: Largo
-  - Indicadores: EMA
-  - Stops: No
-  - Complejidad: Bajo
-  - Marco temporal: Cualquiera
-  - Estacionalidad: No
-  - Redes neuronales: No
-  - Divergencia: No
-  - Nivel de riesgo: Medio
+La apertura UTC de la vela debe estar en el intervalo inclusivo `StartTime`–`EndTime`. Con `UseEmaFilter` activo también se requiere `EMA(EmaPeriod)` formada y `Close > EMA`; desactivado, su calentamiento no retrasa entradas.
+
+Cerrar toda la posición larga ejecutada cuando una vela completa cierra por encima del máximo de la vela completa anterior. La ventana de entrada y EMA no bloquean salidas. No hay posiciones cortas, pausas ocultas, take-profit ni stop-loss automáticos. Una orden activa evita duplicados.
+
+## Parámetros
+
+| Parámetro | Predeterminado |
+|---|---|
+| `Threshold` | `-1` |
+| `UseEmaFilter` | `false` |
+| `EmaPeriod` | `200` |
+| `CandleType` | `1m` |
+| `StartTime` | `2014-01-01T00:00:00Z` |
+| `EndTime` | `2099-01-01T00:00:00Z` |

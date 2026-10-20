@@ -1,41 +1,38 @@
-# Low Volatility Stocks Strategy
-[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
+# Low Volatility Stocks
 
-This defensive equity factor seeks out the "low volatility anomaly"—the
-observation that stocks with calmer price movements often deliver superior
-risk-adjusted returns. Volatility is calculated as the standard deviation of
-daily returns over a trailing window (60 trading days by default).
+[Русский](README_ru.md) | [Deutsch](README_de.md) | [Español](README_es.md) | [Português](README_pt.md) | [中文](README_zh.md) | [日本語](README_ja.md)
 
-On the first trading day of each month the universe is ranked by realized
-volatility. The strategy goes long the lowest-volatility decile and shorts the
-highest-volatility decile, allocating equal dollar weights within each bucket.
-Positions are held until the next monthly rebalance and no explicit stop-losses
-are used.
+## Trading rules
 
-Backtests show a smoother equity curve and smaller drawdowns than the broad
-market, making the approach attractive for investors seeking equity exposure
-with reduced risk.
+Compute simple daily returns r[d] = P[d] / P[d−1] − 1 over VolWindowDays intervals using VolWindowDays + 1 completed daily closes. Volatility is the sample standard deviation sqrt(Σ(r−mean(r))² / (VolWindowDays−1)). Every month long the lowest-volatility Deciles bucket and short the highest, floor(eligible count / Deciles) securities per side. Equal USD exposure per side; no benchmark spread, trend gate or intraday volatility threshold.
 
-## Details
+Evaluate only synchronized finished candles. Statistics count distinct UTC dates, replacing earlier intraday closes of the same date. Rebalance once on the first eligible synchronized candle of each month; an unformed input delays the decision. Equal scores are ordered by Security.Id.
 
-- **Entry Criteria**: Monthly sort by trailing volatility; long lowest decile,
-  short highest decile
-- **Long/Short**: Both
-- **Exit Criteria**: Next monthly rebalance
-- **Stops**: No
-- **Default Values**:
-  - `VolWindowDays` = 60
-  - `Deciles` = 10
-  - `MinTradeUsd` = 200
-  - `CandleType` = TimeSpan.FromDays(1)
-- **Filters**:
-  - Category: Volatility
-  - Direction: Both
-  - Indicators: Standard deviation
-  - Stops: No
-  - Complexity: Intermediate
-  - Timeframe: Medium-term
-  - Seasonality: No
-  - Neural networks: No
-  - Divergence: No
-  - Risk level: Low
+All observations must be published by the signal candle close. Intraday execution uses daily prices strictly before its UTC date; a finished one-day candle contributes its own completed date. Never warm a decision with future CSV dates.
+
+## Input data
+
+PriceHistoryFile is an optional CSV of positive daily closes: SecurityId,Date,Close. Dates use yyyy-MM-dd. Current and future dates cannot prefill a decision; live finished closes replace each UTC date. Duplicate dates are rejected. It is needed to warm long lookbacks when the execution archive is short.
+
+## Parameters
+
+| Parameter | Default |
+|---|---|
+| `Universe` | required |
+| `Capital` | `100000` |
+| `Leverage` | `1` |
+| `MinTradeUsd` | `200` |
+| `CandleType` | `TimeSpan.FromDays(1).TimeFrame()` |
+| `PriceHistoryFile` | optional — not supplied |
+| `VolWindowDays` | `60` |
+| `Deciles` | `10` |
+
+## Execution
+
+Set Universe explicitly. Prices and Capital use USD, with one price unit per traded unit. Capital is a fixed budget; Leverage controls gross exposure. No stop loss or take profit is added.
+
+Long and short baskets each receive half of Capital × Leverage. Divide each side equally, convert USD to units at the signal close and round toward zero to VolumeStep. Reconcile against actual filled positions, wait for pending orders, respect MinVolume/MaxVolume and split large adjustments across later candles. MinTradeUsd filters small adjustments; full liquidation bypasses it.
+
+## Verification
+
+Tests run both languages using packaged BTC/TON execution data and explicit rate, financial, score, text and warmup fixtures. Calendar fixtures relocate archive OHLC/volume and provide deterministic execution quotes; they are not multi-year market history. Independent formulas, order direction/size, actual fills, residual positions and forbidden decision dates are checked. Two buckets, K=1 and AssetDecile=1 are declared mechanics profiles, not evidence of the complete production universe. No profitability claim is made.

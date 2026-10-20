@@ -1,28 +1,20 @@
-# EMA50 Crossover Monthly DCA Strategy
-[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
+# Ema50 Crossover Monthly Dca
 
-EMA50 Crossover Monthly DCA buys when price closes above the 50-period EMA and accumulates additional positions each month. Uninvested DCA amounts are stored as cash and deployed once the trend resumes.
+[Русский](README_ru.md) | [Deutsch](README_de.md) | [Español](README_es.md) | [Português](README_pt.md) | [中文](README_zh.md) | [日本語](README_ja.md)
 
-The strategy sells when price falls below the EMA, exiting the position.
+## Trading rules
 
-## Details
+Use finished weekly candles and a formed EmaLength EMA of closes, seeded with its first complete-window arithmetic mean. Eligible closes begin at StartDate. Credit DcaAmount once in the first observed eligible calendar month and for elapsed months thereafter, including during EMA warmup. Do not fabricate decades of contributions before the first observed candle. Above EMA invest accumulated cash in native rounded units; below EMA sell the whole actual long; equality holds. Cash tracks gross actual fills and sale proceeds; it is a strategy allocation ledger, not an account deposit or financing model. Await pending orders, respect volume limits, remain long-only and retain unspent cash. No RSI filter, cooldown or protective stops.
 
-- **Entry Criteria**: close > EMA(50)
-- **Long/Short**: Long only
-- **Exit Criteria**: price crosses below EMA(50)
-- **Stops**: No
-- **Default Values**:
-  - `CandleType` = 1 week
-  - `DcaAmount` = 100000
-  - `StartDate` = 1980-01-01
-- **Filters**:
-  - Category: Trend following
-  - Direction: Long
-  - Indicators: EMA
-  - Stops: No
-  - Complexity: Beginner
-  - Timeframe: Long-term
-  - Seasonality: No
-  - Neural networks: No
-  - Divergence: No
-  - Risk level: Medium
+## Parameters
+
+| Parameter | Default |
+|---|---|
+| `CandleType` | TimeSpan.FromMinutes(10080).TimeFrame() |
+| `EmaLength` | 50 |
+| `DcaAmount` | 100000 |
+| `StartDate` | 1980-01-01 |
+
+## Verification
+
+Both languages are checked with the packaged BTC/TON history, independent formulas, actual order sides/quantities, fills, positions and exits. Dated price/factor and calendar fixtures test mechanics; relocated OHLC/volume is not multi-year market history. Two rank buckets, TopN=1 and SMA=2 are explicit small-universe test profiles. Published long lookbacks/defaults are checked separately. No profitability claim is made.

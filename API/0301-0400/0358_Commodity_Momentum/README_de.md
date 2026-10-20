@@ -1,30 +1,37 @@
-# Rohstoff-Momentum-Strategie
-[English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
+# Commodity Momentum
 
-Die **Commodity Momentum**-Strategie geht long bei Rohstoffen mit dem stärksten 12-Monats-Momentum (unter Auslassung des letzten Monats).
-Positionen werden am ersten Handelstag jedes Monats neu gewichtet.
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Português](README_pt.md) | [中文](README_zh.md) | [日本語](README_ja.md)
 
-Tests zeigen eine durchschnittliche jährliche Rendite von etwa 10%. Sie funktioniert am besten auf diversifizierten Rohstoffmärkten.
+## Handelsregeln
 
-Positionen werden monatlich angepasst; es werden keine Intraday-Signale verwendet.
+M bezeichnet den Entscheidungsmonat, P[K] den letzten beobachteten Tagesschlusskurs des abgeschlossenen Monats K. Momentum = P[M − SkipMonths − 1] / P[M − LookbackMonths − 1] − 1. Alle Zwischenmonate sind erforderlich. Im März vergleichen die Standardwerte Januar mit Februar des Vorjahrs und lassen Februar sowie den laufenden März aus. Bis zu TopN beste Titel gleichgewichtet kaufen, nur Long. Negative Werte bleiben zulässig. Entfernte Titel bei der nächsten monatlichen Umschichtung schließen.
 
-## Details
-- **Einstiegskriterien**: Die `TopN` Rohstoffe nach 12-Monats-Momentum (ohne letzten Monat) kaufen.
-- **Long/Short**: Nur Long.
-- **Ausstiegskriterien**: Neugewichtung am nächsten geplanten Datum.
-- **Stops**: Keine explizite Stop-Logik.
-- **Standardwerte**:
-  - `TopN = 5`
-  - `MinTradeUsd = 200`
-  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
-- **Filter**:
-  - Kategorie: Momentum
-  - Richtung: Nur Long
-  - Indikatoren: Price
-  - Stops: Nein
-  - Komplexität: Mittel
-  - Zeitrahmen: Täglich
-  - Saisonalität: Ja
-  - Neuronale Netze: Nein
-  - Divergenz: Nein
-  - Risikolevel: Mittel
+Nur abgeschlossene Kerzen mit gleichem Zeitstempel werden gemeinsam ausgewertet. Statistiken zählen verschiedene UTC-Daten; weitere Intraday-Kerzen ersetzen den Tageswert. Die erste geeignete gemeinsame Kerze jedes Monats löst genau eine Umschichtung aus. Unvollständige Daten verschieben sie. Gleiche Werte werden nach Security.Id sortiert.
+
+## Eingabedaten
+
+PriceHistoryFile ist eine optionale CSV positiver Tagesschlusskurse: SecurityId,Date,Close; Datum yyyy-MM-dd. Aktuelle und zukünftige Daten dürfen eine Entscheidung nicht vorwärmen. Live-Schlusskurse ersetzen den jeweiligen UTC-Tageswert. Doppelte Daten sind ungültig. Die Datei ermöglicht lange Rückblicke bei kurzen Ausführungsarchiven.
+
+## Parameter
+
+| Parameter | Standardwert |
+|---|---|
+| `Universe` | erforderlich |
+| `Capital` | `100000` |
+| `Leverage` | `1` |
+| `MinTradeUsd` | `200` |
+| `CandleType` | `TimeSpan.FromMinutes(5).TimeFrame()` |
+| `PriceHistoryFile` | optional — nicht gesetzt |
+| `TopN` | `5` |
+| `LookbackMonths` | `12` |
+| `SkipMonths` | `1` |
+
+## Ausführung
+
+Universe muss explizit angegeben werden. Preise und Capital sind in USD je gehandelter Einheit angegeben. Capital ist ein festes Budget; Leverage bestimmt das Bruttoengagement. Es werden keine Stop-Loss- oder Take-Profit-Orders hinzugefügt.
+
+Stückzahlen basieren auf dem Signalschlusskurs und werden zu null auf VolumeStep gerundet. Tatsächliche Ausführungen bestimmen den Bestand. Offene Orders werden abgewartet, MinVolume/MaxVolume eingehalten und große Anpassungen auf spätere Kerzen verteilt. MinTradeUsd gilt nicht für vollständige Glattstellungen.
+
+## Prüfung
+
+Ausführungen werden ausschließlich mit dem vorhandenen BTC/TON-Archiv geprüft. Explizite Berichts-, Options- und Vorwärmdaten sind mechanische Testdaten, keine echten Unternehmens- oder Optionsdaten. Kürzere Fenster, zwei Gruppen und März als jährlicher Termin sind benannte Testprofile, kein Nachweis für unveränderte langfristige Standardwerte. Es wird keine Rendite behauptet.

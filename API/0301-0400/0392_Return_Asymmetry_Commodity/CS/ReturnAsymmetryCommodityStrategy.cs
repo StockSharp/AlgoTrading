@@ -1,329 +1,221 @@
+namespace StockSharp.Samples.Strategies;
+
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Linq;
 
 using Ecng.Common;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
-using StockSharp.Configuration;
 using StockSharp.Messages;
 
-namespace StockSharp.Samples.Strategies;
-
-/// <summary>
-/// Return asymmetry strategy that trades the primary commodity when its positive-versus-negative return balance diverges from a benchmark commodity.
-/// </summary>
+/// <summary>Return Asymmetry Commodity with point-in-time inputs and execution-based portfolio accounting.</summary>
 public class ReturnAsymmetryCommodityStrategy : Strategy
 {
-	private readonly StrategyParam<string> _security2Id;
-	private readonly StrategyParam<int> _windowLength;
-	private readonly StrategyParam<int> _normalizationPeriod;
-	private readonly StrategyParam<decimal> _entryThreshold;
-	private readonly StrategyParam<decimal> _exitThreshold;
-	private readonly StrategyParam<int> _cooldownBars;
-	private readonly StrategyParam<decimal> _stopLoss;
+	private readonly StrategyParam<IEnumerable<Security>> _universe;
+	private readonly StrategyParam<decimal> _capital;
+	private readonly StrategyParam<decimal> _leverage;
+	private readonly StrategyParam<decimal> _minTradeUsd;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<string> _priceHistoryFile;
+	private readonly StrategyParam<int> _windowDays;
+	private readonly StrategyParam<int> _topN;
+	private Security[] _securities = [];
+	private readonly Dictionary<Security, (DateTime time, decimal price)> _latest = [];
+	private readonly Dictionary<Security, SortedDictionary<DateTime, decimal>> _history = [];
+	private readonly Dictionary<Security, decimal> _targets = [];
+	private readonly List<Order> _pending = [];
+	private int _lastRebalance;
+	private DateTime? _lastBar;
 
-	private Security _benchmark = null!;
-	private SimpleMovingAverage _spreadAverage = null!;
-	private StandardDeviation _spreadDeviation = null!;
-	private readonly Queue<decimal> _primaryReturns = [];
-	private readonly Queue<decimal> _benchmarkReturns = [];
-	private decimal? _previousPrimaryClose;
-	private decimal? _previousBenchmarkClose;
-	private decimal? _previousZScore;
-	private decimal _latestPrimaryAsymmetry;
-	private decimal _latestBenchmarkAsymmetry;
-	private bool _primaryUpdated;
-	private bool _benchmarkUpdated;
-	private int _cooldownRemaining;
+	/// <summary>Explicit execution universe with native volume metadata.</summary>
+	public IEnumerable<Security> Universe { get => _universe.Value; set => _universe.Value = value; }
 
-	/// <summary>
-	/// Benchmark security identifier.
-	/// </summary>
-	public string Security2Id
-	{
-		get => _security2Id.Value;
-		set => _security2Id.Value = value;
-	}
+	/// <summary>Fixed USD capital budget.</summary>
+	public decimal Capital { get => _capital.Value; set => _capital.Value = value; }
 
-	/// <summary>
-	/// Lookback period used to compute return asymmetry.
-	/// </summary>
-	public int WindowLength
-	{
-		get => _windowLength.Value;
-		set => _windowLength.Value = value;
-	}
+	/// <summary>Gross exposure divided by capital.</summary>
+	public decimal Leverage { get => _leverage.Value; set => _leverage.Value = value; }
 
-	/// <summary>
-	/// Lookback period used to normalize the asymmetry spread.
-	/// </summary>
-	public int NormalizationPeriod
-	{
-		get => _normalizationPeriod.Value;
-		set => _normalizationPeriod.Value = value;
-	}
+	/// <summary>Minimum USD adjustment; complete liquidation is exempt.</summary>
+	public decimal MinTradeUsd { get => _minTradeUsd.Value; set => _minTradeUsd.Value = value; }
 
-	/// <summary>
-	/// Z-score threshold required to open a position.
-	/// </summary>
-	public decimal EntryThreshold
-	{
-		get => _entryThreshold.Value;
-		set => _entryThreshold.Value = value;
-	}
+	/// <summary>Finished execution candle type.</summary>
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Z-score threshold required to close a position.
-	/// </summary>
-	public decimal ExitThreshold
-	{
-		get => _exitThreshold.Value;
-		set => _exitThreshold.Value = value;
-	}
+	/// <summary>Optional CSV of causal daily close prices.</summary>
+	public string PriceHistoryFile { get => _priceHistoryFile.Value; set => _priceHistoryFile.Value = value; }
 
-	/// <summary>
-	/// Closed candles to wait before another position change.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
+	/// <summary>Daily returns in the up/down balance window.</summary>
+	public int WindowDays { get => _windowDays.Value; set => _windowDays.Value = value; }
 
-	/// <summary>
-	/// Stop loss percentage.
-	/// </summary>
-	public decimal StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
+	/// <summary>Distinct securities on each extreme side.</summary>
+	public int TopN { get => _topN.Value; set => _topN.Value = value; }
 
-	/// <summary>
-	/// Candle type used for calculations.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
+	/// <summary>Initialize the strategy parameters.</summary>
 	public ReturnAsymmetryCommodityStrategy()
 	{
-		_security2Id = Param(nameof(Security2Id), Paths.HistoryDefaultSecurity2)
-			.SetDisplay("Benchmark Security Id", "Identifier of the benchmark commodity", "General");
-
-		_windowLength = Param(nameof(WindowLength), 20)
-			.SetRange(5, 120)
-			.SetDisplay("Window Length", "Lookback period used to compute return asymmetry", "Indicators");
-
-		_normalizationPeriod = Param(nameof(NormalizationPeriod), 16)
-			.SetRange(5, 120)
-			.SetDisplay("Normalization Period", "Lookback period used to normalize the asymmetry spread", "Indicators");
-
-		_entryThreshold = Param(nameof(EntryThreshold), 1.1m)
-			.SetRange(0.2m, 5m)
-			.SetDisplay("Entry Threshold", "Z-score threshold required to open a position", "Signals");
-
-		_exitThreshold = Param(nameof(ExitThreshold), 0.25m)
-			.SetRange(0m, 2m)
-			.SetDisplay("Exit Threshold", "Z-score threshold required to close a position", "Signals");
-
-		_cooldownBars = Param(nameof(CooldownBars), 8)
-			.SetRange(0, 120)
-			.SetDisplay("Cooldown Bars", "Closed candles to wait before another position change", "Risk");
-
-		_stopLoss = Param(nameof(StopLoss), 3m)
-			.SetRange(0.5m, 10m)
-			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
-
+		_universe = Param<IEnumerable<Security>>(nameof(Universe)).SetRequired()
+			.SetDisplay("Universe", "Explicit execution universe with native volume metadata.", "Parameters");
+		_capital = Param(nameof(Capital), 100000m).SetRange(0.000001m, decimal.MaxValue)
+			.SetDisplay("Capital", "Fixed USD capital budget.", "Parameters");
+		_leverage = Param(nameof(Leverage), 1m).SetRange(0.000001m, decimal.MaxValue)
+			.SetDisplay("Leverage", "Gross exposure divided by capital.", "Parameters");
+		_minTradeUsd = Param(nameof(MinTradeUsd), 200m).SetRange(0m, decimal.MaxValue)
+			.SetDisplay("MinTradeUsd", "Minimum USD adjustment; complete liquidation is exempt.", "Parameters");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Time frame for candles", "General");
+			.SetDisplay("CandleType", "Finished execution candle type.", "Parameters");
+		_priceHistoryFile = Param<string>(nameof(PriceHistoryFile))
+			.SetDisplay("PriceHistoryFile", "Optional CSV of causal daily close prices.", "Parameters");
+		_windowDays = Param(nameof(WindowDays), 120).SetRange(1, int.MaxValue)
+			.SetDisplay("WindowDays", "Daily returns in the up/down balance window.", "Parameters");
+		_topN = Param(nameof(TopN), 5).SetRange(1, int.MaxValue)
+			.SetDisplay("TopN", "Distinct securities on each extreme side.", "Parameters");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		if (Security != null)
-			yield return (Security, CandleType);
-
-		if (!Security2Id.IsEmpty())
-			yield return (new Security { Id = Security2Id }, CandleType);
-	}
+		=> (Universe ?? []).Where(s => s is not null).DistinctBy(s => s.Id, StringComparer.OrdinalIgnoreCase).Select(s => (s, CandleType));
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_benchmark = null!;
-		_spreadAverage = null!;
-		_spreadDeviation = null!;
-		_primaryReturns.Clear();
-		_benchmarkReturns.Clear();
-		_previousPrimaryClose = null;
-		_previousBenchmarkClose = null;
-		_previousZScore = null;
-		_latestPrimaryAsymmetry = 0m;
-		_latestBenchmarkAsymmetry = 0m;
-		_primaryUpdated = false;
-		_benchmarkUpdated = false;
-		_cooldownRemaining = 0;
+		_securities = [];
+		_latest.Clear();
+		_history.Clear();
+		_targets.Clear();
+		_pending.Clear();
+		_lastRebalance = 0;
+		_lastBar = null;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
+		_securities = (Universe ?? []).ToArray();
+		if (_securities.Length == 0 || _securities.Any(s => s is null || string.IsNullOrWhiteSpace(s.Id))
+			|| _securities.Select(s => s.Id).Distinct(StringComparer.OrdinalIgnoreCase).Count() != _securities.Length)
+			throw new InvalidOperationException("Universe must contain distinct execution securities.");
+		foreach (var security in _securities)
+		{
+			if (security.VolumeStep is not > 0m || security.MinVolume is not > 0m || security.MaxVolume is not > 0m)
+				throw new InvalidOperationException("Every security needs positive VolumeStep, MinVolume and MaxVolume.");
+			_history[security] = [];
+		}
+		LoadPriceHistory();
 		base.OnStarted2(time);
+		foreach (var security in _securities)
+			SubscribeCandles(CandleType, security: security).Bind(candle => ProcessCandle(security, candle)).Start();
+	}
 
-		if (Security == null)
-			throw new InvalidOperationException("Primary security is not specified.");
+	private void ProcessCandle(Security security, ICandleMessage candle)
+	{
+		if (candle.State != CandleStates.Finished || candle.ClosePrice <= 0m) return;
+		_latest[security] = (candle.OpenTime, candle.ClosePrice);
+		_history[security][candle.OpenTime.Date] = candle.ClosePrice;
+		if (_latest.Count != _securities.Length || _latest.Values.Any(v => v.time != candle.OpenTime)
+			|| _lastBar == candle.OpenTime || !IsFormedAndOnlineAndAllowTrading()) return;
+		_lastBar = candle.OpenTime;
+		var month = candle.OpenTime.Year * 100 + candle.OpenTime.Month;
+		if (_lastRebalance != month && SelectTargets(candle.OpenTime))
+			_lastRebalance = month;
+		ReconcileTargets();
+	}
 
-		if (Security2Id.IsEmpty())
-			throw new InvalidOperationException("Benchmark security identifier is not specified.");
+	private decimal Budget => Capital * Leverage;
 
-		_benchmark = this.LookupById(Security2Id) ?? new Security { Id = Security2Id };
-		_spreadAverage = new SimpleMovingAverage { Length = NormalizationPeriod };
-		_spreadDeviation = new StandardDeviation { Length = NormalizationPeriod };
+	private decimal UnitPrice(Security security) => _latest[security].price;
 
-		var primarySubscription = SubscribeCandles(CandleType, security: Security);
-		var benchmarkSubscription = SubscribeCandles(CandleType, security: _benchmark);
+	private decimal Units(Security security, decimal notional)
+		=> Math.Floor(notional / UnitPrice(security) / security.VolumeStep.Value) * security.VolumeStep.Value;
 
-		primarySubscription
-			.Bind(ProcessPrimaryCandle)
-			.Start();
-
-		benchmarkSubscription
-			.Bind(ProcessBenchmarkCandle)
-			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
+	private void ReconcileTargets()
+	{
+		if (_pending.Any(o => o.State is not (OrderStates.Done or OrderStates.Failed))) return;
+		_pending.Clear();
+		foreach (var security in _securities)
 		{
-			DrawCandles(area, primarySubscription);
-			DrawCandles(area, benchmarkSubscription);
-			DrawOwnTrades(area);
-		}
-
-		StartProtection(
-			new Unit(2, UnitTypes.Percent),
-			new Unit(StopLoss, UnitTypes.Percent));
-	}
-
-	private void ProcessPrimaryCandle(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		var ret = UpdateReturns(_primaryReturns, candle.ClosePrice, ref _previousPrimaryClose);
-		if (ret is null)
-			return;
-
-		_latestPrimaryAsymmetry = CalculateAsymmetry(_primaryReturns);
-		_primaryUpdated = true;
-		TryProcessSpread(candle.OpenTime);
-	}
-
-	private void ProcessBenchmarkCandle(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		var ret = UpdateReturns(_benchmarkReturns, candle.ClosePrice, ref _previousBenchmarkClose);
-		if (ret is null)
-			return;
-
-		_latestBenchmarkAsymmetry = CalculateAsymmetry(_benchmarkReturns);
-		_benchmarkUpdated = true;
-		TryProcessSpread(candle.OpenTime);
-	}
-
-	private decimal? UpdateReturns(Queue<decimal> queue, decimal closePrice, ref decimal? previousClose)
-	{
-		if (previousClose is not decimal previous || previous <= 0m)
-		{
-			previousClose = closePrice;
-			return null;
-		}
-
-		var ret = (closePrice - previous) / previous;
-		previousClose = closePrice;
-
-		if (queue.Count == WindowLength)
-			queue.Dequeue();
-
-		queue.Enqueue(ret);
-		return ret;
-	}
-
-	private static decimal CalculateAsymmetry(IEnumerable<decimal> returns)
-	{
-		decimal positive = 0m;
-		decimal negative = 0m;
-
-		foreach (var ret in returns)
-		{
-			if (ret > 0m)
-				positive += ret;
-			else
-				negative += Math.Abs(ret);
-		}
-
-		return positive / Math.Max(negative, 0.0001m);
-	}
-
-	private void TryProcessSpread(DateTime time)
-	{
-		if (!_primaryUpdated || !_benchmarkUpdated || _primaryReturns.Count < WindowLength || _benchmarkReturns.Count < WindowLength)
-			return;
-
-		_primaryUpdated = false;
-		_benchmarkUpdated = false;
-
-		var spread = _latestPrimaryAsymmetry - _latestBenchmarkAsymmetry;
-		var mean = _spreadAverage.Process(spread, time, true).ToDecimal();
-		var deviation = _spreadDeviation.Process(spread, time, true).ToDecimal();
-
-		if (!_spreadAverage.IsFormed || !_spreadDeviation.IsFormed || deviation <= 0m)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (_cooldownRemaining > 0)
-			_cooldownRemaining--;
-
-		var zScore = (spread - mean) / deviation;
-		var bullishEntry = _previousZScore is decimal previousBullish && previousBullish < EntryThreshold && zScore >= EntryThreshold;
-		var bearishEntry = _previousZScore is decimal previousBearish && previousBearish > -EntryThreshold && zScore <= -EntryThreshold;
-
-		if (_cooldownRemaining == 0 && Position == 0)
-		{
-			if (bullishEntry)
+			if (!_targets.TryGetValue(security, out var target)) continue;
+			var delta = target - GetPositionValue(security, Portfolio).GetValueOrDefault();
+			if (delta == 0m || (target != 0m && Math.Abs(delta) * UnitPrice(security) < MinTradeUsd)) continue;
+			var step = security.VolumeStep.Value;
+			var quantity = Math.Floor(Math.Min(Math.Abs(delta), security.MaxVolume.Value) / step) * step;
+			if (quantity < security.MinVolume.Value) continue;
+			var order = new Order
 			{
-				BuyMarket();
-				_cooldownRemaining = CooldownBars;
-			}
-			else if (bearishEntry)
-			{
-				SellMarket();
-				_cooldownRemaining = CooldownBars;
-			}
+				Security = security, Portfolio = Portfolio, Type = OrderTypes.Market,
+				Side = delta > 0m ? Sides.Buy : Sides.Sell, Volume = quantity, Comment = "0392Rebalance",
+			};
+			_pending.Add(order);
+			RegisterOrder(order);
 		}
-		else if (Position > 0 && zScore <= ExitThreshold)
-		{
-			SellMarket(Position);
-			_cooldownRemaining = CooldownBars;
-		}
-		else if (Position < 0 && zScore >= -ExitThreshold)
-		{
-			BuyMarket(Math.Abs(Position));
-			_cooldownRemaining = CooldownBars;
-		}
+	}
 
-		_previousZScore = zScore;
+	private static DateTime ParseUtc(string value)
+		=> DateTime.ParseExact(value.Trim(), "yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
+
+	private static IEnumerable<string[]> ReadRows(string path, string header, int fields)
+	{
+		using var lines = File.ReadLines(path).GetEnumerator();
+		if (!lines.MoveNext() || lines.Current.Trim() != header)
+			throw new InvalidOperationException("Invalid CSV header: expected " + header + ".");
+		while (lines.MoveNext())
+		{
+			if (string.IsNullOrWhiteSpace(lines.Current)) continue;
+			var row = lines.Current.Split(',');
+			if (row.Length != fields) throw new InvalidOperationException("Invalid CSV field count.");
+			yield return row;
+		}
+	}
+
+	private DateTime LastClosedDate(DateTime time)
+		=> CandleType.Arg is TimeSpan frame && frame == TimeSpan.FromDays(1) ? time.Date : time.Date.AddDays(-1);
+
+	private decimal[] Daily(Security security, DateTime time, int count, DateTime cutoff)
+		=> _history[security].Where(x => x.Key <= LastClosedDate(time) && x.Key < cutoff).Select(x => x.Value).TakeLast(count).ToArray();
+
+	private void LoadPriceHistory()
+	{
+		if (string.IsNullOrWhiteSpace(PriceHistoryFile)) return;
+		foreach (var row in ReadRows(PriceHistoryFile, "SecurityId,Date,Close", 3))
+		{
+			var security = _securities.SingleOrDefault(s => string.Equals(s.Id, row[0].Trim(), StringComparison.OrdinalIgnoreCase));
+			if (security is null) continue;
+			var date = DateTime.ParseExact(row[1].Trim(), "yyyy-MM-dd", CultureInfo.InvariantCulture);
+			var price = decimal.Parse(row[2], CultureInfo.InvariantCulture);
+			if (price <= 0m || !_history[security].TryAdd(date, price))
+				throw new InvalidOperationException("Daily prices must be positive and unique per security and UTC date.");
+		}
+	}
+
+	private bool SelectTargets(DateTime time)
+	{
+		var scores = new List<(Security security, decimal score)>();
+		foreach (var security in _securities)
+		{
+			var prices = Daily(security, time, WindowDays + 1, DateTime.MaxValue);
+			if (prices.Length != WindowDays + 1) continue;
+			var returns = prices.Zip(prices.Skip(1), (a, b) => b / a - 1m).ToArray();
+			var up = returns.Where(r => r > 0m).Sum();
+			var down = -returns.Where(r => r < 0m).Sum();
+			scores.Add((security, up + down == 0m ? 0m : (up - down) / (up + down)));
+		}
+		if (scores.Count < 2L * TopN) return false;
+		var ranked = scores.OrderByDescending(x => x.score).ThenBy(x => x.security.Id, StringComparer.Ordinal).Select(x => x.security).ToArray();
+		SetBasketTargets(ranked.Take(TopN), ranked.TakeLast(TopN), Budget);
+		return true;
+	}
+
+	private void SetBasketTargets(IEnumerable<Security> longBasket, IEnumerable<Security> shortBasket, decimal grossCapital)
+	{
+		var longs = longBasket.ToArray();
+		var shorts = shortBasket.ToArray();
+		foreach (var security in _securities) _targets[security] = 0m;
+		foreach (var security in longs) _targets[security] = Units(security, grossCapital / (2m * longs.Length));
+		foreach (var security in shorts) _targets[security] = -Units(security, grossCapital / (2m * shorts.Length));
 	}
 }

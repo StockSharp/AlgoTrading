@@ -1,106 +1,116 @@
+namespace StockSharp.Samples.Strategies;
+
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using Ecng.Common;
 
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-namespace StockSharp.Samples.Strategies;
-
-/// <summary>
-/// BTC outperform strategy.
-/// Uses fast and slow EMA crossover to detect momentum outperformance.
-/// Goes long on golden cross, short on death cross.
-/// </summary>
+/// <summary>Compares completed fixed-duration weekly and quarterly closes.</summary>
 public class BtcOutperformStrategy : Strategy
 {
-	private readonly StrategyParam<int> _fastEmaPeriod;
-	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _weeklyDays;
+	private readonly StrategyParam<int> _quarterlyDays;
+	private DateTime _week, _quarter, _lastTime;
+	private int _weekCount, _quarterCount;
+	private decimal? _weeklyClose, _quarterlyClose;
+	private Order _pending;
 
-	private decimal _prevFastEma;
-	private decimal _prevSlowEma;
+	/// <summary>Finished source candle interval.</summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
 
-	public int FastEmaPeriod { get => _fastEmaPeriod.Value; set => _fastEmaPeriod.Value = value; }
-	public int SlowEmaPeriod { get => _slowEmaPeriod.Value; set => _slowEmaPeriod.Value = value; }
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+	/// <summary>UTC Monday-anchored weekly period in days.</summary>
+	public int WeeklyDays
+	{
+		get => _weeklyDays.Value;
+		set => _weeklyDays.Value = value;
+	}
 
+	/// <summary>UTC epoch-anchored long period in days.</summary>
+	public int QuarterlyDays
+	{
+		get => _quarterlyDays.Value;
+		set => _quarterlyDays.Value = value;
+	}
+
+	/// <summary>Initializes the seven-day and ninety-day periods.</summary>
 	public BtcOutperformStrategy()
 	{
-		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 120)
-			.SetGreaterThanZero()
-			.SetDisplay("Fast EMA", "Fast EMA period", "Indicators");
-
-		_slowEmaPeriod = Param(nameof(SlowEmaPeriod), 450)
-			.SetGreaterThanZero()
-			.SetDisplay("Slow EMA", "Slow EMA period", "Indicators");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+			.SetDisplay("CandleType", "Finished source candle interval", "Parameters");
+		_weeklyDays = Param(nameof(WeeklyDays), 7).SetGreaterThanZero()
+			.SetDisplay("WeeklyDays", "UTC Monday-anchored weekly period in days", "Parameters");
+		_quarterlyDays = Param(nameof(QuarterlyDays), 90).SetGreaterThanZero()
+			.SetDisplay("QuarterlyDays", "UTC epoch-anchored long period in days", "Parameters");
+		OrderRegistering += order => _pending = order;
 	}
 
 	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() => [(Security, CandleType)];
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevFastEma = 0m;
-		_prevSlowEma = 0m;
+		_week = _quarter = _lastTime = default;
+		_weekCount = _quarterCount = 0;
+		_weeklyClose = _quarterlyClose = null;
+		_pending = null;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
+		if (!CandleType.Equals(TimeSpan.FromDays(1).TimeFrame()) || WeeklyDays >= QuarterlyDays)
+			throw new InvalidOperationException("Daily source candles and a weekly period shorter than the quarterly period are required.");
 		base.OnStarted2(time);
-
-		var fastEma = new ExponentialMovingAverage { Length = FastEmaPeriod };
-		var slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(fastEma, slowEma, ProcessCandle)
-			.Start();
-
+		var candles = SubscribeCandles(CandleType);
+		candles.Bind(ProcessCandle).Start();
 		var area = CreateChartArea();
-		if (area != null)
+		if (area is not null)
 		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, fastEma);
-			DrawIndicator(area, slowEma);
+			DrawCandles(area, candles);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue)
+	private static DateTime Bucket(DateTime date, DateTime epoch, int days)
+		=> epoch.AddDays(Math.Floor((date - epoch).TotalDays / days) * days);
+
+	private void ProcessCandle(ICandleMessage candle)
 	{
-		if (candle.State != CandleStates.Finished)
+		if (candle.State != CandleStates.Finished || candle.OpenTime <= _lastTime)
 			return;
-
-		if (_prevFastEma == 0m || _prevSlowEma == 0m)
-		{
-			_prevFastEma = fastEmaValue;
-			_prevSlowEma = slowEmaValue;
+		var date = candle.OpenTime.Date;
+		var contiguous = _lastTime == default || date == _lastTime.AddDays(1);
+		var week = Bucket(date, new DateTime(1970, 1, 5, 0, 0, 0, DateTimeKind.Utc), WeeklyDays);
+		var quarter = Bucket(date, DateTime.UnixEpoch, QuarterlyDays);
+		_weekCount = week != _week ? date == week ? 1 : 0 : contiguous && _weekCount > 0 ? _weekCount + 1 : 0;
+		_quarterCount = quarter != _quarter ? date == quarter ? 1 : 0 : contiguous && _quarterCount > 0 ? _quarterCount + 1 : 0;
+		_week = week;
+		_quarter = quarter;
+		_lastTime = date;
+		if (_weekCount == WeeklyDays && date.AddDays(1) == week.AddDays(WeeklyDays))
+			_weeklyClose = candle.ClosePrice;
+		if (_quarterCount == QuarterlyDays && date.AddDays(1) == quarter.AddDays(QuarterlyDays))
+			_quarterlyClose = candle.ClosePrice;
+		if (_weeklyClose is null || _quarterlyClose is null || !IsFormedAndOnlineAndAllowTrading()
+			|| _pending is not null && _pending.State is not (OrderStates.Done or OrderStates.Failed))
 			return;
-		}
-
-		if (_prevFastEma <= _prevSlowEma && fastEmaValue > slowEmaValue && Position <= 0)
-		{
-			BuyMarket();
-		}
-		else if (_prevFastEma >= _prevSlowEma && fastEmaValue < slowEmaValue && Position >= 0)
-		{
-			SellMarket();
-		}
-
-		_prevFastEma = fastEmaValue;
-		_prevSlowEma = slowEmaValue;
+		if (_weeklyClose > _quarterlyClose && Position <= 0m)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (_weeklyClose < _quarterlyClose && Position >= 0m)
+			SellMarket(Volume + Math.Abs(Position));
 	}
 }

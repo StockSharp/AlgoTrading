@@ -1,25 +1,37 @@
-# Book to Market Value 策略
-[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
+# Book To Market Value
 
-**Book-to-Market Value** 策略展示了如何设置交易品种列表并订阅日线K线以支持 book-to-market 因子。
-当前实现仅为示例，不包含具体交易逻辑。
+[English](README.md) | [Русский](README_ru.md) | [Deutsch](README_de.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-## 详情
-- **入场条件**：因子逻辑未实现。
-- **多空方向**：双向。
-- **退出条件**：无。
-- **止损**：无。
-- **默认值**:
-  - `MinTradeUsd = 200`
-  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
-- **过滤器**:
-  - 分类: 基本面
-  - 方向: 双向
-  - 指标: Fundamentals
-  - 止损: 否
-  - 复杂度: 低
-  - 时间框架: 日线
-  - 季节性: 否
-  - 神经网络: 否
-  - 背离: 否
-  - 风险等级: 低
+## 交易规则
+
+账面市值比 = 正的 BookEquity / (SharesOutstanding × 信号收盘价)，所有金额须使用兼容 USD 单位。买最高 Deciles 组，卖空最低组，每侧 floor(合格数 / Deciles) 个标的，至少需要 Deciles 份报告。排除非正权益。默认每年七月再平衡。
+
+每年仅在 RebalanceMonth 的第一个合格同步收盘信号再平衡一次。后来公布的报告不能影响较早决策。MaxReportAgeDays 从 PeriodEnd 起计算。
+
+## 输入数据
+
+FundamentalsFile 为必填 CSV：SecurityId,PeriodEnd,PublishedAt,TotalAssets,NetIncome,OperatingCashFlow,BookEquity,SharesOutstanding。PeriodEnd 为 yyyy-MM-dd，PublishedAt 为 yyyy-MM-ddTHH:mm:ssZ（UTC）。资产和股数必须为正。只选信号时已公布的最新财年及其最新修订。拒绝重复修订和期末之前的公布时间。禁止从蜡烛价格伪造财务数据。
+
+## 参数
+
+| 参数 | 默认值 |
+|---|---|
+| `Universe` | 必填 |
+| `Capital` | `100000` |
+| `Leverage` | `1` |
+| `MinTradeUsd` | `200` |
+| `CandleType` | `TimeSpan.FromMinutes(5).TimeFrame()` |
+| `Deciles` | `10` |
+| `FundamentalsFile` | 必填 |
+| `RebalanceMonth` | `7` |
+| `MaxReportAgeDays` | `550` |
+
+## 成交与仓位
+
+必须显式设置 Universe。价格与 Capital 采用 USD，每个价格单位对应一个交易单位。Capital 是固定预算，Leverage 控制总敞口。不添加止损或止盈。
+
+多头和空头各分配 Capital × Leverage 的一半，各篮子内等额分配。按信号收盘价换算数量，并按 VolumeStep 向零取整。根据实际成交仓位调整，等待未完成订单，遵守 MinVolume/MaxVolume，并在后续蜡烛继续大额调整。MinTradeUsd 过滤小额调整，但完整平仓不受此过滤限制。
+
+## 验证
+
+成交测试仅使用已有 BTC/TON 执行档案。显式财报、期权观测和预热数据是机制测试夹具，不是真实企业财务或期权历史。缩短周期、两组排序和三月年度调仓是明确的测试配置，不代表原始长期默认值已完整交易验证。不声称任何收益率。

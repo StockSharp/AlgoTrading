@@ -1,28 +1,46 @@
-# Estratégia de Reversão por F-Score
-[English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
+# F-Score Reversal
 
-Esta estratégia combina os fundamentos do Piotroski F-Score com a reversão de preço de curto prazo. A cada mês, compra a ação de pior desempenho entre aquelas com F-Score alto e, opcionalmente, vende a descoberto a de melhor desempenho com F-Score baixo. A premissa é que empresas fundamentalmente sólidas se recuperam após quedas temporárias, enquanto empresas fracas revertem após ralis.
+[English](README.md) | [Русский](README_ru.md) | [Deutsch](README_de.md) | [Español](README_es.md) | [中文](README_zh.md) | [日本語](README_ja.md)
 
-No primeiro dia útil do mês, o algoritmo classifica o universo pelo retorno de um mês. Vai comprado no ativo com menor retorno com `FScore >= FHi` e, se disponível, vai vendido no ativo com maior retorno com `FScore <= FLo`. As posições são mantidas por um mês.
+## Regras de negociação
 
-## Detalhes
+Mensalmente calcular o retorno de Lookback dias: P[d] / P[d−Lookback] − 1. Comprar o pior retorno entre FScore publicados >= FHi; com IsShortEnabled, vender o melhor entre FScore <= FLo. Os limites são inclusivos e FHi deve superar FLo. Usar pontuações Piotroski publicadas, inteiros 0..9, com o último período/revisão conhecido e limite MaxReportAgeDays. Cada lado recebe metade do orçamento bruto; um lado ausente permanece em caixa. Liquidar toda a carteira anterior e aguardar as execuções antes das novas posições.
 
-- **Critérios de entrada**:
-  - Comprado: entre ativos com `FScore >= FHi`, comprar o de menor retorno `Lookback` se o tamanho da operação >= `MinTradeUsd`.
-  - Vendido (opcional): entre ativos com `FScore <= FLo`, vender a descoberto o de maior retorno `Lookback`.
-- **Comprado/Vendido**: Comprado e vendido.
-- **Critérios de saída**: Encerrar todas as posições no próximo rebalanceamento mensal.
-- **Stops**: Nenhum.
-- **Valores padrão**:
-  - `Universe` – ativos a avaliar.
-  - `Lookback` = 21 dias.
-  - `FHi` = 7.
-  - `FLo` = 3.
-  - `CandleType` = 1 dia.
-  - `MinTradeUsd` – valor mínimo de negociação.
-- **Filtros**:
-  - Categoria: Reversão à média.
-  - Direção: Comprado e vendido.
-  - Período: Curto prazo.
-  - Rebalanceamento: Mensal.
+Somente velas encerradas sincronizadas são avaliadas. As estatísticas contam datas UTC distintas; novas velas intradiárias substituem o valor da mesma data. Há um rebalanceamento na primeira vela conjunta apta de cada mês; dados incompletos adiam a decisão. Empates são ordenados por Security.Id.
 
+Observações devem ser publicadas até o fechamento da vela de sinal. No intradiário contam apenas datas UTC anteriores; uma vela diária completa contribui sua própria data. Datas CSV futuras não antecipam decisões.
+
+O limite de publicação é o último CloseTime real entre as velas completas sincronizadas. Uma sessão pode terminar antes de transcorrer todo o intervalo configurado.
+
+## Dados de entrada
+
+PriceHistoryFile é um CSV opcional de fechamentos diários positivos: SecurityId,Date,Close; data yyyy-MM-dd. Datas atuais e futuras não antecipam o aquecimento. Fechamentos ao vivo substituem o valor da sua data UTC. Duplicatas são rejeitadas. Permite preparar janelas longas com um arquivo de execução curto.
+
+FScoreFile é obrigatório: `SecurityId,PeriodEnd,PublishedAt,FScore`. PeriodEnd: `yyyy-MM-dd`; PublishedAt: UTC `yyyy-MM-ddTHH:mm:ssZ`. Apenas inteiros 0..9, revisões únicas e publicações desde PeriodEnd. Usar o último período/revisão conhecido; MaxReportAgeDays conta desde PeriodEnd.
+
+## Parâmetros
+
+| Parâmetro | Padrão |
+|---|---|
+| `Universe` | obrigatório |
+| `Capital` | `100000` |
+| `Leverage` | `1` |
+| `MinTradeUsd` | `100` |
+| `CandleType` | `TimeSpan.FromDays(1).TimeFrame()` |
+| `PriceHistoryFile` | opcional — não definido |
+| `Lookback` | `21` |
+| `FHi` | `7` |
+| `FLo` | `3` |
+| `IsShortEnabled` | `true` |
+| `MaxReportAgeDays` | `550` |
+| `FScoreFile` | obrigatório |
+
+## Execução
+
+Universe é definido explicitamente. Preços e Capital usam USD por unidade negociada. Capital é um orçamento fixo; Leverage define a exposição bruta. Não são adicionados stop loss nem take profit.
+
+Arredondar objetivos para zero em VolumeStep. Aguardar execuções da liquidação completa antes de abrir novas posições; conciliar posições reais, respeitar MinVolume/MaxVolume e dividir ajustes grandes entre velas posteriores. MinTradeUsd filtra ajustes de objetivos não nulos; liquidação completa ignora o filtro.
+
+## Verificação
+
+Ambas as linguagens usam execuções BTC/TON incluídas e fixtures explícitas de taxas, relatórios, pontuações, textos e aquecimento. Fixtures de calendário deslocam OHLC/volume e definem cotações; não são histórico plurianual. Fórmulas independentes, direção/tamanho das ordens, execuções reais, posições residuais e datas proibidas são verificadas. Dois grupos, K=1 e AssetDecile=1 são perfis declarados de mecânica, não prova do universo completo. Sem promessa de rentabilidade.

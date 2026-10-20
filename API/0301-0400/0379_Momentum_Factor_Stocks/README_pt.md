@@ -1,33 +1,39 @@
-# Estratégia de Ações por Fator de Momentum
-[English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
+# Momentum Factor Stocks
 
-Esta abordagem sistemática aproveita o clássico fator de momentum de 12-1 meses em ações. No final de cada mês, as ações são classificadas pelo seu desempenho nos doze meses anteriores, ignorando o mês mais recente para contornar reversões de curto prazo. Os ativos no quintil mais alto são comprados e os do quintil mais baixo são vendidos a descoberto, formando um spread neutro ao mercado.
+[English](README.md) | [Русский](README_ru.md) | [Deutsch](README_de.md) | [Español](README_es.md) | [中文](README_zh.md) | [日本語](README_ja.md)
 
-O rebalanceamento ocorre no primeiro dia útil de cada mês. As posições têm peso igual e permanecem abertas até o próximo rebalanceamento; nenhum stop explícito é utilizado.
+## Regras de negociação
 
-Extensa pesquisa acadêmica e setorial mostra que o momentum entrega retornos excessivos persistentes e oferece diversificação valiosa quando combinado com outros fatores.
+Em cada revisão mensal exigir LookbackDays + 1 fechamentos diários completos. Momentum = P[d−SkipDays] / P[d−LookbackDays] − 1; SkipDays deve ser menor que LookbackDays. Excluir os últimos SkipDays intervalos, sem subtrair dois indicadores ROC separados. Comprar o Quintile superior e vender o inferior, floor(quantidade elegível / Quintile) por lado. Manter as quantidades nativas arredondadas até a próxima revisão.
 
-## Detalhes
+Somente velas encerradas sincronizadas são avaliadas. As estatísticas contam datas UTC distintas; novas velas intradiárias substituem o valor da mesma data. Há um rebalanceamento na primeira vela conjunta apta de cada mês; dados incompletos adiam a decisão. Empates são ordenados por Security.Id.
 
-- **Critérios de entrada**: Classificação mensal por momentum 12-1; comprado no quintil superior,
-  vendido no quintil inferior
-- **Comprado/Vendido**: Ambos
-- **Critérios de saída**: Próximo rebalanceamento mensal
-- **Stops**: Não
-- **Valores padrão**:
-  - `LookbackDays` = 252
-  - `SkipDays` = 21
-  - `Quintile` = 5
-  - `MinTradeUsd` = 200
-  - `CandleType` = TimeSpan.FromDays(1)
-- **Filtros**:
-  - Categoria: Momentum
-  - Direção: Ambos
-  - Indicadores: Variação de preço
-  - Stops: Não
-  - Complexidade: Intermediário
-  - Período: Médio prazo
-  - Sazonalidade: Não
-  - Redes neurais: Não
-  - Divergência: Não
-  - Nível de risco: Médio
+Observações devem ser publicadas até o fechamento da vela de sinal. No intradiário contam apenas datas UTC anteriores; uma vela diária completa contribui sua própria data. Datas CSV futuras não antecipam decisões.
+
+## Dados de entrada
+
+PriceHistoryFile é um CSV opcional de fechamentos diários positivos: SecurityId,Date,Close; data yyyy-MM-dd. Datas atuais e futuras não antecipam o aquecimento. Fechamentos ao vivo substituem o valor da sua data UTC. Duplicatas são rejeitadas. Permite preparar janelas longas com um arquivo de execução curto.
+
+## Parâmetros
+
+| Parâmetro | Padrão |
+|---|---|
+| `Universe` | obrigatório |
+| `Capital` | `100000` |
+| `Leverage` | `1` |
+| `MinTradeUsd` | `200` |
+| `CandleType` | `TimeSpan.FromDays(1).TimeFrame()` |
+| `PriceHistoryFile` | opcional — não definido |
+| `LookbackDays` | `252` |
+| `SkipDays` | `21` |
+| `Quintile` | `5` |
+
+## Execução
+
+Universe é definido explicitamente. Preços e Capital usam USD por unidade negociada. Capital é um orçamento fixo; Leverage define a exposição bruta. Não são adicionados stop loss nem take profit.
+
+Cada cesta recebe metade de Capital × Leverage, dividida igualmente. As unidades são calculadas pelo fechamento do sinal e arredondadas para zero conforme VolumeStep. Usam-se posições realmente executadas, aguardam-se ordens pendentes e respeitam-se MinVolume/MaxVolume, dividindo grandes ajustes entre velas posteriores. MinTradeUsd filtra pequenos ajustes, mas não liquidações completas.
+
+## Verificação
+
+Ambas as linguagens usam execuções BTC/TON incluídas e fixtures explícitas de taxas, relatórios, pontuações, textos e aquecimento. Fixtures de calendário deslocam OHLC/volume e definem cotações; não são histórico plurianual. Fórmulas independentes, direção/tamanho das ordens, execuções reais, posições residuais e datas proibidas são verificadas. Dois grupos, K=1 e AssetDecile=1 são perfis declarados de mecânica, não prova do universo completo. Sem promessa de rentabilidade.

@@ -2,6 +2,9 @@ namespace StockSharp.Samples.Strategies;
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Linq;
 
 using Ecng.Common;
 
@@ -10,11 +13,7 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-/// <summary>
-/// SMA Pullback with ATR Exits Strategy.
-/// Buys on pullbacks in uptrend and sells on pullbacks in downtrend.
-/// Exits are based on ATR multiples.
-/// </summary>
+/// <summary>SMA pullbacks with entry-frozen ATR distances and native quote exits.</summary>
 public class SmaPullbackAtrExitsStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
@@ -23,44 +22,43 @@ public class SmaPullbackAtrExitsStrategy : Strategy
 	private readonly StrategyParam<int> _atrLength;
 	private readonly StrategyParam<decimal> _atrMultiplierSl;
 	private readonly StrategyParam<decimal> _atrMultiplierTp;
-	private readonly StrategyParam<int> _cooldownBars;
-
-	private decimal _entryPrice;
-	private int _cooldownRemaining;
-
+	private Order _pending;
+	private SimpleMovingAverage _fast;
+	private SimpleMovingAverage _slow;
+	private AverageTrueRange _atr;
+	/// <summary>Finished signal candle type.</summary>
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-	public int FastSmaLength { get => _fastSmaLength.Value; set => _fastSmaLength.Value = value; }
-	public int SlowSmaLength { get => _slowSmaLength.Value; set => _slowSmaLength.Value = value; }
-	public int AtrLength { get => _atrLength.Value; set => _atrLength.Value = value; }
-	public decimal AtrMultiplierSl { get => _atrMultiplierSl.Value; set => _atrMultiplierSl.Value = value; }
-	public decimal AtrMultiplierTp { get => _atrMultiplierTp.Value; set => _atrMultiplierTp.Value = value; }
-	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
 
+	/// <summary>Fast close SMA length.</summary>
+	public int FastSmaLength { get => _fastSmaLength.Value; set => _fastSmaLength.Value = value; }
+
+	/// <summary>Slow close SMA length.</summary>
+	public int SlowSmaLength { get => _slowSmaLength.Value; set => _slowSmaLength.Value = value; }
+
+	/// <summary>Wilder true-range window.</summary>
+	public int AtrLength { get => _atrLength.Value; set => _atrLength.Value = value; }
+
+	/// <summary>Frozen ATR stop-loss multiplier.</summary>
+	public decimal AtrMultiplierSl { get => _atrMultiplierSl.Value; set => _atrMultiplierSl.Value = value; }
+
+	/// <summary>Frozen ATR take-profit multiplier.</summary>
+	public decimal AtrMultiplierTp { get => _atrMultiplierTp.Value; set => _atrMultiplierTp.Value = value; }
+
+	/// <summary>Initialize the strategy parameters.</summary>
 	public SmaPullbackAtrExitsStrategy()
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_fastSmaLength = Param(nameof(FastSmaLength), 8)
-			.SetGreaterThanZero()
-			.SetDisplay("Fast SMA", "Fast SMA length", "Indicators");
-
-		_slowSmaLength = Param(nameof(SlowSmaLength), 30)
-			.SetGreaterThanZero()
-			.SetDisplay("Slow SMA", "Slow SMA length", "Indicators");
-
-		_atrLength = Param(nameof(AtrLength), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("ATR Length", "ATR calculation length", "Indicators");
-
-		_atrMultiplierSl = Param(nameof(AtrMultiplierSl), 1.2m)
-			.SetDisplay("ATR SL Mult", "ATR multiplier for stop-loss", "Risk");
-
-		_atrMultiplierTp = Param(nameof(AtrMultiplierTp), 2.0m)
-			.SetDisplay("ATR TP Mult", "ATR multiplier for take-profit", "Risk");
-
-		_cooldownBars = Param(nameof(CooldownBars), 10)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "Risk");
+			.SetDisplay("CandleType", "Finished signal candle type.", "Parameters");
+		_fastSmaLength = Param(nameof(FastSmaLength), 8).SetRange(1, int.MaxValue)
+			.SetDisplay("FastSmaLength", "Fast close SMA length.", "Parameters");
+		_slowSmaLength = Param(nameof(SlowSmaLength), 30).SetRange(2, int.MaxValue)
+			.SetDisplay("SlowSmaLength", "Slow close SMA length.", "Parameters");
+		_atrLength = Param(nameof(AtrLength), 14).SetRange(1, int.MaxValue)
+			.SetDisplay("AtrLength", "Wilder true-range window.", "Parameters");
+		_atrMultiplierSl = Param(nameof(AtrMultiplierSl), 1.2m).SetRange(0.000001m, decimal.MaxValue)
+			.SetDisplay("AtrMultiplierSl", "Frozen ATR stop-loss multiplier.", "Parameters");
+		_atrMultiplierTp = Param(nameof(AtrMultiplierTp), 2m).SetRange(0.000001m, decimal.MaxValue)
+			.SetDisplay("AtrMultiplierTp", "Frozen ATR take-profit multiplier.", "Parameters");
 	}
 
 	/// <inheritdoc />
@@ -71,95 +69,49 @@ public class SmaPullbackAtrExitsStrategy : Strategy
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_entryPrice = 0;
-		_cooldownRemaining = 0;
+		_pending = null;
+		_fast = null;
+		_slow = null;
+		_atr = null;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
+		if (FastSmaLength >= SlowSmaLength) throw new InvalidOperationException("FastSmaLength must be smaller than SlowSmaLength.");
 		base.OnStarted2(time);
-
-		var fastSma = new SimpleMovingAverage { Length = FastSmaLength };
-		var slowSma = new SimpleMovingAverage { Length = SlowSmaLength };
-		var atr = new AverageTrueRange { Length = AtrLength };
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(fastSma, slowSma, atr, ProcessCandle)
-			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
 		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, fastSma);
-			DrawIndicator(area, slowSma);
-			DrawOwnTrades(area);
+			var quote = new Subscription(DataType.Level1, Security);
+			quote.MarketData.BuildField = field;
+			SubscribeLevel1(quote).Start();
 		}
+		_fast = new SimpleMovingAverage { Length = FastSmaLength };
+		_slow = new SimpleMovingAverage { Length = SlowSmaLength };
+		_atr = new AverageTrueRange { Length = AtrLength };
+		SubscribeCandles(CandleType).Bind(_fast, _slow, _atr, ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal fastSmaValue, decimal slowSmaValue, decimal atrValue)
+	private bool IsPending => _pending is not null && _pending.State is not (OrderStates.Done or OrderStates.Failed);
+
+	private void Submit(Sides side, decimal quantity, string comment)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		// Check stop/TP exits first
-		if (Position > 0 && _entryPrice > 0)
-		{
-			var stop = _entryPrice - atrValue * AtrMultiplierSl;
-			var target = _entryPrice + atrValue * AtrMultiplierTp;
-
-			if (candle.LowPrice <= stop || candle.HighPrice >= target)
-			{
-				SellMarket(Math.Abs(Position));
-				_entryPrice = 0;
-				_cooldownRemaining = CooldownBars;
-				return;
-			}
-		}
-		else if (Position < 0 && _entryPrice > 0)
-		{
-			var stop = _entryPrice + atrValue * AtrMultiplierSl;
-			var target = _entryPrice - atrValue * AtrMultiplierTp;
-
-			if (candle.HighPrice >= stop || candle.LowPrice <= target)
-			{
-				BuyMarket(Math.Abs(Position));
-				_entryPrice = 0;
-				_cooldownRemaining = CooldownBars;
-				return;
-			}
-		}
-
-		if (_cooldownRemaining > 0)
-		{
-			_cooldownRemaining--;
-			return;
-		}
-
-		var currentPrice = candle.ClosePrice;
-
-		// Buy: pullback in uptrend (price below fast SMA, fast > slow)
-		if (currentPrice < fastSmaValue && fastSmaValue > slowSmaValue && Position <= 0)
-		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-			BuyMarket(Volume);
-			_entryPrice = currentPrice;
-			_cooldownRemaining = CooldownBars;
-		}
-		// Sell: pullback in downtrend (price above fast SMA, fast < slow)
-		else if (currentPrice > fastSmaValue && fastSmaValue < slowSmaValue && Position >= 0)
-		{
-			if (Position > 0)
-				SellMarket(Math.Abs(Position));
-			SellMarket(Volume);
-			_entryPrice = currentPrice;
-			_cooldownRemaining = CooldownBars;
-		}
+		_pending = CreateOrder(side, 0m, quantity);
+		_pending.Type = OrderTypes.Market;
+		_pending.Comment = comment;
+		RegisterOrder(_pending);
 	}
+
+	private void ProcessCandle(ICandleMessage candle, decimal fast, decimal slow, decimal atr)
+	{
+		if (candle.State != CandleStates.Finished || !_fast.IsFormed || !_slow.IsFormed || !_atr.IsFormed
+			|| atr <= 0m || Position != 0m || IsPending || !IsFormedAndOnlineAndAllowTrading()) return;
+		Sides? side = candle.ClosePrice < fast && fast > slow ? Sides.Buy
+			: candle.ClosePrice > fast && fast < slow ? Sides.Sell : null;
+		if (side is null) return;
+		StartProtection(new Unit(atr * AtrMultiplierTp, UnitTypes.Absolute), new Unit(atr * AtrMultiplierSl, UnitTypes.Absolute),
+			useMarketOrders: true, isLocalStop: true);
+		Submit(side.Value, Volume, "0487Entry");
+	}
+
 }

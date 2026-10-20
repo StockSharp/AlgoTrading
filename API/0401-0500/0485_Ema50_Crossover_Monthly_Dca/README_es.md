@@ -1,28 +1,20 @@
-# Estrategia EMA50 Crossover DCA Mensual
-[English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
+# Ema50 Crossover Monthly Dca
 
-EMA50 Crossover DCA Mensual compra cuando el precio cierra por encima de la EMA de 50 períodos y acumula posiciones adicionales cada mes. Los importes de DCA no invertidos se guardan como efectivo y se despliegan una vez que la tendencia se reanuda.
+[English](README.md) | [Русский](README_ru.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [中文](README_zh.md) | [日本語](README_ja.md)
 
-La estrategia vende cuando el precio cae por debajo de la EMA, cerrando la posición.
+## Reglas de negociación
 
-## Detalles
+Velas semanales cerradas y EMA de EmaLength cierres formada, iniciada con la media del primer período completo. Cierres aptos desde StartDate. Abonar un DcaAmount en el primer mes apto observado y después por meses transcurridos, incluso durante calentamiento. No inventar décadas de aportes previos al primer dato. Sobre EMA invertir efectivo acumulado con cantidades redondeadas; bajo EMA vender todo el largo real; igualdad mantiene. El saldo sigue ejecuciones brutas y ventas; es un registro de asignación, no depósito ni financiación. Esperar órdenes, respetar límites y retener efectivo sobrante. Sin cortos, RSI, espera ni stops.
 
-- **Criterios de entrada**: cierre > EMA(50)
-- **Largo/Corto**: Solo largos
-- **Criterios de salida**: el precio cruza por debajo de EMA(50)
-- **Stops**: No
-- **Valores predeterminados**:
-  - `CandleType` = 1 semana
-  - `DcaAmount` = 100000
-  - `StartDate` = 1980-01-01
-- **Filtros**:
-  - Categoría: Seguimiento de tendencia
-  - Dirección: Largo
-  - Indicadores: EMA
-  - Stops: No
-  - Complejidad: Principiante
-  - Marco temporal: Largo plazo
-  - Estacionalidad: No
-  - Redes neuronales: No
-  - Divergencia: No
-  - Nivel de riesgo: Medio
+## Parámetros
+
+| Parámetro | Predeterminado |
+|---|---|
+| `CandleType` | TimeSpan.FromMinutes(10080).TimeFrame() |
+| `EmaLength` | 50 |
+| `DcaAmount` | 100000 |
+| `StartDate` | 1980-01-01 |
+
+## Verificación
+
+Ambos lenguajes se verifican con BTC/TON incluido, fórmulas independientes, dirección/tamaño de órdenes, ejecuciones, posiciones y salidas. Datos fechados de precios/factores y calendarios verifican mecánica; OHLC/volúmenes trasladados no son historia plurianual. Dos grupos, TopN=1 y SMA=2 son perfiles explícitos pequeños. Ventanas largas y valores originales se comprueban aparte. Sin promesas de rentabilidad.

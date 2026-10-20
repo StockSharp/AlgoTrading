@@ -1,31 +1,22 @@
-# Estratégia de Pullback SMA + Saídas ATR
-[English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
+# Sma Pullback Atr Exits
 
-Esta estratégia entra em pullbacks quando uma média móvel de curto prazo está acima ou abaixo de uma média de tendência de longo prazo. Posições compradas são abertas quando o preço cai abaixo da SMA rápida enquanto ela permanece acima da SMA lenta. Posições vendidas são abertas quando o preço sobe acima da SMA rápida enquanto ela permanece abaixo da SMA lenta. As saídas utilizam múltiplos do Average True Range a partir do preço de entrada.
+[English](README.md) | [Русский](README_ru.md) | [Deutsch](README_de.md) | [Español](README_es.md) | [中文](README_zh.md) | [日本語](README_ja.md)
 
-## Detalhes
+## Regras de negociação
 
-- **Critérios de entrada**:
-  - Comprado: close < SMA rápida e SMA rápida > SMA lenta.
-  - Vendido: close > SMA rápida e SMA rápida < SMA lenta.
-- **Comprado/Vendido**: Ambos.
-- **Critérios de saída**:
-  - O preço atinge o stop loss ou take profit baseado em ATR.
-- **Stops**: Múltiplos de ATR para stop loss e take profit.
-- **Valores padrão**:
-  - `FastSmaLength` = 8
-  - `SlowSmaLength` = 30
-  - `AtrLength` = 14
-  - `AtrMultiplierSl` = 1.2
-  - `AtrMultiplierTp` = 2.0
-- **Filtros**:
-  - Categoria: Seguidor de tendência
-  - Direção: Ambos
-  - Indicadores: SMA, ATR
-  - Stops: Sim
-  - Complexidade: Baixo
-  - Período: Qualquer
-  - Sazonalidade: Não
-  - Redes neurais: Não
-  - Divergência: Não
-  - Nível de risco: Médio
+Com velas encerradas, SMA de fechamentos e ATR de Wilder formados, comprar se fechamento < SMA rápida e rápida > lenta; vender se fechamento > rápida e rápida < lenta. Igualdades não geram entrada. Volume apenas sem posição, aguardando ordens pendentes. Fixar SL = ATR×AtrMultiplierSl e TP = ATR×AtrMultiplierTp no sinal. Proteção local nativa ancora distâncias na execução real e observa bid/ask. ATR posterior não move níveis. Encerrar todo saldo pela proteção, sem reversão por sinal contrário.
+
+## Parâmetros
+
+| Parâmetro | Padrão |
+|---|---|
+| `CandleType` | TimeSpan.FromMinutes(30).TimeFrame() |
+| `FastSmaLength` | 8 |
+| `SlowSmaLength` | 30 |
+| `AtrLength` | 14 |
+| `AtrMultiplierSl` | 1.2 |
+| `AtrMultiplierTp` | 2 |
+
+## Verificação
+
+Ambas as linguagens são verificadas com BTC/TON incluído, fórmulas independentes, direção/tamanho das ordens, execuções, posições e saídas. Dados datados de preços/fatores e calendário verificam mecânica; OHLC/volumes deslocados não são história plurianual. Dois grupos, TopN=1 e SMA=2 são perfis pequenos explícitos. Janelas longas e valores originais são verificados separadamente. Sem promessa de rentabilidade.

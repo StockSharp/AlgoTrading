@@ -1,26 +1,29 @@
-# Two X SPY TIPS 戦略
-[English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
+# Two X Spy Tips
 
-この戦略は、S&P 500 と TIPS の価格がともに 200 期間移動平均を上回っている状態で月の変わり目を迎えたとき、取引対象資産に資金を配分します。
+[English](README.md) | [Русский](README_ru.md) | [Deutsch](README_de.md) | [Español](README_es.md) | [Português](README_pt.md) | [中文](README_zh.md)
 
-## 詳細
+## 取引規則
 
-- **エントリー条件**: 新しい月の開始時に S&P 500 と TIPS が SMA を上回っている。
-- **ロング/ショート**: ロングのみ。
-- **エグジット条件**: エグジットなし。
-- **ストップ**: いいえ。
-- **デフォルト値**:
-  - `SmaLength` = 200
-  - `Leverage` = 2
-  - `CandleType` = TimeSpan.FromDays(1)
-- **フィルター**:
-  - カテゴリ: トレンド
-  - 方向: ロングのみ
-  - インジケーター: SMA
-  - ストップ: いいえ
-  - 複雑さ: 基本
-  - 時間軸: 日足
-  - 季節性: はい
-  - ニューラルネットワーク: いいえ
-  - ダイバージェンス: いいえ
-  - リスクレベル: 中
+SpySecurity と TipsSecurity は Universe 内の異なる明示的なシグナルで、取引対象 Security も含めます。毎月最初の同期確定足で、両方の最新確定日終値が自身を含む SmaLength 日 SMA を厳密に上回る必要があります。形成済みの不成立条件でも当月審査を消費し、履歴不足だけが判断を遅らせます。空なら Capital×Leverage/価格を VolumeStep で切り捨てて買い、出口・売り建て・月次追加購入なしで保有します。USD、MinTradeUsd、銘柄固有数量制限を適用します。
+
+## パラメーター
+
+| パラメーター | 初期値 |
+|---|---|
+| `Universe` | 必須 |
+| `Capital` | 100000 |
+| `Leverage` | 2 |
+| `MinTradeUsd` | 200 |
+| `CandleType` | TimeSpan.FromMinutes(1440).TimeFrame() |
+| `PriceHistoryFile` | 未指定 |
+| `SpySecurity` | 必須 |
+| `TipsSecurity` | 必須 |
+| `SmaLength` | 200 |
+
+## 入力データ
+
+任意の `PriceHistoryFile` CSV：`SecurityId,Date,Close`。終値は正、銘柄・日付は一意、日付は `yyyy-MM-dd`。日中判断では当日 UTC 日付より前だけを使い、確定日足は自身の終値を使えます。将来行で先取りせず、取引足が該当日の値を更新します。
+
+## 検証
+
+両言語を同梱 BTC/TON、独立式、注文方向・数量、実約定、保有、出口で検証します。日付付き価格・評価・暦データは機構検証で、OHLC・出来高の日付移動は複数年の市場履歴ではありません。2区分、TopN=1、SMA=2 は明示的な小規模テスト設定です。長期窓と元の初期値を別に確認し、収益は保証しません。

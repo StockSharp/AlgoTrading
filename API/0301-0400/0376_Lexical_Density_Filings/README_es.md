@@ -1,31 +1,40 @@
-# Estrategia de Densidad Léxica en Presentaciones Regulatorias
-[English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
+# Lexical Density Filings
 
-Esta estrategia de factores examina el lenguaje utilizado en las presentaciones regulatorias para evaluar el rendimiento futuro de las acciones. La densidad léxica se mide como la fracción de términos únicos en el informe más reciente. Las presentaciones densas sugieren divulgaciones ricas y cargadas de información que suelen preceder a rendimientos más sólidos, mientras que una redacción escasa puede enmascarar debilidades.
+[English](README.md) | [Русский](README_ru.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [中文](README_zh.md) | [日本語](README_ja.md)
 
-Cada trimestre, el universo se ordena por densidad léxica. El quintil más alto se mantiene largo y el quintil más bajo se vende en corto, con posiciones de igual ponderación. El rebalanceo ocurre durante los primeros tres días hábiles de febrero, mayo, agosto y noviembre, y las posiciones permanecen abiertas entre revisiones sin stops.
+## Reglas de negociación
 
-Las pruebas retrospectivas en renta variable estadounidense amplia muestran que el factor proporciona una prima estable con una rotación moderada, lo que lo convierte en un componente útil en carteras multifactor.
+Leer el último informe de texto publicado por cada título. Los tokens son secuencias Unicode de letras/marcas, normalizadas con reglas invariantes .NET. Densidad léxica = tokens normalizados distintos / tokens totales. Revisar solo las primeras tres fechas bursátiles de febrero, mayo, agosto y noviembre según el calendario del primer título. Esperar dentro de esa ventana hasta disponer de Quintile informes; de lo contrario, esperar al siguiente mes de revisión. Comprar el grupo de mayor densidad y vender el menor, floor(cantidad elegible / Quintile) por lado. Mantener entre revisiones.
 
-## Detalles
+Las observaciones deben publicarse antes del cierre de la vela de señal. En intradía solo cuentan fechas UTC anteriores; una vela diaria completa aporta su propia fecha. Los datos CSV futuros no pueden anticipar decisiones.
 
-- **Criterios de entrada**: Ordenación trimestral por densidad léxica; largo quintil superior,
-  corto quintil inferior
-- **Largo/Corto**: Ambos
-- **Criterios de salida**: Próximo rebalanceo
-- **Stops**: No
-- **Valores predeterminados**:
-  - `Quintile` = 5
-  - `MinTradeUsd` = 200
-  - `CandleType` = TimeSpan.FromDays(1)
-- **Filtros**:
-  - Categoría: Fundamental
-  - Dirección: Ambos
-  - Indicadores: Análisis de texto
-  - Stops: No
-  - Complejidad: Intermedio
-  - Marco temporal: Multimensual
-  - Estacionalidad: Sí
-  - Redes neuronales: No
-  - Divergencia: No
-  - Nivel de riesgo: Medio
+El límite de publicación es el último CloseTime real entre las velas completas sincronizadas. Una sesión puede terminar antes de que transcurra todo el intervalo configurado.
+
+## Datos de entrada
+
+FilingsFile es obligatorio: `SecurityId,PeriodEnd,PublishedAt,DocumentPath`. Formatos: `yyyy-MM-dd` y UTC `yyyy-MM-ddTHH:mm:ssZ`. DocumentPath señala texto UTF-8, absoluto o relativo al manifiesto; sin comas en las rutas. Rechazar documentos vacíos, revisiones duplicadas y publicaciones anteriores a PeriodEnd. Usar el último período/revisión publicado antes del cierre y límite MaxReportAgeDays. El primer título requiere calendario bursátil con festivos.
+
+Los tokens usan elementos de texto Unicode cuya categoría inicial es letra o marca combinante; puntuación y dígitos separan palabras. Normalización de mayúsculas invariante, sin lematización ni normalización de acentos.
+
+## Parámetros
+
+| Parámetro | Predeterminado |
+|---|---|
+| `Universe` | obligatorio |
+| `Capital` | `100000` |
+| `Leverage` | `1` |
+| `MinTradeUsd` | `200` |
+| `CandleType` | `TimeSpan.FromDays(1).TimeFrame()` |
+| `Quintile` | `5` |
+| `MaxReportAgeDays` | `550` |
+| `FilingsFile` | obligatorio |
+
+## Ejecución
+
+Universe se configura explícitamente. Los precios y Capital se expresan en USD por unidad negociada. Capital es un presupuesto fijo; Leverage determina la exposición bruta. No se añaden stop loss ni take profit.
+
+Cada cesta recibe la mitad de Capital × Leverage, repartida por igual. Se convierte a unidades al cierre de señal y se redondea hacia cero según VolumeStep. Se usan posiciones realmente ejecutadas, se esperan órdenes pendientes y se respetan MinVolume/MaxVolume dividiendo ajustes grandes entre velas posteriores. MinTradeUsd filtra ajustes pequeños, pero no liquidaciones completas.
+
+## Verificación
+
+Ambos lenguajes se prueban con ejecuciones BTC/TON incluidas y fixtures explícitas de tasas, informes, puntuaciones, textos e historial. Las fixtures de calendario trasladan OHLC/volumen y fijan cotizaciones; no son historia de mercado plurianual. Se verifican fórmulas independientes, dirección/tamaño de órdenes, ejecuciones reales, posiciones residuales y fechas prohibidas. Dos grupos, K=1 y AssetDecile=1 son perfiles de mecánica declarados, no prueba del universo completo. Sin promesas de rentabilidad.

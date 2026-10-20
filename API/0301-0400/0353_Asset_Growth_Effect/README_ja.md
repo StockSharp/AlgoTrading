@@ -1,33 +1,37 @@
-# 資産成長効果戦略
-[English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
+# Asset Growth Effect
 
-この戦略は総資産の成長率が最も低い企業をロングし、資産成長率が最も高い企業をショートします。毎年7月に最新のファンダメンタルデータを使用してポートフォリオをリバランスします。
+[English](README.md) | [Русский](README_ru.md) | [Deutsch](README_de.md) | [Español](README_es.md) | [Português](README_pt.md) | [中文](README_zh.md)
 
-テストでは年平均リターン約15%を示しています。株式市場で最も優れたパフォーマンスを発揮します。
+## 取引規則
 
-資産成長は企業の財務報告書に記載された総資産から計算されます。株式は分位数にランク付けされ、最低分位を買い、最高分位を売り建てます。ポジションは目標レバレッジを達成するようにサイズが決められ、毎年調整されます。
+資産成長率 = 最新公表年度の TotalAssets / 一年前の同じ決算日の TotalAssets − 1。両報告は信号時点で公表済みである必要があります。最低 Quantiles を買い、最高を売り、片側 floor(適格数 / Quantiles) 銘柄。最低 Quantiles 組の報告が必要です。既定は毎年七月です。
 
-## 詳細
+毎年 RebalanceMonth の最初の適格な同期確定足で一度リバランスします。後日の公表は過去の判断に影響しません。MaxReportAgeDays は PeriodEnd から数えます。
 
-- **エントリー条件**:
-  - ロング: 資産成長率が最低分位の銘柄。
-  - ショート: 資産成長率が最高分位の銘柄。
-- **ロング/ショート**: 両方。
-- **エグジット条件**: 年次リバランス時にポジションを調整。
-- **ストップ**: いいえ。
-- **デフォルト値**:
-  - `Quantiles` = 10
-  - `Leverage` = 1m
-  - `MinTradeUsd` = 50m
-  - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
-- **フィルター**:
-  - カテゴリ: ファンダメンタル
-  - 方向: 両方
-  - インジケーター: Fundamentals
-  - ストップ: いいえ
-  - 複雑さ: 中程度
-  - 時間軸: 長期
-  - 季節性: はい
-  - ニューラルネットワーク: いいえ
-  - ダイバージェンス: いいえ
-  - リスクレベル: 中
+## 入力データ
+
+FundamentalsFile は必須 CSV です：SecurityId,PeriodEnd,PublishedAt,TotalAssets,NetIncome,OperatingCashFlow,BookEquity,SharesOutstanding。PeriodEnd は yyyy-MM-dd、PublishedAt は yyyy-MM-ddTHH:mm:ssZ（UTC）。資産と株数は正である必要があります。信号時点で公表済みの最新会計期間と最新改訂だけを選びます。重複改訂や期末より前の公表は禁止です。足から財務値を作りません。
+
+## パラメーター
+
+| パラメーター | 既定値 |
+|---|---|
+| `Universe` | 必須 |
+| `Capital` | `100000` |
+| `Leverage` | `1` |
+| `MinTradeUsd` | `50` |
+| `CandleType` | `TimeSpan.FromMinutes(5).TimeFrame()` |
+| `Quantiles` | `10` |
+| `FundamentalsFile` | 必須 |
+| `RebalanceMonth` | `7` |
+| `MaxReportAgeDays` | `550` |
+
+## 約定と保有数量
+
+Universe を明示的に設定します。価格と Capital は取引単位当たりの USD です。Capital は固定予算、Leverage は総エクスポージャーを指定します。損切りや利食い注文は追加しません。
+
+買い・売りの各バスケットに Capital × Leverage の半分を均等配分します。信号終値で数量に換算し、VolumeStep 単位でゼロ方向へ丸めます。実際の約定残高を使い、未完了注文を待ち、MinVolume/MaxVolume を守って大口調整を後続足へ分割します。MinTradeUsd は小口調整を除外しますが、全決済には適用しません。
+
+## 検証
+
+約定検証には既存 BTC/TON アーカイブのみを使います。明示した財務報告、オプション観測、準備価格は仕組みのテスト用で、実企業財務やオプション履歴ではありません。短縮期間、二分位、三月の年次調整は明示的な検証設定で、元の長期既定値の取引を証明しません。収益率は主張しません。

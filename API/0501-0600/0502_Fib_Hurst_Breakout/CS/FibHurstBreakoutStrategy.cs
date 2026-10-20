@@ -1,5 +1,10 @@
+namespace StockSharp.Samples.Strategies;
+
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Linq;
 
 using Ecng.Common;
 
@@ -8,149 +13,178 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-namespace StockSharp.Samples.Strategies;
-
-/// <summary>
-/// Fibonacci levels with Hurst exponent filter.
-/// Uses rolling high/low for Fib levels and Hurst to detect trending.
-/// Enters long when price crosses above 61.8% level and Hurst > 0.5.
-/// Enters short when price crosses below 38.2% level and Hurst less than 0.5.
-/// </summary>
+/// <summary>Prior completed daily Fibonacci range and daily R/S Hurst filter with capped intraday entries.</summary>
 public class FibHurstBreakoutStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _hurstPeriod;
 	private readonly StrategyParam<int> _lookbackPeriod;
-	private readonly StrategyParam<int> _cooldownBars;
-
-	private readonly List<decimal> _highs = [];
-	private readonly List<decimal> _lows = [];
-	private decimal _prevClose;
-	private int _cooldownRemaining;
-
+	private readonly StrategyParam<int> _maxTradesPerDay;
+	private readonly StrategyParam<int> _maxTotalTrades;
+	private readonly StrategyParam<decimal> _riskPercent;
+	private readonly StrategyParam<decimal> _riskReward;
+	private readonly StrategyParam<string> _dailyHistoryFile;
+	private Order _pending;
+	private readonly SortedDictionary<DateTime, (decimal high, decimal low, decimal close)> _daily = [];
+	private decimal? _previousClose;
+	private DateTime _day;
+	private int _dailyTrades;
+	private int _totalTrades;
+	/// <summary>Finished signal candle type.</summary>
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-	public int HurstPeriod { get => _hurstPeriod.Value; set => _hurstPeriod.Value = value; }
-	public int LookbackPeriod { get => _lookbackPeriod.Value; set => _lookbackPeriod.Value = value; }
-	public int CooldownBars { get => _cooldownBars.Value; set => _cooldownBars.Value = value; }
 
+	/// <summary>Completed daily closes in the R/S Hurst window.</summary>
+	public int HurstPeriod { get => _hurstPeriod.Value; set => _hurstPeriod.Value = value; }
+
+	/// <summary>Prior completed daily bars in the Fibonacci range.</summary>
+	public int LookbackPeriod { get => _lookbackPeriod.Value; set => _lookbackPeriod.Value = value; }
+
+	/// <summary>Maximum filled-entry attempts per historical UTC day.</summary>
+	public int MaxTradesPerDay { get => _maxTradesPerDay.Value; set => _maxTradesPerDay.Value = value; }
+
+	/// <summary>Maximum entry attempts in one run.</summary>
+	public int MaxTotalTrades { get => _maxTotalTrades.Value; set => _maxTotalTrades.Value = value; }
+
+	/// <summary>Native stop distance as a percentage of the actual fill.</summary>
+	public decimal RiskPercent { get => _riskPercent.Value; set => _riskPercent.Value = value; }
+
+	/// <summary>Take-profit percentage divided by the stop percentage.</summary>
+	public decimal RiskReward { get => _riskReward.Value; set => _riskReward.Value = value; }
+
+	/// <summary>Optional dated daily High/Low/Close CSV for warmup.</summary>
+	public string DailyHistoryFile { get => _dailyHistoryFile.Value; set => _dailyHistoryFile.Value = value; }
+
+	/// <summary>Initialize the strategy parameters.</summary>
 	public FibHurstBreakoutStrategy()
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles for strategy", "Parameters");
-
-		_hurstPeriod = Param(nameof(HurstPeriod), 50)
-			.SetGreaterThanZero()
-			.SetDisplay("Hurst Period", "Period for Hurst exponent", "Parameters");
-
-		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("Lookback Period", "Period for Fib level calculation", "Parameters");
-
-		_cooldownBars = Param(nameof(CooldownBars), 10)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "Risk");
+			.SetDisplay("CandleType", "Finished signal candle type.", "Parameters");
+		_hurstPeriod = Param(nameof(HurstPeriod), 50).SetRange(2, int.MaxValue)
+			.SetDisplay("HurstPeriod", "Completed daily closes in the R/S Hurst window.", "Parameters");
+		_lookbackPeriod = Param(nameof(LookbackPeriod), 20).SetRange(1, int.MaxValue)
+			.SetDisplay("LookbackPeriod", "Prior completed daily bars in the Fibonacci range.", "Parameters");
+		_maxTradesPerDay = Param(nameof(MaxTradesPerDay), 5).SetRange(1, int.MaxValue)
+			.SetDisplay("MaxTradesPerDay", "Maximum filled-entry attempts per historical UTC day.", "Parameters");
+		_maxTotalTrades = Param(nameof(MaxTotalTrades), 510).SetRange(1, int.MaxValue)
+			.SetDisplay("MaxTotalTrades", "Maximum entry attempts in one run.", "Parameters");
+		_riskPercent = Param(nameof(RiskPercent), 2m).SetRange(0.000001m, decimal.MaxValue)
+			.SetDisplay("RiskPercent", "Native stop distance as a percentage of the actual fill.", "Parameters");
+		_riskReward = Param(nameof(RiskReward), 2m).SetRange(0.000001m, decimal.MaxValue)
+			.SetDisplay("RiskReward", "Take-profit percentage divided by the stop percentage.", "Parameters");
+		_dailyHistoryFile = Param<string>(nameof(DailyHistoryFile))
+			.SetDisplay("DailyHistoryFile", "Optional dated daily High/Low/Close CSV for warmup.", "Parameters");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> [(Security, CandleType)];
+		=> [(Security, CandleType), (Security, TimeSpan.FromDays(1).TimeFrame())];
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_highs.Clear();
-		_lows.Clear();
-		_prevClose = 0;
-		_cooldownRemaining = 0;
+		_pending = null;
+		_daily.Clear();
+		_previousClose = null;
+		_day = default;
+		_dailyTrades = 0;
+		_totalTrades = 0;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
+		if (CandleType.Arg is not TimeSpan frame || frame <= TimeSpan.Zero || frame >= TimeSpan.FromDays(1))
+			throw new InvalidOperationException("CandleType must be an intraday time frame.");
+		LoadDailyHistory();
 		base.OnStarted2(time);
-
-		var hurst = new HurstExponent { Length = HurstPeriod };
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(hurst, ProcessCandle)
-			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
 		{
-			DrawCandles(area, subscription);
-			DrawOwnTrades(area);
+			var quote = new Subscription(DataType.Level1, Security);
+			quote.MarketData.BuildField = field;
+			SubscribeLevel1(quote).Start();
 		}
+		SubscribeCandles(TimeSpan.FromDays(1).TimeFrame()).Bind(candle =>
+		{
+			if (candle.State == CandleStates.Finished)
+				_daily[candle.OpenTime.Date] = (candle.HighPrice, candle.LowPrice, candle.ClosePrice);
+		}).Start();
+		SubscribeCandles(CandleType).Bind(ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal hurstValue)
+	private bool IsPending => _pending is not null && _pending.State is not (OrderStates.Done or OrderStates.Failed);
+
+	private void Submit(Sides side, decimal quantity, string comment)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		// Track rolling highs/lows for Fib levels
-		_highs.Add(candle.HighPrice);
-		_lows.Add(candle.LowPrice);
-
-		if (_highs.Count > LookbackPeriod)
-		{
-			_highs.RemoveAt(0);
-			_lows.RemoveAt(0);
-		}
-
-		if (_highs.Count < LookbackPeriod || _prevClose == 0)
-		{
-			_prevClose = candle.ClosePrice;
-			return;
-		}
-
-		// Calculate Fibonacci levels from recent range
-		decimal high = decimal.MinValue, low = decimal.MaxValue;
-		for (var i = 0; i < _highs.Count; i++)
-		{
-			if (_highs[i] > high) high = _highs[i];
-			if (_lows[i] < low) low = _lows[i];
-		}
-
-		var range = high - low;
-		if (range <= 0)
-		{
-			_prevClose = candle.ClosePrice;
-			return;
-		}
-
-		var fib382 = low + 0.382m * range;
-		var fib618 = low + 0.618m * range;
-
-		if (_cooldownRemaining > 0)
-		{
-			_cooldownRemaining--;
-			_prevClose = candle.ClosePrice;
-			return;
-		}
-
-		var crossUp = _prevClose <= fib618 && candle.ClosePrice > fib618;
-		var crossDown = _prevClose >= fib382 && candle.ClosePrice < fib382;
-
-		if (hurstValue > 0.5m && crossUp && Position <= 0)
-		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-			BuyMarket(Volume);
-			_cooldownRemaining = CooldownBars;
-		}
-		else if (hurstValue < 0.5m && crossDown && Position >= 0)
-		{
-			if (Position > 0)
-				SellMarket(Math.Abs(Position));
-			SellMarket(Volume);
-			_cooldownRemaining = CooldownBars;
-		}
-
-		_prevClose = candle.ClosePrice;
+		_pending = CreateOrder(side, 0m, quantity);
+		_pending.Type = OrderTypes.Market;
+		_pending.Comment = comment;
+		RegisterOrder(_pending);
 	}
+
+	private void LoadDailyHistory()
+	{
+		if (string.IsNullOrWhiteSpace(DailyHistoryFile)) return;
+		using var lines = File.ReadLines(DailyHistoryFile).GetEnumerator();
+		if (!lines.MoveNext() || lines.Current.Trim() != "Date,High,Low,Close")
+			throw new InvalidOperationException("Daily CSV header must be Date,High,Low,Close.");
+		while (lines.MoveNext())
+		{
+			if (string.IsNullOrWhiteSpace(lines.Current)) continue;
+			var row = lines.Current.Split(',');
+			if (row.Length != 4) throw new InvalidOperationException("Invalid daily CSV field count.");
+			var date = DateTime.ParseExact(row[0].Trim(), "yyyy-MM-dd", CultureInfo.InvariantCulture);
+			var high = decimal.Parse(row[1], CultureInfo.InvariantCulture);
+			var low = decimal.Parse(row[2], CultureInfo.InvariantCulture);
+			var close = decimal.Parse(row[3], CultureInfo.InvariantCulture);
+			if (low <= 0m || high < low || close < low || close > high || !_daily.TryAdd(date, (high, low, close)))
+				throw new InvalidOperationException("Daily history must contain unique dates and valid positive OHLC.");
+		}
+	}
+
+	private void ProcessCandle(ICandleMessage candle)
+	{
+		if (candle.State != CandleStates.Finished) return;
+		var previous = _previousClose;
+		_previousClose = candle.ClosePrice;
+		if (_day != candle.OpenTime.Date)
+		{
+			_day = candle.OpenTime.Date;
+			_dailyTrades = 0;
+		}
+		var days = _daily.Where(d => d.Key < _day).Select(d => d.Value).ToArray();
+		if (days.Length < Math.Max(HurstPeriod, LookbackPeriod) || previous is null || Position != 0m || IsPending
+			|| _dailyTrades >= MaxTradesPerDay || _totalTrades >= MaxTotalTrades || !IsFormedAndOnlineAndAllowTrading()) return;
+		var prices = days.TakeLast(HurstPeriod).Select(d => (double)d.close).ToArray();
+		var mean = prices.Average();
+		var variance = prices.Sum(p => (p - mean) * (p - mean)) / prices.Length;
+		if (variance <= 0d) return;
+		var cumulative = 0d;
+		var minimum = double.MaxValue;
+		var maximum = double.MinValue;
+		foreach (var price in prices)
+		{
+			cumulative += price - mean;
+			minimum = Math.Min(minimum, cumulative);
+			maximum = Math.Max(maximum, cumulative);
+		}
+		var rescaled = (maximum - minimum) / Math.Sqrt(variance);
+		if (rescaled <= 0d) return;
+		var hurst = Math.Log(rescaled) / Math.Log(prices.Length);
+		var range = days.TakeLast(LookbackPeriod).ToArray();
+		var low = range.Min(d => d.low);
+		var high = range.Max(d => d.high);
+		if (high <= low) return;
+		var upper = low + 0.618m * (high - low);
+		var lower = low + 0.382m * (high - low);
+		Sides? side = previous <= upper && candle.ClosePrice > upper && hurst > 0.5d ? Sides.Buy
+			: previous >= lower && candle.ClosePrice < lower && hurst < 0.5d ? Sides.Sell : null;
+		if (side is null) return;
+		_dailyTrades++;
+		_totalTrades++;
+		StartProtection(new Unit(RiskPercent * RiskReward, UnitTypes.Percent), new Unit(RiskPercent, UnitTypes.Percent),
+			useMarketOrders: true, isLocalStop: true);
+		Submit(side.Value, Volume, "0502Entry");
+	}
+
 }

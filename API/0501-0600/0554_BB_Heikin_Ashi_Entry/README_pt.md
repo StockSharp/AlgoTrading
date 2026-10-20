@@ -1,32 +1,27 @@
-# Estratégia de Entrada Bollinger Heikin Ashi
+# Bollinger Heikin Ashi Entry
+
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
-Estratégia que utiliza Bollinger Bands em velas Heikin Ashi. Compra após duas velas Heikin Ashi baixistas consecutivas tocando a banda inferior, seguidas de uma vela altista acima dela. Vende no sentido inverso.
+Reversão de Bollinger em velas Heikin Ashi, realizando metade da posição e acompanhando o restante.
 
-Após entrar, um primeiro alvo igual ao risco é realizado e o stop é ajustado em modo trailing usando os extremos da vela anterior.
+## Regras de negociação
 
-## Detalhes
+Fechamento HA: `(Open+High+Low+Close)/4`. Primeira abertura HA: `(Open+Close)/2`; seguintes: `(abertura HA anterior+fechamento HA anterior)/2`. Extremos HA incluem abertura/fechamento HA e extremos originais. Bollinger usa fechamentos HA desde a primeira vela arquivada, não os originais. Doji não tem cor. Toque: `HA low <= lower` / `HA high >= upper`.
 
-- **Critérios de entrada**:
-  - Comprado: duas velas HA baixistas tocando a banda inferior, depois altista acima
-  - Vendido: duas velas HA altistas tocando a banda superior, depois baixista abaixo
-- **Comprado/Vendido**: Ambos
-- **Critérios de saída**:
-  - Comprado: primeiro alvo a 1R, depois stop trailing nas mínimas anteriores
-  - Vendido: primeiro alvo a 1R, depois stop trailing nas máximas anteriores
-- **Stops**: Mínima/máxima da vela anterior
-- **Valores padrão**:
-  - `BollingerPeriod` = 20
-  - `BollingerDeviation` = 2m
-  - `CandleType` = TimeSpan.FromMinutes(5).TimeFrame()
-- **Filtros**:
-  - Categoria: Reversão
-  - Direção: Ambos
-  - Indicadores: Bollinger Bands, Heikin Ashi
-  - Stops: Sim
-  - Complexidade: Intermediário
-  - Período: Médio prazo
-  - Sazonalidade: Não
-  - Redes neurais: Não
-  - Divergência: Não
-  - Nível de risco: Médio
+Pelo menos duas velas HA baixistas consecutivas devem tocar cada uma sua banda inferior. Uma HA altista fechando estritamente acima de sua banda inferior abre compra. Cores e bandas invertidas, com fechamento baixista abaixo da banda superior, abrem venda.
+
+Entrada por `Volume` apenas sem posição. Stop inicial no mínimo/máximo da vela original concluída anterior, fixado antes da ordem. `R` é a distância positiva entre o preço médio ponderado executado e esse stop. Em `1R`, encerra-se metade da posição executada a mercado, arredondada para baixo por `VolumeStep`. Se qualquer metade for menor que `MinVolume`, encerra-se tudo no alvo. Entrada executada além do stop é encerrada na próxima cotação executável.
+
+Somente execução real do alvo ativa o acompanhamento pelo mínimo/máximo da última vela original concluída, sem afrouxar o stop. Bid para compras ou ask para vendas ativam a saída total entre velas; stop tem prioridade sobre alvo. Ordens pendentes impedem duplicatas. Extremos anteriores não acionam níveis criados depois. Sem alvo percentual fixo nem espera oculta.
+
+As entradas exigem velas concluídas e indicadores aquecidos. A posição é acompanhada até a saída; ordens a mercado pendentes impedem envios duplicados.
+
+Bollinger usa o desvio padrão populacional da janela móvel de fechamentos, incluindo a vela concluída atual.
+
+## Parâmetros
+
+| Parameter | Default |
+|---|---|
+| `BollingerPeriod` | `20` |
+| `BollingerDeviation` | `2` |
+| `CandleType` | `5m` |

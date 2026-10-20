@@ -1,31 +1,18 @@
-# BTCマイニング難易度調整戦略
+# BTC Difficulty Adjustments
+
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
-BTCマイニング難易度調整戦略は、Bitcoinのマイニング難易度の変化に基づいて取引します。しきい値モードが有効な場合、変化率が指定したしきい値を超えた場合にのみポジションを建てます。難易度が上昇した場合にロングポジション、下降した場合にショートポジションを建てます。
+## 取引ルール
 
-## 詳細
+表頭が `Time,Difficulty` の `DifficultyHistoryFile` が必須です。公開時刻は厳密に増加する `Z` 付き ISO UTC 時刻、難易度は正である必要があります。起動時に読み込み、欠落や不正形式は明示的に失敗します。市場価格から採掘難易度を推定しません。
 
-- **エントリー条件**:
-  - しきい値モード: `abs(change) >= Threshold` かつ `change < 0` → ロングエントリー。
-  - しきい値モード: `abs(change) >= Threshold` かつ `change > 0` → ショートエントリー。
-  - しきい値モードなし: `difficulty > 前回の difficulty` → ロングエントリー。
-  - しきい値モードなし: `difficulty < 前回の difficulty` → ショートエントリー。
-- **ロング/ショート**: 両方向。
-- **エグジット条件**:
-  - 逆シグナルでポジションをクローズして反転。
-- **ストップ**: なし。
-- **デフォルト値**:
-  - `CandleType` = 1日
-  - `ThresholdMode` = false
-  - `Threshold` = 10
-- **フィルター**:
-  - カテゴリ: ファンダメンタル
-  - 方向: ロング & ショート
-  - インジケーター: なし
-  - ストップ: いいえ
-  - 複雑さ: 低
-  - 時間軸: 日足
-  - 季節性: いいえ
-  - ニューラルネットワーク: いいえ
-  - ダイバージェンス: いいえ
-  - リスクレベル: 中
+確定足では `OpenTime` 以前に公開された観測だけを使用します。最初の値は基準となり、変化なしではシグナルを出しません。変化率は `100*(difficulty/previous-1)`。閾値モード無効時は上昇で買い、低下で売りです。有効時は `abs(change)>=Threshold` のときのみ、低下で買い、上昇で売ります。条件を満たす最新の既知の変化で方向を決定します。新規は `Volume`、反転は `Volume+abs(Position)` です。未完了注文は判断の重複を防ぎ、自動ストップはありません。
+
+## パラメーター
+
+| パラメーター | 既定値 |
+|---|---|
+| `CandleType` | `1d` |
+| `ThresholdMode` | `false` |
+| `Threshold` | `10` |
+| `DifficultyHistoryFile` | `必須` |

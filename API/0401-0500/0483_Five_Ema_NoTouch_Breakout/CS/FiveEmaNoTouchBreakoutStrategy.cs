@@ -1,5 +1,10 @@
+namespace StockSharp.Samples.Strategies;
+
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Linq;
 
 using Ecng.Common;
 
@@ -8,213 +13,114 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-namespace StockSharp.Samples.Strategies;
-
-/// <summary>
-/// 5 EMA No-Touch Breakout Strategy - waits for a candle completely above or below the EMA and enters on breakout.
-/// </summary>
+/// <summary>Finished no-touch EMA setups with native protection fixed from actual entry risk.</summary>
 public class FiveEmaNoTouchBreakoutStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _emaPeriod;
 	private readonly StrategyParam<decimal> _rewardRisk;
-	private readonly StrategyParam<int> _cooldownBars;
-
+	private Order _pending;
 	private ExponentialMovingAverage _ema;
+	private (decimal high, decimal low, Sides side)? _setup;
+	private decimal _setupStop;
+	private bool _isProtectionArmed;
 
-	private decimal? _pendingLongHigh;
-	private decimal? _pendingLongLow;
-	private decimal? _pendingShortLow;
-	private decimal? _pendingShortHigh;
-	private bool _longReady;
-	private bool _shortReady;
+	/// <summary>Finished signal candle type.</summary>
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	private decimal? _longStop;
-	private decimal? _longTarget;
-	private decimal? _shortStop;
-	private decimal? _shortTarget;
-	private int _cooldownRemaining;
+	/// <summary>EMA length.</summary>
+	public int EmaPeriod { get => _emaPeriod.Value; set => _emaPeriod.Value = value; }
 
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	/// <summary>Take-profit distance divided by initial risk.</summary>
+	public decimal RewardRisk { get => _rewardRisk.Value; set => _rewardRisk.Value = value; }
 
-	/// <summary>
-	/// EMA period.
-	/// </summary>
-	public int EmaPeriod
-	{
-		get => _emaPeriod.Value;
-		set => _emaPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Reward to risk ratio.
-	/// </summary>
-	public decimal RewardRisk
-	{
-		get => _rewardRisk.Value;
-		set => _rewardRisk.Value = value;
-	}
-
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
-
-	/// <summary>
-	/// Constructor.
-	/// </summary>
+	/// <summary>Initialize the strategy parameters.</summary>
 	public FiveEmaNoTouchBreakoutStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_emaPeriod = Param(nameof(EmaPeriod), 5)
-			.SetGreaterThanZero()
-			.SetDisplay("EMA Period", "Length of EMA", "EMA")
-			
-			.SetOptimize(3, 10, 1);
-
-		_rewardRisk = Param(nameof(RewardRisk), 3.0m)
-			.SetGreaterThanZero()
-			.SetDisplay("Reward : Risk", "Reward to risk ratio", "Risk Management")
-			
-			.SetOptimize(1.0m, 5.0m, 0.5m);
-
-		_cooldownBars = Param(nameof(CooldownBars), 10)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "Risk");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("CandleType", "Finished signal candle type.", "Parameters");
+		_emaPeriod = Param(nameof(EmaPeriod), 5).SetRange(1, int.MaxValue)
+			.SetDisplay("EmaPeriod", "EMA length.", "Parameters");
+		_rewardRisk = Param(nameof(RewardRisk), 3m).SetRange(0.000001m, decimal.MaxValue)
+			.SetDisplay("RewardRisk", "Take-profit distance divided by initial risk.", "Parameters");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_pendingLongHigh = null;
-		_pendingLongLow = null;
-		_pendingShortLow = null;
-		_pendingShortHigh = null;
-		_longReady = false;
-		_shortReady = false;
-		_longStop = null;
-		_longTarget = null;
-		_shortStop = null;
-		_shortTarget = null;
-		_cooldownRemaining = 0;
+		_pending = null;
+		_ema = null;
+		_setup = null;
+		_setupStop = 0m;
+		_isProtectionArmed = false;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
+
 		base.OnStarted2(time);
-
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quote = new Subscription(DataType.Level1, Security);
+			quote.MarketData.BuildField = field;
+			SubscribeLevel1(quote).Start();
+		}
 		_ema = new ExponentialMovingAverage { Length = EmaPeriod };
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(_ema, ProcessCandle)
-			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, _ema);
-			DrawOwnTrades(area);
-		}
+		SubscribeCandles(CandleType).Bind(_ema, ProcessCandle).Start();
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal emaValue)
+	private bool IsPending => _pending is not null && _pending.State is not (OrderStates.Done or OrderStates.Failed);
+
+	private void Submit(Sides side, decimal quantity, string comment)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading() || !_ema.IsFormed)
-			return;
-
-		var high = candle.HighPrice;
-		var low = candle.LowPrice;
-		var close = candle.ClosePrice;
-
-		if (high < emaValue)
-		{
-			_pendingLongHigh = high;
-			_pendingLongLow = low;
-			_longReady = true;
-			_shortReady = false;
-		}
-		else if (low > emaValue)
-		{
-			_pendingShortLow = low;
-			_pendingShortHigh = high;
-			_shortReady = true;
-			_longReady = false;
-		}
-
-		// Check stop/target exits (always, regardless of cooldown)
-		if (Position > 0 && _longStop is decimal ls && _longTarget is decimal lt)
-		{
-			if (low <= ls || high >= lt)
-			{
-				SellMarket(Math.Abs(Position));
-				_longStop = null;
-				_longTarget = null;
-				_cooldownRemaining = CooldownBars;
-				return;
-			}
-		}
-		else if (Position < 0 && _shortStop is decimal ss && _shortTarget is decimal st)
-		{
-			if (high >= ss || low <= st)
-			{
-				BuyMarket(Math.Abs(Position));
-				_shortStop = null;
-				_shortTarget = null;
-				_cooldownRemaining = CooldownBars;
-				return;
-			}
-		}
-
-		if (_cooldownRemaining > 0)
-		{
-			_cooldownRemaining--;
-			return;
-		}
-
-		if (_longReady && _pendingLongHigh is decimal longHigh && high > longHigh)
-		{
-			if (_pendingLongLow is decimal longLow)
-			{
-				_longStop = longLow;
-				_longTarget = close + (close - longLow) * RewardRisk;
-				BuyMarket(Volume + Math.Abs(Position));
-				_longReady = false;
-				_cooldownRemaining = CooldownBars;
-			}
-		}
-		else if (_shortReady && _pendingShortLow is decimal shortLow && low < shortLow)
-		{
-			if (_pendingShortHigh is decimal shortHigh)
-			{
-				_shortStop = shortHigh;
-				_shortTarget = close - (shortHigh - close) * RewardRisk;
-				SellMarket(Volume + Math.Abs(Position));
-				_shortReady = false;
-				_cooldownRemaining = CooldownBars;
-			}
-		}
+		_pending = CreateOrder(side, 0m, quantity);
+		_pending.Type = OrderTypes.Market;
+		_pending.Comment = comment;
+		RegisterOrder(_pending);
 	}
+
+	private void ProcessCandle(ICandleMessage candle, decimal ema)
+	{
+		if (candle.State != CandleStates.Finished || !_ema.IsFormed || !IsFormedAndOnlineAndAllowTrading() || IsPending) return;
+		if (Position != 0m)
+		{
+			_setup = null;
+			return;
+		}
+		// Test the previous finished setup before a new candle can replace it.
+		if (_setup is { } setup && ((setup.side == Sides.Buy && candle.HighPrice > setup.high && candle.ClosePrice > setup.low)
+			|| (setup.side == Sides.Sell && candle.LowPrice < setup.low && candle.ClosePrice < setup.high)))
+		{
+			_setupStop = setup.side == Sides.Buy ? setup.low : setup.high;
+			_isProtectionArmed = false;
+			_setup = null;
+			Submit(setup.side, Volume, "0483Entry");
+			return;
+		}
+		if (candle.HighPrice < ema) _setup = (candle.HighPrice, candle.LowPrice, Sides.Buy);
+		else if (candle.LowPrice > ema) _setup = (candle.HighPrice, candle.LowPrice, Sides.Sell);
+	}
+
+	/// <inheritdoc />
+	protected override void OnOwnTradeReceived(MyTrade trade)
+	{
+		base.OnOwnTradeReceived(trade);
+		if (trade.Order.Comment != "0483Entry" || _isProtectionArmed) return;
+		_isProtectionArmed = true;
+		var risk = trade.Order.Side == Sides.Buy ? trade.Trade.Price - _setupStop : _setupStop - trade.Trade.Price;
+		if (risk <= 0m)
+		{
+			Submit(trade.Order.Side == Sides.Buy ? Sides.Sell : Sides.Buy, Math.Abs(Position), "0483InvalidFillExit");
+			return;
+		}
+		StartProtection(new Unit(risk * RewardRisk, UnitTypes.Absolute), new Unit(risk, UnitTypes.Absolute),
+			useMarketOrders: true, isLocalStop: true);
+	}
+
 }

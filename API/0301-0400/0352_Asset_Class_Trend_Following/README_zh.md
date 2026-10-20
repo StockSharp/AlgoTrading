@@ -1,30 +1,37 @@
-# 资产类别趋势跟随策略
-[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
+# Asset Class Trend Following
 
-该策略在多个资产类别上跟随趋势。对投资范围中的每个品种应用简单移动平均线过滤，并在每个月的第一个交易日进行再平衡。只有当价格高于均线时才持有头寸。
+[English](README.md) | [Русский](README_ru.md) | [Deutsch](README_de.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-测试表明年化收益约为15%。在多元化期货组合上表现最佳。
+## 交易规则
 
-每月初，价格高于SMA的品种获得等额资金。价格跌破SMA或再平衡时头寸被关闭。
+每个标的的 SMA 为最近 SmaLength 个不同日期收盘价的算术平均，包含当前已完成收盘。只在 Close > SMA 时持有多头。每月将 Capital × Leverage 在合格标的间等额分配；无候选时持现金。之后 Close <= SMA 立即完整平仓，不等待下个月；下次月度分配前不重新入场。不使用相对基准强弱过滤。
 
-## 细节
+仅处理时间戳一致的已完成蜡烛。统计按不同 UTC 日期计数，同一天的盘中收盘值会被后续值替换。每月在第一个满足条件的同步收盘信号上再平衡一次；数据不足时延迟。相同分数按 Security.Id 排序。
 
-- **入场条件**：`Close > SMA`
-- **多空方向**：仅做多
-- **离场条件**：`Close <= SMA` 或在再平衡时被剔除
-- **止损**：无；资金每月重新分配
-- **默认参数**：
-  - `SmaLength` = 210
-  - `MinTradeUsd` = 50
-  - `CandleType` = 日线
-- **过滤器**：
-  - 类别：趋势跟随
-  - 方向：多头
-  - 指标：SMA
-  - 止损：否
-  - 复杂度：中等
-  - 时间框架：长期
-  - 季节性：否
-  - 神经网络：否
-  - 背离：否
-  - 风险等级：中等
+盘中 CandleType 的日统计只使用严格早于当前信号日期的 UTC 日期，排除尚未完成的当天。已完成的一日蜡烛可计入自己的完整日期。
+
+## 输入数据
+
+PriceHistoryFile 为可选的正值日收盘价 CSV：SecurityId,Date,Close；日期格式 yyyy-MM-dd。当前或未来日期不能提前预热决策，实时已完成蜡烛覆盖对应 UTC 日期。禁止重复日期。执行历史较短时可用于长周期预热。
+
+## 参数
+
+| 参数 | 默认值 |
+|---|---|
+| `Universe` | 必填 |
+| `Capital` | `100000` |
+| `Leverage` | `1` |
+| `MinTradeUsd` | `50` |
+| `CandleType` | `TimeSpan.FromDays(1).TimeFrame()` |
+| `PriceHistoryFile` | 可选 — 未提供 |
+| `SmaLength` | `210` |
+
+## 成交与仓位
+
+必须显式设置 Universe。价格与 Capital 采用 USD，每个价格单位对应一个交易单位。Capital 是固定预算，Leverage 控制总敞口。不添加止损或止盈。
+
+按信号收盘价换算数量，并按 VolumeStep 向零取整。根据实际成交仓位调整，等待未完成订单，遵守 MinVolume/MaxVolume，并在后续蜡烛继续大额调整。MinTradeUsd 过滤小额调整，但完整平仓不受此过滤限制。
+
+## 验证
+
+成交测试仅使用已有 BTC/TON 执行档案。显式财报、期权观测和预热数据是机制测试夹具，不是真实企业财务或期权历史。缩短周期、两组排序和三月年度调仓是明确的测试配置，不代表原始长期默认值已完整交易验证。不声称任何收益率。

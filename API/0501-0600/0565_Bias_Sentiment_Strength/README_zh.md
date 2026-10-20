@@ -1,26 +1,31 @@
-# Bias And Sentiment Strength 策略
+# Bias Sentiment Strength
+
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-该策略将多种动量和成交量指标（MACD、RSI、Stochastic、Awesome Oscillator、Alligator 平滑均线和成交量偏差）汇总成一个数值。当综合偏向大于零时做多，小于零时做空。
+## 交易规则
 
-## 详情
+在已完成的 15 分钟足上组合 MACD(12,26,9)、Wilder RSI(14)、随机指标(21,14,14)、Awesome Oscillator(5,34)、Alligator 与成交量加权偏差。原始 K 使用 21 根高低价；`Ks` 为其 14 值 SMA，`D` 再作 14 值 SMA。Alligator 使用中位价 SMMA：jaw 周期 13 位移 8，teeth 周期 8 位移 5，lips 周期 5 位移 3。
 
-- **入场条件**：
-  - **多头**：综合数值 > 0。
-  - **空头**：综合数值 < 0。
-- **多/空**：双向。
-- **出场条件**：信号反转。
-- **止损**：通过 `StopLossPercent` 设置百分比止损。
-- **默认值**：
-  - MACD 快线 12，慢线 26，信号线 9。
-  - RSI 周期 14。
-  - Stochastic 周期 21/14/14。
-  - AO 周期 5/34。
-  - 成交量偏差长度 30。
-- **过滤**：
-  - 类别：趋势跟随
-  - 方向：双向
-  - 指标：多个
-  - 止损：有
-  - 复杂度：复杂
-  - 时间框架：中期
+`BASS = 2 * (MACD - Signal) + (RSI - 50) / 5 + 0.15 * (Ks - D) + 0.6 * AO + (Lips - Teeth) + (Teeth - Jaw) + VWMA(30) - SMA(30)`。必须等所有部分形成；默认至少 47 根完整足。错误配置会明确报错。
+
+分数严格大于 `BassThreshold` 时目标多仓 `Volume`，小于 `-BassThreshold` 时目标空仓 `Volume`，默认阈值为零。依据水平而非仅零轴交叉，止损后无需再次穿越零轴即可入场。反向用 `Volume + abs(Position)` 完整反转；活动订单阻止重复。原生本地市价止损按实际成交仓位的 `StopLossPercent` 百分比执行，默认 1，不设置止盈。
+
+本地原生保护使用该品种的蜡烛和已订阅价格更新，距离以实际入场成交为基准。退出为市价订单，成交价受可用市场及价格步长影响。
+
+## 参数
+
+| 参数 | 默认值 |
+|---|---|
+| `MacdFast` | `12` |
+| `MacdSlow` | `26` |
+| `MacdSignal` | `9` |
+| `RsiPeriod` | `14` |
+| `StochK` | `21` |
+| `StochSmooth` | `14` |
+| `StochD` | `14` |
+| `AoShort` | `5` |
+| `AoLong` | `34` |
+| `VolumeLength` | `30` |
+| `BassThreshold` | `0` |
+| `StopLossPercent` | `1` |
+| `CandleType` | `15m` |

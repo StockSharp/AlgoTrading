@@ -1,35 +1,39 @@
-# 动量反转波动率策略
-[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
+# Momentum Rev Vol
 
-该复合因子同时考虑长期动量、短期反转以及低波动率。每月为每只股票计算一个综合得分，包含12个月动量、最近1个月收益率的相反数以及过去60天的波动率，可通过权重 `WM`、`WR`、`WV` 调整三项的影响。
+[English](README.md) | [Русский](README_ru.md) | [Deutsch](README_de.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-在每月第一个交易日，根据综合得分对股票排序，买入得分最高的十分位，卖空得分最低的十分位，仓位等权并持有到下次再平衡，不设止损。
+## 交易规则
 
-通过结合趋势跟随、均值回归与风险控制，该策略力图在不同市场环境下提供多样化收益。
+每个证券采用不同完整交易日的收盘价 P。M = P[t]/P[t−Lookback12]−1，R = P[t]/P[t−Lookback1]−1，V 为最近 VolWindow 个简单日收益率的样本标准差（分母 N−1）。评分 = WM×M − WR×R − WV×V，不做截面归一化。降序排列，买入前 floor(n/Decile) 个并做空同等数量末尾证券，至少需要 Decile 个有效证券。月度审查之间保持数量不变。
 
-## 细节
+必须显式设置 Universe。价格与 Capital 采用 USD，每个价格单位对应一个交易单位。Capital 是固定预算，Leverage 控制总敞口。不添加止损或止盈。
 
-- **入场条件**：按动量、反转和波动率的加权得分排序；多头最高十分位、空头最低十分位
-- **多/空**：双向
-- **退出条件**：下一次月度再平衡
-- **止损**：无
-- **默认值**：
-  - `Lookback12` = 252
-  - `Lookback1` = 21
-  - `VolWindow` = 60
-  - `WM` = 1.0
-  - `WR` = 1.0
-  - `WV` = 1.0
-  - `MinTradeUsd` = 200
-  - `CandleType` = TimeSpan.FromDays(1)
-- **过滤**：
-  - 类别：多因子
-  - 方向：双向
-  - 指标：动量、反转、波动率
-  - 止损：无
-  - 复杂度：高
-  - 时间框架：中期
-  - 季节性：无
-  - 神经网络：无
-  - 背离：无
-  - 风险级别：中等
+仅处理时间戳一致的已完成蜡烛。统计按不同 UTC 日期计数，同一天的盘中收盘值会被后续值替换。每月在第一个满足条件的同步收盘信号上再平衡一次；数据不足时延迟。相同分数按 Security.Id 排序。
+
+多头和空头各分配 Capital × Leverage 的一半，各篮子内等额分配。按信号收盘价换算数量，并按 VolumeStep 向零取整。根据实际成交仓位调整，等待未完成订单，遵守 MinVolume/MaxVolume，并在后续蜡烛继续大额调整。MinTradeUsd 过滤小额调整，但完整平仓不受此过滤限制。
+
+## 参数
+
+| 参数 | 默认值 |
+|---|---|
+| `Universe` | 必填 |
+| `Capital` | 100000 |
+| `Leverage` | 1 |
+| `MinTradeUsd` | 200 |
+| `CandleType` | TimeSpan.FromMinutes(1440).TimeFrame() |
+| `PriceHistoryFile` | 未提供 |
+| `Lookback12` | 252 |
+| `Lookback1` | 21 |
+| `VolWindow` | 60 |
+| `WM` | 1 |
+| `WR` | 1 |
+| `WV` | 1 |
+| `Decile` | 10 |
+
+## 输入数据
+
+可选 `PriceHistoryFile` CSV：`SecurityId,Date,Close`，收盘价为正，证券/日期唯一，日期 `yyyy-MM-dd`。日内仅用当前 UTC 日期之前的数据，完整日蜡烛可计入自身收盘。未来行不得提前影响决策，执行蜡烛替换当日值。
+
+## 验证
+
+两种语言使用随附 BTC/TON，检查独立公式、订单方向/数量、真实成交、仓位与退出。带日期的价格、因子、日历数据验证机制，重定位 OHLC/成交量不是多年历史。两个排名组、TopN=1、SMA=2 是明确的小证券池测试配置，长窗口和原始默认值另行检查。不承诺盈利。

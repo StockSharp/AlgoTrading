@@ -1,26 +1,36 @@
-# Estrategia de Momentum del Factor ESG
-[English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
+# ESG Factor Momentum
 
-Esta estrategia rota entre un universo de valores puntuados por métricas ambientales, sociales y de gobernanza. Al inicio de cada mes clasifica todos los símbolos por su rendimiento acumulado y solo mantiene el de mayor desempeño. La premisa es que los activos que atraen capital ESG tienden a mantener el momentum. Para evitar una rotación excesiva, el algoritmo solo opera cuando el valor de la posición supera un umbral mínimo en dólares.
+[English](README.md) | [Русский](README_ru.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [中文](README_zh.md) | [日本語](README_ja.md)
 
-Durante el rebalanceo, el sistema cierra cualquier posición existente y reasigna capital al valor de mayor momentum. La cartera nunca usa apalancamiento ni posiciones cortas; está totalmente invertida en un único activo seleccionado por la fuerza del momentum.
+## Reglas de negociación
 
-## Detalles
+Universe debe contener títulos previamente filtrados por ESG; no se genera una puntuación ESG. Momentum = P[d] / P[d−LookbackDays] − 1 con LookbackDays + 1 cierres diarios completos. Comprar mensualmente solo al ganador, incluso si todas las rentabilidades son negativas. Liquidar todas las posiciones anteriores y esperar sus ejecuciones antes de comprar, aunque el ganador no cambie. El presupuesto queda limitado por el valor declarado de la cartera; sin apalancamiento ni cortos.
 
-- **Criterios de entrada**:
-  - En el primer día hábil del mes, calcular el rendimiento total durante `LookbackDays` para cada valor.
-  - Comprar el valor con mayor rendimiento si el tamaño de la orden es al menos `MinTradeUsd`.
-- **Largo/Corto**: Solo largos.
-- **Criterios de salida**: Todas las posiciones se cierran en cada rebalanceo mensual antes de abrir la nueva posición.
-- **Stops**: Ninguno.
-- **Valores predeterminados**:
-  - `Universe` – lista de símbolos centrados en ESG.
-  - `LookbackDays` = 252.
-  - `CandleType` = 1 día.
-  - `MinTradeUsd` – valor mínimo de operación.
-- **Filtros**:
-  - Categoría: Momentum.
-  - Dirección: Solo largos.
-  - Marco temporal: Medio plazo.
-  - Rebalanceo: Mensual.
+Se evalúan únicamente velas cerradas sincronizadas. Las estadísticas cuentan fechas UTC distintas; las velas intradía sustituyen el valor de la misma fecha. Se rebalancea una vez en la primera vela conjunta apta de cada mes; los datos incompletos retrasan la decisión. Los empates se ordenan por Security.Id.
 
+Las observaciones deben publicarse antes del cierre de la vela de señal. En intradía solo cuentan fechas UTC anteriores; una vela diaria completa aporta su propia fecha. Los datos CSV futuros no pueden anticipar decisiones.
+
+## Datos de entrada
+
+PriceHistoryFile es un CSV opcional de cierres diarios positivos: SecurityId,Date,Close; fecha yyyy-MM-dd. Las fechas actuales o futuras no precalientan decisiones. Los cierres en vivo sustituyen el valor de su fecha UTC. Se rechazan duplicados. Permite preparar ventanas largas con un archivo de ejecución corto.
+
+## Parámetros
+
+| Parámetro | Predeterminado |
+|---|---|
+| `Universe` | obligatorio |
+| `Capital` | `100000` |
+| `MinTradeUsd` | `100` |
+| `CandleType` | `TimeSpan.FromDays(1).TimeFrame()` |
+| `PriceHistoryFile` | opcional — sin configurar |
+| `LookbackDays` | `252` |
+
+## Ejecución
+
+Definir Universe explícitamente. Precios y Capital en USD por unidad negociada. Exposición larga limitada a min(Capital, Portfolio.CurrentValue declarado); sin valor positivo no hay presupuesto de compra. Sin apalancamiento, stop-loss ni toma de beneficios.
+
+Redondear objetivos hacia cero a VolumeStep. Esperar ejecuciones de la liquidación completa antes de abrir nuevas posiciones; conciliar posiciones reales, respetar MinVolume/MaxVolume y dividir ajustes grandes entre velas posteriores. MinTradeUsd filtra ajustes con objetivos no nulos; la liquidación completa omite el filtro.
+
+## Verificación
+
+Ambos lenguajes se prueban con ejecuciones BTC/TON incluidas y fixtures explícitas de tasas, informes, puntuaciones, textos e historial. Las fixtures de calendario trasladan OHLC/volumen y fijan cotizaciones; no son historia de mercado plurianual. Se verifican fórmulas independientes, dirección/tamaño de órdenes, ejecuciones reales, posiciones residuales y fechas prohibidas. Dos grupos, K=1 y AssetDecile=1 son perfiles de mecánica declarados, no prueba del universo completo. Sin promesas de rentabilidad.

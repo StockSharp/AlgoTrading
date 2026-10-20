@@ -2,11 +2,13 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.BusinessEntities")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
+from System import TimeSpan, Decimal
+from StockSharp.BusinessEntities import Subscription
+from StockSharp.Messages import DataType, CandleStates, Level1Fields, OrderStates, OrderTypes, Sides, Unit, UnitTypes
 from StockSharp.Algo.Indicators import BollingerBands, ExponentialMovingAverage, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
 
@@ -34,104 +36,57 @@ class bbsr_extreme_strategy(Strategy):
             .SetDisplay("ATR Profit Multiplier", "ATR multiplier for take profit", "Risk Management")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
-        self._prev_lower = 0.0
-        self._prev_upper = 0.0
-        self._prev_close = 0.0
-        self._prev_ma = 0.0
-        self._is_initialized = False
-        self._entry_price = 0.0
-        self._cooldown = 0
+        self._clear_state()
 
-    @property
-    def candle_type(self):
-        return self._candle_type.Value
-
-    @candle_type.setter
-    def candle_type(self, value):
-        self._candle_type.Value = value
+    def _clear_state(self):
+        self._previous = None
+        self._pending = None
 
     def OnReseted(self):
         super(bbsr_extreme_strategy, self).OnReseted()
-        self._prev_lower = 0.0
-        self._prev_upper = 0.0
-        self._prev_close = 0.0
-        self._prev_ma = 0.0
-        self._is_initialized = False
-        self._entry_price = 0.0
-        self._cooldown = 0
+        self._clear_state()
 
     def OnStarted2(self, time):
         super(bbsr_extreme_strategy, self).OnStarted2(time)
-        bb = BollingerBands()
-        bb.Length = self._bb_period.Value
-        bb.Width = self._bb_mult.Value
-        ma = ExponentialMovingAverage()
-        ma.Length = self._ma_length.Value
-        atr = AverageTrueRange()
-        atr.Length = self._atr_length.Value
-        subscription = self.SubscribeCandles(self.candle_type)
-        subscription.BindEx(bb, ma, atr, self.OnProcess).Start()
+        for field in (Level1Fields.BestBidPrice, Level1Fields.BestAskPrice):
+            quotes = Subscription(DataType.Level1, self.Security)
+            quotes.MarketData.BuildField = field
+            self.SubscribeLevel1(quotes).Start()
+        self._bb = BollingerBands()
+        self._bb.Length = self._bb_period.Value
+        self._bb.Width = self._bb_mult.Value
+        self._ma = ExponentialMovingAverage()
+        self._ma.Length = self._ma_length.Value
+        self._atr = AverageTrueRange()
+        self._atr.Length = self._atr_length.Value
+        candles = self.SubscribeCandles(self._candle_type.Value)
+        candles.BindEx(self._bb, self._ma, self._atr, self._process).Start()
         area = self.CreateChartArea()
         if area is not None:
-            self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, ma)
-            self.DrawIndicator(area, bb)
+            self.DrawCandles(area, candles)
+            self.DrawIndicator(area, self._ma)
+            self.DrawIndicator(area, self._bb)
             self.DrawOwnTrades(area)
 
-    def OnProcess(self, candle, bb_value, ma_value, atr_value):
-        if candle.State != CandleStates.Finished:
+    def _process(self, candle, bb, ma, atr):
+        if candle.State != CandleStates.Finished or not self._bb.IsFormed or not self._ma.IsFormed or not self._atr.IsFormed or bb.UpBand is None or bb.LowBand is None:
             return
-        bb = bb_value
-        upper = bb.UpBand
-        lower = bb.LowBand
-        if upper is None or lower is None:
+        average = ma.GetValue[Decimal](None)
+        distance = atr.GetValue[Decimal](None)
+        close = candle.ClosePrice
+        bull = self._previous is not None and self._previous[0] < self._previous[1] and close > bb.LowBand and average > self._previous[3]
+        bear = self._previous is not None and self._previous[0] > self._previous[2] and close < bb.UpBand and average < self._previous[3]
+        self._previous = (close, bb.LowBand, bb.UpBand, average)
+        pending = self._pending is not None and self._pending.State not in (OrderStates.Done, OrderStates.Failed)
+        if self.Position != 0 or pending or distance <= 0 or not self.IsFormedAndOnlineAndAllowTrading() or not (bull or bear):
             return
-        if not ma_value.IsFormed or not atr_value.IsFormed:
-            return
-        upper_v = float(upper)
-        lower_v = float(lower)
-        ma_v = float(ma_value)
-        atr_v = float(atr_value)
-        close = float(candle.ClosePrice)
-        low = float(candle.LowPrice)
-        high = float(candle.HighPrice)
-        if not self._is_initialized:
-            self._prev_lower = lower_v
-            self._prev_upper = upper_v
-            self._prev_close = close
-            self._prev_ma = ma_v
-            self._is_initialized = True
-            return
-        if self._cooldown > 0:
-            self._cooldown -= 1
-        bull = self._prev_close < self._prev_lower and close > lower_v and ma_v > self._prev_ma
-        bear = self._prev_close > self._prev_upper and close < upper_v and ma_v < self._prev_ma
-        if bull and self.Position <= 0 and self._cooldown == 0:
-            self.BuyMarket()
-            self._entry_price = close
-            self._cooldown = 20
-        elif bear and self.Position >= 0 and self._cooldown == 0:
-            self.SellMarket()
-            self._entry_price = close
-            self._cooldown = 20
-        stop_mult = float(self._atr_stop_mult.Value)
-        profit_mult = float(self._atr_profit_mult.Value)
-        stop = stop_mult * atr_v
-        profit = profit_mult * atr_v
-        if self.Position > 0:
-            if low <= self._entry_price - stop or high >= self._entry_price + profit:
-                self.SellMarket()
-                self._entry_price = 0.0
-                self._cooldown = 20
-        elif self.Position < 0:
-            if high >= self._entry_price + stop or low <= self._entry_price - profit:
-                self.BuyMarket()
-                self._entry_price = 0.0
-                self._cooldown = 20
-        self._prev_lower = lower_v
-        self._prev_upper = upper_v
-        self._prev_close = close
-        self._prev_ma = ma_v
+        self.StartProtection(Unit(distance * Decimal(self._atr_profit_mult.Value), UnitTypes.Absolute),
+                             Unit(distance * Decimal(self._atr_stop_mult.Value), UnitTypes.Absolute),
+                             useMarketOrders=True, isLocalStop=True)
+        self._pending = self.CreateOrder(Sides.Buy if bull else Sides.Sell, Decimal(0), self.Volume)
+        self._pending.Type = OrderTypes.Market
+        self._pending.Comment = "0556Entry"
+        self.RegisterOrder(self._pending)
 
     def CreateClone(self):
         return bbsr_extreme_strategy()

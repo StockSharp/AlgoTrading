@@ -1,34 +1,29 @@
-# BB RSI Trailing Stop 策略
+# BB RSI Trailing Stop
+
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-将布林带与RSI动量结合，并在利润达到指定阈值后启用跟踪止损。
-当价格跌破下轨且RSI从超卖区上穿时做多；价格突破上轨且RSI从超买区下穿时做空。
+布林带突破后必须出现 RSI 从极端区域恢复，随后使用有条件的移动止损。`p` 为前一根指标已形成的蜡烛；RSI 使用 Wilder 平滑。
 
-初始止损为固定点数，当价格向有利方向移动并超过偏移量时，止损转换为跟踪模式。
+## 交易规则
 
-## 细节
+做多：原始 `Low < lowerBand` 且 `RSI[p] <= RsiOversold && RSI > RsiOversold`。做空：原始 `High > upperBand` 且 `RSI[p] >= RsiOverbought && RSI < RsiOverbought`。仅处于超卖或超买区并不足够。仅空仓时以 `Volume` 入场，无隐藏等待期。
 
-- **入场条件**：布林带突破并由RSI确认
-- **多空**：双向
-- **出场条件**：初始止损或跟踪止损
-- **止损**：是，动态跟踪
-- **默认参数**：
-  - `BollingerPeriod` = 25
-  - `BollingerDeviation` = 2
-  - `RsiPeriod` = 14
-  - `RsiOverbought` = 60
-  - `RsiOversold` = 33
-  - `StopLossPoints` = 50
-  - `TrailOffsetPoints` = 99
-  - `TrailStopPoints` = 40
-- **过滤器**：
-  - 类别：均值回归
-  - 方向：双向
-  - 指标：布林带、RSI
-  - 止损：跟踪
-  - 复杂度：中等
-  - 时间框架：日内
-  - 季节性：否
-  - 神经网络：否
-  - 背离：否
-  - 风险等级：中等
+以加权实际入场价为基准，多头使用可执行 bid，空头使用 ask。初始距离为 `StopLossPoints`；有利报价极值移动达到 `TrailOffsetPoints` 后才启用跟踪。此后止损距该极值 `TrailStopPoints`，且不得放宽初始止损。报价触及止损时以市价平掉全部实际持仓。三种距离均为绝对价格单位，不是跳动点或百分比；不使用较早的蜡烛极值触发稍后才创建的止损。
+
+仅在指标充分预热后使用已完成的蜡烛生成入场信号。持仓持续管理至退出；未完成的市价订单会阻止重复提交。
+
+布林带采用滚动收盘价窗口的总体标准差，包含当前已完成蜡烛。
+
+## 参数
+
+| Parameter | Default |
+|---|---|
+| `BollingerPeriod` | `25` |
+| `BollingerDeviation` | `2` |
+| `RsiPeriod` | `14` |
+| `RsiOversold` | `33` |
+| `RsiOverbought` | `60` |
+| `StopLossPoints` | `50` |
+| `TrailOffsetPoints` | `99` |
+| `TrailStopPoints` | `40` |
+| `CandleType` | `15m` |

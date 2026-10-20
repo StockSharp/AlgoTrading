@@ -1,29 +1,18 @@
-# BTCUSD Momentum-Strategie nach Abnormalen Tagen
+# BTCUSD Momentum After Abnormal Days
+
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-Die Strategie misst die Tagesrendite als `(close - open) / open` und vergleicht sie mit einem gleitenden Durchschnitt und einer Standardabweichung über einen konfigurierbaren Zeitraum. Überschreitet die Rendite den oberen Schwellenwert, wird eine Long-Position eröffnet; fällt sie unter den unteren Schwellenwert, wird eine Short-Position eröffnet. Alle Positionen werden zum Schlusskurs des nächsten Tages geschlossen.
+## Handelsregeln
 
-## Details
+Die Rendite einer abgeschlossenen Tageskerze lautet `r=(Close-Open)/Open`. Mittelwert und Populationsabweichung verwenden die vorherigen `LookbackPeriod` abgeschlossenen Tagesrenditen ohne die aktuelle; das Vorfenster muss vollständig sein. Kauf bei `r>mean+k*sd`, Verkauf bei `r<mean-k*sd`, mit `k=AbnormalThreshold`. Gleichheit erzeugt keinen Einstieg.
 
-- **Einstiegskriterien**:
-  - Rendite > Mittelwert + k × Std → Long.
-  - Rendite < Mittelwert - k × Std → Short.
-- **Long/Short**: Beide
-- **Ausstiegskriterien**:
-  - Alle Positionen zum Schlusskurs des nächsten Tages schließen.
-- **Stops**: Keine
-- **Standardwerte**:
-  - Lookback-Periode = 5
-  - Schwellenwert für abnormale Rendite (k) = 1.6
-  - Kapital pro Trade = 1000
-- **Filter**:
-  - Kategorie: Momentum
-  - Richtung: Beide
-  - Indikatoren: SMA, StandardDeviation
-  - Stops: Keine
-  - Komplexität: Niedrig
-  - Zeitrahmen: Langfristig
-  - Saisonalität: Nein
-  - Neuronale Netze: Nein
-  - Divergenz: Nein
-  - Risikolevel: Mittel
+Einstieg nur ohne Position. Menge: `floor(CapitalPerTrade/Close/VolumeStep)*VolumeStep`; Mengen unter dem Minimum entfallen, oberhalb des Maximums werden abgewiesen. Kapital bezieht sich auf den Signalschluss, Marktpreise können abweichen. Die gesamte ausgeführte Position wird zum nächsten Tagesschluss oder nach einer Datenlücke zum ersten verfügbaren späteren Tagesschluss geschlossen. Ausstieg hat auf dieser Kerze Vorrang. Offene Orders verhindern Duplikate; kein Preisstop.
+
+## Parameter
+
+| Parameter | Standardwert |
+|---|---|
+| `CandleType` | `1d` |
+| `LookbackPeriod` | `5` |
+| `AbnormalThreshold` | `1.6` |
+| `CapitalPerTrade` | `1000` |

@@ -3,209 +3,254 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.BusinessEntities")
-clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import RateOfChange, CandleIndicatorValue
+from System import DateTime, Decimal, Math, TimeSpan, InvalidOperationException
+from System.Collections.Generic import IEnumerable
+from System.Globalization import CultureInfo, DateTimeStyles
+from System.IO import File
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.BusinessEntities import Security
+from StockSharp.BusinessEntities import Order, Security
+from StockSharp.Messages import CandleStates, DataType, OrderStates, OrderTypes, Sides
 
 
 class consistent_momentum_strategy(Strategy):
-    """Consistent momentum strategy using dual securities with medium and long-term ROC."""
+    """Consistent Momentum with explicit inputs and execution-based portfolio accounting."""
 
     def __init__(self):
         super(consistent_momentum_strategy, self).__init__()
-
-        self._security2_id = self.Param("Security2Id", "TONUSDT@BNBFT") \
-            .SetDisplay("Benchmark Security Id", "Identifier of the benchmark security", "General")
-
-        self._medium_momentum_length = self.Param("MediumMomentumLength", 18) \
-            .SetRange(5, 80) \
-            .SetDisplay("Medium Momentum Length", "Medium-term momentum length", "Indicators")
-
-        self._long_momentum_length = self.Param("LongMomentumLength", 60) \
-            .SetRange(20, 200) \
-            .SetDisplay("Long Momentum Length", "Long-term momentum length", "Indicators")
-
-        self._entry_margin = self.Param("EntryMargin", 1.5) \
-            .SetRange(0.1, 20.0) \
-            .SetDisplay("Entry Margin", "Minimum relative edge required to open a position", "Signals")
-
-        self._exit_margin = self.Param("ExitMargin", 0.4) \
-            .SetRange(0.0, 10.0) \
-            .SetDisplay("Exit Margin", "Relative edge threshold used to close a position", "Signals")
-
-        self._cooldown_bars = self.Param("CooldownBars", 8) \
-            .SetRange(0, 100) \
-            .SetDisplay("Cooldown Bars", "Closed candles to wait before another position change", "Risk")
-
-        self._stop_loss = self.Param("StopLoss", 2.5) \
-            .SetRange(0.5, 10.0) \
-            .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk")
-
+        self._universe = self.Param[IEnumerable[Security]]("Universe", None).SetRequired() \
+            .SetDisplay("Universe", "Execution securities with USD prices and valid volume metadata", "Parameters")
+        self._capital = self.Param("Capital", Decimal(100000)).SetGreaterThanZero() \
+            .SetDisplay("Capital", "Fixed gross capital budget in USD", "Parameters")
+        self._leverage = self.Param("Leverage", Decimal(1)).SetGreaterThanZero() \
+            .SetDisplay("Leverage", "Gross target exposure divided by the capital budget", "Parameters")
+        self._min_trade_usd = self.Param("MinTradeUsd", Decimal(50)).SetRange(Decimal(0), Decimal.MaxValue) \
+            .SetDisplay("MinTradeUsd", "Minimum notional adjustment; complete liquidation bypasses this filter", "Parameters")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
-            .SetDisplay("Candle Type", "Candle series for both instruments", "General")
+            .SetDisplay("CandleType", "Closed candle type; daily statistics count distinct UTC dates", "Parameters")
+        self._deciles = self.Param("Deciles", 10).SetRange(2, 10000) \
+            .SetDisplay("Deciles", "Number of cross-sectional buckets, requiring at least this many eligible securities", "Parameters")
+        self._price_history_file = self.Param[str]("PriceHistoryFile", None) \
+            .SetDisplay("PriceHistoryFile", "Optional daily close CSV for warmup; current and future dates cannot prefill a decision", "Parameters")
+        self._lookback_days = self.Param("LookbackDays", 147).SetGreaterThanZero() \
+            .SetDisplay("LookbackDays", "Long daily momentum lookback", "Parameters")
+        self._short_lookback_days = self.Param("ShortLookbackDays", 21).SetGreaterThanZero() \
+            .SetDisplay("ShortLookbackDays", "Short daily momentum lookback", "Parameters")
+        self._holding_months = self.Param("HoldingMonths", 6).SetGreaterThanZero() \
+            .SetDisplay("HoldingMonths", "Lifetime and gross capital denominator of each monthly tranche", "Parameters")
+        self._clear_state()
 
-        self._benchmark = None
-        self._primary_medium_mom = None
-        self._primary_long_mom = None
-        self._benchmark_medium_mom = None
-        self._benchmark_long_mom = None
-        self._primary_updated = False
-        self._benchmark_updated = False
-        self._primary_medium_value = 0.0
-        self._primary_long_value = 0.0
-        self._benchmark_medium_value = 0.0
-        self._benchmark_long_value = 0.0
-        self._cooldown_remaining = 0
+    def _clear_state(self):
+        self._securities = []
+        self._latest = {}
+        self._history = {}
+        self._targets = {}
+        self._pending = []
+        self._last_rebalance = 0
+        self._last_bar = None
+        self._tranches = []
 
     @property
-    def candle_type(self):
+    def Universe(self):
+        return self._universe.Value
+
+    @Universe.setter
+    def Universe(self, value):
+        self._universe.Value = value
+
+    @property
+    def Capital(self):
+        return self._capital.Value
+
+    @Capital.setter
+    def Capital(self, value):
+        self._capital.Value = value
+
+    @property
+    def Leverage(self):
+        return self._leverage.Value
+
+    @Leverage.setter
+    def Leverage(self, value):
+        self._leverage.Value = value
+
+    @property
+    def MinTradeUsd(self):
+        return self._min_trade_usd.Value
+
+    @MinTradeUsd.setter
+    def MinTradeUsd(self, value):
+        self._min_trade_usd.Value = value
+
+    @property
+    def CandleType(self):
         return self._candle_type.Value
 
+    @CandleType.setter
+    def CandleType(self, value):
+        self._candle_type.Value = value
+
+    @property
+    def Deciles(self):
+        return self._deciles.Value
+
+    @Deciles.setter
+    def Deciles(self, value):
+        self._deciles.Value = value
+
+    @property
+    def PriceHistoryFile(self):
+        return self._price_history_file.Value
+
+    @PriceHistoryFile.setter
+    def PriceHistoryFile(self, value):
+        self._price_history_file.Value = value
+
+    @property
+    def LookbackDays(self):
+        return self._lookback_days.Value
+
+    @LookbackDays.setter
+    def LookbackDays(self, value):
+        self._lookback_days.Value = value
+
+    @property
+    def ShortLookbackDays(self):
+        return self._short_lookback_days.Value
+
+    @ShortLookbackDays.setter
+    def ShortLookbackDays(self, value):
+        self._short_lookback_days.Value = value
+
+    @property
+    def HoldingMonths(self):
+        return self._holding_months.Value
+
+    @HoldingMonths.setter
+    def HoldingMonths(self, value):
+        self._holding_months.Value = value
+
     def GetWorkingSecurities(self):
-        result = []
-        if self.Security is not None:
-            result.append((self.Security, self.candle_type))
-        sec2_id = str(self._security2_id.Value)
-        if sec2_id:
-            s = Security()
-            s.Id = sec2_id
-            result.append((s, self.candle_type))
-        return result
+        securities = list(self.Universe) if self.Universe is not None else []
+
+        return [(s, self.CandleType) for s in securities]
 
     def OnReseted(self):
         super(consistent_momentum_strategy, self).OnReseted()
-        self._benchmark = None
-        self._primary_medium_mom = None
-        self._primary_long_mom = None
-        self._benchmark_medium_mom = None
-        self._benchmark_long_mom = None
-        self._primary_updated = False
-        self._benchmark_updated = False
-        self._primary_medium_value = 0.0
-        self._primary_long_value = 0.0
-        self._benchmark_medium_value = 0.0
-        self._benchmark_long_value = 0.0
-        self._cooldown_remaining = 0
+        self._clear_state()
 
     def OnStarted2(self, time):
+        self._securities = list(self.Universe) if self.Universe is not None else []
+        if not self._securities or any(s is None or not s.Id for s in self._securities) or len(set(s.Id.upper() for s in self._securities)) != len(self._securities):
+            raise InvalidOperationException("Universe must contain distinct execution securities.")
+
+        for s, dt in self.GetWorkingSecurities():
+            if s.VolumeStep is None or s.MinVolume is None or s.MaxVolume is None or s.VolumeStep <= 0 or s.MinVolume <= 0 or s.MaxVolume <= 0:
+                raise InvalidOperationException("Every security needs positive VolumeStep, MinVolume and MaxVolume.")
+            self._history[s] = {}
+        if self.ShortLookbackDays >= self.LookbackDays:
+            raise InvalidOperationException("ShortLookbackDays must be less than LookbackDays.")
+        self._load_price_history()
         super(consistent_momentum_strategy, self).OnStarted2(time)
+        for security, dt in self.GetWorkingSecurities():
+            self.SubscribeCandles(dt, True, security).Bind(lambda candle, s=security: self._process_candle(s, candle)).Start()
 
-        sec2_id = str(self._security2_id.Value)
-        if not sec2_id:
-            raise Exception("Benchmark security identifier is not specified.")
-
-        s = Security()
-        s.Id = sec2_id
-        self._benchmark = s
-
-        med_len = int(self._medium_momentum_length.Value)
-        long_len = int(self._long_momentum_length.Value)
-
-        self._primary_medium_mom = RateOfChange()
-        self._primary_medium_mom.Length = med_len
-        self._primary_long_mom = RateOfChange()
-        self._primary_long_mom.Length = long_len
-        self._benchmark_medium_mom = RateOfChange()
-        self._benchmark_medium_mom.Length = med_len
-        self._benchmark_long_mom = RateOfChange()
-        self._benchmark_long_mom.Length = long_len
-
-        primary_subscription = self.SubscribeCandles(self.candle_type, True, self.Security)
-        benchmark_subscription = self.SubscribeCandles(self.candle_type, True, self._benchmark)
-
-        primary_subscription.Bind(self.ProcessPrimaryCandle).Start()
-        benchmark_subscription.Bind(self.ProcessBenchmarkCandle).Start()
-
-        area = self.CreateChartArea()
-        if area is not None:
-            self.DrawCandles(area, primary_subscription)
-            self.DrawCandles(area, benchmark_subscription)
-            self.DrawOwnTrades(area)
-
-        self.StartProtection(
-            Unit(2, UnitTypes.Percent),
-            Unit(float(self._stop_loss.Value), UnitTypes.Percent)
-        )
-
-    def ProcessPrimaryCandle(self, candle):
-        if candle.State != CandleStates.Finished:
+    def _process_candle(self, security, candle):
+        if candle.State != CandleStates.Finished or candle.ClosePrice <= 0:
             return
-
-        civ_med = CandleIndicatorValue(self._primary_medium_mom, candle)
-        civ_med.IsFinal = True
-        med_result = self._primary_medium_mom.Process(civ_med)
-
-        civ_long = CandleIndicatorValue(self._primary_long_mom, candle)
-        civ_long.IsFinal = True
-        long_result = self._primary_long_mom.Process(civ_long)
-
-        if not med_result.IsEmpty and not long_result.IsEmpty and self._primary_medium_mom.IsFormed and self._primary_long_mom.IsFormed:
-            self._primary_medium_value = float(med_result)
-            self._primary_long_value = float(long_result)
-            self._primary_updated = True
-            self.TryProcessSignal()
-
-    def ProcessBenchmarkCandle(self, candle):
-        if candle.State != CandleStates.Finished:
+        self._latest[security] = (candle.OpenTime, candle.ClosePrice)
+        self._history[security][candle.OpenTime.Date] = candle.ClosePrice
+        if len(self._latest) != len(self._history) or any(t != candle.OpenTime for t, p in self._latest.values()) or self._last_bar == candle.OpenTime or not self.IsFormedAndOnlineAndAllowTrading():
             return
+        self._last_bar = candle.OpenTime
+        month = candle.OpenTime.Year * 100 + candle.OpenTime.Month
+        self._update_tranche_targets(DateTime(candle.OpenTime.Year, candle.OpenTime.Month, 1))
+        if self._last_rebalance != month and self._select_targets(candle.OpenTime):
+            self._last_rebalance = month
 
-        civ_med = CandleIndicatorValue(self._benchmark_medium_mom, candle)
-        civ_med.IsFinal = True
-        med_result = self._benchmark_medium_mom.Process(civ_med)
+        self._reconcile_targets()
 
-        civ_long = CandleIndicatorValue(self._benchmark_long_mom, candle)
-        civ_long.IsFinal = True
-        long_result = self._benchmark_long_mom.Process(civ_long)
+    def _daily(self, security, time):
+        return [self._history[security][d] for d in sorted(self._history[security]) if d <= self._last_closed_date(time)]
 
-        if not med_result.IsEmpty and not long_result.IsEmpty and self._benchmark_medium_mom.IsFormed and self._benchmark_long_mom.IsFormed:
-            self._benchmark_medium_value = float(med_result)
-            self._benchmark_long_value = float(long_result)
-            self._benchmark_updated = True
-            self.TryProcessSignal()
+    def _last_closed_date(self, time):
+        return time.Date if self.CandleType.Arg == TimeSpan.FromDays(1) else time.Date.AddDays(-1)
 
-    def TryProcessSignal(self):
-        if not self._primary_updated or not self._benchmark_updated:
+    def _units(self, security, notional):
+        return Math.Floor(notional / self._latest[security][1] / security.VolumeStep) * security.VolumeStep
+
+    def _reconcile_targets(self):
+        if any(o.State != OrderStates.Done and o.State != OrderStates.Failed for o in self._pending):
             return
+        self._pending = []
+        for security in self._securities:
+            if security not in self._targets:
+                continue
+            target = self._targets[security]
+            position = self.GetPositionValue(security, self.Portfolio)
+            delta = target - (position if position is not None else Decimal(0))
+            if delta == 0 or (target != 0 and abs(delta) * self._latest[security][1] < self.MinTradeUsd):
+                continue
+            quantity = Math.Floor(min(abs(delta), security.MaxVolume) / security.VolumeStep) * security.VolumeStep
+            if quantity < security.MinVolume:
+                continue
+            order = Order()
+            order.Security = security
+            order.Portfolio = self.Portfolio
+            order.Type = OrderTypes.Market
+            order.Side = Sides.Buy if delta > 0 else Sides.Sell
+            order.Volume = quantity
+            order.Comment = "0359Rebalance"
+            self._pending.append(order)
+            self.RegisterOrder(order)
 
-        self._primary_updated = False
-        self._benchmark_updated = False
-
-        if not self.IsFormedAndOnlineAndAllowTrading():
+    def _load_price_history(self):
+        if not self.PriceHistoryFile:
             return
+        lines = iter(File.ReadLines(self.PriceHistoryFile))
+        if next(lines, "").strip() != "SecurityId,Date,Close":
+            raise InvalidOperationException("Price history must begin with SecurityId,Date,Close.")
+        for line in lines:
+            if not line.strip():
+                continue
+            row = line.split(",")
+            if len(row) != 3:
+                raise InvalidOperationException("A daily price row must have three fields.")
+            security = next((s for s in self._history if s.Id.lower() == row[0].strip().lower()), None)
+            if security is None:
+                continue
+            date = DateTime.ParseExact(row[1].strip(), "yyyy-MM-dd", CultureInfo.InvariantCulture)
+            price = Decimal.Parse(row[2], CultureInfo.InvariantCulture)
+            if price <= 0 or date in self._history[security]:
+                raise InvalidOperationException("Daily prices must be positive and unique per security and UTC date.")
+            self._history[security][date] = price
 
-        if self._cooldown_remaining > 0:
-            self._cooldown_remaining -= 1
+    def _select_targets(self, time):
+        if len(self._securities) < self.Deciles or any(len(self._daily(s, time)) < self.LookbackDays + 1 for s in self._securities):
+            return False
+        def momentum(s, length):
+            values = self._daily(s, time)
+            return values[-1] / values[-length - 1] - Decimal(1)
+        count = len(self._securities) // self.Deciles
+        long_rank = sorted(self._securities, key=lambda s: (momentum(s, self.LookbackDays), s.Id))
+        short_rank = sorted(self._securities, key=lambda s: (momentum(s, self.ShortLookbackDays), s.Id))
+        longs = [s for s in long_rank[-count:] if s in short_rank[-count:]]
+        shorts = [s for s in long_rank[:count] if s in short_rank[:count]]
+        quantities = dict((s, Decimal(0)) for s in self._securities)
+        for s in longs:
+            quantities[s] = self._units(s, self.Capital * self.Leverage / Decimal(2 * self.HoldingMonths * len(longs)))
+        for s in shorts:
+            quantities[s] = -self._units(s, self.Capital * self.Leverage / Decimal(2 * self.HoldingMonths * len(shorts)))
+        month = DateTime(time.Year, time.Month, 1)
+        self._tranches.append((month.AddMonths(self.HoldingMonths), quantities))
+        self._update_tranche_targets(month)
+        return True
 
-        entry_margin = float(self._entry_margin.Value)
-        exit_margin = float(self._exit_margin.Value)
-        cooldown = int(self._cooldown_bars.Value)
-
-        medium_edge = self._primary_medium_value - self._benchmark_medium_value
-        long_edge = self._primary_long_value - self._benchmark_long_value
-
-        bullish_consistent = medium_edge >= entry_margin and long_edge >= entry_margin
-        bearish_consistent = medium_edge <= -entry_margin and long_edge <= -entry_margin
-        bullish_exit = medium_edge <= exit_margin or long_edge <= exit_margin
-        bearish_exit = medium_edge >= -exit_margin or long_edge >= -exit_margin
-
-        if self._cooldown_remaining == 0 and self.Position == 0:
-            if bullish_consistent:
-                self.BuyMarket()
-                self._cooldown_remaining = cooldown
-            elif bearish_consistent:
-                self.SellMarket()
-                self._cooldown_remaining = cooldown
-        elif self.Position > 0 and bullish_exit:
-            self.SellMarket(self.Position)
-            self._cooldown_remaining = cooldown
-        elif self.Position < 0 and bearish_exit:
-            self.BuyMarket(Math.Abs(self.Position))
-            self._cooldown_remaining = cooldown
+    def _update_tranche_targets(self, month):
+        self._tranches = [(expiry, quantities) for expiry, quantities in self._tranches if expiry > month]
+        for s in self._securities:
+            self._targets[s] = sum((quantities[s] for expiry, quantities in self._tranches), Decimal(0))
 
     def CreateClone(self):
         return consistent_momentum_strategy()

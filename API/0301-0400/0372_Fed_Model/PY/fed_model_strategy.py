@@ -3,210 +3,255 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.BusinessEntities")
-clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
+clr.AddReference("Ecng.ComponentModel")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, SimpleMovingAverage, StandardDeviation
+from System import Boolean, DateTime, Decimal, Int32, Math, TimeSpan, InvalidOperationException
+from System.Collections.Generic import IEnumerable
+from System.Globalization import CultureInfo, DateTimeStyles
+from System.IO import File, Path
+from Ecng.ComponentModel import WorkingTimeExtensions
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.BusinessEntities import Security
-from indicator_extensions import *
+from StockSharp.BusinessEntities import Order, Security
+from StockSharp.Messages import CandleStates, DataType, OrderStates, OrderTypes, Sides
+
 
 class fed_model_strategy(Strategy):
-    """Fed model strategy that trades the primary instrument when its synthetic earnings yield exceeds a synthetic bond yield benchmark."""
+    """Fed Model with point-in-time inputs and execution-based portfolio accounting."""
 
     def __init__(self):
         super(fed_model_strategy, self).__init__()
+        self._universe = self.Param[IEnumerable[Security]]("Universe", None).SetRequired() \
+            .SetDisplay("Universe", "Explicit execution securities with valid native volume metadata", "Parameters")
+        self._capital = self.Param("Capital", Decimal(100000)).SetGreaterThanZero() \
+            .SetDisplay("Capital", "Fixed capital budget in USD", "Parameters")
+        self._min_trade_usd = self.Param("MinTradeUsd", Decimal(100)).SetRange(Decimal(0), Decimal.MaxValue) \
+            .SetDisplay("MinTradeUsd", "Minimum USD adjustment; complete liquidation bypasses this filter", "Parameters")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1440))) \
+            .SetDisplay("CandleType", "Finished execution candle type", "Parameters")
+        self._regression_months = self.Param("RegressionMonths", 12).SetRange(2, 120) \
+            .SetDisplay("RegressionMonths", "Consecutive monthly yield spreads in the OLS forecast", "Parameters")
+        self._yield_history_file = self.Param[str]("YieldHistoryFile", None).SetRequired() \
+            .SetDisplay("YieldHistoryFile", "Required point-in-time monthly equity earnings and ten-year bond yields", "Parameters")
+        self._clear_state()
+        self.Trades.TradeAdded += self._on_trade
 
-        self._security2_id = self.Param("Security2Id", "TONUSDT@BNBFT") \
-            .SetDisplay("Benchmark Security Id", "Identifier of the benchmark security", "General")
-
-        self._yield_length = self.Param("YieldLength", 12) \
-            .SetRange(2, 80) \
-            .SetDisplay("Yield Length", "Smoothing length for synthetic yields", "Indicators")
-
-        self._lookback_period = self.Param("LookbackPeriod", 24) \
-            .SetRange(5, 120) \
-            .SetDisplay("Lookback Period", "Lookback period used to normalize the yield gap", "Indicators")
-
-        self._entry_threshold = self.Param("EntryThreshold", 1.1) \
-            .SetRange(0.2, 5.0) \
-            .SetDisplay("Entry Threshold", "Z-score threshold required to open a position", "Signals")
-
-        self._exit_threshold = self.Param("ExitThreshold", 0.25) \
-            .SetRange(0.0, 2.0) \
-            .SetDisplay("Exit Threshold", "Z-score threshold required to close a position", "Signals")
-
-        self._cooldown_bars = self.Param("CooldownBars", 8) \
-            .SetRange(0, 120) \
-            .SetDisplay("Cooldown Bars", "Closed candles to wait before another position change", "Risk")
-
-        self._stop_loss = self.Param("StopLoss", 2.5) \
-            .SetRange(0.5, 10.0) \
-            .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk")
-
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
-            .SetDisplay("Candle Type", "Type of candles", "General")
-
-        self._benchmark = None
-        self._earnings_yield = None
-        self._bond_yield = None
-        self._gap_average = None
-        self._gap_deviation = None
-        self._latest_primary_gap = 0.0
-        self._latest_benchmark_gap = 0.0
-        self._previous_z_score = None
-        self._primary_updated = False
-        self._benchmark_updated = False
-        self._cooldown_remaining = 0
+    def _clear_state(self):
+        self._securities = []
+        self._latest = {}
+        self._targets = {}
+        self._pending = []
+        self._last_rebalance = 0
+        self._last_bar = None
+        self._next_targets = {}
+        self._is_rotating = False
+        self._is_reconciling = False
+        self._yields = []
+        self._equity_regime = None
 
     @property
-    def candle_type(self):
+    def Universe(self):
+        return self._universe.Value
+
+    @Universe.setter
+    def Universe(self, value):
+        self._universe.Value = value
+
+    @property
+    def Capital(self):
+        return self._capital.Value
+
+    @Capital.setter
+    def Capital(self, value):
+        self._capital.Value = value
+
+    @property
+    def MinTradeUsd(self):
+        return self._min_trade_usd.Value
+
+    @MinTradeUsd.setter
+    def MinTradeUsd(self, value):
+        self._min_trade_usd.Value = value
+
+    @property
+    def CandleType(self):
         return self._candle_type.Value
 
+    @CandleType.setter
+    def CandleType(self, value):
+        self._candle_type.Value = value
+
+    @property
+    def RegressionMonths(self):
+        return self._regression_months.Value
+
+    @RegressionMonths.setter
+    def RegressionMonths(self, value):
+        self._regression_months.Value = value
+
+    @property
+    def YieldHistoryFile(self):
+        return self._yield_history_file.Value
+
+    @YieldHistoryFile.setter
+    def YieldHistoryFile(self, value):
+        self._yield_history_file.Value = value
+
     def GetWorkingSecurities(self):
-        result = []
-        if self.Security is not None:
-            result.append((self.Security, self.candle_type))
-        sec2_id = str(self._security2_id.Value)
-        if sec2_id:
-            s = Security()
-            s.Id = sec2_id
-            result.append((s, self.candle_type))
-        return result
+        return [(s, self.CandleType) for s in self.Universe] if self.Universe is not None else []
 
     def OnReseted(self):
         super(fed_model_strategy, self).OnReseted()
-        self._benchmark = None
-        self._earnings_yield = None
-        self._bond_yield = None
-        self._gap_average = None
-        self._gap_deviation = None
-        self._latest_primary_gap = 0.0
-        self._latest_benchmark_gap = 0.0
-        self._previous_z_score = None
-        self._primary_updated = False
-        self._benchmark_updated = False
-        self._cooldown_remaining = 0
+        self._clear_state()
 
     def OnStarted2(self, time):
+        self._securities = list(self.Universe) if self.Universe is not None else []
+        if not self._securities or any(s is None or not s.Id for s in self._securities) or len(set(s.Id.upper() for s in self._securities)) != len(self._securities):
+            raise InvalidOperationException("Universe must contain distinct execution securities.")
+        for security in self._securities:
+            if security.VolumeStep is None or security.MinVolume is None or security.MaxVolume is None or security.VolumeStep <= 0 or security.MinVolume <= 0 or security.MaxVolume <= 0:
+                raise InvalidOperationException("Every security needs positive VolumeStep, MinVolume and MaxVolume.")
+        if len(self._securities) > 2 or self.CandleType.Arg != TimeSpan.FromDays(1) or any(s.Board is None for s in self._securities):
+            raise InvalidOperationException("The Fed model requires daily candles, an equity security and at most one cash security, with exchange calendars.")
+        self._load_yields()
         super(fed_model_strategy, self).OnStarted2(time)
+        for security in self._securities:
+            self.SubscribeCandles(self.CandleType, True, security).Bind(lambda candle, s=security: self._process_candle(s, candle)).Start()
 
-        sec2_id = str(self._security2_id.Value)
-        if not sec2_id:
-            raise Exception("Benchmark security identifier is not specified.")
-
-        s = Security()
-        s.Id = sec2_id
-        self._benchmark = s
-
-        yield_len = int(self._yield_length.Value)
-        lookback = int(self._lookback_period.Value)
-
-        self._earnings_yield = ExponentialMovingAverage()
-        self._earnings_yield.Length = yield_len
-        self._bond_yield = ExponentialMovingAverage()
-        self._bond_yield.Length = yield_len
-        self._gap_average = SimpleMovingAverage()
-        self._gap_average.Length = lookback
-        self._gap_deviation = StandardDeviation()
-        self._gap_deviation.Length = lookback
-
-        primary_subscription = self.SubscribeCandles(self.candle_type, True, self.Security)
-        benchmark_subscription = self.SubscribeCandles(self.candle_type, True, self._benchmark)
-
-        primary_subscription.Bind(self.ProcessPrimaryCandle).Start()
-        benchmark_subscription.Bind(self.ProcessBenchmarkCandle).Start()
-
-        area = self.CreateChartArea()
-        if area is not None:
-            self.DrawCandles(area, primary_subscription)
-            self.DrawCandles(area, benchmark_subscription)
-            self.DrawOwnTrades(area)
-
-        self.StartProtection(
-            Unit(2, UnitTypes.Percent),
-            Unit(float(self._stop_loss.Value), UnitTypes.Percent)
-        )
-
-    def ProcessPrimaryCandle(self, candle):
-        if candle.State != CandleStates.Finished:
+    def _process_candle(self, security, candle):
+        if candle.State != CandleStates.Finished or candle.ClosePrice <= 0:
             return
-
-        self._latest_primary_gap = self.UpdateYieldGap(self._earnings_yield, candle)
-        self._primary_updated = True
-        self.TryProcessGap(candle.OpenTime)
-
-    def ProcessBenchmarkCandle(self, candle):
-        if candle.State != CandleStates.Finished:
+        self._latest[security] = (candle.OpenTime, candle.ClosePrice, candle.CloseTime)
+        if len(self._latest) != len(self._securities) or any(value[0] != candle.OpenTime for value in self._latest.values()) or self._last_bar == candle.OpenTime or not self.IsFormedAndOnlineAndAllowTrading():
             return
+        self._last_bar = candle.OpenTime
+        month = candle.OpenTime.Year * 100 + candle.OpenTime.Month
+        if not self._is_rotating and self._last_rebalance != month and self._select_targets(candle.OpenTime, max(value[2] for value in self._latest.values())):
+            self._last_rebalance = month
+        self._reconcile_targets()
 
-        self._latest_benchmark_gap = self.UpdateYieldGap(self._bond_yield, candle)
-        self._benchmark_updated = True
-        self.TryProcessGap(candle.OpenTime)
+    def _budget(self):
+        return max(Decimal(0), min(self.Capital, self.Portfolio.CurrentValue if self.Portfolio.CurrentValue is not None else Decimal(0)))
 
-    def UpdateYieldGap(self, average, candle):
-        yield_proxy = self.CalculateYieldProxy(candle)
-        result = process_float(average, yield_proxy, candle.OpenTime, True)
-        return float(result)
+    def _unit_price(self, security):
+        return self._latest[security][1]
 
-    def CalculateYieldProxy(self, candle):
-        price_base = max(float(candle.ClosePrice), 1.0)
-        price_step = float(self.Security.PriceStep) if self.Security is not None and self.Security.PriceStep is not None else 1.0
-        range_val = max(float(candle.HighPrice) - float(candle.LowPrice), price_step)
-        normalized_range = range_val / price_base
-        close_location = (float(candle.ClosePrice) - float(candle.LowPrice)) / range_val
+    def _units(self, security, notional):
+        return Math.Floor(notional / self._unit_price(security) / security.VolumeStep) * security.VolumeStep
 
-        return (1.0 / price_base * 100.0) + close_location - normalized_range
-
-    def TryProcessGap(self, time):
-        if not self._primary_updated or not self._benchmark_updated:
+    def _reconcile_targets(self):
+        if self._is_reconciling:
             return
-
-        self._primary_updated = False
-        self._benchmark_updated = False
-
-        gap = self._latest_primary_gap - self._latest_benchmark_gap
-
-        mean_result = process_float(self._gap_average, gap, time, True)
-        mean = float(mean_result)
-
-        dev_result = process_float(self._gap_deviation, gap, time, True)
-        deviation = float(dev_result)
-
-        if not self._gap_average.IsFormed or not self._gap_deviation.IsFormed or deviation <= 0:
+        if any(o.State != OrderStates.Done and o.State != OrderStates.Failed for o in self._pending):
             return
+        self._pending = []
+        self._is_reconciling = True
+        try:
+            for security in self._securities:
+                if security not in self._targets:
+                    continue
+                target = self._targets[security]
+                position = self.GetPositionValue(security, self.Portfolio)
+                delta = target - (position if position is not None else Decimal(0))
+                if delta == 0 or (target != 0 and abs(delta) * self._unit_price(security) < self.MinTradeUsd):
+                    continue
+                quantity = Math.Floor(min(abs(delta), security.MaxVolume) / security.VolumeStep) * security.VolumeStep
+                if quantity < security.MinVolume:
+                    continue
+                order = Order()
+                order.Security = security
+                order.Portfolio = self.Portfolio
+                order.Type = OrderTypes.Market
+                order.Side = Sides.Buy if delta > 0 else Sides.Sell
+                order.Volume = quantity
+                order.Comment = "0372Rebalance"
+                self._pending.append(order)
+                self.RegisterOrder(order)
+        finally:
+            self._is_reconciling = False
+        self._continue_rotation()
 
-        if not self.IsFormedAndOnlineAndAllowTrading():
+    def _begin_rotation(self, targets):
+        self._next_targets = targets
+        self._targets = {s: Decimal(0) for s in self._securities}
+        self._is_rotating = True
+
+    def _on_trade(self, trade):
+        self._continue_rotation()
+
+    def _continue_rotation(self):
+        if not self._is_rotating or self._is_reconciling or not self.IsFormedAndOnlineAndAllowTrading():
             return
+        if any(o.State != OrderStates.Done and o.State != OrderStates.Failed for o in self._pending):
+            return
+        if any((self.GetPositionValue(s, self.Portfolio) or Decimal(0)) != 0 for s in self._securities):
+            return
+        self._is_rotating = False
+        self._targets = {s: self._next_targets.get(s, Decimal(0)) for s in self._securities}
+        self._next_targets = {}
+        self._reconcile_targets()
 
-        if self._cooldown_remaining > 0:
-            self._cooldown_remaining -= 1
+    @staticmethod
+    def _parse_utc(value):
+        return DateTime.ParseExact(value.strip(), "yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal)
 
-        z_score = (gap - mean) / deviation
-        entry_thresh = float(self._entry_threshold.Value)
-        exit_thresh = float(self._exit_threshold.Value)
-        cooldown = int(self._cooldown_bars.Value)
+    @staticmethod
+    def _read_rows(path, header, fields):
+        lines = list(File.ReadLines(path))
+        if not lines or lines[0].strip() != header:
+            raise InvalidOperationException("Invalid CSV header: expected " + header + ".")
+        for line in lines[1:]:
+            if not line.strip():
+                continue
+            row = line.split(",")
+            if len(row) != fields:
+                raise InvalidOperationException("Invalid CSV field count.")
+            yield row
 
-        bullish_entry = self._previous_z_score is not None and self._previous_z_score < entry_thresh and z_score >= entry_thresh
-        bearish_entry = self._previous_z_score is not None and self._previous_z_score > -entry_thresh and z_score <= -entry_thresh
+    def _load_yields(self):
+        keys = set()
+        for row in self._read_rows(self.YieldHistoryFile, "Month,PublishedAt,EarningsYield,BondYield", 4):
+            month = DateTime.ParseExact(row[0].strip(), "yyyy-MM", CultureInfo.InvariantCulture)
+            published = self._parse_utc(row[1])
+            earnings = Decimal.Parse(row[2], CultureInfo.InvariantCulture)
+            bond = Decimal.Parse(row[3], CultureInfo.InvariantCulture)
+            key = (month, published)
+            if published.Date < month or key in keys:
+                raise InvalidOperationException("Monthly yield observations need causal, unique publication dates.")
+            keys.add(key)
+            self._yields.append((month, published, earnings - bond))
 
-        if self._cooldown_remaining == 0 and self.Position == 0:
-            if bullish_entry:
-                self.BuyMarket()
-                self._cooldown_remaining = cooldown
-            elif bearish_entry:
-                self.SellMarket()
-                self._cooldown_remaining = cooldown
-        elif self.Position > 0 and z_score <= exit_thresh:
-            self.SellMarket(self.Position)
-            self._cooldown_remaining = cooldown
-        elif self.Position < 0 and z_score >= -exit_thresh:
-            self.BuyMarket(Math.Abs(self.Position))
-            self._cooldown_remaining = cooldown
+    def _select_targets(self, time, as_of):
+        calendar = self._securities[0].Board.WorkingTime
+        if not WorkingTimeExtensions.IsWorkingDate(calendar, time.Date, True):
+            return False
+        following = time.Date.AddDays(1)
+        while following.Month == time.Month:
+            if WorkingTimeExtensions.IsWorkingDate(calendar, following, True):
+                return False
+            following = following.AddDays(1)
+        month = DateTime(time.Year, time.Month, 1)
+        y = []
+        for i in range(self.RegressionMonths - 1, -1, -1):
+            available = [v for v in self._yields if v[0] == month.AddMonths(-i) and v[1] <= as_of]
+            if not available:
+                return False
+            y.append(max(available, key=lambda v: v[1])[2])
+        mean_x = Decimal(self.RegressionMonths - 1) / Decimal(2)
+        mean_y = sum(y, Decimal(0)) / Decimal(len(y))
+        variance = sum(((Decimal(i) - mean_x) * (Decimal(i) - mean_x) for i in range(len(y))), Decimal(0))
+        slope = sum(((Decimal(i) - mean_x) * (v - mean_y) for i, v in enumerate(y)), Decimal(0)) / variance
+        prediction = mean_y + slope * (Decimal(self.RegressionMonths) - mean_x)
+        if prediction == 0:
+            return False
+        equity = prediction > 0
+        if self._equity_regime == equity:
+            return True
+        self._equity_regime = equity
+        security = self._securities[0] if equity else self._securities[1] if len(self._securities) > 1 else None
+        self._begin_rotation({security: self._units(security, self._budget())} if security is not None else {})
+        return True
 
-        self._previous_z_score = z_score
 
     def CreateClone(self):
         return fed_model_strategy()

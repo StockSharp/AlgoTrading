@@ -1,27 +1,39 @@
-# Betting Against Beta 策略
-[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
+# Betting Against Beta
 
-**Betting Against Beta** 策略做多最低贝塔分位的资产，做空最高贝塔分位。贝塔相对于基准在滚动窗口上计算，
-组合在每个月的第一个交易日重新平衡。
+[English](README.md) | [Русский](README_ru.md) | [Deutsch](README_de.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-## 详情
-- **入场条件**：按相对于基准的贝塔对证券排序；做多最低十分位，做空最高十分位。
-- **多空方向**：双向。
-- **退出条件**：在下一次每月再平衡时调整仓位。
-- **止损**：无明确止损逻辑。
-- **默认值**：
-  - `WindowDays = 252`
-  - `Deciles = 10`
-  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
-  - `MinTradeUsd = 100`
-- **过滤器**：
-  - 分类: 因子
-  - 方向: 双向
-  - 指标: 统计
-  - 止损: 否
-  - 复杂度: 中等
-  - 时间框架: 日线
-  - 季节性: 否
-  - 神经网络: 否
-  - 背离: 否
-  - 风险等级: 中等
+## 交易规则
+
+对齐 Universe 与 BenchmarkSecurity 的日收盘日期，至少需要 WindowDays + 1 个共同日期。简单收益 r[d] = P[d] / P[d−1] − 1。beta 为标的收益与基准收益的协方差除以基准方差。基准方差为零时延迟。买最低 beta 的 Deciles 组，卖空最高组，每侧 floor(Universe 数量 / Deciles)。没有盘中 beta 阈值、止损或 beta 中性杠杆调整。
+
+仅处理时间戳一致的已完成蜡烛。统计按不同 UTC 日期计数，同一天的盘中收盘值会被后续值替换。每月在第一个满足条件的同步收盘信号上再平衡一次；数据不足时延迟。相同分数按 Security.Id 排序。
+
+盘中 CandleType 的日统计只使用严格早于当前信号日期的 UTC 日期，排除尚未完成的当天。已完成的一日蜡烛可计入自己的完整日期。
+
+## 输入数据
+
+PriceHistoryFile 为可选的正值日收盘价 CSV：SecurityId,Date,Close；日期格式 yyyy-MM-dd。当前或未来日期不能提前预热决策，实时已完成蜡烛覆盖对应 UTC 日期。禁止重复日期。执行历史较短时可用于长周期预热。
+
+## 参数
+
+| 参数 | 默认值 |
+|---|---|
+| `Universe` | 必填 |
+| `Capital` | `100000` |
+| `Leverage` | `1` |
+| `MinTradeUsd` | `100` |
+| `CandleType` | `TimeSpan.FromMinutes(5).TimeFrame()` |
+| `Deciles` | `10` |
+| `PriceHistoryFile` | 可选 — 未提供 |
+| `BenchmarkSecurity` | 必填 |
+| `WindowDays` | `252` |
+
+## 成交与仓位
+
+必须显式设置 Universe。价格与 Capital 采用 USD，每个价格单位对应一个交易单位。Capital 是固定预算，Leverage 控制总敞口。不添加止损或止盈。
+
+多头和空头各分配 Capital × Leverage 的一半，各篮子内等额分配。按信号收盘价换算数量，并按 VolumeStep 向零取整。根据实际成交仓位调整，等待未完成订单，遵守 MinVolume/MaxVolume，并在后续蜡烛继续大额调整。MinTradeUsd 过滤小额调整，但完整平仓不受此过滤限制。
+
+## 验证
+
+成交测试仅使用已有 BTC/TON 执行档案。显式财报、期权观测和预热数据是机制测试夹具，不是真实企业财务或期权历史。缩短周期、两组排序和三月年度调仓是明确的测试配置，不代表原始长期默认值已完整交易验证。不声称任何收益率。

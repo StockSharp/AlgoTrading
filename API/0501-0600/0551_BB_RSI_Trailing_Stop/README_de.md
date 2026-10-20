@@ -1,34 +1,29 @@
-# BB RSI Trailing-Stop-Strategie
+# BB RSI Trailing Stop
+
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-Kombiniert Bollinger Bands mit RSI-Momentum und schützt Trades mit einem bedingten Trailing-Stop.
-Long-Positionen entstehen, wenn der Kurs die untere Band durchbricht und der RSI die überverkaufte Zone verlässt. Shorts werden ausgelöst, wenn die obere Band mit überkauftem RSI getroffen wird.
+Ein Bollinger-Ausbruch benötigt eine RSI-Erholung; danach gilt ein bedingter Trailing-Stop. `p` ist die vorherige gebildete Kerze; RSI verwendet Wilder-Glättung.
 
-Der Stop-Loss beginnt mit einem festen Abstand und wechselt zu einem Trailing-Stop, sobald sich der Kurs um einen voreingestellten Versatz günstig bewegt hat.
+## Handelsregeln
 
-## Details
+Long: `Low < lowerBand` und `RSI[p] <= RsiOversold && RSI > RsiOversold`. Short: `High > upperBand` und `RSI[p] >= RsiOverbought && RSI < RsiOverbought`. Ein weiterhin extremer RSI genügt nicht. Einstieg mit `Volume` nur ohne Position, ohne versteckte Wartezeit.
 
-- **Einstiegskriterien**: Bollinger-Band-Ausbruch mit RSI-Bestätigung
-- **Long/Short**: Beide
-- **Ausstiegskriterien**: Anfänglicher Stop-Loss oder Trailing-Stop
-- **Stops**: Ja, dynamisches Trailing
-- **Standardwerte**:
-  - `BollingerPeriod` = 25
-  - `BollingerDeviation` = 2
-  - `RsiPeriod` = 14
-  - `RsiOverbought` = 60
-  - `RsiOversold` = 33
-  - `StopLossPoints` = 50
-  - `TrailOffsetPoints` = 99
-  - `TrailStopPoints` = 40
-- **Filter**:
-  - Kategorie: Mean Reversion
-  - Richtung: Beide
-  - Indikatoren: Bollinger Bands, RSI
-  - Stops: Trailing
-  - Komplexität: Mittel
-  - Zeitrahmen: Intraday
-  - Saisonalität: Nein
-  - Neuronale Netze: Nein
-  - Divergenz: Nein
-  - Risikolevel: Mittel
+Basis ist der gewichtete tatsächliche Einstiegspreis; Long nutzt ausführbaren Bid, Short Ask. Anfangsabstand `StopLossPoints`; Trailing beginnt erst nach einem günstigen Extrem von `TrailOffsetPoints`. Danach folgt der Stop diesem Extrem mit `TrailStopPoints`, ohne den Anfangsstop zu lockern. Eine Kursüberschreitung schließt die gesamte ausgeführte Position per Marktorder. Alle Abstände sind absolute Preiseinheiten, keine Ticks oder Prozente. Frühere Kerzenextreme lösen keinen erst später erzeugten Stop aus.
+
+Einstiege verwenden nur abgeschlossene Kerzen und vollständig gebildete Indikatoren. Offene Positionen werden bis zum Ausstieg verwaltet; ausstehende Marktorders verhindern doppelte Aufträge.
+
+Bollinger verwendet die Populationsstandardabweichung des gleitenden Schlusskursfensters einschließlich der aktuellen abgeschlossenen Kerze.
+
+## Parameter
+
+| Parameter | Default |
+|---|---|
+| `BollingerPeriod` | `25` |
+| `BollingerDeviation` | `2` |
+| `RsiPeriod` | `14` |
+| `RsiOversold` | `33` |
+| `RsiOverbought` | `60` |
+| `StopLossPoints` | `50` |
+| `TrailOffsetPoints` | `99` |
+| `TrailStopPoints` | `40` |
+| `CandleType` | `15m` |

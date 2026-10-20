@@ -1,310 +1,225 @@
+namespace StockSharp.Samples.Strategies;
+
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Linq;
 
 using Ecng.Common;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
-using StockSharp.Configuration;
 using StockSharp.Messages;
 
-namespace StockSharp.Samples.Strategies;
-
-/// <summary>
-/// Relative book-to-market factor strategy that trades the primary instrument against a benchmark using a synthetic valuation spread.
-/// </summary>
+/// <summary>Book To Market Value with explicit inputs and execution-based portfolio accounting.</summary>
 public class BookToMarketValueStrategy : Strategy
 {
-	private readonly StrategyParam<string> _security2Id;
-	private readonly StrategyParam<int> _bookLength;
-	private readonly StrategyParam<int> _lookbackPeriod;
-	private readonly StrategyParam<decimal> _entryThreshold;
-	private readonly StrategyParam<decimal> _exitThreshold;
-	private readonly StrategyParam<int> _cooldownBars;
-	private readonly StrategyParam<decimal> _stopLoss;
+	private readonly StrategyParam<IEnumerable<Security>> _universe;
+	private readonly StrategyParam<decimal> _capital;
+	private readonly StrategyParam<decimal> _leverage;
+	private readonly StrategyParam<decimal> _minTradeUsd;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _deciles;
+	private readonly StrategyParam<string> _fundamentalsFile;
+	private readonly StrategyParam<int> _rebalanceMonth;
+	private readonly StrategyParam<int> _maxReportAgeDays;
+	private Security[] _securities = [];
+	private readonly Dictionary<Security, (DateTime time, decimal price)> _latest = [];
+	private readonly Dictionary<Security, decimal> _targets = [];
+	private readonly List<Order> _pending = [];
+	private int _lastRebalance;
+	private DateTime? _lastBar;
 
-	private Security _benchmark = null!;
-	private ExponentialMovingAverage _primaryBook = null!;
-	private ExponentialMovingAverage _benchmarkBook = null!;
-	private SimpleMovingAverage _ratioSpreadAverage = null!;
-	private StandardDeviation _ratioSpreadDeviation = null!;
-	private decimal _latestPrimaryRatio;
-	private decimal _latestBenchmarkRatio;
-	private decimal? _previousZScore;
-	private bool _primaryUpdated;
-	private bool _benchmarkUpdated;
-	private int _cooldownRemaining;
+	private sealed record Report(string Id, DateTime Period, DateTime Published, decimal Assets, decimal Income, decimal CashFlow, decimal Book, decimal Shares);
+	private readonly List<Report> _reports = [];
 
-	/// <summary>
-	/// Benchmark security identifier.
-	/// </summary>
-	public string Security2Id
-	{
-		get => _security2Id.Value;
-		set => _security2Id.Value = value;
-	}
+	/// <summary>Execution securities with USD prices and valid volume metadata.</summary>
+	public IEnumerable<Security> Universe { get => _universe.Value; set => _universe.Value = value; }
 
-	/// <summary>
-	/// Smoothing length for the synthetic book value.
-	/// </summary>
-	public int BookLength
-	{
-		get => _bookLength.Value;
-		set => _bookLength.Value = value;
-	}
+	/// <summary>Fixed gross capital budget in USD.</summary>
+	public decimal Capital { get => _capital.Value; set => _capital.Value = value; }
 
-	/// <summary>
-	/// Lookback period used to normalize valuation spread.
-	/// </summary>
-	public int LookbackPeriod
-	{
-		get => _lookbackPeriod.Value;
-		set => _lookbackPeriod.Value = value;
-	}
+	/// <summary>Gross target exposure divided by the capital budget.</summary>
+	public decimal Leverage { get => _leverage.Value; set => _leverage.Value = value; }
 
-	/// <summary>
-	/// Z-score threshold required to open a position.
-	/// </summary>
-	public decimal EntryThreshold
-	{
-		get => _entryThreshold.Value;
-		set => _entryThreshold.Value = value;
-	}
+	/// <summary>Minimum notional adjustment; complete liquidation bypasses this filter.</summary>
+	public decimal MinTradeUsd { get => _minTradeUsd.Value; set => _minTradeUsd.Value = value; }
 
-	/// <summary>
-	/// Z-score threshold required to close a position.
-	/// </summary>
-	public decimal ExitThreshold
-	{
-		get => _exitThreshold.Value;
-		set => _exitThreshold.Value = value;
-	}
+	/// <summary>Closed candle type; daily statistics count distinct UTC dates.</summary>
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Closed candles to wait before another position change.
-	/// </summary>
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
+	/// <summary>Number of cross-sectional buckets, requiring at least this many eligible securities.</summary>
+	public int Deciles { get => _deciles.Value; set => _deciles.Value = value; }
 
-	/// <summary>
-	/// Stop loss percentage.
-	/// </summary>
-	public decimal StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
+	/// <summary>Point-in-time annual financial reports in CSV format.</summary>
+	public string FundamentalsFile { get => _fundamentalsFile.Value; set => _fundamentalsFile.Value = value; }
 
-	/// <summary>
-	/// Candle type used for both instruments.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	/// <summary>UTC calendar month of the annual portfolio rebalance.</summary>
+	public int RebalanceMonth { get => _rebalanceMonth.Value; set => _rebalanceMonth.Value = value; }
 
-	/// <summary>
-	/// Initializes strategy parameters.
-	/// </summary>
+	/// <summary>Maximum age of the fiscal period at a rebalance.</summary>
+	public int MaxReportAgeDays { get => _maxReportAgeDays.Value; set => _maxReportAgeDays.Value = value; }
+
+	/// <summary>Initialize the published strategy parameters.</summary>
 	public BookToMarketValueStrategy()
 	{
-		_security2Id = Param(nameof(Security2Id), Paths.HistoryDefaultSecurity2)
-			.SetDisplay("Benchmark Security Id", "Identifier of the benchmark security", "General");
-
-		_bookLength = Param(nameof(BookLength), 10)
-			.SetRange(2, 50)
-			.SetDisplay("Book Length", "Smoothing length for the synthetic book value", "Indicators");
-
-		_lookbackPeriod = Param(nameof(LookbackPeriod), 28)
-			.SetRange(10, 150)
-			.SetDisplay("Lookback Period", "Lookback period used to normalize valuation spread", "Indicators");
-
-		_entryThreshold = Param(nameof(EntryThreshold), 1.35m)
-			.SetRange(0.5m, 4m)
-			.SetDisplay("Entry Threshold", "Z-score threshold required to open a position", "Signals");
-
-		_exitThreshold = Param(nameof(ExitThreshold), 0.35m)
-			.SetRange(0m, 2m)
-			.SetDisplay("Exit Threshold", "Z-score threshold required to close a position", "Signals");
-
-		_cooldownBars = Param(nameof(CooldownBars), 12)
-			.SetRange(0, 120)
-			.SetDisplay("Cooldown Bars", "Closed candles to wait before another position change", "Risk");
-
-		_stopLoss = Param(nameof(StopLoss), 2.5m)
-			.SetRange(0.5m, 10m)
-			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
-
+		_universe = Param<IEnumerable<Security>>(nameof(Universe)).SetRequired()
+			.SetDisplay("Universe", "Execution securities with USD prices and valid volume metadata", "Parameters");
+		_capital = Param(nameof(Capital), 100000m).SetGreaterThanZero()
+			.SetDisplay("Capital", "Fixed gross capital budget in USD", "Parameters");
+		_leverage = Param(nameof(Leverage), 1m).SetGreaterThanZero()
+			.SetDisplay("Leverage", "Gross target exposure divided by the capital budget", "Parameters");
+		_minTradeUsd = Param(nameof(MinTradeUsd), 200m).SetRange(0m, decimal.MaxValue)
+			.SetDisplay("MinTradeUsd", "Minimum notional adjustment; complete liquidation bypasses this filter", "Parameters");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Candle series for both instruments", "General");
+			.SetDisplay("CandleType", "Closed candle type; daily statistics count distinct UTC dates", "Parameters");
+		_deciles = Param(nameof(Deciles), 10).SetRange(2, 10000)
+			.SetDisplay("Deciles", "Number of cross-sectional buckets, requiring at least this many eligible securities", "Parameters");
+		_fundamentalsFile = Param<string>(nameof(FundamentalsFile)).SetRequired()
+			.SetDisplay("FundamentalsFile", "Point-in-time annual financial reports in CSV format", "Parameters");
+		_rebalanceMonth = Param(nameof(RebalanceMonth), 7).SetRange(1, 12)
+			.SetDisplay("RebalanceMonth", "UTC calendar month of the annual portfolio rebalance", "Parameters");
+		_maxReportAgeDays = Param(nameof(MaxReportAgeDays), 550).SetGreaterThanZero()
+			.SetDisplay("MaxReportAgeDays", "Maximum age of the fiscal period at a rebalance", "Parameters");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		if (Security != null)
-			yield return (Security, CandleType);
-
-		if (!Security2Id.IsEmpty())
-			yield return (new Security { Id = Security2Id }, CandleType);
+		foreach (var security in (Universe ?? []).DistinctBy(s => s.Id, StringComparer.OrdinalIgnoreCase))
+			yield return (security, CandleType);
 	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_benchmark = null!;
-		_primaryBook = null!;
-		_benchmarkBook = null!;
-		_ratioSpreadAverage = null!;
-		_ratioSpreadDeviation = null!;
-		_latestPrimaryRatio = 0m;
-		_latestBenchmarkRatio = 0m;
-		_previousZScore = null;
-		_primaryUpdated = false;
-		_benchmarkUpdated = false;
-		_cooldownRemaining = 0;
+		_securities = [];
+		_latest.Clear();
+		_targets.Clear();
+		_pending.Clear();
+		_lastRebalance = 0;
+		_lastBar = null;
+		_reports.Clear();
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
+		_securities = (Universe ?? []).ToArray();
+		if (_securities.Length == 0 || _securities.Any(s => s is null || string.IsNullOrWhiteSpace(s.Id))
+			|| _securities.Select(s => s.Id).Distinct(StringComparer.OrdinalIgnoreCase).Count() != _securities.Length)
+			throw new InvalidOperationException("Universe must contain distinct execution securities.");
+		foreach (var security in GetWorkingSecurities().Select(x => x.sec))
+		{
+			if (security.VolumeStep is not > 0m || security.MinVolume is not > 0m || security.MaxVolume is not > 0m)
+				throw new InvalidOperationException("Every security needs positive VolumeStep, MinVolume and MaxVolume.");
+		}
+
+		if (string.IsNullOrWhiteSpace(FundamentalsFile)) throw new InvalidOperationException("FundamentalsFile is required.");
+		LoadReports();
 		base.OnStarted2(time);
+		foreach (var security in GetWorkingSecurities().Select(x => x.sec))
+			SubscribeCandles(CandleType, security: security).Bind(candle => ProcessCandle(security, candle)).Start();
+	}
 
-		if (Security == null)
-			throw new InvalidOperationException("Primary security is not specified.");
+	private void ProcessCandle(Security security, ICandleMessage candle)
+	{
+		if (candle.State != CandleStates.Finished || candle.ClosePrice <= 0m) return;
+		_latest[security] = (candle.OpenTime, candle.ClosePrice);
+		if (_latest.Count != _securities.Length || _latest.Values.Any(v => v.time != candle.OpenTime)
+			|| _lastBar == candle.OpenTime || !IsFormedAndOnlineAndAllowTrading()) return;
+		_lastBar = candle.OpenTime;
+		var month = candle.OpenTime.Year * 100 + candle.OpenTime.Month;
 
-		if (Security2Id.IsEmpty())
-			throw new InvalidOperationException("Benchmark security identifier is not specified.");
+		if (_lastRebalance / 100 != candle.OpenTime.Year && SelectTargets(candle.OpenTime))
+			_lastRebalance = month;
 
-		_benchmark = this.LookupById(Security2Id) ?? new Security { Id = Security2Id };
-		_primaryBook = new ExponentialMovingAverage { Length = BookLength };
-		_benchmarkBook = new ExponentialMovingAverage { Length = BookLength };
-		_ratioSpreadAverage = new SimpleMovingAverage { Length = LookbackPeriod };
-		_ratioSpreadDeviation = new StandardDeviation { Length = LookbackPeriod };
-		_cooldownRemaining = 0;
+		ReconcileTargets();
+	}
 
-		var primarySubscription = SubscribeCandles(CandleType, security: Security);
-		var benchmarkSubscription = SubscribeCandles(CandleType, security: _benchmark);
+	private decimal Units(Security security, decimal notional)
+		=> Math.Floor(notional / _latest[security].price / security.VolumeStep.Value) * security.VolumeStep.Value;
 
-		primarySubscription
-			.Bind(ProcessPrimaryCandle)
-			.Start();
-
-		benchmarkSubscription
-			.Bind(ProcessBenchmarkCandle)
-			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
+	private void ReconcileTargets()
+	{
+		if (_pending.Any(o => o.State is not (OrderStates.Done or OrderStates.Failed))) return;
+		_pending.Clear();
+		foreach (var security in _securities)
 		{
-			DrawCandles(area, primarySubscription);
-			DrawCandles(area, benchmarkSubscription);
-			DrawOwnTrades(area);
+			if (!_targets.TryGetValue(security, out var target)) continue;
+			var delta = target - GetPositionValue(security, Portfolio).GetValueOrDefault();
+			if (delta == 0m || (target != 0m && Math.Abs(delta) * _latest[security].price < MinTradeUsd)) continue;
+			var step = security.VolumeStep.Value;
+			var quantity = Math.Floor(Math.Min(Math.Abs(delta), security.MaxVolume.Value) / step) * step;
+			if (quantity < security.MinVolume.Value) continue;
+			var order = new Order
+			{
+				Security = security, Portfolio = Portfolio, Type = OrderTypes.Market,
+				Side = delta > 0m ? Sides.Buy : Sides.Sell, Volume = quantity, Comment = "0357Rebalance",
+			};
+			_pending.Add(order);
+			RegisterOrder(order);
 		}
-
-		StartProtection(
-			new Unit(2, UnitTypes.Percent),
-			new Unit(StopLoss, UnitTypes.Percent));
 	}
 
-	private void ProcessPrimaryCandle(ICandleMessage candle)
+	private void LoadReports()
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		_latestPrimaryRatio = UpdateRatio(_primaryBook, candle);
-		_primaryUpdated = true;
-		TryProcessSpread(candle.OpenTime);
-	}
-
-	private void ProcessBenchmarkCandle(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		_latestBenchmarkRatio = UpdateRatio(_benchmarkBook, candle);
-		_benchmarkUpdated = true;
-		TryProcessSpread(candle.OpenTime);
-	}
-
-	private decimal UpdateRatio(ExponentialMovingAverage average, ICandleMessage candle)
-	{
-		var syntheticBookValue = CalculateSyntheticBookValue(candle);
-		var smoothedBook = average.Process(syntheticBookValue, candle.OpenTime, true).ToDecimal();
-
-		return smoothedBook / Math.Max(candle.ClosePrice, 1m);
-	}
-
-	private decimal CalculateSyntheticBookValue(ICandleMessage candle)
-	{
-		var priceBase = Math.Max(candle.OpenPrice, 1m);
-		var range = Math.Max(candle.HighPrice - candle.LowPrice, Security?.PriceStep ?? 1m);
-		var balanceComponent = (candle.OpenPrice + candle.LowPrice + candle.ClosePrice) / 3m;
-		var stabilityComponent = priceBase * (1m - Math.Min(0.2m, range / priceBase));
-
-		return balanceComponent + stabilityComponent;
-	}
-
-	private void TryProcessSpread(DateTime time)
-	{
-		if (!_primaryUpdated || !_benchmarkUpdated)
-			return;
-
-		_primaryUpdated = false;
-		_benchmarkUpdated = false;
-
-		if (!_primaryBook.IsFormed || !_benchmarkBook.IsFormed)
-			return;
-
-		var ratioSpread = _latestPrimaryRatio - _latestBenchmarkRatio;
-		var mean = _ratioSpreadAverage.Process(ratioSpread, time, true).ToDecimal();
-		var deviation = _ratioSpreadDeviation.Process(ratioSpread, time, true).ToDecimal();
-
-		if (!_ratioSpreadAverage.IsFormed || !_ratioSpreadDeviation.IsFormed || deviation <= 0m)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (_cooldownRemaining > 0)
-			_cooldownRemaining--;
-
-		var zScore = (ratioSpread - mean) / deviation;
-		var bullishEntry = _previousZScore is decimal previousBullish && previousBullish < EntryThreshold && zScore >= EntryThreshold;
-		var bearishEntry = _previousZScore is decimal previousBearish && previousBearish > -EntryThreshold && zScore <= -EntryThreshold;
-
-		if (_cooldownRemaining == 0 && Position == 0)
+		var lines = File.ReadLines(FundamentalsFile).GetEnumerator();
+		using (lines)
 		{
-			if (bullishEntry)
+			if (!lines.MoveNext() || lines.Current.Trim() != "SecurityId,PeriodEnd,PublishedAt,TotalAssets,NetIncome,OperatingCashFlow,BookEquity,SharesOutstanding")
+				throw new InvalidOperationException("Invalid annual financial report CSV header.");
+			var keys = new HashSet<(string, DateTime, DateTime)>();
+			while (lines.MoveNext())
 			{
-				BuyMarket();
-				_cooldownRemaining = CooldownBars;
-			}
-			else if (bearishEntry)
-			{
-				SellMarket();
-				_cooldownRemaining = CooldownBars;
+				if (string.IsNullOrWhiteSpace(lines.Current)) continue;
+				var row = lines.Current.Split(',');
+				if (row.Length != 8) throw new InvalidOperationException("A financial report must have eight fields.");
+				var id = row[0].Trim();
+				if (!_securities.Any(s => string.Equals(s.Id, id, StringComparison.OrdinalIgnoreCase))) continue;
+				var period = DateTime.ParseExact(row[1].Trim(), "yyyy-MM-dd", CultureInfo.InvariantCulture);
+				var published = DateTime.ParseExact(row[2].Trim(), "yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
+				var numbers = row.Skip(3).Select(x => decimal.Parse(x, CultureInfo.InvariantCulture)).ToArray();
+				if (numbers[0] <= 0m || numbers[4] <= 0m || published.Date < period || !keys.Add((id.ToUpperInvariant(), period, published)))
+					throw new InvalidOperationException("Reports need positive assets/shares, causal publication dates and unique revisions.");
+				_reports.Add(new(id, period, published, numbers[0], numbers[1], numbers[2], numbers[3], numbers[4]));
 			}
 		}
-		else if (Position > 0 && zScore <= ExitThreshold)
-		{
-			SellMarket(Position);
-			_cooldownRemaining = CooldownBars;
-		}
-		else if (Position < 0 && zScore >= -ExitThreshold)
-		{
-			BuyMarket(Math.Abs(Position));
-			_cooldownRemaining = CooldownBars;
-		}
-
-		_previousZScore = zScore;
 	}
+
+	private Report FindReport(Security security, DateTime time, DateTime? period = null)
+		=> _reports.Where(r => string.Equals(r.Id, security.Id, StringComparison.OrdinalIgnoreCase)
+			&& r.Published <= time && r.Period <= time.Date && (period is null || r.Period == period))
+			.OrderByDescending(r => r.Period).ThenByDescending(r => r.Published).FirstOrDefault();
+
+	private bool SelectTargets(DateTime time)
+	{
+		if (time.Month != RebalanceMonth) return false;
+		var scores = new List<(Security security, decimal score)>();
+		foreach (var security in _securities)
+		{
+			var report = FindReport(security, time);
+			if (report is null || (time.Date - report.Period).TotalDays > MaxReportAgeDays) continue;
+			if (report.Book <= 0m) continue;
+			var score = report.Book / (report.Shares * _latest[security].price);
+			scores.Add((security, score));
+		}
+		if (scores.Count < Deciles) return false;
+		var ranked = scores.OrderBy(x => x.score).ThenBy(x => x.security.Id, StringComparer.Ordinal).Select(x => x.security).ToArray();
+		var count = ranked.Length / Deciles;
+		SetBasketTargets(ranked.TakeLast(count), ranked.Take(count), Capital * Leverage);
+		return true;
+	}
+
+	private void SetBasketTargets(IEnumerable<Security> longBasket, IEnumerable<Security> shortBasket, decimal grossCapital)
+	{
+		var longs = longBasket.ToArray();
+		var shorts = shortBasket.ToArray();
+		foreach (var s in _securities) _targets[s] = 0m;
+		foreach (var s in longs) _targets[s] = Units(s, grossCapital / (2m * longs.Length));
+		foreach (var s in shorts) _targets[s] = -Units(s, grossCapital / (2m * shorts.Length));
+	}
+
 }

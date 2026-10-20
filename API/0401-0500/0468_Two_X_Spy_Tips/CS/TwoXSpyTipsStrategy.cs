@@ -2,155 +2,226 @@ namespace StockSharp.Samples.Strategies;
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Linq;
 
 using Ecng.Common;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-/// <summary>
-/// 2X SPY TIPS Strategy (single-security adaptation).
-/// Uses dual SMA to detect strong uptrend, then buys.
-/// Original requires SPY+TIPS, adapted to single security with fast/slow SMA.
-/// </summary>
+/// <summary>Two X Spy Tips with point-in-time inputs and execution-based portfolio accounting.</summary>
 public class TwoXSpyTipsStrategy : Strategy
 {
+	private readonly StrategyParam<IEnumerable<Security>> _universe;
+	private readonly StrategyParam<decimal> _capital;
+	private readonly StrategyParam<decimal> _leverage;
+	private readonly StrategyParam<decimal> _minTradeUsd;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _fastSmaLength;
-	private readonly StrategyParam<int> _slowSmaLength;
-	private readonly StrategyParam<int> _cooldownBars;
+	private readonly StrategyParam<string> _priceHistoryFile;
+	private readonly StrategyParam<Security> _spySecurity;
+	private readonly StrategyParam<Security> _tipsSecurity;
+	private readonly StrategyParam<int> _smaLength;
+	private Security[] _securities = [];
+	private readonly Dictionary<Security, (DateTime time, decimal price)> _latest = [];
+	private readonly Dictionary<Security, SortedDictionary<DateTime, decimal>> _history = [];
+	private readonly Dictionary<Security, decimal> _targets = [];
+	private readonly List<Order> _pending = [];
+	private int _lastRebalance;
+	private DateTime? _lastBar;
 
-	private SimpleMovingAverage _fastSma;
-	private SimpleMovingAverage _slowSma;
+	/// <summary>Explicit execution universe with native volume metadata.</summary>
+	public IEnumerable<Security> Universe { get => _universe.Value; set => _universe.Value = value; }
 
-	private int _cooldownRemaining;
+	/// <summary>Fixed USD capital budget.</summary>
+	public decimal Capital { get => _capital.Value; set => _capital.Value = value; }
 
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
+	/// <summary>Gross exposure divided by capital.</summary>
+	public decimal Leverage { get => _leverage.Value; set => _leverage.Value = value; }
 
-	public int FastSmaLength
-	{
-		get => _fastSmaLength.Value;
-		set => _fastSmaLength.Value = value;
-	}
+	/// <summary>Minimum USD adjustment; complete liquidation is exempt.</summary>
+	public decimal MinTradeUsd { get => _minTradeUsd.Value; set => _minTradeUsd.Value = value; }
 
-	public int SlowSmaLength
-	{
-		get => _slowSmaLength.Value;
-		set => _slowSmaLength.Value = value;
-	}
+	/// <summary>Finished execution candle type.</summary>
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	public int CooldownBars
-	{
-		get => _cooldownBars.Value;
-		set => _cooldownBars.Value = value;
-	}
+	/// <summary>Optional CSV of causal daily close prices.</summary>
+	public string PriceHistoryFile { get => _priceHistoryFile.Value; set => _priceHistoryFile.Value = value; }
 
+	/// <summary>Explicit S&P 500 signal security.</summary>
+	public Security SpySecurity { get => _spySecurity.Value; set => _spySecurity.Value = value; }
+
+	/// <summary>Explicit TIPS signal security.</summary>
+	public Security TipsSecurity { get => _tipsSecurity.Value; set => _tipsSecurity.Value = value; }
+
+	/// <summary>Completed daily closes in each signal SMA.</summary>
+	public int SmaLength { get => _smaLength.Value; set => _smaLength.Value = value; }
+
+	/// <summary>Initialize the strategy parameters.</summary>
 	public TwoXSpyTipsStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_fastSmaLength = Param(nameof(FastSmaLength), 50)
-			.SetGreaterThanZero()
-			.SetDisplay("Fast SMA", "Fast SMA period", "Indicators");
-
-		_slowSmaLength = Param(nameof(SlowSmaLength), 200)
-			.SetGreaterThanZero()
-			.SetDisplay("Slow SMA", "Slow SMA period", "Indicators");
-
-		_cooldownBars = Param(nameof(CooldownBars), 15)
-			.SetDisplay("Cooldown Bars", "Bars between trades", "Risk");
+		_universe = Param<IEnumerable<Security>>(nameof(Universe)).SetRequired()
+			.SetDisplay("Universe", "Explicit execution universe with native volume metadata.", "Parameters");
+		_capital = Param(nameof(Capital), 100000m).SetRange(0.000001m, decimal.MaxValue)
+			.SetDisplay("Capital", "Fixed USD capital budget.", "Parameters");
+		_leverage = Param(nameof(Leverage), 2m).SetRange(0.000001m, decimal.MaxValue)
+			.SetDisplay("Leverage", "Gross exposure divided by capital.", "Parameters");
+		_minTradeUsd = Param(nameof(MinTradeUsd), 200m).SetRange(0m, decimal.MaxValue)
+			.SetDisplay("MinTradeUsd", "Minimum USD adjustment; complete liquidation is exempt.", "Parameters");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1440).TimeFrame())
+			.SetDisplay("CandleType", "Finished execution candle type.", "Parameters");
+		_priceHistoryFile = Param<string>(nameof(PriceHistoryFile))
+			.SetDisplay("PriceHistoryFile", "Optional CSV of causal daily close prices.", "Parameters");
+		_spySecurity = Param<Security>(nameof(SpySecurity)).SetRequired()
+			.SetDisplay("SpySecurity", "Explicit S&P 500 signal security.", "Parameters");
+		_tipsSecurity = Param<Security>(nameof(TipsSecurity)).SetRequired()
+			.SetDisplay("TipsSecurity", "Explicit TIPS signal security.", "Parameters");
+		_smaLength = Param(nameof(SmaLength), 200).SetRange(2, int.MaxValue)
+			.SetDisplay("SmaLength", "Completed daily closes in each signal SMA.", "Parameters");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> [(Security, CandleType)];
+		=> (Universe ?? []).Where(s => s is not null).DistinctBy(s => s.Id, StringComparer.OrdinalIgnoreCase).Select(s => (s, CandleType));
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_fastSma = null;
-		_slowSma = null;
-		_cooldownRemaining = 0;
+		_securities = [];
+		_latest.Clear();
+		_history.Clear();
+		_targets.Clear();
+		_pending.Clear();
+		_lastRebalance = 0;
+		_lastBar = null;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted2(time);
-
-		_fastSma = new SimpleMovingAverage { Length = FastSmaLength };
-		_slowSma = new SimpleMovingAverage { Length = SlowSmaLength };
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(_fastSma, _slowSma, OnProcess)
-			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
+		_securities = (Universe ?? []).ToArray();
+		if (_securities.Length == 0 || _securities.Any(s => s is null || string.IsNullOrWhiteSpace(s.Id))
+			|| _securities.Select(s => s.Id).Distinct(StringComparer.OrdinalIgnoreCase).Count() != _securities.Length)
+			throw new InvalidOperationException("Universe must contain distinct execution securities.");
+		foreach (var security in _securities)
 		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, _fastSma);
-			DrawIndicator(area, _slowSma);
-			DrawOwnTrades(area);
+			if (security.VolumeStep is not > 0m || security.MinVolume is not > 0m || security.MaxVolume is not > 0m)
+				throw new InvalidOperationException("Every security needs positive VolumeStep, MinVolume and MaxVolume.");
+			_history[security] = [];
+		}
+		if (SpySecurity is null || TipsSecurity is null || SpySecurity.Id == TipsSecurity.Id
+			|| !_securities.Contains(SpySecurity) || !_securities.Contains(TipsSecurity) || !_securities.Contains(Security))
+			throw new InvalidOperationException("Distinct SPY and TIPS signals and the execution security must belong to Universe.");
+		LoadPriceHistory();
+		base.OnStarted2(time);
+		foreach (var security in _securities)
+			SubscribeCandles(CandleType, security: security).Bind(candle => ProcessCandle(security, candle)).Start();
+	}
+
+	private void ProcessCandle(Security security, ICandleMessage candle)
+	{
+		if (candle.State != CandleStates.Finished || candle.ClosePrice <= 0m) return;
+		_latest[security] = (candle.OpenTime, candle.ClosePrice);
+		_history[security][candle.OpenTime.Date] = candle.ClosePrice;
+		if (_latest.Count != _securities.Length || _latest.Values.Any(v => v.time != candle.OpenTime)
+			|| _lastBar == candle.OpenTime || !IsFormedAndOnlineAndAllowTrading()) return;
+		_lastBar = candle.OpenTime;
+		var month = candle.OpenTime.Year * 100 + candle.OpenTime.Month;
+		if (_lastRebalance != month && SelectTargets(candle.OpenTime))
+			_lastRebalance = month;
+		ReconcileTargets();
+	}
+
+	private decimal Budget => Capital * Leverage;
+
+	private decimal UnitPrice(Security security) => _latest[security].price;
+
+	private decimal Units(Security security, decimal notional)
+		=> Math.Floor(notional / UnitPrice(security) / security.VolumeStep.Value) * security.VolumeStep.Value;
+
+	private void ReconcileTargets()
+	{
+		if (_pending.Any(o => o.State is not (OrderStates.Done or OrderStates.Failed))) return;
+		_pending.Clear();
+		foreach (var security in _securities)
+		{
+			if (!_targets.TryGetValue(security, out var target)) continue;
+			var delta = target - GetPositionValue(security, Portfolio).GetValueOrDefault();
+			if (delta == 0m || (target != 0m && Math.Abs(delta) * UnitPrice(security) < MinTradeUsd)) continue;
+			var step = security.VolumeStep.Value;
+			var quantity = Math.Floor(Math.Min(Math.Abs(delta), security.MaxVolume.Value) / step) * step;
+			if (quantity < security.MinVolume.Value) continue;
+			var order = new Order
+			{
+				Security = security, Portfolio = Portfolio, Type = OrderTypes.Market,
+				Side = delta > 0m ? Sides.Buy : Sides.Sell, Volume = quantity, Comment = "0468Rebalance",
+			};
+			_pending.Add(order);
+			RegisterOrder(order);
 		}
 	}
 
-	private void OnProcess(ICandleMessage candle, decimal fastVal, decimal slowVal)
+	private static DateTime ParseUtc(string value)
+		=> DateTime.ParseExact(value.Trim(), "yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
+
+	private static IEnumerable<string[]> ReadRows(string path, string header, int fields)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		if (!_fastSma.IsFormed || !_slowSma.IsFormed)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (_cooldownRemaining > 0)
+		using var lines = File.ReadLines(path).GetEnumerator();
+		if (!lines.MoveNext() || lines.Current.Trim() != header)
+			throw new InvalidOperationException("Invalid CSV header: expected " + header + ".");
+		while (lines.MoveNext())
 		{
-			_cooldownRemaining--;
-			return;
+			if (string.IsNullOrWhiteSpace(lines.Current)) continue;
+			var row = lines.Current.Split(',');
+			if (row.Length != fields) throw new InvalidOperationException("Invalid CSV field count.");
+			yield return row;
 		}
+	}
 
-		var price = candle.ClosePrice;
+	private DateTime LastClosedDate(DateTime time)
+		=> CandleType.Arg is TimeSpan frame && frame == TimeSpan.FromDays(1) ? time.Date : time.Date.AddDays(-1);
 
-		// Strong uptrend: price above both SMAs + fast > slow
-		if (price > fastVal && price > slowVal && fastVal > slowVal && Position <= 0)
+	private decimal[] Daily(Security security, DateTime time, int count, DateTime cutoff)
+		=> _history[security].Where(x => x.Key <= LastClosedDate(time) && x.Key < cutoff).Select(x => x.Value).TakeLast(count).ToArray();
+
+	private void LoadPriceHistory()
+	{
+		if (string.IsNullOrWhiteSpace(PriceHistoryFile)) return;
+		foreach (var row in ReadRows(PriceHistoryFile, "SecurityId,Date,Close", 3))
 		{
-			if (Position < 0)
-				BuyMarket(Math.Abs(Position));
-			BuyMarket(Volume);
-			_cooldownRemaining = CooldownBars;
+			var security = _securities.SingleOrDefault(s => string.Equals(s.Id, row[0].Trim(), StringComparison.OrdinalIgnoreCase));
+			if (security is null) continue;
+			var date = DateTime.ParseExact(row[1].Trim(), "yyyy-MM-dd", CultureInfo.InvariantCulture);
+			var price = decimal.Parse(row[2], CultureInfo.InvariantCulture);
+			if (price <= 0m || !_history[security].TryAdd(date, price))
+				throw new InvalidOperationException("Daily prices must be positive and unique per security and UTC date.");
 		}
-		// Strong downtrend: price below both SMAs + fast < slow
-		else if (price < fastVal && price < slowVal && fastVal < slowVal && Position >= 0)
+	}
+
+	private bool SelectTargets(DateTime time)
+	{
+		if (GetPositionValue(Security, Portfolio).GetValueOrDefault() > 0m) return true;
+		var passes = true;
+		foreach (var signal in new[] { SpySecurity, TipsSecurity })
 		{
-			if (Position > 0)
-				SellMarket(Math.Abs(Position));
-			SellMarket(Volume);
-			_cooldownRemaining = CooldownBars;
+			var prices = Daily(signal, time, SmaLength, DateTime.MaxValue);
+			if (prices.Length != SmaLength) return false;
+			passes &= prices[^1] > prices.Average();
 		}
-		// Exit long: price drops below fast SMA
-		else if (Position > 0 && price < fastVal)
-		{
-			SellMarket(Math.Abs(Position));
-			_cooldownRemaining = CooldownBars;
-		}
-		// Exit short: price rises above fast SMA
-		else if (Position < 0 && price > fastVal)
-		{
-			BuyMarket(Math.Abs(Position));
-			_cooldownRemaining = CooldownBars;
-		}
+		if (!passes) return true;
+		_targets[Security] = Units(Security, Budget);
+		return true;
+	}
+
+	private void SetBasketTargets(IEnumerable<Security> longBasket, IEnumerable<Security> shortBasket, decimal grossCapital)
+	{
+		var longs = longBasket.ToArray();
+		var shorts = shortBasket.ToArray();
+		foreach (var security in _securities) _targets[security] = 0m;
+		foreach (var security in longs) _targets[security] = Units(security, grossCapital / (2m * longs.Length));
+		foreach (var security in shorts) _targets[security] = -Units(security, grossCapital / (2m * shorts.Length));
 	}
 }

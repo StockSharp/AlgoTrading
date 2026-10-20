@@ -2,169 +2,165 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.BusinessEntities")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import BollingerBands
+from System import Decimal, Math, TimeSpan, Convert, InvalidOperationException
+from StockSharp.Algo.Indicators import BollingerBands, RelativeStrengthIndex, ExponentialMovingAverage, AverageTrueRange, DecimalIndicatorValue
 from StockSharp.Algo.Strategies import Strategy
-
+from StockSharp.BusinessEntities import Subscription
+from StockSharp.Messages import DataType, CandleStates, Level1Fields, OrderStates, OrderTypes, Sides, Unit, UnitTypes, ITickTradeMessage
 
 class bollinger_heikin_ashi_entry_strategy(Strategy):
+    """Heikin Ashi band reversal with actual partial profit and a trailing remainder."""
+
     def __init__(self):
         super(bollinger_heikin_ashi_entry_strategy, self).__init__()
-        self._bollinger_period = self.Param("BollingerPeriod", 20) \
-            .SetDisplay("Bollinger Period", "Bollinger Bands length", "Indicators")
-        self._bollinger_deviation = self.Param("BollingerDeviation", 2.0) \
-            .SetDisplay("Bollinger Deviation", "Bollinger Bands standard deviation", "Indicators")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
-            .SetDisplay("Candle Type", "Type of candles to use", "General")
-        self._entry_price = 0.0
-        self._initial_stop = 0.0
-        self._first_target = 0.0
-        self._first_target_reached = False
-        self._trail_stop = 0.0
-        self._is_ha_initialized = False
-        self._ha_open1 = 0.0
-        self._ha_close1 = 0.0
-        self._ha_high1 = 0.0
-        self._ha_low1 = 0.0
-        self._ha_open2 = 0.0
-        self._ha_close2 = 0.0
-        self._ha_high2 = 0.0
-        self._ha_low2 = 0.0
-        self._upper_bb1 = 0.0
-        self._lower_bb1 = 0.0
-        self._upper_bb2 = 0.0
-        self._lower_bb2 = 0.0
-        self._prev_high = 0.0
-        self._prev_low = 0.0
-        self._cooldown = 0
+        self._bollingerPeriod = self.Param("BollingerPeriod", 20).SetGreaterThanZero() \
+            .SetDisplay("BollingerPeriod", "Heikin Ashi close window", "Parameters")
+        self._bollingerDeviation = self.Param("BollingerDeviation", Decimal(2)).SetGreaterThanZero() \
+            .SetDisplay("BollingerDeviation", "Bollinger standard deviation multiplier", "Parameters")
+        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+            .SetDisplay("CandleType", "Finished signal candle interval", "Parameters")
+        self._clear_state()
 
     @property
-    def bollinger_period(self):
-        return self._bollinger_period.Value
+    def BollingerPeriod(self):
+        return self._bollingerPeriod.Value
+
+    @BollingerPeriod.setter
+    def BollingerPeriod(self, value):
+        self._bollingerPeriod.Value = value
+
     @property
-    def bollinger_deviation(self):
-        return self._bollinger_deviation.Value
+    def BollingerDeviation(self):
+        return self._bollingerDeviation.Value
+
+    @BollingerDeviation.setter
+    def BollingerDeviation(self, value):
+        self._bollingerDeviation.Value = value
+
     @property
-    def candle_type(self):
-        return self._candle_type.Value
+    def CandleType(self):
+        return self._candleType.Value
+
+    @CandleType.setter
+    def CandleType(self, value):
+        self._candleType.Value = value
+
+    def _clear_state(self):
+        self._bands = None
+        self._pending = None
+        self._ha_initialized = False
+        self._target_taken = False
+        self._invalid_fill = False
+        self._ha_open = self._ha_close = Decimal(0)
+        self._previous_low = self._previous_high = Decimal(0)
+        self._stop = self._target = self._entry_cost = self._entry_quantity = Decimal(0)
+        self._red_touches = self._green_touches = 0
 
     def OnReseted(self):
         super(bollinger_heikin_ashi_entry_strategy, self).OnReseted()
-        self._entry_price = 0.0
-        self._initial_stop = 0.0
-        self._first_target = 0.0
-        self._first_target_reached = False
-        self._trail_stop = 0.0
-        self._is_ha_initialized = False
-        self._ha_open1 = 0.0
-        self._ha_close1 = 0.0
-        self._ha_high1 = 0.0
-        self._ha_low1 = 0.0
-        self._ha_open2 = 0.0
-        self._ha_close2 = 0.0
-        self._ha_high2 = 0.0
-        self._ha_low2 = 0.0
-        self._upper_bb1 = 0.0
-        self._lower_bb1 = 0.0
-        self._upper_bb2 = 0.0
-        self._lower_bb2 = 0.0
-        self._prev_high = 0.0
-        self._prev_low = 0.0
-        self._cooldown = 0
+        self._clear_state()
+
+    def GetWorkingSecurities(self):
+        return [(self.Security, self.CandleType), (self.Security, DataType.Level1)]
 
     def OnStarted2(self, time):
         super(bollinger_heikin_ashi_entry_strategy, self).OnStarted2(time)
-        bb = BollingerBands()
-        bb.Length = self.bollinger_period
-        bb.Width = self.bollinger_deviation
-        subscription = self.SubscribeCandles(self.candle_type)
-        subscription.BindEx(bb, self.OnProcess).Start()
+        self._bands = BollingerBands()
+        self._bands.Length = self.BollingerPeriod
+        self._bands.Width = self.BollingerDeviation
+        self.Indicators.Add(self._bands)
+        candles = self.SubscribeCandles(self.CandleType)
+        candles.Bind(self._process_candle).Start()
         area = self.CreateChartArea()
         if area is not None:
-            self.DrawCandles(area, subscription)
+            self.DrawCandles(area, candles)
+            self.DrawIndicator(area, self._bands)
             self.DrawOwnTrades(area)
+        for field in (Level1Fields.BestBidPrice, Level1Fields.BestAskPrice):
+            quote = Subscription(DataType.Level1, self.Security)
+            quote.MarketData.BuildField = field
+            self.SubscribeLevel1(quote).Bind(self._process_quote).Start()
 
-    def OnProcess(self, candle, bb_value):
+    def _is_pending(self):
+        return self._pending is not None and self._pending.State not in (OrderStates.Done, OrderStates.Failed)
+
+    def _submit(self, side, quantity, reason):
+        self._pending = self.CreateOrder(side, Decimal(0), quantity)
+        self._pending.Type = OrderTypes.Market
+        self._pending.Comment = "0554" + reason
+        self.RegisterOrder(self._pending)
+
+    def _process_candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
-        if bb_value.UpBand is None or bb_value.LowBand is None:
+        ha_open = (self._ha_open + self._ha_close) / Decimal(2) if self._ha_initialized else (candle.OpenPrice + candle.ClosePrice) / Decimal(2)
+        ha_close = (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / Decimal(4)
+        self._ha_open = ha_open
+        self._ha_close = ha_close
+        self._ha_initialized = True
+        value = DecimalIndicatorValue(self._bands, ha_close, candle.OpenTime)
+        value.IsFinal = True
+        bands = self._bands.Process(value)
+        signal = None
+        if self._bands.IsFormed and bands.LowBand is not None and bands.UpBand is not None:
+            red_valid = self._red_touches >= 2
+            green_valid = self._green_touches >= 2
+            if ha_close > ha_open and ha_close > bands.LowBand and red_valid:
+                signal = Sides.Buy
+            elif ha_close < ha_open and ha_close < bands.UpBand and green_valid:
+                signal = Sides.Sell
+            self._red_touches = self._red_touches + 1 if ha_close < ha_open and min(candle.LowPrice, ha_open, ha_close) <= bands.LowBand else 0
+            self._green_touches = self._green_touches + 1 if ha_close > ha_open and max(candle.HighPrice, ha_open, ha_close) >= bands.UpBand else 0
+        if self.Position != 0 and self._target_taken:
+            self._stop = max(self._stop, candle.LowPrice) if self.Position > 0 else min(self._stop, candle.HighPrice)
+        setup_stop = self._previous_low if signal == Sides.Buy else self._previous_high
+        self._previous_low = candle.LowPrice
+        self._previous_high = candle.HighPrice
+        if signal is None or self.Position != 0 or self._is_pending() or not self.IsFormedAndOnlineAndAllowTrading():
             return
-        upper = float(bb_value.UpBand)
-        lower = float(bb_value.LowBand)
+        self._stop = setup_stop
+        self._entry_cost = self._entry_quantity = Decimal(0)
+        self._target_taken = self._invalid_fill = False
+        self._submit(signal, self.Volume, "Entry")
 
-        ha_close = (float(candle.OpenPrice) + float(candle.HighPrice) + float(candle.LowPrice) + float(candle.ClosePrice)) / 4.0
-        if not self._is_ha_initialized:
-            ha_open = (float(candle.OpenPrice) + float(candle.ClosePrice)) / 2.0
-            self._is_ha_initialized = True
-        else:
-            ha_open = (self._ha_open1 + self._ha_close1) / 2.0
+    def OnOwnTradeReceived(self, trade):
+        super(bollinger_heikin_ashi_entry_strategy, self).OnOwnTradeReceived(trade)
+        if trade.Order.Comment == "0554Entry":
+            price = ITickTradeMessage.Price.__get__(trade.Trade)
+            quantity = ITickTradeMessage.Volume.__get__(trade.Trade)
+            self._entry_cost += price * quantity
+            self._entry_quantity += quantity
+            entry = self._entry_cost / self._entry_quantity
+            risk = entry - self._stop if trade.Order.Side == Sides.Buy else self._stop - entry
+            self._invalid_fill = risk <= 0
+            self._target = entry + risk if trade.Order.Side == Sides.Buy else entry - risk
+        elif trade.Order.Comment == "0554Target":
+            self._target_taken = True
+            if self.Position != 0:
+                self._stop = max(self._stop, self._previous_low) if self.Position > 0 else min(self._stop, self._previous_high)
 
-        ha_high = max(float(candle.HighPrice), ha_open, ha_close)
-        ha_low = min(float(candle.LowPrice), ha_open, ha_close)
-
-        red1 = self._ha_close1 < self._ha_open1 and (self._ha_low1 <= self._lower_bb1 or self._ha_close1 <= self._lower_bb1)
-        green1 = self._ha_close1 > self._ha_open1 and (self._ha_high1 >= self._upper_bb1 or self._ha_close1 >= self._upper_bb1)
-
-        buy_signal = red1 and ha_close > ha_open and ha_close > lower
-        sell_signal = green1 and ha_close < ha_open and ha_close < upper
-
-        if self._cooldown > 0:
-            self._cooldown -= 1
-
-        if buy_signal and self.Position <= 0 and self._cooldown == 0:
-            self._entry_price = float(candle.ClosePrice)
-            self._initial_stop = self._prev_low if self._prev_low > 0 else float(candle.LowPrice)
-            self._first_target = self._entry_price + (self._entry_price - self._initial_stop)
-            self._first_target_reached = False
-            self._trail_stop = 0.0
-            self._cooldown = 20
-            self.BuyMarket()
-        elif sell_signal and self.Position >= 0 and self._cooldown == 0:
-            self._entry_price = float(candle.ClosePrice)
-            self._initial_stop = self._prev_high if self._prev_high > 0 else float(candle.HighPrice)
-            self._first_target = self._entry_price - (self._initial_stop - self._entry_price)
-            self._first_target_reached = False
-            self._trail_stop = 0.0
-            self._cooldown = 20
-            self.SellMarket()
-
-        if self.Position > 0:
-            if float(candle.HighPrice) >= self._first_target:
-                self._first_target_reached = True
-                self._trail_stop = max(self._entry_price, self._prev_low)
-            if self._first_target_reached:
-                self._trail_stop = max(self._trail_stop, self._prev_low)
-            current_stop = self._trail_stop if self._first_target_reached else self._initial_stop
-            if current_stop > 0 and float(candle.LowPrice) <= current_stop:
-                self.SellMarket()
-        elif self.Position < 0:
-            if float(candle.LowPrice) <= self._first_target:
-                self._first_target_reached = True
-                self._trail_stop = min(self._entry_price, self._prev_high)
-            if self._first_target_reached and self._trail_stop > 0:
-                self._trail_stop = min(self._trail_stop, self._prev_high)
-            current_stop = self._trail_stop if self._first_target_reached else self._initial_stop
-            if current_stop > 0 and float(candle.HighPrice) >= current_stop:
-                self.BuyMarket()
-
-        self._ha_open2 = self._ha_open1
-        self._ha_close2 = self._ha_close1
-        self._ha_high2 = self._ha_high1
-        self._ha_low2 = self._ha_low1
-        self._upper_bb2 = self._upper_bb1
-        self._lower_bb2 = self._lower_bb1
-        self._ha_open1 = ha_open
-        self._ha_close1 = ha_close
-        self._ha_high1 = ha_high
-        self._ha_low1 = ha_low
-        self._upper_bb1 = upper
-        self._lower_bb1 = lower
-        self._prev_high = float(candle.HighPrice)
-        self._prev_low = float(candle.LowPrice)
+    def _process_quote(self, quote):
+        if self.Position == 0 or self._entry_quantity == 0 or self._is_pending() or not self.IsFormedAndOnlineAndAllowTrading():
+            return
+        field = Level1Fields.BestBidPrice if self.Position > 0 else Level1Fields.BestAskPrice
+        if not quote.Changes.ContainsKey(field):
+            return
+        price = Convert.ToDecimal(quote.Changes[field])
+        if price <= 0:
+            return
+        side = Sides.Sell if self.Position > 0 else Sides.Buy
+        if self._invalid_fill or (price <= self._stop if self.Position > 0 else price >= self._stop):
+            self._submit(side, abs(self.Position), "Stop")
+        elif not self._target_taken and (price >= self._target if self.Position > 0 else price <= self._target):
+            quantity = abs(self.Position)
+            step = self.Security.VolumeStep if self.Security.VolumeStep is not None else Decimal(1)
+            minimum = self.Security.MinVolume if self.Security.MinVolume is not None else step
+            half = Math.Floor(quantity / Decimal(2) / step) * step
+            self._submit(side, half if half >= minimum and quantity - half >= minimum else quantity, "Target")
 
     def CreateClone(self):
         return bollinger_heikin_ashi_entry_strategy()

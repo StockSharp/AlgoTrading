@@ -43,6 +43,4086 @@ using DisplayAttribute = System.ComponentModel.DataAnnotations.DisplayAttribute;
 
 public abstract partial class StrategyTests
 {
+
+	private sealed class NextNativeFillReference
+	{
+		private sealed class Exit
+		{
+			public Order Order;
+			public DateTime Time;
+			public decimal Position, Entry, Filled;
+		}
+
+		private readonly Strategy _strategy;
+		private readonly LinkedList<(decimal price, decimal quantity)> _lots = [];
+		private readonly Dictionary<DateTime, List<decimal>> _marks = [];
+		private readonly Dictionary<Order, Exit> _exits = new(ReferenceEqualityComparer.Instance);
+		public decimal Position { get; private set; }
+		public int ExitCount => _exits.Count;
+		public decimal EntryPrice
+		{
+			get
+			{
+				if (_lots.Count == 0) return 0m;
+				var price = _lots.Sum(l => l.price * l.quantity) / _lots.Sum(l => l.quantity);
+				return _strategy.Security.PriceStep is decimal step
+					? price.ShrinkPrice(step, _strategy.Security.Decimals)
+					: price;
+			}
+		}
+
+		public NextNativeFillReference(Strategy strategy)
+		{
+			_strategy = strategy;
+			void Mark(decimal price)
+			{
+				if (price <= 0m) return;
+				if (!_marks.TryGetValue(strategy.CurrentTime, out var prices)) _marks.Add(strategy.CurrentTime, prices = []);
+				prices.Add(price);
+			}
+			strategy.CandleReceived += (_, c) => Mark(c.ClosePrice);
+			strategy.Level1Received += (_, q) =>
+			{
+				foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice, Level1Fields.LastTradePrice })
+					if (q.Changes.TryGetValue(field, out var raw) && raw is decimal price) Mark(price);
+			};
+			strategy.OwnTradeReceived += (_, t) =>
+			{
+				if (_exits.TryGetValue(t.Order, out var exit)) exit.Filled += t.Trade.Volume;
+				var quantity = t.Trade.Volume;
+				var signed = t.Order.Side == Sides.Buy ? quantity : -quantity;
+				if (Position != 0m && Math.Sign(Position) != Math.Sign(signed))
+				{
+					var closing = Math.Min(quantity, Math.Abs(Position));
+					quantity -= closing;
+					while (closing > 0m)
+					{
+						var node = _lots.First ?? throw new InvalidOperationException("The independent fill ledger has no open lot.");
+						var consumed = Math.Min(closing, node.Value.quantity);
+						closing -= consumed;
+						if (consumed == node.Value.quantity) _lots.RemoveFirst();
+						else node.Value = (node.Value.price, node.Value.quantity - consumed);
+					}
+				}
+				if (quantity > 0m) _lots.AddLast((t.Trade.Price, quantity));
+				Position += signed;
+			};
+		}
+
+		public void RecordExit(Order order)
+		{
+			if (Position == 0m || order.Side == (Position > 0m ? Sides.Buy : Sides.Sell))
+				throw new InvalidOperationException("A native exit must oppose the actual filled position.");
+			if (order.Volume != Math.Abs(Position))
+				throw new InvalidOperationException($"Native exit {order.Volume} differs from filled exposure {Position}.");
+			_exits.Add(order, new Exit { Order = order, Time = _strategy.CurrentTime, Position = Position, Entry = EntryPrice });
+		}
+
+		public string[] Violations(decimal stop, decimal take, bool percent)
+		{
+			var errors = new List<string>();
+			foreach (var exit in _exits.Values)
+			{
+				var stopDistance = percent ? exit.Entry * stop / 100m : stop;
+				var takeDistance = percent ? exit.Entry * take / 100m : take;
+				var prices = _marks.TryGetValue(exit.Time, out var observed) ? observed : [];
+				var activated = prices.Any(price =>
+					stop > 0m && (exit.Position > 0m ? price <= exit.Entry - stopDistance : price >= exit.Entry + stopDistance)
+					|| take > 0m && (exit.Position > 0m ? price >= exit.Entry + takeDistance : price <= exit.Entry - takeDistance));
+				if (!activated || exit.Filled != exit.Order.Volume || exit.Order.Type != OrderTypes.Market)
+					errors.Add($"Native exit at {exit.Time:O}: filled exposure={exit.Position}, FIFO entry={exit.Entry}, marks=[{string.Join(",", prices)}], stop={stopDistance}, take={takeDistance}, executed={exit.Filled}/{exit.Order.Volume}, type={exit.Order.Type}, triggered={activated}.");
+			}
+			return errors.ToArray();
+		}
+	}
+
+
+	[TestMethod, TestCategory("Shard05")]
+	[DataRow(false), DataRow(true)]
+	public async Task S0565_Ahr999UsesGeometricDailyCostMondayBudgetsAndDateRange(bool extended)
+	{
+		var from = new DateTime(2023, 6, 1, 0, 0, 0, DateTimeKind.Utc);
+		var fixture = await CreateNextCalendarFixture(from, extended ? 1232 : 959);
+		var strategy = await CompileContractStrategy("0565_Btc_Dca_Ahr999");
+		var prices = new Queue<decimal>(); var expected = 0; var entries = 0; var fills = 0; var small = 0; var deep = 0; var refused = 0;
+		var mustOrder = false; var quantity = 0m;
+		var start = new DateTime(2024, 2, 1, 0, 0, 0, DateTimeKind.Utc);
+		var end = new DateTime(extended ? 2027 : 2025, 12, 31, 0, 0, 0, DateTimeKind.Utc);
+		Order pending = null;
+		await AsmInit.RunScenario(strategy, CancellationToken, fixture.data, (s, _) =>
+		{
+			AreEqual(200, s.Parameters["Length"].Value);
+			AreEqual(100m, Convert.ToDecimal(s.Parameters["UsdInvest1"].Value));
+			AreEqual(1000m, Convert.ToDecimal(s.Parameters["UsdInvest2"].Value));
+			AreEqual(start, s.Parameters["StartDate"].Value);
+			AreEqual(new DateTime(2025, 12, 31, 0, 0, 0, DateTimeKind.Utc), s.Parameters["EndDate"].Value);
+			AreEqual(TimeSpan.FromDays(1).TimeFrame(), s.Parameters["CandleType"].Value);
+			if (extended) SetParam(s, "EndDate", end);
+			s.CandleReceived += (_, c) =>
+			{
+				if (c.State != CandleStates.Finished) return;
+				IsFalse(mustOrder, "Every funded eligible Monday must place exactly one accumulation order.");
+				prices.Enqueue(c.ClosePrice); if (prices.Count > 200) prices.Dequeue();
+				mustOrder = false;
+				if (prices.Count < 200 || c.OpenTime.Date < start || c.OpenTime.Date > end || c.OpenTime.DayOfWeek != DayOfWeek.Monday)
+				{ refused++; return; }
+				var geometric = Math.Exp(prices.Average(p => Math.Log((double)p)));
+				var age = (c.OpenTime.Date - new DateTime(2009, 1, 3)).TotalDays;
+				var growth = Math.Pow(10, 5.84 * Math.Log10(age) - 17.01);
+				var index = (double)c.ClosePrice / geometric * (double)c.ClosePrice / growth;
+				var budget = index < 0.45 ? 1000m : index < 1.2 ? 100m : 0m;
+				if (budget == 0m) { refused++; return; }
+				var step = s.Security.VolumeStep ?? 1m;
+				quantity = Math.Floor(budget / c.ClosePrice / step) * step;
+				if (quantity < (s.Security.MinVolume ?? step)) return;
+				if (budget == 1000m) deep++; else small++;
+				mustOrder = s.IsOnline && (pending is null || pending.State is OrderStates.Done or OrderStates.Failed);
+				if (mustOrder) expected++;
+			};
+			s.OrderRegistering += o =>
+			{
+				IsTrue(mustOrder, "EMA crosses, other weekdays, unformed costs and excluded dates cannot buy.");
+				AreEqual(Sides.Buy, o.Side); AreEqual(quantity, o.Volume);
+				entries++; mustOrder = false; pending = o;
+			};
+			s.OwnTradeReceived += (_, t) => { AreEqual(Sides.Buy, t.Order.Side); IsTrue(s.Position > 0m); fills++; };
+		}, null, null, true, TimeSpan.FromSeconds(90));
+		IsFalse(mustOrder); AreEqual(expected, entries); AreEqual(entries, fills); IsTrue(entries > 10 && small > 0 && refused > 0);
+		if (extended) IsTrue(deep > 0, "The explicit extended-date mechanics fixture must also execute the larger deep-value budget.");
+		TestContext.WriteLine($"0565 AHR999 python={IsPython}, extended={extended}: buys={entries}, normal={small}, deep={deep}, excluded={refused}");
+	}
+
+	[TestMethod, TestCategory("Shard06")]
+	[DataRow(false), DataRow(true)]
+	public async Task S0566_OnlyPublishedDifficultyChangesDriveThresholdedFullReversals(bool thresholdMode)
+	{
+		var from = new DateTime(2024, 3, 1, 0, 0, 0, DateTimeKind.Utc);
+		var fixture = await CreateNextCalendarFixture(from, 40);
+		var strategy = await CompileContractStrategy("0566_Btc_Difficulty_Adjustments");
+		decimal[] observations = [100m, 105m, 110m, 99m, 90m, 90m, 108m, 97.2m, 87.48m, 96.228m, 115.4736m, 103.92624m];
+		var rows = observations.Select((d, i) => (time: from.AddDays(i * 2), value: d)).ToArray();
+		var file = WritePortfolioCsv(new[] { "Time,Difficulty" }.Concat(rows.Select(r => FormattableString.Invariant($"{r.time:O},{r.value}")))
+			.Append(FormattableString.Invariant($"{from.AddYears(10):O},1")));
+		var cursor = 0; decimal? previous = null;
+		Sides? side = null; var mustOrder = false; var count = 0; var expected = 0; var reversals = 0; var ignored = 0;
+		Order pending = null;
+		await AsmInit.RunScenario(strategy, CancellationToken, fixture.data, (s, _) =>
+		{
+			AreEqual(false, s.Parameters["ThresholdMode"].Value);
+			AreEqual(10m, Convert.ToDecimal(s.Parameters["Threshold"].Value));
+			AreEqual(TimeSpan.FromDays(1).TimeFrame(), s.Parameters["CandleType"].Value);
+			SetParam(s, "DifficultyHistoryFile", file); SetParam(s, "ThresholdMode", thresholdMode); s.Volume = 2m;
+			s.CandleReceived += (_, c) =>
+			{
+				if (c.State != CandleStates.Finished) return;
+				IsFalse(mustOrder, "Eligible observed adjustments must not be replaced by price momentum or silently skipped.");
+				side = null;
+				while (cursor < rows.Length && rows[cursor].time <= c.OpenTime)
+				{
+					var current = rows[cursor++].value;
+					if (previous is decimal prior && current != prior)
+					{
+						var change = (current / prior - 1m) * 100m;
+						if (!thresholdMode || Math.Abs(change) >= 10m)
+							side = thresholdMode ? change < 0m ? Sides.Buy : Sides.Sell : change > 0m ? Sides.Buy : Sides.Sell;
+						else ignored++;
+					}
+					previous = current;
+				}
+				mustOrder = side is not null && (side == Sides.Buy ? s.Position <= 0m : s.Position >= 0m)
+					&& s.IsOnline && (pending is null || pending.State is OrderStates.Done or OrderStates.Failed);
+				if (mustOrder) expected++;
+			};
+			s.OrderRegistering += o =>
+			{
+				IsTrue(mustOrder, "Unchanged or unpublished difficulty cannot create a trade.");
+				AreEqual(side.Value, o.Side); AreEqual(s.Volume + Math.Abs(s.Position), o.Volume);
+				if (s.Position != 0m) reversals++;
+				count++; mustOrder = false; pending = o;
+			};
+			s.OwnTradeReceived += (_, t) => AreEqual(2m, Math.Abs(s.Position));
+		}, null, null, true, TimeSpan.FromSeconds(90));
+		IsFalse(mustOrder); AreEqual(expected, count); IsTrue(count > 3 && reversals > 0);
+		if (thresholdMode) IsTrue(ignored > 0);
+	}
+
+	[TestMethod, TestCategory("Shard06")]
+	public async Task S0566_MissingDifficultySourceFailsExplicitly()
+	{
+		Exception failure = null;
+		try { await Replay("0566_Btc_Difficulty_Adjustments", (_, _) => { }, TimeSpan.FromDays(1)); }
+		catch (Exception error) { failure = error; }
+		IsNotNull(failure, "A price-only replay must not silently manufacture mining difficulty.");
+		IsTrue(failure.ToString().Contains("DifficultyHistoryFile", StringComparison.Ordinal), failure.ToString());
+	}
+
+	[TestMethod, TestCategory("Shard00")]
+	public async Task S0568_OnlyCompletedWeeklyAndQuarterlyClosesDriveOutperformance()
+	{
+		var from = new DateTime(2023, 1, 2, 0, 0, 0, DateTimeKind.Utc);
+		var fixture = await CreateNextCalendarFixture(from, 700);
+		var strategy = await CompileContractStrategy("0568_Btc_Outperform");
+		var observed = new List<ICandleMessage>(); var count = 0; var reversals = 0; var expected = 0; var unformed = 0;
+		var mustOrder = false; Sides? side = null;
+		Order pending = null;
+		await AsmInit.RunScenario(strategy, CancellationToken, fixture.data, (s, _) =>
+		{
+			AreEqual(7, s.Parameters["WeeklyDays"].Value); AreEqual(90, s.Parameters["QuarterlyDays"].Value);
+			AreEqual(TimeSpan.FromDays(1).TimeFrame(), s.Parameters["CandleType"].Value);
+			s.Volume = 2m;
+			s.CandleReceived += (_, c) =>
+			{
+				if (c.State != CandleStates.Finished) return;
+				IsFalse(mustOrder); observed.Add(c);
+				decimal? Completed(int days)
+				{
+					var epoch = days == 7 ? new DateTime(1970, 1, 5, 0, 0, 0, DateTimeKind.Utc) : DateTime.UnixEpoch;
+					return observed.GroupBy(b => epoch.AddDays(Math.Floor((b.OpenTime - epoch).TotalDays / days) * days))
+						.Where(g => g.Count() == days && g.Min(b => b.OpenTime) == g.Key
+							&& g.Max(b => b.OpenTime).AddDays(1) == g.Key.AddDays(days) && g.Key.AddDays(days) <= c.OpenTime.AddDays(1))
+						.OrderBy(g => g.Key).Select(g => (decimal?)g.OrderBy(b => b.OpenTime).Last().ClosePrice).LastOrDefault();
+				}
+				var week = Completed(7); var quarter = Completed(90); side = null;
+				if (week is null || quarter is null) unformed++;
+				else if (week > quarter && s.Position <= 0m) side = Sides.Buy;
+				else if (week < quarter && s.Position >= 0m) side = Sides.Sell;
+				mustOrder = side is not null && s.IsOnline && (pending is null || pending.State is OrderStates.Done or OrderStates.Failed);
+				if (mustOrder) expected++;
+			};
+			s.OrderRegistering += o =>
+			{
+				IsTrue(mustOrder, "The unfinished current week or quarter and EMA crosses cannot choose a position.");
+				AreEqual(side.Value, o.Side); AreEqual(s.Volume + Math.Abs(s.Position), o.Volume);
+				if (s.Position != 0m) reversals++;
+				count++; mustOrder = false; pending = o;
+			};
+			s.OwnTradeReceived += (_, t) => AreEqual(2m, Math.Abs(s.Position));
+		}, null, null, true, TimeSpan.FromSeconds(90));
+		IsFalse(mustOrder); AreEqual(expected, count); IsTrue(count > 3 && reversals > 2 && unformed >= 89);
+		TestContext.WriteLine($"0568 Outperform python={IsPython}: orders={count}, reversals={reversals}, unformed days={unformed}");
+	}
+
+	[TestMethod, TestCategory("Shard02")]
+	[DataRow(OptionTypes.Call, OptionStyles.European, SecurityTypes.Stock, false, 48.0)]
+	[DataRow(OptionTypes.Put, OptionStyles.European, SecurityTypes.Stock, false, 12.0)]
+	[DataRow(OptionTypes.Call, OptionStyles.American, SecurityTypes.Stock, false, 48.0)]
+	[DataRow(OptionTypes.Put, OptionStyles.American, SecurityTypes.Stock, false, 20.0)]
+	[DataRow(OptionTypes.Call, OptionStyles.European, SecurityTypes.Stock, true, 21.3333333333333)]
+	[DataRow(OptionTypes.Put, OptionStyles.European, SecurityTypes.Currency, true, 21.3333333333333)]
+	[DataRow(OptionTypes.Call, OptionStyles.American, SecurityTypes.Index, true, 26.6666666666667)]
+	[DataRow(OptionTypes.Put, OptionStyles.American, SecurityTypes.Stock, true, 26.6666666666667)]
+	[DataRow(OptionTypes.Call, OptionStyles.European, SecurityTypes.Future, false, 21.3333333333333)]
+	public async Task S0570_TwoStepBinomialPricesMatchExactPathProbabilities(OptionTypes type, OptionStyles style, SecurityTypes asset, bool yield, double expected)
+	{
+		var strategy = await CompileContractStrategy("0570_Binomial_Option_Pricing_Model");
+		// u=2, d=1/2, each step is one year. Stock q=0 gives p=1/2 and discount=4/5.
+		// A yield equal to r, or futures carry, gives p=1/3. American nodes permit immediate exercise.
+		SetParam(strategy, "StrikePrice", 100m); SetParam(strategy, "RiskFreeRate", (decimal)Math.Log(1.25));
+		SetParam(strategy, "DividendYield", yield ? (decimal)Math.Log(1.25) : 0m);
+		SetParam(strategy, "OptionType", type); SetParam(strategy, "OptionStyle", style); SetParam(strategy, "AssetClass", asset);
+		dynamic model = strategy;
+		var actual = Convert.ToDecimal(model.CalculatePrice(100m, (decimal)Math.Log(2), TimeSpan.FromDays(730)));
+		IsTrue(Math.Abs(actual - (decimal)expected) < 0.00000001m, $"Expected exact two-step value {expected}, got {actual}.");
+		AreEqual(type == OptionTypes.Call ? 20m : 0m, Convert.ToDecimal(model.CalculatePrice(120m, 0.2m, TimeSpan.Zero)));
+	}
+
+	[TestMethod, TestCategory("Shard02")]
+	public async Task S0570_FinishedPriceWindowsProduceValuesAndNeverOrders()
+	{
+		var strategy = await CompileContractStrategy("0570_Binomial_Option_Pricing_Model");
+		var fixture = await CreateNextArchivedFixture(TimeSpan.FromMinutes(1), 1);
+		var window = new Queue<decimal>(); var values = 0; var orders = 0;
+		SetParam(strategy, "Length", 20); SetParam(strategy, "StrikePrice", 60000m);
+		SetParam(strategy, "TimeToExpiry", TimeSpan.FromDays(30));
+		strategy.OrderRegistering += _ => orders++;
+		dynamic model = strategy;
+		foreach (var bar in fixture.bars.Take(80))
+		{
+			var candle = new TimeFrameCandleMessage
+			{
+				SecurityId = fixture.data.Primary.Id.ToSecurityId(), TypedArg = TimeSpan.FromMinutes(1), OpenTime = bar.time,
+				OpenPrice = bar.open, HighPrice = bar.high, LowPrice = bar.low, ClosePrice = bar.close, TotalVolume = bar.volume, State = CandleStates.Active,
+			};
+			IsNull((object)model.EvaluatePrice(candle), "An unfinished candle must not change the rolling price sample.");
+			candle.State = CandleStates.Finished;
+			window.Enqueue(bar.close); if (window.Count > 20) window.Dequeue();
+			object result = model.EvaluatePrice(candle);
+			IsNull((object)model.EvaluatePrice(candle), "A repeated finished candle must not change the pricing window.");
+			if (window.Count < 20) { IsNull(result); continue; }
+			IsNotNull(result);
+			AreEqual(Convert.ToDecimal(result), Convert.ToDecimal(model.LastOptionPrice));
+			var mean = window.Average();
+			var sd = Math.Sqrt((double)window.Average(v => (v - mean) * (v - mean)));
+			var volatility = (decimal)(sd / (double)mean * Math.Sqrt(365.0 * 24 * 60));
+			var expected = Convert.ToDecimal(model.CalculatePrice(bar.close, volatility, TimeSpan.FromDays(30)));
+			IsTrue(Math.Abs(Convert.ToDecimal(result) - expected) < 0.00000001m);
+			values++;
+		}
+		AreEqual(61, values); AreEqual(0, orders, "This is a price calculator, so its own processing must never create trades.");
+		AreEqual(0m, Convert.ToDecimal(model.CalculatePrice(60000m, 0m, TimeSpan.Zero)));
+		SetParam(strategy, "DividendYield", 0m); SetParam(strategy, "StrikePrice", 100m);
+		SetParam(strategy, "RiskFreeRate", (decimal)Math.Log(1.25));
+		SetParam(strategy, "OptionType", OptionTypes.Call); SetParam(strategy, "OptionStyle", OptionStyles.European);
+		SetParam(strategy, "AssetClass", SecurityTypes.Stock);
+		IsTrue(Math.Abs(Convert.ToDecimal(model.CalculatePrice(100m, 0m, TimeSpan.FromDays(730))) - 36m) < 0.00000001m);
+	}
+
+	[TestMethod, TestCategory("Shard03")]
+	public async Task S0571_PreviousCompletedHourAndFilledBufferProtectionDriveBreakout()
+	{
+		var reference = new List<ICandleMessage>(); Sides? side = null;
+		var mustEnter = false; var expected = 0; var entries = 0; var exits = 0; var ignored = 0;
+		NextNativeFillReference native = null;
+		Order pending = null;
+		var entryOrders = new HashSet<Order>(); var sides = new HashSet<Sides>();
+		var stopField = typeof(Strategy).GetField("_stopLoss", BindingFlags.Instance | BindingFlags.NonPublic);
+		var takeField = typeof(Strategy).GetField("_takeProfit", BindingFlags.Instance | BindingFlags.NonPublic);
+		await Replay("0571_Bitcoin_1H15M_Breakout", (s, _) =>
+		{
+			native = new(s);
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), s.Parameters["CandleType"].Value);
+			AreEqual(TimeSpan.FromHours(1), s.Parameters["HigherTimeFrame"].Value);
+			AreEqual(50m, Convert.ToDecimal(s.Parameters["StopLossBuffer"].Value));
+			AreEqual(2m, Convert.ToDecimal(s.Parameters["RiskRewardRatio"].Value));
+			s.Volume = 2m;
+			s.CandleReceived += (_, c) =>
+			{
+				if (c.State != CandleStates.Finished) return;
+				IsFalse(mustEnter);
+				var hour = new DateTime(c.OpenTime.Year, c.OpenTime.Month, c.OpenTime.Day, c.OpenTime.Hour, 0, 0, DateTimeKind.Utc);
+				var previous = reference.Where(b => b.OpenTime >= hour.AddHours(-1) && b.OpenTime < hour).ToArray();
+				side = null;
+				if (previous.Length == 4)
+				{
+					if (c.ClosePrice > previous.Max(b => b.HighPrice)) side = Sides.Buy;
+					else if (c.ClosePrice < previous.Min(b => b.LowPrice)) side = Sides.Sell;
+				}
+				else ignored++;
+				reference.Add(c);
+				mustEnter = side is not null && s.Position == 0m && s.IsOnline
+					&& (pending is null || pending.State is OrderStates.Done or OrderStates.Failed);
+				if (mustEnter) expected++;
+			};
+			s.OrderRegistering += o =>
+			{
+				pending = o;
+				if (s.Position == 0m)
+				{
+					IsTrue(mustEnter, "Only a fifteen-minute close outside the preceding complete hour can enter.");
+					AreEqual(side.Value, o.Side); AreEqual(s.Volume, o.Volume);
+					entries++; sides.Add(o.Side); entryOrders.Add(o); mustEnter = false;
+				}
+				else
+				{
+					AreEqual(Math.Abs(s.Position), o.Volume);
+					native.RecordExit(o);
+					AreEqual(OrderTypes.Market, o.Type); exits++;
+				}
+			};
+			s.OwnTradeReceived += (_, t) =>
+			{
+				if (entryOrders.Contains(t.Order))
+				{
+					var sl = (Unit)stopField.GetValue(s); var tp = (Unit)takeField.GetValue(s);
+					IsNotNull(sl); IsNotNull(tp); AreEqual(50m, sl.Value); AreEqual(100m, tp.Value);
+					AreEqual(UnitTypes.Absolute, sl.Type); AreEqual(UnitTypes.Absolute, tp.Type);
+				}
+				else AreEqual(0m, s.Position);
+			};
+		}, TimeSpan.FromDays(31));
+		IsFalse(mustEnter); AreEqual(expected, entries); AreEqual(2, sides.Count);
+		IsTrue(entries > 3 && exits > 3 && ignored > 0);
+		var violations = native.Violations(50m, 100m, false);
+		IsTrue(violations.Length == 0, string.Join(Environment.NewLine, violations));
+	}
+
+	[TestMethod, TestCategory("Shard03")]
+	public async Task S0571_AbnormalDailyReturnUsesPriorPopulationAndExitsNextDailyClose()
+	{
+		var fixture = await CreateNextArchivedFixture(TimeSpan.FromDays(1), 31);
+		var strategy = await CompileContractStrategy("0571_BTCUSD_Momentum_After_Abnormal_Days");
+		var returns = new Queue<decimal>(); DateTime? signalDate = null;
+		Sides? side = null; var quantity = 0m; var mustOrder = false; var exiting = false;
+		var entries = 0; var exits = 0; var eligible = 0; var excluded = 0;
+		Order pending = null;
+		await AsmInit.RunScenario(strategy, CancellationToken, fixture.data, (s, _) =>
+		{
+			AreEqual(5, s.Parameters["LookbackPeriod"].Value);
+			AreEqual(1.6m, Convert.ToDecimal(s.Parameters["AbnormalThreshold"].Value));
+			AreEqual(1000m, Convert.ToDecimal(s.Parameters["CapitalPerTrade"].Value));
+			AreEqual(TimeSpan.FromDays(1).TimeFrame(), s.Parameters["CandleType"].Value);
+			s.CandleReceived += (_, c) =>
+			{
+				if (c.State != CandleStates.Finished) return;
+				IsFalse(mustOrder); side = null; exiting = false;
+				var value = (c.ClosePrice - c.OpenPrice) / c.OpenPrice;
+				if (s.IsOnline && (pending is null || pending.State is OrderStates.Done or OrderStates.Failed))
+				{
+					if (s.Position != 0m && signalDate is DateTime day && c.OpenTime.Date > day)
+					{ side = s.Position > 0m ? Sides.Sell : Sides.Buy; quantity = Math.Abs(s.Position); exiting = true; }
+					else if (s.Position == 0m && returns.Count == 5)
+					{
+						var mean = returns.Average();
+						var sd = (decimal)Math.Sqrt((double)returns.Average(r => (r - mean) * (r - mean)));
+						if (value > mean + 1.6m * sd) side = Sides.Buy;
+						else if (value < mean - 1.6m * sd) side = Sides.Sell;
+						if (side is not null)
+						{
+							var step = s.Security.VolumeStep ?? 1m;
+							quantity = Math.Floor(1000m / c.ClosePrice / step) * step;
+							if (quantity < (s.Security.MinVolume ?? step)) side = null;
+						}
+						else excluded++;
+					}
+				}
+				returns.Enqueue(value); if (returns.Count > 5) returns.Dequeue();
+				mustOrder = side is not null;
+				if (mustOrder && !exiting) { signalDate = c.OpenTime.Date; eligible++; }
+			};
+			s.OrderRegistering += o =>
+			{
+				IsTrue(mustOrder, "Only the completed daily anomaly or the next daily close can submit an order.");
+				AreEqual(side.Value, o.Side); AreEqual(quantity, o.Volume);
+				if (exiting) exits++; else entries++;
+				pending = o; mustOrder = false;
+			};
+			s.OwnTradeReceived += (_, t) => { if (exiting) AreEqual(0m, s.Position); };
+		}, null, null, true, TimeSpan.FromSeconds(90));
+		IsFalse(mustOrder); AreEqual(eligible, entries); IsTrue(entries > 0 && exits > 0 && excluded > 0);
+		TestContext.WriteLine($"0571 daily momentum python={IsPython}: entries={entries}, next-day exits={exits}, ordinary-day rejections={excluded}");
+	}
+
+	private async Task<(ReplayMarketData data, (DateTime time, decimal open, decimal high, decimal low, decimal close, decimal volume)[] bars)> CreateNextArchivedFixture(TimeSpan frame, int days)
+	{
+		var archive = await AsmInit.CreateArchiveMarketData(CancellationToken);
+		var storage = archive.Storage.GetCandleMessageStorage(archive.Primary.Id.ToSecurityId(), TimeSpan.FromMinutes(1).TimeFrame());
+		var minutes = new List<ICandleMessage>();
+		for (var date = archive.From; date < archive.From.AddDays(days); date = date.AddDays(1))
+			await foreach (var c in storage.LoadAsync(date).WithCancellation(CancellationToken)) minutes.Add(c);
+		var bars = minutes.GroupBy(c => new DateTime(c.OpenTime.Ticks / frame.Ticks * frame.Ticks, DateTimeKind.Utc))
+			.Where(g => g.Count() == frame.TotalMinutes)
+			.Select(g => (time: g.Key, open: g.First().OpenPrice, high: g.Max(c => c.HighPrice), low: g.Min(c => c.LowPrice),
+				close: g.Last().ClosePrice, volume: g.Sum(c => c.TotalVolume))).ToArray();
+		IsTrue(bars.Length > 0);
+		var data = CreateContractMarket(archive.From, archive.From.AddDays(days), false);
+		await SaveContractCandles(data, frame, bars);
+		return (data, bars);
+	}
+
+	private async Task<(ReplayMarketData data, (DateTime time, decimal open, decimal high, decimal low, decimal close, decimal volume)[] bars)> CreateNextCalendarFixture(DateTime from, int days)
+	{
+		var archive = await AsmInit.CreateArchiveMarketData(CancellationToken);
+		var source = new List<ICandleMessage>();
+		await foreach (var c in archive.Storage.GetCandleMessageStorage(archive.Primary.Id.ToSecurityId(), TimeSpan.FromMinutes(1).TimeFrame())
+			.LoadAsync(archive.From).WithCancellation(CancellationToken)) source.Add(c);
+		var ordered = source.OrderBy(c => c.ClosePrice).ToArray();
+		IsTrue(ordered.Length > 1000);
+		// Real archived OHLC is moved onto explicit daily dates. The resulting calendar checks mechanics, not market performance.
+		var bars = Enumerable.Range(0, days).Select(i =>
+		{
+			var index = i / 120 % 2 == 0 ? i % 120 : 119 - i % 120;
+			var c = ordered[index * (ordered.Length - 1) / 119];
+			return (time: from.AddDays(i), open: c.OpenPrice, high: c.HighPrice, low: c.LowPrice, close: c.ClosePrice, volume: c.TotalVolume);
+		}).ToArray();
+		var data = CreateContractMarket(from, from.AddDays(days), false);
+		await SaveContractCandles(data, TimeSpan.FromDays(1), bars);
+		return (data, bars);
+	}
+
+
+	[TestMethod, TestCategory("Shard05")]
+	[DataRow(0), DataRow(1), DataRow(-1)]
+	public async Task S0557_FormedBbTrendSupertrendFullyReversesAndHonorsDirection(int direction)
+	{
+		var reference = new NextBbTrendReference();
+		Sides? required = null;
+		var quantity = 0m; var orders = 0; var reversals = 0; var closes = 0;
+		var expected = 0; var mustOrder = false;
+		Order pending = null;
+		await Replay("0557_Bbtrend_Supertrend_Decision", (s, _) =>
+		{
+			AreEqual(20, s.Parameters["ShortBbLength"].Value); AreEqual(50, s.Parameters["LongBbLength"].Value);
+			AreEqual(2m, Convert.ToDecimal(s.Parameters["StdDev"].Value));
+			AreEqual(10, s.Parameters["SupertrendLength"].Value);
+			AreEqual(7m, Convert.ToDecimal(s.Parameters["SupertrendMultiplier"].Value));
+			AreEqual(0, Convert.ToInt32(s.Parameters["TpSlCondition"].Value));
+			if (direction != 0) SetParam(s, "TradeDirection", direction > 0 ? Sides.Buy : Sides.Sell);
+			s.Volume = 2m;
+			s.CandleReceived += (_, c) =>
+			{
+				if (c.State != CandleStates.Finished) return;
+				IsFalse(mustOrder, "Every eligible SuperTrend decision must be executed.");
+				var side = reference.Add(c);
+				required = null;
+				if (side is null || !s.IsOnline || pending is not null && pending.State is not (OrderStates.Done or OrderStates.Failed)) return;
+				var target = direction == 0 || (direction > 0) == (side == Sides.Buy) ? side == Sides.Buy ? s.Volume : -s.Volume : 0m;
+				if (target == s.Position) return;
+				var delta = target - s.Position;
+				required = delta > 0m ? Sides.Buy : Sides.Sell; quantity = Math.Abs(delta);
+				mustOrder = true; expected++;
+			};
+			s.OrderRegistering += o =>
+			{
+				IsNotNull(required, "No order is allowed before the complete BBTrend/SuperTrend warmup or without its direction.");
+				AreEqual(required.Value, o.Side); AreEqual(quantity, o.Volume);
+				if (s.Position != 0m) { if (o.Volume > Math.Abs(s.Position)) reversals++; else closes++; }
+				pending = o; mustOrder = false; orders++;
+			};
+		}, TimeSpan.FromDays(31));
+		IsFalse(mustOrder); AreEqual(expected, orders); IsTrue(orders > 3);
+		if (direction == 0) IsTrue(reversals > 0, "An opposite direction must leave a full opposite position, not merely flatten it.");
+		else IsTrue(closes > 0, "A forbidden opposite direction still closes the existing allowed position.");
+		TestContext.WriteLine($"0557 python={IsPython}, direction={direction}: orders={orders}, reversals={reversals}, closes={closes}");
+	}
+
+	[TestMethod, TestCategory("Shard05")]
+	[DataRow("None"), DataRow("TP"), DataRow("SL"), DataRow("Both")]
+	public async Task S0557_SelectedProtectionModesActuallyFill(string mode)
+	{
+		var entries = 0;
+		NextNativeFillReference native = null;
+		var nativeOrders = new HashSet<Order>(ReferenceEqualityComparer.Instance);
+		var stopField = typeof(Strategy).GetField("_stopLoss", BindingFlags.Instance | BindingFlags.NonPublic);
+		var takeField = typeof(Strategy).GetField("_takeProfit", BindingFlags.Instance | BindingFlags.NonPublic);
+		await Replay("0557_Bbtrend_Supertrend_Decision", (s, _) =>
+		{
+			native = new(s);
+			AreEqual(30m, Convert.ToDecimal(s.Parameters["TakeProfitPerc"].Value));
+			AreEqual(20m, Convert.ToDecimal(s.Parameters["StopLossPerc"].Value));
+			var original = s.Parameters["TpSlCondition"].Value;
+			SetParam(s, "TpSlCondition", original is Enum ? Enum.Parse(original.GetType(), mode)
+				: mode == "None" ? 0 : mode == "TP" ? 1 : mode == "SL" ? 2 : 3);
+			SetParam(s, "TakeProfitPerc", 0.5m); SetParam(s, "StopLossPerc", 1m);
+			s.OrderRegistering += o =>
+			{
+				if (s.Position == 0m || o.Volume != Math.Abs(s.Position))
+					return;
+				native.RecordExit(o);
+				nativeOrders.Add(o);
+			};
+			s.OwnTradeReceived += (_, t) =>
+			{
+				if (!nativeOrders.Contains(t.Order))
+				{
+					entries++;
+					var sl = (Unit)stopField.GetValue(s); var tp = (Unit)takeField.GetValue(s);
+					AreEqual(mode is "SL" or "Both" ? 1m : 0m, sl?.Value ?? 0m);
+					AreEqual(mode is "TP" or "Both" ? 0.5m : 0m, tp?.Value ?? 0m);
+					if (sl?.Value > 0m) AreEqual(UnitTypes.Percent, sl.Type);
+					if (tp?.Value > 0m) AreEqual(UnitTypes.Percent, tp.Type);
+				}
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(entries > 2);
+		if (mode == "None") AreEqual(0, native.ExitCount);
+		else IsTrue(native.ExitCount > 0, "Selected native protection must actually close a filled position.");
+		var violations = native.Violations(mode is "SL" or "Both" ? 1m : 0m, mode is "TP" or "Both" ? 0.5m : 0m, true);
+		IsTrue(violations.Length == 0, string.Join(Environment.NewLine, violations));
+	}
+
+	[TestMethod, TestCategory("Shard06")]
+	[DataRow(false), DataRow(true)]
+	public async Task S0558_LongWickDateWindowAndOptionalEmaNeverCreateShorts(bool emaEnabled)
+	{
+		var ema = new ImpulseEma(200);
+		ICandleMessage previous = null;
+		Sides? required = null; var quantity = 0m; var mustOrder = false;
+		var entries = 0; var exits = 0; var forbiddenShorts = 0; var filtered = 0; var eligible = 0; var published = 0;
+		var start = Paths.HistoryBeginDate.AddDays(3); var end = Paths.HistoryBeginDate.AddDays(23);
+		Order pending = null;
+		await Replay("0558_Bearish_Wick_Reversal", (s, _) =>
+		{
+			AreEqual(-1m, Convert.ToDecimal(s.Parameters["Threshold"].Value));
+			AreEqual(false, s.Parameters["UseEmaFilter"].Value); AreEqual(200, s.Parameters["EmaPeriod"].Value);
+			AreEqual(TimeSpan.FromMinutes(1).TimeFrame(), s.Parameters["CandleType"].Value);
+			AreEqual(new DateTime(2014, 1, 1, 0, 0, 0, DateTimeKind.Utc), s.Parameters["StartTime"].Value);
+			AreEqual(new DateTime(2099, 1, 1, 0, 0, 0, DateTimeKind.Utc), s.Parameters["EndTime"].Value);
+			SetParam(s, "Threshold", -0.03m); SetParam(s, "UseEmaFilter", emaEnabled);
+			SetParam(s, "StartTime", start); SetParam(s, "EndTime", end); s.Volume = 2m;
+			s.CandleReceived += (_, c) =>
+			{
+				if (c.State != CandleStates.Finished) return;
+				IsFalse(mustOrder, "No hidden cooldown may skip an eligible long entry or its exit.");
+				ema.Add(c.ClosePrice); required = null;
+				var prev = previous; previous = c;
+				if (c.ClosePrice > c.OpenPrice && 100m * (c.HighPrice - c.ClosePrice) / c.ClosePrice >= 0.03m) forbiddenShorts++;
+				var wick = c.ClosePrice < c.OpenPrice && 100m * (c.LowPrice - c.ClosePrice) / c.ClosePrice <= -0.03m;
+				if (c.ClosePrice < c.OpenPrice && 100m * (c.LowPrice - c.ClosePrice) / c.ClosePrice <= -1m) published++;
+				if (wick && ema.Formed && c.ClosePrice <= ema.Value) filtered++;
+				if (!s.IsOnline || pending is not null && pending.State is not (OrderStates.Done or OrderStates.Failed)) return;
+				if (s.Position > 0m && prev is not null && c.ClosePrice > prev.HighPrice)
+				{ required = Sides.Sell; quantity = s.Position; }
+				else if (s.Position == 0m && c.OpenTime >= start && c.OpenTime <= end && wick && (!emaEnabled || ema.Formed && c.ClosePrice > ema.Value))
+				{ required = Sides.Buy; quantity = s.Volume; eligible++; }
+				mustOrder = required is not null;
+			};
+			s.OrderRegistering += o =>
+			{
+				IsNotNull(required, "Only the bearish lower-wick long or the previous-high exit is allowed.");
+				AreEqual(required.Value, o.Side); AreEqual(quantity, o.Volume);
+				if (o.Side == Sides.Buy) { AreEqual(0m, s.Position); entries++; } else { IsTrue(s.Position > 0m); exits++; }
+				pending = o; mustOrder = false;
+			};
+			s.OwnTradeReceived += (_, t) => { IsTrue(s.Position >= 0m); if (t.Order.Side == Sides.Sell) AreEqual(0m, s.Position); };
+		}, TimeSpan.FromDays(31));
+		IsFalse(mustOrder); AreEqual(eligible, entries); IsTrue(entries > 3 && exits > 3 && forbiddenShorts > 0 && filtered > 0);
+		TestContext.WriteLine($"0558 python={IsPython}, EMA={emaEnabled}: entries={entries}, exits={exits}, bullish-wick rejections={forbiddenShorts}, EMA rejections={filtered}, published-wick candidates={published}");
+	}
+
+	[TestMethod, TestCategory("Shard05")]
+	public async Task S0565_BassUsesEveryFormedComponentAndFilledPercentProtection()
+	{
+		var reference = new NextTechnicalReference();
+		Order pending = null; var mustEnter = false; var eligible = 0;
+		var entries = 0; var reversals = 0; var stops = 0; var unformed = 0;
+		decimal? previousScore = null;
+		NextNativeFillReference native = null;
+		var entryOrders = new HashSet<Order>();
+		var stopField = typeof(Strategy).GetField("_stopLoss", BindingFlags.Instance | BindingFlags.NonPublic);
+		await Replay("0565_Bias_Sentiment_Strength", (s, _) =>
+		{
+			native = new(s);
+			AreEqual(0m, Convert.ToDecimal(s.Parameters["BassThreshold"].Value));
+			AreEqual(1m, Convert.ToDecimal(s.Parameters["StopLossPercent"].Value));
+			AreEqual(14, s.Parameters["StochSmooth"].Value);
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), s.Parameters["CandleType"].Value);
+			s.CandleReceived += (_, c) =>
+			{
+				if (c.State != CandleStates.Finished) return;
+				IsFalse(mustEnter, "A filled stop must not require a fresh zero crossover before re-entry.");
+				if (previousScore is decimal previous)
+				{
+					dynamic model = s;
+					object actual = model.LastBass;
+					IsNotNull(actual, "A formed composite score must be published.");
+					IsTrue(Math.Abs(Convert.ToDecimal(actual) - previous) < 0.00000001m,
+						$"All BASS components must match the independent calculation: expected={previous}, actual={actual}.");
+				}
+				reference.Add(c);
+				previousScore = reference.IsBassReady ? reference.Bass : null;
+				if (!reference.IsBassReady) unformed++;
+				mustEnter = reference.IsBassReady && reference.Bass != 0m && s.IsOnline
+					&& (pending is null || pending.State is OrderStates.Done or OrderStates.Failed)
+					&& (reference.Bass > 0m ? s.Position <= 0m : s.Position >= 0m);
+				if (mustEnter) eligible++;
+			};
+			s.OrderRegistering += o =>
+			{
+				pending = o;
+				if (s.Position != 0m && o.Volume == Math.Abs(s.Position))
+				{
+					native.RecordExit(o);
+					stops++; return;
+				}
+				IsTrue(mustEnter && reference.IsBassReady);
+				AreEqual(reference.Bass > 0m ? Sides.Buy : Sides.Sell, o.Side);
+				AreEqual(s.Volume + Math.Abs(s.Position), o.Volume);
+				if (s.Position != 0m) reversals++;
+				entryOrders.Add(o); entries++; mustEnter = false;
+			};
+			s.OwnTradeReceived += (_, t) =>
+			{
+				if (entryOrders.Contains(t.Order))
+				{
+					var sl = (Unit)stopField.GetValue(s);
+					IsNotNull(sl); AreEqual(UnitTypes.Percent, sl.Type); AreEqual(1m, sl.Value);
+				}
+				else AreEqual(0m, s.Position);
+			};
+		}, TimeSpan.FromDays(31));
+		IsFalse(mustEnter); AreEqual(eligible, entries); IsTrue(entries > 3 && reversals > 0 && stops > 0 && unformed >= 46);
+		var violations = native.Violations(1m, 0m, true);
+		IsTrue(violations.Length == 0, string.Join(Environment.NewLine, violations));
+		TestContext.WriteLine($"0565 BASS python={IsPython}: entries={entries}, reversals={reversals}, filled stops={stops}");
+	}
+
+	[TestMethod, TestCategory("Shard00")]
+	[DataRow("None"), DataRow("Rsi"), DataRow("Adx"), DataRow("Atr"), DataRow("Ema"), DataRow("Macd"), DataRow("All"), DataRow("Force")]
+	public async Task S0568_BigMoverBandsFiltersMiddleExitAndNativeStop(string profile)
+	{
+		var reference = new NextTechnicalReference();
+		var entries = 0; var eligible = 0; var exits = 0; var forceExits = 0; var stops = 0; var rejected = 0;
+		var mustOrder = false; Sides? side = null;
+		NextNativeFillReference native = null;
+		Order pending = null;
+		var entryOrders = new HashSet<Order>();
+		var stopField = typeof(Strategy).GetField("_stopLoss", BindingFlags.Instance | BindingFlags.NonPublic);
+		var force = profile == "Force";
+		await Replay("0568_Big_Mover_Catcher", (s, _) =>
+		{
+			native = new(s);
+			AreEqual(40, s.Parameters["BollingerPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(s.Parameters["StopLossPercent"].Value));
+			AreEqual(5m, Convert.ToDecimal(s.Parameters["ForceTakeProfitPercent"].Value));
+			AreEqual(TimeSpan.FromMinutes(1).TimeFrame(), s.Parameters["CandleType"].Value);
+			foreach (var filter in new[] { "Rsi", "Adx", "Atr", "Ema", "Macd" })
+			{
+				AreEqual(true, s.Parameters["Is" + filter + "FilterEnabled"].Value);
+				SetParam(s, "Is" + filter + "FilterEnabled", profile == "All" || profile == filter);
+			}
+			AreEqual(50m, Convert.ToDecimal(s.Parameters["RsiLongThreshold"].Value));
+			AreEqual(50m, Convert.ToDecimal(s.Parameters["RsiShortThreshold"].Value));
+			if (profile == "Rsi")
+			{
+				SetParam(s, "RsiLongThreshold", 70m);
+				SetParam(s, "RsiShortThreshold", 30m);
+			}
+			SetParam(s, "IsForceTakeProfitEnabled", force);
+			if (force) SetParam(s, "ForceTakeProfitPercent", 0.02m);
+			s.CandleReceived += (_, c) =>
+			{
+				if (c.State != CandleStates.Finished) return;
+				IsFalse(mustOrder, "An eligible band entry or middle/large-body exit must not be skipped.");
+				reference.Add(c); side = null;
+				if (!s.IsOnline || pending is not null && pending.State is not (OrderStates.Done or OrderStates.Failed)) return;
+				if (s.Position != 0m)
+				{
+					var forced = force && (s.Position > 0m ? c.ClosePrice - c.OpenPrice : c.OpenPrice - c.ClosePrice) / c.OpenPrice * 100m >= 0.02m;
+					if (forced || (s.Position > 0m ? c.ClosePrice <= reference.Middle40 : c.ClosePrice >= reference.Middle40))
+					{ side = s.Position > 0m ? Sides.Sell : Sides.Buy; if (forced) forceExits++; }
+				}
+				else if (reference.IsBigMoverReady(profile))
+				{
+					var raw = c.ClosePrice > reference.Upper40 ? Sides.Buy : c.ClosePrice < reference.Lower40 ? Sides.Sell : (Sides?)null;
+					if (raw is not null && reference.BigMoverFilters(raw.Value, profile)) { side = raw; eligible++; }
+					else if (raw is not null) rejected++;
+				}
+				mustOrder = side is not null;
+			};
+			s.OrderRegistering += o =>
+			{
+				pending = o;
+				if (s.Position != 0m && side is null)
+				{
+					native.RecordExit(o);
+					AreEqual(Math.Abs(s.Position), o.Volume); stops++; return;
+				}
+				IsNotNull(side); AreEqual(side.Value, o.Side);
+				AreEqual(s.Position == 0m ? s.Volume : Math.Abs(s.Position), o.Volume);
+				if (s.Position == 0m) { entries++; entryOrders.Add(o); } else exits++;
+				mustOrder = false;
+			};
+			s.OwnTradeReceived += (_, t) =>
+			{
+				if (entryOrders.Contains(t.Order))
+				{ var sl = (Unit)stopField.GetValue(s); IsNotNull(sl); AreEqual(2m, sl.Value); AreEqual(UnitTypes.Percent, sl.Type); }
+				else AreEqual(0m, s.Position);
+			};
+		}, TimeSpan.FromDays(31));
+		IsFalse(mustOrder); AreEqual(eligible, entries); IsTrue(entries > 3 && exits > 0);
+		if (profile is not ("None" or "Force")) IsTrue(rejected > 0, "An enabled filter must reject actual raw band breakouts.");
+		if (force) IsTrue(forceExits > 0);
+		var violations = native.Violations(2m, 0m, true);
+		IsTrue(violations.Length == 0, string.Join(Environment.NewLine, violations));
+		TestContext.WriteLine($"0568 BigMover python={IsPython}, profile={profile}: entries={entries}, exits={exits}, stops={stops}, force={forceExits}, filtered={rejected}");
+	}
+
+	private sealed class NextBbTrendReference
+	{
+		private readonly List<decimal> _closes = [];
+		private readonly List<decimal> _changes = [];
+		private decimal? _last, _up, _down, _line;
+		private decimal _atr;
+
+		public Sides? Add(ICandleMessage c)
+		{
+			_closes.Add(c.ClosePrice);
+			if (_closes.Count < 50) return null;
+			static (decimal mean, decimal dev) Band(IEnumerable<decimal> prices)
+			{
+				var p = prices.ToArray(); var average = p.Average();
+				return (average, (decimal)Math.Sqrt((double)p.Average(v => (v - average) * (v - average))));
+			}
+			var shortBand = Band(_closes.TakeLast(20)); var longBand = Band(_closes.TakeLast(50));
+			var score = (Math.Abs(shortBand.mean - 2m * shortBand.dev - longBand.mean + 2m * longBand.dev)
+				- Math.Abs(shortBand.mean + 2m * shortBand.dev - longBand.mean - 2m * longBand.dev)) / shortBand.mean * 100m;
+			var previous = _last; _last = score;
+			if (previous is null) return null;
+			_changes.Add(Math.Abs(score - previous.Value));
+			if (_changes.Count < 10) return null;
+			_atr = _changes.Count == 10 ? _changes.Average() : (_atr * 9m + _changes[^1]) / 10m;
+			var upper = (score + previous.Value) / 2m + 7m * _atr;
+			var lower = (score + previous.Value) / 2m - 7m * _atr;
+			if (_up is decimal u && upper >= u && previous <= u) upper = u;
+			if (_down is decimal d && lower <= d && previous >= d) lower = d;
+			var down = _line is null || _line == _up ? score <= upper : score < lower;
+			_up = upper; _down = lower; _line = down ? upper : lower;
+			return down ? Sides.Sell : Sides.Buy;
+		}
+	}
+
+	private sealed class NextTechnicalReference
+	{
+		private readonly List<ICandleMessage> _bars = [];
+		private readonly ImpulseEma _fast = new(12), _slow = new(26), _signal = new(9), _ema = new(350);
+		private readonly List<decimal> _rawK = [], _smoothK = [], _d = [], _jaw = [], _teeth = [], _lips = [];
+		private decimal _gain, _loss, _atr14, _plus, _minus, _adx;
+		private int _adxCount;
+		public int Count => _bars.Count;
+		public decimal Rsi { get; private set; } = 50m;
+		public decimal MacdHistogram { get; private set; }
+		public decimal Ema => _ema.Value;
+		public decimal Atr => _atr14;
+		public decimal Adx => _adx;
+		public decimal Bass { get; private set; }
+		public bool IsBassReady => _d.Count > 0 && _signal.Formed && Count >= 34;
+		public decimal Middle40 { get; private set; }
+		public decimal Upper40 { get; private set; }
+		public decimal Lower40 { get; private set; }
+
+		public void Add(ICandleMessage c)
+		{
+			var previous = _bars.Count > 0 ? _bars[^1] : null;
+			_bars.Add(c); var n = Count;
+			_ema.Add(c.ClosePrice);
+			var macd = _fast.Add(c.ClosePrice) - _slow.Add(c.ClosePrice);
+			if (_slow.Formed) _signal.Add(macd);
+			MacdHistogram = macd - _signal.Value;
+			var tr = previous is null ? c.HighPrice - c.LowPrice : Math.Max(c.HighPrice - c.LowPrice,
+				Math.Max(Math.Abs(c.HighPrice - previous.ClosePrice), Math.Abs(c.LowPrice - previous.ClosePrice)));
+			_atr14 = (_atr14 * (Math.Min(n, 14) - 1) + tr) / Math.Min(n, 14);
+			if (previous is not null)
+			{
+				var delta = c.ClosePrice - previous.ClosePrice;
+				_gain = n <= 15 ? _gain + Math.Max(delta, 0m) / 14m : (_gain * 13m + Math.Max(delta, 0m)) / 14m;
+				_loss = n <= 15 ? _loss + Math.Max(-delta, 0m) / 14m : (_loss * 13m + Math.Max(-delta, 0m)) / 14m;
+				if (delta != 0m && _gain + _loss > 0m) Rsi = 100m * _gain / (_gain + _loss);
+				var up = c.HighPrice - previous.HighPrice; var down = previous.LowPrice - c.LowPrice;
+				var k = Math.Min(n - 1, 28);
+				_plus = (_plus * (k - 1) + (up > down && up > 0m ? up : 0m)) / k;
+				_minus = (_minus * (k - 1) + (down > up && down > 0m ? down : 0m)) / k;
+				if (n >= 30)
+				{
+					_adxCount++; var a = Math.Min(_adxCount, 28);
+					var dx = _plus + _minus == 0m ? 0m : 100m * Math.Abs(_plus - _minus) / (_plus + _minus);
+					_adx = (_adx * (a - 1) + dx) / a;
+				}
+			}
+			if (n >= 40)
+			{
+				var window = _bars.TakeLast(40).Select(b => b.ClosePrice).ToArray();
+				Middle40 = window.Average();
+				var dev = (decimal)Math.Sqrt((double)window.Average(v => (v - Middle40) * (v - Middle40)));
+				Upper40 = Middle40 + 2m * dev; Lower40 = Middle40 - 2m * dev;
+			}
+			if (n >= 21)
+			{
+				var window = _bars.TakeLast(21).ToArray(); var high = window.Max(b => b.HighPrice); var low = window.Min(b => b.LowPrice);
+				_rawK.Add(high == low ? 0m : 100m * (c.ClosePrice - low) / (high - low));
+				if (_rawK.Count >= 14)
+				{
+					_smoothK.Add(_rawK.TakeLast(14).Average());
+					if (_smoothK.Count >= 14) _d.Add(_smoothK.TakeLast(14).Average());
+				}
+			}
+			static decimal Smoothed(List<decimal> values, int length, int count, decimal input)
+				=> count <= length ? (values.Count == 0 ? 0m : values[^1] * (count - 1)) / count + input / count
+					: (values[^1] * (length - 1) + input) / length;
+			var median = (c.HighPrice + c.LowPrice) / 2m;
+			_jaw.Add(Smoothed(_jaw, 13, n, median)); _teeth.Add(Smoothed(_teeth, 8, n, median)); _lips.Add(Smoothed(_lips, 5, n, median));
+			if (!IsBassReady) return;
+			var medianShort = _bars.TakeLast(5).Average(b => (b.HighPrice + b.LowPrice) / 2m);
+			var medianLong = _bars.TakeLast(34).Average(b => (b.HighPrice + b.LowPrice) / 2m);
+			var volume = _bars.TakeLast(30).ToArray();
+			var vwma = volume.Sum(b => b.ClosePrice * b.TotalVolume) / volume.Sum(b => b.TotalVolume);
+			var gator = (_lips[n - 1 - 3] - _teeth[n - 1 - 5]) + (_teeth[n - 1 - 5] - _jaw[n - 1 - 8]);
+			Bass = 2m * MacdHistogram + (Rsi - 50m) / 5m + (_smoothK[^1] - _d[^1]) * 0.15m
+				+ (medianShort - medianLong) * 0.6m + gator + vwma - volume.Average(b => b.ClosePrice);
+		}
+
+		public bool IsBigMoverReady(string profile)
+			=> Count >= 40 && (profile is not ("All" or "Ema") || _ema.Formed) && (profile is not ("All" or "Adx") || _adxCount >= 28)
+				&& (profile is not ("All" or "Macd") || _signal.Formed);
+
+		public bool BigMoverFilters(Sides side, string profile)
+		{
+			var close = _bars[^1].ClosePrice; var buy = side == Sides.Buy;
+			return (profile is not ("All" or "Rsi") || (buy ? Rsi > (profile == "Rsi" ? 70m : 50m) : Rsi < (profile == "Rsi" ? 30m : 50m)))
+				&& (profile is not ("All" or "Adx") || Adx >= 20m)
+				&& (profile is not ("All" or "Atr") || Atr / close * 100m >= 0.05m)
+				&& (profile is not ("All" or "Ema") || (buy ? close > Ema : close < Ema))
+				&& (profile is not ("All" or "Macd") || (buy ? MacdHistogram > 0m : MacdHistogram < 0m));
+		}
+	}
+
+	[TestMethod, TestCategory("Shard01")]
+	public Task S0121_OverdueExitKeepsTheFilledEntrySeasonAcrossMissingData()
+		=> CheckOverdueSeasonalExit("0121_Santa_Claus_Rally", 24);
+
+	[TestMethod, TestCategory("Shard02")]
+	public Task S0122_OverdueExitKeepsTheFilledEntrySeasonAcrossMissingData()
+		=> CheckOverdueSeasonalExit("0122_January_Effect", 26);
+
+	private async Task CheckOverdueSeasonalExit(string key, int entryDay)
+	{
+		var archive = await AsmInit.CreateArchiveMarketData(CancellationToken);
+		var minuteStorage = archive.Storage.GetCandleMessageStorage(archive.Primary.Id.ToSecurityId(), TimeSpan.FromMinutes(1).TimeFrame());
+		var archived = new List<ICandleMessage>();
+		await foreach (var candle in minuteStorage.LoadAsync(archive.From).WithCancellation(CancellationToken))
+		{
+			archived.Add(candle);
+			if (archived.Count == 15) break;
+		}
+		AreEqual(15, archived.Count);
+		var open = archived[0].OpenPrice; var close = archived[^1].ClosePrice;
+		var high = archived.Max(c => c.HighPrice); var low = archived.Min(c => c.LowPrice);
+		IsTrue(high - low < low * 0.01m, "The repeated archived bar must stay strictly inside the published two-percent stop.");
+		var entry = new DateTime(2024, 12, entryDay, 9, 0, 0, DateTimeKind.Utc);
+		var resumed = new DateTime(2025, 12, 1, 9, 0, 0, DateTimeKind.Utc);
+		var frame = TimeSpan.FromMinutes(15);
+		var data = CreateContractMarket(entry.Date, resumed.AddDays(1), true);
+		// Repeat real archived OHLC at explicit session times; the long data gap isolates the overdue calendar exit.
+		await SaveContractCandles(data, frame, new[] { entry, entry.Add(frame), resumed, resumed.Add(frame) }
+			.Select(time => (time, open, high, low, close, archived.Sum(c => c.TotalVolume))));
+		var strategy = await CompileContractStrategy(key);
+		var orders = new List<Order>(); var fills = 0;
+		await AsmInit.RunScenario(strategy, CancellationToken, data, (s, _) =>
+		{
+			AreEqual(2m, Convert.ToDecimal(s.Parameters["StopLoss"].Value));
+			AreEqual(frame.TimeFrame(), s.Parameters["CandleType"].Value);
+			s.OrderRegistering += o =>
+			{
+				orders.Add(o);
+				if (o.Side == Sides.Buy) AreEqual(entry.Date, s.CurrentTime.Date);
+				else
+				{
+					AreEqual(resumed.Date, s.CurrentTime.Date, "The first available candle after the original January deadline must close the original season, even in a later December.");
+					AreEqual(s.Position, o.Volume);
+				}
+			};
+			s.OwnTradeReceived += (_, t) =>
+			{
+				fills++;
+				if (t.Order.Side == Sides.Buy) AreEqual(2024, t.Trade.ServerTime.Year);
+				else AreEqual(0m, s.Position);
+			};
+		}, null, null, true, TimeSpan.FromSeconds(90));
+		AreEqual(2, orders.Count, "Exactly the original filled entry and its overdue exit are required; December of the next year must not postpone the exit to another January.");
+		AreEqual(2, fills);
+	}
+
+	[TestMethod, TestCategory("Shard05")]
+	[DataRow(1), DataRow(-1)]
+	public async Task S0333_DefaultFiltersRejectWeakSeasonAndFillTheSameArchivedBreakoutsInStrongSeason(int direction)
+	{
+		var archive = await AsmInit.CreateArchiveMarketData(CancellationToken);
+		var frame = TimeSpan.FromMinutes(5);
+		var data = CreateContractMarket(archive.From, archive.From.AddMonths(1).AddDays(15), false);
+		var minutes = new List<ICandleMessage>();
+		var storage = archive.Storage.GetCandleMessageStorage(archive.Primary.Id.ToSecurityId(), TimeSpan.FromMinutes(1).TimeFrame());
+		for (var day = archive.From; day < archive.From.AddDays(14); day = day.AddDays(1))
+			await foreach (var c in storage.LoadAsync(day).WithCancellation(CancellationToken)) minutes.Add(c);
+		var archivedBars = minutes.GroupBy(c => new DateTime(c.OpenTime.Ticks / frame.Ticks * frame.Ticks, DateTimeKind.Utc))
+			.Where(g => g.Count() == 5).Select(g => (time: g.Key, open: g.First().OpenPrice, high: g.Max(c => c.HighPrice),
+				low: g.Min(c => c.LowPrice), close: g.Last().ClosePrice, volume: g.Sum(c => c.TotalVolume))).ToArray();
+		// Identical archived OHLC is replayed in two calendar months; this tests gating mechanics, not April market performance.
+		await SaveContractCandles(data, frame, archivedBars.Concat(archivedBars.Select(b => (b.time.AddMonths(1), b.open, b.high, b.low, b.close, b.volume))));
+		var history = WritePortfolioCsv([
+			"SecurityId,Month,Open,Close",
+			FormattableString.Invariant($"{data.Primary.Id},2022-03,100,{100m + direction * 0.3m}"),
+			FormattableString.Invariant($"{data.Primary.Id},2023-03,100,{100m + direction * 0.3m}"),
+			FormattableString.Invariant($"{data.Primary.Id},2022-04,100,{100m + direction * 10m}"),
+			FormattableString.Invariant($"{data.Primary.Id},2023-04,100,{100m + direction * 10m}"),
+			FormattableString.Invariant($"{data.Primary.Id},2024-04,100,{(direction > 0 ? 1m : 10000m)}"),
+		]);
+		var strategy = await CompileContractStrategy("0333_Keltner_Seasonal_Filter");
+		var ema = new ImpulseEma(20); var atr = 0m; decimal? previousClose = null;
+		var bars = 0; var weakBreakouts = 0; var strongEntries = 0;
+		ICandleMessage current = null;
+		await AsmInit.RunScenario(strategy, CancellationToken, data, (s, _) =>
+		{
+			SetParam(s, "SeasonalityHistoryFile", history);
+			AreEqual(20, s.Parameters["EmaPeriod"].Value); AreEqual(14, s.Parameters["AtrPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(s.Parameters["AtrMultiplier"].Value));
+			AreEqual(0.5m, Convert.ToDecimal(s.Parameters["SeasonalThreshold"].Value));
+			AreEqual(frame.TimeFrame(), s.Parameters["CandleType"].Value);
+			s.CandleReceived += (_, c) =>
+			{
+				if (c.State != CandleStates.Finished) return;
+				current = c; bars++; ema.Add(c.ClosePrice);
+				var tr = previousClose is decimal pc ? Math.Max(c.HighPrice - c.LowPrice,
+					Math.Max(Math.Abs(c.HighPrice - pc), Math.Abs(c.LowPrice - pc))) : c.HighPrice - c.LowPrice;
+				atr = (atr * (Math.Min(bars, 14) - 1) + tr) / Math.Min(bars, 14); previousClose = c.ClosePrice;
+				if (c.OpenTime.Month == 3 && ema.Formed && (direction > 0 ? c.ClosePrice > ema.Value + 2m * atr : c.ClosePrice < ema.Value - 2m * atr)) weakBreakouts++;
+			};
+			s.OrderRegistering += o =>
+			{
+				if (s.Position != 0m) return;
+				AreEqual(4, current.OpenTime.Month, "The same original-filter breakout must be forbidden in the weak March season.");
+				AreEqual(direction > 0 ? Sides.Buy : Sides.Sell, o.Side);
+				IsTrue(direction > 0 ? current.ClosePrice > ema.Value + 2m * atr : current.ClosePrice < ema.Value - 2m * atr);
+				AreEqual(s.Volume, o.Volume); strongEntries++;
+			};
+		}, null, null, true, TimeSpan.FromSeconds(90));
+		IsTrue(weakBreakouts > 0 && strongEntries > 0, "Both an actual forbidden default-filter breakout and a filled permitted breakout are required.");
+		TestContext.WriteLine($"0333 python={IsPython}, direction={direction}: forbidden default-filter breakouts={weakBreakouts}, permitted filled entries={strongEntries}");
+	}
+	[TestMethod, TestCategory("Shard03")]
+	[DataRow(1.0, 1.0, 2.0, false), DataRow(1.5, 0.75, 2.0, false)]
+	[DataRow(1.0, 1.0, 0.05, false), DataRow(1.0, 1.0, 2.0, true)]
+	public async Task S0299_BetaHedgedPairsUseMatchingBarsAndCloseBothFilledLegs(double beta1, double beta2, double stopPercent, bool asynchronous)
+	{
+		var firstBars = new Dictionary<DateTime, decimal>(); var secondBars = new Dictionary<DateTime, decimal>();
+		var spreads = new Queue<decimal>();
+		decimal? firstBase = null; decimal? secondBase = null; decimal? previousZ = null;
+		var hedge = (decimal)beta1 / (decimal)beta2;
+		var first = 0m; var second = 0m; var z = 0m;
+		var matched = default(DateTime); var currentPair = default(DateTime);
+		var expectedSide = 0; var pairSide = 0; var entryPairs = 0; var completedPairs = 0;
+		var entryQuantities = new Dictionary<Order, bool>();
+		var entryCost1 = 0m; var entryCost2 = 0m; var entryQty1 = 0m; var entryQty2 = 0m;
+		var stopRequired = false; var meanExits = 0; var stopExits = 0;
+		var secondEntries = 0; var firstExit = false; var secondExit = false;
+		var pairBars = 0; var lastEntryPair = -1000; var expectedPairs = 0; var exitsDuringCooldown = 0;
+		var pending = new List<Order>();
+		var strategy = await CompileContractStrategy("0299_Beta_Adjusted_Pairs_Trading");
+		var data = asynchronous ? await CreateAsynchronousPairFixture() : await AsmInit.CreateArchiveMarketData(CancellationToken);
+		await AsmInit.RunScenario(strategy, CancellationToken, data, (s, other) =>
+		{
+			SetParam(s, "Asset2", other);
+			SetParam(s, "Asset2Portfolio", s.Portfolio);
+			AreEqual(20, s.Parameters["LookbackPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(s.Parameters["EntryThreshold"].Value));
+			AreEqual(2m, Convert.ToDecimal(s.Parameters["StopLoss"].Value));
+			SetParam(s, "StopLoss", (decimal)stopPercent);
+			AreEqual(1m, Convert.ToDecimal(s.Parameters["BetaAsset1"].Value));
+			AreEqual(1m, Convert.ToDecimal(s.Parameters["BetaAsset2"].Value));
+			AreEqual(0.15m, Convert.ToDecimal(s.Parameters["ExitThreshold"].Value));
+			AreEqual(120, s.Parameters["CooldownBars"].Value);
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), s.Parameters["CandleType"].Value);
+			SetParam(s, "BetaAsset1", (decimal)beta1); SetParam(s, "BetaAsset2", (decimal)beta2);
+			s.CandleReceived += (_, c) =>
+			{
+				if (c.State != CandleStates.Finished) return;
+				var primary = c.SecurityId == s.Security.Id.ToSecurityId();
+				currentPair = c.OpenTime;
+				(primary ? firstBars : secondBars)[c.OpenTime] = c.ClosePrice;
+				if (!firstBars.TryGetValue(c.OpenTime, out first) || !secondBars.TryGetValue(c.OpenTime, out second) || c.OpenTime <= matched) return;
+				matched = c.OpenTime;
+				pairBars++;
+				firstBase ??= first; secondBase ??= second;
+				var spread = (decimal)Math.Log((double)(first / firstBase.Value)) - hedge * (decimal)Math.Log((double)(second / secondBase.Value));
+				spreads.Enqueue(spread); if (spreads.Count > 20) spreads.Dequeue();
+				expectedSide = 0; stopRequired = false;
+				if (spreads.Count < 20) return;
+				var mean = spreads.Average(); var deviation = (decimal)Math.Sqrt((double)spreads.Average(v => (v - mean) * (v - mean)));
+				if (deviation == 0m) return;
+				z = (spread - mean) / deviation;
+				if (previousZ is decimal previous && s.Position == 0m && (s.GetPositionValue(other, s.Portfolio) ?? 0m) == 0m
+					&& pairBars - lastEntryPair > 120 && s.IsOnline && pending.All(o => o.State is OrderStates.Done or OrderStates.Failed))
+				{
+					if (previous <= -2m && z > -2m && z < 0m) expectedSide = 1;
+					else if (previous >= 2m && z < 2m && z > 0m) expectedSide = -1;
+				}
+				if (expectedSide != 0) expectedPairs++;
+				previousZ = z;
+				if (pairSide != 0 && entryQty1 > 0m && entryQty2 > 0m)
+				{
+					var profit = pairSide * (entryQty1 * first - entryCost1 - entryQty2 * second + entryCost2);
+					stopRequired = profit <= -(entryCost1 + entryCost2) * (decimal)stopPercent / 100m;
+				}
+			};
+			s.OrderRegistering += o =>
+			{
+				pending.Add(o);
+				AreEqual(currentPair, matched, "Both legs must have a matching finished candle before an order.");
+				var primary = o.Security == s.Security;
+				if (o.Comment == "0299Entry")
+				{
+					if (primary)
+					{
+						IsTrue(expectedSide != 0, "An entry needs a real return across the two-sigma threshold toward the mean.");
+						AreEqual(expectedSide > 0 ? Sides.Buy : Sides.Sell, o.Side);
+						pairSide = expectedSide; entryPairs++; entryCost1 = entryCost2 = entryQty1 = entryQty2 = 0m;
+						lastEntryPair = pairBars;
+						firstExit = secondExit = false; AreEqual(s.Volume, o.Volume);
+					}
+					else
+					{
+						AreEqual(pairSide > 0 ? Sides.Sell : Sides.Buy, o.Side);
+						var step = other.VolumeStep ?? 1m;
+						AreEqual(Math.Floor(s.Volume * first * hedge / second / step) * step, o.Volume, "Hedge beta-adjusted dollar exposure using the actual second instrument's lot step.");
+						AreEqual(s.Portfolio, o.Portfolio); secondEntries++;
+					}
+					entryQuantities.Add(o, primary);
+				}
+				else
+				{
+					IsTrue(o.Comment == "0299Stop" || o.Comment == "0299Mean", "The pair must close both legs through the documented spread or loss exit.");
+					IsTrue(stopRequired || (pairSide > 0 ? z >= -0.15m : z <= 0.15m));
+					var position = s.GetPositionValue(o.Security, o.Portfolio) ?? 0m;
+					AreEqual(Math.Abs(position), o.Volume); AreEqual(position > 0m ? Sides.Sell : Sides.Buy, o.Side);
+					if (primary)
+					{
+						if (stopRequired) stopExits++; else meanExits++;
+						if (pairBars - lastEntryPair <= 120) exitsDuringCooldown++;
+					}
+				}
+			};
+			s.Trades.TradeAdded += t =>
+			{
+				if (entryQuantities.TryGetValue(t.Order, out var primary))
+				{
+					if (primary) { entryCost1 += t.Trade.Price * t.Trade.Volume; entryQty1 += t.Trade.Volume; }
+					else { entryCost2 += t.Trade.Price * t.Trade.Volume; entryQty2 += t.Trade.Volume; }
+				}
+				else
+				{
+					if (t.Order.Security == s.Security) firstExit = true; else secondExit = true;
+					if (firstExit && secondExit && s.Position == 0m && (s.GetPositionValue(other, s.Portfolio) ?? 0m) == 0m)
+					{ completedPairs++; pairSide = 0; }
+				}
+			};
+		}, null, TimeSpan.FromDays(31), true, TimeSpan.FromSeconds(90));
+		IsTrue(entryPairs > 3 && completedPairs > 3 && meanExits > 0, "The unchanged lookback and threshold must open and fully unwind real pairs repeatedly.");
+		AreEqual(entryPairs, secondEntries);
+		AreEqual(expectedPairs, entryPairs, "Every eligible threshold return while both legs are flat must enter the pair.");
+		IsTrue(exitsDuringCooldown > 0, "The entry cooldown must never block an actual pair exit.");
+		if (stopPercent < 2.0) IsTrue(stopExits > 0, "The explicit tighter loss profile must actually unwind both legs through the pair stop.");
+		TestContext.WriteLine($"0299 python={IsPython}, asynchronous={asynchronous}, beta={hedge}, stop={stopPercent}: pairs={entryPairs}, completed={completedPairs}, meanExits={meanExits}, stopExits={stopExits}, earlyExits={exitsDuringCooldown}");
+	}
+
+	private async Task<ReplayMarketData> CreateAsynchronousPairFixture()
+	{
+		var archive = await AsmInit.CreateArchiveMarketData(CancellationToken);
+		var data = CreateContractMarket(archive.From, archive.From.AddDays(14).AddMinutes(2), false);
+		data.Secondary.VolumeStep = archive.Secondary.VolumeStep;
+		data.Secondary.MinVolume = archive.Secondary.MinVolume;
+		data.Secondary.MaxVolume = archive.Secondary.MaxVolume;
+		var frame = TimeSpan.FromMinutes(5);
+		foreach (var security in new[] { data.Primary, data.Secondary })
+		{
+			var minutes = new List<ICandleMessage>();
+			var source = archive.Storage.GetCandleMessageStorage(security.Id.ToSecurityId(), TimeSpan.FromMinutes(1).TimeFrame());
+			for (var date = archive.From; date < archive.From.AddDays(14); date = date.AddDays(1))
+				await foreach (var c in source.LoadAsync(date).WithCancellation(CancellationToken)) minutes.Add(c);
+			var bars = minutes.GroupBy(c => new DateTime(c.OpenTime.Ticks / frame.Ticks * frame.Ticks, DateTimeKind.Utc))
+				.Where(g => g.Count() == 5).Select(g =>
+				{
+					// Preserve archived OHLC. Shift alternate secondary timestamps only, exposing stale-bar mixing.
+					var time = security == data.Secondary && (g.Key - archive.From).Ticks / frame.Ticks % 2 == 1 ? g.Key.AddMinutes(1) : g.Key;
+					return (time, g.First().OpenPrice, g.Max(c => c.HighPrice), g.Min(c => c.LowPrice), g.Last().ClosePrice, g.Sum(c => c.TotalVolume));
+				}).ToArray();
+			IsTrue(bars.Length > 1000);
+			await SaveContractCandles(security == data.Primary ? data : data with { Primary = data.Secondary, Secondary = data.Primary }, frame, bars);
+		}
+		return data;
+	}
+	[TestMethod, TestCategory("Shard02")]
+	[DataRow(2.0), DataRow(0.25)]
+	public async Task S0522_AllSixSignalComponentsAndActualAtrStop(double multiplier)
+	{
+		var ema20 = new ImpulseEma(20); var ema50 = new ImpulseEma(50);
+		var fast = new ImpulseEma(12); var slow = new ImpulseEma(26); var macdSignal = new ImpulseEma(9);
+		var prices = new Queue<decimal>();
+		var vwapBars = new Queue<(decimal price, decimal volume)>();
+		decimal? previousClose = null;
+		var atr = 0m; var gain = 0m; var loss = 0m; var rsi = 50m;
+		var bars = 0; var lastEntry = -1000; var entries = 0; var exits = 0; var omittedComponentDisagreements = 0;
+		var composite = 0m;
+		var eligibleEntries = 0; var mustEnter = false;
+		Order pending = null;
+		var distances = new Dictionary<Order, decimal>();
+		var sides = new HashSet<Sides>();
+		var stopField = typeof(Strategy).GetField("_stopLoss", BindingFlags.Instance | BindingFlags.NonPublic);
+		static decimal Clip(decimal value, decimal limit) => Math.Clamp(value, -limit, limit);
+		await Replay("0522_Anomalous_Holonomy_Field_Theory", (s, _) =>
+		{
+			AreEqual(2m, Convert.ToDecimal(s.Parameters["SignalThreshold"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), s.Parameters["CandleType"].Value);
+			AreEqual(14, s.Parameters["AtrLength"].Value);
+			AreEqual(2m, Convert.ToDecimal(s.Parameters["AtrStopMultiplier"].Value));
+			AreEqual(10, s.Parameters["RocPeriod"].Value);
+			AreEqual(20, s.Parameters["VwapPeriod"].Value);
+			AreEqual(50, s.Parameters["CooldownBars"].Value);
+			if (multiplier != 2.0) SetParam(s, "AtrStopMultiplier", (decimal)multiplier);
+			s.CandleReceived += (_, c) =>
+			{
+				if (c.State != CandleStates.Finished) return;
+				IsFalse(mustEnter, "An eligible flat composite signal must not be silently skipped.");
+				bars++;
+				var shortTrend = ema20.Add(c.ClosePrice); var longTrend = ema50.Add(c.ClosePrice);
+				var macd = fast.Add(c.ClosePrice) - slow.Add(c.ClosePrice);
+				if (slow.Formed) macdSignal.Add(macd);
+				var tr = previousClose is decimal pc ? Math.Max(c.HighPrice - c.LowPrice,
+					Math.Max(Math.Abs(c.HighPrice - pc), Math.Abs(c.LowPrice - pc))) : c.HighPrice - c.LowPrice;
+				atr = (atr * (Math.Min(bars, 14) - 1) + tr) / Math.Min(bars, 14);
+				if (previousClose is decimal prior)
+				{
+					var delta = c.ClosePrice - prior;
+					gain = bars <= 15 ? gain + Math.Max(delta, 0m) / 14m : (gain * 13m + Math.Max(delta, 0m)) / 14m;
+					loss = bars <= 15 ? loss + Math.Max(-delta, 0m) / 14m : (loss * 13m + Math.Max(-delta, 0m)) / 14m;
+					if (delta != 0m && gain + loss > 0m) rsi = 100m * gain / (gain + loss);
+				}
+				previousClose = c.ClosePrice;
+				prices.Enqueue(c.ClosePrice); if (prices.Count > 11) prices.Dequeue();
+				vwapBars.Enqueue(((c.HighPrice + c.LowPrice + c.ClosePrice) / 3m, c.TotalVolume));
+				if (vwapBars.Count > 20) vwapBars.Dequeue();
+				composite = 0m;
+				if (bars < 50 || atr <= 0m || vwapBars.Sum(b => b.volume) <= 0m) return;
+				var trend = c.ClosePrice > shortTrend ? c.ClosePrice > longTrend ? 1.5m : 1m
+					: c.ClosePrice < shortTrend ? c.ClosePrice < longTrend ? -1.5m : -1m : 0m;
+				var vwap = vwapBars.Sum(b => b.price * b.volume) / vwapBars.Sum(b => b.volume);
+				var baseSignal = trend + Clip((c.ClosePrice - vwap) / atr, 2m);
+				if (rsi < 30m && baseSignal > 0m) baseSignal += 1.5m;
+				else if (rsi < 40m && baseSignal > 0m) baseSignal += 0.5m;
+				else if (rsi > 70m && baseSignal < 0m) baseSignal -= 1.5m;
+				else if (rsi > 60m && baseSignal < 0m) baseSignal -= 0.5m;
+				composite = baseSignal + Clip((macd - macdSignal.Value) / atr, 1m) + Clip((c.ClosePrice - prices.Peek()) / atr, 1m);
+				if ((Math.Abs(baseSignal) >= 2m) != (Math.Abs(composite) >= 2m)) omittedComponentDisagreements++;
+				mustEnter = Math.Abs(composite) >= 2m && s.Position == 0m && bars - lastEntry > 50 && s.IsOnline
+					&& (pending is null || pending.State is OrderStates.Done or OrderStates.Failed);
+				if (mustEnter) eligibleEntries++;
+			};
+			s.OrderRegistering += o =>
+			{
+				pending = o;
+				if (s.Position != 0m) return;
+				mustEnter = false;
+				IsTrue(bars >= 50 && Math.Abs(composite) >= 2m, "Every filled entry requires the complete formed EMA/RSI/MACD/ATR/ROC/VWAP composite.");
+				AreEqual(composite > 0m ? Sides.Buy : Sides.Sell, o.Side);
+				IsTrue(bars - lastEntry > 50, "The published entry cooldown must be respected without delaying protective exits.");
+				lastEntry = bars; entries++; sides.Add(o.Side); distances.Add(o, atr * (decimal)multiplier);
+			};
+			s.Trades.TradeAdded += t =>
+			{
+				if (distances.TryGetValue(t.Order, out var expected))
+				{
+					var native = (Unit)stopField.GetValue(s);
+					IsNotNull(native, "The composite strategy must actually protect every filled position with ATR.");
+					AreEqual(UnitTypes.Absolute, native.Type);
+					IsTrue(Math.Abs(expected - native.Value) < 0.00000001m);
+				}
+				else { AreEqual(0m, s.Position); exits++; }
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(entries > 3 && exits > 3 && omittedComponentDisagreements > 0);
+		AreEqual(2, sides.Count);
+		IsFalse(mustEnter);
+		IsTrue(entries >= eligibleEntries);
+		TestContext.WriteLine($"0522 python={IsPython}, ATR multiplier={multiplier}: entries={entries}, eligible={eligibleEntries}, exits={exits}, incomplete-score disagreements={omittedComponentDisagreements}");
+	}
+	[TestMethod, TestCategory("Shard04")]
+	public Task S0556_DefaultReentrySignalsAndFrozenAtrProtection()
+		=> CheckBollingerExecution("0556_Bbsr_Extreme");
+
+	[TestMethod, TestCategory("Shard07")]
+	public Task S0551_RsiRecoveryAndConditionalQuoteTrailing()
+		=> CheckBollingerExecution("0551_BB_RSI_Trailing_Stop");
+
+	[TestMethod, TestCategory("Shard02")]
+	public Task S0554_TwoHeikinAshiTouchesPartialTargetAndTrailingRemainder()
+		=> CheckBollingerExecution("0554_BB_Heikin_Ashi_Entry");
+
+	[TestMethod, TestCategory("Shard03")]
+	public Task S0555_TwoOrThreeHeikinAshiTouchesPartialTargetAndTrailingRemainder()
+		=> CheckBollingerExecution("0555_BB_HeikinAshi_Entry");
+
+	private async Task CheckBollingerExecution(string key)
+	{
+		var bbsr = key.StartsWith("0556");
+		var rsiTrail = key.StartsWith("0551");
+		var ha = !bbsr && !rsiTrail;
+		var id = key[..4];
+		var length = rsiTrail ? 25 : 20;
+		var samples = new Queue<decimal>();
+		var ema = new ImpulseEma(7);
+		var n = 0; var gain = 0m; var loss = 0m; var atr = 0m;
+		decimal? previousClose = null;
+		var previousRsi = 50m; var previousMa = 0m;
+		var previousLower = 0m; var previousUpper = 0m;
+		var haOpen = 0m; var haClose = 0m;
+		var redTouches = 0; var greenTouches = 0;
+		var previousLow = 0m; var previousHigh = 0m;
+		Sides? signal = null;
+		var initialStop = 0m; var stop = 0m; var target = 0m;
+		var entryCost = 0m; var entryQuantity = 0m; var extreme = 0m;
+		var targetFilled = false; var trailActive = false;
+		var bid = 0m; var ask = 0m;
+		var entries = 0; var exits = 0; var partials = 0; var trailExits = 0;
+		var intrabarExits = 0; var rejectedColorChanges = 0; var rejectedRsi = 0;
+		var lastSignalTime = default(DateTime);
+		var eligibleEntries = 0; var mustEnter = false;
+		Order pending = null;
+		var sides = new HashSet<Sides>();
+		var distances = new Dictionary<Order, (decimal stop, decimal take)>();
+		var stopField = typeof(Strategy).GetField("_stopLoss", BindingFlags.Instance | BindingFlags.NonPublic);
+		var takeField = typeof(Strategy).GetField("_takeProfit", BindingFlags.Instance | BindingFlags.NonPublic);
+		await Replay(key, (s, _) =>
+		{
+			var frame = rsiTrail || id == "0555" ? TimeSpan.FromMinutes(15) : TimeSpan.FromMinutes(5);
+			AreEqual(frame.TimeFrame(), s.Parameters["CandleType"].Value);
+			AreEqual(length, s.Parameters[id == "0555" ? "BollingerLength" : "BollingerPeriod"].Value);
+			AreEqual(2m, Convert.ToDecimal(s.Parameters[bbsr ? "BollingerMultiplier" : id == "0555" ? "BollingerWidth" : "BollingerDeviation"].Value));
+			if (bbsr)
+			{
+				AreEqual(7, s.Parameters["MaLength"].Value);
+				AreEqual(14, s.Parameters["AtrLength"].Value);
+				AreEqual(2m, Convert.ToDecimal(s.Parameters["AtrStopMultiplier"].Value));
+				AreEqual(3m, Convert.ToDecimal(s.Parameters["AtrProfitMultiplier"].Value));
+			}
+			if (ha) IsFalse(s.Parameters.ContainsKey("CooldownBars"), "The HA strategy has no unused or hidden cooldown parameter.");
+			if (rsiTrail)
+			{
+				AreEqual(14, s.Parameters["RsiPeriod"].Value);
+				AreEqual(33m, Convert.ToDecimal(s.Parameters["RsiOversold"].Value));
+				AreEqual(60m, Convert.ToDecimal(s.Parameters["RsiOverbought"].Value));
+				AreEqual(50m, Convert.ToDecimal(s.Parameters["StopLossPoints"].Value));
+				AreEqual(99m, Convert.ToDecimal(s.Parameters["TrailOffsetPoints"].Value));
+				AreEqual(40m, Convert.ToDecimal(s.Parameters["TrailStopPoints"].Value));
+			}
+			s.CandleReceived += (_, c) =>
+			{
+				if (c.State != CandleStates.Finished) return;
+				n++;
+				lastSignalTime = s.CurrentTime;
+				IsFalse(mustEnter, "An eligible flat Bollinger signal must not be silently skipped.");
+				var oldClose = previousClose;
+				var tr = oldClose is decimal pc ? Math.Max(c.HighPrice - c.LowPrice,
+					Math.Max(Math.Abs(c.HighPrice - pc), Math.Abs(c.LowPrice - pc))) : c.HighPrice - c.LowPrice;
+				atr = (atr * (Math.Min(n, 14) - 1) + tr) / Math.Min(n, 14);
+				var ma = ema.Add(c.ClosePrice);
+				var rsi = previousRsi;
+				if (oldClose is decimal prior)
+				{
+					var delta = c.ClosePrice - prior;
+					gain = n <= 15 ? gain + Math.Max(delta, 0m) / 14m : (gain * 13m + Math.Max(delta, 0m)) / 14m;
+					loss = n <= 15 ? loss + Math.Max(-delta, 0m) / 14m : (loss * 13m + Math.Max(-delta, 0m)) / 14m;
+					if (delta != 0m && gain + loss > 0m) rsi = 100m * gain / (gain + loss);
+				}
+				var nextHaClose = (c.OpenPrice + c.HighPrice + c.LowPrice + c.ClosePrice) / 4m;
+				var nextHaOpen = n == 1 ? (c.OpenPrice + c.ClosePrice) / 2m : (haOpen + haClose) / 2m;
+				haOpen = nextHaOpen; haClose = nextHaClose;
+				samples.Enqueue(ha ? haClose : c.ClosePrice);
+				if (samples.Count > length) samples.Dequeue();
+				signal = null;
+				if (samples.Count == length)
+				{
+					var mean = samples.Average();
+					var deviation = (decimal)Math.Sqrt((double)samples.Average(v => (v - mean) * (v - mean)));
+					var lower = mean - 2m * deviation; var upper = mean + 2m * deviation;
+					if (bbsr && n > length)
+					{
+						if (oldClose < previousLower && c.ClosePrice > lower && ma > previousMa) signal = Sides.Buy;
+						else if (oldClose > previousUpper && c.ClosePrice < upper && ma < previousMa) signal = Sides.Sell;
+					}
+					else if (rsiTrail && n > length)
+					{
+						if (c.LowPrice < lower && previousRsi <= 33m && rsi > 33m) signal = Sides.Buy;
+						else if (c.HighPrice > upper && previousRsi >= 60m && rsi < 60m) signal = Sides.Sell;
+						else if (c.LowPrice < lower && rsi < 33m || c.HighPrice > upper && rsi > 60m) rejectedRsi++;
+					}
+					else if (ha)
+					{
+						var redValid = redTouches >= 2 && (id == "0554" || redTouches <= 3);
+						var greenValid = greenTouches >= 2 && (id == "0554" || greenTouches <= 3);
+						if (haClose > haOpen && haClose > lower && redValid) signal = Sides.Buy;
+						else if (haClose < haOpen && haClose < upper && greenValid) signal = Sides.Sell;
+						else if (haClose > haOpen && redTouches == 1 || haClose < haOpen && greenTouches == 1) rejectedColorChanges++;
+						redTouches = haClose < haOpen && Math.Min(c.LowPrice, Math.Min(haOpen, haClose)) <= lower ? redTouches + 1 : 0;
+						greenTouches = haClose > haOpen && Math.Max(c.HighPrice, Math.Max(haOpen, haClose)) >= upper ? greenTouches + 1 : 0;
+					}
+					previousLower = lower; previousUpper = upper;
+				}
+				if (ha && targetFilled && s.Position != 0m)
+					stop = s.Position > 0m ? Math.Max(stop, c.LowPrice) : Math.Min(stop, c.HighPrice);
+				initialStop = signal == Sides.Buy ? previousLow : previousHigh;
+				previousLow = c.LowPrice; previousHigh = c.HighPrice;
+				previousRsi = rsi; previousMa = ma; previousClose = c.ClosePrice;
+				mustEnter = signal is not null && s.Position == 0m && s.IsOnline
+					&& (pending is null || pending.State is OrderStates.Done or OrderStates.Failed);
+				if (mustEnter) eligibleEntries++;
+			};
+			s.Level1Received += (_, q) =>
+			{
+				if (q.Changes.TryGetValue(Level1Fields.BestBidPrice, out var b)) bid = Convert.ToDecimal(b);
+				if (q.Changes.TryGetValue(Level1Fields.BestAskPrice, out var a)) ask = Convert.ToDecimal(a);
+				if (!rsiTrail || s.Position == 0m || entryQuantity == 0m) return;
+				var price = s.Position > 0m ? bid : ask;
+				extreme = s.Position > 0m ? Math.Max(extreme, price) : Math.Min(extreme, price);
+				var entry = entryCost / entryQuantity;
+				if (s.Position > 0m ? extreme - entry >= 99m : entry - extreme >= 99m) trailActive = true;
+				if (trailActive) stop = s.Position > 0m ? Math.Max(stop, extreme - 40m) : Math.Min(stop, extreme + 40m);
+			};
+			s.OrderRegistering += o =>
+			{
+				pending = o;
+				if (s.Position == 0m)
+				{
+					mustEnter = false;
+					IsTrue(signal is not null, "A flat entry requires the complete independently calculated signal, including RSI recovery or both HA band touches.");
+					AreEqual(signal.Value, o.Side); AreEqual(s.Volume, o.Volume);
+					entries++; sides.Add(o.Side);
+					entryCost = 0m; entryQuantity = 0m; targetFilled = false; trailActive = false;
+					stop = initialStop;
+					distances.Add(o, (2m * atr, 3m * atr));
+					return;
+				}
+				if (bbsr) return; // Native protection is checked at actual entry fills below.
+				AreEqual(s.Position > 0m ? Sides.Sell : Sides.Buy, o.Side);
+				var price = s.Position > 0m ? bid : ask;
+				IsTrue(price > 0m, "A protective exit needs an observed executable bid or ask between candles.");
+				if (o.Comment == id + "Target")
+				{
+					IsTrue(ha && !targetFilled);
+					IsTrue(s.Position > 0m ? price >= target : price <= target);
+					var step = s.Security.VolumeStep ?? 1m;
+					var half = Math.Floor(Math.Abs(s.Position) / 2m / step) * step;
+					var minimum = s.Security.MinVolume ?? step;
+					AreEqual(half >= minimum && Math.Abs(s.Position) - half >= minimum ? half : Math.Abs(s.Position), o.Volume);
+				}
+				else
+				{
+					AreEqual(id + "Stop", o.Comment);
+					IsTrue(s.Position > 0m ? price <= stop : price >= stop, "A quote must cross the causal stop; a candle's earlier extreme cannot close a later entry.");
+					AreEqual(Math.Abs(s.Position), o.Volume);
+					if (targetFilled || trailActive) trailExits++;
+				}
+			};
+			s.Trades.TradeAdded += t =>
+			{
+				if (distances.TryGetValue(t.Order, out var risk))
+				{
+					entryCost += t.Trade.Price * t.Trade.Volume; entryQuantity += t.Trade.Volume;
+					var entry = entryCost / entryQuantity; extreme = entry;
+					if (rsiTrail) stop = t.Order.Side == Sides.Buy ? entry - 50m : entry + 50m;
+					else if (ha) target = t.Order.Side == Sides.Buy ? entry + Math.Max(entry - stop, 0m) : entry - Math.Max(stop - entry, 0m);
+					else
+					{
+						var nativeStop = (Unit)stopField.GetValue(s); var nativeTake = (Unit)takeField.GetValue(s);
+						IsNotNull(nativeStop, "Every BBSR entry must arm a real frozen native ATR stop.");
+						AreEqual(UnitTypes.Absolute, nativeStop.Type); AreEqual(UnitTypes.Absolute, nativeTake.Type);
+						IsTrue(Math.Abs(nativeStop.Value - risk.stop) < 0.00000001m);
+						IsTrue(Math.Abs(nativeTake.Value - risk.take) < 0.00000001m);
+					}
+				}
+				else
+				{
+					exits++;
+					if (t.Trade.ServerTime > lastSignalTime) intrabarExits++;
+					if (t.Order.Comment == id + "Target" && s.Position != 0m)
+					{
+						partials++; targetFilled = true;
+						stop = s.Position > 0m ? Math.Max(stop, previousLow) : Math.Min(stop, previousHigh);
+					}
+				}
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(entries > 3 && exits > 3, "The published defaults must exercise repeated filled entries and real exits.");
+		AreEqual(2, sides.Count, "Both entry directions need actual fills.");
+		IsTrue(intrabarExits > 0, "Protection must execute between signal candles.");
+		if (ha) IsTrue(partials > 0 && trailExits > 0 && rejectedColorChanges > 0, "Need a real half exit, trailing remainder exit and rejected one-candle setup.");
+		if (rsiTrail) IsTrue(trailExits > 0 && rejectedRsi > 0, "Need real conditional trailing and rejected still-extreme RSI entries.");
+		IsFalse(mustEnter);
+		IsTrue(entries >= eligibleEntries);
+		TestContext.WriteLine($"{id} python={IsPython}: entries={entries}, eligible={eligibleEntries}, exit fills={exits}, partials={partials}, trail exits={trailExits}, intrabar exits={intrabarExits}, rejected HA={rejectedColorChanges}, rejected RSI={rejectedRsi}");
+	}
+
+	[TestMethod, TestCategory("Shard07")]
+	[DataRow(false), DataRow(true)]
+	public void S0487_NativeProtectionRearmingKeepsActivePositionsAndProtectsLaterFills(bool rearmWhileOpen)
+	{
+		var security = new Security { Id = "BTCUSDT@BNBFT", Code = "BTCUSDT", Board = ExchangeBoard.Test, PriceStep = 0.1m };
+		var portfolio = new Portfolio { Name = "protection_regression" };
+		using var strategy = new Strategy { Security = security, Portfolio = portfolio };
+		var time = new DateTime(2024, 3, 1, 0, 0, 0, DateTimeKind.Utc);
+		var controllerField = typeof(Strategy).GetField("_protectiveController", BindingFlags.Instance | BindingFlags.NonPublic);
+		void Fill(Sides side, decimal price, int id)
+		{
+			var order = new Order { Security = security, Portfolio = portfolio, Side = side, Volume = 10m, State = OrderStates.Done, TransactionId = id };
+			IsTrue(strategy.Trades.TryAdd(new MyTrade
+			{
+				Order = order, Trade = new ExecutionMessage
+				{
+					DataTypeEx = DataType.Ticks, SecurityId = security.Id.ToSecurityId(),
+					TradeId = id, TradePrice = price, TradeVolume = 10m, ServerTime = time.AddMinutes(id),
+				},
+			}));
+		}
+		(bool isTake, Sides side, decimal price, decimal volume, OrderCondition condition)[] Activate(decimal price)
+		{
+			var controller = controllerField.GetValue(strategy);
+			var method = controller.GetType().GetMethod("TryActivate");
+			return ((IEnumerable<(bool, Sides, decimal, decimal, OrderCondition)>)method.Invoke(controller,
+				[security.Id.ToSecurityId(), price, time.AddMinutes(10)])).ToArray();
+		}
+		strategy.StartProtection(new Unit(), new Unit(5m, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+		Fill(Sides.Buy, 100m, 1);
+		if (rearmWhileOpen)
+			strategy.StartProtection(new Unit(), new Unit(2m, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+		var first = Activate(94m);
+		AreEqual(1, first.Length, "Reconfiguring future protection must not orphan an existing protected position.");
+		AreEqual(Sides.Sell, first[0].side); AreEqual(10m, first[0].volume);
+		Fill(Sides.Sell, 94m, 2);
+		strategy.StartProtection(new Unit(), new Unit(2m, UnitTypes.Percent), useMarketOrders: true, isLocalStop: true);
+		Fill(Sides.Buy, 200m, 3);
+		AreEqual(0, Activate(197m).Length, "The newly configured two-percent stop must not activate above 196.");
+		var second = Activate(195m);
+		AreEqual(1, second.Length, "The later actual entry must belong to the same controller that receives market prices.");
+		AreEqual(Sides.Sell, second[0].side); AreEqual(10m, second[0].volume);
+	}
+
+
+	[TestMethod, TestCategory("Shard04")]
+	public Task S0380_DefaultDecilesBlockTwoSecuritiesUntilAnExplicitProfile()
+		=> CheckMonthlyPortfolioEligibility("0380_Momentum_Rev_Vol", "Decile", null);
+
+	[TestMethod, TestCategory("Shard00")]
+	public Task S0392_DefaultTopFiveRequiresTenDistinctSecurities()
+		=> CheckMonthlyPortfolioEligibility("0392_Return_Asymmetry_Commodity", "TopN", null);
+
+	[TestMethod, TestCategory("Shard07")]
+	public Task S0391_DefaultDecilesRequireAnAdequatePublishedUniverse()
+		=> CheckMonthlyPortfolioEligibility("0391_Residual_Momentum_Factor", "Decile", "ResidualMomentumFile");
+
+	[TestMethod, TestCategory("Shard01")]
+	public Task S0393_DefaultDecilesRequireAnAdequatePublishedUniverse()
+		=> CheckMonthlyPortfolioEligibility("0393_ROAEffect_Stocks", "Decile", "RoaFile");
+
+	private async Task CheckMonthlyPortfolioEligibility(string key, string bucket, string scoreFile)
+	{
+		var dates = Enumerable.Range(0, 3).Select(i => new DateTime(2024, 3, 1, 0, 0, 0, DateTimeKind.Utc).AddMonths(i)).ToArray();
+		var data = await CreateFactorDatedFixture(dates, TimeSpan.FromDays(1), TimeSpan.FromDays(1));
+		var strategy = await CompileContractStrategy(key);
+		var rows = new List<string> { scoreFile is null ? "SecurityId,Date,Close" : "SecurityId,PeriodEnd,PublishedAt,Score" };
+		foreach (var security in new[] { data.Primary, data.Secondary })
+		{
+			if (scoreFile is not null) rows.Add($"{security.Id},2023-12-31,2024-01-01T00:00:00Z,{(security == data.Primary ? "0.8" : "-0.2")}");
+			else for (var i = 0; i < 350; i++)
+				rows.Add(FormattableString.Invariant($"{security.Id},{dates[0].AddDays(i - 350):yyyy-MM-dd},{(security == data.Primary ? 30000m + i * 50m : 10m - i * 0.01m)}"));
+		}
+		var orders = new List<Order>();
+		ICandleMessage latest = null;
+		await AsmInit.RunScenario(strategy, CancellationToken, data, (s, _) =>
+		{
+			var published = bucket == "TopN" ? 5 : 10;
+			AreEqual(published, s.Parameters[bucket].Value);
+			SetParam(s, "Universe", new[] { data.Primary, data.Secondary });
+			SetParam(s, "Capital", 10000m); SetParam(s, "CandleType", TimeSpan.FromDays(1).TimeFrame());
+			SetParam(s, scoreFile ?? "PriceHistoryFile", WritePortfolioCsv(rows));
+			s.CandleReceived += (_, c) =>
+			{
+				if (c.State != CandleStates.Finished) return;
+				latest = c;
+				if (c.OpenTime == dates[1]) SetParam(s, bucket, bucket == "TopN" ? 1 : 2);
+				if (c.OpenTime == dates[2]) SetParam(s, bucket, published);
+			};
+			s.OrderRegistering += o =>
+			{
+				AreEqual(dates[1], latest.OpenTime, "The unchanged default cannot create an extreme bucket from two securities.");
+				orders.Add(o);
+			};
+		}, TimeSpan.FromMinutes(5), null, true, TimeSpan.FromSeconds(60));
+		AreEqual(2, orders.Count);
+		AreEqual(2, orders.Select(o => o.Security.Id).Distinct().Count());
+	}
+
+	[TestMethod, TestCategory("Shard04")]
+	public async Task S0468_FailedMonthStartFilterCannotTurnIntoAMidmonthEntry()
+	{
+		var dates = new[] { new DateTime(2024, 3, 1, 0, 0, 0, DateTimeKind.Utc), new DateTime(2024, 3, 15, 0, 0, 0, DateTimeKind.Utc),
+			new DateTime(2024, 4, 1, 0, 0, 0, DateTimeKind.Utc) };
+		var data = await CreateFactorDatedFixture(dates, TimeSpan.FromDays(1), TimeSpan.FromDays(1));
+		var strategy = await CompileContractStrategy("0468_Two_X_Spy_Tips");
+		var rows = new List<string> { "SecurityId,Date,Close" };
+		foreach (var security in new[] { data.Primary, data.Secondary })
+		{
+			rows.Add(FormattableString.Invariant($"{security.Id},2024-02-29,{(security == data.Primary ? 10000m : 100m)}"));
+			rows.Add(FormattableString.Invariant($"{security.Id},2024-03-14,{(security == data.Primary ? 10000m : 1m)}"));
+			rows.Add(FormattableString.Invariant($"{security.Id},2024-03-31,{(security == data.Primary ? 10000m : 1m)}"));
+		}
+		ICandleMessage latest = null;
+		var fills = 0;
+		await AsmInit.RunScenario(strategy, CancellationToken, data, (s, _) =>
+		{
+			SetParam(s, "Universe", new[] { data.Primary, data.Secondary });
+			SetParam(s, "SpySecurity", data.Primary); SetParam(s, "TipsSecurity", data.Secondary);
+			SetParam(s, "SmaLength", 2); SetParam(s, "Capital", 10000m);
+			SetParam(s, "PriceHistoryFile", WritePortfolioCsv(rows));
+			s.CandleReceived += (_, c) => { if (c.State == CandleStates.Finished) latest = c; };
+			s.OrderRegistering += o =>
+			{
+				AreEqual(dates[2], latest.OpenTime, "A formed, failed month-start filter consumes that month's review.");
+				AreEqual(Sides.Buy, o.Side);
+			};
+			s.Trades.TradeAdded += _ => fills++;
+		}, TimeSpan.FromMinutes(5), null, true, TimeSpan.FromSeconds(60));
+		AreEqual(1, fills);
+	}
+
+
+	[TestMethod, TestCategory("Shard04")]
+	[DataRow(1, 0, 0, false), DataRow(0, 1, 0, false), DataRow(0, 0, 1, false)]
+	[DataRow(1, 1, 1, false), DataRow(1, 1, 1, true)]
+	public Task S0380_IndependentDailyComponentsDetermineBothMonthlyLegs(int wm, int wr, int wv, bool reverse)
+		=> CheckCompositeDailyPortfolio("0380_Momentum_Rev_Vol", wm, wr, wv, reverse);
+
+	[TestMethod, TestCategory("Shard00")]
+	[DataRow(false), DataRow(true)]
+	public Task S0392_UpDownReturnBalanceRanksDailyHistoryRatherThanCandleSkewness(bool reverse)
+		=> CheckCompositeDailyPortfolio("0392_Return_Asymmetry_Commodity", 0, 0, 0, reverse);
+
+	private Task CheckCompositeDailyPortfolio(string key, int wm, int wr, int wv, bool reverse)
+	{
+		var history = new Dictionary<string, SortedDictionary<DateTime, decimal>>();
+		var composite = key.StartsWith("0380");
+		return CheckFactorBasket(key, (s, secondary) =>
+		{
+			AreEqual(composite ? TimeSpan.FromDays(1).TimeFrame() : TimeSpan.FromMinutes(5).TimeFrame(), s.Parameters["CandleType"].Value);
+			AreEqual(200m, Convert.ToDecimal(s.Parameters["MinTradeUsd"].Value));
+			if (composite)
+			{
+				AreEqual(252, s.Parameters["Lookback12"].Value);
+				AreEqual(21, s.Parameters["Lookback1"].Value);
+				AreEqual(60, s.Parameters["VolWindow"].Value);
+				foreach (var name in new[] { "WM", "WR", "WV" }) AreEqual(1m, Convert.ToDecimal(s.Parameters[name].Value));
+				SetParam(s, "Decile", 2);
+				SetParam(s, "WM", wm); SetParam(s, "WR", wr); SetParam(s, "WV", wv);
+			}
+			else
+			{
+				AreEqual(120, s.Parameters["WindowDays"].Value);
+				AreEqual(5, s.Parameters["TopN"].Value);
+				SetParam(s, "TopN", 1);
+			}
+			var rows = new List<string> { "SecurityId,Date,Close" };
+			foreach (var security in new[] { s.Security, secondary })
+			{
+				var winner = (security == s.Security) != reverse;
+				var values = history[security.Id] = [];
+				var anchor = security == s.Security ? 60000m : 3m;
+				var price = anchor;
+				for (var i = 0; i < 350; i++)
+				{
+					if (!composite)
+						price *= 1m + (i % 4 == 0 ? (winner ? -0.01m : 0.01m) : (winner ? 0.02m : -0.02m));
+					else
+					{
+						var slope = winner ? 0.001m : -0.001m;
+						price = anchor * (1m + slope * i);
+						if (i >= 290) price *= 1m + (i % 2 == 0 ? 1m : -1m) * (winner ? 0.001m : 0.03m);
+						if (i >= 330) price *= winner ? 0.9m : 1.1m;
+					}
+					var date = new DateTime(2024, 3, 1).AddDays(i - 350);
+					values[date] = price;
+					rows.Add(FormattableString.Invariant($"{security.Id},{date:yyyy-MM-dd},{price}"));
+				}
+				rows.Add(FormattableString.Invariant($"{security.Id},2025-01-01,{anchor * (winner ? 100m : 0.001m)}"));
+			}
+			SetParam(s, "PriceHistoryFile", WritePortfolioCsv(rows));
+		}, (s, security, latest) =>
+		{
+			var decision = latest[security.Id].OpenTime.Date;
+			foreach (var item in latest) history[item.Key][item.Value.OpenTime.Date] = item.Value.ClosePrice;
+			var scores = history.ToDictionary(p => p.Key, p =>
+			{
+				var closes = p.Value.Where(v => composite ? v.Key <= decision : v.Key < decision)
+					.Select(v => (double)v.Value).TakeLast(composite ? 253 : 121).ToArray();
+				var returns = closes.Skip(1).Select((v, i) => v / closes[i] - 1d).ToArray();
+				if (!composite)
+				{
+					var up = returns.Where(r => r > 0).Sum();
+					var down = -returns.Where(r => r < 0).Sum();
+					return up + down == 0 ? 0 : (up - down) / (up + down);
+				}
+				var last = returns.TakeLast(60).ToArray();
+				var mean = last.Average();
+				var vol = Math.Sqrt(last.Sum(r => (r - mean) * (r - mean)) / 59d);
+				return wm * (closes[^1] / closes[0] - 1d) - wr * (closes[^1] / closes[^22] - 1d) - wv * vol;
+			});
+			var winner = scores.OrderByDescending(v => v.Value).ThenBy(v => v.Key, StringComparer.Ordinal).First().Key;
+			return winner == security.Id ? Sides.Buy : Sides.Sell;
+		}, _ => 0m, 2);
+	}
+
+	[TestMethod, TestCategory("Shard07")]
+	[DataRow(false, false), DataRow(true, false), DataRow(false, true)]
+	public Task S0391_PublishedResidualScoresGateAndReverseActualMonthlyPositions(bool reverse, bool late)
+		=> CheckPublishedMonthlyScore("0391_Residual_Momentum_Factor", "ResidualMomentumFile", reverse, late);
+
+	[TestMethod, TestCategory("Shard01")]
+	[DataRow(false, false), DataRow(true, false), DataRow(false, true)]
+	public Task S0393_PublishedRoaScoresGateAndReverseActualMonthlyPositions(bool reverse, bool late)
+		=> CheckPublishedMonthlyScore("0393_ROAEffect_Stocks", "RoaFile", reverse, late);
+
+	private async Task CheckPublishedMonthlyScore(string key, string parameter, bool reverse, bool late)
+	{
+		var dates = new[] { new DateTime(2024, 3, 1, 9, 0, 0, DateTimeKind.Utc), new DateTime(2024, 3, 15, 9, 0, 0, DateTimeKind.Utc),
+			new DateTime(2024, 4, 1, 9, 0, 0, DateTimeKind.Utc), new DateTime(2024, 4, 15, 9, 0, 0, DateTimeKind.Utc),
+			new DateTime(2024, 5, 1, 9, 0, 0, DateTimeKind.Utc) };
+		var data = await CreateFactorDatedFixture(dates, TimeSpan.FromDays(1), TimeSpan.FromHours(7));
+		var strategy = await CompileContractStrategy(key);
+		var rows = new List<string> { "SecurityId,PeriodEnd,PublishedAt,Score" };
+		foreach (var security in new[] { data.Primary, data.Secondary })
+		{
+			var high = (security == data.Primary) != reverse;
+			rows.Add($"{security.Id},2023-12-31,2024-03-01T{(late ? "18" : "08")}:00:00Z,{(high ? "0.9" : "-0.3")}");
+			rows.Add($"{security.Id},2024-03-31,2024-04-01T18:00:00Z,{(high ? "-0.3" : "0.9")}");
+		}
+		var orders = new List<Order>();
+		var latest = new Dictionary<string, ICandleMessage>();
+		var fills = new Dictionary<string, decimal>();
+		await AsmInit.RunScenario(strategy, CancellationToken, data, (s, _) =>
+		{
+			IsTrue(s.Parameters.ContainsKey(parameter), "The declared external score must be supplied, never manufactured from OHLC.");
+			AreEqual(10, s.Parameters["Decile"].Value);
+			AreEqual(200m, Convert.ToDecimal(s.Parameters["MinTradeUsd"].Value));
+			AreEqual(TimeSpan.FromMinutes(5).TimeFrame(), s.Parameters["CandleType"].Value);
+			SetParam(s, "Universe", new[] { data.Primary, data.Secondary });
+			SetParam(s, "Decile", 2); SetParam(s, "Capital", 10000m);
+			SetParam(s, "CandleType", TimeSpan.FromDays(1).TimeFrame());
+			SetParam(s, parameter, WritePortfolioCsv(rows));
+			s.CandleReceived += (_, c) => { if (c.State == CandleStates.Finished) latest[c.SecurityId.ToStringId()] = c; };
+			s.OrderRegistering += order =>
+			{
+				var bar = latest[order.Security.Id];
+				IsTrue(orders.Count < 4, "Only the initial month and the published reversal may adjust the holdings.");
+				AreEqual(orders.Count < 2 ? (late ? dates[1] : dates[0]) : dates[4], bar.OpenTime,
+					"The 18:00 publication cannot enter a candle that actually closed at 16:00.");
+				var initiallyLong = (order.Security == data.Primary) != reverse;
+				AreEqual(initiallyLong == (orders.Count < 2) ? Sides.Buy : Sides.Sell, order.Side);
+				var units = Math.Floor(5000m / bar.ClosePrice / order.Security.VolumeStep.Value) * order.Security.VolumeStep.Value;
+				AreEqual(units * (orders.Count < 2 ? 1m : 2m), order.Volume);
+				orders.Add(order);
+			};
+			s.Trades.TradeAdded += t =>
+			{
+				var id = t.Order.Security.Id;
+				fills[id] = fills.GetValueOrDefault(id) + (t.Order.Side == Sides.Buy ? t.Trade.Volume : -t.Trade.Volume);
+				AreEqual(fills[id], s.GetPositionValue(t.Order.Security, s.Portfolio).Value);
+			};
+		}, TimeSpan.FromMinutes(5), null, true, TimeSpan.FromSeconds(60));
+		AreEqual(4, orders.Count);
+		AreEqual(2, fills.Count);
+		IsTrue(fills.Values.Any(v => v > 0m) && fills.Values.Any(v => v < 0m));
+	}
+
+	[TestMethod, TestCategory("Shard04")]
+	[DataRow(false), DataRow(true)]
+	public async Task S0468_IndependentSpyAndTipsFiltersOpenOneLeveragedLongWithoutExits(bool tipsFirstBlocks)
+	{
+		var start = new DateTime(2024, 3, 1, 0, 0, 0, DateTimeKind.Utc);
+		var dates = Enumerable.Range(0, 3).Select(m => start.AddMonths(m)).ToArray();
+		var data = await CreateFactorDatedFixture(dates, TimeSpan.FromDays(1), TimeSpan.FromDays(1));
+		var strategy = await CompileContractStrategy("0468_Two_X_Spy_Tips");
+		var rows = new List<string> { "SecurityId,Date,Close" };
+		foreach (var security in new[] { data.Primary, data.Secondary })
+			for (var i = 0; i < 200; i++)
+			{
+				var anchor = security == data.Primary ? 10000m : tipsFirstBlocks ? 100m : 1m;
+				rows.Add(FormattableString.Invariant($"{security.Id},{start.AddDays(i - 200):yyyy-MM-dd},{anchor}"));
+			}
+		if (tipsFirstBlocks)
+			foreach (var security in new[] { data.Primary, data.Secondary })
+				rows.Add(FormattableString.Invariant($"{security.Id},2024-03-31,{(security == data.Primary ? 10000m : 1m)}"));
+		ICandleMessage latest = null;
+		var orders = new List<Order>();
+		decimal filled = 0m;
+		await AsmInit.RunScenario(strategy, CancellationToken, data, (s, _) =>
+		{
+			AreEqual(200, s.Parameters["SmaLength"].Value);
+			AreEqual(2m, Convert.ToDecimal(s.Parameters["Leverage"].Value));
+			AreEqual(TimeSpan.FromDays(1).TimeFrame(), s.Parameters["CandleType"].Value);
+			SetParam(s, "Universe", new[] { data.Primary, data.Secondary });
+			SetParam(s, "SpySecurity", data.Primary); SetParam(s, "TipsSecurity", data.Secondary);
+			SetParam(s, "Capital", 10000m);
+			if (tipsFirstBlocks) SetParam(s, "SmaLength", 2);
+			SetParam(s, "PriceHistoryFile", WritePortfolioCsv(rows));
+			s.CandleReceived += (_, c) =>
+			{
+				if (c.State != CandleStates.Finished || c.SecurityId.ToStringId() != data.Primary.Id) return;
+				latest = c;
+				// Keep the published 200-period default assertion separate from this two-security gating profile.
+
+			};
+			s.OrderRegistering += o =>
+			{
+				AreEqual(data.Primary.Id, o.Security.Id);
+				AreEqual(Sides.Buy, o.Side);
+				IsTrue(!tipsFirstBlocks || latest.OpenTime >= dates[1], "A rising primary alone must not substitute for a blocked TIPS leg.");
+				AreEqual(Math.Floor(20000m / latest.ClosePrice / data.Primary.VolumeStep.Value) * data.Primary.VolumeStep.Value, o.Volume);
+				orders.Add(o);
+			};
+			s.Trades.TradeAdded += t => { filled += t.Trade.Volume; AreEqual(filled, s.Position); };
+		}, TimeSpan.FromMinutes(5), null, true, TimeSpan.FromSeconds(60));
+		AreEqual(1, orders.Count, "No shorting, trend exits or repeated monthly accumulation.");
+		IsTrue(filled > 0m);
+	}
+
+	[TestMethod, TestCategory("Shard03")]
+	[DataRow(3d), DataRow(1d)]
+	public Task S0483_FinishedSetupBreakoutsFreezeNativeProtectionAndNeverAddToOpenPositions(double reward)
+		=> CheckTechnicalEntryAndNativeProtection("0483_Five_Ema_NoTouch_Breakout", (decimal)reward);
+
+	[TestMethod, TestCategory("Shard07")]
+	[DataRow(1.2d), DataRow(0.00001d)]
+	public Task S0487_IndependentSmaPullbacksFreezeAtrAndExecuteQuoteStops(double multiplier)
+		=> CheckTechnicalEntryAndNativeProtection("0487_Sma_Pullback_Atr_Exits", (decimal)multiplier);
+
+	[TestMethod, TestCategory("Shard00")]
+	[DataRow(2d), DataRow(0.00001d)]
+	public Task S0512_ShiftedMedianAlligatorCrossesAreLongOnlyAndAtrStopsExecute(double multiplier)
+		=> CheckTechnicalEntryAndNativeProtection("0512_Williams_Alligator_ATR", (decimal)multiplier);
+
+	private async Task CheckTechnicalEntryAndNativeProtection(string key, decimal riskParameter)
+	{
+		var noTouch = key.StartsWith("0483");
+		var pullback = key.StartsWith("0487");
+		var closes = new List<decimal>();
+		var medians = new List<decimal>();
+		var jawValues = new List<decimal>();
+		var lipsValues = new List<decimal>();
+		var ema = 0m; var atr = 0m; var jaw = 0m; var lips = 0m;
+		decimal? previousClose = null;
+		(decimal high, decimal low, Sides side)? setup = null;
+		var entrySide = (Sides?)null;
+		var expectedStop = 0m; var expectedTake = 0m;
+		var entries = 0; var expectedEntries = 0; var exits = 0; var intrabarExits = 0;
+		var protectedEntries = 0; var invalidFillEntries = 0; var invalidFillExitOrders = 0; var invalidFillExitFills = 0;
+		Order invalidFillExit = null;
+		Order entryOrder = null;
+		var invalidFillExitByEntry = new Dictionary<Order, Order>();
+		var entryProtection = new Dictionary<Order, (decimal stop, decimal take)>();
+		var entryBar = 0;
+		var countsBySide = new HashSet<Sides>();
+		var stopField = typeof(Strategy).GetField("_stopLoss", BindingFlags.Instance | BindingFlags.NonPublic);
+		var takeField = typeof(Strategy).GetField("_takeProfit", BindingFlags.Instance | BindingFlags.NonPublic);
+		await Replay(key, (s, _) =>
+		{
+			var frame = noTouch ? TimeSpan.FromMinutes(5) : TimeSpan.FromMinutes(30);
+			AreEqual(frame.TimeFrame(), s.Parameters["CandleType"].Value);
+			if (noTouch)
+			{
+				AreEqual(5, s.Parameters["EmaPeriod"].Value);
+				AreEqual(3m, Convert.ToDecimal(s.Parameters["RewardRisk"].Value));
+				SetParam(s, "RewardRisk", riskParameter);
+			}
+			else if (pullback)
+			{
+				AreEqual(8, s.Parameters["FastSmaLength"].Value); AreEqual(30, s.Parameters["SlowSmaLength"].Value);
+				AreEqual(14, s.Parameters["AtrLength"].Value);
+				AreEqual(1.2m, Convert.ToDecimal(s.Parameters["AtrMultiplierSl"].Value));
+				AreEqual(2m, Convert.ToDecimal(s.Parameters["AtrMultiplierTp"].Value));
+				SetParam(s, "AtrMultiplierSl", riskParameter);
+			}
+			else
+			{
+				AreEqual(13, s.Parameters["JawLength"].Value); AreEqual(8, s.Parameters["TeethLength"].Value);
+				AreEqual(5, s.Parameters["LipsLength"].Value);
+				AreEqual(8, s.Parameters["JawShift"].Value); AreEqual(5, s.Parameters["TeethShift"].Value);
+				AreEqual(3, s.Parameters["LipsShift"].Value);
+				AreEqual(2m, Convert.ToDecimal(s.Parameters["AtrMultiplier"].Value));
+				SetParam(s, "AtrMultiplier", riskParameter);
+			}
+			s.CandleReceived += (_, c) =>
+			{
+				if (c.State != CandleStates.Finished) return;
+				var previousLipsAbove = jawValues.Count > 8 && lipsValues.Count > 3
+					? lipsValues[^(3 + 1)] > jawValues[^(8 + 1)] : (bool?)null;
+				var previousLipsBelow = jawValues.Count > 8 && lipsValues.Count > 3
+					? lipsValues[^(3 + 1)] < jawValues[^(8 + 1)] : (bool?)null;
+				closes.Add(c.ClosePrice);
+				medians.Add((c.HighPrice + c.LowPrice) / 2m);
+				var n = closes.Count;
+				ema = n <= 5 ? closes.Sum() / 5m : ema + (c.ClosePrice - ema) / 3m;
+				jaw = n <= 13 ? medians.Sum() / 13m : (jaw * 12m + medians[^1]) / 13m;
+				lips = n <= 5 ? medians.Sum() / 5m : (lips * 4m + medians[^1]) / 5m;
+				if (n >= 13) jawValues.Add(jaw);
+				if (n >= 5) lipsValues.Add(lips);
+				var tr = previousClose is decimal pc ? Math.Max(c.HighPrice - c.LowPrice,
+					Math.Max(Math.Abs(c.HighPrice - pc), Math.Abs(c.LowPrice - pc))) : c.HighPrice - c.LowPrice;
+				atr = (atr * (Math.Min(n, 14) - 1) + tr) / Math.Min(n, 14);
+				previousClose = c.ClosePrice;
+				entrySide = null;
+				if (noTouch && n >= 5)
+				{
+					if (s.Position == 0m && setup is { } pending)
+					{
+						if (pending.side == Sides.Buy && c.HighPrice > pending.high && c.ClosePrice > pending.low
+							|| pending.side == Sides.Sell && c.LowPrice < pending.low && c.ClosePrice < pending.high)
+						{
+							entrySide = pending.side;
+							expectedStop = pending.side == Sides.Buy ? pending.low : pending.high;
+						}
+					}
+					if (entrySide is not null) setup = null;
+					else if (s.Position == 0m)
+					{
+						if (c.HighPrice < ema) setup = (c.HighPrice, c.LowPrice, Sides.Buy);
+						else if (c.LowPrice > ema) setup = (c.HighPrice, c.LowPrice, Sides.Sell);
+					}
+				}
+				else if (pullback && n >= 30 && s.Position == 0m)
+				{
+					var fast = closes.TakeLast(8).Average(); var slow = closes.TakeLast(30).Average();
+					if (c.ClosePrice < fast && fast > slow) entrySide = Sides.Buy;
+					else if (c.ClosePrice > fast && fast < slow) entrySide = Sides.Sell;
+					expectedStop = atr * riskParameter; expectedTake = atr * 2m;
+				}
+				else if (!noTouch && !pullback && previousLipsAbove is not null && jawValues.Count > 8 && lipsValues.Count > 3)
+				{
+					var above = lipsValues[^(3 + 1)] > jawValues[^(8 + 1)];
+					if (!previousLipsAbove.Value && above && s.Position == 0m) entrySide = Sides.Buy;
+					expectedStop = atr * riskParameter;
+				}
+				if (entrySide is not null && s.IsOnline) expectedEntries++;
+			};
+			s.OrderRegistering += o =>
+			{
+				if (o.Comment == key[..4] + "Entry")
+				{
+					IsNull(invalidFillExit, "An entry filled beyond its setup stop must close before another entry.");
+					IsTrue(entrySide is not null, "Every entry must have an independently calculated, formed signal.");
+					AreEqual(entrySide.Value, o.Side);
+					AreEqual(0m, s.Position, "Existing positions must leave through their documented exit, without pyramiding or implicit reversal.");
+					AreEqual(s.Volume, o.Volume);
+					entryProtection.Add(o, (expectedStop, expectedTake));
+					entryOrder = o;
+					countsBySide.Add(o.Side); entries++;
+				}
+				else if (o.Comment == "0483InvalidFillExit")
+				{
+					IsTrue(noTouch);
+					IsNull(invalidFillExit, "An invalid fill must submit exactly one closing order.");
+					AreEqual(s.Position > 0m ? Sides.Sell : Sides.Buy, o.Side);
+					AreEqual(Math.Abs(s.Position), o.Volume);
+					AreEqual(OrderTypes.Market, o.Type);
+					IsNotNull(entryOrder);
+					invalidFillExitByEntry.Add(entryOrder, o);
+					invalidFillExit = o;
+					invalidFillExitOrders++;
+				}
+				else if (o.Comment == "0512CrossExit")
+				{
+					AreEqual(Sides.Sell, o.Side); AreEqual(s.Position, o.Volume);
+					IsTrue(lipsValues[^(3 + 1)] < jawValues[^(8 + 1)], "The shifted Lips line must actually cross below Jaw.");
+				}
+			};
+			s.Trades.TradeAdded += t =>
+			{
+				if (t.Order.Comment == key[..4] + "Entry")
+				{
+					var protection = entryProtection[t.Order];
+					var risk = noTouch ? (t.Order.Side == Sides.Buy ? t.Trade.Price - protection.stop : protection.stop - t.Trade.Price) : protection.stop;
+					if (noTouch && risk <= 0m)
+					{
+						IsTrue(invalidFillExitByEntry.ContainsKey(t.Order), $"A fill beyond the independently calculated setup stop must immediately submit a closing order: side={t.Order.Side}, fill={t.Trade.Price}, stop={protection.stop}, risk={risk}.");
+						invalidFillEntries++;
+					}
+					else
+					{
+						IsFalse(invalidFillExitByEntry.ContainsKey(t.Order), "A valid entry risk must arm native protection instead of the invalid-fill exit.");
+						var sl = (Unit)stopField.GetValue(s);
+						IsNotNull(sl, "The native protection must be active on the actual entry fill.");
+						AreEqual(UnitTypes.Absolute, sl.Type);
+						IsTrue(Math.Abs(risk - sl.Value) < 0.00000001m, $"Protection must freeze the signal's independent stop, not move with later ATR: side={t.Order.Side}, fill={t.Trade.Price}, stop={protection.stop}, expected risk={risk}, actual risk={sl.Value}.");
+						if (noTouch || pullback)
+						{
+							var tp = (Unit)takeField.GetValue(s);
+							IsNotNull(tp);
+							AreEqual(UnitTypes.Absolute, tp.Type);
+							var distance = noTouch ? risk * riskParameter : protection.take;
+							IsTrue(Math.Abs(distance - tp.Value) < 0.00000001m, "Profit distance is frozen from actual entry risk.");
+						}
+						protectedEntries++;
+					}
+					entryBar = closes.Count;
+				}
+				else if (s.Position == 0m)
+				{
+					exits++;
+					if (t.Order == invalidFillExit)
+					{
+						invalidFillExitFills++;
+						invalidFillExit = null;
+					}
+					if (closes.Count == entryBar) intrabarExits++;
+				}
+				if (!noTouch && !pullback) IsTrue(s.Position >= 0m, "Alligator is long-only.");
+			};
+		}, TimeSpan.FromDays(20));
+		IsTrue(entries > 2, $"Need repeated independent entries; entries={entries}, expected={expectedEntries}, exits={exits}."); AreEqual(expectedEntries, entries, "No valid flat-position signal may be silently omitted.");
+		IsTrue(protectedEntries > 2, "Repeated valid entry fills must each arm native protection.");
+		AreEqual(invalidFillEntries, invalidFillExitOrders);
+		AreEqual(invalidFillEntries, invalidFillExitFills, "Every invalid entry must actually fill its complete closing order.");
+		IsNull(invalidFillExit);
+		IsTrue(exits > invalidFillExitFills, "Protection/cross exits must reach real fills independently of invalid-fill closes.");
+		if (noTouch || pullback) AreEqual(2, countsBySide.Count);
+		if (noTouch) IsTrue(invalidFillEntries > 0, "The archive must also exercise fills beyond the setup stop and their complete closing fills.");
+		if (riskParameter < 0.001m) IsTrue(intrabarExits > 0, "A tight quote stop must flatten before another finished signal bar.");
+	}
+
+	[TestMethod, TestCategory("Shard05")]
+	[DataRow(false), DataRow(true)]
+	public async Task S0485_WeeklyEmaDcaAccumulatesCashAndSellsWithoutOpeningShorts(bool futureStart)
+	{
+		var dates = Enumerable.Range(0, 66).Select(i => new DateTime(2023, 1, 2, 0, 0, 0, DateTimeKind.Utc).AddDays(i * 7)).ToArray();
+		var data = await CreateDcaCalendarFixture(dates);
+		var strategy = await CompileContractStrategy("0485_Ema50_Crossover_Monthly_Dca");
+		var closes = new List<decimal>();
+		var ema = 0m; var cash = 0m; var lastMonth = 0; var buys = 0; var sells = 0;
+		decimal filledPosition = 0m;
+		Sides? expectedSide = null;
+		decimal expectedVolume = 0m;
+		await AsmInit.RunScenario(strategy, CancellationToken, data, (s, _) =>
+		{
+			AreEqual(100000m, Convert.ToDecimal(s.Parameters["DcaAmount"].Value));
+			AreEqual(new DateTime(1980, 1, 1), s.Parameters["StartDate"].Value);
+			AreEqual(TimeSpan.FromDays(7).TimeFrame(), s.Parameters["CandleType"].Value);
+			AreEqual(50, s.Parameters["EmaLength"].Value);
+			SetParam(s, "DcaAmount", 10000m);
+			if (futureStart) SetParam(s, "StartDate", dates[54]);
+			s.CandleReceived += (_, c) =>
+			{
+				if (c.State != CandleStates.Finished) return;
+				closes.Add(c.ClosePrice);
+				ema = closes.Count <= 50 ? closes.Sum() / 50m : ema + (c.ClosePrice - ema) * 2m / 51m;
+				expectedSide = null;
+				if (futureStart && c.CloseTime < dates[54]) return;
+				var month = c.CloseTime.Year * 12 + c.CloseTime.Month;
+				cash += 10000m * (lastMonth == 0 ? 1 : month - lastMonth); lastMonth = month;
+				expectedSide = null;
+				if (closes.Count < 50) return;
+				if (c.ClosePrice > ema)
+				{
+					expectedVolume = Math.Floor(cash / c.ClosePrice / data.Primary.VolumeStep.Value) * data.Primary.VolumeStep.Value;
+					if (expectedVolume >= data.Primary.MinVolume) expectedSide = Sides.Buy;
+				}
+				else if (c.ClosePrice < ema && filledPosition > 0m)
+				{
+					expectedSide = Sides.Sell; expectedVolume = filledPosition;
+				}
+			};
+			s.OrderRegistering += o =>
+			{
+				IsTrue(expectedSide is not null, "DCA follows the formed EMA and available monthly cash.");
+				AreEqual(expectedSide.Value, o.Side); AreEqual(expectedVolume, o.Volume);
+				if (o.Side == Sides.Buy) buys++; else sells++;
+			};
+			s.Trades.TradeAdded += t =>
+			{
+				var sign = t.Order.Side == Sides.Buy ? 1m : -1m;
+				cash -= sign * t.Trade.Price * t.Trade.Volume;
+				filledPosition += sign * t.Trade.Volume;
+				AreEqual(filledPosition, s.Position); IsTrue(filledPosition >= 0m);
+			};
+		}, TimeSpan.FromMinutes(5), null, true, TimeSpan.FromSeconds(60));
+		IsTrue(buys > 1, "Warmup cash and later monthly contributions must both be invested.");
+		IsTrue(sells > 0, "The complete long holding must actually exit below EMA.");
+	}
+
+	private async Task<ReplayMarketData> CreateDcaCalendarFixture(IReadOnlyList<DateTime> dates)
+	{
+		var data = await CreateFactorDatedFixture(dates, TimeSpan.FromDays(1), TimeSpan.FromDays(1));
+		var archive = await AsmInit.CreateArchiveMarketData(CancellationToken);
+		var source = new List<CandleMessage>();
+		await foreach (var c in archive.Storage.GetCandleMessageStorage(archive.Primary.Id.ToSecurityId(), TimeSpan.FromMinutes(1).TimeFrame())
+			.LoadAsync(archive.From.Date).WithCancellation(CancellationToken)) source.Add(c);
+		var ordered = source.OrderBy(c => c.ClosePrice).ToArray();
+		var bars = dates.Select((d, i) =>
+		{
+			var pick = i < 50 ? ordered[ordered.Length / 2] : i < 57 ? ordered[^1] : i < 61 ? ordered[0] : ordered[^1];
+			return new TimeFrameCandleMessage
+			{
+				SecurityId = data.Primary.Id.ToSecurityId(), TypedArg = TimeSpan.FromDays(7),
+				OpenTime = d, CloseTime = d.AddDays(7).AddTicks(-1), OpenPrice = pick.OpenPrice,
+				HighPrice = pick.HighPrice, LowPrice = pick.LowPrice, ClosePrice = pick.ClosePrice,
+				TotalVolume = pick.TotalVolume, State = CandleStates.Finished,
+			};
+		}).ToArray();
+		var result = data with { To = dates[^1].AddDays(10) };
+		await result.Storage.GetCandleMessageStorage(data.Primary.Id.ToSecurityId(), TimeSpan.FromDays(7).TimeFrame()).SaveAsync(bars, CancellationToken);
+		var quotes = bars.SelectMany(b => new[] { (time: b.OpenTime, price: b.OpenPrice), (time: b.CloseTime.AddTicks(1), price: b.ClosePrice) })
+			.OrderBy(q => q.time).Select(q => new Level1ChangeMessage
+			{
+				SecurityId = data.Primary.Id.ToSecurityId(), ServerTime = q.time, LocalTime = q.time,
+				Changes = { [Level1Fields.BestBidPrice] = q.price, [Level1Fields.BestAskPrice] = q.price,
+					[Level1Fields.BestBidVolume] = 1000m, [Level1Fields.BestAskVolume] = 1000m },
+			});
+		await result.Storage.GetLevel1MessageStorage(data.Primary.Id.ToSecurityId()).SaveAsync(quotes, CancellationToken);
+		return result;
+	}
+
+	[TestMethod, TestCategory("Shard06")]
+	[DataRow(false), DataRow(true)]
+	public async Task S0502_DailyHurstAndPriorDailyFibonacciCrossesRespectCapsAndNativePercentRisk(bool limited)
+	{
+		var seed = new SortedDictionary<DateTime, (decimal high, decimal low, decimal close)>();
+		var archive = await AsmInit.CreateArchiveMarketData(CancellationToken);
+		var source = new List<CandleMessage>();
+		await foreach (var c in archive.Storage.GetCandleMessageStorage(archive.Primary.Id.ToSecurityId(), TimeSpan.FromMinutes(1).TimeFrame())
+			.LoadAsync(archive.From.Date).WithCancellation(CancellationToken)) source.Add(c);
+		var sorted = source.OrderBy(c => c.ClosePrice).ToArray();
+		var rows = new List<string> { "Date,High,Low,Close" };
+		for (var i = 0; i < 70; i++)
+		{
+			var c = sorted[Math.Min(sorted.Length - 1, i * sorted.Length / 70)];
+			var date = archive.From.Date.AddDays(i - 70);
+			seed[date] = (c.HighPrice, c.LowPrice, c.ClosePrice);
+			rows.Add(FormattableString.Invariant($"{date:yyyy-MM-dd},{c.HighPrice},{c.LowPrice},{c.ClosePrice}"));
+		}
+		decimal? previous = null;
+		bool? expectedLong = null;
+		var ordersByDay = new Dictionary<DateTime, int>();
+		var entries = 0;
+		var protectedFills = 0;
+		var latestDate = default(DateTime);
+		await Replay("0502_Fib_Hurst_Breakout", (s, _) =>
+		{
+			AreEqual(50, s.Parameters["HurstPeriod"].Value);
+			AreEqual(5, s.Parameters["MaxTradesPerDay"].Value);
+			AreEqual(510, s.Parameters["MaxTotalTrades"].Value);
+			AreEqual(2m, Convert.ToDecimal(s.Parameters["RiskPercent"].Value));
+			AreEqual(2m, Convert.ToDecimal(s.Parameters["RiskReward"].Value));
+			if (limited) { SetParam(s, "MaxTradesPerDay", 1); SetParam(s, "MaxTotalTrades", 2); }
+			SetParam(s, "DailyHistoryFile", WritePortfolioCsv(rows));
+			s.CandleReceived += (_, c) =>
+			{
+				if (c.State != CandleStates.Finished) return;
+				if (c is TimeFrameCandleMessage daily && daily.TypedArg == TimeSpan.FromDays(1))
+				{
+					seed[c.OpenTime.Date] = (c.HighPrice, c.LowPrice, c.ClosePrice); return;
+				}
+				latestDate = c.OpenTime.Date; expectedLong = null;
+				var days = seed.Where(p => p.Key < latestDate).ToArray();
+				if (days.Length >= 50 && previous is decimal prev)
+				{
+					var prices = days.TakeLast(50).Select(p => (double)p.Value.close).ToArray();
+					var mean = prices.Average(); var cumulative = 0d; var path = new List<double>();
+					foreach (var price in prices) { cumulative += price - mean; path.Add(cumulative); }
+					var sd = Math.Sqrt(prices.Sum(p => (p - mean) * (p - mean)) / 50d);
+					var hurst = sd > 0 ? Math.Log((path.Max() - path.Min()) / sd) / Math.Log(50d) : 0.5d;
+					var range = days.TakeLast(20).ToArray();
+					var low = range.Min(p => p.Value.low); var high = range.Max(p => p.Value.high);
+					if (prev <= low + 0.618m * (high - low) && c.ClosePrice > low + 0.618m * (high - low) && hurst > 0.5d)
+						expectedLong = true;
+					if (prev >= low + 0.382m * (high - low) && c.ClosePrice < low + 0.382m * (high - low) && hurst < 0.5d)
+						expectedLong = false;
+				}
+				previous = c.ClosePrice;
+			};
+			s.OrderRegistering += o =>
+			{
+				if (o.Comment != "0502Entry") return;
+				IsTrue(expectedLong is not null, "Intraday Hurst or a range containing the signal candle is not the daily filter.");
+				AreEqual(expectedLong.Value ? Sides.Buy : Sides.Sell, o.Side);
+				AreEqual(s.Volume, o.Volume); AreEqual(0m, s.Position);
+				ordersByDay[latestDate] = ordersByDay.GetValueOrDefault(latestDate) + 1;
+				IsTrue(ordersByDay[latestDate] <= (limited ? 1 : 5)); IsTrue(++entries <= (limited ? 2 : 510));
+			};
+			s.Trades.TradeAdded += t =>
+			{
+				if (t.Order.Comment == "0502Entry")
+				{
+					var stop = (Unit)typeof(Strategy).GetField("_stopLoss", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(s);
+					var take = (Unit)typeof(Strategy).GetField("_takeProfit", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(s);
+					IsNotNull(stop); IsNotNull(take);
+					AreEqual(UnitTypes.Percent, stop.Type); AreEqual(2m, stop.Value);
+					AreEqual(UnitTypes.Percent, take.Type); AreEqual(4m, take.Value);
+				}
+				else if (s.Position == 0m) protectedFills++;
+			};
+		}, TimeSpan.FromDays(20));
+		IsTrue(entries > 0); IsTrue(protectedFills > 0);
+		if (limited) AreEqual(2, entries, "The explicit run cap must actually bind, not merely exceed an untested count.");
+	}
+
+
+	[TestMethod, TestCategory("Shard06")]
+	public Task S0366_PublicationsAfterActualCandleCloseCannotEnterTheDecision()
+		=> CheckFactorPublicationCutoff("0366_Dollar_Carry_Trade");
+
+	[TestMethod, TestCategory("Shard02")]
+	public Task S0370_PublicationsAfterActualCandleCloseCannotEnterTheDecision()
+		=> CheckFactorPublicationCutoff("0370_Earnings_Quality_Factor");
+
+	[TestMethod, TestCategory("Shard04")]
+	public Task S0372_PublicationsAfterActualCandleCloseCannotEnterTheDecision()
+		=> CheckFactorPublicationCutoff("0372_Fed_Model");
+
+	[TestMethod, TestCategory("Shard05")]
+	public Task S0373_PublicationsAfterActualCandleCloseCannotEnterTheDecision()
+		=> CheckFactorPublicationCutoff("0373_FScore_Reversal");
+
+	[TestMethod, TestCategory("Shard06")]
+	public Task S0374_PublicationsAfterActualCandleCloseCannotEnterTheDecision()
+		=> CheckFactorPublicationCutoff("0374_FXCarry_Trade");
+
+	[TestMethod, TestCategory("Shard00")]
+	public Task S0376_PublicationsAfterActualCandleCloseCannotEnterTheDecision()
+		=> CheckFactorPublicationCutoff("0376_Lexical_Density_Filings");
+
+	[TestMethod, TestCategory("Shard02")]
+	public Task S0378_PublicationsAfterActualCandleCloseCannotEnterTheDecision()
+		=> CheckFactorPublicationCutoff("0378_Momentum_Asset_Growth");
+
+	private async Task CheckFactorPublicationCutoff(string key)
+	{
+		var fed = key.StartsWith("0372");
+		var lexical = key.StartsWith("0376");
+		var rates = key.StartsWith("0366") || key.StartsWith("0374");
+		var quality = key.StartsWith("0370");
+		var hybrid = key.StartsWith("0378");
+		var fscore = key.StartsWith("0373");
+		var first = fed ? new DateTime(2024, 3, 31, 9, 0, 0, DateTimeKind.Utc)
+			: lexical ? new DateTime(2024, 5, 1, 9, 0, 0, DateTimeKind.Utc) : new DateTime(2024, 3, 1, 9, 0, 0, DateTimeKind.Utc);
+		var second = fed ? new DateTime(2024, 4, 30, 9, 0, 0, DateTimeKind.Utc) : first.AddDays(1);
+		var data = await CreateFactorDatedFixture([first, second], TimeSpan.FromDays(1), TimeSpan.FromHours(7));
+		var strategy = await CompileContractStrategy(key);
+		var published = first.Date.AddHours(18);
+		var reports = new List<string> { "SecurityId,PeriodEnd,PublishedAt,TotalAssets,NetIncome,OperatingCashFlow,BookEquity,SharesOutstanding" };
+		var observations = new List<string> { rates
+			? "SecurityId,PublishedAt,BaseRate,QuoteRate,UsdPerUnit" + (key.StartsWith("0366") ? ",IsUsdBase" : "")
+			: fscore ? "SecurityId,PeriodEnd,PublishedAt,FScore" : "SecurityId,PeriodEnd,PublishedAt,DocumentPath" };
+		var prices = new List<string> { "SecurityId,Date,Close" };
+		foreach (var security in new[] { data.Primary, data.Secondary })
+		{
+			var primary = security == data.Primary;
+			if (hybrid) reports.Add($"{security.Id},2022-12-31,2023-02-01T00:00:00Z,100,1,2,10,1");
+			reports.Add(FormattableString.Invariant($"{security.Id},2023-12-31,{published:yyyy-MM-ddTHH:mm:ss}Z,{(primary ? 110 : 200)},{(primary ? 1 : 30)},10,10,1"));
+			if (rates)
+				observations.Add(FormattableString.Invariant($"{security.Id},{published:yyyy-MM-ddTHH:mm:ss}Z,{(primary ? 0.09m : 0.01m)},0.04,{(primary ? 60000m : 3m)}{(key.StartsWith("0366") ? ",false" : "")}"));
+			if (fscore)
+				observations.Add(FormattableString.Invariant($"{security.Id},2023-12-31,{published:yyyy-MM-ddTHH:mm:ss}Z,{(primary ? 7 : 3)}"));
+			if (lexical)
+			{
+				var document = WritePortfolioCsv([primary ? "one two three four" : "echo echo echo echo"]);
+				observations.Add(FormattableString.Invariant($"{security.Id},2023-12-31,{published:yyyy-MM-ddTHH:mm:ss}Z,{document}"));
+			}
+			for (var i = 0; i < 360; i++)
+			{
+				var anchor = primary ? 60000m : 3m;
+				var price = fscore ? primary ? anchor * 2m : anchor / 2m
+					: anchor * (primary ? 0.4m + i * 0.001m : 1.6m - i * 0.001m);
+				prices.Add(FormattableString.Invariant($"{security.Id},{first.Date.AddDays(i - 360):yyyy-MM-dd},{price}"));
+			}
+		}
+		var yields = new List<string> { "Month,PublishedAt,EarningsYield,BondYield" };
+		if (fed)
+			for (var i = -11; i <= 1; i++)
+			{
+				var month = new DateTime(2024, 3, 1).AddMonths(i);
+				var publication = i == 0 ? published : month.AddMonths(1).AddDays(-1);
+				yields.Add(FormattableString.Invariant($"{month:yyyy-MM},{publication:yyyy-MM-ddTHH:mm:ss}Z,0.05,0.04"));
+			}
+		var orders = new List<Order>();
+		var latest = new Dictionary<string, ICandleMessage>();
+		var fills = new Dictionary<string, decimal>();
+		await AsmInit.RunScenario(strategy, CancellationToken, data, (s, _) =>
+		{
+			SetParam(s, "Universe", fed ? new[] { data.Primary } : new[] { data.Primary, data.Secondary });
+			SetParam(s, "Capital", 10000m);
+			SetParam(s, "CandleType", TimeSpan.FromDays(1).TimeFrame());
+			if (quality)
+			{
+				SetParam(s, "RebalanceMonth", 3);
+				SetParam(s, "Deciles", 2);
+			}
+			if (rates)
+			{
+				SetParam(s, key.StartsWith("0366") ? "K" : "TopK", 1);
+				SetParam(s, "RatesFile", WritePortfolioCsv(observations));
+			}
+			if (quality || hybrid) SetParam(s, "FundamentalsFile", WritePortfolioCsv(reports));
+			if (hybrid)
+			{
+				SetParam(s, "AssetDecile", 1);
+				SetParam(s, "Quintile", 2);
+			}
+			if (lexical)
+			{
+				SetParam(s, "Quintile", 2);
+				SetParam(s, "FilingsFile", WritePortfolioCsv(observations));
+			}
+			if (fscore) SetParam(s, "FScoreFile", WritePortfolioCsv(observations));
+			if (fscore || hybrid) SetParam(s, "PriceHistoryFile", WritePortfolioCsv(prices));
+			if (fed) SetParam(s, "YieldHistoryFile", WritePortfolioCsv(yields));
+			s.CandleReceived += (_, c) =>
+			{
+				if (c.State != CandleStates.Finished) return;
+				AreEqual(TimeSpan.FromHours(7).Add(TimeSpan.FromTicks(-1)), c.CloseTime - c.OpenTime, "A daily candle can close at its session end before a full day elapses.");
+				latest[c.SecurityId.ToStringId()] = c;
+			};
+			s.OrderRegistering += order =>
+			{
+				orders.Add(order);
+				AreEqual(second.Date, latest[order.Security.Id].OpenTime.Date, "An 18:00 publication is unavailable to the actual 16:00 close, despite a one-day candle argument.");
+				AreEqual(order.Security == data.Primary ? Sides.Buy : Sides.Sell, order.Side);
+				var unitPrice = rates ? order.Security == data.Primary ? 60000m : 3m : latest[order.Security.Id].ClosePrice;
+				var step = order.Security.VolumeStep.Value;
+				AreEqual(Math.Floor((fed ? 10000m : 5000m) / unitPrice / step) * step, order.Volume);
+			};
+			s.Trades.TradeAdded += t =>
+			{
+				var id = t.Order.Security.Id;
+				fills[id] = fills.GetValueOrDefault(id) + (t.Order.Side == Sides.Buy ? t.Trade.Volume : -t.Trade.Volume);
+				AreEqual(fills[id], s.GetPositionValue(t.Order.Security, s.Portfolio).Value);
+			};
+		}, TimeSpan.FromMinutes(5), null, true, TimeSpan.FromSeconds(60));
+		AreEqual(fed ? 1 : 2, orders.Count);
+		AreEqual(orders.Count, fills.Count);
+	}
+
+
+	[TestMethod, TestCategory("Shard04")]
+	public async Task S0372_MissingMonthsDelayForecastAndZeroKeepsTheExistingRegime()
+	{
+		var dates = Enumerable.Range(0, 4).Select(m => new DateTime(2024, 4, 1, 0, 0, 0, DateTimeKind.Utc).AddMonths(m + 1).AddDays(-1)).ToArray();
+		var data = await CreateFactorDatedFixture(dates, TimeSpan.FromDays(1), TimeSpan.FromDays(1));
+		var strategy = await CompileContractStrategy("0372_Fed_Model");
+		var rows = new List<string> { "Month,PublishedAt,EarningsYield,BondYield" };
+		for (var i = -1; i <= 12; i++)
+		{
+			var month = new DateTime(2023, 7, 1).AddMonths(i);
+			var gap = i < 0 ? -0.2m : i == 12 ? -0.3m : -0.012m + i * 0.001m;
+			rows.Add(FormattableString.Invariant($"{month:yyyy-MM},{month.AddMonths(1).AddDays(-1):yyyy-MM-dd}T00:00:00Z,{0.2m + gap},0.2"));
+		}
+		var orders = new List<Order>();
+		ICandleMessage latest = null;
+		decimal position = 0m;
+		await AsmInit.RunScenario(strategy, CancellationToken, data, (s, _) =>
+		{
+			SetParam(s, "Universe", new[] { data.Primary });
+			SetParam(s, "Capital", 10000m);
+			SetParam(s, "YieldHistoryFile", WritePortfolioCsv(rows));
+			s.CandleReceived += (_, c) => { if (c.State == CandleStates.Finished) latest = c; };
+			s.OrderRegistering += order =>
+			{
+				orders.Add(order);
+				if (orders.Count == 1)
+				{
+					AreEqual(5, latest.OpenTime.Month, "The missing May 2023 observation must block the April 2024 forecast.");
+					AreEqual(Sides.Buy, order.Side);
+					var step = data.Primary.VolumeStep.Value;
+					AreEqual(Math.Floor(10000m / latest.ClosePrice / step) * step, order.Volume);
+				}
+				else
+				{
+					AreEqual(7, latest.OpenTime.Month, "The exact zero June forecast must keep the old holding until July turns negative.");
+					AreEqual(Sides.Sell, order.Side);
+					AreEqual(s.GetPositionValue(data.Primary, s.Portfolio).Value, order.Volume);
+				}
+			};
+			s.Trades.TradeAdded += t =>
+			{
+				position += t.Order.Side == Sides.Buy ? t.Trade.Volume : -t.Trade.Volume;
+				AreEqual(position, s.GetPositionValue(data.Primary, s.Portfolio).Value);
+			};
+		}, TimeSpan.FromMinutes(5), null, true, TimeSpan.FromSeconds(60));
+		AreEqual(2, orders.Count);
+		AreEqual(0m, position);
+	}
+
+
+	[TestMethod, TestCategory("Shard02")]
+	public async Task S0378_DefaultGrowthDecileRefusesAnUndersizedUniverse()
+	{
+		var data = await CreatePortfolioCalendarFixture(new DateTime(2024, 3, 1, 0, 0, 0, DateTimeKind.Utc), 2);
+		var strategy = await CompileContractStrategy("0378_Momentum_Asset_Growth");
+		var rows = new List<string> { "SecurityId,Date,Close" };
+		foreach (var security in new[] { data.Primary, data.Secondary })
+			for (var i = 0; i < 330; i++)
+			{
+				var primary = security == data.Primary;
+				var value = (primary ? 60000m : 3m) * (primary ? 0.4m + i * 0.001m : 1.6m - i * 0.001m);
+				rows.Add(FormattableString.Invariant($"{security.Id},{data.From.AddDays(i - 330):yyyy-MM-dd},{value}"));
+			}
+		var orders = new List<Order>();
+		var fills = new Dictionary<string, decimal>();
+		var prices = new Dictionary<string, decimal>();
+		await AsmInit.RunScenario(strategy, CancellationToken, data, (s, _) =>
+		{
+			AreEqual(10, s.Parameters["AssetDecile"].Value);
+			SetParam(s, "Universe", new[] { data.Primary, data.Secondary });
+			SetParam(s, "Quintile", 2);
+			SetParam(s, "Capital", 10000m);
+			SetParam(s, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(s, "PriceHistoryFile", WritePortfolioCsv(rows));
+			SetParam(s, "FundamentalsFile", WriteFundamentalPortfolioFixture(data.Primary, data.Secondary, false));
+			s.CandleReceived += (_, c) =>
+			{
+				if (c.State != CandleStates.Finished) return;
+				prices[c.SecurityId.ToStringId()] = c.ClosePrice;
+				if (c.OpenTime.Month == 4) SetParam(s, "AssetDecile", c.OpenTime.Minute == 15 ? 10 : 1);
+			};
+			s.OrderRegistering += order =>
+			{
+				orders.Add(order);
+				AreEqual(4, s.CurrentTime.Month, "The unchanged ten-bucket growth filter cannot produce a two-sided portfolio from two instruments.");
+				AreEqual(order.Security == data.Primary ? Sides.Buy : Sides.Sell, order.Side);
+				var step = order.Security.VolumeStep.Value;
+				AreEqual(Math.Floor(5000m / prices[order.Security.Id] / step) * step, order.Volume);
+			};
+			s.Trades.TradeAdded += t =>
+			{
+				var id = t.Order.Security.Id;
+				fills[id] = fills.GetValueOrDefault(id) + (t.Order.Side == Sides.Buy ? t.Trade.Volume : -t.Trade.Volume);
+				AreEqual(fills[id], s.GetPositionValue(t.Order.Security, s.Portfolio).Value);
+			};
+		}, TimeSpan.FromMinutes(5), null, true, TimeSpan.FromSeconds(60));
+		AreEqual(2, orders.Count, "Only the explicitly reduced April profile may trade; requireTrades remains enabled.");
+		AreEqual(2, fills.Count);
+	}
+
+	[TestMethod, TestCategory("Shard01")]
+	public async Task S0377_VolumeCapsSplitAdjustmentsWithoutOvershootingTargets()
+	{
+		var data = await CreatePortfolioCalendarFixture(new DateTime(2024, 3, 1, 0, 0, 0, DateTimeKind.Utc), 1);
+		var strategy = await CompileContractStrategy("0377_Low_Volatility_Stocks");
+		data.Primary.MaxVolume = 0.03m;
+		data.Secondary.MaxVolume = 800m;
+		var rows = new List<string> { "SecurityId,Date,Close" };
+		foreach (var security in new[] { data.Primary, data.Secondary })
+			for (var i = 0; i < 70; i++)
+			{
+				var primary = security == data.Primary;
+				var anchor = primary ? 60000m : 3m;
+				var price = anchor * (1m + (i % 2 == 0 ? 1m : -1m) * (primary ? 0.001m : 0.03m));
+				rows.Add(FormattableString.Invariant($"{security.Id},{data.From.AddDays(i - 70):yyyy-MM-dd},{price}"));
+			}
+		var targets = new Dictionary<string, decimal>();
+		var prices = new Dictionary<string, decimal>();
+		var fills = new Dictionary<string, decimal>();
+		var orders = new List<Order>();
+		await AsmInit.RunScenario(strategy, CancellationToken, data, (s, _) =>
+		{
+			SetParam(s, "Universe", new[] { data.Primary, data.Secondary });
+			SetParam(s, "Capital", 10000m);
+			SetParam(s, "Deciles", 2);
+			SetParam(s, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(s, "PriceHistoryFile", WritePortfolioCsv(rows));
+			s.CandleReceived += (_, c) => { if (c.State == CandleStates.Finished && c.OpenTime.Minute == 0) prices[c.SecurityId.ToStringId()] = c.ClosePrice; };
+			s.OrderRegistering += order =>
+			{
+				orders.Add(order);
+				var security = order.Security;
+				var primary = security == data.Primary;
+				var step = security.VolumeStep.Value;
+				var units = Math.Floor(5000m / prices[security.Id] / step) * step;
+				var target = targets[security.Id] = primary ? units : -units;
+				var remaining = target - (s.GetPositionValue(security, s.Portfolio) ?? 0m);
+				var expected = Math.Floor(Math.Min(Math.Abs(remaining), security.MaxVolume.Value) / step) * step;
+				AreEqual(primary ? Sides.Buy : Sides.Sell, order.Side);
+				AreEqual(expected, order.Volume);
+				IsTrue(order.Volume <= security.MaxVolume.Value);
+			};
+			s.Trades.TradeAdded += t =>
+			{
+				var id = t.Order.Security.Id;
+				fills[id] = fills.GetValueOrDefault(id) + (t.Order.Side == Sides.Buy ? t.Trade.Volume : -t.Trade.Volume);
+				AreEqual(fills[id], s.GetPositionValue(t.Order.Security, s.Portfolio).Value);
+				IsTrue(Math.Abs(fills[id]) <= Math.Abs(targets[id]));
+			};
+		}, TimeSpan.FromMinutes(5), null, true, TimeSpan.FromSeconds(60));
+		AreEqual(6, orders.Count, "Both target holdings require three capped native orders.");
+		foreach (var target in targets) AreEqual(target.Value, fills[target.Key]);
+	}
+
+
+	[TestMethod, TestCategory("Shard04")]
+	public async Task S0372_LastTradingDayIgnoresUnpublishedYieldRevisions()
+	{
+		var dates = new[] { new DateTime(2024, 6, 27, 0, 0, 0, DateTimeKind.Utc), new DateTime(2024, 6, 28, 0, 0, 0, DateTimeKind.Utc),
+			new DateTime(2024, 7, 30, 0, 0, 0, DateTimeKind.Utc), new DateTime(2024, 7, 31, 0, 0, 0, DateTimeKind.Utc),
+			new DateTime(2024, 8, 29, 0, 0, 0, DateTimeKind.Utc), new DateTime(2024, 8, 30, 0, 0, 0, DateTimeKind.Utc) };
+		var data = await CreateFactorDatedFixture(dates, TimeSpan.FromDays(1), TimeSpan.FromDays(1));
+		data.Primary.Board.WorkingTime.IsEnabled = true;
+		data.Primary.Board.WorkingTime.Periods = [new WorkingTimePeriod { Till = DateTime.MaxValue, Times = [new(TimeSpan.Zero, TimeSpan.FromDays(1))] }];
+		data.Storage.ExchangeInfoProvider.Save(data.Primary.Board);
+		var strategy = await CompileContractStrategy("0372_Fed_Model");
+		var rows = new List<string> { "Month,PublishedAt,EarningsYield,BondYield" };
+		for (var i = -11; i <= 2; i++)
+		{
+			var month = new DateTime(2024, 6, 1).AddMonths(i);
+			var published = i < 0 ? month.AddMonths(1).AddDays(-1) : i == 0 ? dates[1] : i == 1 ? dates[3] : dates[5];
+			rows.Add(FormattableString.Invariant($"{month:yyyy-MM},{published:yyyy-MM-dd}T00:00:00Z,0.21,0.2"));
+		}
+		rows.Add("2024-05,2024-06-29T00:00:00Z,-0.3,0.2");
+		var orders = new List<Order>();
+		var latest = new Dictionary<string, ICandleMessage>();
+		var fills = new Dictionary<string, decimal>();
+		await AsmInit.RunScenario(strategy, CancellationToken, data, (s, _) =>
+		{
+			SetParam(s, "Universe", new[] { data.Primary, data.Secondary });
+			SetParam(s, "Capital", 10000m);
+			SetParam(s, "YieldHistoryFile", WritePortfolioCsv(rows));
+			s.CandleReceived += (_, c) => { if (c.State == CandleStates.Finished) latest[c.SecurityId.ToStringId()] = c; };
+			s.OrderRegistering += order =>
+			{
+				orders.Add(order);
+				var date = latest[data.Primary.Id].OpenTime.Date;
+				IsTrue(date == dates[1].Date || date == dates[3].Date, "Review at the actual last trading date; a repeated negative forecast must not trade.");
+				if (order.Side == Sides.Buy)
+				{
+					AreEqual(date.Month == 6 ? data.Primary.Id : data.Secondary.Id, order.Security.Id,
+						"The June 29 revision cannot influence the June 28 close; it must influence the July forecast.");
+					var step = order.Security.VolumeStep.Value;
+					AreEqual(Math.Floor(10000m / latest[order.Security.Id].ClosePrice / step) * step, order.Volume);
+				}
+				else AreEqual(fills[order.Security.Id], order.Volume);
+			};
+			s.Trades.TradeAdded += t =>
+			{
+				var id = t.Order.Security.Id;
+				fills[id] = fills.GetValueOrDefault(id) + (t.Order.Side == Sides.Buy ? t.Trade.Volume : -t.Trade.Volume);
+				AreEqual(fills[id], s.GetPositionValue(t.Order.Security, s.Portfolio).Value);
+			};
+		}, TimeSpan.FromMinutes(5), null, true, TimeSpan.FromSeconds(60));
+		AreEqual(3, orders.Count);
+		AreEqual(0m, fills[data.Primary.Id]);
+		IsTrue(fills[data.Secondary.Id] > 0m);
+	}
+
+	[TestMethod, TestCategory("Shard06")]
+	public Task S0366_MonthlyUsdCarryReversalUsesTheWholeActualHolding()
+		=> CheckCarryCalendar("0366_Dollar_Carry_Trade", false);
+
+	[TestMethod, TestCategory("Shard06")]
+	public Task S0374_MonthlyFxCarryReversalUsesTheWholeActualHolding()
+		=> CheckCarryCalendar("0374_FXCarry_Trade", false);
+
+	[TestMethod, TestCategory("Shard06")]
+	public Task S0366_StaleAndUnpublishedRatesCannotFormACarryBasket()
+		=> CheckCarryCalendar("0366_Dollar_Carry_Trade", true);
+
+	[TestMethod, TestCategory("Shard06")]
+	public Task S0374_StaleAndUnpublishedRatesCannotFormACarryBasket()
+		=> CheckCarryCalendar("0374_FXCarry_Trade", true);
+
+	private async Task CheckCarryCalendar(string key, bool delayed)
+	{
+		var data = await CreatePortfolioCalendarFixture(new DateTime(2024, 3, 1, 0, 0, 0, DateTimeKind.Utc), 3);
+		var strategy = await CompileContractStrategy(key);
+		var dollar = key.StartsWith("0366");
+		var rows = new List<string> { "SecurityId,PublishedAt,BaseRate,QuoteRate,UsdPerUnit" + (dollar ? ",IsUsdBase" : "") };
+		foreach (var security in new[] { data.Primary, data.Secondary })
+		{
+			for (var i = 0; i < (delayed ? 2 : 3); i++)
+			{
+				var primary = security == data.Primary;
+				var high = i == 0 ? primary : !primary;
+				var rate = high ? 0.09m : 0.01m;
+				var usd = primary ? 60000m : 3m;
+				if (!delayed && i == 2) usd *= 0.8m;
+				var published = delayed
+					? i == 0 ? primary ? "2023-01-01" : "2024-02-28" : primary ? "2024-03-25" : "2024-02-29"
+					: i == 0 ? "2024-02-28" : i == 1 ? "2024-03-15" : "2024-04-25";
+				rows.Add(FormattableString.Invariant($"{security.Id},{published}T00:00:00Z,{rate},0.04,{usd}{(dollar ? ",false" : "")}"));
+			}
+		}
+		var orders = new List<Order>();
+		var fills = new Dictionary<string, decimal>();
+		await AsmInit.RunScenario(strategy, CancellationToken, data, (s, _) =>
+		{
+			AreEqual(45, s.Parameters["MaxRateAgeDays"].Value);
+			SetParam(s, "Universe", new[] { data.Primary, data.Secondary });
+			SetParam(s, dollar ? "K" : "TopK", 1);
+			SetParam(s, "Capital", 10000m);
+			SetParam(s, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(s, "RatesFile", WritePortfolioCsv(rows));
+			s.OrderRegistering += order =>
+			{
+				orders.Add(order);
+				var month = s.CurrentTime.Month;
+				IsTrue(delayed ? month == 4 : month is 3 or 4 or 5);
+				var primary = order.Security == data.Primary;
+				var high = month == 3 ? primary : !primary;
+				var usd = primary ? 60000m : 3m;
+				if (!delayed && month == 5) usd *= 0.8m;
+				var units = Math.Floor(5000m / usd / order.Security.VolumeStep.Value) * order.Security.VolumeStep.Value;
+				var delta = (high ? units : -units) - (s.GetPositionValue(order.Security, s.Portfolio) ?? 0m);
+				AreEqual(delta > 0m ? Sides.Buy : Sides.Sell, order.Side);
+				AreEqual(Math.Abs(delta), order.Volume, "Carry rebalance must subtract the actual old holding in native units.");
+			};
+			s.Trades.TradeAdded += t =>
+			{
+				var id = t.Order.Security.Id;
+				fills[id] = fills.GetValueOrDefault(id) + (t.Order.Side == Sides.Buy ? t.Trade.Volume : -t.Trade.Volume);
+				AreEqual(fills[id], s.GetPositionValue(t.Order.Security, s.Portfolio).Value);
+			};
+		}, TimeSpan.FromMinutes(5), null, true, TimeSpan.FromSeconds(60));
+		AreEqual(delayed ? 2 : 6, orders.Count);
+		IsTrue(fills[data.Primary.Id] < 0m && fills[data.Secondary.Id] > 0m);
+	}
+
+	[TestMethod, TestCategory("Shard05")]
+	public async Task S0373_MonthlyFScoreRotationWaitsForBothLiquidationFills()
+	{
+		var data = await CreatePortfolioCalendarFixture(new DateTime(2024, 3, 1, 0, 0, 0, DateTimeKind.Utc), 3);
+		var strategy = await CompileContractStrategy("0373_FScore_Reversal");
+		var rows = new List<string> { "SecurityId,PeriodEnd,PublishedAt,FScore" };
+		var prices = new List<string> { "SecurityId,Date,Close" };
+		foreach (var security in new[] { data.Primary, data.Secondary })
+		{
+			var primary = security == data.Primary;
+			rows.Add($"{security.Id},2023-12-31,2024-02-01T00:00:00Z,{(primary ? 7 : 3)}");
+			rows.Add($"{security.Id},2023-12-31,2024-03-15T00:00:00Z,{(primary ? 3 : 7)}");
+			for (var i = 0; i < 40; i++)
+				prices.Add(FormattableString.Invariant($"{security.Id},{data.From.AddDays(i - 40):yyyy-MM-dd},{(primary ? 120000m : 1.5m)}"));
+		}
+		var orders = new List<Order>();
+		var counts = new Dictionary<int, int>();
+		var latest = new Dictionary<string, decimal>();
+		var fills = new Dictionary<string, decimal>();
+		await AsmInit.RunScenario(strategy, CancellationToken, data, (s, _) =>
+		{
+			SetParam(s, "Universe", new[] { data.Primary, data.Secondary });
+			SetParam(s, "Capital", 10000m);
+			SetParam(s, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(s, "FScoreFile", WritePortfolioCsv(rows));
+			SetParam(s, "PriceHistoryFile", WritePortfolioCsv(prices));
+			s.CandleReceived += (_, c) => { if (c.State == CandleStates.Finished && c.OpenTime.Minute == 0) latest[c.SecurityId.ToStringId()] = c.ClosePrice; };
+			s.OrderRegistering += order =>
+			{
+				orders.Add(order);
+				var month = s.CurrentTime.Month;
+				var index = counts.GetValueOrDefault(month);
+				counts[month] = index + 1;
+				var close = month != 3 && index < 2;
+				var position = s.GetPositionValue(order.Security, s.Portfolio) ?? 0m;
+				if (close)
+				{
+					AreEqual(position > 0m ? Sides.Sell : Sides.Buy, order.Side);
+					AreEqual(Math.Abs(position), order.Volume);
+				}
+				else
+				{
+					if (index == (month == 3 ? 0 : 2))
+						foreach (var security in new[] { data.Primary, data.Secondary })
+							AreEqual(0m, s.GetPositionValue(security, s.Portfolio) ?? 0m, "Both liquidation fills must precede the first replacement order.");
+					var longLeg = (order.Security == data.Primary) == (month == 3);
+					AreEqual(longLeg ? Sides.Buy : Sides.Sell, order.Side);
+					var step = order.Security.VolumeStep.Value;
+					AreEqual(Math.Floor(5000m / latest[order.Security.Id] / step) * step, order.Volume);
+				}
+			};
+			s.Trades.TradeAdded += t =>
+			{
+				var id = t.Order.Security.Id;
+				fills[id] = fills.GetValueOrDefault(id) + (t.Order.Side == Sides.Buy ? t.Trade.Volume : -t.Trade.Volume);
+				AreEqual(fills[id], s.GetPositionValue(t.Order.Security, s.Portfolio).Value);
+			};
+		}, TimeSpan.FromMinutes(5), null, true, TimeSpan.FromSeconds(60));
+		AreEqual(10, orders.Count);
+		AreEqual(2, counts[3]);
+		AreEqual(4, counts[4]);
+		AreEqual(4, counts[5]);
+		IsTrue(fills[data.Primary.Id] < 0m && fills[data.Secondary.Id] > 0m);
+	}
+
+	[TestMethod, TestCategory("Shard01")]
+	public Task S0377_MonthlyVolatilityRankReversalAdjustsBothActualLegs()
+		=> CheckDailyFactorCalendar("0377_Low_Volatility_Stocks");
+
+	[TestMethod, TestCategory("Shard03")]
+	public Task S0379_MonthlyMomentumRankReversalAdjustsBothActualLegs()
+		=> CheckDailyFactorCalendar("0379_Momentum_Factor_Stocks");
+
+	private async Task CheckDailyFactorCalendar(string key)
+	{
+		var dates = Enumerable.Range(0, 3).Select(m => new DateTime(2024, 3, 1, 0, 0, 0, DateTimeKind.Utc).AddMonths(m)).ToArray();
+		var data = await CreateFactorDatedFixture(dates, TimeSpan.FromDays(1), TimeSpan.FromDays(1));
+		var strategy = await CompileContractStrategy(key);
+		var volatility = key.StartsWith("0377");
+		var rows = new List<string> { "SecurityId,Date,Close" };
+		var history = new Dictionary<string, SortedDictionary<DateTime, decimal>>();
+		foreach (var security in new[] { data.Primary, data.Secondary })
+		{
+			var primary = security == data.Primary;
+			var anchor = primary ? 60000m : 3m;
+			var values = history[security.Id] = [];
+			for (var i = 0; i < 420; i++)
+			{
+				var date = new DateTime(2023, 4, 1).AddDays(i);
+				decimal price;
+				if (volatility)
+				{
+					var amplitude = date.Month < 3 || date.Year < 2024 ? primary ? 0.001m : 0.03m : primary ? 0.1m : 0.0005m;
+					price = anchor * (1m + (i % 2 == 0 ? amplitude : -amplitude));
+				}
+				else
+				{
+					var factor = date < new DateTime(2024, 2, 8) ? 1m : date < new DateTime(2024, 3, 8) ? primary ? 2m : 0.5m : primary ? 0.1m : 4m;
+					price = anchor * factor;
+				}
+				values[date] = price;
+				rows.Add(FormattableString.Invariant($"{security.Id},{date:yyyy-MM-dd},{price}"));
+			}
+		}
+		var orders = new List<Order>();
+		var latest = new Dictionary<string, ICandleMessage>();
+		var fills = new Dictionary<string, decimal>();
+		await AsmInit.RunScenario(strategy, CancellationToken, data, (s, _) =>
+		{
+			SetParam(s, "Universe", new[] { data.Primary, data.Secondary });
+			SetParam(s, volatility ? "Deciles" : "Quintile", 2);
+			SetParam(s, "Capital", 10000m);
+			SetParam(s, "PriceHistoryFile", WritePortfolioCsv(rows));
+			s.CandleReceived += (_, c) =>
+			{
+				if (c.State != CandleStates.Finished) return;
+				latest[c.SecurityId.ToStringId()] = c;
+				history[c.SecurityId.ToStringId()][c.OpenTime.Date] = c.ClosePrice;
+			};
+			s.OrderRegistering += order =>
+			{
+				orders.Add(order);
+				var date = latest[data.Primary.Id].OpenTime.Date;
+				var scores = history.ToDictionary(p => p.Key, p =>
+				{
+					var values = p.Value.Where(v => v.Key <= date).TakeLast(volatility ? 61 : 253).Select(v => (double)v.Value).ToArray();
+					if (!volatility) return values[^22] / values[0] - 1d;
+					var returns = values.Skip(1).Select((p, i) => p / values[i] - 1d).ToArray();
+					var mean = returns.Average();
+					return Math.Sqrt(returns.Sum(r => (r - mean) * (r - mean)) / 59d);
+				});
+				var winner = (volatility ? scores.OrderBy(p => p.Value) : scores.OrderByDescending(p => p.Value)).First().Key;
+				AreEqual(date.Month == 3 ? data.Primary.Id : data.Secondary.Id, winner);
+				var step = order.Security.VolumeStep.Value;
+				var units = Math.Floor(5000m / latest[order.Security.Id].ClosePrice / step) * step;
+				var target = order.Security.Id == winner ? units : -units;
+				var delta = target - (s.GetPositionValue(order.Security, s.Portfolio) ?? 0m);
+				AreEqual(delta > 0m ? Sides.Buy : Sides.Sell, order.Side);
+				AreEqual(Math.Abs(delta), order.Volume);
+			};
+			s.Trades.TradeAdded += t =>
+			{
+				var id = t.Order.Security.Id;
+				fills[id] = fills.GetValueOrDefault(id) + (t.Order.Side == Sides.Buy ? t.Trade.Volume : -t.Trade.Volume);
+				AreEqual(fills[id], s.GetPositionValue(t.Order.Security, s.Portfolio).Value);
+			};
+		}, TimeSpan.FromMinutes(5), null, true, TimeSpan.FromSeconds(60));
+		AreEqual(4, orders.Count, "One entry and one rank reversal must adjust both legs, without daily rebalancing.");
+		IsTrue(fills[data.Primary.Id] < 0m && fills[data.Secondary.Id] > 0m);
+	}
+
+	[TestMethod, TestCategory("Shard02")]
+	public async Task S0378_JanuaryKeepsExistingHoldingsUntilFebruaryReversal()
+	{
+		var data = await CreatePortfolioCalendarFixture(new DateTime(2023, 12, 1, 0, 0, 0, DateTimeKind.Utc), 3);
+		var strategy = await CompileContractStrategy("0378_Momentum_Asset_Growth");
+		var prices = new List<string> { "SecurityId,Date,Close" };
+		var reports = new List<string> { "SecurityId,PeriodEnd,PublishedAt,TotalAssets,NetIncome,OperatingCashFlow,BookEquity,SharesOutstanding" };
+		foreach (var security in new[] { data.Primary, data.Secondary })
+		{
+			var primary = security == data.Primary;
+			for (var year = 2021; year <= 2022; year++)
+				reports.Add($"{security.Id},{year}-12-31,{year + 1}-02-01T00:00:00Z,{(year == 2021 ? 100 : primary ? 110 : 200)},1,2,10,1");
+			for (var i = 0; i < 580; i++)
+			{
+				var date = new DateTime(2022, 6, 1).AddDays(i);
+				var factor = date < new DateTime(2023, 10, 1) ? 1m : date < new DateTime(2023, 11, 1) ? primary ? 2m : 0.5m : primary ? 0.1m : 4m;
+				prices.Add(FormattableString.Invariant($"{security.Id},{date:yyyy-MM-dd},{(primary ? 60000m : 3m) * factor}"));
+			}
+		}
+		var orders = new List<Order>();
+		var fills = new Dictionary<string, decimal>();
+		var latest = new Dictionary<string, decimal>();
+		await AsmInit.RunScenario(strategy, CancellationToken, data, (s, _) =>
+		{
+			SetParam(s, "Universe", new[] { data.Primary, data.Secondary });
+			SetParam(s, "AssetDecile", 1);
+			SetParam(s, "Quintile", 2);
+			SetParam(s, "Capital", 10000m);
+			SetParam(s, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(s, "PriceHistoryFile", WritePortfolioCsv(prices));
+			SetParam(s, "FundamentalsFile", WritePortfolioCsv(reports));
+			s.CandleReceived += (_, c) => { if (c.State == CandleStates.Finished) latest[c.SecurityId.ToStringId()] = c.ClosePrice; };
+			s.OrderRegistering += order =>
+			{
+				orders.Add(order);
+				var month = s.CurrentTime.Month;
+				IsTrue(month is 12 or 2, "January must neither reverse nor forcibly liquidate an existing portfolio.");
+				var longLeg = (order.Security == data.Primary) == (month == 12);
+				var step = order.Security.VolumeStep.Value;
+				var units = Math.Floor(5000m / latest[order.Security.Id] / step) * step;
+				var target = longLeg ? units : -units;
+				var delta = target - (s.GetPositionValue(order.Security, s.Portfolio) ?? 0m);
+				AreEqual(delta > 0m ? Sides.Buy : Sides.Sell, order.Side);
+				AreEqual(Math.Abs(delta), order.Volume);
+			};
+			s.Trades.TradeAdded += t =>
+			{
+				var id = t.Order.Security.Id;
+				fills[id] = fills.GetValueOrDefault(id) + (t.Order.Side == Sides.Buy ? t.Trade.Volume : -t.Trade.Volume);
+				AreEqual(fills[id], s.GetPositionValue(t.Order.Security, s.Portfolio).Value);
+			};
+		}, TimeSpan.FromMinutes(5), null, true, TimeSpan.FromSeconds(60));
+		AreEqual(4, orders.Count);
+		IsTrue(fills[data.Primary.Id] < 0m && fills[data.Secondary.Id] > 0m);
+	}
+
+
+	[TestMethod, TestCategory("Shard06")]
+	[DataRow(false, false), DataRow(true, false), DataRow(false, true), DataRow(true, true)]
+	public Task S0366_ObservedForeignCarryRespectsUsdPairOrientation(bool reverse, bool isUsdBase)
+		=> CheckObservedCarryPortfolio("0366_Dollar_Carry_Trade", reverse, isUsdBase);
+
+	[TestMethod, TestCategory("Shard06")]
+	[DataRow(false), DataRow(true)]
+	public Task S0374_ObservedRateDifferentialFillsBothCarryLegs(bool reverse)
+		=> CheckObservedCarryPortfolio("0374_FXCarry_Trade", reverse, false);
+
+	private Task CheckObservedCarryPortfolio(string key, bool reverse, bool isUsdBase)
+	{
+		var usdPrices = new Dictionary<string, decimal>();
+		var sides = new Dictionary<string, Sides>();
+		return CheckFactorBasket(key, (s, secondary) =>
+		{
+			var dollar = key.StartsWith("0366");
+			var count = dollar ? "K" : "TopK";
+			AreEqual(3, s.Parameters[count].Value);
+			SetParam(s, count, 1);
+			var lines = new List<string> { dollar
+				? "SecurityId,PublishedAt,BaseRate,QuoteRate,UsdPerUnit,IsUsdBase"
+				: "SecurityId,PublishedAt,BaseRate,QuoteRate,UsdPerUnit" };
+			foreach (var security in new[] { s.Security, secondary })
+			{
+				var low = (security == s.Security) != reverse;
+				var foreign = low ? 0.01m : 0.09m;
+				var baseRate = dollar && isUsdBase ? 0.04m : foreign;
+				var quoteRate = dollar && isUsdBase ? foreign : 0.04m;
+				var usd = security == s.Security ? 60000m : 3m;
+				usdPrices[security.Id] = usd;
+				var buy = dollar ? low == isUsdBase : !low;
+				sides[security.Id] = buy ? Sides.Buy : Sides.Sell;
+				var suffix = dollar ? "," + (isUsdBase ? "true" : "false") : "";
+				lines.Add(FormattableString.Invariant($"{security.Id},2024-02-28T00:00:00Z,{baseRate},{quoteRate},{usd}{suffix}"));
+				lines.Add(FormattableString.Invariant($"{security.Id},2024-03-15T00:00:00Z,{quoteRate},{baseRate},{usd}{suffix}"));
+			}
+			SetParam(s, "RatesFile", WritePortfolioCsv(lines));
+		}, (_, security, _) => sides[security.Id], security => usdPrices[security.Id], 2);
+	}
+
+	[TestMethod, TestCategory("Shard02")]
+	[DataRow(false), DataRow(true)]
+	public Task S0370_PublishedCashEarningsQualityRanksFillBothLegs(bool reverse)
+		=> CheckFactorBasket("0370_Earnings_Quality_Factor", (s, secondary) =>
+		{
+			AreEqual(100m, Convert.ToDecimal(s.Parameters["MinTradeUsd"].Value));
+			AreEqual(7, s.Parameters["RebalanceMonth"].Value);
+			AreEqual(10, s.Parameters["Deciles"].Value);
+			SetParam(s, "Deciles", 2);
+			SetParam(s, "RebalanceMonth", 3);
+			SetParam(s, "FundamentalsFile", WriteFundamentalPortfolioFixture(s.Security, secondary, reverse));
+		}, (s, security, _) => (security == s.Security) != reverse ? Sides.Buy : Sides.Sell, _ => 0m, 2);
+
+	[TestMethod, TestCategory("Shard02")]
+	public Task S0370_AnnualJulyQualityReversalAccountsForActualPositions()
+		=> CheckAnnualFactorCalendar("0370_Earnings_Quality_Factor", 7);
+
+	[TestMethod, TestCategory("Shard01")]
+	[DataRow(false), DataRow(true)]
+	public Task S0377_DailyReturnStandardDeviationSelectsBothVolatilityDeciles(bool reverse)
+		=> CheckDailyFactorBasket("0377_Low_Volatility_Stocks", reverse);
+
+	[TestMethod, TestCategory("Shard03")]
+	[DataRow(false), DataRow(true)]
+	public Task S0379_TwelveMinusOneMomentumExcludesTheLatestDailyReturns(bool reverse)
+		=> CheckDailyFactorBasket("0379_Momentum_Factor_Stocks", reverse);
+
+	[TestMethod, TestCategory("Shard02")]
+	[DataRow(false), DataRow(true)]
+	public Task S0378_PublishedAssetGrowthAndSkippedMonthMomentumFillBothLegs(bool reverse)
+		=> CheckDailyFactorBasket("0378_Momentum_Asset_Growth", reverse);
+
+	private Task CheckDailyFactorBasket(string key, bool reverse)
+	{
+		var history = new Dictionary<string, SortedDictionary<DateTime, decimal>>();
+		return CheckFactorBasket(key, (s, secondary) =>
+		{
+			var volatility = key.StartsWith("0377");
+			var hybrid = key.StartsWith("0378");
+			AreEqual(TimeSpan.FromDays(1).TimeFrame(), s.Parameters["CandleType"].Value);
+			AreEqual(200m, Convert.ToDecimal(s.Parameters["MinTradeUsd"].Value));
+			if (volatility)
+			{
+				AreEqual(60, s.Parameters["VolWindowDays"].Value);
+				AreEqual(10, s.Parameters["Deciles"].Value);
+				SetParam(s, "Deciles", 2);
+			}
+			else
+			{
+				AreEqual(252, s.Parameters[hybrid ? "MomLook" : "LookbackDays"].Value);
+				AreEqual(5, s.Parameters["Quintile"].Value);
+				SetParam(s, "Quintile", 2);
+				if (hybrid)
+				{
+					AreEqual(10, s.Parameters["AssetDecile"].Value);
+					AreEqual(1, s.Parameters["SkipMonths"].Value);
+					SetParam(s, "AssetDecile", 1);
+					SetParam(s, "FundamentalsFile", WriteFundamentalPortfolioFixture(s.Security, secondary, false));
+				}
+				else AreEqual(21, s.Parameters["SkipDays"].Value);
+			}
+			var rows = new List<string> { "SecurityId,Date,Close" };
+			var end = new DateTime(2024, 3, 1);
+			foreach (var security in new[] { s.Security, secondary })
+			{
+				var winner = (security == s.Security) != reverse;
+				var anchor = security == s.Security ? 60000m : 3m;
+				var values = history[security.Id] = [];
+				decimal price = anchor;
+				for (var i = 0; i < 330; i++)
+				{
+					if (volatility) price *= 1m + (i % 2 == 0 ? 1m : -1m) * (winner ? 0.002m : 0.06m);
+					else price = anchor * (winner ? 0.4m + i * 0.001m : 1.6m - i * 0.001m);
+					var date = end.AddDays(i - 330);
+					if (!volatility && date >= (hybrid ? end.AddMonths(-1) : end.AddDays(-20)))
+						price = anchor * (winner ? 0.01m : 100m);
+					values.Add(date, price);
+					rows.Add(FormattableString.Invariant($"{security.Id},{date:yyyy-MM-dd},{price}"));
+				}
+				// Future prices must not prefill a March ranking.
+				rows.Add(FormattableString.Invariant($"{security.Id},2025-03-01,{(winner ? anchor / 100m : anchor * 100m)}"));
+			}
+			SetParam(s, "PriceHistoryFile", WritePortfolioCsv(rows));
+		}, (s, security, latest) =>
+		{
+			foreach (var item in latest)
+				history[item.Key][item.Value.OpenTime.Date] = item.Value.ClosePrice;
+			var scores = history.ToDictionary(p => p.Key, p =>
+			{
+				var decision = latest[security.Id].OpenTime.Date;
+				var values = p.Value.Where(v => v.Key <= decision).ToArray();
+				if (key.StartsWith("0377"))
+				{
+					var closes = values.TakeLast(61).Select(v => (double)v.Value).ToArray();
+					var returns = closes.Skip(1).Select((v, i) => v / closes[i] - 1d).ToArray();
+					var mean = returns.Average();
+					return Math.Sqrt(returns.Sum(r => (r - mean) * (r - mean)) / (returns.Length - 1));
+				}
+				if (key.StartsWith("0378"))
+				{
+					var cutoff = new DateTime(decision.Year, decision.Month, 1).AddMonths(-1);
+					values = values.Where(v => v.Key < cutoff).ToArray();
+					return (double)(values[^1].Value / values[^253].Value - 1m);
+				}
+				return (double)(values[^22].Value / values[^253].Value - 1m);
+			});
+			var ranked = key.StartsWith("0377")
+				? scores.OrderBy(p => p.Value).ToArray() : scores.OrderByDescending(p => p.Value).ToArray();
+			AreEqual((security == s.Security) != reverse, security.Id == ranked[0].Key,
+				"The independently calculated factor must select the intended adversarial fixture winner.");
+			return security.Id == ranked[0].Key ? Sides.Buy : Sides.Sell;
+		}, _ => 0m, 2);
+	}
+
+	private async Task CheckFactorBasket(string key, Action<Strategy, Security> setup,
+		Func<Strategy, Security, IReadOnlyDictionary<string, ICandleMessage>, Sides> side,
+		Func<Security, decimal> usdPrice, int expectedOrders)
+	{
+		var orders = new List<Order>();
+		var latest = new Dictionary<string, ICandleMessage>();
+		var fills = new Dictionary<string, decimal>();
+		var expected = new Dictionary<string, decimal>();
+		await Replay(key, (s, secondary) =>
+		{
+			IsTrue(s.Parameters.ContainsKey("Universe"), "A portfolio strategy must evaluate and trade its explicit universe.");
+			SetParam(s, "Universe", new[] { s.Security, secondary });
+			SetParam(s, "Capital", 10000m);
+			setup(s, secondary);
+			s.CandleReceived += (_, c) => { if (c.State == CandleStates.Finished) latest[c.SecurityId.ToStringId()] = c; };
+			s.OrderRegistering += order =>
+			{
+				orders.Add(order);
+				AreEqual(OrderTypes.Market, order.Type);
+				AreEqual(side(s, order.Security, latest), order.Side, "The independent factor rank determines the actual order side.");
+				var price = usdPrice(order.Security);
+				if (price == 0m) price = latest[order.Security.Id].ClosePrice;
+				var units = Math.Floor(5000m / price / order.Security.VolumeStep.Value) * order.Security.VolumeStep.Value;
+				AreEqual(units, order.Volume, "Each extreme side receives half the gross budget in native volume units.");
+				expected[order.Security.Id] = order.Side == Sides.Buy ? units : -units;
+			};
+			s.Trades.TradeAdded += t =>
+			{
+				var id = t.Order.Security.Id;
+				fills[id] = fills.GetValueOrDefault(id) + (t.Order.Side == Sides.Buy ? t.Trade.Volume : -t.Trade.Volume);
+				AreEqual(fills[id], s.GetPositionValue(t.Order.Security, s.Portfolio).Value);
+			};
+		}, TimeSpan.FromDays(20));
+		AreEqual(expectedOrders, orders.Count, "Hold the selected basket without candle-proxy trades or undocumented protection.");
+		AreEqual(expectedOrders, fills.Count);
+		foreach (var pair in expected) AreEqual(pair.Value, fills[pair.Key]);
+	}
+
+	[TestMethod, TestCategory("Shard03")]
+	[DataRow(false, false), DataRow(true, false), DataRow(false, true), DataRow(true, true)]
+	public async Task S0371_MonthlyEsgRotationClosesBeforeReopeningTheWinner(bool reverse, bool daily)
+	{
+		var start = new DateTime(2024, 3, 1, 0, 0, 0, DateTimeKind.Utc);
+		var data = daily
+			? await CreateFactorDatedFixture(Enumerable.Range(0, 3).Select(m => start.AddMonths(m)).ToArray(), TimeSpan.FromDays(1), TimeSpan.FromDays(1))
+			: await CreatePortfolioCalendarFixture(start, 3);
+		var strategy = await CompileContractStrategy("0371_ESGFactor_Momentum");
+		var winner = reverse ? data.Secondary : data.Primary;
+		var orders = new List<Order>();
+		var prices = new Dictionary<string, decimal>();
+		var fills = new Dictionary<string, decimal>();
+		var rows = new List<string> { "SecurityId,Date,Close" };
+		foreach (var security in new[] { data.Primary, data.Secondary })
+			for (var i = 0; i < 300; i++)
+			{
+				var anchor = security == data.Primary ? 60000m : 3m;
+				var price = anchor * (security == winner ? 0.4m + i * 0.001m : 1.6m - i * 0.001m);
+				rows.Add(FormattableString.Invariant($"{security.Id},{data.From.AddDays(i - 300):yyyy-MM-dd},{price}"));
+			}
+		await AsmInit.RunScenario(strategy, CancellationToken, data, (s, _) =>
+		{
+			IsTrue(s.Parameters.ContainsKey("Universe"));
+			AreEqual(252, s.Parameters["LookbackDays"].Value);
+			AreEqual(TimeSpan.FromDays(1).TimeFrame(), s.Parameters["CandleType"].Value);
+			IsFalse(s.Parameters.ContainsKey("Leverage"), "The ESG portfolio cannot request leveraged exposure.");
+			SetParam(s, "Universe", new[] { data.Primary, data.Secondary });
+			SetParam(s, "Capital", 10000m);
+			if (!daily) SetParam(s, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(s, "PriceHistoryFile", WritePortfolioCsv(rows));
+			s.CandleReceived += (_, c) => { if (c.State == CandleStates.Finished && c.OpenTime.Minute == 0) prices[c.SecurityId.ToStringId()] = c.ClosePrice; };
+			s.OrderRegistering += order =>
+			{
+				orders.Add(order);
+				AreEqual(winner.Id, order.Security.Id);
+				if (order.Side == Sides.Buy)
+				{
+					foreach (var security in new[] { data.Primary, data.Secondary })
+						AreEqual(0m, s.GetPositionValue(security, s.Portfolio) ?? 0m, "Close the entire old portfolio before opening the monthly winner.");
+					var units = Math.Floor(10000m / prices[winner.Id] / winner.VolumeStep.Value) * winner.VolumeStep.Value;
+					AreEqual(units, order.Volume);
+				}
+				else AreEqual(s.GetPositionValue(winner, s.Portfolio).Value, order.Volume);
+			};
+			s.Trades.TradeAdded += t =>
+			{
+				var id = t.Order.Security.Id;
+				fills[id] = fills.GetValueOrDefault(id) + (t.Order.Side == Sides.Buy ? t.Trade.Volume : -t.Trade.Volume);
+				AreEqual(fills[id], s.GetPositionValue(t.Order.Security, s.Portfolio).Value);
+				IsTrue(fills[id] >= 0m);
+			};
+		}, TimeSpan.FromMinutes(5), null, true, TimeSpan.FromSeconds(60));
+		AreEqual(5, orders.Count, "Three monthly purchases require two complete liquidations even when the winner stays the same.");
+		AreEqual(3, orders.Count(o => o.Side == Sides.Buy));
+		AreEqual(2, orders.Count(o => o.Side == Sides.Sell));
+	}
+
+	[TestMethod, TestCategory("Shard05")]
+	[DataRow(0), DataRow(1), DataRow(2), DataRow(3)]
+	public async Task S0373_PublishedFScoreThresholdsGateIndependentReversalRanks(int profile)
+	{
+		var orders = new List<Order>();
+		var fills = new Dictionary<string, decimal>();
+		await Replay("0373_FScore_Reversal", (s, secondary) =>
+		{
+			IsTrue(s.Parameters.ContainsKey("FScoreFile"), "Piotroski scores must be published inputs, not candle-derived scores.");
+			AreEqual(7, s.Parameters["FHi"].Value);
+			AreEqual(3, s.Parameters["FLo"].Value);
+			AreEqual(21, s.Parameters["Lookback"].Value);
+			AreEqual(TimeSpan.FromDays(1).TimeFrame(), s.Parameters["CandleType"].Value);
+			SetParam(s, "Universe", new[] { s.Security, secondary });
+			SetParam(s, "Capital", 10000m);
+			SetParam(s, "IsShortEnabled", profile != 3);
+			var rows = new List<string> { "SecurityId,Date,Close" };
+			var reports = new List<string> { "SecurityId,PeriodEnd,PublishedAt,FScore" };
+			foreach (var security in new[] { s.Security, secondary })
+			{
+				var primary = security == s.Security;
+				var anchor = primary ? 60000m : 3m;
+				for (var i = 0; i < 40; i++)
+					rows.Add(FormattableString.Invariant($"{security.Id},{new DateTime(2024, 3, 1).AddDays(i - 40):yyyy-MM-dd},{(primary ? anchor * 2m : anchor / 2m)}"));
+				var score = profile == 1 ? 7 : profile == 2 ? 3 : primary ? 7 : 3;
+				reports.Add($"{security.Id},2023-12-31,2024-02-01T00:00:00Z,{score}");
+				reports.Add($"{security.Id},2023-12-31,2024-03-15T00:00:00Z,{9 - score}");
+			}
+			SetParam(s, "PriceHistoryFile", WritePortfolioCsv(rows));
+			SetParam(s, "FScoreFile", WritePortfolioCsv(reports));
+			var prices = new Dictionary<string, decimal>();
+			s.CandleReceived += (_, c) => { if (c.State == CandleStates.Finished) prices[c.SecurityId.ToStringId()] = c.ClosePrice; };
+			s.OrderRegistering += order =>
+			{
+				orders.Add(order);
+				var primary = order.Security == s.Security;
+				IsTrue(primary ? profile != 2 : profile is 0 or 2);
+				AreEqual(primary ? Sides.Buy : Sides.Sell, order.Side,
+					"The worst high-score return is long; the best low-score return is short.");
+				var units = Math.Floor(5000m / prices[order.Security.Id] / order.Security.VolumeStep.Value) * order.Security.VolumeStep.Value;
+				AreEqual(units, order.Volume, "An absent side stays in cash rather than doubling the other side.");
+			};
+			s.Trades.TradeAdded += t =>
+			{
+				var id = t.Order.Security.Id;
+				fills[id] = fills.GetValueOrDefault(id) + (t.Order.Side == Sides.Buy ? t.Trade.Volume : -t.Trade.Volume);
+				AreEqual(fills[id], s.GetPositionValue(t.Order.Security, s.Portfolio).Value);
+			};
+		}, TimeSpan.FromDays(20));
+		AreEqual(profile == 0 ? 2 : 1, orders.Count);
+		AreEqual(orders.Count, fills.Count);
+	}
+
+	[TestMethod, TestCategory("Shard00")]
+	[DataRow(false, false, false), DataRow(true, false, false), DataRow(false, true, false), DataRow(true, true, false)]
+	[DataRow(false, false, true), DataRow(true, false, true), DataRow(false, true, true), DataRow(true, true, true)]
+	public async Task S0376_ActualTextDensityUsesPublishedQuarterlyReports(bool lateFebruary, bool unicode, bool daily)
+	{
+		var dates = Enumerable.Range(0, 8).SelectMany(m => Enumerable.Range(0, 4).Select(d => new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddMonths(m).AddDays(d))).ToArray();
+		var data = await CreateFactorDatedFixture(dates, daily ? TimeSpan.FromDays(1) : TimeSpan.FromMinutes(5), daily ? TimeSpan.FromDays(1) : TimeSpan.FromMinutes(5));
+		var strategy = await CompileContractStrategy("0376_Lexical_Density_Filings");
+		var texts = unicode
+			? new[] { "Élan 猫 Ωμέγα Élan 猫 Ωμέγα Élan 猫 Ωμέγα Élan", "ÉLAN Élan éLAN élan ÉLAN Élan éLAN élan ÉLAN élan" }
+			: new[] { "Alpha,beta;gamma Alpha!beta?gamma Alpha:beta.gamma Alpha 123", "Echo eCho ecHo echO ECho EcHo ECHo eCHo eCHO ECHO" };
+		var documentPaths = texts.Select(text =>
+		{
+			var path = Path.ChangeExtension(WritePortfolioCsv([text]), ".txt");
+			File.WriteAllText(path, text);
+			return path;
+		}).ToArray();
+		var rows = new List<string> { "SecurityId,PeriodEnd,PublishedAt,DocumentPath" };
+		foreach (var security in new[] { data.Primary, data.Secondary })
+		{
+			var primary = security == data.Primary;
+			rows.Add($"{security.Id},2023-12-31,2024-02-{(lateFebruary ? "04" : "01")}T00:00:00Z,{documentPaths[primary ? 0 : 1]}");
+			rows.Add($"{security.Id},2024-03-31,2024-04-01T00:00:00Z,{documentPaths[primary ? 1 : 0]}");
+		}
+		var orders = new List<Order>();
+		var fills = new Dictionary<string, decimal>();
+		var prices = new Dictionary<string, decimal>();
+		await AsmInit.RunScenario(strategy, CancellationToken, data, (s, _) =>
+		{
+			IsTrue(s.Parameters.ContainsKey("FilingsFile"), "Lexical density must be calculated from filing text.");
+			AreEqual(5, s.Parameters["Quintile"].Value);
+			AreEqual(200m, Convert.ToDecimal(s.Parameters["MinTradeUsd"].Value));
+			AreEqual(TimeSpan.FromDays(1).TimeFrame(), s.Parameters["CandleType"].Value);
+			SetParam(s, "Universe", new[] { data.Primary, data.Secondary });
+			SetParam(s, "Quintile", 2);
+			SetParam(s, "Capital", 10000m);
+			if (!daily) SetParam(s, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			SetParam(s, "FilingsFile", WritePortfolioCsv(rows));
+			s.CandleReceived += (_, c) => { if (c.State == CandleStates.Finished) prices[c.SecurityId.ToStringId()] = c.ClosePrice; };
+			s.OrderRegistering += order =>
+			{
+				orders.Add(order);
+				var month = s.CurrentTime.Month;
+				IsTrue(month == 5 || (!lateFebruary && month == 2), "Only the first three trading days in review months may allocate.");
+				IsTrue(s.CurrentTime.Day <= 3);
+				var longLeg = (order.Security == data.Primary) == (month == 2);
+				var units = Math.Floor(5000m / prices[order.Security.Id] / order.Security.VolumeStep.Value) * order.Security.VolumeStep.Value;
+				var target = longLeg ? units : -units;
+				var delta = target - fills.GetValueOrDefault(order.Security.Id);
+				AreEqual(delta > 0 ? Sides.Buy : Sides.Sell, order.Side);
+				AreEqual(Math.Abs(delta), order.Volume);
+			};
+			s.Trades.TradeAdded += t =>
+			{
+				var id = t.Order.Security.Id;
+				fills[id] = fills.GetValueOrDefault(id) + (t.Order.Side == Sides.Buy ? t.Trade.Volume : -t.Trade.Volume);
+				AreEqual(fills[id], s.GetPositionValue(t.Order.Security, s.Portfolio).Value);
+			};
+		}, TimeSpan.FromMinutes(5), null, true, TimeSpan.FromSeconds(60));
+		AreEqual(lateFebruary ? 2 : 4, orders.Count);
+		IsTrue(fills[data.Primary.Id] < 0m && fills[data.Secondary.Id] > 0m);
+	}
+
+	[TestMethod, TestCategory("Shard04")]
+	[DataRow(false), DataRow(true)]
+	public async Task S0372_MonthEndYieldRegressionSwitchesOnlyAtZeroCrossings(bool cashProxy)
+	{
+		var dates = Enumerable.Range(0, 4).Select(m => new DateTime(2024, 2, 1, 0, 0, 0, DateTimeKind.Utc).AddMonths(m + 1).AddDays(-1)).ToArray();
+		var data = await CreateFactorDatedFixture(dates, TimeSpan.FromDays(1), TimeSpan.FromDays(1));
+		var strategy = await CompileContractStrategy("0372_Fed_Model");
+		var rows = new List<string> { "Month,PublishedAt,EarningsYield,BondYield" };
+		var observations = new SortedDictionary<DateTime, decimal>();
+		for (var m = -11; m <= 3; m++)
+		{
+			var month = new DateTime(2024, 2, 1, 0, 0, 0, DateTimeKind.Utc).AddMonths(m);
+			var gap = m < 1 ? 0.01m : m < 3 ? -0.09m : 0.3m;
+			observations[month] = gap;
+			rows.Add(FormattableString.Invariant($"{month:yyyy-MM},{month.AddMonths(1).AddDays(-1):yyyy-MM-dd}T00:00:00Z,{0.2m + gap},0.2"));
+		}
+		var orders = new List<Order>();
+		var fills = new Dictionary<string, decimal>();
+		var latest = new Dictionary<string, ICandleMessage>();
+		await AsmInit.RunScenario(strategy, CancellationToken, data, (s, _) =>
+		{
+			IsTrue(s.Parameters.ContainsKey("YieldHistoryFile"), "The Fed model requires observed equity and bond yields.");
+			AreEqual(12, s.Parameters["RegressionMonths"].Value);
+			AreEqual(TimeSpan.FromDays(1).TimeFrame(), s.Parameters["CandleType"].Value);
+			SetParam(s, "Universe", cashProxy ? new[] { data.Primary, data.Secondary } : new[] { data.Primary });
+			SetParam(s, "Capital", 10000m);
+			SetParam(s, "YieldHistoryFile", WritePortfolioCsv(rows));
+			s.CandleReceived += (_, c) => { if (c.State == CandleStates.Finished) latest[c.SecurityId.ToStringId()] = c; };
+			s.OrderRegistering += order =>
+			{
+				orders.Add(order);
+				var candle = latest[data.Primary.Id];
+				var month = new DateTime(candle.OpenTime.Year, candle.OpenTime.Month, 1);
+				AreEqual(month.AddMonths(1).AddDays(-1).Date, candle.OpenTime.Date, "Forecast only at month end.");
+				var y = observations.Where(p => p.Key <= month).TakeLast(12).Select(p => (double)p.Value).ToArray();
+				var average = y.Average();
+				var slope = y.Select((v, i) => (i - 5.5d) * (v - average)).Sum() / Enumerable.Range(0, 12).Sum(i => (i - 5.5d) * (i - 5.5d));
+				var forecast = average + slope * 6.5d;
+				var desired = forecast > 0d ? data.Primary : cashProxy ? data.Secondary : null;
+				if (order.Side == Sides.Buy)
+				{
+					AreEqual(desired.Id, order.Security.Id);
+					foreach (var security in new[] { data.Primary, data.Secondary })
+						AreEqual(0m, s.GetPositionValue(security, s.Portfolio) ?? 0m);
+					var units = Math.Floor(10000m / latest[order.Security.Id].ClosePrice / order.Security.VolumeStep.Value) * order.Security.VolumeStep.Value;
+					AreEqual(units, order.Volume);
+				}
+				else AreEqual(fills[order.Security.Id], order.Volume, "Flatten the entire old regime before buying the next one.");
+			};
+			s.Trades.TradeAdded += t =>
+			{
+				var id = t.Order.Security.Id;
+				fills[id] = fills.GetValueOrDefault(id) + (t.Order.Side == Sides.Buy ? t.Trade.Volume : -t.Trade.Volume);
+				AreEqual(fills[id], s.GetPositionValue(t.Order.Security, s.Portfolio).Value);
+				IsTrue(fills[id] >= 0m);
+			};
+		}, TimeSpan.FromMinutes(5), null, true, TimeSpan.FromSeconds(60));
+		AreEqual(cashProxy ? 5 : 3, orders.Count, "A second negative forecast must not churn or resize the current holding.");
+	}
+
+	private async Task<ReplayMarketData> CreateFactorDatedFixture(IReadOnlyList<DateTime> dates, TimeSpan frame, TimeSpan sessionLength)
+	{
+		var archive = await AsmInit.CreateArchiveMarketData(CancellationToken);
+		var data = CreateContractMarket(dates.Min(), dates.Max().AddDays(3), false);
+		foreach (var pair in new[] { (source: archive.Primary, target: data.Primary), (source: archive.Secondary, target: data.Secondary) })
+		{
+			pair.target.PriceStep = pair.source.PriceStep;
+			pair.target.VolumeStep = pair.source.VolumeStep;
+			pair.target.MinVolume = pair.source.MinVolume;
+			pair.target.MaxVolume = pair.source.MaxVolume;
+			var source = new List<CandleMessage>();
+			var storage = archive.Storage.GetCandleMessageStorage(pair.source.Id.ToSecurityId(), TimeSpan.FromMinutes(1).TimeFrame());
+			await foreach (var candle in storage.LoadAsync(archive.From.Date).WithCancellation(CancellationToken))
+			{
+				source.Add(candle);
+				if (source.Count == 20) break;
+			}
+			AreEqual(20, source.Count);
+			var bars = new List<TimeFrameCandleMessage>();
+			foreach (var date in dates)
+				for (var slot = 0; slot < (frame == TimeSpan.FromDays(1) ? 1 : 4); slot++)
+				{
+					var values = frame == TimeSpan.FromDays(1) ? source.ToArray() : source.Skip(slot * 5).Take(5).ToArray();
+					var open = date.AddTicks(frame.Ticks * slot);
+					// Calendar dates and quotes are fixtures; every OHLC and volume comes from packaged BTC/TON.
+					bars.Add(new()
+					{
+						SecurityId = pair.target.Id.ToSecurityId(), TypedArg = frame,
+						OpenTime = open, CloseTime = open.Add(sessionLength).AddTicks(-1),
+						OpenPrice = values[0].OpenPrice, ClosePrice = values[^1].ClosePrice,
+						HighPrice = values.Max(v => v.HighPrice), LowPrice = values.Min(v => v.LowPrice),
+						TotalVolume = values.Sum(v => v.TotalVolume), State = CandleStates.Finished,
+					});
+				}
+			await data.Storage.GetCandleMessageStorage(pair.target.Id.ToSecurityId(), frame.TimeFrame()).SaveAsync(bars, CancellationToken);
+			var step = pair.target.PriceStep.Value;
+			var quotes = bars.SelectMany(b => new[] { (time: b.OpenTime, price: b.OpenPrice), (time: b.CloseTime.AddTicks(1), price: b.ClosePrice), (time: b.CloseTime.AddMinutes(10), price: b.ClosePrice) })
+				.OrderBy(q => q.time).Select(q => new Level1ChangeMessage
+				{
+					SecurityId = pair.target.Id.ToSecurityId(), ServerTime = q.time, LocalTime = q.time,
+					Changes =
+					{
+						[Level1Fields.BestBidPrice] = Math.Floor(q.price / step) * step,
+						[Level1Fields.BestAskPrice] = Math.Ceiling(q.price / step) * step,
+						[Level1Fields.BestBidVolume] = pair.target.MaxVolume.Value,
+						[Level1Fields.BestAskVolume] = pair.target.MaxVolume.Value,
+					},
+				});
+			await data.Storage.GetLevel1MessageStorage(pair.target.Id.ToSecurityId()).SaveAsync(quotes, CancellationToken);
+		}
+		return data;
+	}
+
+
+	[TestMethod, TestCategory("Shard07")]
+	[DataRow(false), DataRow(true)]
+	public Task S0351_PublishedAccrualRanksFillBothLegs(bool reverse)
+		=> CheckFundamentalPortfolio("0351_Accrual_Anomaly", reverse);
+
+	[TestMethod, TestCategory("Shard01")]
+	[DataRow(false), DataRow(true)]
+	public Task S0353_PublishedAssetGrowthRanksFillBothLegs(bool reverse)
+		=> CheckFundamentalPortfolio("0353_Asset_Growth_Effect", reverse);
+
+	[TestMethod, TestCategory("Shard05")]
+	[DataRow(false), DataRow(true)]
+	public Task S0357_PublishedBookToMarketRanksFillBothLegs(bool reverse)
+		=> CheckFundamentalPortfolio("0357_Book_To_Market_Value", reverse);
+
+	private async Task CheckFundamentalPortfolio(string key, bool reverse)
+	{
+		var orders = new List<Order>();
+		var fills = new Dictionary<string, decimal>();
+		var prices = new Dictionary<string, decimal>();
+		var expected = new Dictionary<Order, decimal>();
+		await Replay(key, (strategy, secondary) =>
+		{
+			IsTrue(strategy.Parameters.ContainsKey("Universe"), "A cross-sectional factor must trade its explicit universe.");
+			IsTrue(strategy.Parameters.ContainsKey("FundamentalsFile"), "Financial reports must not be manufactured from candle prices.");
+			var bucketParameter = key.StartsWith("0353") ? "Quantiles" : "Deciles";
+			AreEqual(10, strategy.Parameters[bucketParameter].Value);
+			AreEqual(key.StartsWith("0351") ? 5 : 7, strategy.Parameters["RebalanceMonth"].Value);
+			SetParam(strategy, "Universe", new[] { strategy.Security, secondary });
+			SetParam(strategy, bucketParameter, 2);
+			SetParam(strategy, "RebalanceMonth", 3);
+			SetParam(strategy, "Capital", 10000m);
+			SetParam(strategy, "FundamentalsFile", WriteFundamentalPortfolioFixture(strategy.Security, secondary, reverse));
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State == CandleStates.Finished)
+					prices[candle.SecurityId.ToStringId()] = candle.ClosePrice;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				orders.Add(order);
+				AreEqual(OrderTypes.Market, order.Type);
+				IsTrue(prices.ContainsKey(order.Security.Id));
+				var primary = order.Security.Id == strategy.Security.Id;
+				var longLeg = primary != reverse;
+				AreEqual(longLeg ? Sides.Buy : Sides.Sell, order.Side,
+					"Rank the published financial factor, ignoring the later restatement and candle pattern.");
+				var step = order.Security.VolumeStep.Value;
+				var units = Math.Floor(5000m / prices[order.Security.Id] / step) * step;
+				AreEqual(units, order.Volume, "Each extreme basket receives half the configured gross capital.");
+				expected.Add(order, order.Side == Sides.Buy ? units : -units);
+			};
+			strategy.Trades.TradeAdded += trade =>
+			{
+				IsTrue(expected.ContainsKey(trade.Order), "Every execution must belong to a verified rebalance order.");
+				var id = trade.Order.Security.Id;
+				fills[id] = fills.GetValueOrDefault(id) + (trade.Order.Side == Sides.Buy ? trade.Trade.Volume : -trade.Trade.Volume);
+				AreEqual(fills[id], strategy.GetPositionValue(trade.Order.Security, strategy.Portfolio).Value);
+			};
+		}, TimeSpan.FromDays(20));
+		AreEqual(2, orders.Count, "An annual portfolio must rebalance both legs once, without intraday spread trades.");
+		AreEqual(2, fills.Count);
+		foreach (var order in orders)
+		{
+			AreEqual(expected[order], fills[order.Security.Id]);
+		}
+	}
+
+	private static string WritePortfolioCsv(IEnumerable<string> lines)
+	{
+		var directory = Path.Combine(AppContext.BaseDirectory, "ContractHistory");
+		Directory.CreateDirectory(directory);
+		var path = Path.Combine(directory, Guid.NewGuid().ToString("N") + ".csv");
+		File.WriteAllLines(path, lines);
+		return path;
+	}
+
+	private static string WriteFundamentalPortfolioFixture(Security primary, Security secondary, bool reverse)
+	{
+		var lines = new List<string> { "SecurityId,PeriodEnd,PublishedAt,TotalAssets,NetIncome,OperatingCashFlow,BookEquity,SharesOutstanding" };
+		foreach (var security in new[] { primary, secondary })
+		{
+			var low = (security.Id == primary.Id) != reverse;
+			var assets = low ? 110 : 200;
+			var income = low ? 1 : 30;
+			var book = low ? 1000000 : 1;
+			lines.Add(FormattableString.Invariant($"{security.Id},2022-12-31,2023-02-01T00:00:00Z,100,10,10,100,1"));
+			lines.Add(FormattableString.Invariant($"{security.Id},2023-12-31,2024-02-01T00:00:00Z,{assets},{income},10,{book},1"));
+			// A restatement known only later must not change the first March decision.
+			lines.Add(FormattableString.Invariant($"{security.Id},2023-12-31,2024-03-15T00:00:00Z,{(low ? 300 : 101)},{(low ? 90 : 1)},10,{(low ? 1 : 1000000)},1"));
+		}
+		return WritePortfolioCsv(lines);
+	}
+
+	[TestMethod, TestCategory("Shard02")]
+	[DataRow(3, false)]
+	[DataRow(8, false)]
+	[DataRow(3, true)]
+	[DataRow(210, false)]
+	public async Task S0352_IndependentDailySmaAndMonthlyEqualAllocation(int length, bool intraday)
+	{
+		var daily = new Dictionary<string, SortedDictionary<DateTime, decimal>>();
+		var latest = new Dictionary<string, ICandleMessage>();
+		var targets = new Dictionary<string, decimal>();
+		var actual = new Dictionary<string, decimal>();
+		var expectedOrders = new Dictionary<string, decimal>();
+		var orders = 0;
+		var exits = 0;
+		var rebalanced = false;
+		Security[] universe = null;
+		await Replay("0352_Asset_Class_Trend_Following", (strategy, secondary) =>
+		{
+			AreEqual(210, strategy.Parameters["SmaLength"].Value, "The daily 210-period default must retain its published meaning.");
+			AreEqual(TimeSpan.FromDays(1).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			AreEqual(50m, Convert.ToDecimal(strategy.Parameters["MinTradeUsd"].Value));
+			universe = [strategy.Security, secondary];
+			SetParam(strategy, "Universe", universe);
+			SetParam(strategy, "SmaLength", length);
+			SetParam(strategy, "Capital", 10000m);
+			foreach (var security in universe) daily[security.Id] = [];
+			if (intraday) SetParam(strategy, "CandleType", TimeSpan.FromMinutes(5).TimeFrame());
+			if (length == 210)
+			{
+				var lines = new List<string> { "SecurityId,Date,Close" };
+				foreach (var security in universe)
+				{
+					for (var day = 0; day < 210; day++)
+					{
+						var date = new DateTime(2024, 3, 1).AddDays(day - 210);
+						var price = (security == universe[0] ? 60000m : 2m) * (0.1m + day * 0.003m);
+						daily[security.Id][date] = price;
+						lines.Add(FormattableString.Invariant($"{security.Id},{date:yyyy-MM-dd},{price}"));
+					}
+				}
+				SetParam(strategy, "PriceHistoryFile", WritePortfolioCsv(lines));
+			}
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				var id = candle.SecurityId.ToStringId();
+				latest[id] = candle;
+				daily[id][candle.OpenTime.Date] = candle.ClosePrice;
+				var cutoff = intraday ? candle.OpenTime.Date.AddDays(-1) : candle.OpenTime.Date;
+				if (latest.Count != 2 || latest.Values.Any(c => c.OpenTime != candle.OpenTime)
+					|| daily.Values.Any(values => values.Count(v => v.Key <= cutoff) < length)) return;
+				AreEqual(0, expectedOrders.Count, "Every prior SMA decision must already have submitted its order.");
+				var eligible = universe.Where(s =>
+					latest[s.Id].ClosePrice > daily[s.Id].Where(v => v.Key <= cutoff).TakeLast(length).Average(v => v.Value)).ToArray();
+				if (!rebalanced)
+				{
+					rebalanced = true;
+					foreach (var s in universe)
+					{
+						var weight = eligible.Contains(s) ? 10000m / eligible.Length : 0m;
+						targets[s.Id] = Math.Floor(weight / latest[s.Id].ClosePrice / s.VolumeStep.Value) * s.VolumeStep.Value;
+					}
+				}
+				foreach (var s in universe)
+				{
+					if (!eligible.Contains(s)) targets[s.Id] = 0m;
+					var delta = targets.GetValueOrDefault(s.Id) - actual.GetValueOrDefault(s.Id);
+					if (delta != 0m && (targets[s.Id] == 0m || Math.Abs(delta) * latest[s.Id].ClosePrice >= 50m))
+						expectedOrders[s.Id] = delta;
+				}
+			};
+			strategy.OrderRegistering += order =>
+			{
+				orders++;
+				IsTrue(expectedOrders.Remove(order.Security.Id, out var delta), "No relative-strength, fixed-bar or intraday surrogate orders are allowed.");
+				AreEqual(delta > 0m ? Sides.Buy : Sides.Sell, order.Side);
+				AreEqual(Math.Abs(delta), order.Volume);
+				if (delta < 0m) { exits++; AreEqual(actual[order.Security.Id], order.Volume); }
+			};
+			strategy.Trades.TradeAdded += trade =>
+			{
+				var id = trade.Order.Security.Id;
+				actual[id] = actual.GetValueOrDefault(id) + (trade.Order.Side == Sides.Buy ? trade.Trade.Volume : -trade.Trade.Volume);
+				IsTrue(actual[id] >= 0m, "This portfolio is long only.");
+				AreEqual(actual[id], strategy.GetPositionValue(trade.Order.Security, strategy.Portfolio).Value);
+			};
+		}, TimeSpan.FromDays(31));
+		AreEqual(0, expectedOrders.Count);
+		IsTrue(orders >= 2, "The archive must exercise the independent equal-dollar allocation.");
+		if (length < 210) IsTrue(exits > 0, "The reachable short profiles must exercise an actual complete SMA exit.");
+	}
+
+	[TestMethod, TestCategory("Shard03")]
+	[DataRow(5), DataRow(20), DataRow(252)]
+	public Task S0355_DailyCovarianceFillsBothBetaDeciles(int window)
+		=> CheckBetaPortfolio("0355_Betting_Against_Beta", window);
+
+	[TestMethod, TestCategory("Shard02")]
+	[DataRow(5), DataRow(20), DataRow(252)]
+	public Task S0354_DailyCovarianceFillsBothBetaDeciles(int window)
+		=> CheckBetaPortfolio("0354_Betting_Against_Beta_Stocks", window);
+
+	private async Task CheckBetaPortfolio(string key, int window)
+	{
+		var daily = new Dictionary<string, SortedDictionary<DateTime, decimal>>();
+		var latest = new Dictionary<string, ICandleMessage>();
+		var expected = new Dictionary<string, decimal>();
+		var signedFills = new Dictionary<string, decimal>();
+		var orders = new List<Order>();
+		var decision = false;
+		Security[] securities = null;
+		await Replay(key, (strategy, secondary) =>
+		{
+			AreEqual(252, strategy.Parameters["WindowDays"].Value);
+			AreEqual(10, strategy.Parameters["Deciles"].Value);
+			AreEqual(100m, Convert.ToDecimal(strategy.Parameters["MinTradeUsd"].Value));
+			securities = [strategy.Security, secondary];
+			SetParam(strategy, "Universe", securities);
+			SetParam(strategy, "BenchmarkSecurity", strategy.Security);
+			SetParam(strategy, "WindowDays", window);
+			SetParam(strategy, "Deciles", 2);
+			SetParam(strategy, "Capital", 10000m);
+			foreach (var s in securities) daily[s.Id] = [];
+			if (window == 252)
+			{
+				var lines = new List<string> { "SecurityId,Date,Close" };
+				foreach (var security in securities)
+				{
+					var primary = security == securities[0];
+					var price = primary ? 60000m : 2m;
+					for (var day = 0; day < 253; day++)
+					{
+						var date = new DateTime(2024, 3, 1).AddDays(day - 253);
+						price *= 1m + (day % 3 == 0 ? 0.01m : -0.004m) * (primary ? 1m : 0.25m);
+						daily[security.Id][date] = price;
+						lines.Add(FormattableString.Invariant($"{security.Id},{date:yyyy-MM-dd},{price}"));
+					}
+				}
+				SetParam(strategy, "PriceHistoryFile", WritePortfolioCsv(lines));
+			}
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				var id = candle.SecurityId.ToStringId();
+				latest[id] = candle;
+				daily[id][candle.OpenTime.Date] = candle.ClosePrice;
+				var cutoff = candle.OpenTime.Date.AddDays(-1);
+				if (decision || latest.Count != 2 || latest.Values.Any(c => c.OpenTime != candle.OpenTime)
+					|| daily.Values.Any(v => v.Count(p => p.Key <= cutoff) < window + 1)) return;
+				decision = true;
+				var returns = securities.Select(s => daily[s.Id].Where(p => p.Key <= cutoff).TakeLast(window + 1).Select(p => p.Value).ToArray())
+					.Select(p => p.Zip(p.Skip(1), (a, b) => (double)(b / a - 1m)).ToArray()).ToArray();
+				var benchmark = returns[0];
+				var mean = benchmark.Average();
+				var variance = benchmark.Sum(r => (r - mean) * (r - mean));
+				IsTrue(variance > 0d);
+				var beta = returns[1].Select((r, i) => (r - returns[1].Average()) * (benchmark[i] - mean)).Sum() / variance;
+				IsTrue(Math.Abs(beta - 1d) > 0.00001d, "The archive profile must separate the two beta ranks.");
+				for (var i = 0; i < 2; i++)
+				{
+					var s = securities[i];
+					var longLeg = i == 0 ? beta > 1d : beta < 1d;
+					var units = Math.Floor(5000m / latest[s.Id].ClosePrice / s.VolumeStep.Value) * s.VolumeStep.Value;
+					expected[s.Id] = longLeg ? units : -units;
+				}
+			};
+			strategy.OrderRegistering += order =>
+			{
+				orders.Add(order);
+				IsTrue(decision && expected.TryGetValue(order.Security.Id, out _), "No intraday observations may substitute for WindowDays daily returns.");
+				var target = expected[order.Security.Id];
+				AreEqual(target > 0m ? Sides.Buy : Sides.Sell, order.Side);
+				AreEqual(Math.Abs(target), order.Volume);
+			};
+			strategy.Trades.TradeAdded += t =>
+			{
+				var id = t.Order.Security.Id;
+				signedFills[id] = signedFills.GetValueOrDefault(id) + (t.Order.Side == Sides.Buy ? t.Trade.Volume : -t.Trade.Volume);
+			};
+		}, TimeSpan.FromDays(31));
+		AreEqual(2, orders.Count, "Rebalance both deciles once in March; do not replace them with threshold crossings in one security.");
+		foreach (var s in securities) AreEqual(expected[s.Id], signedFills[s.Id]);
+	}
+
+	[TestMethod, TestCategory("Shard06")]
+	[DataRow(false)]
+	[DataRow(true)]
+	public async Task S0358_CalendarMomentumSkipsTheLatestMonthAndBuysOnlyTheTopRank(bool reverse)
+	{
+		var orders = new List<Order>();
+		var fills = 0m;
+		await Replay("0358_Commodity_Momentum", (strategy, secondary) =>
+		{
+			AreEqual(5, strategy.Parameters["TopN"].Value);
+			AreEqual(12, strategy.Parameters["LookbackMonths"].Value);
+			AreEqual(1, strategy.Parameters["SkipMonths"].Value);
+			AreEqual(200m, Convert.ToDecimal(strategy.Parameters["MinTradeUsd"].Value));
+			SetParam(strategy, "Universe", new[] { strategy.Security, secondary });
+			SetParam(strategy, "TopN", 1);
+			SetParam(strategy, "Capital", 10000m);
+			var lines = new List<string> { "SecurityId,Date,Close" };
+			foreach (var s in new[] { strategy.Security, secondary })
+			{
+				var winner = (s.Id == strategy.Security.Id) != reverse;
+				for (var month = 0; month < 14; month++)
+				{
+					var date = new DateTime(2023, 2, 1).AddMonths(month + 1).AddDays(-1);
+					var close = month >= 12 ? (winner ? 1m : 1000000m) : winner ? 100m + month * 10m : 200m - month * 5m;
+					lines.Add(FormattableString.Invariant($"{s.Id},{date:yyyy-MM-dd},{close}"));
+				}
+			}
+			SetParam(strategy, "PriceHistoryFile", WritePortfolioCsv(lines));
+			var prices = new Dictionary<string, decimal>();
+			strategy.CandleReceived += (_, c) => { if (c.State == CandleStates.Finished) prices[c.SecurityId.ToStringId()] = c.ClosePrice; };
+			strategy.OrderRegistering += order =>
+			{
+				orders.Add(order);
+				AreEqual(reverse ? secondary.Id : strategy.Security.Id, order.Security.Id,
+					"Use January versus February of the previous year; exclude February and all current/future March rows.");
+				AreEqual(Sides.Buy, order.Side);
+				var units = Math.Floor(10000m / prices[order.Security.Id] / order.Security.VolumeStep.Value) * order.Security.VolumeStep.Value;
+				AreEqual(units, order.Volume);
+			};
+			strategy.Trades.TradeAdded += trade => fills += trade.Trade.Volume;
+		}, TimeSpan.FromDays(20));
+		AreEqual(1, orders.Count);
+		AreEqual(orders[0].Volume, fills);
+	}
+
+	[TestMethod, TestCategory("Shard07")]
+	[DataRow(false)]
+	[DataRow(true)]
+	public async Task S0359_IntersectBothMomentumRanksAndReserveSixMonthlyTranches(bool reverse)
+	{
+		var orders = new List<Order>();
+		var fills = new Dictionary<string, decimal>();
+		await Replay("0359_Consistent_Momentum", (strategy, secondary) =>
+		{
+			AreEqual(147, strategy.Parameters["LookbackDays"].Value);
+			AreEqual(6, strategy.Parameters["HoldingMonths"].Value);
+			AreEqual(50m, Convert.ToDecimal(strategy.Parameters["MinTradeUsd"].Value));
+			SetParam(strategy, "Universe", new[] { strategy.Security, secondary });
+			SetParam(strategy, "Deciles", 2);
+			SetParam(strategy, "Capital", 12000m);
+			var lines = new List<string> { "SecurityId,Date,Close" };
+			foreach (var s in new[] { strategy.Security, secondary })
+			{
+				var winner = (s.Id == strategy.Security.Id) != reverse;
+				for (var day = 0; day < 170; day++)
+				{
+					var date = new DateTime(2024, 3, 1).AddDays(day - 170);
+					var anchor = s.Id == strategy.Security.Id ? 60000m : 2m;
+					var close = anchor * (winner ? 0.1m + day * 0.004m : 3m - day * 0.002m);
+					lines.Add(FormattableString.Invariant($"{s.Id},{date:yyyy-MM-dd},{close}"));
+				}
+			}
+			SetParam(strategy, "PriceHistoryFile", WritePortfolioCsv(lines));
+			var prices = new Dictionary<string, decimal>();
+			strategy.CandleReceived += (_, c) => { if (c.State == CandleStates.Finished) prices[c.SecurityId.ToStringId()] = c.ClosePrice; };
+			strategy.OrderRegistering += order =>
+			{
+				orders.Add(order);
+				var primary = order.Security.Id == strategy.Security.Id;
+				AreEqual(primary != reverse ? Sides.Buy : Sides.Sell, order.Side);
+				var step = order.Security.VolumeStep.Value;
+				var units = Math.Floor(1000m / prices[order.Security.Id] / step) * step;
+				AreEqual(units, order.Volume, "A new monthly tranche uses 1/HoldingMonths of gross capital, split equally between both baskets.");
+			};
+			strategy.Trades.TradeAdded += t =>
+			{
+				var id = t.Order.Security.Id;
+				fills[id] = fills.GetValueOrDefault(id) + (t.Order.Side == Sides.Buy ? t.Trade.Volume : -t.Trade.Volume);
+			};
+		}, TimeSpan.FromDays(20));
+		AreEqual(2, orders.Count, "Hold the first tranche through intraday momentum changes.");
+		foreach (var order in orders)
+			AreEqual(order.Side == Sides.Buy ? order.Volume : -order.Volume, fills[order.Security.Id]);
+	}
+
+	[TestMethod, TestCategory("Shard05")]
+	public Task S0341_IndependentSupertrendAndObservedPcr()
+		=> CheckObservedOptionFilter("0341_Supertrend_Put_Call_Ratio", true);
+
+	[TestMethod, TestCategory("Shard05")]
+	public Task S0341_DefaultParametersWithExplicitPcrObservations()
+		=> Replay("0341_Supertrend_Put_Call_Ratio", (s, _) =>
+		{
+			AreEqual(10, s.Parameters["Period"].Value);
+			AreEqual(3m, Convert.ToDecimal(s.Parameters["Multiplier"].Value));
+			SetParam(s, "PCRHistoryFile", WriteOptionObservationFixture(s.Security.Id));
+		}, TimeSpan.FromDays(7));
+
+	[TestMethod, TestCategory("Shard00")]
+	public Task S0344_IndependentHullSlopeAndObservedIv()
+		=> CheckObservedOptionFilter("0344_Hull_MA_Implied_Volatility_Breakout", false);
+
+	[TestMethod, TestCategory("Shard00")]
+	public Task S0344_DefaultParametersWithExplicitIvObservations()
+		=> Replay("0344_Hull_MA_Implied_Volatility_Breakout", (s, _) =>
+		{
+			AreEqual(9, s.Parameters["HmaPeriod"].Value);
+			SetParam(s, "IVHistoryFile", WriteOptionObservationFixture(s.Security.Id));
+		}, TimeSpan.FromDays(7));
+
+	[TestMethod, TestCategory("Shard05")]
+	public Task S0341_AtrProtectionChangesActualFills()
+		=> CheckAtrDistancesAndRiskParameterChangeRealExecutions("0341_Supertrend_Put_Call_Ratio", "0341Entry",
+			signalSetup: strategy =>
+			{
+				SetParam(strategy, "PCRHistoryFile", WriteOptionObservationFixture(strategy.Security.Id));
+				SetParam(strategy, "Multiplier", 6m);
+				strategy.Volume = 3m;
+			},
+			stopParameter: "StopLossAtr");
+
+	[TestMethod, TestCategory("Shard00")]
+	public Task S0344_AtrProtectionChangesActualFills()
+		=> CheckAtrDistancesAndRiskParameterChangeRealExecutions("0344_Hull_MA_Implied_Volatility_Breakout", "0344Entry",
+			signalSetup: strategy => SetParam(strategy, "IVHistoryFile", WriteOptionObservationFixture(strategy.Security.Id)),
+			stopParameter: "StopLossAtr");
+
+	[TestMethod, TestCategory("Shard07")]
+	public Task S0351_AnnualMayRebalanceReversesActualHoldings()
+		=> CheckAnnualFactorCalendar("0351_Accrual_Anomaly", 5);
+
+	[TestMethod, TestCategory("Shard01")]
+	public Task S0353_AnnualJulyRebalanceReversesActualHoldings()
+		=> CheckAnnualFactorCalendar("0353_Asset_Growth_Effect", 7);
+
+	[TestMethod, TestCategory("Shard05")]
+	public Task S0357_AnnualJulyRebalanceReversesActualHoldings()
+		=> CheckAnnualFactorCalendar("0357_Book_To_Market_Value", 7);
+
+	private async Task<ReplayMarketData> CreatePortfolioCalendarFixture(DateTime start, int months)
+	{
+		var archive = await AsmInit.CreateArchiveMarketData(CancellationToken);
+		var data = CreateContractMarket(start, start.AddMonths(months), false);
+		var frame = TimeSpan.FromMinutes(5);
+		foreach (var pair in new[] { (original: archive.Primary, target: data.Primary), (original: archive.Secondary, target: data.Secondary) })
+		{
+			pair.target.PriceStep = pair.original.PriceStep;
+			pair.target.VolumeStep = pair.original.VolumeStep;
+			pair.target.MinVolume = pair.original.MinVolume;
+			pair.target.MaxVolume = pair.original.MaxVolume;
+			var source = new List<CandleMessage>();
+			var storage = archive.Storage.GetCandleMessageStorage(pair.original.Id.ToSecurityId(), TimeSpan.FromMinutes(1).TimeFrame());
+			await foreach (var bar in storage.LoadAsync(archive.From.Date).WithCancellation(CancellationToken))
+			{
+				source.Add(bar);
+				if (source.Count == 20) break;
+			}
+			AreEqual(20, source.Count, "The calendar fixture must reuse actual packaged BTC/TON OHLC and volume.");
+			var candles = new List<TimeFrameCandleMessage>();
+			for (var month = 0; month < months; month++)
+			{
+				for (var slot = 0; slot < 4; slot++)
+				{
+					var values = source.Skip(slot * 5).Take(5).ToArray();
+					var time = start.AddMonths(month).AddMinutes(slot * 5);
+					// Only calendar timestamps and execution quotes are fixtures; OHLC/volume come from the archive.
+					candles.Add(new()
+					{
+						SecurityId = pair.target.Id.ToSecurityId(), TypedArg = frame,
+						OpenTime = time, CloseTime = time.Add(frame).AddTicks(-1),
+						OpenPrice = values[0].OpenPrice, HighPrice = values.Max(b => b.HighPrice),
+						LowPrice = values.Min(b => b.LowPrice), ClosePrice = values[^1].ClosePrice,
+						TotalVolume = values.Sum(b => b.TotalVolume), State = CandleStates.Finished,
+					});
+				}
+			}
+			await data.Storage.GetCandleMessageStorage(pair.target.Id.ToSecurityId(), frame.TimeFrame()).SaveAsync(candles, CancellationToken);
+			var step = pair.target.PriceStep.Value;
+			var quotes = candles.SelectMany(c => new[] { (time: c.OpenTime, price: c.OpenPrice), (time: c.CloseTime.AddTicks(1), price: c.ClosePrice) })
+				.Select(q => new Level1ChangeMessage
+				{
+					SecurityId = pair.target.Id.ToSecurityId(), ServerTime = q.time, LocalTime = q.time,
+					Changes =
+					{
+						[Level1Fields.BestBidPrice] = Math.Floor(q.price / step) * step,
+						[Level1Fields.BestAskPrice] = Math.Ceiling(q.price / step) * step,
+						[Level1Fields.BestBidVolume] = pair.target.MaxVolume.Value,
+						[Level1Fields.BestAskVolume] = pair.target.MaxVolume.Value,
+					},
+				});
+			await data.Storage.GetLevel1MessageStorage(pair.target.Id.ToSecurityId()).SaveAsync(quotes, CancellationToken);
+		}
+		return data;
+	}
+
+	private async Task CheckAnnualFactorCalendar(string key, int month)
+	{
+		var data = await CreatePortfolioCalendarFixture(new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc), 20);
+		var strategy = await CompileContractStrategy(key);
+		var orders = new List<Order>();
+		var fills = new Dictionary<string, decimal>();
+		var prices = new Dictionary<string, decimal>();
+		var expected = new Dictionary<Order, decimal>();
+		var source = new List<string>
+		{
+			"SecurityId,PeriodEnd,PublishedAt,TotalAssets,NetIncome,OperatingCashFlow,BookEquity,SharesOutstanding",
+		};
+		foreach (var security in new[] { data.Primary, data.Secondary })
+		{
+			var primary = security.Id == data.Primary.Id;
+			for (var year = 2022; year <= 2024; year++)
+			{
+				var low = year == 2024 ? !primary : primary;
+				var assets = year == 2022 ? 100m : year == 2023 ? primary ? 110m : 200m : primary ? 330m : 202m;
+				var income = low ? 1m : 30m;
+				var book = low ? 1000000m : 1m;
+				source.Add(FormattableString.Invariant($"{security.Id},{year}-12-31,{year + 1}-02-01T00:00:00Z,{assets},{income},10,{book},1"));
+			}
+		}
+		await AsmInit.RunScenario(strategy, CancellationToken, data, (s, _) =>
+		{
+			AreEqual(month, s.Parameters["RebalanceMonth"].Value);
+			SetParam(s, "Universe", new[] { data.Primary, data.Secondary });
+			SetParam(s, key.StartsWith("0353") ? "Quantiles" : "Deciles", 2);
+			SetParam(s, "Capital", 10000m);
+			SetParam(s, "FundamentalsFile", WritePortfolioCsv(source));
+			s.CandleReceived += (_, c) => { if (c.State == CandleStates.Finished) prices[c.SecurityId.ToStringId()] = c.ClosePrice; };
+			s.OrderRegistering += order =>
+			{
+				orders.Add(order);
+				AreEqual(month, s.CurrentTime.Month, "Annual allocation must not occur in arbitrary months.");
+				var longLeg = (order.Security.Id == data.Primary.Id) == (s.CurrentTime.Year == 2024);
+				var step = order.Security.VolumeStep.Value;
+				var units = Math.Floor(5000m / prices[order.Security.Id] / step) * step;
+				var target = longLeg ? units : -units;
+				var delta = target - fills.GetValueOrDefault(order.Security.Id);
+				AreEqual(delta > 0m ? Sides.Buy : Sides.Sell, order.Side);
+				AreEqual(Math.Abs(delta), order.Volume, "The next annual portfolio must account for the full opposite holding.");
+				expected[order] = delta;
+			};
+			s.Trades.TradeAdded += t =>
+			{
+				IsTrue(expected.ContainsKey(t.Order));
+				var id = t.Order.Security.Id;
+				fills[id] = fills.GetValueOrDefault(id) + (t.Order.Side == Sides.Buy ? t.Trade.Volume : -t.Trade.Volume);
+				AreEqual(fills[id], s.GetPositionValue(t.Order.Security, s.Portfolio).Value);
+			};
+		}, TimeSpan.FromMinutes(5), null, true, TimeSpan.FromSeconds(60));
+		AreEqual(4, orders.Count, "Two annual decisions must each execute both basket adjustments.");
+		IsTrue(fills[data.Primary.Id] < 0m && fills[data.Secondary.Id] > 0m);
+	}
+
+	[TestMethod, TestCategory("Shard07")]
+	public async Task S0359_ExpiredTranchesReduceRealHoldingsWithoutMovingExistingExpiryDates()
+	{
+		var data = await CreatePortfolioCalendarFixture(new DateTime(2024, 3, 1, 0, 0, 0, DateTimeKind.Utc), 8);
+		var strategy = await CompileContractStrategy("0359_Consistent_Momentum");
+		var latest = new Dictionary<string, ICandleMessage>();
+		var actual = new Dictionary<string, decimal>();
+		var tranches = new List<(DateTime expiry, Dictionary<string, decimal> quantities)>();
+		var expected = new Dictionary<string, decimal>();
+		var seen = 0;
+		var orders = 0;
+		var reductions = 0;
+		var lines = new List<string> { "SecurityId,Date,Close" };
+		foreach (var s in new[] { data.Primary, data.Secondary })
+		{
+			var winner = s.Id == data.Primary.Id;
+			var anchor = winner ? 60000m : 2m;
+			for (var day = 0; day < 170; day++)
+			{
+				var date = data.From.AddDays(day - 170);
+				var close = anchor * (winner ? 0.1m + day * 0.004m : 3m - day * 0.002m);
+				lines.Add(FormattableString.Invariant($"{s.Id},{date:yyyy-MM-dd},{close}"));
+			}
+		}
+		await AsmInit.RunScenario(strategy, CancellationToken, data, (s, _) =>
+		{
+			SetParam(s, "Universe", new[] { data.Primary, data.Secondary });
+			SetParam(s, "Capital", 12000m);
+			SetParam(s, "Deciles", 2);
+			SetParam(s, "PriceHistoryFile", WritePortfolioCsv(lines));
+			s.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished) return;
+				latest[candle.SecurityId.ToStringId()] = candle;
+				if (latest.Count != 2 || latest.Values.Any(c => c.OpenTime != candle.OpenTime)) return;
+				var month = new DateTime(candle.OpenTime.Year, candle.OpenTime.Month, 1);
+				if (month.Month == 10 && candle.OpenTime.TimeOfDay == TimeSpan.FromMinutes(15))
+					SetParam(s, "HoldingMonths", 6);
+				if (seen == month.Month) return;
+				seen = month.Month;
+				var holding = month.Month < 9 ? 6 : 12;
+				SetParam(s, "HoldingMonths", holding);
+				tranches.RemoveAll(t => t.expiry <= month);
+				var quantities = new Dictionary<string, decimal>();
+				foreach (var sec in new[] { data.Primary, data.Secondary })
+				{
+					var step = sec.VolumeStep.Value;
+					var units = Math.Floor(12000m / (2m * holding) / latest[sec.Id].ClosePrice / step) * step;
+					quantities[sec.Id] = sec.Id == data.Primary.Id ? units : -units;
+				}
+				tranches.Add((month.AddMonths(holding), quantities));
+				foreach (var sec in new[] { data.Primary, data.Secondary })
+					expected[sec.Id] = tranches.Sum(t => t.quantities[sec.Id]) - actual.GetValueOrDefault(sec.Id);
+			};
+			s.OrderRegistering += order =>
+			{
+				orders++;
+				IsTrue(expected.Remove(order.Security.Id, out var delta), "Only the independent sum of unexpired tranches may change the holding.");
+				AreEqual(delta > 0m ? Sides.Buy : Sides.Sell, order.Side);
+				AreEqual(Math.Abs(delta), order.Volume);
+				if (s.CurrentTime.Month >= 9)
+				{
+					reductions++;
+					AreEqual(order.Security.Id == data.Primary.Id ? Sides.Sell : Sides.Buy, order.Side);
+				}
+			};
+			s.Trades.TradeAdded += t =>
+			{
+				var id = t.Order.Security.Id;
+				actual[id] = actual.GetValueOrDefault(id) + (t.Order.Side == Sides.Buy ? t.Trade.Volume : -t.Trade.Volume);
+				AreEqual(actual[id], s.GetPositionValue(t.Order.Security, s.Portfolio).Value);
+			};
+		}, TimeSpan.FromMinutes(5), null, true, TimeSpan.FromSeconds(60));
+		AreEqual(16, orders);
+		AreEqual(4, reductions, "March and April tranches must expire after six months despite HoldingMonths changing to twelve.");
+		AreEqual(0, expected.Count);
+	}
+
+
+	[TestMethod, TestCategory("Shard07")]
+	public async Task S0359_DisagreeingMomentumRanksStayInCashUntilBothWindowsAgree()
+	{
+		var data = await CreatePortfolioCalendarFixture(new DateTime(2024, 3, 1, 0, 0, 0, DateTimeKind.Utc), 2);
+		var strategy = await CompileContractStrategy("0359_Consistent_Momentum");
+		var lines = new List<string> { "SecurityId,Date,Close" };
+		foreach (var security in new[] { data.Primary, data.Secondary })
+		{
+			var primary = security == data.Primary;
+			var anchor = primary ? 60000m : 2m;
+			for (var day = 0; day < 170; day++)
+			{
+				var date = data.From.AddDays(day - 170);
+				var factor = day < 148 ? primary ? 0.1m + day * 0.004m : 4m - day * 0.002m
+					: day < 169 ? primary ? 2m : 0.2m : primary ? 0.9m : 1.1m;
+				lines.Add(FormattableString.Invariant($"{security.Id},{date:yyyy-MM-dd},{anchor * factor}"));
+			}
+			for (var day = 1; day < 31; day++)
+			{
+				var date = data.From.AddDays(day);
+				var factor = primary ? 0.5m + day * 0.002m : 2m - day * 0.002m;
+				lines.Add(FormattableString.Invariant($"{security.Id},{date:yyyy-MM-dd},{anchor * factor}"));
+			}
+		}
+		var orders = new List<Order>();
+		var fills = new Dictionary<string, decimal>();
+		await AsmInit.RunScenario(strategy, CancellationToken, data, (s, _) =>
+		{
+			SetParam(s, "Universe", new[] { data.Primary, data.Secondary });
+			SetParam(s, "Capital", 12000m);
+			SetParam(s, "Deciles", 2);
+			SetParam(s, "PriceHistoryFile", WritePortfolioCsv(lines));
+			s.OrderRegistering += order =>
+			{
+				orders.Add(order);
+				AreEqual(4, s.CurrentTime.Month, "Conflicting daily ranks must remain in cash throughout March, without reading later March prices early.");
+				AreEqual(order.Security == data.Primary ? Sides.Buy : Sides.Sell, order.Side);
+			};
+			s.Trades.TradeAdded += trade =>
+			{
+				var id = trade.Order.Security.Id;
+				fills[id] = fills.GetValueOrDefault(id) + (trade.Order.Side == Sides.Buy ? trade.Trade.Volume : -trade.Trade.Volume);
+				AreEqual(fills[id], s.GetPositionValue(trade.Order.Security, s.Portfolio).Value);
+			};
+		}, TimeSpan.FromMinutes(5), null, true, TimeSpan.FromSeconds(60));
+		AreEqual(2, orders.Count);
+		foreach (var order in orders) AreEqual(order.Side == Sides.Buy ? order.Volume : -order.Volume, fills[order.Security.Id]);
+	}
+
+	private static decimal OptionObservation(int bar)
+		=> bar % 47 == 0 ? 0.05m : bar % 47 == 23 ? 10m : 1m + bar % 7 * 0.02m;
+
+	private static string WriteOptionObservationFixture(string securityId)
+	{
+		var start = new DateTime(2024, 3, 1, 0, 0, 0, DateTimeKind.Utc);
+		return WritePortfolioCsv(new[] { "SecurityId,Time,Value" }.Concat(Enumerable.Range(0, 31 * 96)
+			.Where(i => i < 400 || i > 430)
+			.Select(i => FormattableString.Invariant($"{securityId},{start.AddMinutes(i * 15):yyyy-MM-ddTHH:mm:ssZ},{OptionObservation(i)}"))));
+	}
+
+	private async Task CheckObservedOptionFilter(string key, bool pcr)
+	{
+		var observations = new List<decimal>();
+		var closes = new List<decimal>();
+		var hullDifferences = new List<decimal>();
+		var count = 0;
+		var atr = 0m;
+		decimal? previousClose = null, previousLine = null, previousUpper = null, previousLower = null, previousHull = null;
+		var trend = 1;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+		var actualPosition = 0m;
+		var entries = new HashSet<Sides>();
+		var exits = 0;
+		var fills = 0;
+		var rejected = 0;
+		var missing = 0;
+		var stPeriod = 10;
+		var hmaPeriod = 9;
+		var filterPeriod = 20;
+		decimal Wma(IReadOnlyList<decimal> values, int length)
+			=> Enumerable.Range(0, length).Sum(i => values[values.Count - length + i] * (i + 1)) / (length * (length + 1m) / 2m);
+		await Replay(key, (strategy, _) =>
+		{
+			IsTrue(strategy.Parameters.ContainsKey(pcr ? "PCRHistoryFile" : "IVHistoryFile"),
+				"Option statistics must be explicit observations, without candle-based random simulation.");
+			SetParam(strategy, pcr ? "PCRHistoryFile" : "IVHistoryFile", WriteOptionObservationFixture(strategy.Security.Id));
+			SetParam(strategy, "StopLossAtr", 0m);
+			strategy.Volume = 3m;
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished || candle.SecurityId != strategy.Security.Id.ToSecurityId()) return;
+				IsTrue(expectedSide == null, "Every prior signal must have submitted its order before the next candle.");
+				var bar = (int)((candle.OpenTime - new DateTime(2024, 3, 1, 0, 0, 0, DateTimeKind.Utc)).TotalMinutes / 15);
+				var tr = previousClose is decimal pc
+					? Math.Max(candle.HighPrice - candle.LowPrice, Math.Max(Math.Abs(candle.HighPrice - pc), Math.Abs(candle.LowPrice - pc)))
+					: candle.HighPrice - candle.LowPrice;
+				count++;
+				var atrLength = Math.Min(count, stPeriod);
+				atr = (atr * (atrLength - 1) + tr) / atrLength;
+				closes.Add(candle.ClosePrice);
+				decimal? line = null, hull = null;
+				if (count >= stPeriod)
+				{
+					var median = (candle.HighPrice + candle.LowPrice) / 2m;
+					var upper = median + 3m * atr;
+					var lower = median - 3m * atr;
+					upper = previousUpper is null || upper < previousUpper || previousClose > previousUpper ? upper : previousUpper.Value;
+					lower = previousLower is null || lower > previousLower || previousClose < previousLower ? lower : previousLower.Value;
+					if (previousLine is null) trend = candle.ClosePrice >= median ? 1 : -1;
+					else if (trend > 0 && candle.ClosePrice <= lower) trend = -1;
+					else if (trend < 0 && candle.ClosePrice >= upper) trend = 1;
+					line = trend > 0 ? lower : upper;
+					previousUpper = upper;
+					previousLower = lower;
+					previousLine = line;
+				}
+				previousClose = candle.ClosePrice;
+				if (closes.Count >= hmaPeriod)
+				{
+					hullDifferences.Add(2m * Wma(closes, hmaPeriod / 2) - Wma(closes, hmaPeriod));
+					if (hullDifferences.Count >= 3) hull = Wma(hullDifferences, 3);
+				}
+				var up = pcr ? line is decimal st && candle.ClosePrice > st : hull is decimal h && previousHull is decimal ph && h > ph;
+				var down = pcr ? line is decimal st2 && candle.ClosePrice < st2 : hull is decimal h2 && previousHull is decimal ph2 && h2 < ph2;
+				var available = bar < 400 || bar > 430;
+				var current = OptionObservation(bar);
+				var low = false;
+				var high = false;
+				if (available && observations.Count == filterPeriod)
+				{
+					var mean = observations.Average();
+					var deviation = (decimal)Math.Sqrt((double)(observations.Sum(v => (v - mean) * (v - mean)) / (filterPeriod - 1)));
+					low = current < mean - 2m * deviation;
+					high = current > mean + 2m * deviation;
+				}
+				if (!available) { observations.Clear(); missing++; }
+				else { observations.Add(current); if (observations.Count > filterPeriod) observations.RemoveAt(0); }
+				if (actualPosition > 0m && down) { expectedSide = Sides.Sell; expectedVolume = actualPosition; exits++; }
+				else if (actualPosition < 0m && up) { expectedSide = Sides.Buy; expectedVolume = -actualPosition; exits++; }
+				else if (actualPosition == 0m)
+				{
+					if (up && (pcr ? low : high)) expectedSide = Sides.Buy;
+					else if (down && high) expectedSide = Sides.Sell;
+					else if (up || down) rejected++;
+					expectedVolume = 3m;
+				}
+				if (hull is not null) previousHull = hull;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				IsNotNull(expectedSide, "No random or stale factor may create an extra entry.");
+				AreEqual(expectedSide.Value, order.Side);
+				AreEqual(expectedVolume, order.Volume, "Close the actual entire holding before accepting another entry.");
+				if (actualPosition == 0m) entries.Add(order.Side);
+				expectedSide = null;
+			};
+			strategy.Trades.TradeAdded += trade =>
+			{
+				actualPosition += trade.Order.Side == Sides.Buy ? trade.Trade.Volume : -trade.Trade.Volume;
+				AreEqual(actualPosition, strategy.Position);
+				fills++;
+			};
+		}, TimeSpan.FromDays(20));
+		IsTrue(expectedSide == null);
+		AreEqual(2, entries.Count, "The archive fixture must fill both independently predicted directions.");
+		IsTrue(exits > 0 && rejected > 0 && missing > 0 && fills > 5);
+	}
+
+
 	[TestMethod]
 	[TestCategory("Shard01")]
 	public async Task S0001_MaCrossover()
@@ -175,6 +4255,227 @@ public abstract partial class StrategyTests
 
 		shortHistory.AssertDiffersFrom(longHistory,
 			"HmmHistoryLength is published as the model history and as an optimization range, so its value must change the detected state and the orders that follow from it.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard01")]
+	[DataRow(false)]
+	[DataRow(true)]
+	public async Task S0321_NoEntryUsesAnUnformedHurstWindow(bool secondary)
+	{
+		var bars = 0;
+		var entries = 0;
+		var earlyEntries = new List<int>();
+		await Replay("0321_Ichimoku_Hurst_Exponent", (strategy, alternate) =>
+		{
+			if (secondary)
+				strategy.Security = alternate;
+			SetParam(strategy, "HurstPeriod", 500);
+			SetParam(strategy, "HurstThreshold", 0.45m);
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State == CandleStates.Finished && candle.SecurityId == strategy.Security.Id.ToSecurityId())
+					bars++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				if (strategy.Position != 0m)
+					return;
+				entries++;
+				if (bars < 500)
+					earlyEntries.Add(bars);
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(entries > 0, "The real archive must reach a formed Hurst window and fill subsequent entries.");
+		AreEqual(0, earlyEntries.Count, "A default Hurst value must not stand in for 500 observed closes: " + string.Join(", ", earlyEntries));
+	}
+
+	[TestMethod]
+	[TestCategory("Shard01")]
+	[DataRow(false, 9, 26, 52, 100, 0.5, 6)]
+	[DataRow(true, 9, 26, 52, 100, 0.5, 6)]
+	[DataRow(false, 7, 22, 44, 80, 0.45, 3)]
+	[DataRow(true, 7, 22, 44, 200, 0.55, 12)]
+	[DataRow(false, 15, 40, 70, 100, 0.45, 6)]
+	public async Task S0321_IndependentCloudCrossHurstAndFullExits(bool secondary, int tenkanLength,
+		int kijunLength, int spanLength, int hurstLength, double threshold, int cooldown)
+	{
+		var bars = new List<(decimal high, decimal low, decimal close)>();
+		var violations = new List<string>();
+		var expectedOrders = 0;
+		var orders = new Dictionary<Order, decimal>();
+		var entries = new Dictionary<Sides, int> { [Sides.Buy] = 0, [Sides.Sell] = 0 };
+		var position = 0m;
+		var lastOrderBar = -10000;
+		var hurstRejected = 0;
+		var cooldownRejected = 0;
+		var exits = 0;
+		var exitsDuringCooldown = 0;
+		var fills = 0;
+		decimal? previousTenkan = null;
+		decimal? previousKijun = null;
+		Order pending = null;
+		Sides? expectedSide = null;
+		var expectedVolume = 0m;
+
+		decimal midpoint(int length, int last)
+		{
+			var window = bars.Skip(last - length + 1).Take(length).ToArray();
+			return (window.Max(bar => bar.high) + window.Min(bar => bar.low)) / 2m;
+		}
+
+		double? hurst()
+		{
+			if (bars.Count < hurstLength)
+				return null;
+			var prices = bars.Skip(bars.Count - hurstLength).Select(bar => bar.close).ToArray();
+			var returns = prices.Zip(prices.Skip(1), (previous, current) => Math.Log((double)(current / previous))).ToArray();
+			var mean = returns.Average();
+			var cumulative = 0.0;
+			var deviations = returns.Select(value => cumulative += value - mean).ToArray();
+			var sigma = Math.Sqrt(returns.Average(value => Math.Pow(value - mean, 2)));
+			return sigma == 0.0 ? null : Math.Log((deviations.Max() - deviations.Min()) / sigma) / Math.Log(returns.Length);
+		}
+
+		await Replay("0321_Ichimoku_Hurst_Exponent", (strategy, alternate) =>
+		{
+			if (secondary)
+				strategy.Security = alternate;
+			foreach (var (name, expected) in new (string, decimal)[]
+			{
+				("TenkanPeriod", 9m), ("KijunPeriod", 26m), ("SenkouSpanBPeriod", 52m),
+				("HurstPeriod", 100m), ("HurstThreshold", 0.5m), ("SignalCooldownBars", 6m),
+			})
+				AreEqual(expected, Convert.ToDecimal(strategy.Parameters[name].Value), name);
+			AreEqual(TimeSpan.FromMinutes(15).TimeFrame(), strategy.Parameters["CandleType"].Value);
+			SetParam(strategy, "TenkanPeriod", tenkanLength);
+			SetParam(strategy, "KijunPeriod", kijunLength);
+			SetParam(strategy, "SenkouSpanBPeriod", spanLength);
+			SetParam(strategy, "HurstPeriod", hurstLength);
+			SetParam(strategy, "HurstThreshold", threshold);
+			SetParam(strategy, "SignalCooldownBars", cooldown);
+			// Isolate candle signals; the separate protection test verifies the published ATR stop.
+			SetParam(strategy, "StopLossAtr", 0m);
+			strategy.Volume = 3m;
+			strategy.CandleReceived += (_, candle) =>
+			{
+				if (candle.State != CandleStates.Finished || candle.SecurityId != strategy.Security.Id.ToSecurityId())
+					return;
+				if (expectedSide is not null)
+					violations.Add("An independently expected cloud/Hurst order was missed.");
+				expectedSide = null;
+				bars.Add((candle.HighPrice, candle.LowPrice, candle.ClosePrice));
+				if (bars.Count < Math.Max(2 * kijunLength - 1, spanLength + kijunLength - 1))
+					return;
+				var last = bars.Count - 1;
+				var tenkan = midpoint(tenkanLength, last);
+				var kijun = midpoint(kijunLength, last);
+				// The first formed span is retained for one extra slot while its displacement buffer fills.
+				var aIndex = Math.Max(kijunLength - 1, last - kijunLength);
+				var bIndex = Math.Max(spanLength - 1, last - kijunLength);
+				var spanA = (midpoint(tenkanLength, aIndex) + midpoint(kijunLength, aIndex)) / 2m;
+				var spanB = midpoint(spanLength, bIndex);
+				var crossUp = previousTenkan is decimal oldTenkan && previousKijun is decimal oldKijun
+					&& oldTenkan <= oldKijun && tenkan > kijun;
+				var crossDown = previousTenkan is decimal oldFast && previousKijun is decimal oldSlow
+					&& oldFast >= oldSlow && tenkan < kijun;
+				previousTenkan = tenkan;
+				previousKijun = kijun;
+				if (pending is not null && pending.State is not (OrderStates.Done or OrderStates.Failed))
+					return;
+				var above = candle.ClosePrice > Math.Max(spanA, spanB);
+				var below = candle.ClosePrice < Math.Min(spanA, spanB);
+				var available = bars.Count - lastOrderBar >= cooldown;
+				if (position > 0m && (below || crossDown) || position < 0m && (above || crossUp))
+				{
+					expectedSide = position > 0m ? Sides.Sell : Sides.Buy;
+					expectedVolume = Math.Abs(position);
+					exits++;
+					if (!available)
+						exitsDuringCooldown++;
+				}
+				else if (position == 0m && (above && crossUp || below && crossDown))
+				{
+					var value = hurst();
+					if (value is null || value <= threshold)
+						hurstRejected++;
+					else if (!available)
+						cooldownRejected++;
+					else
+					{
+						expectedSide = crossUp ? Sides.Buy : Sides.Sell;
+						expectedVolume = strategy.Volume;
+						entries[expectedSide.Value]++;
+					}
+				}
+				if (expectedSide is not null)
+					expectedOrders++;
+			};
+			strategy.OrderRegistering += order =>
+			{
+				if (order.Side != expectedSide || order.Volume != expectedVolume || order.Type != OrderTypes.Market || strategy.Position != position)
+					violations.Add($"{strategy.CurrentTime:O}: {order.Side} {order.Volume}, expected {expectedSide} {expectedVolume} from independent rolling extrema, displaced spans and R/S log returns.");
+				expectedSide = null;
+				lastOrderBar = bars.Count;
+				pending = order;
+				orders.Add(order, 0m);
+			};
+			strategy.Trades.TradeAdded += trade =>
+			{
+				IsTrue(orders.ContainsKey(trade.Order), "An execution must belong to an independently checked order.");
+				orders[trade.Order] += trade.Trade.Volume;
+				position += trade.Order.Side == Sides.Buy ? trade.Trade.Volume : -trade.Trade.Volume;
+				AreEqual(position, strategy.Position);
+				IsTrue(Math.Abs(position) <= strategy.Volume);
+				IsTrue(trade.Trade.Price > 0m && trade.Trade.Volume > 0m);
+				fills++;
+			};
+		}, TimeSpan.FromDays(31));
+		IsTrue(violations.Count == 0, string.Join(Environment.NewLine, violations.Take(12)));
+		IsNull(expectedSide, "An eligible signal on the last observed bar must also submit its order.");
+		AreEqual(expectedOrders, orders.Count);
+		IsTrue(entries[Sides.Buy] > 0 && entries[Sides.Sell] > 0 && exits > 0 && fills > 0);
+		IsTrue(hurstRejected > 0, "The Hurst gate must actually reject observed cloud crossings.");
+		IsTrue(cooldownRejected > 0, "The entry cooldown must reject observed eligible crossings.");
+		IsTrue(exitsDuringCooldown > 0, "An exit must really execute while new entries are blocked.");
+		foreach (var (order, filled) in orders)
+			AreEqual(order.Volume, filled, "Every submitted entry and exit must really fill.");
+		TestContext.WriteLine($"Ichimoku/Hurst: {entries[Sides.Buy]} longs, {entries[Sides.Sell]} shorts, {exits} exits, {fills} fills, {hurstRejected} Hurst rejections, {cooldownRejected} cooldown rejections, {exitsDuringCooldown} exits during cooldown.");
+	}
+
+	[TestMethod]
+	[TestCategory("Shard01")]
+	public async Task S0321_AtrStopsFreezeTheEntryDistanceAndFillBetweenSignalBars()
+	{
+		var heldStopChecks = 0;
+		var stopField = typeof(Strategy).GetField("_stopLoss", BindingFlags.Instance | BindingFlags.NonPublic);
+		await CheckAtrDistancesAndRiskParameterChangeRealExecutions("0321_Ichimoku_Hurst_Exponent",
+			"Ichimoku Hurst entry", signalSetup: strategy =>
+			{
+				strategy.Volume = 3m;
+				SetParam(strategy, "TenkanPeriod", 15);
+				SetParam(strategy, "KijunPeriod", 40);
+				SetParam(strategy, "SenkouSpanBPeriod", 70);
+				SetParam(strategy, "HurstThreshold", 0.45m);
+				decimal? frozenDistance = null;
+				strategy.Trades.TradeAdded += trade =>
+				{
+					if (strategy.Position == 0m)
+						frozenDistance = null;
+					else if (trade.Order.Comment == "Ichimoku Hurst entry" && stopField.GetValue(strategy) is Unit offset)
+						frozenDistance = offset.Value;
+				};
+				strategy.CandleReceived += (_, candle) =>
+				{
+					if (candle.State != CandleStates.Finished || frozenDistance is not decimal distance || strategy.Position == 0m)
+						return;
+					AreEqual(distance, ((Unit)stopField.GetValue(strategy)).Value,
+						"The entry-verified ATR distance must stay fixed through subsequent signal candles.");
+					heldStopChecks++;
+				};
+			},
+			stopParameter: "StopLossAtr");
+		IsTrue(heldStopChecks > 0, "A nonzero frozen ATR distance must be observed while a real position remains open.");
 	}
 
 	/// <summary>
@@ -27925,7 +32226,6 @@ public abstract partial class StrategyTests
 		{
 			AreEqual(2m, Convert.ToDecimal(s.Parameters["StopLoss"].Value));
 			AreEqual(frame.TimeFrame(), s.Parameters["CandleType"].Value);
-			SetParam(s, "StopLoss", 0.00001m);
 			if (darkPool) SetParam(s, "DarkPoolSecurity", data.Secondary);
 			s.CandleReceived += (_, candle) =>
 			{
@@ -27942,7 +32242,7 @@ public abstract partial class StrategyTests
 					entryVolume += trade.Trade.Volume;
 					var stop = (Unit)stopField.GetValue(s);
 					AreEqual(UnitTypes.Percent, stop.Type);
-					AreEqual(0.00001m, stop.Value);
+					AreEqual(2m, stop.Value);
 				}
 				else if (entryFill is not null)
 				{

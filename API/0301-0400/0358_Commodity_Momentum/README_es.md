@@ -1,30 +1,37 @@
-# Estrategia de Momentum en Materias Primas
-[English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
+# Commodity Momentum
 
-La estrategia **Commodity Momentum** toma posiciones largas en las materias primas con el momentum más fuerte a 12 meses (omitiendo el mes más reciente).
-Las posiciones se rebalancean el primer día de negociación de cada mes.
+[English](README.md) | [Русский](README_ru.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [中文](README_zh.md) | [日本語](README_ja.md)
 
-Las pruebas indican un rendimiento anual promedio de aproximadamente 10%. Funciona mejor en mercados de materias primas diversificados.
+## Reglas de negociación
 
-Las posiciones se ajustan mensualmente; no se utilizan señales intradía.
+M es el mes de decisión y P[K] el último cierre observado del mes completo K. Momentum = P[M − SkipMonths − 1] / P[M − LookbackMonths − 1] − 1. Se exigen todos los meses intermedios. En marzo, los valores predeterminados comparan enero con febrero del año anterior, omitiendo febrero y marzo en curso. Comprar hasta TopN mejores activos con pesos iguales, solo largos. Se admite momentum negativo. Cerrar valores excluidos en el siguiente rebalanceo.
 
-## Detalles
-- **Criterios de entrada**: Comprar las `TopN` principales materias primas por momentum a 12 meses excluyendo el último mes.
-- **Largo/Corto**: Solo largos.
-- **Criterios de salida**: Rebalanceo en la próxima fecha programada.
-- **Stops**: Sin lógica de stop explícita.
-- **Valores predeterminados**:
-  - `TopN = 5`
-  - `MinTradeUsd = 200`
-  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
-- **Filtros**:
-  - Categoría: Momentum
-  - Dirección: Solo largos
-  - Indicadores: Price
-  - Stops: No
-  - Complejidad: Intermedio
-  - Marco temporal: Diario
-  - Estacionalidad: Sí
-  - Redes neuronales: No
-  - Divergencia: No
-  - Nivel de riesgo: Medio
+Se evalúan únicamente velas cerradas sincronizadas. Las estadísticas cuentan fechas UTC distintas; las velas intradía sustituyen el valor de la misma fecha. Se rebalancea una vez en la primera vela conjunta apta de cada mes; los datos incompletos retrasan la decisión. Los empates se ordenan por Security.Id.
+
+## Datos de entrada
+
+PriceHistoryFile es un CSV opcional de cierres diarios positivos: SecurityId,Date,Close; fecha yyyy-MM-dd. Las fechas actuales o futuras no precalientan decisiones. Los cierres en vivo sustituyen el valor de su fecha UTC. Se rechazan duplicados. Permite preparar ventanas largas con un archivo de ejecución corto.
+
+## Parámetros
+
+| Parámetro | Valor predeterminado |
+|---|---|
+| `Universe` | obligatorio |
+| `Capital` | `100000` |
+| `Leverage` | `1` |
+| `MinTradeUsd` | `200` |
+| `CandleType` | `TimeSpan.FromMinutes(5).TimeFrame()` |
+| `PriceHistoryFile` | opcional — sin configurar |
+| `TopN` | `5` |
+| `LookbackMonths` | `12` |
+| `SkipMonths` | `1` |
+
+## Ejecución
+
+Universe se configura explícitamente. Los precios y Capital se expresan en USD por unidad negociada. Capital es un presupuesto fijo; Leverage determina la exposición bruta. No se añaden stop loss ni take profit.
+
+Se convierte a unidades al cierre de señal y se redondea hacia cero según VolumeStep. Se usan posiciones realmente ejecutadas, se esperan órdenes pendientes y se respetan MinVolume/MaxVolume dividiendo ajustes grandes entre velas posteriores. MinTradeUsd filtra ajustes pequeños, pero no liquidaciones completas.
+
+## Verificación
+
+Las ejecuciones usan únicamente el archivo BTC/TON disponible. Los informes, observaciones de opciones e historial de preparación explícitos son datos de prueba de la mecánica, no fundamentales ni historia de opciones reales. Las ventanas reducidas, dos grupos y marzo como mes anual son perfiles de prueba identificados, no validación de los valores largos originales. No se afirma rentabilidad.

@@ -1,44 +1,39 @@
-# Momentum-Reversal-Volatilität-Strategie
-[English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
+# Momentum Rev Vol
 
-Diese Komposit-Faktor-Strategie kombiniert drei Signale: langfristiges Momentum,
-kurzfristige Umkehr und niedrige Volatilität. Jeden Monat wird für jedes Wertpapier
-ein Score berechnet, der das 12-Monats-Momentum, den Kehrwert der Einmonatsrenditen
-und die nachgelagerte 60-Tage-Volatilität verwendet. Die einstellbaren Gewichte `WM`,
-`WR` und `WV` steuern den Beitrag jeder Komponente.
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Português](README_pt.md) | [中文](README_zh.md) | [日本語](README_ja.md)
 
-Am ersten Handelstag jedes Monats werden die Wertpapiere nach dem Komposit-Score
-gerankt. Das oberste Dezil wird gekauft und das unterste Dezil wird leerverkauft, mit
-gleichen Dollar-Gewichten. Positionen werden bis zur nächsten Neugewichtung gehalten,
-und es werden keine expliziten Stop-Loss-Regeln angewendet.
+## Handelsregeln
 
-Durch die Kombination von Trendfolge, Mean Reversion und Risikoaversion strebt die
-Strategie diversifizierte Renditen in verschiedenen Marktregimes an.
+Je Titel werden verschiedene abgeschlossene Tagesschlusskurse P verwendet: M = P[t]/P[t−Lookback12]−1, R = P[t]/P[t−Lookback1]−1. V ist die Stichproben-Standardabweichung der letzten VolWindow einfachen Tagesrenditen (Divisor N−1). Bewertung = WM×M − WR×R − WV×V, ohne Querschnittsnormalisierung. Absteigend sortieren: floor(n/Decile) Gewinner kaufen und ebenso viele Verlierer leerverkaufen. Mindestens Decile geeignete Titel sind nötig. Mengen bleiben zwischen Monatsprüfungen fixiert.
 
-## Details
+Universe muss explizit angegeben werden. Preise und Capital sind in USD je gehandelter Einheit angegeben. Capital ist ein festes Budget; Leverage bestimmt das Bruttoengagement. Es werden keine Stop-Loss- oder Take-Profit-Orders hinzugefügt.
 
-- **Einstiegskriterien**: Monatliches Ranking nach gewichteter Kombination aus Momentum,
-  Umkehr und Volatilität; Long oberstes Dezil, Short unterstes Dezil
-- **Long/Short**: Beide
-- **Ausstiegskriterien**: Nächste monatliche Neugewichtung
-- **Stops**: Nein
-- **Standardwerte**:
-  - `Lookback12` = 252
-  - `Lookback1` = 21
-  - `VolWindow` = 60
-  - `WM` = 1.0
-  - `WR` = 1.0
-  - `WV` = 1.0
-  - `MinTradeUsd` = 200
-  - `CandleType` = TimeSpan.FromDays(1)
-- **Filter**:
-  - Kategorie: Multi-Faktor
-  - Richtung: Beide
-  - Indikatoren: Momentum, Umkehr, Volatilität
-  - Stops: Nein
-  - Komplexität: Fortgeschritten
-  - Zeitrahmen: Mittelfristig
-  - Saisonalität: Nein
-  - Neuronale Netze: Nein
-  - Divergenz: Nein
-  - Risikolevel: Mittel
+Nur abgeschlossene Kerzen mit gleichem Zeitstempel werden gemeinsam ausgewertet. Statistiken zählen verschiedene UTC-Daten; weitere Intraday-Kerzen ersetzen den Tageswert. Die erste geeignete gemeinsame Kerze jedes Monats löst genau eine Umschichtung aus. Unvollständige Daten verschieben sie. Gleiche Werte werden nach Security.Id sortiert.
+
+Jede Seite erhält die Hälfte von Capital × Leverage, gleichmäßig auf ihre Titel verteilt. Stückzahlen basieren auf dem Signalschlusskurs und werden zu null auf VolumeStep gerundet. Tatsächliche Ausführungen bestimmen den Bestand. Offene Orders werden abgewartet, MinVolume/MaxVolume eingehalten und große Anpassungen auf spätere Kerzen verteilt. MinTradeUsd gilt nicht für vollständige Glattstellungen.
+
+## Parameter
+
+| Parameter | Standard |
+|---|---|
+| `Universe` | erforderlich |
+| `Capital` | 100000 |
+| `Leverage` | 1 |
+| `MinTradeUsd` | 200 |
+| `CandleType` | TimeSpan.FromMinutes(1440).TimeFrame() |
+| `PriceHistoryFile` | nicht gesetzt |
+| `Lookback12` | 252 |
+| `Lookback1` | 21 |
+| `VolWindow` | 60 |
+| `WM` | 1 |
+| `WR` | 1 |
+| `WV` | 1 |
+| `Decile` | 10 |
+
+## Eingabedaten
+
+Optionale `PriceHistoryFile`-CSV: `SecurityId,Date,Close`, positive Kurse, eindeutige Titel/Datum-Paare, Datum `yyyy-MM-dd`. Intraday nur frühere UTC-Tage verwenden; eine abgeschlossene Tageskerze trägt ihren Schlusskurs bei. Zukünftige Zeilen greifen früheren Prüfungen nicht vor. Ausführungskerzen ersetzen ihren Tageswert.
+
+## Prüfung
+
+Beide Sprachen werden mit gebündelten BTC/TON-Daten, unabhängigen Formeln, Orderseiten/-mengen, Ausführungen, Positionen und Ausstiegen geprüft. Datierte Preis-/Faktor- und Kalenderfixtures prüfen Mechanik; verschobene OHLC/Volumina sind keine mehrjährige Marktgeschichte. Zwei Ranggruppen, TopN=1 und SMA=2 sind ausdrücklich kleine Testprofile. Lange Originalfenster und Standardwerte werden separat geprüft. Keine Renditezusage.

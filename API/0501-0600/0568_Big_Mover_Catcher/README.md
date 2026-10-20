@@ -1,16 +1,43 @@
-# Big Mover Catcher Strategy
+# Big Mover Catcher
+
 [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-This strategy enters long when the price closes above the upper Bollinger Band and all enabled filters confirm the move. It can also go short when the price closes below the lower band. Filters include RSI, ADX, ATR, EMA trend direction and MACD. A fixed percent stop loss is applied, positions are closed when price returns to the middle band, and an optional force take profit exits on unusually large candles.
+## Trading rules
 
-## Details
-- **Entry Criteria:**
-  - **Long:** close > upper Bollinger Band and all active filters pass.
-  - **Short:** close < lower Bollinger Band and all active filters pass.
-- **Long/Short:** Both (configurable).
-- **Exit Criteria:**
-  - Price crosses the middle Bollinger Band.
-  - Optional force take profit on large candles.
-- **Stops:** Fixed percent stop loss.
-- **Default Values:** Bollinger length = 40, stop loss = 2%, force TP threshold = 5%.
-- **Filters:** RSI (14), ADX (28), ATR (14), EMA (350), MACD (12,26,9).
+Use finished one-minute closes and Bollinger bands (40 bars, two population standard deviations). While flat, enter long `Volume` above the upper band or short `Volume` below the lower band. `TradeDirection = null` permits both sides; `Buy` or `Sell` restricts entries.
+
+All five filters are enabled by default and must confirm the same entry: RSI(14) strictly above 50 for long/below 50 for short; ADX(28) at least 20; `100 * ATR(14) / Close >= 0.05`; close above/below EMA(350); MACD(12,26,9) histogram positive/negative. Each filter has an independent switch. Only enabled indicators must be formed, so a disabled EMA does not impose a 350-bar wait.
+
+Exit the entire long at a completed close at/below the middle band, or the entire short at/above it. Optional `IsForceTakeProfitEnabled` also exits when the favorable candle body divided by open is at least `ForceTakeProfitPercent` percent (default 5). This tests the current candle body, not profit from entry; it is disabled by default. Exits have priority and do not reverse within the same candle.
+
+Native local protection uses a market stop at `StopLossPercent` percent from filled entry (default 2). An active order prevents duplicate submissions.
+
+Native local protection uses the instrument's candle and subscribed price updates. Distances are anchored to actual fills. Exits are market orders; execution prices depend on the available market and price grid.
+
+## Parameters
+
+| Parameter | Default |
+|---|---|
+| `BollingerPeriod` | `40` |
+| `BollingerDeviation` | `2` |
+| `IsRsiFilterEnabled` | `true` |
+| `RsiPeriod` | `14` |
+| `RsiLongThreshold` | `50` |
+| `RsiShortThreshold` | `50` |
+| `IsAdxFilterEnabled` | `true` |
+| `AdxPeriod` | `28` |
+| `MinimumAdx` | `20` |
+| `IsAtrFilterEnabled` | `true` |
+| `AtrPeriod` | `14` |
+| `MinimumAtrPercent` | `0.05` |
+| `IsEmaFilterEnabled` | `true` |
+| `EmaPeriod` | `350` |
+| `IsMacdFilterEnabled` | `true` |
+| `MacdFast` | `12` |
+| `MacdSlow` | `26` |
+| `MacdSignal` | `9` |
+| `TradeDirection` | `null` |
+| `StopLossPercent` | `2` |
+| `IsForceTakeProfitEnabled` | `false` |
+| `ForceTakeProfitPercent` | `5` |
+| `CandleType` | `1m` |

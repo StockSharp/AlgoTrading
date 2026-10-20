@@ -31,8 +31,9 @@ public class BbsrExtremeStrategy : Strategy
 	private decimal _prevClose;
 	private decimal _prevMa;
 	private bool _isInitialized;
-	private decimal _entryPrice;
-	private int _cooldown;
+	private Order _pending;
+
+	private bool IsPending => _pending is not null && _pending.State is not (OrderStates.Done or OrderStates.Failed);
 
 	/// <summary>
 	/// Period for Bollinger Bands calculation.
@@ -145,8 +146,7 @@ public class BbsrExtremeStrategy : Strategy
 		_prevClose = default;
 		_prevMa = default;
 		_isInitialized = false;
-		_entryPrice = 0m;
-		_cooldown = 0;
+		_pending = null;
 	}
 
 	/// <inheritdoc />
@@ -170,6 +170,13 @@ public class BbsrExtremeStrategy : Strategy
 			Length = AtrLength
 		};
 
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
+		{
+			var quotes = new Subscription(DataType.Level1, Security);
+			quotes.MarketData.BuildField = field;
+			SubscribeLevel1(quotes).Start();
+		}
+
 		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.BindEx([bollinger, ma, atr], ProcessCandle)
@@ -186,80 +193,34 @@ public class BbsrExtremeStrategy : Strategy
 
 	}
 
+
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue[] values)
 	{
-		if (candle.State != CandleStates.Finished)
+		if (candle.State != CandleStates.Finished
+			|| values[0] is not BollingerBandsValue bb || !values[0].IsFormed
+			|| bb.UpBand is not decimal upper || bb.LowBand is not decimal lower
+			|| !values[1].IsFormed || !values[2].IsFormed)
 			return;
-
-		if (values[0] is not BollingerBandsValue bbValue ||
-			bbValue.UpBand is not decimal upper ||
-			bbValue.LowBand is not decimal lower ||
-			!values[1].IsFormed || !values[2].IsFormed)
-			return;
-
-		var maValue = values[1].GetValue<decimal>();
-		var atrValue = values[2].GetValue<decimal>();
-
-		if (!_isInitialized)
-		{
-			_prevLower = lower;
-			_prevUpper = upper;
-			_prevClose = candle.ClosePrice;
-			_prevMa = maValue;
-			_isInitialized = true;
-			return;
-		}
-
-		if (_cooldown > 0)
-			_cooldown--;
-
-		var bull = _prevClose < _prevLower && candle.ClosePrice > lower && maValue > _prevMa;
-		var bear = _prevClose > _prevUpper && candle.ClosePrice < upper && maValue < _prevMa;
-
-		if (bull && Position <= 0 && _cooldown == 0)
-		{
-			BuyMarket();
-			_entryPrice = candle.ClosePrice;
-			_cooldown = 20;
-		}
-		else if (bear && Position >= 0 && _cooldown == 0)
-		{
-			SellMarket();
-			_entryPrice = candle.ClosePrice;
-			_cooldown = 20;
-		}
-
-		var stop = AtrStopMultiplier * atrValue;
-		var profit = AtrProfitMultiplier * atrValue;
-
-		if (Position > 0)
-		{
-			var stopPrice = _entryPrice - stop;
-			var profitPrice = _entryPrice + profit;
-
-			if (candle.LowPrice <= stopPrice || candle.HighPrice >= profitPrice)
-			{
-				SellMarket();
-				_entryPrice = 0m;
-				_cooldown = 20;
-			}
-		}
-		else if (Position < 0)
-		{
-			var stopPrice = _entryPrice + stop;
-			var profitPrice = _entryPrice - profit;
-
-			if (candle.HighPrice >= stopPrice || candle.LowPrice <= profitPrice)
-			{
-				BuyMarket();
-				_entryPrice = 0m;
-				_cooldown = 20;
-			}
-		}
-
+		var ma = values[1].GetValue<decimal>();
+		var atr = values[2].GetValue<decimal>();
+		var bull = _isInitialized && _prevClose < _prevLower && candle.ClosePrice > lower && ma > _prevMa;
+		var bear = _isInitialized && _prevClose > _prevUpper && candle.ClosePrice < upper && ma < _prevMa;
 		_prevLower = lower;
 		_prevUpper = upper;
 		_prevClose = candle.ClosePrice;
-		_prevMa = maValue;
+		_prevMa = ma;
+		_isInitialized = true;
+		if (Position != 0m || IsPending || atr <= 0m || !IsFormedAndOnlineAndAllowTrading())
+			return;
+		if (!bull && !bear)
+			return;
+		// Freeze distances before registering the entry; native protection anchors them to actual fills.
+		StartProtection(new Unit(atr * AtrProfitMultiplier, UnitTypes.Absolute),
+			new Unit(atr * AtrStopMultiplier, UnitTypes.Absolute), useMarketOrders: true, isLocalStop: true);
+		_pending = CreateOrder(bull ? Sides.Buy : Sides.Sell, 0m, Volume);
+		_pending.Type = OrderTypes.Market;
+		_pending.Comment = "0556Entry";
+		RegisterOrder(_pending);
 	}
+
 }

@@ -1,29 +1,19 @@
-# 5 EMA No-Touch Breakout Strategy
-[Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
+# Five Ema NoTouch Breakout
 
-The 5 EMA No-Touch Breakout strategy waits for a candle that remains entirely on one side of the 5-period EMA. When price later breaks the extreme of that setup candle, the strategy enters in the breakout direction. The stop-loss is placed at the opposite extreme and the take-profit is set at a multiple of the risk.
+[Русский](README_ru.md) | [Deutsch](README_de.md) | [Español](README_es.md) | [Português](README_pt.md) | [中文](README_zh.md) | [日本語](README_ja.md)
 
-## Details
+## Trading rules
 
-- **Entry Criteria**:
-  - Candle high below EMA → prepare long; enter when price breaks above that candle's high.
-  - Candle low above EMA → prepare short; enter when price breaks below that candle's low.
-- **Long/Short**: Both.
-- **Exit Criteria**:
-  - Stop at setup candle extreme.
-  - Target at `RewardRisk` × risk.
-- **Stops**: Yes.
-- **Default Values**:
-  - `EmaPeriod` = 5
-  - `RewardRisk` = 3.0
-- **Filters**:
-  - Category: Breakout
-  - Direction: Long/Short
-  - Indicators: EMA
-  - Stops: Yes
-  - Complexity: Low
-  - Timeframe: 5-minute
-  - Seasonality: No
-  - Neural networks: No
-  - Divergence: No
-  - Risk level: Medium
+Process only finished candles after EMA formation. A candle wholly below EMA arms a long breakout above its high; a candle wholly above EMA arms a short breakout below its low. Test the previous setup before replacing it; touching the boundary is not a breakout. Enter only from flat, with Volume units, and clear setup while holding. Freeze stop at the setup's opposite extreme. On the first actual entry fill freeze risk = distance to that stop and take-profit distance = RewardRisk×risk. Native local market protection observes bid/ask quotes between candles. If the fill has already crossed the stop, immediately close the actual position. No cooldown or pyramiding.
+
+## Parameters
+
+| Parameter | Default |
+|---|---|
+| `CandleType` | TimeSpan.FromMinutes(5).TimeFrame() |
+| `EmaPeriod` | 5 |
+| `RewardRisk` | 3 |
+
+## Verification
+
+Both languages are checked with the packaged BTC/TON history, independent formulas, actual order sides/quantities, fills, positions and exits. Dated price/factor and calendar fixtures test mechanics; relocated OHLC/volume is not multi-year market history. Two rank buckets, TopN=1 and SMA=2 are explicit small-universe test profiles. Published long lookbacks/defaults are checked separately. No profitability claim is made.

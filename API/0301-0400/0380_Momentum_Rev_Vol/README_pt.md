@@ -1,44 +1,39 @@
-# Estratégia de Momentum, Reversão e Volatilidade
-[English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
+# Momentum Rev Vol
 
-Esta estratégia de fator composto combina três sinais: momentum de longo prazo,
-reversão de curto prazo e baixa volatilidade. A cada mês é calculada uma pontuação
-para cada ativo usando o momentum de 12 meses, o inverso dos retornos de um mês e a
-volatilidade dos últimos 60 dias. Os pesos ajustáveis `WM`, `WR` e `WV` controlam
-a contribuição de cada componente.
+[English](README.md) | [Русский](README_ru.md) | [Deutsch](README_de.md) | [Español](README_es.md) | [中文](README_zh.md) | [日本語](README_ja.md)
 
-No primeiro dia de negociação de cada mês, os ativos são classificados pela pontuação
-composta. O decil mais alto é comprado e o decil mais baixo é vendido a descoberto com
-pesos iguais em dólares. As posições são mantidas até o próximo rebalanceamento e não
-são empregadas regras explícitas de stop-loss.
+## Regras de negociação
 
-Ao combinar seguidor de tendência, reversão à média e aversão ao risco, a estratégia
-busca retornos diversificados em diferentes regimes de mercado.
+Usar fechamentos diários completos distintos P: M = P[t]/P[t−Lookback12]−1, R = P[t]/P[t−Lookback1]−1. V é o desvio padrão amostral dos últimos VolWindow retornos diários simples (divisor N−1). Pontuação = WM×M − WR×R − WV×V, sem normalização transversal. Comprar floor(n/Decile) líderes e vender a descoberto igual número de últimos; exigir pelo menos Decile ativos aptos. Manter quantidades entre revisões mensais.
 
-## Detalhes
+Universe é definido explicitamente. Preços e Capital usam USD por unidade negociada. Capital é um orçamento fixo; Leverage define a exposição bruta. Não são adicionados stop loss nem take profit.
 
-- **Critérios de entrada**: Classificação mensal por combinação ponderada de momentum,
-  reversão e volatilidade; comprado no decil superior, vendido no decil inferior
-- **Comprado/Vendido**: Ambos
-- **Critérios de saída**: Próximo rebalanceamento mensal
-- **Stops**: Não
-- **Valores padrão**:
-  - `Lookback12` = 252
-  - `Lookback1` = 21
-  - `VolWindow` = 60
-  - `WM` = 1.0
-  - `WR` = 1.0
-  - `WV` = 1.0
-  - `MinTradeUsd` = 200
-  - `CandleType` = TimeSpan.FromDays(1)
-- **Filtros**:
-  - Categoria: Multi-fator
-  - Direção: Ambos
-  - Indicadores: Momentum, reversão, volatilidade
-  - Stops: Não
-  - Complexidade: Avançado
-  - Período: Médio prazo
-  - Sazonalidade: Não
-  - Redes neurais: Não
-  - Divergência: Não
-  - Nível de risco: Médio
+Somente velas encerradas sincronizadas são avaliadas. As estatísticas contam datas UTC distintas; novas velas intradiárias substituem o valor da mesma data. Há um rebalanceamento na primeira vela conjunta apta de cada mês; dados incompletos adiam a decisão. Empates são ordenados por Security.Id.
+
+Cada cesta recebe metade de Capital × Leverage, dividida igualmente. As unidades são calculadas pelo fechamento do sinal e arredondadas para zero conforme VolumeStep. Usam-se posições realmente executadas, aguardam-se ordens pendentes e respeitam-se MinVolume/MaxVolume, dividindo grandes ajustes entre velas posteriores. MinTradeUsd filtra pequenos ajustes, mas não liquidações completas.
+
+## Parâmetros
+
+| Parâmetro | Padrão |
+|---|---|
+| `Universe` | obrigatório |
+| `Capital` | 100000 |
+| `Leverage` | 1 |
+| `MinTradeUsd` | 200 |
+| `CandleType` | TimeSpan.FromMinutes(1440).TimeFrame() |
+| `PriceHistoryFile` | não definido |
+| `Lookback12` | 252 |
+| `Lookback1` | 21 |
+| `VolWindow` | 60 |
+| `WM` | 1 |
+| `WR` | 1 |
+| `WV` | 1 |
+| `Decile` | 10 |
+
+## Dados de entrada
+
+CSV opcional `PriceHistoryFile`: `SecurityId,Date,Close`, preço positivo, par ativo/data único, data `yyyy-MM-dd`. Intradiário usa datas UTC anteriores; vela diária encerrada fornece seu fechamento. Linhas futuras não antecipam decisões. Velas substituem seu valor diário.
+
+## Verificação
+
+Ambas as linguagens são verificadas com BTC/TON incluído, fórmulas independentes, direção/tamanho das ordens, execuções, posições e saídas. Dados datados de preços/fatores e calendário verificam mecânica; OHLC/volumes deslocados não são história plurianual. Dois grupos, TopN=1 e SMA=2 são perfis pequenos explícitos. Janelas longas e valores originais são verificados separadamente. Sem promessa de rentabilidade.

@@ -1,112 +1,145 @@
+namespace StockSharp.Samples.Strategies;
+
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Linq;
 
 using Ecng.Common;
 
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-namespace StockSharp.Samples.Strategies;
-
-/// <summary>
-/// BTC Difficulty Adjustments Strategy - uses rate of change indicator
-/// to detect momentum shifts and trade accordingly.
-/// </summary>
+/// <summary>Trades published Bitcoin difficulty adjustments without substituting price momentum.</summary>
 public class BtcDifficultyAdjustmentsStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _rocPeriod;
-	private readonly StrategyParam<int> _smaPeriod;
+	private readonly StrategyParam<bool> _thresholdMode;
+	private readonly StrategyParam<decimal> _threshold;
+	private readonly StrategyParam<string> _difficultyHistoryFile;
+	private readonly List<(DateTime time, decimal difficulty)> _observations = [];
+	private int _cursor;
+	private decimal? _previous;
+	private DateTime _lastTime;
+	private Order _pending;
 
-	private decimal _prevRoc;
-	private decimal _prevSma;
+	/// <summary>Finished decision candle interval.</summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
 
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-	public int RocPeriod { get => _rocPeriod.Value; set => _rocPeriod.Value = value; }
-	public int SmaPeriod { get => _smaPeriod.Value; set => _smaPeriod.Value = value; }
+	/// <summary>Use contrarian thresholded adjustments.</summary>
+	public bool ThresholdMode
+	{
+		get => _thresholdMode.Value;
+		set => _thresholdMode.Value = value;
+	}
 
+	/// <summary>Minimum absolute difficulty change in percent.</summary>
+	public decimal Threshold
+	{
+		get => _threshold.Value;
+		set => _threshold.Value = value;
+	}
+
+	/// <summary>Required Time,Difficulty CSV with UTC publication timestamps.</summary>
+	public string DifficultyHistoryFile
+	{
+		get => _difficultyHistoryFile.Value;
+		set => _difficultyHistoryFile.Value = value;
+	}
+
+	/// <summary>Initializes the published difficulty strategy parameters.</summary>
 	public BtcDifficultyAdjustmentsStrategy()
 	{
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-		_rocPeriod = Param(nameof(RocPeriod), 50)
-			.SetGreaterThanZero()
-			.SetDisplay("ROC Period", "Rate of change period", "Indicators");
-
-		_smaPeriod = Param(nameof(SmaPeriod), 100)
-			.SetGreaterThanZero()
-			.SetDisplay("SMA Period", "Trend filter SMA period", "Indicators");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+			.SetDisplay("CandleType", "Finished decision candle interval", "Parameters");
+		_thresholdMode = Param(nameof(ThresholdMode), false)
+			.SetDisplay("ThresholdMode", "Use contrarian thresholded adjustments", "Parameters");
+		_threshold = Param(nameof(Threshold), 10m).SetGreaterThanZero()
+			.SetDisplay("Threshold", "Minimum absolute difficulty change in percent", "Parameters");
+		_difficultyHistoryFile = Param(nameof(DifficultyHistoryFile), string.Empty)
+			.SetDisplay("DifficultyHistoryFile", "Required Time,Difficulty CSV with UTC publication timestamps", "Parameters");
+		OrderRegistering += order => _pending = order;
 	}
 
 	/// <inheritdoc />
-	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() => [(Security, CandleType)];
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_prevRoc = 0m;
-		_prevSma = 0m;
+		_observations.Clear();
+		_cursor = 0;
+		_previous = null;
+		_lastTime = default;
+		_pending = null;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
-		base.OnStarted2(time);
-
-		var roc = new RateOfChange { Length = RocPeriod };
-		var sma = new SimpleMovingAverage { Length = SmaPeriod };
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.Bind(roc, sma, ProcessCandle)
-			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
+		if (string.IsNullOrWhiteSpace(DifficultyHistoryFile) || !File.Exists(DifficultyHistoryFile))
+			throw new InvalidOperationException("DifficultyHistoryFile must identify an existing Time,Difficulty CSV.");
+		_observations.Clear();
+		var lines = File.ReadAllLines(DifficultyHistoryFile);
+		if (lines.Length < 3 || lines[0].Trim() != "Time,Difficulty")
+			throw new FormatException("DifficultyHistoryFile requires Time,Difficulty and at least two observations.");
+		foreach (var line in lines.Skip(1).Where(l => !string.IsNullOrWhiteSpace(l)))
 		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, sma);
-			DrawOwnTrades(area);
+			var cells = line.Split(',');
+			if (cells.Length != 2 || !cells[0].Trim().EndsWith("Z", StringComparison.OrdinalIgnoreCase))
+				throw new FormatException("DifficultyHistoryFile timestamps must be ISO UTC values ending in Z.");
+			var stamp = DateTime.Parse(cells[0], CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind);
+			var value = decimal.Parse(cells[1], CultureInfo.InvariantCulture);
+			if (value <= 0m || _observations.Count > 0 && stamp <= _observations[^1].time)
+				throw new FormatException("DifficultyHistoryFile requires positive values and strictly increasing timestamps.");
+			_observations.Add((stamp, value));
 		}
-
-		var rocArea = CreateChartArea();
-		if (rocArea != null)
+		if (_observations.Count < 2)
+			throw new FormatException("DifficultyHistoryFile requires at least two observations.");
+		base.OnStarted2(time);
+		var candles = SubscribeCandles(CandleType);
+		candles.Bind(ProcessCandle).Start();
+		var area = CreateChartArea();
+		if (area is not null)
 		{
-			DrawIndicator(rocArea, roc);
+			DrawCandles(area, candles);
+			DrawOwnTrades(area);
 		}
 	}
 
-	private void ProcessCandle(ICandleMessage candle, decimal rocValue, decimal smaValue)
+	private void ProcessCandle(ICandleMessage candle)
 	{
-		if (candle.State != CandleStates.Finished)
+		if (candle.State != CandleStates.Finished || candle.OpenTime <= _lastTime)
 			return;
-
-		if (_prevRoc == 0m || _prevSma == 0m)
+		_lastTime = candle.OpenTime;
+		Sides? signal = null;
+		while (_cursor < _observations.Count && _observations[_cursor].time <= candle.OpenTime)
 		{
-			_prevRoc = rocValue;
-			_prevSma = smaValue;
+			var value = _observations[_cursor++].difficulty;
+			if (_previous is decimal prior && value != prior)
+			{
+				var change = (value / prior - 1m) * 100m;
+				signal = !ThresholdMode || Math.Abs(change) >= Threshold
+					? ThresholdMode ? change < 0m ? Sides.Buy : Sides.Sell : change > 0m ? Sides.Buy : Sides.Sell
+					: null;
+			}
+			_previous = value;
+		}
+		if (signal is null || !IsFormedAndOnlineAndAllowTrading()
+			|| _pending is not null && _pending.State is not (OrderStates.Done or OrderStates.Failed))
 			return;
-		}
-
-		// Buy when ROC crosses above zero and price above SMA
-		if (_prevRoc <= 0m && rocValue > 0m && candle.ClosePrice > smaValue && Position <= 0)
-		{
-			BuyMarket();
-		}
-		// Sell when ROC crosses below zero and price below SMA
-		else if (_prevRoc >= 0m && rocValue < 0m && candle.ClosePrice < smaValue && Position >= 0)
-		{
-			SellMarket();
-		}
-
-		_prevRoc = rocValue;
-		_prevSma = smaValue;
+		if (signal == Sides.Buy && Position <= 0m)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (signal == Sides.Sell && Position >= 0m)
+			SellMarket(Volume + Math.Abs(Position));
 	}
 }

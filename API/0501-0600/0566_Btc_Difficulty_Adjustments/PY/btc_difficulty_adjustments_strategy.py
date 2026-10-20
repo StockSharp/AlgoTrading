@@ -4,74 +4,132 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import TimeSpan
-from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import RateOfChange, SimpleMovingAverage
+import math
+from collections import deque
+from System import TimeSpan, DateTime, DateTimeKind, Decimal, Nullable
+from StockSharp.Messages import DataType, CandleStates, Sides, OrderStates, Unit, UnitTypes
+from StockSharp.BusinessEntities import Subscription
 from StockSharp.Algo.Strategies import Strategy
 
+from System.IO import File
+from System.Globalization import CultureInfo, DateTimeStyles
 
 class btc_difficulty_adjustments_strategy(Strategy):
     def __init__(self):
         super(btc_difficulty_adjustments_strategy, self).__init__()
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
-            .SetDisplay("Candle Type", "Type of candles to use", "General")
-        self._roc_period = self.Param("RocPeriod", 50) \
-            .SetDisplay("ROC Period", "Rate of change period", "Indicators")
-        self._sma_period = self.Param("SmaPeriod", 100) \
-            .SetDisplay("SMA Period", "Trend filter SMA period", "Indicators")
-        self._prev_roc = 0.0
-        self._prev_sma = 0.0
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromDays(1))).SetDisplay(
+            "CandleType", "Finished decision candle interval", "Parameters")
+        self._threshold_mode = self.Param("ThresholdMode", False).SetDisplay(
+            "ThresholdMode", "Use contrarian thresholded adjustments", "Parameters")
+        self._threshold = self.Param("Threshold", 10.0).SetGreaterThanZero().SetDisplay(
+            "Threshold", "Minimum absolute difficulty change in percent", "Parameters")
+        self._difficulty_history_file = self.Param("DifficultyHistoryFile", "").SetDisplay(
+            "DifficultyHistoryFile", "Required Time,Difficulty CSV with UTC publication timestamps", "Parameters")
+        self._reset_state()
+        self.OrderRegistering += self._remember_order
 
     @property
-    def candle_type(self):
+    def CandleType(self):
         return self._candle_type.Value
+
+    @CandleType.setter
+    def CandleType(self, value):
+        self._candle_type.Value = value
+
     @property
-    def roc_period(self):
-        return self._roc_period.Value
+    def ThresholdMode(self):
+        return self._threshold_mode.Value
+
+    @ThresholdMode.setter
+    def ThresholdMode(self, value):
+        self._threshold_mode.Value = value
+
     @property
-    def sma_period(self):
-        return self._sma_period.Value
+    def Threshold(self):
+        return self._threshold.Value
+
+    @Threshold.setter
+    def Threshold(self, value):
+        self._threshold.Value = value
+
+    @property
+    def DifficultyHistoryFile(self):
+        return self._difficulty_history_file.Value
+
+    @DifficultyHistoryFile.setter
+    def DifficultyHistoryFile(self, value):
+        self._difficulty_history_file.Value = value
+
+    def _reset_state(self):
+        self._observations = []
+        self._cursor = 0
+        self._previous = None
+        self._last_time = DateTime.MinValue
+        self._pending = None
+
+    def _remember_order(self, order):
+        self._pending = order
 
     def OnReseted(self):
         super(btc_difficulty_adjustments_strategy, self).OnReseted()
-        self._prev_roc = 0.0
-        self._prev_sma = 0.0
+        self._reset_state()
+
+    def GetWorkingSecurities(self):
+        return [(self.Security, self.CandleType)]
 
     def OnStarted2(self, time):
+        if not self.DifficultyHistoryFile or not File.Exists(self.DifficultyHistoryFile):
+            raise ValueError("DifficultyHistoryFile must identify an existing Time,Difficulty CSV.")
+        lines = list(File.ReadAllLines(self.DifficultyHistoryFile))
+        if len(lines) < 3 or lines[0].strip() != "Time,Difficulty":
+            raise ValueError("DifficultyHistoryFile requires Time,Difficulty and at least two observations.")
+        self._observations = []
+        for line in lines[1:]:
+            if not line.strip():
+                continue
+            cells = line.split(",")
+            if len(cells) != 2 or not cells[0].strip().upper().endswith("Z"):
+                raise ValueError("DifficultyHistoryFile timestamps must be ISO UTC values ending in Z.")
+            stamp = DateTime.Parse(cells[0], CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind)
+            value = Decimal.Parse(cells[1], CultureInfo.InvariantCulture)
+            if value <= 0 or (self._observations and stamp <= self._observations[-1][0]):
+                raise ValueError("DifficultyHistoryFile requires positive values and strictly increasing timestamps.")
+            self._observations.append((stamp, value))
+        if len(self._observations) < 2:
+            raise ValueError("DifficultyHistoryFile requires at least two observations.")
         super(btc_difficulty_adjustments_strategy, self).OnStarted2(time)
-        roc = RateOfChange()
-        roc.Length = self.roc_period
-        sma = SimpleMovingAverage()
-        sma.Length = self.sma_period
-        subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(roc, sma, self.OnProcess).Start()
+        candles = self.SubscribeCandles(self.CandleType)
+        candles.Bind(self._process).Start()
         area = self.CreateChartArea()
         if area is not None:
-            self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, sma)
+            self.DrawCandles(area, candles)
             self.DrawOwnTrades(area)
-            roc_area = self.CreateChartArea()
-            if roc_area is not None:
-                self.DrawIndicator(roc_area, roc)
 
-    def OnProcess(self, candle, roc_value, sma_value):
-        if candle.State != CandleStates.Finished:
+    def _process(self, candle):
+        if candle.State != CandleStates.Finished or candle.OpenTime <= self._last_time:
             return
-        roc_val = float(roc_value)
-        sma_val = float(sma_value)
-        if self._prev_roc == 0 or self._prev_sma == 0:
-            self._prev_roc = roc_val
-            self._prev_sma = sma_val
+        self._last_time = candle.OpenTime
+        side = None
+        while self._cursor < len(self._observations) and self._observations[self._cursor][0] <= candle.OpenTime:
+            value = self._observations[self._cursor][1]
+            self._cursor += 1
+            if self._previous is not None and value != self._previous:
+                change = (value / self._previous - Decimal(1)) * Decimal(100)
+                if not self.ThresholdMode or abs(change) >= self.Threshold:
+                    side = (Sides.Buy if change < 0 else Sides.Sell) if self.ThresholdMode else (Sides.Buy if change > 0 else Sides.Sell)
+                else:
+                    side = None
+            self._previous = value
+        if side is None or not self.IsFormedAndOnlineAndAllowTrading():
             return
-
-        if self._prev_roc <= 0 and roc_val > 0 and float(candle.ClosePrice) > sma_val and self.Position <= 0:
-            self.BuyMarket()
-        elif self._prev_roc >= 0 and roc_val < 0 and float(candle.ClosePrice) < sma_val and self.Position >= 0:
-            self.SellMarket()
-
-        self._prev_roc = roc_val
-        self._prev_sma = sma_val
+        if self._pending is not None and self._pending.State not in (OrderStates.Done, OrderStates.Failed):
+            return
+        if side == Sides.Buy and self.Position <= 0:
+            self.BuyMarket(self.Volume + abs(self.Position))
+        elif side == Sides.Sell and self.Position >= 0:
+            self.SellMarket(self.Volume + abs(self.Position))
 
     def CreateClone(self):
         return btc_difficulty_adjustments_strategy()

@@ -1,32 +1,27 @@
-# Estrategia Bbsr Extreme
+# BBSR Extreme
+
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-La estrategia **Bbsr Extreme** combina rupturas de Bollinger Bands con un filtro de tendencia basado en una media móvil.
-Una posición larga aparece cuando el precio rebota desde la banda inferior mientras la media está subiendo.
-Una posición corta se abre en un retroceso desde la banda superior cuando la media desciende.
-Las salidas se basan en stop-loss y take profit calculados mediante ATR.
+Reentrada en las bandas con filtro de pendiente EMA y protección ATR. `C,L,U,E` son cierre original, banda inferior, superior y EMA; `p` es la vela formada anterior.
 
-## Detalles
-- **Criterios de entrada**: El precio cruza las bandas con confirmación de tendencia.
-- **Largo/Corto**: Ambas direcciones.
-- **Criterios de salida**: Stop ATR o take profit.
-- **Stops**: Sí, basados en ATR.
-- **Valores predeterminados**:
-  - `BollingerPeriod = 20`
-  - `BollingerMultiplier = 2`
-  - `MaLength = 7`
-  - `AtrLength = 14`
-  - `AtrStopMultiplier = 2`
-  - `AtrProfitMultiplier = 3`
-  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
-- **Filtros**:
-  - Categoría: Seguimiento de tendencia
-  - Dirección: Ambos
-  - Indicadores: Bollinger Bands, EMA, ATR
-  - Stops: Sí
-  - Complejidad: Básico
-  - Marco temporal: Intradía (5m)
-  - Estacionalidad: No
-  - Redes neuronales: No
-  - Divergencia: No
-  - Nivel de riesgo: Medio
+## Reglas de negociación
+
+Largo: `C[p] < L[p] && C > L && E > E[p]`. Corto: `C[p] > U[p] && C < U && E < E[p]`. La igualdad no activa entradas. Solo se entra sin posición, por `Volume`, sin acumulación, inversión ni espera fija.
+
+Se fija `A=ATR` de la vela de señal antes de enviar la entrada. La protección local nativa usa el precio realmente ejecutado: largo, stop/objetivo `fill-2A` / `fill+3A`; corto, `fill+2A` / `fill-3A`. Los multiplicadores son parámetros; el ATR posterior no mueve los niveles. Las suscripciones bid/ask permiten cerrar el volumen ejecutado entre velas con órdenes de mercado.
+
+Las entradas requieren velas terminadas e indicadores preparados. La posición se gestiona hasta su salida; las órdenes de mercado pendientes impiden envíos duplicados.
+
+Bollinger usa la desviación estándar poblacional de la ventana móvil de cierres, incluida la vela terminada actual.
+
+## Parámetros
+
+| Parameter | Default |
+|---|---|
+| `BollingerPeriod` | `20` |
+| `BollingerMultiplier` | `2` |
+| `MaLength` | `7 (EMA)` |
+| `AtrLength` | `14 (Wilder)` |
+| `AtrStopMultiplier` | `2` |
+| `AtrProfitMultiplier` | `3` |
+| `CandleType` | `5m` |

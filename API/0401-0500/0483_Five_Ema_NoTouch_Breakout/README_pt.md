@@ -1,29 +1,19 @@
-# Estratégia de Rompimento Sem Toque de 5 EMA
-[English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
+# Five Ema NoTouch Breakout
 
-A estratégia de Rompimento Sem Toque de 5 EMA aguarda um candle que permaneça completamente de um lado da EMA de 5 períodos. Quando o preço posteriormente rompe o extremo desse candle de configuração, a estratégia entra na direção do rompimento. O stop-loss é colocado no extremo oposto e o take-profit é definido em um múltiplo do risco.
+[English](README.md) | [Русский](README_ru.md) | [Deutsch](README_de.md) | [Español](README_es.md) | [中文](README_zh.md) | [日本語](README_ja.md)
 
-## Detalhes
+## Regras de negociação
 
-- **Critérios de entrada**:
-  - Máxima do candle abaixo da EMA → preparar comprado; entrar quando o preço romper acima da máxima desse candle.
-  - Mínima do candle acima da EMA → preparar vendido; entrar quando o preço romper abaixo da mínima desse candle.
-- **Comprado/Vendido**: Ambos.
-- **Critérios de saída**:
-  - Stop no extremo do candle de configuração.
-  - Alvo em `RewardRisk` × risco.
-- **Stops**: Sim.
-- **Valores padrão**:
-  - `EmaPeriod` = 5
-  - `RewardRisk` = 3.0
-- **Filtros**:
-  - Categoria: Rompimento
-  - Direção: Comprado/Vendido
-  - Indicadores: EMA
-  - Stops: Sim
-  - Complexidade: Baixo
-  - Período: 5 minutos
-  - Sazonalidade: Não
-  - Redes neurais: Não
-  - Divergência: Não
-  - Nível de risco: Médio
+Usar velas encerradas após formação da EMA. Vela inteiramente abaixo prepara compra acima da máxima; acima prepara venda abaixo da mínima. Verificar preparação anterior antes de substituí-la; tocar não rompe. Entrar apenas sem posição com Volume e limpar preparação durante a posição. Fixar stop no extremo oposto. A primeira execução real fixa risco até o stop e alvo a RewardRisk×risco. Proteção local nativa a mercado observa bid/ask entre velas. Execução além do stop é encerrada imediatamente. Sem espera nem aumento de posição.
+
+## Parâmetros
+
+| Parâmetro | Padrão |
+|---|---|
+| `CandleType` | TimeSpan.FromMinutes(5).TimeFrame() |
+| `EmaPeriod` | 5 |
+| `RewardRisk` | 3 |
+
+## Verificação
+
+Ambas as linguagens são verificadas com BTC/TON incluído, fórmulas independentes, direção/tamanho das ordens, execuções, posições e saídas. Dados datados de preços/fatores e calendário verificam mecânica; OHLC/volumes deslocados não são história plurianual. Dois grupos, TopN=1 e SMA=2 são perfis pequenos explícitos. Janelas longas e valores originais são verificados separadamente. Sem promessa de rentabilidade.

@@ -1,32 +1,27 @@
-# Estratégia Bbsr Extreme
+# BBSR Extreme
+
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
-A estratégia **Bbsr Extreme** combina rompimentos de Bollinger Bands com um filtro de tendência baseado em uma média móvel.
-Uma posição comprada aparece quando o preço recua da banda inferior enquanto a média está subindo.
-Uma posição vendida é aberta em um recuo da banda superior quando a média cai.
-As saídas dependem de stop-loss e take profit calculados por ATR.
+Retorno para dentro das bandas com filtro de inclinação EMA e proteção ATR. `C,L,U,E` indicam fechamento original, banda inferior, superior e EMA; `p` indica a vela formada anterior.
 
-## Detalhes
-- **Critérios de entrada**: O preço cruza as bandas com confirmação de tendência.
-- **Comprado/Vendido**: Ambas as direções.
-- **Critérios de saída**: Stop ATR ou take profit.
-- **Stops**: Sim, baseados em ATR.
-- **Valores padrão**:
-  - `BollingerPeriod = 20`
-  - `BollingerMultiplier = 2`
-  - `MaLength = 7`
-  - `AtrLength = 14`
-  - `AtrStopMultiplier = 2`
-  - `AtrProfitMultiplier = 3`
-  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
-- **Filtros**:
-  - Categoria: Seguidor de tendência
-  - Direção: Ambos
-  - Indicadores: Bollinger Bands, EMA, ATR
-  - Stops: Sim
-  - Complexidade: Básico
-  - Período: Intradiário (5m)
-  - Sazonalidade: Não
-  - Redes neurais: Não
-  - Divergência: Não
-  - Nível de risco: Médio
+## Regras de negociação
+
+Compra: `C[p] < L[p] && C > L && E > E[p]`. Venda: `C[p] > U[p] && C < U && E < E[p]`. A igualdade não gera entrada. Entrada apenas sem posição, por `Volume`, sem acumulação, reversão ou pausa fixa.
+
+Antes da entrada, fixa-se `A=ATR` da vela de sinal. A proteção local nativa usa o preço efetivamente executado: compra, stop/alvo `fill-2A` / `fill+3A`; venda, `fill+2A` / `fill-3A`. Os multiplicadores são parâmetros; ATR posterior não muda os níveis. Assinaturas bid/ask permitem encerrar a quantidade executada entre velas com ordens a mercado.
+
+As entradas exigem velas concluídas e indicadores aquecidos. A posição é acompanhada até a saída; ordens a mercado pendentes impedem envios duplicados.
+
+Bollinger usa o desvio padrão populacional da janela móvel de fechamentos, incluindo a vela concluída atual.
+
+## Parâmetros
+
+| Parameter | Default |
+|---|---|
+| `BollingerPeriod` | `20` |
+| `BollingerMultiplier` | `2` |
+| `MaLength` | `7 (EMA)` |
+| `AtrLength` | `14 (Wilder)` |
+| `AtrStopMultiplier` | `2` |
+| `AtrProfitMultiplier` | `3` |
+| `CandleType` | `5m` |

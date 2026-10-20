@@ -1,33 +1,39 @@
-# Momentum-Faktor-Aktien-Strategie
-[English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
+# Momentum Factor Stocks
 
-Dieser systematische Ansatz nutzt den klassischen 12-1-Monats-Momentum-Faktor bei Aktien. Am Ende jedes Monats werden Aktien nach ihrer Performance über die vorangegangenen zwölf Monate eingestuft, wobei der jüngste Monat ausgelassen wird, um kurzfristige Umkehrungen zu umgehen. Wertpapiere im höchsten Quintil werden gekauft und jene im niedrigsten Quintil leerverkauft, wodurch ein marktneutraler Spread gebildet wird.
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Português](README_pt.md) | [中文](README_zh.md) | [日本語](README_ja.md)
 
-Das Rebalancing erfolgt am ersten Handelstag jedes Monats. Positionen sind gleichgewichtet und bleiben bis zum nächsten Rebalancing offen; es werden keine expliziten Stop-Losses verwendet.
+## Handelsregeln
 
-Umfangreiche akademische und industrielle Forschung zeigt, dass Momentum beständige Überrenditen liefert und wertvolle Diversifikation bietet, wenn es mit anderen Faktoren kombiniert wird.
+Monatlich LookbackDays + 1 abgeschlossene Tageskurse verlangen. Momentum = P[d−SkipDays] / P[d−LookbackDays] − 1; SkipDays muss kleiner als LookbackDays sein. Die letzten SkipDays Renditeintervalle werden ausgelassen; es werden nicht zwei ROC-Indikatoren subtrahiert. Das höchste Quintile-Segment kaufen und das niedrigste verkaufen, jeweils floor(geeignete Anzahl / Quintile). Gerundete native Mengen bis zur nächsten Monatsprüfung halten.
 
-## Details
+Nur abgeschlossene Kerzen mit gleichem Zeitstempel werden gemeinsam ausgewertet. Statistiken zählen verschiedene UTC-Daten; weitere Intraday-Kerzen ersetzen den Tageswert. Die erste geeignete gemeinsame Kerze jedes Monats löst genau eine Umschichtung aus. Unvollständige Daten verschieben sie. Gleiche Werte werden nach Security.Id sortiert.
 
-- **Einstiegskriterien**: Monatliches 12-1-Momentum-Ranking; Long oberstes Quintil,
-  Short unterstes Quintil
-- **Long/Short**: Beide
-- **Ausstiegskriterien**: Nächstes monatliches Rebalancing
-- **Stops**: Nein
-- **Standardwerte**:
-  - `LookbackDays` = 252
-  - `SkipDays` = 21
-  - `Quintile` = 5
-  - `MinTradeUsd` = 200
-  - `CandleType` = TimeSpan.FromDays(1)
-- **Filter**:
-  - Kategorie: Momentum
-  - Richtung: Beide
-  - Indikatoren: Kursveränderung
-  - Stops: Nein
-  - Komplexität: Mittel
-  - Zeitrahmen: Mittelfristig
-  - Saisonalität: Nein
-  - Neuronale Netze: Nein
-  - Divergenz: Nein
-  - Risikolevel: Mittel
+Alle Beobachtungen müssen bis zum Schluss der Signalkerze veröffentlicht sein. Intraday zählen nur Tageskurse vor dem aktuellen UTC-Datum; eine abgeschlossene Tageskerze zählt ihr eigenes Datum. Zukünftige CSV-Daten dürfen keine Entscheidung vorwärmen.
+
+## Eingabedaten
+
+PriceHistoryFile ist eine optionale CSV positiver Tagesschlusskurse: SecurityId,Date,Close; Datum yyyy-MM-dd. Aktuelle und zukünftige Daten dürfen eine Entscheidung nicht vorwärmen. Live-Schlusskurse ersetzen den jeweiligen UTC-Tageswert. Doppelte Daten sind ungültig. Die Datei ermöglicht lange Rückblicke bei kurzen Ausführungsarchiven.
+
+## Parameter
+
+| Parameter | Standard |
+|---|---|
+| `Universe` | erforderlich |
+| `Capital` | `100000` |
+| `Leverage` | `1` |
+| `MinTradeUsd` | `200` |
+| `CandleType` | `TimeSpan.FromDays(1).TimeFrame()` |
+| `PriceHistoryFile` | optional — nicht gesetzt |
+| `LookbackDays` | `252` |
+| `SkipDays` | `21` |
+| `Quintile` | `5` |
+
+## Ausführung
+
+Universe muss explizit angegeben werden. Preise und Capital sind in USD je gehandelter Einheit angegeben. Capital ist ein festes Budget; Leverage bestimmt das Bruttoengagement. Es werden keine Stop-Loss- oder Take-Profit-Orders hinzugefügt.
+
+Jede Seite erhält die Hälfte von Capital × Leverage, gleichmäßig auf ihre Titel verteilt. Stückzahlen basieren auf dem Signalschlusskurs und werden zu null auf VolumeStep gerundet. Tatsächliche Ausführungen bestimmen den Bestand. Offene Orders werden abgewartet, MinVolume/MaxVolume eingehalten und große Anpassungen auf spätere Kerzen verteilt. MinTradeUsd gilt nicht für vollständige Glattstellungen.
+
+## Prüfung
+
+Beide Sprachen werden mit gebündelten BTC/TON-Ausführungsdaten sowie expliziten Zins-, Finanz-, Bewertungs-, Text- und Aufwärmfixtures geprüft. Kalenderfixtures verschieben Archiv-OHLC/Volumina und setzen Ausführungskurse; dies ist keine mehrjährige Markthistorie. Unabhängige Formeln, Orderrichtung/-menge, echte Ausführungen, Restpositionen und gesperrte Termine werden geprüft. Zwei Gruppen, K=1 und AssetDecile=1 sind deklarierte Mechanikprofile, kein Nachweis für ein vollständiges Handelsuniversum. Keine Renditezusage.

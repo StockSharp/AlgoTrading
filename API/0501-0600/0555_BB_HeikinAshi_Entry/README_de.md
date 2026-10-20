@@ -1,28 +1,27 @@
-# BB HeikinAshi-Einstieg
+# BB HeikinAshi Entry
+
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-Bollinger-Bands-Strategie mit Heikin Ashi Kerzen.
+Bollinger-Umkehr auf Heikin-Ashi-Kerzen mit tatsächlichem Gewinnabschluss der halben Position und Trailing des Rests.
 
-Das System wartet auf zwei oder drei aufeinanderfolgende bearische Heikin Ashi Bars, die das untere Bollinger Band berühren. Eine bullische Kerze, die wieder über dem Band schließt, löst einen Long-Einstieg aus. Shorts funktionieren in die entgegengesetzte Richtung. Die Hälfte der Position wird beim ersten Ziel geschlossen, der Rest wird mit einem Trailing-Stop geschützt.
+## Handelsregeln
 
-## Details
+HA-Schluss: `(Open+High+Low+Close)/4`. Erste HA-Eröffnung: `(Open+Close)/2`, danach `(vorherige HA-Eröffnung+vorheriger HA-Schluss)/2`. HA-Extrema enthalten HA-Eröffnung/Schluss und Roh-Extrema. Bollinger nutzt HA-Schlusskurse ab der ersten Archivkerze, keine Rohschlusskurse. Doji hat keine Farbe. Berührung: `HA low <= lower` / `HA high >= upper`.
 
-- **Einstiegskriterien**: Umkehr aufeinanderfolgender Heikin Ashi Kerzen um die Bollinger Bands.
-- **Long/Short**: Beide.
-- **Ausstiegskriterien**: Teilweise Gewinnmitnahme und Trailing-Stop.
-- **Stops**: Ja.
-- **Standardwerte**:
-  - `BollingerLength` = 20
-  - `BollingerWidth` = 2
-  - `CandleType` = TimeSpan.FromMinutes(15)
-- **Filter**:
-  - Kategorie: Umkehr
-  - Richtung: Beide
-  - Indikatoren: Heikin Ashi, Bollinger Bands
-  - Stops: Ja
-  - Komplexität: Mittel
-  - Zeitrahmen: Intraday (15m)
-  - Saisonalität: Nein
-  - Neuronale Netze: Nein
-  - Divergenz: Nein
-  - Risikolevel: Mittel
+Genau zwei oder drei aufeinanderfolgende rote HA-Kerzen müssen jeweils ihr unteres Band berühren. Die nächste grüne HA-Kerze muss strikt über ihrem unteren Band schließen. Eine Kerze oder mindestens vier genügen nicht. Die spiegelbildliche Bedingung eröffnet Short.
+
+Einstieg mit `Volume` nur ohne Position. Anfangsstop am Tief/Hoch der vorherigen abgeschlossenen Rohkerze, vor Auftragserteilung fixiert. `R` ist der positive Abstand vom gewichteten tatsächlichen Einstieg zum Stop. Bei `1R` wird die Hälfte des ausgeführten Bestands per Marktorder geschlossen, auf `VolumeStep` abgerundet. Ist eine Hälfte kleiner als `MinVolume`, wird am Ziel vollständig geschlossen. Ein Einstieg jenseits des Stops wird beim nächsten ausführbaren Kurs geschlossen.
+
+Erst eine tatsächliche Zielausführung aktiviert Trailing anhand des Tiefs/Hochs der letzten abgeschlossenen Rohkerze; der Stop wird nie gelockert. Bid für Long bzw. Ask für Short lösen den vollständigen Stop zwischen Kerzen aus; Stop hat Vorrang vor Ziel. Ausstehende Orders verhindern Duplikate. Frühere Extrema lösen später erzeugte Ebenen nicht aus. Kein fixes Prozentziel oder versteckte Wartezeit.
+
+Einstiege verwenden nur abgeschlossene Kerzen und vollständig gebildete Indikatoren. Offene Positionen werden bis zum Ausstieg verwaltet; ausstehende Marktorders verhindern doppelte Aufträge.
+
+Bollinger verwendet die Populationsstandardabweichung des gleitenden Schlusskursfensters einschließlich der aktuellen abgeschlossenen Kerze.
+
+## Parameter
+
+| Parameter | Default |
+|---|---|
+| `BollingerLength` | `20` |
+| `BollingerWidth` | `2` |
+| `CandleType` | `15m` |

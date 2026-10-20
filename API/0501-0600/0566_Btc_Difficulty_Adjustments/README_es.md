@@ -1,31 +1,18 @@
-# Estrategia de Ajustes de Dificultad BTC
+# BTC Difficulty Adjustments
+
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-La estrategia de Ajustes de Dificultad BTC opera basándose en los cambios en la dificultad de minería de Bitcoin. Cuando el modo de umbral está activado, las operaciones se abren solo si el cambio porcentual supera el umbral especificado. Se abre una posición larga en ajustes de dificultad positivos y una posición corta en ajustes negativos.
+## Reglas de negociación
 
-## Detalles
+Requiere `DifficultyHistoryFile` con cabecera `Time,Difficulty`. Las publicaciones deben ser tiempos ISO UTC estrictamente crecientes terminados en `Z`, con dificultad positiva. Se lee al arrancar y los datos ausentes o incorrectos producen un error explícito. La dificultad no se deduce de precios.
 
-- **Criterios de entrada**:
-  - Modo umbral: `abs(change) >= Threshold` y `change < 0` → entrar en largo.
-  - Modo umbral: `abs(change) >= Threshold` y `change > 0` → entrar en corto.
-  - Sin modo umbral: `difficulty > difficulty anterior` → entrar en largo.
-  - Sin modo umbral: `difficulty < difficulty anterior` → entrar en corto.
-- **Largo/Corto**: Ambas direcciones.
-- **Criterios de salida**:
-  - La señal opuesta cierra y revierte las posiciones.
-- **Stops**: Ninguno.
-- **Valores predeterminados**:
-  - `CandleType` = 1 día
-  - `ThresholdMode` = false
-  - `Threshold` = 10
-- **Filtros**:
-  - Categoría: Fundamental
-  - Dirección: Largo y Corto
-  - Indicadores: Ninguno
-  - Stops: No
-  - Complejidad: Bajo
-  - Marco temporal: Diario
-  - Estacionalidad: No
-  - Redes neuronales: No
-  - Divergencia: No
-  - Nivel de riesgo: Medio
+Cada vela terminada consume solo observaciones publicadas hasta su `OpenTime`. La primera establece la base; un valor sin cambios no genera señal. Cambio: `100*(difficulty/previous-1)`. Sin umbral, un aumento compra y una disminución vende. Con umbral solo actúa `abs(change)>=Threshold`: una caída compra y un aumento vende. La última variación observada admisible decide el lado. Abre `Volume` desde cero y revierte con `Volume+abs(Position)`. Las órdenes pendientes bloquean decisiones superpuestas. No hay stop automático.
+
+## Parámetros
+
+| Parámetro | Predeterminado |
+|---|---|
+| `CandleType` | `1d` |
+| `ThresholdMode` | `false` |
+| `Threshold` | `10` |
+| `DifficultyHistoryFile` | `obligatorio` |

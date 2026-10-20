@@ -1,29 +1,18 @@
-# Estratégia de Momentum BTCUSD Após Dias Anormais
+# BTCUSD Momentum After Abnormal Days
+
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
-A estratégia mede o retorno diário como `(close - open) / open` e o compara com uma média móvel e um desvio padrão ao longo de um período configurável. Se o retorno exceder o limiar superior, abre uma posição comprada; se cair abaixo do limiar inferior, abre uma posição vendida. Todas as posições são encerradas no fechamento do dia seguinte.
+## Regras de negociação
 
-## Detalhes
+O retorno de uma vela diária concluída é `r=(Close-Open)/Open`. Média e desvio populacional usam os `LookbackPeriod` retornos diários anteriores, excluindo o atual, e exigem janela completa. Compra se `r>mean+k*sd`, vende se `r<mean-k*sd`, com `k=AbnormalThreshold`. Igualdade não entra.
 
-- **Critérios de entrada**:
-  - Retorno > média + k × desvio padrão → comprado.
-  - Retorno < média - k × desvio padrão → vendido.
-- **Comprado/Vendido**: Ambos
-- **Critérios de saída**:
-  - Fechar todas as posições no fechamento do dia seguinte.
-- **Stops**: Nenhum
-- **Valores padrão**:
-  - Período de lookback = 5
-  - Limiar de retorno anormal (k) = 1.6
-  - Capital por operação = 1000
-- **Filtros**:
-  - Categoria: Momentum
-  - Direção: Ambos
-  - Indicadores: SMA, StandardDeviation
-  - Stops: Nenhum
-  - Complexidade: Baixo
-  - Período: Longo prazo
-  - Sazonalidade: Não
-  - Redes neurais: Não
-  - Divergência: Não
-  - Nível de risco: Médio
+Entra somente sem posição. Quantidade: `floor(CapitalPerTrade/Close/VolumeStep)*VolumeStep`; ignora volumes abaixo do mínimo e rejeita acima do máximo. O capital usa o fechamento do sinal e a execução pode variar. Encerra toda a posição executada no fechamento diário seguinte ou no primeiro fechamento posterior disponível após uma lacuna. A saída tem prioridade sobre nova entrada nessa vela. Ordens pendentes bloqueiam duplicações; sem stop de preço.
+
+## Parâmetros
+
+| Parâmetro | Padrão |
+|---|---|
+| `CandleType` | `1d` |
+| `LookbackPeriod` | `5` |
+| `AbnormalThreshold` | `1.6` |
+| `CapitalPerTrade` | `1000` |

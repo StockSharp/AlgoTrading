@@ -1,26 +1,38 @@
-# Estrategia de Carry Trade en FX
-[English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
+# FX Carry Trade
 
-Esta estrategia de divisas clasifica un universo de instrumentos de divisas según el diferencial de tasas de interés entre la moneda base y la moneda cotizada. Al inicio de cada mes, toma posiciones largas en los `TopK` símbolos de mayor carry y posiciones cortas en los `TopK` de menor carry. Las ganancias buscan capturar el carry positivo en los largos mientras se paga el carry negativo en los cortos.
+[English](README.md) | [Русский](README_ru.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [中文](README_zh.md) | [日本語](README_ja.md)
 
-Los diferenciales de tasas de interés se obtienen de los datos de rendimiento de cada valor. Las posiciones se dimensionan de forma equitativa y se rebalancean mensualmente; cualquier instrumento que salga de los grupos superior o inferior se cierra y se reemplaza.
+## Reglas de negociación
 
-## Detalles
+Carry mensual = BaseRate − QuoteRate anual observado. Comprar los TopK diferenciales superiores y vender los TopK inferiores; exigir al menos 2×TopK pares elegibles sin solapamiento. Cada lado recibe la mitad del presupuesto bruto en USD, repartida por igual. Convertir exposición USD a unidades nativas con UsdPerUnit observado explícitamente, también si la moneda cotizada no es USD. Liquidar los pares que abandonan la cesta y ajustar los restantes en la próxima revisión.
 
-- **Criterios de entrada**:
-  - En el primer día hábil del mes, calcular el diferencial de tasas de interés para cada divisa.
-  - Tomar posiciones largas en las `TopK` divisas con mayor carry y cortas en las `TopK` con menor carry si los valores de las órdenes superan `MinTradeUsd`.
-- **Largo/Corto**: Largo en carry alto, corto en carry bajo.
-- **Criterios de salida**: Las posiciones se cierran cuando una divisa sale de los grupos seleccionados en el siguiente rebalanceo.
-- **Stops**: Ninguno.
-- **Valores predeterminados**:
-  - `Universe` – lista de instrumentos de divisas.
-  - `TopK` = 3.
-  - `CandleType` = 1 día.
-  - `MinTradeUsd` – valor mínimo de operación.
-- **Filtros**:
-  - Categoría: Carry.
-  - Dirección: Largo y corto.
-  - Marco temporal: Mensual.
-  - Rebalanceo: Mensual.
+Se evalúan únicamente velas cerradas sincronizadas. Las estadísticas cuentan fechas UTC distintas; las velas intradía sustituyen el valor de la misma fecha. Se rebalancea una vez en la primera vela conjunta apta de cada mes; los datos incompletos retrasan la decisión. Los empates se ordenan por Security.Id.
 
+Las observaciones deben publicarse antes del cierre de la vela de señal. En intradía solo cuentan fechas UTC anteriores; una vela diaria completa aporta su propia fecha. Los datos CSV futuros no pueden anticipar decisiones.
+
+El límite de publicación es el último CloseTime real entre las velas completas sincronizadas. Una sesión puede terminar antes de que transcurra todo el intervalo configurado.
+
+## Datos de entrada
+
+RatesFile es CSV obligatorio: `SecurityId,PublishedAt,BaseRate,QuoteRate,UsdPerUnit`. PublishedAt: UTC `yyyy-MM-ddTHH:mm:ssZ`; ambas tasas en iguales unidades decimales anuales. UsdPerUnit es el valor USD positivo de una unidad negociada. Solo vale la última publicación con antigüedad <= MaxRateAgeDays. Se rechazan duplicados de título/publicación. Las tasas no se fabrican con velas.
+
+## Parámetros
+
+| Parámetro | Predeterminado |
+|---|---|
+| `Universe` | obligatorio |
+| `Capital` | `100000` |
+| `Leverage` | `1` |
+| `MinTradeUsd` | `100` |
+| `CandleType` | `TimeSpan.FromDays(1).TimeFrame()` |
+| `TopK` | `3` |
+| `RatesFile` | obligatorio |
+| `MaxRateAgeDays` | `45` |
+
+## Ejecución
+
+Capital es presupuesto USD fijo y Leverage controla exposición bruta. Usar RatesFile.UsdPerUnit para cantidades y MinTradeUsd. Redondear hacia cero a VolumeStep, conciliar ejecuciones reales y esperar órdenes pendientes. Respetar MinVolume/MaxVolume y dividir ajustes grandes entre velas posteriores. La liquidación completa omite MinTradeUsd. Sin stop-loss ni toma de beneficios.
+
+## Verificación
+
+Ambos lenguajes se prueban con ejecuciones BTC/TON incluidas y fixtures explícitas de tasas, informes, puntuaciones, textos e historial. Las fixtures de calendario trasladan OHLC/volumen y fijan cotizaciones; no son historia de mercado plurianual. Se verifican fórmulas independientes, dirección/tamaño de órdenes, ejecuciones reales, posiciones residuales y fechas prohibidas. Dos grupos, K=1 y AssetDecile=1 son perfiles de mecánica declarados, no prueba del universo completo. Sin promesas de rentabilidad.

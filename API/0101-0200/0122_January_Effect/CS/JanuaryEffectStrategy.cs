@@ -106,7 +106,9 @@ public class JanuaryEffectStrategy : Strategy
 
 		var local = TimeZoneInfo.ConvertTimeFromUtc(candle.OpenTime, Security.Board.TimeZone);
 		var date = local.Date;
-		var year = local.Month == 12 ? local.Year : local.Year - 1;
+		var year = Position > 0m && _entryYear > 0
+			? _entryYear
+			: local.Month == 12 ? local.Year : local.Year - 1;
 		var (entry, exit) = GetSeason(year);
 
 		if (Position > 0m)

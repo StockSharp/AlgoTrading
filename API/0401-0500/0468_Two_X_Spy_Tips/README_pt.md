@@ -1,26 +1,29 @@
-# Estratégia Two X SPY TIPS
-[English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
+# Two X Spy Tips
 
-A estratégia aloca capital no ativo negociado quando tanto o S&P 500 quanto os preços TIPS estão acima de suas médias móveis de 200 períodos na virada de um novo mês.
+[English](README.md) | [Русский](README_ru.md) | [Deutsch](README_de.md) | [Español](README_es.md) | [中文](README_zh.md) | [日本語](README_ja.md)
 
-## Detalhes
+## Regras de negociação
 
-- **Critérios de entrada**: S&P 500 e TIPS acima de sua SMA em um novo mês.
-- **Comprado/Vendido**: Somente comprado.
-- **Critérios de saída**: Sem saídas.
-- **Stops**: Não.
-- **Valores padrão**:
-  - `SmaLength` = 200
-  - `Leverage` = 2
-  - `CandleType` = TimeSpan.FromDays(1)
-- **Filtros**:
-  - Categoria: Tendência
-  - Direção: Somente comprado
-  - Indicadores: SMA
-  - Stops: Não
-  - Complexidade: Básico
-  - Período: Diário
-  - Sazonalidade: Sim
-  - Redes neurais: Não
-  - Divergência: Não
-  - Nível de risco: Médio
+SpySecurity e TipsSecurity são sinais explícitos distintos de Universe; Security também pertence ao conjunto. Na primeira vela encerrada sincronizada do mês, ambos fechamentos diários completos devem superar sua SMA de SmaLength dias incluindo o fechamento atual. Filtro formado reprovado consome a revisão mensal; histórico insuficiente a adia. Sem posição comprar Capital×Leverage/preço arredondado a VolumeStep. Manter compra sem saídas, vendas a descoberto ou acumulação mensal adicional. Usar USD e respeitar MinTradeUsd e limites nativos.
+
+## Parâmetros
+
+| Parâmetro | Padrão |
+|---|---|
+| `Universe` | obrigatório |
+| `Capital` | 100000 |
+| `Leverage` | 2 |
+| `MinTradeUsd` | 200 |
+| `CandleType` | TimeSpan.FromMinutes(1440).TimeFrame() |
+| `PriceHistoryFile` | não definido |
+| `SpySecurity` | obrigatório |
+| `TipsSecurity` | obrigatório |
+| `SmaLength` | 200 |
+
+## Dados de entrada
+
+CSV opcional `PriceHistoryFile`: `SecurityId,Date,Close`, preço positivo, par ativo/data único, data `yyyy-MM-dd`. Intradiário usa datas UTC anteriores; vela diária encerrada fornece seu fechamento. Linhas futuras não antecipam decisões. Velas substituem seu valor diário.
+
+## Verificação
+
+Ambas as linguagens são verificadas com BTC/TON incluído, fórmulas independentes, direção/tamanho das ordens, execuções, posições e saídas. Dados datados de preços/fatores e calendário verificam mecânica; OHLC/volumes deslocados não são história plurianual. Dois grupos, TopN=1 e SMA=2 são perfis pequenos explícitos. Janelas longas e valores originais são verificados separadamente. Sem promessa de rentabilidade.

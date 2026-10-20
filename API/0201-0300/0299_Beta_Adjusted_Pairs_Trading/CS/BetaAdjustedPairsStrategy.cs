@@ -1,5 +1,8 @@
+namespace StockSharp.Samples.Strategies;
+
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using Ecng.Common;
 
@@ -7,308 +10,267 @@ using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
-using StockSharp.Configuration;
 using StockSharp.Messages;
 
-namespace StockSharp.Samples.Strategies;
-
-/// <summary>
-/// Mean-reversion strategy that trades the primary instrument when a beta-adjusted spread versus the secondary instrument becomes stretched.
-/// </summary>
+/// <summary>Beta-neutral pairs: synchronized log-spread mean reversion and a filled two-leg loss limit.</summary>
 public class BetaAdjustedPairsStrategy : Strategy
 {
-	private readonly StrategyParam<string> _security2Id;
+	private readonly StrategyParam<Security> _asset2;
+	private readonly StrategyParam<Portfolio> _asset2Portfolio;
 	private readonly StrategyParam<decimal> _betaAsset1;
 	private readonly StrategyParam<decimal> _betaAsset2;
 	private readonly StrategyParam<int> _lookbackPeriod;
 	private readonly StrategyParam<decimal> _entryThreshold;
 	private readonly StrategyParam<decimal> _exitThreshold;
-	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<int> _cooldownBars;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly SortedDictionary<DateTime, decimal> _firstBars = new(), _secondBars = new();
+	private readonly Queue<decimal> _spreads = new();
+	private readonly List<Order> _orders = new();
+	private DateTime _lastPair;
+	private decimal? _base1, _base2, _previousZ;
+	private decimal _cost1, _cost2, _quantity1, _quantity2, _primaryQuantity, _hedgeQuantity;
+	private int _side, _bar;
+	private int? _lastEntry;
 
-	private Security _security2;
-	private SimpleMovingAverage _spreadAverage;
-	private StandardDeviation _spreadStdDev;
-	private decimal _latestPrice1;
-	private decimal _latestPrice2;
-	private decimal _entrySpread;
-	private bool _primaryUpdated;
-	private bool _secondaryUpdated;
-	private int _cooldown;
-
-	/// <summary>
-	/// Secondary security identifier.
-	/// </summary>
-	public string Security2Id
+	/// <summary>Initializes the published pair inputs, signal and loss limit.</summary>
+	public BetaAdjustedPairsStrategy()
 	{
-		get => _security2Id.Value;
-		set => _security2Id.Value = value;
+		_asset2 = Param<Security>(nameof(Asset2)).SetRequired()
+			.SetDisplay("Asset2", "Explicit second execution instrument", "Parameters");
+		_asset2Portfolio = Param<Portfolio>(nameof(Asset2Portfolio)).SetRequired()
+			.SetDisplay("Asset2Portfolio", "Explicit portfolio for the hedge leg", "Parameters");
+		_betaAsset1 = Param(nameof(BetaAsset1), 1m).SetGreaterThanZero()
+			.SetDisplay("BetaAsset1", "Positive primary beta", "Parameters");
+		_betaAsset2 = Param(nameof(BetaAsset2), 1m).SetGreaterThanZero()
+			.SetDisplay("BetaAsset2", "Positive secondary beta", "Parameters");
+		_lookbackPeriod = Param(nameof(LookbackPeriod), 20).SetRange(2, 100000)
+			.SetDisplay("LookbackPeriod", "Matched spread observations in the z-score window", "Parameters");
+		_entryThreshold = Param(nameof(EntryThreshold), 2m).SetGreaterThanZero()
+			.SetDisplay("EntryThreshold", "Extreme z-score boundary to cross back toward zero", "Parameters");
+		_exitThreshold = Param(nameof(ExitThreshold), 0.15m).SetNotNegative()
+			.SetDisplay("ExitThreshold", "Mean-reversion exit band", "Parameters");
+		_stopLoss = Param(nameof(StopLoss), 2m).SetGreaterThanZero()
+			.SetDisplay("StopLoss", "Loss limit as a percentage of gross filled entry notional", "Parameters");
+		_cooldownBars = Param(nameof(CooldownBars), 120).SetNotNegative()
+			.SetDisplay("CooldownBars", "Finished matched bars between pair entries", "Parameters");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("CandleType", "Same finished candle interval on both legs", "Parameters");
 	}
 
-	/// <summary>
-	/// Beta coefficient of the primary security.
-	/// </summary>
+	/// <summary>Explicit second execution instrument.</summary>
+	public Security Asset2
+	{
+		get => _asset2.Value;
+		set => _asset2.Value = value;
+	}
+
+	/// <summary>Explicit portfolio for the hedge leg.</summary>
+	public Portfolio Asset2Portfolio
+	{
+		get => _asset2Portfolio.Value;
+		set => _asset2Portfolio.Value = value;
+	}
+
+	/// <summary>Positive primary beta.</summary>
 	public decimal BetaAsset1
 	{
 		get => _betaAsset1.Value;
 		set => _betaAsset1.Value = value;
 	}
 
-	/// <summary>
-	/// Beta coefficient of the secondary security.
-	/// </summary>
+	/// <summary>Positive secondary beta.</summary>
 	public decimal BetaAsset2
 	{
 		get => _betaAsset2.Value;
 		set => _betaAsset2.Value = value;
 	}
 
-	/// <summary>
-	/// Lookback period for spread statistics.
-	/// </summary>
+	/// <summary>Matched spread observations in the z-score window.</summary>
 	public int LookbackPeriod
 	{
 		get => _lookbackPeriod.Value;
 		set => _lookbackPeriod.Value = value;
 	}
 
-	/// <summary>
-	/// Entry threshold measured in spread standard deviations.
-	/// </summary>
+	/// <summary>Extreme z-score boundary to cross back toward zero.</summary>
 	public decimal EntryThreshold
 	{
 		get => _entryThreshold.Value;
 		set => _entryThreshold.Value = value;
 	}
 
-	/// <summary>
-	/// Exit threshold measured in spread standard deviations.
-	/// </summary>
+	/// <summary>Mean-reversion exit band.</summary>
 	public decimal ExitThreshold
 	{
 		get => _exitThreshold.Value;
 		set => _exitThreshold.Value = value;
 	}
 
-	/// <summary>
-	/// Stop loss percentage applied to spread distance from entry.
-	/// </summary>
-	public decimal StopLossPercent
+	/// <summary>Loss limit as a percentage of gross filled entry notional.</summary>
+	public decimal StopLoss
 	{
-		get => _stopLossPercent.Value;
-		set => _stopLossPercent.Value = value;
+		get => _stopLoss.Value;
+		set => _stopLoss.Value = value;
 	}
 
-	/// <summary>
-	/// Bars to wait between orders.
-	/// </summary>
+	/// <summary>Finished matched bars between pair entries.</summary>
 	public int CooldownBars
 	{
 		get => _cooldownBars.Value;
 		set => _cooldownBars.Value = value;
 	}
 
-	/// <summary>
-	/// Candle type used for both instruments.
-	/// </summary>
+	/// <summary>Same finished candle interval on both legs.</summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Initializes strategy parameters.
-	/// </summary>
-	public BetaAdjustedPairsStrategy()
-	{
-		_security2Id = Param(nameof(Security2Id), Paths.HistoryDefaultSecurity2)
-			.SetDisplay("Second Security Id", "Identifier of the secondary security", "General");
-
-		_betaAsset1 = Param(nameof(BetaAsset1), 1m)
-			.SetRange(0.1m, 5m)
-			.SetDisplay("Primary Beta", "Beta coefficient of the primary security", "Spread");
-
-		_betaAsset2 = Param(nameof(BetaAsset2), 1m)
-			.SetRange(0.1m, 5m)
-			.SetDisplay("Secondary Beta", "Beta coefficient of the secondary security", "Spread");
-
-		_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
-			.SetRange(10, 150)
-			.SetDisplay("Lookback Period", "Lookback period for spread statistics", "Indicators");
-
-		_entryThreshold = Param(nameof(EntryThreshold), 2m)
-			.SetRange(0.25m, 5m)
-			.SetDisplay("Entry Threshold", "Entry threshold in spread standard deviations", "Signals");
-
-		_exitThreshold = Param(nameof(ExitThreshold), 0.15m)
-			.SetRange(0m, 2m)
-			.SetDisplay("Exit Threshold", "Exit threshold in spread standard deviations", "Signals");
-
-		_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-			.SetRange(0.5m, 10m)
-			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
-
-		_cooldownBars = Param(nameof(CooldownBars), 120)
-			.SetRange(1, 500)
-			.SetDisplay("Cooldown Bars", "Bars to wait between orders", "Risk");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay("Candle Type", "Candle series for both instruments", "General");
-	}
-
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		if (Security != null)
-			yield return (Security, CandleType);
-
-		if (!Security2Id.IsEmpty())
-			yield return (new Security { Id = Security2Id }, CandleType);
-	}
+		=> [(Security, CandleType), (Asset2, CandleType)];
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-
-		_security2 = null;
-		_spreadAverage = null;
-		_spreadStdDev = null;
-		_latestPrice1 = 0m;
-		_latestPrice2 = 0m;
-		_entrySpread = 0m;
-		_primaryUpdated = false;
-		_secondaryUpdated = false;
-		_cooldown = 0;
+		_firstBars.Clear(); _secondBars.Clear(); _spreads.Clear(); _orders.Clear();
+		_lastPair = default;
+		_base1 = _base2 = _previousZ = null;
+		_cost1 = _cost2 = _quantity1 = _quantity2 = _primaryQuantity = _hedgeQuantity = 0m;
+		_side = _bar = 0;
+		_lastEntry = null;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
+		if (Asset2 is null || Asset2Portfolio is null || Security is null
+			|| string.Equals(Asset2.Id, Security.Id, StringComparison.OrdinalIgnoreCase))
+			throw new InvalidOperationException("Asset2 must explicitly identify a different instrument, and Asset2Portfolio is required.");
+		if (ExitThreshold >= EntryThreshold)
+			throw new InvalidOperationException("ExitThreshold must be smaller than EntryThreshold.");
 		base.OnStarted2(time);
-
-		if (Security == null)
-			throw new InvalidOperationException("Primary security is not specified.");
-
-		if (Security2Id.IsEmpty())
-			throw new InvalidOperationException("Secondary security identifier is not specified.");
-
-		_security2 = this.LookupById(Security2Id) ?? new Security { Id = Security2Id };
-		_spreadAverage = new SimpleMovingAverage { Length = LookbackPeriod };
-		_spreadStdDev = new StandardDeviation { Length = LookbackPeriod };
-		_cooldown = 0;
-
-		var primarySubscription = SubscribeCandles(CandleType, security: Security);
-		var secondarySubscription = SubscribeCandles(CandleType, security: _security2);
-
-		primarySubscription
-			.Bind(ProcessPrimaryCandle)
-			.Start();
-
-		secondarySubscription
-			.Bind(ProcessSecondaryCandle)
-			.Start();
-
+		var first = SubscribeCandles(CandleType);
+		var second = SubscribeCandles(CandleType, security: Asset2);
+		first.Bind(c => ProcessCandle(c, _firstBars)).Start();
+		second.Bind(c => ProcessCandle(c, _secondBars)).Start();
 		var area = CreateChartArea();
-
-		if (area != null)
+		if (area is not null)
 		{
-			DrawCandles(area, primarySubscription);
-			DrawCandles(area, secondarySubscription);
+			DrawCandles(area, first);
+			DrawCandles(area, second);
 			DrawOwnTrades(area);
 		}
-
-		StartProtection(new Unit(0, UnitTypes.Absolute), new Unit(StopLossPercent, UnitTypes.Percent), false);
 	}
 
-	private void ProcessPrimaryCandle(ICandleMessage candle)
+	private void ProcessCandle(ICandleMessage candle, SortedDictionary<DateTime, decimal> buffer)
 	{
-		if (candle.State != CandleStates.Finished)
+		if (candle.State != CandleStates.Finished || candle.ClosePrice <= 0m || candle.OpenTime <= _lastPair)
 			return;
-
-		_latestPrice1 = candle.ClosePrice;
-		_primaryUpdated = true;
-
-		TryProcessSpread(candle.OpenTime);
-	}
-
-	private void ProcessSecondaryCandle(ICandleMessage candle)
-	{
-		if (candle.State != CandleStates.Finished)
+		buffer[candle.OpenTime] = candle.ClosePrice;
+		// Bound unmatched observations if one feed stops; never combine candles with different times.
+		while (buffer.Count > LookbackPeriod * 2)
+			buffer.Remove(buffer.First().Key);
+		if (!_firstBars.TryGetValue(candle.OpenTime, out var first) || !_secondBars.TryGetValue(candle.OpenTime, out var second))
 			return;
-
-		_latestPrice2 = candle.ClosePrice;
-		_secondaryUpdated = true;
-
-		TryProcessSpread(candle.OpenTime);
-	}
-
-	private void TryProcessSpread(DateTimeOffset time)
-	{
-		if (!_primaryUpdated || !_secondaryUpdated)
+		_lastPair = candle.OpenTime;
+		foreach (var old in _firstBars.Keys.Where(t => t <= _lastPair).ToArray())
+			_firstBars.Remove(old);
+		foreach (var old in _secondBars.Keys.Where(t => t <= _lastPair).ToArray())
+			_secondBars.Remove(old);
+		_bar++;
+		_base1 ??= first;
+		_base2 ??= second;
+		var beta = BetaAsset1 / BetaAsset2;
+		var spread = (decimal)Math.Log((double)(first / _base1.Value)) - beta * (decimal)Math.Log((double)(second / _base2.Value));
+		_spreads.Enqueue(spread);
+		if (_spreads.Count > LookbackPeriod)
+			_spreads.Dequeue();
+		if (_spreads.Count < LookbackPeriod)
 			return;
-
-		_primaryUpdated = false;
-		_secondaryUpdated = false;
-
-		if (_latestPrice1 <= 0 || _latestPrice2 <= 0 || BetaAsset1 <= 0 || BetaAsset2 <= 0)
+		var mean = _spreads.Average();
+		var deviation = (decimal)Math.Sqrt((double)_spreads.Average(v => (v - mean) * (v - mean)));
+		var previous = _previousZ;
+		var z = deviation > 0m ? (spread - mean) / deviation : (decimal?)null;
+		_previousZ = z;
+		if (!IsFormedAndOnlineAndAllowTrading() || _orders.Any(o => o.State is not (OrderStates.Done or OrderStates.Failed)))
 			return;
-
-		var spread = (_latestPrice1 / BetaAsset1) - (_latestPrice2 / BetaAsset2);
-		var averageSpread = _spreadAverage.Process(spread, time.UtcDateTime, true).ToDecimal();
-		var spreadStdDev = _spreadStdDev.Process(spread, time.UtcDateTime, true).ToDecimal();
-
-		if (!_spreadAverage.IsFormed || !_spreadStdDev.IsFormed)
-			return;
-
-		if (ProcessState != ProcessStates.Started)
-			return;
-
-		if (_cooldown > 0)
+		_orders.Clear();
+		var position1 = Position;
+		var position2 = GetPositionValue(Asset2, Asset2Portfolio) ?? 0m;
+		if (position1 != 0m || position2 != 0m)
 		{
-			_cooldown--;
-			return;
-		}
-
-		if (spreadStdDev <= 0)
-			return;
-
-		var zScore = (spread - averageSpread) / spreadStdDev;
-
-		if (Position == 0)
-		{
-			if (zScore <= -EntryThreshold)
+			if (_side == 0 || position1 != _side * _primaryQuantity || position2 != -_side * _hedgeQuantity)
 			{
-				_entrySpread = spread;
-				BuyMarket();
-				_cooldown = CooldownBars;
+				ClosePair("Unbalanced");
+				return;
 			}
-			else if (zScore >= EntryThreshold)
-			{
-				_entrySpread = spread;
-				SellMarket();
-				_cooldown = CooldownBars;
-			}
-
+			var profit = _side * (_quantity1 * first - _cost1 - _quantity2 * second + _cost2);
+			if (_cost1 + _cost2 > 0m && profit <= -(_cost1 + _cost2) * StopLoss / 100m)
+				ClosePair("Stop");
+			else if (z is decimal score && (_side > 0 ? score >= -ExitThreshold : score <= ExitThreshold))
+				ClosePair("Mean");
 			return;
 		}
+		_side = 0;
+		if (previous is null || z is null || _lastEntry is int lastEntry && _bar - lastEntry <= CooldownBars)
+			return;
+		var side = previous <= -EntryThreshold && z > -EntryThreshold && z < 0m ? 1
+			: previous >= EntryThreshold && z < EntryThreshold && z > 0m ? -1 : 0;
+		if (side == 0)
+			return;
+		var step = Asset2.VolumeStep ?? 1m;
+		_hedgeQuantity = Math.Floor(Volume * first * beta / second / step) * step;
+		if (_hedgeQuantity < (Asset2.MinVolume ?? step) || Asset2.MaxVolume is decimal max && _hedgeQuantity > max)
+			throw new InvalidOperationException("The beta-neutral hedge quantity is outside Asset2 lot limits.");
+		_cost1 = _cost2 = _quantity1 = _quantity2 = 0m;
+		_side = side;
+		_primaryQuantity = Volume;
+		_lastEntry = _bar;
+		Submit(Security, Portfolio, side * _primaryQuantity, "Entry");
+		Submit(Asset2, Asset2Portfolio, -side * _hedgeQuantity, "Entry");
+	}
 
-		var stopDistance = Math.Max(Math.Abs(_entrySpread) * StopLossPercent / 100m, Security.PriceStep ?? 1m);
-		var stopTriggered = Position > 0
-			? spread <= _entrySpread - stopDistance
-			: spread >= _entrySpread + stopDistance;
-
-		if (Position > 0 && (zScore >= -ExitThreshold || stopTriggered))
+	private void Submit(Security security, Portfolio portfolio, decimal signedQuantity, string reason)
+	{
+		if (signedQuantity == 0m)
+			return;
+		var order = new Order
 		{
-			SellMarket(Math.Abs(Position));
-			_cooldown = CooldownBars;
+			Security = security, Portfolio = portfolio,
+			Side = signedQuantity > 0m ? Sides.Buy : Sides.Sell,
+			Volume = Math.Abs(signedQuantity), Type = OrderTypes.Market, Comment = "0299" + reason,
+		};
+		_orders.Add(order);
+		RegisterOrder(order);
+	}
+
+	private void ClosePair(string reason)
+	{
+		Submit(Security, Portfolio, -Position, reason);
+		Submit(Asset2, Asset2Portfolio, -(GetPositionValue(Asset2, Asset2Portfolio) ?? 0m), reason);
+		_side = 0;
+	}
+
+	/// <inheritdoc />
+	protected override void OnOwnTradeReceived(MyTrade trade)
+	{
+		base.OnOwnTradeReceived(trade);
+		if (trade.Order.Comment != "0299Entry")
+			return;
+		if (trade.Order.Security == Security)
+		{
+			_quantity1 += trade.Trade.Volume;
+			_cost1 += trade.Trade.Volume * trade.Trade.Price;
 		}
-		else if (Position < 0 && (zScore <= ExitThreshold || stopTriggered))
+		else
 		{
-			BuyMarket(Math.Abs(Position));
-			_cooldown = CooldownBars;
+			_quantity2 += trade.Trade.Volume;
+			_cost2 += trade.Trade.Volume * trade.Trade.Price;
 		}
 	}
 }

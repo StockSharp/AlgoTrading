@@ -3,216 +3,243 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.BusinessEntities")
-clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import ExponentialMovingAverage, SimpleMovingAverage, StandardDeviation
+from System import DateTime, Decimal, Math, TimeSpan, InvalidOperationException
+from System.Collections.Generic import IEnumerable
+from System.Globalization import CultureInfo, DateTimeStyles
+from System.IO import File
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.BusinessEntities import Security
-from indicator_extensions import *
+from StockSharp.BusinessEntities import Order, Security
+from StockSharp.Messages import CandleStates, DataType, OrderStates, OrderTypes, Sides
+
 
 class book_to_market_value_strategy(Strategy):
-    """Relative book-to-market factor strategy using dual securities."""
+    """Book To Market Value with explicit inputs and execution-based portfolio accounting."""
 
     def __init__(self):
         super(book_to_market_value_strategy, self).__init__()
-
-        self._security2_id = self.Param("Security2Id", "TONUSDT@BNBFT") \
-            .SetDisplay("Benchmark Security Id", "Identifier of the benchmark security", "General")
-
-        self._book_length = self.Param("BookLength", 10) \
-            .SetRange(2, 50) \
-            .SetDisplay("Book Length", "Smoothing length for the synthetic book value", "Indicators")
-
-        self._lookback_period = self.Param("LookbackPeriod", 28) \
-            .SetRange(10, 150) \
-            .SetDisplay("Lookback Period", "Lookback period used to normalize valuation spread", "Indicators")
-
-        self._entry_threshold = self.Param("EntryThreshold", 1.35) \
-            .SetRange(0.5, 4.0) \
-            .SetDisplay("Entry Threshold", "Z-score threshold required to open a position", "Signals")
-
-        self._exit_threshold = self.Param("ExitThreshold", 0.35) \
-            .SetRange(0.0, 2.0) \
-            .SetDisplay("Exit Threshold", "Z-score threshold required to close a position", "Signals")
-
-        self._cooldown_bars = self.Param("CooldownBars", 12) \
-            .SetRange(0, 120) \
-            .SetDisplay("Cooldown Bars", "Closed candles to wait before another position change", "Risk")
-
-        self._stop_loss = self.Param("StopLoss", 2.5) \
-            .SetRange(0.5, 10.0) \
-            .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk")
-
+        self._universe = self.Param[IEnumerable[Security]]("Universe", None).SetRequired() \
+            .SetDisplay("Universe", "Execution securities with USD prices and valid volume metadata", "Parameters")
+        self._capital = self.Param("Capital", Decimal(100000)).SetGreaterThanZero() \
+            .SetDisplay("Capital", "Fixed gross capital budget in USD", "Parameters")
+        self._leverage = self.Param("Leverage", Decimal(1)).SetGreaterThanZero() \
+            .SetDisplay("Leverage", "Gross target exposure divided by the capital budget", "Parameters")
+        self._min_trade_usd = self.Param("MinTradeUsd", Decimal(200)).SetRange(Decimal(0), Decimal.MaxValue) \
+            .SetDisplay("MinTradeUsd", "Minimum notional adjustment; complete liquidation bypasses this filter", "Parameters")
         self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
-            .SetDisplay("Candle Type", "Candle series for both instruments", "General")
+            .SetDisplay("CandleType", "Closed candle type; daily statistics count distinct UTC dates", "Parameters")
+        self._deciles = self.Param("Deciles", 10).SetRange(2, 10000) \
+            .SetDisplay("Deciles", "Number of cross-sectional buckets, requiring at least this many eligible securities", "Parameters")
+        self._fundamentals_file = self.Param[str]("FundamentalsFile", None).SetRequired() \
+            .SetDisplay("FundamentalsFile", "Point-in-time annual financial reports in CSV format", "Parameters")
+        self._rebalance_month = self.Param("RebalanceMonth", 7).SetRange(1, 12) \
+            .SetDisplay("RebalanceMonth", "UTC calendar month of the annual portfolio rebalance", "Parameters")
+        self._max_report_age_days = self.Param("MaxReportAgeDays", 550).SetGreaterThanZero() \
+            .SetDisplay("MaxReportAgeDays", "Maximum age of the fiscal period at a rebalance", "Parameters")
+        self._clear_state()
 
-        self._benchmark = None
-        self._primary_book = None
-        self._benchmark_book = None
-        self._ratio_spread_average = None
-        self._ratio_spread_deviation = None
-        self._latest_primary_ratio = 0.0
-        self._latest_benchmark_ratio = 0.0
-        self._previous_z_score = None
-        self._primary_updated = False
-        self._benchmark_updated = False
-        self._cooldown_remaining = 0
+    def _clear_state(self):
+        self._securities = []
+        self._latest = {}
+        self._targets = {}
+        self._pending = []
+        self._last_rebalance = 0
+        self._last_bar = None
+        self._reports = []
 
     @property
-    def candle_type(self):
+    def Universe(self):
+        return self._universe.Value
+
+    @Universe.setter
+    def Universe(self, value):
+        self._universe.Value = value
+
+    @property
+    def Capital(self):
+        return self._capital.Value
+
+    @Capital.setter
+    def Capital(self, value):
+        self._capital.Value = value
+
+    @property
+    def Leverage(self):
+        return self._leverage.Value
+
+    @Leverage.setter
+    def Leverage(self, value):
+        self._leverage.Value = value
+
+    @property
+    def MinTradeUsd(self):
+        return self._min_trade_usd.Value
+
+    @MinTradeUsd.setter
+    def MinTradeUsd(self, value):
+        self._min_trade_usd.Value = value
+
+    @property
+    def CandleType(self):
         return self._candle_type.Value
 
+    @CandleType.setter
+    def CandleType(self, value):
+        self._candle_type.Value = value
+
+    @property
+    def Deciles(self):
+        return self._deciles.Value
+
+    @Deciles.setter
+    def Deciles(self, value):
+        self._deciles.Value = value
+
+    @property
+    def FundamentalsFile(self):
+        return self._fundamentals_file.Value
+
+    @FundamentalsFile.setter
+    def FundamentalsFile(self, value):
+        self._fundamentals_file.Value = value
+
+    @property
+    def RebalanceMonth(self):
+        return self._rebalance_month.Value
+
+    @RebalanceMonth.setter
+    def RebalanceMonth(self, value):
+        self._rebalance_month.Value = value
+
+    @property
+    def MaxReportAgeDays(self):
+        return self._max_report_age_days.Value
+
+    @MaxReportAgeDays.setter
+    def MaxReportAgeDays(self, value):
+        self._max_report_age_days.Value = value
+
     def GetWorkingSecurities(self):
-        result = []
-        if self.Security is not None:
-            result.append((self.Security, self.candle_type))
-        sec2_id = str(self._security2_id.Value)
-        if sec2_id:
-            s = Security()
-            s.Id = sec2_id
-            result.append((s, self.candle_type))
-        return result
+        securities = list(self.Universe) if self.Universe is not None else []
+
+        return [(s, self.CandleType) for s in securities]
 
     def OnReseted(self):
         super(book_to_market_value_strategy, self).OnReseted()
-        self._benchmark = None
-        self._primary_book = None
-        self._benchmark_book = None
-        self._ratio_spread_average = None
-        self._ratio_spread_deviation = None
-        self._latest_primary_ratio = 0.0
-        self._latest_benchmark_ratio = 0.0
-        self._previous_z_score = None
-        self._primary_updated = False
-        self._benchmark_updated = False
-        self._cooldown_remaining = 0
+        self._clear_state()
 
     def OnStarted2(self, time):
+        self._securities = list(self.Universe) if self.Universe is not None else []
+        if not self._securities or any(s is None or not s.Id for s in self._securities) or len(set(s.Id.upper() for s in self._securities)) != len(self._securities):
+            raise InvalidOperationException("Universe must contain distinct execution securities.")
+
+        for s, dt in self.GetWorkingSecurities():
+            if s.VolumeStep is None or s.MinVolume is None or s.MaxVolume is None or s.VolumeStep <= 0 or s.MinVolume <= 0 or s.MaxVolume <= 0:
+                raise InvalidOperationException("Every security needs positive VolumeStep, MinVolume and MaxVolume.")
+        if not self.FundamentalsFile:
+            raise InvalidOperationException("FundamentalsFile is required.")
+        self._load_reports()
         super(book_to_market_value_strategy, self).OnStarted2(time)
+        for security, dt in self.GetWorkingSecurities():
+            self.SubscribeCandles(dt, True, security).Bind(lambda candle, s=security: self._process_candle(s, candle)).Start()
 
-        sec2_id = str(self._security2_id.Value)
-        if not sec2_id:
-            raise Exception("Benchmark security identifier is not specified.")
-
-        s = Security()
-        s.Id = sec2_id
-        self._benchmark = s
-
-        book_len = int(self._book_length.Value)
-        lookback = int(self._lookback_period.Value)
-
-        self._primary_book = ExponentialMovingAverage()
-        self._primary_book.Length = book_len
-        self._benchmark_book = ExponentialMovingAverage()
-        self._benchmark_book.Length = book_len
-        self._ratio_spread_average = SimpleMovingAverage()
-        self._ratio_spread_average.Length = lookback
-        self._ratio_spread_deviation = StandardDeviation()
-        self._ratio_spread_deviation.Length = lookback
-        self._cooldown_remaining = 0
-
-        primary_subscription = self.SubscribeCandles(self.candle_type, True, self.Security)
-        benchmark_subscription = self.SubscribeCandles(self.candle_type, True, self._benchmark)
-
-        primary_subscription.Bind(self.ProcessPrimaryCandle).Start()
-        benchmark_subscription.Bind(self.ProcessBenchmarkCandle).Start()
-
-        area = self.CreateChartArea()
-        if area is not None:
-            self.DrawCandles(area, primary_subscription)
-            self.DrawCandles(area, benchmark_subscription)
-            self.DrawOwnTrades(area)
-
-        self.StartProtection(
-            Unit(2, UnitTypes.Percent),
-            Unit(float(self._stop_loss.Value), UnitTypes.Percent)
-        )
-
-    def ProcessPrimaryCandle(self, candle):
-        if candle.State != CandleStates.Finished:
+    def _process_candle(self, security, candle):
+        if candle.State != CandleStates.Finished or candle.ClosePrice <= 0:
             return
-
-        self._latest_primary_ratio = self.UpdateRatio(self._primary_book, candle)
-        self._primary_updated = True
-        self.TryProcessSpread(candle.OpenTime)
-
-    def ProcessBenchmarkCandle(self, candle):
-        if candle.State != CandleStates.Finished:
+        self._latest[security] = (candle.OpenTime, candle.ClosePrice)
+        if len(self._latest) != len(self._securities) or any(t != candle.OpenTime for t, p in self._latest.values()) or self._last_bar == candle.OpenTime or not self.IsFormedAndOnlineAndAllowTrading():
             return
+        self._last_bar = candle.OpenTime
+        month = candle.OpenTime.Year * 100 + candle.OpenTime.Month
 
-        self._latest_benchmark_ratio = self.UpdateRatio(self._benchmark_book, candle)
-        self._benchmark_updated = True
-        self.TryProcessSpread(candle.OpenTime)
+        if self._last_rebalance // 100 != candle.OpenTime.Year and self._select_targets(candle.OpenTime):
+            self._last_rebalance = month
 
-    def UpdateRatio(self, average, candle):
-        synthetic_book = self.CalculateSyntheticBookValue(candle)
-        result = process_float(average, synthetic_book, candle.OpenTime, True)
-        smoothed_book = float(result)
+        self._reconcile_targets()
 
-        return smoothed_book / max(float(candle.ClosePrice), 1.0)
+    def _units(self, security, notional):
+        return Math.Floor(notional / self._latest[security][1] / security.VolumeStep) * security.VolumeStep
 
-    def CalculateSyntheticBookValue(self, candle):
-        price_base = max(float(candle.OpenPrice), 1.0)
-        price_step = float(self.Security.PriceStep) if self.Security is not None and self.Security.PriceStep is not None else 1.0
-        range_val = max(float(candle.HighPrice) - float(candle.LowPrice), price_step)
-        balance_component = (float(candle.OpenPrice) + float(candle.LowPrice) + float(candle.ClosePrice)) / 3.0
-        stability_component = price_base * (1.0 - min(0.2, range_val / price_base))
-
-        return balance_component + stability_component
-
-    def TryProcessSpread(self, time):
-        if not self._primary_updated or not self._benchmark_updated:
+    def _reconcile_targets(self):
+        if any(o.State != OrderStates.Done and o.State != OrderStates.Failed for o in self._pending):
             return
+        self._pending = []
+        for security in self._securities:
+            if security not in self._targets:
+                continue
+            target = self._targets[security]
+            position = self.GetPositionValue(security, self.Portfolio)
+            delta = target - (position if position is not None else Decimal(0))
+            if delta == 0 or (target != 0 and abs(delta) * self._latest[security][1] < self.MinTradeUsd):
+                continue
+            quantity = Math.Floor(min(abs(delta), security.MaxVolume) / security.VolumeStep) * security.VolumeStep
+            if quantity < security.MinVolume:
+                continue
+            order = Order()
+            order.Security = security
+            order.Portfolio = self.Portfolio
+            order.Type = OrderTypes.Market
+            order.Side = Sides.Buy if delta > 0 else Sides.Sell
+            order.Volume = quantity
+            order.Comment = "0357Rebalance"
+            self._pending.append(order)
+            self.RegisterOrder(order)
 
-        self._primary_updated = False
-        self._benchmark_updated = False
+    def _load_reports(self):
+        lines = iter(File.ReadLines(self.FundamentalsFile))
+        if next(lines, "").strip() != "SecurityId,PeriodEnd,PublishedAt,TotalAssets,NetIncome,OperatingCashFlow,BookEquity,SharesOutstanding":
+            raise InvalidOperationException("Invalid annual financial report CSV header.")
+        keys = set()
+        for line in lines:
+            if not line.strip():
+                continue
+            row = line.split(",")
+            if len(row) != 8:
+                raise InvalidOperationException("A financial report must have eight fields.")
+            security_id = row[0].strip()
+            if not any(s.Id.lower() == security_id.lower() for s in self._securities):
+                continue
+            period = DateTime.ParseExact(row[1].strip(), "yyyy-MM-dd", CultureInfo.InvariantCulture)
+            published = DateTime.ParseExact(row[2].strip(), "yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture,
+                                            DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal)
+            values = [Decimal.Parse(v, CultureInfo.InvariantCulture) for v in row[3:]]
+            key = (security_id.upper(), period, published)
+            if values[0] <= 0 or values[4] <= 0 or published.Date < period or key in keys:
+                raise InvalidOperationException("Reports need positive assets/shares, causal publication dates and unique revisions.")
+            keys.add(key)
+            self._reports.append((security_id, period, published) + tuple(values))
 
-        if not self._primary_book.IsFormed or not self._benchmark_book.IsFormed:
-            return
+    def _find_report(self, security, time, period=None):
+        eligible = [r for r in self._reports if r[0].lower() == security.Id.lower()
+                    and r[2] <= time and r[1] <= time.Date and (period is None or r[1] == period)]
+        return max(eligible, key=lambda r: (r[1], r[2])) if eligible else None
 
-        ratio_spread = self._latest_primary_ratio - self._latest_benchmark_ratio
+    def _select_targets(self, time):
+        if time.Month != self.RebalanceMonth:
+            return False
+        scores = []
+        for security in self._securities:
+            report = self._find_report(security, time)
+            if report is None or (time.Date - report[1]).TotalDays > self.MaxReportAgeDays:
+                continue
+            if report[6] <= 0:
+                continue
+            score = report[6] / (report[7] * self._latest[security][1])
+            scores.append((security, score))
+        if len(scores) < self.Deciles:
+            return False
+        ranked = [s for s, score in sorted(scores, key=lambda x: (x[1], x[0].Id))]
+        count = len(ranked) // self.Deciles
+        self._set_basket_targets(ranked[-count:], ranked[:count], self.Capital * self.Leverage)
+        return True
 
-        mean_result = process_float(self._ratio_spread_average, ratio_spread, time, True)
-        mean = float(mean_result)
-
-        dev_result = process_float(self._ratio_spread_deviation, ratio_spread, time, True)
-        deviation = float(dev_result)
-
-        if not self._ratio_spread_average.IsFormed or not self._ratio_spread_deviation.IsFormed or deviation <= 0:
-            return
-
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
-        if self._cooldown_remaining > 0:
-            self._cooldown_remaining -= 1
-
-        z_score = (ratio_spread - mean) / deviation
-        entry_thresh = float(self._entry_threshold.Value)
-        exit_thresh = float(self._exit_threshold.Value)
-        cooldown = int(self._cooldown_bars.Value)
-
-        bullish_entry = self._previous_z_score is not None and self._previous_z_score < entry_thresh and z_score >= entry_thresh
-        bearish_entry = self._previous_z_score is not None and self._previous_z_score > -entry_thresh and z_score <= -entry_thresh
-
-        if self._cooldown_remaining == 0 and self.Position == 0:
-            if bullish_entry:
-                self.BuyMarket()
-                self._cooldown_remaining = cooldown
-            elif bearish_entry:
-                self.SellMarket()
-                self._cooldown_remaining = cooldown
-        elif self.Position > 0 and z_score <= exit_thresh:
-            self.SellMarket(self.Position)
-            self._cooldown_remaining = cooldown
-        elif self.Position < 0 and z_score >= -exit_thresh:
-            self.BuyMarket(Math.Abs(self.Position))
-            self._cooldown_remaining = cooldown
-
-        self._previous_z_score = z_score
+    def _set_basket_targets(self, longs, shorts, gross_capital):
+        self._targets = dict((s, Decimal(0)) for s in self._securities)
+        for s in longs:
+            self._targets[s] = self._units(s, gross_capital / Decimal(2 * len(longs)))
+        for s in shorts:
+            self._targets[s] = -self._units(s, gross_capital / Decimal(2 * len(shorts)))
 
     def CreateClone(self):
         return book_to_market_value_strategy()

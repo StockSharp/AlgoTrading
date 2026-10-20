@@ -1,31 +1,18 @@
-# BTC-Mining-Schwierigkeitsanpassungs-Strategie
+# BTC Difficulty Adjustments
+
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-Die BTC-Mining-Schwierigkeitsanpassungs-Strategie handelt auf Basis von Änderungen der Bitcoin-Mining-Schwierigkeit. Wenn der Schwellenwertmodus aktiviert ist, werden Trades nur geöffnet, wenn die prozentuale Änderung den angegebenen Schwellenwert überschreitet. Eine Long-Position wird bei positiven Schwierigkeitsanpassungen und eine Short-Position bei negativen Anpassungen eröffnet.
+## Handelsregeln
 
-## Details
+Erfordert `DifficultyHistoryFile` mit Kopfzeile `Time,Difficulty`. Veröffentlichungen sind strikt steigende ISO-UTC-Zeitstempel mit `Z`; die Schwierigkeit muss positiv sein. Die Datei wird beim Start gelesen. Fehlende oder ungültige Daten führen zu einem eindeutigen Fehler. Die Schwierigkeit wird nicht aus Marktpreisen abgeleitet.
 
-- **Einstiegskriterien**:
-  - Schwellenwertmodus: `abs(change) >= Threshold` und `change < 0` → Long einsteigen.
-  - Schwellenwertmodus: `abs(change) >= Threshold` und `change > 0` → Short einsteigen.
-  - Ohne Schwellenwertmodus: `difficulty > vorherige difficulty` → Long einsteigen.
-  - Ohne Schwellenwertmodus: `difficulty < vorherige difficulty` → Short einsteigen.
-- **Long/Short**: Beide Richtungen.
-- **Ausstiegskriterien**:
-  - Das entgegengesetzte Signal schließt und kehrt Positionen um.
-- **Stops**: Keine.
-- **Standardwerte**:
-  - `CandleType` = 1 Tag
-  - `ThresholdMode` = false
-  - `Threshold` = 10
-- **Filter**:
-  - Kategorie: Fundamental
-  - Richtung: Long & Short
-  - Indikatoren: Keine
-  - Stops: Nein
-  - Komplexität: Niedrig
-  - Zeitrahmen: Täglich
-  - Saisonalität: Nein
-  - Neuronale Netze: Nein
-  - Divergenz: Nein
-  - Risikolevel: Mittel
+Je abgeschlossener Kerze werden nur bis zu ihrem `OpenTime` veröffentlichte Werte verwendet. Der erste Wert bildet die Basis; unveränderte Werte erzeugen kein Signal. Änderung: `100*(difficulty/previous-1)`. Ohne Schwellenmodus kauft ein Anstieg und verkauft ein Rückgang. Im Schwellenmodus gilt nur `abs(change)>=Threshold`: Rückgang kauft, Anstieg verkauft. Die letzte zulässige beobachtete Änderung entscheidet. Ausgehend von null wird `Volume`, beim Richtungswechsel `Volume+abs(Position)` gehandelt. Offene Orders blockieren überlappende Entscheidungen. Kein automatischer Stop.
+
+## Parameter
+
+| Parameter | Standardwert |
+|---|---|
+| `CandleType` | `1d` |
+| `ThresholdMode` | `false` |
+| `Threshold` | `10` |
+| `DifficultyHistoryFile` | `erforderlich` |

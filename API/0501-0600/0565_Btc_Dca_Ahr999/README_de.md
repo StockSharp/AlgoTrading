@@ -1,30 +1,24 @@
-# BTC DCA AHR999-Strategie
+# BTC DCA AHR999
+
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-Diese Strategie kauft Bitcoin jeden Montag zwischen dem konfigurierten Start- und Enddatum. Der investierte Betrag hängt vom AHR999-Index ab, der ein geometrisches Mittel des Preises mit einem logarithmischen Wachstumsmodell für Bitcoin kombiniert.
+## Handelsregeln
 
-## Details
+Verwendet abgeschlossene UTC-Tageskerzen. Die letzten `Length` positiven Schlusskurse einschließlich des aktuellen ergeben `G=exp(mean(ln(C)))`. Das BTC-Alter sind ganze Tage seit 2009-01-03: `F=10^(5.84*log10(age)-17.01)`, `AHR999=(C/G)*(C/F)`. Das vollständige Fenster ist erforderlich.
 
-- **Einstiegskriterien**:
-  - An Montagen innerhalb des Datumsbereichs, wenn AHR999 < 0.45, den Betrag `UsdInvest2` kaufen.
-  - An Montagen innerhalb des Datumsbereichs, wenn AHR999 < 1.2, den Betrag `UsdInvest1` kaufen.
-- **Long/Short**: Nur Long.
-- **Ausstiegskriterien**:
-  - Positionen werden gehalten; keine automatische Ausstiegslogik enthalten.
-- **Stops**: Keine.
-- **Standardwerte**:
-  - UsdInvest1 = 100.
-  - UsdInvest2 = 1000.
-  - Length = 200.
-  - Startdatum = 2024-02-01, Enddatum = 2025-12-31.
-- **Filter**:
-  - Kategorie: Akkumulation.
-  - Richtung: Long.
-  - Indikatoren: AHR999.
-  - Stops: Nein.
-  - Komplexität: Moderat.
-  - Zeitrahmen: Täglich.
-  - Saisonalität: Nein.
-  - Neuronale Netze: Nein.
-  - Divergenz: Nein.
-  - Risikolevel: Mittel.
+An einem zulässigen Montag wird bei einem Index strikt unter 0.45 das Budget `UsdInvest2` gekauft, sonst bei strikt unter 1.2 das Budget `UsdInvest1`. Andere Werte, Wochentage und Daten erzeugen keinen Kauf. Die UTC-Datumsgrenzen sind einschließlich; je Tageskerze gibt es höchstens eine Entscheidung. Menge: `floor(budget/C/VolumeStep)*VolumeStep`; Mengen unter dem Minimum entfallen. Das Budget verwendet den Signalschluss, der Marktpreis kann abweichen. Offene Orders blockieren weitere Aufträge. Bestände werden ohne automatischen Ausstieg angesammelt.
+
+## Parameter
+
+| Parameter | Standardwert |
+|---|---|
+| `CandleType` | `1d` |
+| `Length` | `200` |
+| `UsdInvest1` | `100` |
+| `UsdInvest2` | `1000` |
+| `StartDate` | `2024-02-01T00:00:00Z` |
+| `EndDate` | `2025-12-31T00:00:00Z` |
+
+## Quellen
+
+- [AHR999 geometric-cost implementation](https://github.com/alibaba-web3/quant-master/blob/main/ahr999_index.py)

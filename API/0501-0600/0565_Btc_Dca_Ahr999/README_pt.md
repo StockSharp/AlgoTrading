@@ -1,30 +1,24 @@
-# Estratégia BTC DCA AHR999
+# BTC DCA AHR999
+
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [日本語](README_ja.md)
 
-Esta estratégia compra Bitcoin toda segunda-feira entre as datas de início e fim configuradas. O valor investido depende do índice AHR999, que combina uma média geométrica do preço com um modelo de crescimento logarítmico do Bitcoin.
+## Regras de negociação
 
-## Detalhes
+Usa velas diárias UTC concluídas. Os últimos `Length` fechamentos positivos, incluindo o atual, fornecem `G=exp(mean(ln(C)))`. A idade do BTC são dias inteiros desde 2009-01-03: `F=10^(5.84*log10(age)-17.01)` e `AHR999=(C/G)*(C/F)`. Exige a janela completa.
 
-- **Critérios de entrada**:
-  - Nas segundas-feiras dentro do intervalo de datas, se AHR999 < 0.45, comprar o valor `UsdInvest2`.
-  - Nas segundas-feiras dentro do intervalo de datas, se AHR999 < 1.2, comprar o valor `UsdInvest1`.
-- **Comprado/Vendido**: Somente comprado.
-- **Critérios de saída**:
-  - As posições são mantidas; nenhuma lógica de saída automática está incluída.
-- **Stops**: Nenhum.
-- **Valores padrão**:
-  - UsdInvest1 = 100.
-  - UsdInvest2 = 1000.
-  - Length = 200.
-  - Data de início = 2024-02-01, data de fim = 2025-12-31.
-- **Filtros**:
-  - Categoria: Acumulação.
-  - Direção: Comprado.
-  - Indicadores: AHR999.
-  - Stops: Não.
-  - Complexidade: Moderado.
-  - Período: Diário.
-  - Sazonalidade: Não.
-  - Redes neurais: Não.
-  - Divergência: Não.
-  - Nível de risco: Médio.
+Na segunda-feira permitida, compra o orçamento `UsdInvest2` se o índice for estritamente menor que 0.45; caso contrário, usa `UsdInvest1` se for menor que 1.2. Outros valores, dias e datas não compram. Os limites UTC são inclusivos, com uma decisão por vela diária. Quantidade: `floor(budget/C/VolumeStep)*VolumeStep`; volumes abaixo do mínimo são ignorados. O orçamento usa o fechamento do sinal; o preço executado a mercado pode variar. Ordens pendentes bloqueiam duplicações. Acumula posições sem saída automática.
+
+## Parâmetros
+
+| Parâmetro | Padrão |
+|---|---|
+| `CandleType` | `1d` |
+| `Length` | `200` |
+| `UsdInvest1` | `100` |
+| `UsdInvest2` | `1000` |
+| `StartDate` | `2024-02-01T00:00:00Z` |
+| `EndDate` | `2025-12-31T00:00:00Z` |
+
+## Referências
+
+- [AHR999 geometric-cost implementation](https://github.com/alibaba-web3/quant-master/blob/main/ahr999_index.py)

@@ -1,26 +1,31 @@
-# Bias- und Sentiment-Stärke-Strategie
+# Bias Sentiment Strength
+
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-Diese Strategie aggregiert mehrere Momentum- und Volumenindikatoren (MACD, RSI, Stochastic, Awesome Oscillator, Alligator-Durchschnitte und Volumen-Bias) zu einem einzelnen Bias-Wert. Eine Long-Position wird eröffnet, wenn der kombinierte Bias über null liegt, und eine Short-Position, wenn er unter null liegt.
+## Handelsregeln
 
-## Details
+Auf abgeschlossenen 15-Minuten-Kerzen werden MACD(12,26,9), Wilder-RSI(14), Stochastik(21,14,14), Awesome Oscillator(5,34), Alligator und Volumengewichtung kombiniert. Roh-K verwendet 21 Hochs/Tiefs; `Ks` ist sein SMA über 14 Werte, `D` ein weiterer SMA über 14. Alligator nutzt Medianpreis-SMMAs: Kiefer 13 um 8 versetzt, Zähne 8 um 5, Lippen 5 um 3.
 
-- **Einstiegskriterien**:
-  - **Long**: Kombinierter Bias > 0.
-  - **Short**: Kombinierter Bias < 0.
-- **Long/Short**: Beide.
-- **Ausstiegskriterien**: Umgekehrtes Signal.
-- **Stops**: Stop-Loss-Prozentsatz über `StopLossPercent`.
-- **Standardwerte**:
-  - MACD schnell 12, langsam 26, Signal 9.
-  - RSI-Periode 14.
-  - Stochastic-Perioden 21/14/14.
-  - Awesome Oscillator-Perioden 5/34.
-  - Volumen-Bias-Länge 30.
-- **Filter**:
-  - Kategorie: Trendfolge
-  - Richtung: Beide
-  - Indikatoren: Mehrere
-  - Stops: Ja
-  - Komplexität: Komplex
-  - Zeitrahmen: Mittelfristig
+`BASS = 2 * (MACD - Signal) + (RSI - 50) / 5 + 0.15 * (Ks - D) + 0.6 * AO + (Lips - Teeth) + (Teeth - Jaw) + VWMA(30) - SMA(30)`. Alle Komponenten müssen gebildet sein; standardmäßig mindestens 47 vollständige Kerzen. Ungültige Konfiguration wird ausdrücklich abgelehnt.
+
+Über `BassThreshold` ist das Ziel Long `Volume`, unter `-BassThreshold` Short `Volume`. Standardgrenze ist null. Es gelten Pegel, sodass nach einem Stop kein neuer Nulldurchgang nötig ist. Umkehrorders umfassen `Volume + abs(Position)`; offene Orders blockieren neue. Der native lokale Marktstop schließt die gesamte ausgeführte Position nach `StopLossPercent` Prozent, standardmäßig 1. Kein Gewinnlimit.
+
+Der native lokale Schutz verwendet Kerzen und abonnierte Preisaktualisierungen des Instruments. Abstände beziehen sich auf tatsächliche Einstiegsausführungen. Ausstiege sind Marktorders; der Ausführungspreis hängt vom verfügbaren Markt und Preisraster ab.
+
+## Parameter
+
+| Parameter | Standardwert |
+|---|---|
+| `MacdFast` | `12` |
+| `MacdSlow` | `26` |
+| `MacdSignal` | `9` |
+| `RsiPeriod` | `14` |
+| `StochK` | `21` |
+| `StochSmooth` | `14` |
+| `StochD` | `14` |
+| `AoShort` | `5` |
+| `AoLong` | `34` |
+| `VolumeLength` | `30` |
+| `BassThreshold` | `0` |
+| `StopLossPercent` | `1` |
+| `CandleType` | `15m` |

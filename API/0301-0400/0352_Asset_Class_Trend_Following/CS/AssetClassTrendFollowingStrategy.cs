@@ -1,258 +1,203 @@
+namespace StockSharp.Samples.Strategies;
+
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Linq;
 
 using Ecng.Common;
 
-using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
-using StockSharp.Configuration;
 using StockSharp.Messages;
 
-namespace StockSharp.Samples.Strategies;
-
-/// <summary>
-/// Relative asset class trend-following strategy that allocates to the primary instrument when its trend is stronger than the secondary benchmark.
-/// </summary>
+/// <summary>Asset Class Trend Following with explicit inputs and execution-based portfolio accounting.</summary>
 public class AssetClassTrendFollowingStrategy : Strategy
 {
-	private readonly StrategyParam<string> _security2Id;
-	private readonly StrategyParam<int> _smaLength;
-	private readonly StrategyParam<decimal> _minTrendStrength;
-	private readonly StrategyParam<decimal> _relativeStrengthThreshold;
-	private readonly StrategyParam<int> _rebalanceIntervalBars;
-	private readonly StrategyParam<decimal> _stopLoss;
+	private readonly StrategyParam<IEnumerable<Security>> _universe;
+	private readonly StrategyParam<decimal> _capital;
+	private readonly StrategyParam<decimal> _leverage;
+	private readonly StrategyParam<decimal> _minTradeUsd;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<string> _priceHistoryFile;
+	private readonly StrategyParam<int> _smaLength;
+	private Security[] _securities = [];
+	private readonly Dictionary<Security, (DateTime time, decimal price)> _latest = [];
+	private readonly Dictionary<Security, SortedDictionary<DateTime, decimal>> _history = [];
+	private readonly Dictionary<Security, decimal> _targets = [];
+	private readonly List<Order> _pending = [];
+	private int _lastRebalance;
+	private DateTime? _lastBar;
 
-	private Security _security2 = null!;
-	private SimpleMovingAverage _primarySma = null!;
-	private SimpleMovingAverage _secondarySma = null!;
-	private decimal _latestPrimaryPrice;
-	private decimal _latestSecondaryPrice;
-	private decimal _latestPrimarySma;
-	private decimal _latestSecondarySma;
-	private bool _primaryUpdated;
-	private bool _secondaryUpdated;
-	private int _barsSinceRebalance;
+	/// <summary>Execution securities with USD prices and valid volume metadata.</summary>
+	public IEnumerable<Security> Universe { get => _universe.Value; set => _universe.Value = value; }
 
-	/// <summary>
-	/// Secondary security identifier.
-	/// </summary>
-	public string Security2Id
-	{
-		get => _security2Id.Value;
-		set => _security2Id.Value = value;
-	}
+	/// <summary>Fixed gross capital budget in USD.</summary>
+	public decimal Capital { get => _capital.Value; set => _capital.Value = value; }
 
-	/// <summary>
-	/// Trend moving average length.
-	/// </summary>
-	public int SmaLength
-	{
-		get => _smaLength.Value;
-		set => _smaLength.Value = value;
-	}
+	/// <summary>Gross target exposure divided by the capital budget.</summary>
+	public decimal Leverage { get => _leverage.Value; set => _leverage.Value = value; }
 
-	/// <summary>
-	/// Minimum absolute trend strength required to hold the primary instrument.
-	/// </summary>
-	public decimal MinTrendStrength
-	{
-		get => _minTrendStrength.Value;
-		set => _minTrendStrength.Value = value;
-	}
+	/// <summary>Minimum notional adjustment; complete liquidation bypasses this filter.</summary>
+	public decimal MinTradeUsd { get => _minTradeUsd.Value; set => _minTradeUsd.Value = value; }
 
-	/// <summary>
-	/// Minimum relative outperformance of the primary instrument versus the benchmark.
-	/// </summary>
-	public decimal RelativeStrengthThreshold
-	{
-		get => _relativeStrengthThreshold.Value;
-		set => _relativeStrengthThreshold.Value = value;
-	}
+	/// <summary>Closed candle type; daily statistics count distinct UTC dates.</summary>
+	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Number of paired candles between rebalancing decisions.
-	/// </summary>
-	public int RebalanceIntervalBars
-	{
-		get => _rebalanceIntervalBars.Value;
-		set => _rebalanceIntervalBars.Value = value;
-	}
+	/// <summary>Optional daily close CSV for warmup; current and future dates cannot prefill a decision.</summary>
+	public string PriceHistoryFile { get => _priceHistoryFile.Value; set => _priceHistoryFile.Value = value; }
 
-	/// <summary>
-	/// Stop loss percentage.
-	/// </summary>
-	public decimal StopLoss
-	{
-		get => _stopLoss.Value;
-		set => _stopLoss.Value = value;
-	}
+	/// <summary>Distinct daily closes in the simple moving average.</summary>
+	public int SmaLength { get => _smaLength.Value; set => _smaLength.Value = value; }
 
-	/// <summary>
-	/// Candle type used for both instruments.
-	/// </summary>
-	public DataType CandleType
-	{
-		get => _candleType.Value;
-		set => _candleType.Value = value;
-	}
-
-	/// <summary>
-	/// Initializes strategy parameters.
-	/// </summary>
+	/// <summary>Initialize the published strategy parameters.</summary>
 	public AssetClassTrendFollowingStrategy()
 	{
-		_security2Id = Param(nameof(Security2Id), Paths.HistoryDefaultSecurity2)
-			.SetDisplay("Second Security Id", "Identifier of the secondary benchmark security", "General");
-
-		_smaLength = Param(nameof(SmaLength), 36)
-			.SetRange(10, 200)
-			.SetDisplay("SMA Length", "Trend moving average length", "Indicators");
-
-		_minTrendStrength = Param(nameof(MinTrendStrength), 0.004m)
-			.SetRange(0.001m, 0.05m)
-			.SetDisplay("Min Trend Strength", "Minimum absolute trend strength required to hold the primary instrument", "Signals");
-
-		_relativeStrengthThreshold = Param(nameof(RelativeStrengthThreshold), 0.002m)
-			.SetRange(0m, 0.05m)
-			.SetDisplay("Relative Strength Threshold", "Minimum relative outperformance of the primary instrument", "Signals");
-
-		_rebalanceIntervalBars = Param(nameof(RebalanceIntervalBars), 18)
-			.SetRange(1, 200)
-			.SetDisplay("Rebalance Bars", "Number of paired candles between rebalancing decisions", "General");
-
-		_stopLoss = Param(nameof(StopLoss), 2m)
-			.SetRange(0.5m, 10m)
-			.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
-			.SetDisplay("Candle Type", "Candle series for both instruments", "General");
+		_universe = Param<IEnumerable<Security>>(nameof(Universe)).SetRequired()
+			.SetDisplay("Universe", "Execution securities with USD prices and valid volume metadata", "Parameters");
+		_capital = Param(nameof(Capital), 100000m).SetGreaterThanZero()
+			.SetDisplay("Capital", "Fixed gross capital budget in USD", "Parameters");
+		_leverage = Param(nameof(Leverage), 1m).SetGreaterThanZero()
+			.SetDisplay("Leverage", "Gross target exposure divided by the capital budget", "Parameters");
+		_minTradeUsd = Param(nameof(MinTradeUsd), 50m).SetRange(0m, decimal.MaxValue)
+			.SetDisplay("MinTradeUsd", "Minimum notional adjustment; complete liquidation bypasses this filter", "Parameters");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+			.SetDisplay("CandleType", "Closed candle type; daily statistics count distinct UTC dates", "Parameters");
+		_priceHistoryFile = Param<string>(nameof(PriceHistoryFile))
+			.SetDisplay("PriceHistoryFile", "Optional daily close CSV for warmup; current and future dates cannot prefill a decision", "Parameters");
+		_smaLength = Param(nameof(SmaLength), 210).SetGreaterThanZero()
+			.SetDisplay("SmaLength", "Distinct daily closes in the simple moving average", "Parameters");
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-		if (Security != null)
-			yield return (Security, CandleType);
-
-		if (!Security2Id.IsEmpty())
-			yield return (new Security { Id = Security2Id }, CandleType);
+		foreach (var security in (Universe ?? []).DistinctBy(s => s.Id, StringComparer.OrdinalIgnoreCase))
+			yield return (security, CandleType);
 	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
+		_securities = [];
+		_latest.Clear();
+		_history.Clear();
+		_targets.Clear();
+		_pending.Clear();
+		_lastRebalance = 0;
+		_lastBar = null;
 
-		_security2 = null!;
-		_primarySma = null!;
-		_secondarySma = null!;
-		_latestPrimaryPrice = 0m;
-		_latestSecondaryPrice = 0m;
-		_latestPrimarySma = 0m;
-		_latestSecondarySma = 0m;
-		_primaryUpdated = false;
-		_secondaryUpdated = false;
-		_barsSinceRebalance = 0;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
+		_securities = (Universe ?? []).ToArray();
+		if (_securities.Length == 0 || _securities.Any(s => s is null || string.IsNullOrWhiteSpace(s.Id))
+			|| _securities.Select(s => s.Id).Distinct(StringComparer.OrdinalIgnoreCase).Count() != _securities.Length)
+			throw new InvalidOperationException("Universe must contain distinct execution securities.");
+		foreach (var security in GetWorkingSecurities().Select(x => x.sec))
+		{
+			if (security.VolumeStep is not > 0m || security.MinVolume is not > 0m || security.MaxVolume is not > 0m)
+				throw new InvalidOperationException("Every security needs positive VolumeStep, MinVolume and MaxVolume.");
+			_history[security] = [];
+		}
+
+		LoadPriceHistory();
 		base.OnStarted2(time);
-
-		if (Security == null)
-			throw new InvalidOperationException("Primary security is not specified.");
-
-		if (Security2Id.IsEmpty())
-			throw new InvalidOperationException("Secondary security identifier is not specified.");
-
-		_security2 = this.LookupById(Security2Id) ?? new Security { Id = Security2Id };
-		_primarySma = new SimpleMovingAverage { Length = SmaLength };
-		_secondarySma = new SimpleMovingAverage { Length = SmaLength };
-		_barsSinceRebalance = RebalanceIntervalBars;
-
-		var primarySubscription = SubscribeCandles(CandleType, security: Security);
-		var secondarySubscription = SubscribeCandles(CandleType, security: _security2);
-
-		primarySubscription
-			.Bind(ProcessPrimaryCandle)
-			.Start();
-
-		secondarySubscription
-			.Bind(ProcessSecondaryCandle)
-			.Start();
-
-		var area = CreateChartArea();
-		if (area != null)
-		{
-			DrawCandles(area, primarySubscription);
-			DrawCandles(area, secondarySubscription);
-			DrawOwnTrades(area);
-		}
-
-		StartProtection(
-			new Unit(2, UnitTypes.Percent),
-			new Unit(StopLoss, UnitTypes.Percent));
+		foreach (var security in GetWorkingSecurities().Select(x => x.sec))
+			SubscribeCandles(CandleType, security: security).Bind(candle => ProcessCandle(security, candle)).Start();
 	}
 
-	private void ProcessPrimaryCandle(ICandleMessage candle)
+	private void ProcessCandle(Security security, ICandleMessage candle)
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
+		if (candle.State != CandleStates.Finished || candle.ClosePrice <= 0m) return;
+		_latest[security] = (candle.OpenTime, candle.ClosePrice);
+		_history[security][candle.OpenTime.Date] = candle.ClosePrice;
+		if (_latest.Count != _history.Count || _latest.Values.Any(v => v.time != candle.OpenTime)
+			|| _lastBar == candle.OpenTime || !IsFormedAndOnlineAndAllowTrading()) return;
+		_lastBar = candle.OpenTime;
+		var month = candle.OpenTime.Year * 100 + candle.OpenTime.Month;
 
-		_latestPrimaryPrice = candle.ClosePrice;
-		_latestPrimarySma = _primarySma.Process(candle).ToDecimal();
-		_primaryUpdated = true;
-		TryRebalance();
+		if (_lastRebalance != month && SelectTargets(candle.OpenTime))
+			_lastRebalance = month;
+		ApplyTrendExits(candle.OpenTime);
+		ReconcileTargets();
 	}
 
-	private void ProcessSecondaryCandle(ICandleMessage candle)
+	private decimal[] Daily(Security security, DateTime time)
+		=> _history[security].Where(x => x.Key <= LastClosedDate(time)).Select(x => x.Value).ToArray();
+
+	private DateTime LastClosedDate(DateTime time)
+		=> CandleType.Arg is TimeSpan frame && frame == TimeSpan.FromDays(1) ? time.Date : time.Date.AddDays(-1);
+
+	private decimal Units(Security security, decimal notional)
+		=> Math.Floor(notional / _latest[security].price / security.VolumeStep.Value) * security.VolumeStep.Value;
+
+	private void ReconcileTargets()
 	{
-		if (candle.State != CandleStates.Finished)
-			return;
-
-		_latestSecondaryPrice = candle.ClosePrice;
-		_latestSecondarySma = _secondarySma.Process(candle).ToDecimal();
-		_secondaryUpdated = true;
-		TryRebalance();
+		if (_pending.Any(o => o.State is not (OrderStates.Done or OrderStates.Failed))) return;
+		_pending.Clear();
+		foreach (var security in _securities)
+		{
+			if (!_targets.TryGetValue(security, out var target)) continue;
+			var delta = target - GetPositionValue(security, Portfolio).GetValueOrDefault();
+			if (delta == 0m || (target != 0m && Math.Abs(delta) * _latest[security].price < MinTradeUsd)) continue;
+			var step = security.VolumeStep.Value;
+			var quantity = Math.Floor(Math.Min(Math.Abs(delta), security.MaxVolume.Value) / step) * step;
+			if (quantity < security.MinVolume.Value) continue;
+			var order = new Order
+			{
+				Security = security, Portfolio = Portfolio, Type = OrderTypes.Market,
+				Side = delta > 0m ? Sides.Buy : Sides.Sell, Volume = quantity, Comment = "0352Rebalance",
+			};
+			_pending.Add(order);
+			RegisterOrder(order);
+		}
 	}
 
-	private void TryRebalance()
+	private void LoadPriceHistory()
 	{
-		if (!_primaryUpdated || !_secondaryUpdated)
-			return;
-
-		_primaryUpdated = false;
-		_secondaryUpdated = false;
-
-		if (!_primarySma.IsFormed || !_secondarySma.IsFormed)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		if (_barsSinceRebalance < RebalanceIntervalBars)
+		if (string.IsNullOrWhiteSpace(PriceHistoryFile)) return;
+		var lines = File.ReadLines(PriceHistoryFile).GetEnumerator();
+		using (lines)
 		{
-			_barsSinceRebalance++;
-			return;
-		}
-
-		_barsSinceRebalance = 0;
-
-		var primaryTrend = (_latestPrimaryPrice - _latestPrimarySma) / Math.Max(_latestPrimarySma, 1m);
-		var secondaryTrend = (_latestSecondaryPrice - _latestSecondarySma) / Math.Max(_latestSecondarySma, 1m);
-		var relativeStrength = primaryTrend - secondaryTrend;
-		var shouldHoldLong = primaryTrend >= MinTrendStrength && relativeStrength >= RelativeStrengthThreshold;
-
-		if (shouldHoldLong && Position <= 0)
-		{
-			BuyMarket(Volume + (Position < 0 ? Math.Abs(Position) : 0m));
-		}
-		else if (!shouldHoldLong && Position > 0)
-		{
-			SellMarket(Position);
+			if (!lines.MoveNext() || lines.Current.Trim() != "SecurityId,Date,Close")
+				throw new InvalidOperationException("Price history must begin with SecurityId,Date,Close.");
+			while (lines.MoveNext())
+			{
+				if (string.IsNullOrWhiteSpace(lines.Current)) continue;
+				var row = lines.Current.Split(',');
+				if (row.Length != 3) throw new InvalidOperationException("A daily price row must have three fields.");
+				var security = _history.Keys.SingleOrDefault(s => string.Equals(s.Id, row[0].Trim(), StringComparison.OrdinalIgnoreCase));
+				if (security is null) continue;
+				var date = DateTime.ParseExact(row[1].Trim(), "yyyy-MM-dd", CultureInfo.InvariantCulture);
+				var price = decimal.Parse(row[2], CultureInfo.InvariantCulture);
+				if (price <= 0m || !_history[security].TryAdd(date, price))
+					throw new InvalidOperationException("Daily prices must be positive and unique per security and UTC date.");
+			}
 		}
 	}
+
+	private bool SelectTargets(DateTime time)
+	{
+		if (_securities.Any(s => Daily(s, time).Length < SmaLength)) return false;
+		var eligible = _securities.Where(s => _latest[s].price > Daily(s, time).TakeLast(SmaLength).Average()).ToArray();
+		foreach (var s in _securities)
+			_targets[s] = eligible.Contains(s) ? Units(s, Capital * Leverage / eligible.Length) : 0m;
+		return true;
+	}
+
+	private void ApplyTrendExits(DateTime time)
+	{
+		foreach (var s in _securities)
+		{
+			var history = Daily(s, time);
+			if (history.Length >= SmaLength && _latest[s].price <= history.TakeLast(SmaLength).Average())
+				_targets[s] = 0m;
+		}
+	}
+
 }

@@ -1,16 +1,43 @@
-# Estrategia Cazadora de Grandes Movimientos
+# Big Mover Catcher
+
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-Esta estrategia entra en largo cuando el precio cierra por encima de la Banda de Bollinger superior y todos los filtros habilitados confirman el movimiento. También puede ir en corto cuando el precio cierra por debajo de la banda inferior. Los filtros incluyen RSI, ADX, ATR, dirección de tendencia EMA y MACD. Se aplica un stop loss de porcentaje fijo, las posiciones se cierran cuando el precio regresa a la banda media y una toma de beneficios forzada opcional sale en velas inusualmente grandes.
+## Reglas de negociación
 
-## Detalles
-- **Criterios de entrada:**
-  - **Largo:** cierre > Banda de Bollinger superior y todos los filtros activos pasan.
-  - **Corto:** cierre < Banda de Bollinger inferior y todos los filtros activos pasan.
-- **Largo/Corto:** Ambos (configurable).
-- **Criterios de salida:**
-  - El precio cruza la Banda de Bollinger media.
-  - Toma de beneficios forzada opcional en velas grandes.
-- **Stops:** Stop loss de porcentaje fijo.
-- **Valores predeterminados:** Longitud Bollinger = 40, stop loss = 2%, umbral de TP forzado = 5%.
-- **Filtros:** RSI (14), ADX (28), ATR (14), EMA (350), MACD (12,26,9).
+Usa cierres terminados de un minuto y bandas de Bollinger (40 barras, dos desviaciones poblacionales). Sin posición, compra `Volume` por encima de la banda superior o vende `Volume` por debajo de la inferior. `TradeDirection = null` permite ambas direcciones; `Buy` o `Sell` limita entradas.
+
+Los cinco filtros están activos por defecto y deben confirmar: RSI(14) estrictamente mayor de 50 para largo/menor de 50 para corto; ADX(28) al menos 20; `100 * ATR(14) / Close >= 0.05`; cierre sobre/bajo EMA(350); histograma MACD(12,26,9) positivo/negativo. Cada filtro se desactiva por separado. Solo los indicadores activos deben estar formados; EMA desactivada no impone esperar 350 barras.
+
+Cierra todo el largo con cierre completo en/bajo la banda media, o todo el corto en/sobre ella. `IsForceTakeProfitEnabled` añade salida si el cuerpo favorable dividido por apertura alcanza `ForceTakeProfitPercent` por ciento, por defecto 5. Se mide el cuerpo actual, no la ganancia desde entrada; está desactivado por defecto. La salida tiene prioridad sin reversión en la misma vela.
+
+El stop nativo local a mercado usa `StopLossPercent` por ciento desde la entrada ejecutada, predeterminado 2. Una orden activa evita duplicados.
+
+La protección local nativa usa velas y actualizaciones de precio suscritas del instrumento. Las distancias parten de los precios ejecutados. Las salidas son a mercado y dependen del mercado disponible y del paso de precio.
+
+## Parámetros
+
+| Parámetro | Predeterminado |
+|---|---|
+| `BollingerPeriod` | `40` |
+| `BollingerDeviation` | `2` |
+| `IsRsiFilterEnabled` | `true` |
+| `RsiPeriod` | `14` |
+| `RsiLongThreshold` | `50` |
+| `RsiShortThreshold` | `50` |
+| `IsAdxFilterEnabled` | `true` |
+| `AdxPeriod` | `28` |
+| `MinimumAdx` | `20` |
+| `IsAtrFilterEnabled` | `true` |
+| `AtrPeriod` | `14` |
+| `MinimumAtrPercent` | `0.05` |
+| `IsEmaFilterEnabled` | `true` |
+| `EmaPeriod` | `350` |
+| `IsMacdFilterEnabled` | `true` |
+| `MacdFast` | `12` |
+| `MacdSlow` | `26` |
+| `MacdSignal` | `9` |
+| `TradeDirection` | `null` |
+| `StopLossPercent` | `2` |
+| `IsForceTakeProfitEnabled` | `false` |
+| `ForceTakeProfitPercent` | `5` |
+| `CandleType` | `1m` |

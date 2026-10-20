@@ -1,31 +1,22 @@
-# Estrategia de Ruptura Bitcoin 1H-15M
+# Bitcoin 1H/15M Breakout
+
 [English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-La estrategia sigue el máximo y el mínimo de la vela de 1 hora anterior y entra en operaciones cuando una vela de 15 minutos cierra fuera de ese rango. El riesgo se gestiona con un buffer de stop-loss fijo y un take-profit derivado de una relación riesgo-beneficio configurable.
+## Reglas de negociación
 
-## Detalles
+Opera rupturas en velas terminadas de 15 minutos del rango de la hora anterior completa. Las velas menores se agregan en horas UTC. Una hora solo es válida si contiene los cuatro cuartos consecutivos desde su inicio exacto; una hora inicial parcial o un hueco no crea rango.
 
-- **Criterios de entrada**:
-  - Cierre de 15 minutos por encima del máximo de la hora anterior → entrada larga.
-  - Cierre de 15 minutos por debajo del mínimo de la hora anterior → entrada corta.
-- **Largo/Corto**: Ambos
-- **Criterios de salida**:
-  - Stop loss a distancia de buffer fija.
-  - Take profit a buffer × relación riesgo-beneficio.
-- **Stops**: Stop loss y take profit mediante módulo de protección.
-- **Valores predeterminados**:
-  - Marco temporal inferior = 15 minutos.
-  - Marco temporal superior = 1 hora.
-  - Buffer de stop loss = 50.
-  - Relación riesgo-beneficio = 2.0.
-- **Filtros**:
-  - Categoría: Ruptura
-  - Dirección: Ambos
-  - Indicadores: Ninguno
-  - Stops: SL & TP
-  - Complejidad: Bajo
-  - Marco temporal: Corto plazo
-  - Estacionalidad: No
-  - Redes neuronales: No
-  - Divergencia: No
-  - Nivel de riesgo: Medio
+Para una vela menor abierta en la hora H, usar exclusivamente el máximo/mínimo de H−1 ya completa, nunca la hora actual parcial. Sin posición, comprar `Volume` con cierre estrictamente por encima del máximo o vender `Volume` por debajo del mínimo. Se permiten ambas direcciones; una posición abierta no aumenta ni revierte por nuevas rupturas. Una orden activa bloquea otra.
+
+La protección local nativa fija `StopLossBuffer` como distancia absoluta desde ejecuciones de entrada, predeterminado 50. El take-profit usa `StopLossBuffer * RiskRewardRatio`, predeterminado 100 con razón 2. Ambas salidas son a mercado por toda la posición y no cambian con nuevos rangos horarios. `HigherTimeFrame` debe ser múltiplo entero del intervalo menor.
+
+La protección local nativa usa velas y actualizaciones de precio suscritas del instrumento. Las distancias parten de los precios ejecutados. Las salidas son a mercado y dependen del mercado disponible y del paso de precio.
+
+## Parámetros
+
+| Parámetro | Predeterminado |
+|---|---|
+| `CandleType` | `15m` |
+| `HigherTimeFrame` | `1h` |
+| `StopLossBuffer` | `50` |
+| `RiskRewardRatio` | `2` |

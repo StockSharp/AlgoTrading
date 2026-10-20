@@ -1,28 +1,34 @@
-# 商品收益不对称
-[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
+# Return Asymmetry Commodity
 
-**商品收益不对称** 策略利用正收益和负收益的差异。对于每个商品期货，在滚动窗口中分别累加所有上涨和下跌的幅度。较高的比率表示持续上涨动能，较低的比率表明卖压持续。
+[English](README.md) | [Русский](README_ru.md) | [Deutsch](README_de.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-每月初根据该不对称指标对期货进行排序。系统等权买入前 N 个合约并做空后 N 个，持仓在每月再平衡时调整。
+## 交易规则
 
-## 细节
-- **入场条件**：按窗口内日收益的不对称度进行每月排序。
-- **多空方向**：双向。
-- **出场条件**：在每月再平衡时调整仓位。
-- **止损**：没有明确止损，通过 `MinTradeUsd` 控制仓位。
-- **默认值**：
-  - `WindowDays = 120`
-  - `TopN = 5`
-  - `MinTradeUsd = 200`
-  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
-- **筛选**：
-  - 分类：动量
-  - 方向：双向
-  - 指标：价格
-  - 止损：无
-  - 复杂度：中等
-  - 时间框架：中期
-  - 季节性：是
-  - 神经网络：否
-  - 背离：否
-  - 风险级别：中等
+对 WindowDays 个完整日收益率 r，计算 U = Σmax(r,0)，D = Σmax(−r,0)，按 (U−D)/(U+D) 排名，U+D=0 时取零。该有界评分保持 U/D 的排序，包括全涨、全跌窗口，不添加任意分母下限。它表示涨跌收益平衡，并非统计偏度。买入 TopN 个领先证券，做空 TopN 个不同的落后证券，至少需 2×TopN 个有效证券。
+
+必须显式设置 Universe。价格与 Capital 采用 USD，每个价格单位对应一个交易单位。Capital 是固定预算，Leverage 控制总敞口。不添加止损或止盈。
+
+仅处理时间戳一致的已完成蜡烛。统计按不同 UTC 日期计数，同一天的盘中收盘值会被后续值替换。每月在第一个满足条件的同步收盘信号上再平衡一次；数据不足时延迟。相同分数按 Security.Id 排序。
+
+多头和空头各分配 Capital × Leverage 的一半，各篮子内等额分配。按信号收盘价换算数量，并按 VolumeStep 向零取整。根据实际成交仓位调整，等待未完成订单，遵守 MinVolume/MaxVolume，并在后续蜡烛继续大额调整。MinTradeUsd 过滤小额调整，但完整平仓不受此过滤限制。
+
+## 参数
+
+| 参数 | 默认值 |
+|---|---|
+| `Universe` | 必填 |
+| `Capital` | 100000 |
+| `Leverage` | 1 |
+| `MinTradeUsd` | 200 |
+| `CandleType` | TimeSpan.FromMinutes(5).TimeFrame() |
+| `PriceHistoryFile` | 未提供 |
+| `WindowDays` | 120 |
+| `TopN` | 5 |
+
+## 输入数据
+
+可选 `PriceHistoryFile` CSV：`SecurityId,Date,Close`，收盘价为正，证券/日期唯一，日期 `yyyy-MM-dd`。日内仅用当前 UTC 日期之前的数据，完整日蜡烛可计入自身收盘。未来行不得提前影响决策，执行蜡烛替换当日值。
+
+## 验证
+
+两种语言使用随附 BTC/TON，检查独立公式、订单方向/数量、真实成交、仓位与退出。带日期的价格、因子、日历数据验证机制，重定位 OHLC/成交量不是多年历史。两个排名组、TopN=1、SMA=2 是明确的小证券池测试配置，长窗口和原始默认值另行检查。不承诺盈利。

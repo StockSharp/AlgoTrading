@@ -3,241 +3,245 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.BusinessEntities")
-clr.AddReference("StockSharp.Algo.Indicators")
 clr.AddReference("StockSharp.Algo.Strategies")
 
-from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import StandardDeviation, SimpleMovingAverage, CandleIndicatorValue
+from System import Boolean, DateTime, Decimal, Int32, Math, TimeSpan, InvalidOperationException
+from System.Collections.Generic import IEnumerable
+from System.Globalization import CultureInfo, DateTimeStyles
+from System.IO import File, Path
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.BusinessEntities import Security
-from indicator_extensions import *
+from StockSharp.BusinessEntities import Order, Security
+from StockSharp.Messages import CandleStates, DataType, OrderStates, OrderTypes, Sides
+
 
 class low_volatility_stocks_strategy(Strategy):
-    """Low volatility anomaly strategy that trades the primary instrument when its realized volatility diverges from a benchmark instrument."""
+    """Low Volatility Stocks with point-in-time inputs and execution-based portfolio accounting."""
 
     def __init__(self):
         super(low_volatility_stocks_strategy, self).__init__()
+        self._universe = self.Param[IEnumerable[Security]]("Universe", None).SetRequired() \
+            .SetDisplay("Universe", "Explicit execution securities with valid native volume metadata", "Parameters")
+        self._capital = self.Param("Capital", Decimal(100000)).SetGreaterThanZero() \
+            .SetDisplay("Capital", "Fixed capital budget in USD", "Parameters")
+        self._leverage = self.Param("Leverage", Decimal(1)).SetGreaterThanZero() \
+            .SetDisplay("Leverage", "Gross target exposure divided by the capital budget", "Parameters")
+        self._min_trade_usd = self.Param("MinTradeUsd", Decimal(200)).SetRange(Decimal(0), Decimal.MaxValue) \
+            .SetDisplay("MinTradeUsd", "Minimum USD adjustment; complete liquidation bypasses this filter", "Parameters")
+        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(1440))) \
+            .SetDisplay("CandleType", "Finished execution candle type", "Parameters")
+        self._price_history_file = self.Param[str]("PriceHistoryFile", None) \
+            .SetDisplay("PriceHistoryFile", "Optional daily close CSV; future dates cannot prefill a decision", "Parameters")
+        self._vol_window_days = self.Param("VolWindowDays", 60).SetRange(2, 2147483647) \
+            .SetDisplay("VolWindowDays", "Completed daily returns in the sample standard deviation", "Parameters")
+        self._deciles = self.Param("Deciles", 10).SetRange(2, 2147483647) \
+            .SetDisplay("Deciles", "Number of volatility buckets", "Parameters")
+        self._clear_state()
 
-        self._security2_id = self.Param("Security2Id", "TONUSDT@BNBFT") \
-            .SetDisplay("Benchmark Security Id", "Identifier of the benchmark security", "General")
+    def _clear_state(self):
+        self._securities = []
+        self._latest = {}
+        self._history = {}
+        self._targets = {}
+        self._pending = []
+        self._last_rebalance = 0
+        self._last_bar = None
 
-        self._volatility_period = self.Param("VolatilityPeriod", 18) \
-            .SetRange(5, 120) \
-            .SetDisplay("Volatility Period", "Lookback period used to estimate realized volatility", "Indicators")
-
-        self._normalization_period = self.Param("NormalizationPeriod", 24) \
-            .SetRange(5, 120) \
-            .SetDisplay("Normalization Period", "Lookback period used to normalize the volatility spread", "Indicators")
-
-        self._trend_period = self.Param("TrendPeriod", 30) \
-            .SetRange(5, 200) \
-            .SetDisplay("Trend Period", "Trend period used to align entries with the primary instrument direction", "Indicators")
-
-        self._entry_threshold = self.Param("EntryThreshold", 1.1) \
-            .SetRange(0.2, 5.0) \
-            .SetDisplay("Entry Threshold", "Z-score threshold required to open a position", "Signals")
-
-        self._exit_threshold = self.Param("ExitThreshold", 0.25) \
-            .SetRange(0.0, 2.0) \
-            .SetDisplay("Exit Threshold", "Z-score threshold required to close a position", "Signals")
-
-        self._cooldown_bars = self.Param("CooldownBars", 6) \
-            .SetRange(0, 120) \
-            .SetDisplay("Cooldown Bars", "Closed candles to wait before another position change", "Risk")
-
-        self._stop_loss = self.Param("StopLoss", 2.5) \
-            .SetRange(0.5, 10.0) \
-            .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk")
-
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(4))) \
-            .SetDisplay("Candle Type", "Time frame for candles", "General")
-
-        self._benchmark = None
-        self._primary_volatility = None
-        self._benchmark_volatility = None
-        self._spread_average = None
-        self._spread_deviation = None
-        self._primary_trend = None
-        self._previous_primary_close = None
-        self._previous_benchmark_close = None
-        self._latest_primary_volatility = 0.0
-        self._latest_benchmark_volatility = 0.0
-        self._latest_primary_trend = 0.0
-        self._primary_updated = False
-        self._benchmark_updated = False
-        self._cooldown_remaining = 0
 
     @property
-    def candle_type(self):
+    def Universe(self):
+        return self._universe.Value
+
+    @Universe.setter
+    def Universe(self, value):
+        self._universe.Value = value
+
+    @property
+    def Capital(self):
+        return self._capital.Value
+
+    @Capital.setter
+    def Capital(self, value):
+        self._capital.Value = value
+
+    @property
+    def Leverage(self):
+        return self._leverage.Value
+
+    @Leverage.setter
+    def Leverage(self, value):
+        self._leverage.Value = value
+
+    @property
+    def MinTradeUsd(self):
+        return self._min_trade_usd.Value
+
+    @MinTradeUsd.setter
+    def MinTradeUsd(self, value):
+        self._min_trade_usd.Value = value
+
+    @property
+    def CandleType(self):
         return self._candle_type.Value
 
+    @CandleType.setter
+    def CandleType(self, value):
+        self._candle_type.Value = value
+
+    @property
+    def PriceHistoryFile(self):
+        return self._price_history_file.Value
+
+    @PriceHistoryFile.setter
+    def PriceHistoryFile(self, value):
+        self._price_history_file.Value = value
+
+    @property
+    def VolWindowDays(self):
+        return self._vol_window_days.Value
+
+    @VolWindowDays.setter
+    def VolWindowDays(self, value):
+        self._vol_window_days.Value = value
+
+    @property
+    def Deciles(self):
+        return self._deciles.Value
+
+    @Deciles.setter
+    def Deciles(self, value):
+        self._deciles.Value = value
+
     def GetWorkingSecurities(self):
-        result = []
-        if self.Security is not None:
-            result.append((self.Security, self.candle_type))
-        sec2_id = str(self._security2_id.Value)
-        if sec2_id:
-            s = Security()
-            s.Id = sec2_id
-            result.append((s, self.candle_type))
-        return result
+        return [(s, self.CandleType) for s in self.Universe] if self.Universe is not None else []
 
     def OnReseted(self):
         super(low_volatility_stocks_strategy, self).OnReseted()
-        self._benchmark = None
-        self._primary_volatility = None
-        self._benchmark_volatility = None
-        self._spread_average = None
-        self._spread_deviation = None
-        self._primary_trend = None
-        self._previous_primary_close = None
-        self._previous_benchmark_close = None
-        self._latest_primary_volatility = 0.0
-        self._latest_benchmark_volatility = 0.0
-        self._latest_primary_trend = 0.0
-        self._primary_updated = False
-        self._benchmark_updated = False
-        self._cooldown_remaining = 0
+        self._clear_state()
 
     def OnStarted2(self, time):
+        self._securities = list(self.Universe) if self.Universe is not None else []
+        if not self._securities or any(s is None or not s.Id for s in self._securities) or len(set(s.Id.upper() for s in self._securities)) != len(self._securities):
+            raise InvalidOperationException("Universe must contain distinct execution securities.")
+        for security in self._securities:
+            if security.VolumeStep is None or security.MinVolume is None or security.MaxVolume is None or security.VolumeStep <= 0 or security.MinVolume <= 0 or security.MaxVolume <= 0:
+                raise InvalidOperationException("Every security needs positive VolumeStep, MinVolume and MaxVolume.")
+            self._history[security] = {}
+        self._load_price_history()
+
         super(low_volatility_stocks_strategy, self).OnStarted2(time)
+        for security in self._securities:
+            self.SubscribeCandles(self.CandleType, True, security).Bind(lambda candle, s=security: self._process_candle(s, candle)).Start()
 
-        sec2_id = str(self._security2_id.Value)
-        if not sec2_id:
-            raise Exception("Benchmark security identifier is not specified.")
-
-        s = Security()
-        s.Id = sec2_id
-        self._benchmark = s
-
-        vol_period = int(self._volatility_period.Value)
-        norm_period = int(self._normalization_period.Value)
-        trend_period = int(self._trend_period.Value)
-
-        self._primary_volatility = StandardDeviation()
-        self._primary_volatility.Length = vol_period
-        self._benchmark_volatility = StandardDeviation()
-        self._benchmark_volatility.Length = vol_period
-        self._spread_average = SimpleMovingAverage()
-        self._spread_average.Length = norm_period
-        self._spread_deviation = StandardDeviation()
-        self._spread_deviation.Length = norm_period
-        self._primary_trend = SimpleMovingAverage()
-        self._primary_trend.Length = trend_period
-
-        primary_subscription = self.SubscribeCandles(self.candle_type, True, self.Security)
-        benchmark_subscription = self.SubscribeCandles(self.candle_type, True, self._benchmark)
-
-        primary_subscription.Bind(self.ProcessPrimaryCandle).Start()
-        benchmark_subscription.Bind(self.ProcessBenchmarkCandle).Start()
-
-        area = self.CreateChartArea()
-        if area is not None:
-            self.DrawCandles(area, primary_subscription)
-            self.DrawCandles(area, benchmark_subscription)
-            self.DrawOwnTrades(area)
-
-        self.StartProtection(
-            Unit(2, UnitTypes.Percent),
-            Unit(float(self._stop_loss.Value), UnitTypes.Percent)
-        )
-
-    def ProcessPrimaryCandle(self, candle):
-        if candle.State != CandleStates.Finished:
+    def _process_candle(self, security, candle):
+        if candle.State != CandleStates.Finished or candle.ClosePrice <= 0:
             return
-
-        trend_iv = CandleIndicatorValue(self._primary_trend, candle)
-        trend_iv.IsFinal = True
-        trend_result = self._primary_trend.Process(trend_iv)
-        if not trend_result.IsEmpty and self._primary_trend.IsFormed:
-            self._latest_primary_trend = float(trend_result)
-
-        close_price = float(candle.ClosePrice)
-        if self._previous_primary_close is None or self._previous_primary_close <= 0.0:
-            self._previous_primary_close = close_price
+        self._latest[security] = (candle.OpenTime, candle.ClosePrice)
+        self._history[security][candle.OpenTime.Date] = candle.ClosePrice
+        if len(self._latest) != len(self._securities) or any(t != candle.OpenTime for t, p in self._latest.values()) or self._last_bar == candle.OpenTime or not self.IsFormedAndOnlineAndAllowTrading():
             return
+        self._last_bar = candle.OpenTime
+        month = candle.OpenTime.Year * 100 + candle.OpenTime.Month
+        if self._last_rebalance != month and self._select_targets(candle.OpenTime):
+            self._last_rebalance = month
+        self._reconcile_targets()
 
-        ret = (close_price - self._previous_primary_close) / self._previous_primary_close
-        self._previous_primary_close = close_price
+    def _budget(self):
+        return self.Capital * self.Leverage
 
-        abs_ret = abs(ret)
-        vol_result = process_float(self._primary_volatility, abs_ret, candle.OpenTime, True)
-        if not vol_result.IsEmpty and self._primary_volatility.IsFormed:
-            self._latest_primary_volatility = float(vol_result)
-            self._primary_updated = True
-            self.TryProcessSpread(candle)
+    def _as_of(self, time):
+        return time.Add(self.CandleType.Arg).AddTicks(-1)
 
-    def ProcessBenchmarkCandle(self, candle):
-        if candle.State != CandleStates.Finished:
+    def _unit_price(self, security):
+        return self._latest[security][1]
+
+    def _units(self, security, notional):
+        return Math.Floor(notional / self._unit_price(security) / security.VolumeStep) * security.VolumeStep
+
+    def _reconcile_targets(self):
+        if any(o.State != OrderStates.Done and o.State != OrderStates.Failed for o in self._pending):
             return
+        self._pending = []
+        for security in self._securities:
+            if security not in self._targets:
+                continue
+            target = self._targets[security]
+            position = self.GetPositionValue(security, self.Portfolio)
+            delta = target - (position if position is not None else Decimal(0))
+            if delta == 0 or (target != 0 and abs(delta) * self._unit_price(security) < self.MinTradeUsd):
+                continue
+            quantity = Math.Floor(min(abs(delta), security.MaxVolume) / security.VolumeStep) * security.VolumeStep
+            if quantity < security.MinVolume:
+                continue
+            order = Order()
+            order.Security = security
+            order.Portfolio = self.Portfolio
+            order.Type = OrderTypes.Market
+            order.Side = Sides.Buy if delta > 0 else Sides.Sell
+            order.Volume = quantity
+            order.Comment = "0377Rebalance"
+            self._pending.append(order)
+            self.RegisterOrder(order)
 
-        close_price = float(candle.ClosePrice)
-        if self._previous_benchmark_close is None or self._previous_benchmark_close <= 0.0:
-            self._previous_benchmark_close = close_price
+    @staticmethod
+    def _parse_utc(value):
+        return DateTime.ParseExact(value.strip(), "yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal)
+
+    @staticmethod
+    def _read_rows(path, header, fields):
+        lines = list(File.ReadLines(path))
+        if not lines or lines[0].strip() != header:
+            raise InvalidOperationException("Invalid CSV header: expected " + header + ".")
+        for line in lines[1:]:
+            if not line.strip():
+                continue
+            row = line.split(",")
+            if len(row) != fields:
+                raise InvalidOperationException("Invalid CSV field count.")
+            yield row
+
+    def _last_closed_date(self, time):
+        return time.Date if self.CandleType.Arg == TimeSpan.FromDays(1) else time.Date.AddDays(-1)
+
+    def _daily(self, security, time, count, cutoff):
+        dates = [d for d in sorted(self._history[security]) if d <= self._last_closed_date(time) and d < cutoff]
+        return [self._history[security][d] for d in dates[-count:]]
+
+    def _load_price_history(self):
+        if not self.PriceHistoryFile:
             return
+        for row in self._read_rows(self.PriceHistoryFile, "SecurityId,Date,Close", 3):
+            security = next((s for s in self._securities if s.Id.upper() == row[0].strip().upper()), None)
+            if security is None:
+                continue
+            date = DateTime.ParseExact(row[1].strip(), "yyyy-MM-dd", CultureInfo.InvariantCulture)
+            price = Decimal.Parse(row[2], CultureInfo.InvariantCulture)
+            if price <= 0 or date in self._history[security]:
+                raise InvalidOperationException("Daily prices must be positive and unique per security and UTC date.")
+            self._history[security][date] = price
 
-        ret = (close_price - self._previous_benchmark_close) / self._previous_benchmark_close
-        self._previous_benchmark_close = close_price
+    def _select_targets(self, time):
+        scores = []
+        for security in self._securities:
+            prices = self._daily(security, time, self.VolWindowDays + 1, DateTime.MaxValue)
+            if len(prices) != self.VolWindowDays + 1:
+                continue
+            returns = [float(prices[i] / prices[i - 1] - Decimal(1)) for i in range(1, len(prices))]
+            mean = sum(returns) / len(returns)
+            deviation = Math.Sqrt(sum((r - mean) ** 2 for r in returns) / (self.VolWindowDays - 1))
+            scores.append((security, deviation))
+        if len(scores) < self.Deciles:
+            return False
+        ranked = [s for s, score in sorted(scores, key=lambda x: (x[1], x[0].Id))]
+        count = len(ranked) // self.Deciles
+        self._set_basket_targets(ranked[:count], ranked[-count:], self._budget())
+        return True
 
-        abs_ret = abs(ret)
-        vol_result = process_float(self._benchmark_volatility, abs_ret, candle.OpenTime, True)
-        if not vol_result.IsEmpty and self._benchmark_volatility.IsFormed:
-            self._latest_benchmark_volatility = float(vol_result)
-            self._benchmark_updated = True
-            self.TryProcessSpread(candle)
-
-    def TryProcessSpread(self, candle):
-        if not self._primary_updated or not self._benchmark_updated:
-            return
-
-        self._primary_updated = False
-        self._benchmark_updated = False
-
-        spread = self._latest_benchmark_volatility - self._latest_primary_volatility
-
-        mean_result = process_float(self._spread_average, spread, candle.OpenTime, True)
-        mean = float(mean_result)
-
-        dev_result = process_float(self._spread_deviation, spread, candle.OpenTime, True)
-        deviation = float(dev_result)
-
-        if not self._spread_average.IsFormed or not self._spread_deviation.IsFormed or deviation <= 0:
-            return
-
-        if not self._primary_trend.IsFormed:
-            return
-
-        if not self.IsFormedAndOnlineAndAllowTrading():
-            return
-
-        if self._cooldown_remaining > 0:
-            self._cooldown_remaining -= 1
-
-        z_score = (spread - mean) / deviation
-        entry_thresh = float(self._entry_threshold.Value)
-        exit_thresh = float(self._exit_threshold.Value)
-        cooldown = int(self._cooldown_bars.Value)
-
-        close_price = float(candle.ClosePrice)
-        bullish_trend = close_price >= self._latest_primary_trend
-        bearish_trend = close_price <= self._latest_primary_trend
-        bullish_entry = z_score >= entry_thresh and bullish_trend
-        bearish_entry = z_score <= -entry_thresh and bearish_trend
-
-        if self._cooldown_remaining == 0 and self.Position == 0:
-            if bullish_entry:
-                self.BuyMarket()
-                self._cooldown_remaining = cooldown
-            elif bearish_entry:
-                self.SellMarket()
-                self._cooldown_remaining = cooldown
-        elif self.Position > 0 and (z_score <= exit_thresh or bearish_entry):
-            self.SellMarket(self.Position)
-            self._cooldown_remaining = cooldown
-        elif self.Position < 0 and (z_score >= -exit_thresh or bullish_entry):
-            self.BuyMarket(Math.Abs(self.Position))
-            self._cooldown_remaining = cooldown
+    def _set_basket_targets(self, longs, shorts, gross):
+        self._targets = {s: Decimal(0) for s in self._securities}
+        for security in longs:
+            self._targets[security] = self._units(security, gross / Decimal(2 * len(longs)))
+        for security in shorts:
+            self._targets[security] = -self._units(security, gross / Decimal(2 * len(shorts)))
 
     def CreateClone(self):
         return low_volatility_stocks_strategy()

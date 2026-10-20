@@ -1,21 +1,17 @@
+namespace StockSharp.Samples.Strategies;
+
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
-using Ecng.Collections;
-using Ecng.Serialization;
 
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-namespace StockSharp.Samples.Strategies;
-
-/// <summary>
-/// Bollinger Bands and RSI strategy with conditional trailing stop.
-/// </summary>
+/// <summary>Bollinger excursions with RSI recovery and fill-anchored conditional quote trailing.</summary>
 public class BbRsiTrailingStopStrategy : Strategy
 {
 	private readonly StrategyParam<int> _bollingerPeriod;
@@ -27,276 +23,199 @@ public class BbRsiTrailingStopStrategy : Strategy
 	private readonly StrategyParam<decimal> _trailOffsetPoints;
 	private readonly StrategyParam<decimal> _trailStopPoints;
 	private readonly StrategyParam<DataType> _candleType;
+	private Order _pending;
+	private decimal? _previousRsi;
+	private decimal _entryCost, _entryQuantity, _extreme, _stop;
+	private decimal _initialDistance, _activationDistance, _trailingDistance;
+	private bool _trailing;
 
-	private decimal _entryPrice;
-	private decimal _stopPrice;
-	private decimal _trailingPrice;
-	private bool _trailingActive;
-	private int _cooldown;
+	/// <summary>Initializes the published signal and risk parameters.</summary>
+	public BbRsiTrailingStopStrategy()
+	{
+		_bollingerPeriod = Param(nameof(BollingerPeriod), 25).SetGreaterThanZero().SetOptimize(10, 50, 5)
+			.SetDisplay("BollingerPeriod", "Bollinger close window", "Parameters");
+		_bollingerDeviation = Param(nameof(BollingerDeviation), 2m).SetGreaterThanZero().SetOptimize(1m, 3m, 0.5m)
+			.SetDisplay("BollingerDeviation", "Bollinger standard deviation multiplier", "Parameters");
+		_rsiPeriod = Param(nameof(RsiPeriod), 14).SetGreaterThanZero().SetOptimize(7, 21, 7)
+			.SetDisplay("RsiPeriod", "Wilder RSI window", "Parameters");
+		_rsiOverbought = Param(nameof(RsiOverbought), 60m).SetGreaterThanZero().SetOptimize(50m, 80m, 5m)
+			.SetDisplay("RsiOverbought", "RSI upper recovery threshold", "Parameters");
+		_rsiOversold = Param(nameof(RsiOversold), 33m).SetGreaterThanZero().SetOptimize(20m, 40m, 5m)
+			.SetDisplay("RsiOversold", "RSI lower recovery threshold", "Parameters");
+		_stopLossPoints = Param(nameof(StopLossPoints), 50m).SetGreaterThanZero().SetOptimize(20m, 100m, 10m)
+			.SetDisplay("StopLossPoints", "Initial stop distance in price units", "Parameters");
+		_trailOffsetPoints = Param(nameof(TrailOffsetPoints), 99m).SetGreaterThanZero().SetOptimize(50m, 150m, 10m)
+			.SetDisplay("TrailOffsetPoints", "Favorable price movement required to activate trailing", "Parameters");
+		_trailStopPoints = Param(nameof(TrailStopPoints), 40m).SetGreaterThanZero().SetOptimize(20m, 80m, 10m)
+			.SetDisplay("TrailStopPoints", "Trailing distance in price units", "Parameters");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+			.SetDisplay("CandleType", "Finished signal candle interval", "Parameters");
+	}
 
-	/// <summary>
-	/// Bollinger Bands period.
-	/// </summary>
+	/// <summary>Bollinger close window.</summary>
 	public int BollingerPeriod
 	{
 		get => _bollingerPeriod.Value;
 		set => _bollingerPeriod.Value = value;
 	}
 
-	/// <summary>
-	/// Bollinger Bands deviation multiplier.
-	/// </summary>
+	/// <summary>Bollinger standard deviation multiplier.</summary>
 	public decimal BollingerDeviation
 	{
 		get => _bollingerDeviation.Value;
 		set => _bollingerDeviation.Value = value;
 	}
 
-	/// <summary>
-	/// RSI calculation period.
-	/// </summary>
+	/// <summary>Wilder RSI window.</summary>
 	public int RsiPeriod
 	{
 		get => _rsiPeriod.Value;
 		set => _rsiPeriod.Value = value;
 	}
 
-	/// <summary>
-	/// RSI overbought level.
-	/// </summary>
+	/// <summary>RSI upper recovery threshold.</summary>
 	public decimal RsiOverbought
 	{
 		get => _rsiOverbought.Value;
 		set => _rsiOverbought.Value = value;
 	}
 
-	/// <summary>
-	/// RSI oversold level.
-	/// </summary>
+	/// <summary>RSI lower recovery threshold.</summary>
 	public decimal RsiOversold
 	{
 		get => _rsiOversold.Value;
 		set => _rsiOversold.Value = value;
 	}
 
-	/// <summary>
-	/// Initial stop loss in price points.
-	/// </summary>
+	/// <summary>Initial stop distance in price units.</summary>
 	public decimal StopLossPoints
 	{
 		get => _stopLossPoints.Value;
 		set => _stopLossPoints.Value = value;
 	}
 
-	/// <summary>
-	/// Profit required to activate trailing stop.
-	/// </summary>
+	/// <summary>Favorable price movement required to activate trailing.</summary>
 	public decimal TrailOffsetPoints
 	{
 		get => _trailOffsetPoints.Value;
 		set => _trailOffsetPoints.Value = value;
 	}
 
-	/// <summary>
-	/// Trailing stop distance in price points.
-	/// </summary>
+	/// <summary>Trailing distance in price units.</summary>
 	public decimal TrailStopPoints
 	{
 		get => _trailStopPoints.Value;
 		set => _trailStopPoints.Value = value;
 	}
 
-	/// <summary>
-	/// Candle type for strategy calculation.
-	/// </summary>
+	/// <summary>Finished signal candle interval.</summary>
 	public DataType CandleType
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Initializes strategy parameters.
-	/// </summary>
-	public BbRsiTrailingStopStrategy()
-	{
-		_bollingerPeriod = Param(nameof(BollingerPeriod), 25)
-			.SetDisplay("Bollinger Period", "Period for Bollinger Bands", "Indicators")
-			
-			.SetOptimize(10, 50, 5);
-
-		_bollingerDeviation = Param(nameof(BollingerDeviation), 2m)
-			.SetDisplay("Bollinger Deviation", "Deviation multiplier", "Indicators")
-			
-			.SetOptimize(1m, 3m, 0.5m);
-
-		_rsiPeriod = Param(nameof(RsiPeriod), 14)
-			.SetDisplay("RSI Period", "RSI calculation period", "Indicators")
-			
-			.SetOptimize(7, 21, 7);
-
-		_rsiOverbought = Param(nameof(RsiOverbought), 60m)
-			.SetDisplay("RSI Overbought", "Overbought level", "Indicators")
-
-			.SetOptimize(50m, 80m, 5m);
-
-		_rsiOversold = Param(nameof(RsiOversold), 33m)
-			.SetDisplay("RSI Oversold", "Oversold level", "Indicators")
-
-			.SetOptimize(20m, 40m, 5m);
-
-		_stopLossPoints = Param(nameof(StopLossPoints), 50m)
-			.SetDisplay("Stop Loss Points", "Initial stop loss in points", "Risk Management")
-
-			.SetOptimize(20m, 100m, 10m);
-
-		_trailOffsetPoints = Param(nameof(TrailOffsetPoints), 99m)
-			.SetDisplay("Trail Offset Points", "Profit to activate trailing stop", "Risk Management")
-
-			.SetOptimize(50m, 150m, 10m);
-
-		_trailStopPoints = Param(nameof(TrailStopPoints), 40m)
-			.SetDisplay("Trail Stop Points", "Trailing stop distance", "Risk Management")
-
-			.SetOptimize(20m, 80m, 10m);
-
-		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-			.SetDisplay("Candle Type", "Type of candles to use", "General");
-	}
+	private bool IsPending => _pending is not null && _pending.State is not (OrderStates.Done or OrderStates.Failed);
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-	{
-		return [(Security, CandleType)];
-	}
+		=> [(Security, CandleType), (Security, DataType.Level1)];
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
-		_entryPrice = 0;
-		_stopPrice = 0;
-		_trailingPrice = 0;
-		_trailingActive = false;
-		_cooldown = 0;
+		_pending = null;
+		_previousRsi = null;
+		_entryCost = _entryQuantity = _extreme = _stop = 0m;
+		_initialDistance = _activationDistance = _trailingDistance = 0m;
+		_trailing = false;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted2(DateTime time)
 	{
+		if (RsiOversold >= RsiOverbought || RsiOverbought >= 100m)
+			throw new InvalidOperationException("RSI thresholds must satisfy 0 < oversold < overbought < 100.");
 		base.OnStarted2(time);
-
-		var bollinger = new BollingerBands
+		foreach (var field in new[] { Level1Fields.BestBidPrice, Level1Fields.BestAskPrice })
 		{
-		Length = BollingerPeriod,
-		Width = BollingerDeviation
-		};
-
-		var rsi = new RelativeStrengthIndex
-		{
-		Length = RsiPeriod
-		};
-
-		var subscription = SubscribeCandles(CandleType);
-		subscription
-			.BindEx(bollinger, rsi, ProcessCandle)
-			.Start();
-
+			var quote = new Subscription(DataType.Level1, Security);
+			quote.MarketData.BuildField = field;
+			SubscribeLevel1(quote).Bind(ProcessQuote).Start();
+		}
+		var bb = new BollingerBands { Length = BollingerPeriod, Width = BollingerDeviation };
+		var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
+		var candles = SubscribeCandles(CandleType);
+		candles.BindEx([bb, rsi], ProcessCandle).Start();
 		var area = CreateChartArea();
-		if (area != null)
+		if (area is not null)
 		{
-			DrawCandles(area, subscription);
-			DrawIndicator(area, bollinger);
+			DrawCandles(area, candles);
+			DrawIndicator(area, bb);
 			DrawIndicator(area, rsi);
 			DrawOwnTrades(area);
 		}
 	}
 
-	private void ResetStops()
+	private void Submit(Sides side, decimal quantity, string reason)
 	{
-		_entryPrice = 0;
-		_stopPrice = 0;
-		_trailingPrice = 0;
-		_trailingActive = false;
-		_cooldown = 100;
+		_pending = CreateOrder(side, 0m, quantity);
+		_pending.Type = OrderTypes.Market;
+		_pending.Comment = "0551" + reason;
+		RegisterOrder(_pending);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue, IIndicatorValue rsiValue)
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue[] values)
 	{
-		if (candle.State != CandleStates.Finished)
+		if (candle.State != CandleStates.Finished || !values[0].IsFormed || !values[1].IsFormed
+			|| values[0] is not BollingerBandsValue bb || bb.LowBand is not decimal lower || bb.UpBand is not decimal upper)
 			return;
-
-		if (bollingerValue is not BollingerBandsValue bb ||
-			bb.UpBand is not decimal upper ||
-			bb.LowBand is not decimal lower ||
-			!rsiValue.IsFormed)
+		var rsi = values[1].GetValue<decimal>();
+		var previous = _previousRsi;
+		_previousRsi = rsi;
+		if (previous is null || Position != 0m || IsPending || !IsFormedAndOnlineAndAllowTrading())
 			return;
+		Sides? side = candle.LowPrice < lower && previous <= RsiOversold && rsi > RsiOversold ? Sides.Buy
+			: candle.HighPrice > upper && previous >= RsiOverbought && rsi < RsiOverbought ? Sides.Sell : null;
+		if (side is null)
+			return;
+		_entryCost = _entryQuantity = 0m;
+		_trailing = false;
+		_initialDistance = StopLossPoints;
+		_activationDistance = TrailOffsetPoints;
+		_trailingDistance = TrailStopPoints;
+		Submit(side.Value, Volume, "Entry");
+	}
 
-		var rsi = rsiValue.GetValue<decimal>();
-
-		if (_cooldown > 0)
-			_cooldown--;
-
-		if (Position == 0 && _cooldown == 0)
+	/// <inheritdoc />
+	protected override void OnOwnTradeReceived(MyTrade trade)
+	{
+		base.OnOwnTradeReceived(trade);
+		if (trade.Order.Comment == "0551Entry")
 		{
-			if (candle.LowPrice < lower && rsi < RsiOversold)
-			{
-				BuyMarket();
-				_entryPrice = candle.ClosePrice;
-				_stopPrice = _entryPrice - StopLossPoints;
-				_cooldown = 100;
-			}
-			else if (candle.HighPrice > upper && rsi > RsiOverbought)
-			{
-				SellMarket();
-				_entryPrice = candle.ClosePrice;
-				_stopPrice = _entryPrice + StopLossPoints;
-				_cooldown = 100;
-			}
+			_entryCost += trade.Trade.Price * trade.Trade.Volume;
+			_entryQuantity += trade.Trade.Volume;
+			var entry = _entryCost / _entryQuantity;
+			_extreme = entry;
+			_stop = trade.Order.Side == Sides.Buy ? entry - _initialDistance : entry + _initialDistance;
 		}
-		else if (Position > 0)
-		{
-			if (!_trailingActive && candle.ClosePrice - _entryPrice >= TrailOffsetPoints)
-			{
-				_trailingActive = true;
-				_trailingPrice = candle.ClosePrice - TrailStopPoints;
-			}
+	}
 
-			if (_trailingActive)
-			{
-				var newLevel = candle.ClosePrice - TrailStopPoints;
-				if (newLevel > _trailingPrice)
-					_trailingPrice = newLevel;
-			}
-
-			// Exit on stop or trailing stop
-			if (candle.LowPrice <= _stopPrice || (_trailingActive && candle.LowPrice <= _trailingPrice))
-			{
-				SellMarket();
-				ResetStops();
-			}
-		}
-		else
-		{
-			if (!_trailingActive && _entryPrice - candle.ClosePrice >= TrailOffsetPoints)
-			{
-				_trailingActive = true;
-				_trailingPrice = candle.ClosePrice + TrailStopPoints;
-			}
-
-			if (_trailingActive)
-			{
-				var newLevel = candle.ClosePrice + TrailStopPoints;
-				if (newLevel < _trailingPrice || _trailingPrice == 0)
-					_trailingPrice = newLevel;
-			}
-
-			// Exit on stop or trailing stop
-			if (candle.HighPrice >= _stopPrice || (_trailingActive && candle.HighPrice >= _trailingPrice))
-			{
-				BuyMarket();
-				ResetStops();
-			}
-		}
+	private void ProcessQuote(Level1ChangeMessage quote)
+	{
+		if (Position == 0m || _entryQuantity == 0m || IsPending || !IsFormedAndOnlineAndAllowTrading())
+			return;
+		var field = Position > 0m ? Level1Fields.BestBidPrice : Level1Fields.BestAskPrice;
+		if (!quote.Changes.TryGetValue(field, out var raw) || raw is not decimal price || price <= 0m)
+			return;
+		var entry = _entryCost / _entryQuantity;
+		_extreme = Position > 0m ? Math.Max(_extreme, price) : Math.Min(_extreme, price);
+		if (Position > 0m ? _extreme - entry >= _activationDistance : entry - _extreme >= _activationDistance)
+			_trailing = true;
+		if (_trailing)
+			_stop = Position > 0m ? Math.Max(_stop, _extreme - _trailingDistance) : Math.Min(_stop, _extreme + _trailingDistance);
+		if (Position > 0m ? price <= _stop : price >= _stop)
+			Submit(Position > 0m ? Sides.Sell : Sides.Buy, Math.Abs(Position), "Stop");
 	}
 }

@@ -1,28 +1,37 @@
-# 発生主義異常戦略
-[English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
+# Accrual Anomaly
 
-**Accrual Anomaly** 戦略は発生主義異常ファクターを実装しています。毎年5月の最初の取引日にリバランスし、低発生主義銘柄をロング、高発生主義銘柄をショートします。
+[English](README.md) | [Русский](README_ru.md) | [Deutsch](README_de.md) | [Español](README_es.md) | [Português](README_pt.md) | [中文](README_zh.md)
 
-テストでは年平均リターン約12%を示しています。米国株式市場で最も優れたパフォーマンスを発揮します。
+## 取引規則
 
-ポジションは年に一度だけ調整されます。イントラデイシグナルは使用されません。
+年次報告の (NetIncome − OperatingCashFlow) / TotalAssets を順位付けし、Deciles の最下位を買い、最上位を売ります。各端の銘柄数は floor(適格数 / Deciles)、最低 Deciles 件の報告が必要です。既定の年次月は五月です。
 
-## 詳細
-- **エントリー条件**: 発生主義計算の実装を参照。
-- **ロング/ショート**: 両方向。
-- **エグジット条件**: 次回予定日にリバランス。
-- **ストップ**: 明示的なストップロジックなし。
-- **デフォルト値**:
-  - `Deciles = 10`
-  - `CandleType = TimeSpan.FromMinutes(5).TimeFrame()`
-- **フィルター**:
-  - カテゴリ: ファンダメンタル
-  - 方向: 両方
-  - インジケーター: Fundamentals
-  - ストップ: いいえ
-  - 複雑さ: 中級
-  - 時間軸: 日足
-  - 季節性: はい
-  - ニューラルネットワーク: いいえ
-  - ダイバージェンス: いいえ
-  - リスクレベル: 中
+毎年 RebalanceMonth の最初の適格な同期確定足で一度リバランスします。後日の公表は過去の判断に影響しません。MaxReportAgeDays は PeriodEnd から数えます。
+
+## 入力データ
+
+FundamentalsFile は必須 CSV です：SecurityId,PeriodEnd,PublishedAt,TotalAssets,NetIncome,OperatingCashFlow,BookEquity,SharesOutstanding。PeriodEnd は yyyy-MM-dd、PublishedAt は yyyy-MM-ddTHH:mm:ssZ（UTC）。資産と株数は正である必要があります。信号時点で公表済みの最新会計期間と最新改訂だけを選びます。重複改訂や期末より前の公表は禁止です。足から財務値を作りません。
+
+## パラメーター
+
+| パラメーター | 既定値 |
+|---|---|
+| `Universe` | 必須 |
+| `Capital` | `100000` |
+| `Leverage` | `1` |
+| `MinTradeUsd` | `50` |
+| `CandleType` | `TimeSpan.FromMinutes(5).TimeFrame()` |
+| `Deciles` | `10` |
+| `FundamentalsFile` | 必須 |
+| `RebalanceMonth` | `5` |
+| `MaxReportAgeDays` | `550` |
+
+## 約定と保有数量
+
+Universe を明示的に設定します。価格と Capital は取引単位当たりの USD です。Capital は固定予算、Leverage は総エクスポージャーを指定します。損切りや利食い注文は追加しません。
+
+買い・売りの各バスケットに Capital × Leverage の半分を均等配分します。信号終値で数量に換算し、VolumeStep 単位でゼロ方向へ丸めます。実際の約定残高を使い、未完了注文を待ち、MinVolume/MaxVolume を守って大口調整を後続足へ分割します。MinTradeUsd は小口調整を除外しますが、全決済には適用しません。
+
+## 検証
+
+約定検証には既存 BTC/TON アーカイブのみを使います。明示した財務報告、オプション観測、準備価格は仕組みのテスト用で、実企業財務やオプション履歴ではありません。短縮期間、二分位、三月の年次調整は明示的な検証設定で、元の長期既定値の取引を証明しません。収益率は主張しません。

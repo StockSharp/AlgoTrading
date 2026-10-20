@@ -1,31 +1,24 @@
-# BTC DCA AHR999 策略
+# BTC DCA AHR999
+
 [English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Deutsch](README_de.md) | [Português](README_pt.md) | [日本語](README_ja.md)
 
-该策略在设定的起止日期之间每周一买入比特币。买入金额取决于
-AHR999 指数，该指数结合了价格的几何平均值与比特币的对数增长模型。
+## 交易规则
 
-## 详情
+使用已完成的 UTC 日线。以最近 `Length` 个正收盘价（含当前）计算 `G=exp(mean(ln(C)))`。BTC 年龄为自 2009-01-03 起的整天数；`F=10^(5.84*log10(age)-17.01)`，`AHR999=(C/G)*(C/F)`。窗口必须完整。
 
-- **入场条件**：
-  - 在日期范围内的周一如果 AHR999 < 0.45 则按 `UsdInvest2` 买入。
-  - 在日期范围内的周一如果 AHR999 < 1.2 则按 `UsdInvest1` 买入。
-- **多空方向**：仅做多。
-- **出场条件**：
-  - 持仓不平仓，无自动退出逻辑。
-- **止损**：无。
-- **默认值**：
-  - UsdInvest1 = 100。
-  - UsdInvest2 = 1000。
-  - Length = 200。
-  - 起始日期 = 2024-02-01，结束日期 = 2025-12-31。
-- **过滤器**：
-  - 分类：定投累积。
-  - 方向：多头。
-  - 指标：AHR999。
-  - 止损：无。
-  - 复杂度：中等。
-  - 时间框架：日线。
-  - 季节性：无。
-  - 神经网络：无。
-  - 背离：无。
-  - 风险等级：中等。
+在日期范围内的星期一，指数严格低于 0.45 时按 `UsdInvest2` 预算买入，否则严格低于 1.2 时使用 `UsdInvest1`。其余指数、星期及日期不买入。UTC 日期边界包含在内，每根日线最多决策一次。数量为 `floor(budget/C/VolumeStep)*VolumeStep`，不足最小数量则跳过。预算按信号收盘价计算，实际市价成交可能不同。未完成订单阻止重复提交。持仓累积，没有自动退出。
+
+## 参数
+
+| 参数 | 默认值 |
+|---|---|
+| `CandleType` | `1d` |
+| `Length` | `200` |
+| `UsdInvest1` | `100` |
+| `UsdInvest2` | `1000` |
+| `StartDate` | `2024-02-01T00:00:00Z` |
+| `EndDate` | `2025-12-31T00:00:00Z` |
+
+## 参考资料
+
+- [AHR999 geometric-cost implementation](https://github.com/alibaba-web3/quant-master/blob/main/ahr999_index.py)

@@ -105,7 +105,8 @@ class santa_claus_rally_strategy(Strategy):
             return
         local = TimeZoneInfo.ConvertTimeFromUtc(candle.OpenTime, self.Security.Board.TimeZone)
         date = local.Date
-        year = local.Year if local.Month == 12 else local.Year - 1
+        year = self._entry_year if self.Position > 0 and self._entry_year > 0 else (
+            local.Year if local.Month == 12 else local.Year - 1)
         entry, exit_date = self._season(year)
         if self.Position > 0:
             bar_end = TimeZoneInfo.ConvertTimeFromUtc(candle.OpenTime.Add(self.candle_type.Arg), self.Security.Board.TimeZone)

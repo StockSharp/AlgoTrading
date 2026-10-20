@@ -1,29 +1,19 @@
-# 5 EMA No-Touch Ausbruch-Strategie
-[English](README.md) | [Русский](README_ru.md) | [中文](README_zh.md) | [Español](README_es.md) | [Português](README_pt.md) | [日本語](README_ja.md)
+# Five Ema NoTouch Breakout
 
-Die 5 EMA No-Touch Ausbruch-Strategie wartet auf eine Kerze, die vollständig auf einer Seite des 5-Perioden-EMA verbleibt. Wenn der Preis später das Extrem dieser Setup-Kerze bricht, tritt die Strategie in Ausbruchsrichtung ein. Der Stop-Loss wird am entgegengesetzten Extrem platziert und das Take-Profit wird auf ein Vielfaches des Risikos gesetzt.
+[English](README.md) | [Русский](README_ru.md) | [Español](README_es.md) | [Português](README_pt.md) | [中文](README_zh.md) | [日本語](README_ja.md)
 
-## Details
+## Handelsregeln
 
-- **Einstiegskriterien**:
-  - Kerzenhoch unter EMA → Long vorbereiten; eintreten wenn der Preis über das Hoch dieser Kerze bricht.
-  - Kerzentief über EMA → Short vorbereiten; eintreten wenn der Preis unter das Tief dieser Kerze bricht.
-- **Long/Short**: Beide.
-- **Ausstiegskriterien**:
-  - Stop am Extrem der Setup-Kerze.
-  - Ziel bei `RewardRisk` × Risiko.
-- **Stops**: Ja.
-- **Standardwerte**:
-  - `EmaPeriod` = 5
-  - `RewardRisk` = 3.0
-- **Filter**:
-  - Kategorie: Ausbruch
-  - Richtung: Long/Short
-  - Indikatoren: EMA
-  - Stops: Ja
-  - Komplexität: Niedrig
-  - Zeitrahmen: 5 Minuten
-  - Saisonalität: Nein
-  - Neuronale Netze: Nein
-  - Divergenz: Nein
-  - Risikolevel: Mittel
+Nur abgeschlossene Kerzen nach EMA-Bildung verwenden. Vollständig unter EMA: Long über dem Kerzenhoch vormerken; vollständig darüber: Short unter dem Tief. Die vorherige Vorgabe vor einer Ersetzung prüfen; Berührung genügt nicht. Nur aus leerer Position mit Volume einsteigen, während des Haltens Vorgabe löschen. Stop am gegenüberliegenden Extrem fixieren. Beim ersten tatsächlichen Einstieg den Abstand zum Stop als Risiko und RewardRisk×Risiko als Gewinnabstand festhalten. Nativer lokaler Marktschutz beobachtet Bid/Ask zwischen Kerzen. Eine Ausführung jenseits des Stops wird sofort glattgestellt. Keine Wartebalken oder Aufstockung.
+
+## Parameter
+
+| Parameter | Standard |
+|---|---|
+| `CandleType` | TimeSpan.FromMinutes(5).TimeFrame() |
+| `EmaPeriod` | 5 |
+| `RewardRisk` | 3 |
+
+## Prüfung
+
+Beide Sprachen werden mit gebündelten BTC/TON-Daten, unabhängigen Formeln, Orderseiten/-mengen, Ausführungen, Positionen und Ausstiegen geprüft. Datierte Preis-/Faktor- und Kalenderfixtures prüfen Mechanik; verschobene OHLC/Volumina sind keine mehrjährige Marktgeschichte. Zwei Ranggruppen, TopN=1 und SMA=2 sind ausdrücklich kleine Testprofile. Lange Originalfenster und Standardwerte werden separat geprüft. Keine Renditezusage.
